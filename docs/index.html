@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRT Rebound Scanner</title>
+  <link rel="icon" href="assets/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="wrap header">
+    <div class="brand">
+      <img class="logo" src="assets/logo.svg" alt="" />
+      <div class="brand-text">
+        <div class="title">CRT Rebound Scanner</div>
+        <div class="subtitle" id="subtitle">Precomputed daily • static</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input id="search" class="search" placeholder="Search ticker (universe only)" spellcheck="false" />
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="status" class="status"></section>
+
+    <section>
+      <h2 class="h2">Top 10</h2>
+      <div id="top10" class="cards"></div>
+    </section>
+
+    <section>
+      <h2 class="h2">All tickers</h2>
+      <div class="table-wrap">
+        <table id="table" class="table">
+          <thead>
+            <tr>
+              <th data-sort="Ticker">Ticker</th>
+              <th data-sort="ReboundScore">Score</th>
+              <th data-sort="Confidence">Conf</th>
+              <th data-sort="Stability">Stab</th>
+              <th data-sort="Verdict">Verdict</th>
+              <th data-sort="Risk">Risk</th>
+              <th data-sort="WashoutToday">Washout</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <div id="footnote"></div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
