@@ -1,3 +1,4 @@
+
 const DATA_URL = "./data/full.json";
 
 function fmtPct(x){
@@ -5,6 +6,24 @@ function fmtPct(x){
   const v = Number(x);
   if (!Number.isFinite(v)) return "—";
   return `${Math.round(v*100)}%`;
+}
+
+function fmtSignedPct(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  const s = Math.round(v*100);
+  const sign = (s>0?"+":"");
+  return `${sign}${s}%`;
+}
+
+function fmtPP(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  const s = Math.round(v*100);
+  const sign = (s>0?"+":"");
+  return `${sign}${s}pp`;
 }
 function fmtNum(x){
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
@@ -118,6 +137,40 @@ function renderCard(container, item, detail){
   outcomes.appendChild(makeBox("3 years", detail.outcomes?.["3Y"]));
   outcomes.appendChild(makeBox("5 years", detail.outcomes?.["5Y"]));
   left.appendChild(outcomes);
+
+  // Evidence: alpha vs a random historical day for the same stock
+  const ev = detail.evidence || null;
+  if (ev && (ev["1Y"] || ev["3Y"] || ev["5Y"])){
+    const box = document.createElement("div");
+    box.className = "evidence";
+    box.innerHTML = `
+      <div class="ev-title">Evidence (top 10% washout days vs a normal historical day)</div>
+      <div class="ev-sub">Same stock, same horizons. This is the “alpha” this scanner is built to surface.</div>
+    `;
+
+    const lines = document.createElement("div");
+    lines.className = "ev-lines";
+    const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
+    for (const [k,label] of horizons){
+      const e = ev[k];
+      if (!e) continue;
+      const dWin = (e.win_wash - e.win_norm);
+      const dMed = (e.med_wash - e.med_norm);
+      const dP10 = (e.p10_wash - e.p10_norm);
+      const row = document.createElement("div");
+      row.className = "ev-row";
+      row.innerHTML = `
+        <div class="ev-h">${label}</div>
+        <div class="ev-m"><span>Chance of gain</span><strong>${Math.round(e.win_wash*100)}% vs ${Math.round(e.win_norm*100)}% (${fmtPP(dWin)})</strong></div>
+        <div class="ev-m"><span>Typical</span><strong>${fmtPct(e.med_wash)} vs ${fmtPct(e.med_norm)} (${fmtSignedPct(dMed)})</strong></div>
+        <div class="ev-m"><span>Downside (1 in 10)</span><strong>${fmtPct(e.p10_wash)} vs ${fmtPct(e.p10_norm)} (${fmtSignedPct(dP10)})</strong></div>
+        <div class="ev-n">N=${e.n_wash} vs ${e.n_norm}</div>
+      `;
+      lines.appendChild(row);
+    }
+    box.appendChild(lines);
+    left.appendChild(box);
+  }
 
   const right = document.createElement("div");
   right.className = "chart";
@@ -283,7 +336,6 @@ function setSortButtons(active){
     alert("Ticker not in today’s universe (Russell 1000 / IWB holdings).");
   }
   go.addEventListener("click", doSearch);
-  q.addEventListener("keydown", (e)=>{ if (e.key==="Enter\") doSearch(); });
+  q.addEventListener("keydown", (e)=>{ if (e.key==="Enter") doSearch(); });
 
 })();
-
