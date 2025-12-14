@@ -4,7 +4,7 @@
 #   - docs/data/full.json (ranking + top10 embedded details)
 #   - docs/data/tickers/{TICKER}.json (details for every scored ticker)
 #
-# Runs once per day after ~5pm America/New_York (the workflow is hourly; the script gates itself).
+# Runs once per day after 5pm America/New_York (the workflow is hourly; the script gates itself).
 
 import os, math, json, warnings
 warnings.filterwarnings("ignore")
@@ -86,28 +86,48 @@ OUT_DIR = os.path.join("docs","data")
 TICKER_DIR = os.path.join(OUT_DIR,"tickers")
 
 # =========================
-# Time gate (after 5pm NY)
+# Time gate (scheduled after 5pm NY) + manual override
 # =========================
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+NY_TZ = ZoneInfo("America/New_York")
+
+# GitHub Actions sets this for workflow_dispatch (manual runs). Allow anytime.
+FORCE_RUN = os.getenv("FORCE_RUN", "").strip().lower() in {"1", "true", "yes"}
+
+RUN_HOUR_NY = 17        # 5PM
+RUN_WINDOW_MIN = 20     # 5:00–5:19pm ET window
+
+STAMP_PATH = os.path.join(OUT_DIR, "last_run.txt")
+
 def should_run_now():
-    if os.getenv("FORCE_RUN","").strip() == "1":
+    if FORCE_RUN:
         return True
-    tz = ZoneInfo("America/New_York")
-    now = datetime.now(tz)
-    if now.hour < 17:
+
+    now = datetime.now(NY_TZ)
+
+    # Only run in the window (prevents 6pm, 9pm, etc. cron runs)
+    if not (now.hour == RUN_HOUR_NY and 0 <= now.minute < RUN_WINDOW_MIN):
         return False
-    stamp_path = os.path.join(OUT_DIR, "last_run.txt")
+
+    # Only once per day
     today = now.strftime("%Y-%m-%d")
-    if os.path.exists(stamp_path):
-        prev = open(stamp_path, "r").read().strip()
-        if prev == today:
-            return False
+    if os.path.exists(STAMP_PATH):
+        try:
+            prev = open(STAMP_PATH, "r", encoding="utf-8").read().strip()
+            if prev == today:
+                return False
+        except Exception:
+            pass
+
     return True
 
 def mark_ran_today():
     os.makedirs(OUT_DIR, exist_ok=True)
-    tz = ZoneInfo("America/New_York")
-    today = datetime.now(tz).strftime("%Y-%m-%d")
-    open(os.path.join(OUT_DIR, "last_run.txt"), "w").write(today)
+    today = datetime.now(NY_TZ).strftime("%Y-%m-%d")
+    with open(STAMP_PATH, "w", encoding="utf-8") as f:
+        f.write(today)
 
 # =========================
 # Math helpers
