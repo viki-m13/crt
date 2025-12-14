@@ -156,6 +156,8 @@ h1{
   border-left:1px solid var(--rule2);
   padding-left:12px;
   position:relative;
+  display:flex;
+  flex-direction:column;
 }
 .canvas{
   width:100%;
@@ -164,20 +166,19 @@ h1{
 }
 
 .chart-legend{
-  position:absolute;
-  right:10px;
-  bottom:10px;
+  position:static;
   display:inline-flex;
   align-items:center;
   gap:8px;
   font-family:var(--mono);
   font-size:11px;
   color:var(--muted);
-  background:rgba(251,250,247,.86);
+  background:rgba(0,0,0,.015);
   border:1px solid var(--rule2);
   padding:6px 8px;
   border-radius:14px;
-  pointer-events:none;
+  margin-top:0;
+  align-self:flex-end;
 }
 .legend-bar{
   width:44px;
@@ -270,18 +271,3 @@ h1{
 .evidence-details{margin-top:14px}
 .evidence-summary-left{display:flex;flex-direction:column;gap:2px}
 .evidence-summary-left .ev-sub{margin-top:0}
-
-
-/* Footer */
-.footer{
-  max-width:1120px;
-  margin:0 auto;
-  padding:0 18px 26px;
-}
-.footer-inner{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  color:var(--muted);
-  font-size:13px;
-}

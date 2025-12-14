@@ -24,9 +24,15 @@
     <div class="rule"></div>
 
     <section class="explain">
-      <div class="explain-grid">
-        <div>
-          <div class="section-title">What this does</div>
+      <details class="details whathow" open>
+        <summary class="details-summary">
+          <span class="section-title">WHAT &amp; HOW</span>
+          <span class="plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="details-body">
+          <div class="explain-grid">
+            <div>
+              <div class="section-title">What this does</div>
           <p>
             Rebound Ledger runs once a day and surfaces stocks that look <strong>unusually washed‑out for their own history</strong> —
             <strong>and checks that the weakness is stock‑specific, not just “the market fell”</strong>.
@@ -47,68 +53,66 @@
             <li><strong>Not a forecast.</strong> It summarizes historical outcomes; it does not predict the future.</li>
             <li><strong>Not a guarantee.</strong> Stocks can keep falling — including to zero.</li>
           </ul>
-        </div>
+            </div>
 
-        <div>
-          <div class="section-title">How it works</div>
-          <ol>
-            <li>
-              <strong>Measure “washout.”</strong>
-              The <strong>Washout Meter (0–100)</strong> summarizes drawdown vs the 52‑week high, position inside the 52‑week range,
-              volatility/volume stress, and <strong>market‑adjusted weakness</strong>.
-            </li>
-            <li>
-              <strong>Remove the “market did it” excuse.</strong>
-              The model estimates each stock’s rolling sensitivity to SPY and analyzes the residual (stock‑specific) component.
-              That’s why this is not just mean reversion: it’s looking for <em>abnormal</em> weakness for that stock after accounting for the market.
-            </li>
-            <li>
-              <strong>Match historical analogs (same stock).</strong>
-              It searches the stock’s own history for the most similar days (same stock, similar conditions), then measures what happened next.
-            </li>
-            <li>
-              <strong>Compute two kinds of evidence.</strong>
-              <strong>Evidence A</strong> compares outcomes after the stock’s <strong>top‑10% most washed‑out days</strong> versus <strong>any normal day</strong>.
-              <strong>Evidence B</strong> compares outcomes after the stock’s <strong>top‑10% Final Score days</strong> versus <strong>any normal day</strong>.
-            </li>
-            <li>
-              <strong>Rank by one consistent score.</strong>
-              <strong>Edge Score (0–100)</strong> measures rebound edge from analogs.
-              <strong>Final Score (0–100)</strong> amplifies Edge by how washed‑out it is today — this is the single score used for ranking and the chart color.
-              Confidence/Stability penalize “one lucky episode” patterns.
-            </li>
-          </ol>
-        </div>
+            <div>
+              <div class="section-title">How it works</div>
+              <ol>
+                <li>
+                  <strong>Measure “washout.”</strong>
+                  The <strong>Washout Meter (0–100)</strong> summarizes drawdown vs the 52‑week high, position inside the 52‑week range,
+                  volatility/volume stress, and <strong>market‑adjusted weakness</strong>.
+                </li>
+                <li>
+                  <strong>Remove the “market did it” excuse.</strong>
+                  The model estimates each stock’s rolling sensitivity to SPY and analyzes the residual (stock‑specific) component.
+                  That’s why this is not just mean reversion: it’s looking for <em>abnormal</em> weakness for that stock after accounting for the market.
+                </li>
+                <li>
+                  <strong>Match historical analogs (same stock).</strong>
+                  It searches the stock’s own history for the most similar days (same stock, similar conditions), then measures what happened next.
+                </li>
+                <li>
+                  <strong>Compute two kinds of evidence.</strong>
+                  <strong>Evidence A</strong> compares outcomes after the stock’s <strong>top‑10% most washed‑out days</strong> versus <strong>any normal day</strong>.
+                  <strong>Evidence B</strong> compares outcomes after the stock’s <strong>top‑10% Final Score days</strong> versus <strong>any normal day</strong>.
+                </li>
+                <li>
+                  <strong>Rank by one consistent score.</strong>
+                  <strong>Edge Score (0–100)</strong> measures rebound edge from analogs.
+                  <strong>Final Score (0–100)</strong> amplifies Edge by how washed‑out it is today — this is the single score used for ranking and the chart color.
+                  Confidence/Stability penalize “one lucky episode” patterns.
+                </li>
+              </ol>
+            </div>
 
-        <div>
-          <div class="section-title">How to read the numbers</div>
-          <ul>
-            <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
-            <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
-            <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad‑but‑plausible case).</li>
-            <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
-            <li><span class="mono">Final score (0–100)</span> = the single ranked score used across the site. It is the Edge Score amplified by today’s Washout Meter.</li>
-            <li><span class="mono">Washout Meter (0–100)</span> = how unusually “washed‑out” the stock looks for its own history, after adjusting for the market.</li>
-            <li><span class="mono">Edge Score (0–100)</span> = how strong rebounds were after the most similar historical setups for this same stock.</li>
-            <li><span class="mono">Confidence (0–100)</span> = higher when there are more comparable historical examples and the signal behaves consistently.</li>
-            <li><span class="mono">Stability (0–100)</span> = higher when the score does not swing wildly under small, reasonable tweaks (low stability = fragile).</li>
+            <div>
+              <div class="section-title">How to read the numbers</div>
+              <ul>
+                <li><strong>Final score (0–100)</strong> = the ranked recommendation. It’s the Edge Score amplified by today’s Washout.</li>
+                <li><strong>Washout (0–100)</strong> = how washed‑out/sold‑off the stock looks vs its own history (market‑adjusted).</li>
+                <li><strong>Confidence (0–100)</strong> = higher when there are more comparable past cases and behavior is consistent.</li>
+                <li><strong>Stability (0–100)</strong> = whether the score holds up under small, reasonable tweaks (higher = less fragile).</li>
+                <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
+                <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
+                <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad‑but‑plausible case).</li>
+                <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
+                <li>
+                  The <strong>Evidence A/B</strong> bullets inside each card compare “signal days” to that stock’s <em>typical</em>
+                  outcomes — that’s how you see whether the signal historically added edge for that specific ticker.
+                </li>
+              </ul>
+            </div>
+          </div>
 
-            <li>
-              The <strong>Evidence A/B</strong> bullets inside each card compare “signal days” to that stock’s <em>typical</em>
-              outcomes — that’s how you see whether the signal historically added edge for that specific ticker.
-            </li>
-          </ul>
-        </div>
-      </div>
+          <div class="rule"></div>
 
-      <div class="rule"></div>
-
-      <details class="details nerds">
-        <summary class="details-summary">
-          <span class="section-title">STATS NERDS</span>
-          <span class="plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="details-body">
+          <details class="details nerds">
+            <summary class="details-summary">
+              <span class="section-title">METHOD NOTES</span>
+              <span class="plus" aria-hidden="true">+</span>
+            </summary>
+            <div class="details-body">
           <p>
             Each stock has a daily feature vector <span class="mono">x<sub>t</sub></span> describing “washout‑ness”:
             drawdown, range percentile, volatility/volume stress, and market‑adjusted underperformance.
@@ -125,6 +129,8 @@
           <p class="footnote">
             This is a conditional historical summary, not a promise. Use it as an evidence layer, not as a mandate.
           </p>
+            </div>
+          </details>
         </div>
       </details>
     </section>

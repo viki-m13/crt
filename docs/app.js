@@ -63,23 +63,6 @@ function washoutTopRankText(topPct){
 
 function byId(id){ return document.getElementById(id); }
 
-function fmtAsOf(asOf){
-  if (!asOf) return "—";
-  const s = String(asOf).trim();
-  const m = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
-  if (m) return `${m[1]} ${m[2]}`;
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())){
-    const f = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/New_York",
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: false,
-    });
-    return f.format(d).replace(",", "");
-  }
-  return s;
-}
-
 // Gradient line: dark green = higher score (0..100)
 function drawGradientLine(canvas, dates, prices, score){
   const ctx = canvas.getContext("2d");
@@ -342,6 +325,39 @@ function setSortButtons(active){
   });
 }
 
+function formatAsOf(asOf){
+  if (!asOf) return "—";
+  let s = String(asOf).trim();
+  // Accept "YYYY-MM-DD HH:MM:SS...-05:00" and ISO variants.
+  if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+  let d = new Date(s);
+  if (Number.isNaN(d.getTime())){
+    // Last resort: try stripping fractional seconds
+    s = s.replace(/\.(\d+)(Z|[+-]\d\d:\d\d)?$/, "$2");
+    d = new Date(s);
+  }
+  if (Number.isNaN(d.getTime())) return String(asOf);
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(d);
+
+  const get = (type)=> (parts.find(p=>p.type===type)?.value || "");
+  const yyyy = get("year");
+  const mm = get("month");
+  const dd = get("day");
+  const hh = get("hour");
+  const min = get("minute");
+  const ap = get("dayPeriod");
+  return `${yyyy}-${mm}-${dd} ${hh}:${min} ${ap} EST`;
+}
+
 (async function main(){
   let full;
   try{
@@ -351,7 +367,7 @@ function setSortButtons(active){
     return;
   }
 
-  byId("asOf").textContent = fmtAsOf(full.as_of);
+  byId("asOf").textContent = formatAsOf(full.as_of);
 
   let items = full.items || [];
   let sortMode = "final";
@@ -385,9 +401,8 @@ function setSortButtons(active){
     }else if (sortMode === "stability"){
       list.sort((a,b)=> (b.stability - a.stability) || (b.final_score - a.final_score) || (b.confidence - a.confidence));
     }else if (sortMode === "washout"){
+      // higher washout_today = more washed-out
       list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.final_score - a.final_score) || (b.confidence - a.confidence));
-    }else{
-      list.sort((a,b)=> (b.final_score - a.final_score) || (b.confidence - a.confidence) || (b.stability - a.stability));
     }
     return list;
   }
@@ -405,7 +420,7 @@ function setSortButtons(active){
       await rerender();
     });
   });
-  setSortButtons("final");
+  setSortButtons(sortMode);
 
   await rerender();
 
