@@ -26,7 +26,7 @@ PERIOD   = "max"
 BENCH = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    ""https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
     "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
 )
 
