@@ -1,400 +1,253 @@
+let FULL = null;
+let ROWS = [];
+let chart = null;
 
-const DATA_URL = "./data/full.json";
+const $ = (id) => document.getElementById(id);
 
 function fmtPct(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  return `${Math.round(v*100)}%`;
-}
-
-function fmtSignedPct(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  const s = Math.round(v*100);
-  const sign = (s>0?"+":"");
-  return `${sign}${s}%`;
-}
-
-function fmtPP(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  const s = Math.round(v*100);
-  const sign = (s>0?"+":"");
-  return `${sign}${s}pp`;
+  if (x === null || x === undefined || !isFinite(x)) return "—";
+  const p = x * 100;
+  return (Math.abs(p) < 1 ? p.toFixed(1) : p.toFixed(0)) + "%";
 }
 function fmtNum(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  return `${v.toFixed(0)}`;
+  if (x === null || x === undefined || !isFinite(x)) return "—";
+  return Number(x).toFixed(1);
 }
-function washoutTopPct(wash){
-  const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
-  if (arr.length < 60) return null;
-  const v = arr[arr.length - 1];
-  let le = 0;
-  for (const x of arr){ if (x <= v) le++; }
-  const pct = le / arr.length;
-  const topPct = (1 - pct) * 100;
-  return topPct;
+function clsVerdict(v){
+  if (!v) return "";
+  const s = v.toLowerCase();
+  if (s.includes("strong") || s.includes("top pick")) return "good";
+  if (s.includes("mixed") || s.includes("promising") || s.includes("unstable")) return "warn";
+  return "bad";
 }
 
-function washoutTopRankText(wash){
-  const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
-  if (arr.length < 60) return null;
-  const v = arr[arr.length - 1];
-
-  let le = 0;
-  for (const x of arr){ if (x <= v) le++; }
-
-  const pct = le / arr.length;      // percentile (higher = more washed-out)
-  const topPct = (1 - pct) * 100;   // "top X%" most washed-out days
-
-  if (topPct < 1) return "Top <1%";
-  return `Top ${Math.round(topPct)}%`;
+async function loadFull(){
+  const res = await fetch("data/full.json", {cache:"no-store"});
+  if (!res.ok) throw new Error("Missing docs/data/full.json. Run the workflow once.");
+  return await res.json();
 }
 
-function byId(id){ return document.getElementById(id); }
+function buildTable(rows){
+  const tb = document.querySelector("#tbl tbody");
+  tb.innerHTML = "";
+  for (const r of rows){
+    const tr = document.createElement("tr");
+    tr.dataset.ticker = r.ticker;
 
-function drawGradientLine(canvas, dates, prices, wash){
-  const ctx = canvas.getContext("2d");
-  const w = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
-  const h = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
-  ctx.clearRect(0,0,w,h);
+    const t = r.ticker;
+    const v = r.verdict || "";
+    const typ = r.typical || {};
+    const wash = (r.washout_top_pct === null || r.washout_top_pct === undefined) ? "—" : (Number(r.washout_top_pct).toFixed(0) + "%");
 
-  const n = prices.length;
-  if (n < 3) return;
-
-  const pad = 12 * devicePixelRatio;
-  let minP = Infinity, maxP = -Infinity;
-  for (let i=0;i<n;i++){ const p=prices[i]; if (p<minP) minP=p; if (p>maxP) maxP=p; }
-  if (!(maxP>minP)) return;
-
-  const x0=pad, x1=w-pad, y0=pad, y1=h-pad;
-
-  function xAt(i){ return x0 + (x1-x0) * (i/(n-1)); }
-  function yAt(p){ return y1 - (y1-y0) * ((p-minP)/(maxP-minP)); }
-
-  ctx.lineWidth = 2.2*devicePixelRatio;
-  ctx.strokeStyle = "rgba(0,0,0,.35)";
-  ctx.beginPath();
-  for (let i=0;i<n;i++){
-    const x=xAt(i), y=yAt(prices[i]);
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  for (let i=0;i<n-1;i++){
-    const a = Math.max(0, Math.min(1, (wash[i]||0)/100));
-    if (a <= 0.02) continue;
-    ctx.lineWidth = 3.4*devicePixelRatio;
-    ctx.strokeStyle = `rgba(15,61,46,${0.18 + 0.70*a})`;
-    ctx.beginPath();
-    ctx.moveTo(xAt(i), yAt(prices[i]));
-    ctx.lineTo(xAt(i+1), yAt(prices[i+1]));
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "rgba(15,61,46,.95)";
-  ctx.strokeStyle = "rgba(0,0,0,.85)";
-  ctx.lineWidth = 1.2*devicePixelRatio;
-  ctx.beginPath();
-  ctx.arc(xAt(n-1), yAt(prices[n-1]), 4.3*devicePixelRatio, 0, Math.PI*2);
-  ctx.fill(); ctx.stroke();
-}
-
-function renderCard(container, item, detail){
-  const seriesWash = detail.series?.wash;
-  const topPctFromItem = (item.washout_top_pct != null && Number.isFinite(item.washout_top_pct)) ? Number(item.washout_top_pct) : null;
-  const topPctFromSeries = washoutTopPct(seriesWash);
-  const topPct = (topPctFromItem != null) ? topPctFromItem : topPctFromSeries;
-  const washRank = (topPct == null) ? null : (topPct < 1 ? "Top <1%" : `Top ${Math.round(topPct)}%`);
-  const card = document.createElement("div");
-  card.className = "card";
-  const h = document.createElement("div");
-  h.className = "card-head";
-  h.innerHTML = `
-    <div>
-      <div class="ticker">${item.ticker}</div>
-      <div class="verdict">${item.verdict}</div>
-    </div>
-    <div class="metrics">
-      <div class="metric"><span>Score</span> <strong>${item.score.toFixed(1)}</strong></div>
-      <div class="metric"><span>Conf</span> <strong>${fmtNum(item.confidence)}</strong></div>
-      <div class="metric"><span>Stab</span> <strong>${fmtNum(item.stability)}</strong></div>
-      <div class="metric"><span>Washout</span> <strong>${washRank || "—"}</strong></div>
-      <div class="metric"><span>Risk</span> <strong>${item.risk}</strong></div>
-    </div>
-  `;
-  card.appendChild(h);
-
-  const grid = document.createElement("div");
-  grid.className = "grid2";
-
-  const left = document.createElement("div");
-
-  const ul = document.createElement("ul");
-  ul.className = "bullets";
-  for (const line of (detail.explain || [])){
-    const li = document.createElement("li");
-    li.innerHTML = line;
-    ul.appendChild(li);
-  }
-  left.appendChild(ul);
-
-  const outcomes = document.createElement("div");
-  outcomes.className = "outcomes";
-
-  const makeBox = (label, s) => {
-    const b = document.createElement("div");
-    b.className = "outbox";
-    if (!s || !Number.isFinite(s.n) || s.n<=0){
-      b.innerHTML = `<div class="h">${label}</div><div class="r"><span>Not enough</span><strong>—</strong></div>`;
-      return b;
-    }
-    b.innerHTML = `
-      <div class="h">${label}</div>
-      <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
-      <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
-      <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
-      <div class="r"><span>Based on N</span><strong>${s.n}</strong></div>
+    tr.innerHTML = `
+      <td>${r.rank ?? ""}</td>
+      <td class="ticker">${t}</td>
+      <td class="verdict ${clsVerdict(v)}">${v}</td>
+      <td>${fmtNum(r.score)}</td>
+      <td>${fmtNum(r.confidence)}</td>
+      <td>${fmtNum(r.stability)}</td>
+      <td>${wash}</td>
+      <td>${fmtPct(typ["1Y"])}</td>
+      <td>${fmtPct(typ["3Y"])}</td>
+      <td>${fmtPct(typ["5Y"])}</td>
     `;
-    return b;
+    tr.addEventListener("click", () => showDetails(t));
+    tb.appendChild(tr);
+  }
+}
+
+function applyFilters(){
+  const q = $("search").value.trim().toUpperCase();
+  const vf = $("verdictFilter").value;
+  const sb = $("sortBy").value;
+
+  let out = ROWS.slice();
+
+  if (q){
+    out = out.filter(r => r.ticker.includes(q));
+  }
+  if (vf){
+    out = out.filter(r => (r.verdict || "") === vf);
+  }
+
+  out.sort((a,b)=>{
+    if (sb === "rank") return (a.rank ?? 1e9) - (b.rank ?? 1e9);
+    const av = a[sb]; const bv = b[sb];
+    if (av === null || av === undefined) return 1;
+    if (bv === null || bv === undefined) return -1;
+    if (typeof av === "number" && typeof bv === "number") return bv - av;
+    return String(bv).localeCompare(String(av));
+  });
+
+  buildTable(out);
+}
+
+async function fetchTickerDetail(ticker){
+  if (FULL?.details?.[ticker]) return FULL.details[ticker];
+  const res = await fetch(`data/tickers/${ticker}.json`, {cache:"no-store"});
+  if (!res.ok) throw new Error(`Missing data/tickers/${ticker}.json`);
+  return await res.json();
+}
+
+function renderEvidence(evidence){
+  if (!evidence) return `<div class="notice">No evidence payload found (your generator must write detail.evidence).</div>`;
+
+  const horizons = ["1Y","3Y","5Y"].filter(h=>evidence[h]);
+  if (!horizons.length) return `<div class="notice">No evidence for horizons yet.</div>`;
+
+  const statRow = (label, s) => {
+    if (!s || !s.n) return `<tr><td>${label}</td><td colspan="5" class="small">—</td></tr>`;
+    const win = (s.win*100).toFixed(0)+"%";
+    return `
+      <tr>
+        <td>${label}</td>
+        <td>${s.n}</td>
+        <td>${win}</td>
+        <td>${fmtPct(s.median)}</td>
+        <td>${fmtPct(s.p10)}</td>
+        <td>${fmtPct(s.p90)}</td>
+      </tr>`;
   };
 
-  outcomes.appendChild(makeBox("1 year", detail.outcomes?.["1Y"]));
-  outcomes.appendChild(makeBox("3 years", detail.outcomes?.["3Y"]));
-  outcomes.appendChild(makeBox("5 years", detail.outcomes?.["5Y"]));
-  left.appendChild(outcomes);
-
-  const right = document.createElement("div");
-  right.className = "chart";
-  const canvas = document.createElement("canvas");
-  canvas.className = "canvas";
-  right.appendChild(canvas);
-
-  const legend = document.createElement("div");
-  legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-label">Washout</span><span class="legend-note">higher → darker</span>`;
-  right.appendChild(legend);
-
-  grid.appendChild(left);
-  grid.appendChild(right);
-  card.appendChild(grid);
-
-
-  // Evidence: broad alpha check (top-decile washout days vs any normal day)
-  const ev = detail.evidence || null;
-  if (ev && (ev["1Y"] || ev["3Y"] || ev["5Y"])){
-    const box = document.createElement("details");
-    box.className = "details evidence-details";
-    box.innerHTML = `
-      <summary class="details-summary">
-        <div class="evidence-summary-left">
-          <span class="section-title">EVIDENCE</span>
-          <span class="ev-sub">Top 10% washout vs normal</span>
+  let html = "";
+  for (const h of horizons){
+    const block = evidence[h];
+    html += `
+      <div style="border:1px solid var(--border);border-radius:14px;padding:10px;margin:10px 0;">
+        <div class="small" style="font-weight:700;color:var(--muted);">${h} forward returns</div>
+        <div style="overflow:auto;margin-top:8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th><th>n</th><th>win%</th><th>median</th><th>p10</th><th>p90</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${statRow("Similar days", block.similar_days)}
+              ${statRow("Normal days", block.normal_days)}
+              ${statRow("Normal (same regime)", block.normal_same_regime)}
+            </tbody>
+          </table>
         </div>
-        <span class="plus" aria-hidden="true">+</span>
-      </summary>
-      <div class="details-body">
-        <div class="ev-explain">
-          Think of this as a simple A/B check across the stock’s entire history.
-          <strong>A</strong> = the <strong>10% most washed‑out</strong> days for this stock.
-          <strong>B</strong> = a <strong>normal</strong> historical day (baseline).
-          Each line is written as <strong>A vs B</strong>.
-          <span class="mono">pp</span> = percentage points. <span class="mono">N</span> = how many days were in each group.
-          (This is separate from the “similar past situations” boxes above, which match close analogs to today.)
-        </div>
-        <div class="outcomes ev-grid"></div>
       </div>
     `;
-    const gridEl = box.querySelector(".ev-grid");
-    const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
-    for (const [k,label] of horizons){
-      const e = ev[k];
-      if (!e) continue;
-
-      const dWin = (e.win_wash - e.win_norm);
-      const dMed = (e.med_wash - e.med_norm);
-      const dP10 = (e.p10_wash - e.p10_norm);
-
-      const b = document.createElement("div");
-      b.className = "outbox";
-      b.innerHTML = `
-        <div class="h">${label}</div>
-        <div class="r"><span>Chance of gain</span><strong>${Math.round(e.win_wash*100)}% vs ${Math.round(e.win_norm*100)}% (${fmtPP(dWin)})</strong></div>
-        <div class="r"><span>Typical</span><strong>${fmtPct(e.med_wash)} vs ${fmtPct(e.med_norm)} (${fmtSignedPct(dMed)})</strong></div>
-        <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(e.p10_wash)} vs ${fmtPct(e.p10_norm)} (${fmtSignedPct(dP10)})</strong></div>
-        <div class="r"><span>N</span><strong>${e.n_wash} vs ${e.n_norm}</strong></div>
-      `;
-      gridEl.appendChild(b);
-    }
-
-    if (gridEl.children.length){
-      card.appendChild(box);
-    }
   }
-
-  const series = detail.series || null;
-  if (series && series.prices && series.prices.length){
-    requestAnimationFrame(()=>drawGradientLine(canvas, series.dates, series.prices, series.wash));
-  }
-
-  container.appendChild(card);
+  return html;
 }
 
-function rowHtml(item){
-  const t = item.ticker;
-  const t1 = item.typical?.["1Y"];
-  const t3 = item.typical?.["3Y"];
-  const t5 = item.typical?.["5Y"];
-  return `
-    <tr data-ticker="${t}">
-      <td class="tcell">${t}</td>
-      <td>${item.verdict}</td>
-      <td class="num">${item.score.toFixed(1)}</td>
-      <td class="num">${fmtNum(item.confidence)}</td>
-      <td class="num">${fmtNum(item.stability)}</td>
-      <td>${item.risk}</td>
-      <td class="num">${fmtPct(t1)}</td>
-      <td class="num">${fmtPct(t3)}</td>
-      <td class="num">${fmtPct(t5)}</td>
-    </tr>
-  `;
+function renderExplain(lines){
+  if (!lines || !lines.length) return `<div class="notice">—</div>`;
+  return `<ul>${lines.map(x=>`<li>${x}</li>`).join("")}</ul>`;
 }
 
-async function loadJSON(url){
-  const r = await fetch(url, {cache: "no-cache"});
-  if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
-  return await r.json();
-}
+function renderChart(series){
+  const ctx = $("chart").getContext("2d");
+  const labels = series.dates;
+  const prices = series.prices;
+  const wash = series.wash;
 
-function setSortButtons(active){
-  document.querySelectorAll(".btn-lite").forEach(b=>{
-    b.classList.toggle("active", b.dataset.sort === active);
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "line",
+          label: "Price",
+          data: prices,
+          yAxisID: "yPrice",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.15
+        },
+        {
+          type: "bar",
+          label: "Washout meter",
+          data: wash,
+          yAxisID: "yWash",
+          borderWidth: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "right" },   // <- legend moved to the right
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 7 } },
+        yPrice: { position: "left", grid: { drawOnChartArea: true } },
+        yWash: { position: "right", min: 0, max: 100, grid: { drawOnChartArea: false } }
+      }
+    }
   });
 }
 
-(async function main(){
-  let full;
+async function showDetails(ticker){
+  $("empty").style.display = "none";
+  $("detail").style.display = "block";
+
+  $("dTicker").textContent = ticker;
+  $("dAsOf").textContent = "Loading…";
+  $("dVerdict").textContent = "";
+  $("dExplain").innerHTML = "";
+  $("dEvidence").innerHTML = "";
+  if (chart) chart.destroy();
+
   try{
-    full = await loadJSON(DATA_URL);
+    const d = await fetchTickerDetail(ticker);
+
+    $("dAsOf").textContent = `As of ${d.as_of}`;
+    $("dVerdict").textContent = d.verdict || "";
+    $("dVerdict").className = `verdict ${clsVerdict(d.verdict || "")}`;
+    $("dScore").textContent = fmtNum(d.score);
+    $("dConf").textContent = fmtNum(d.confidence);
+    $("dStab").textContent = fmtNum(d.stability);
+    $("dRisk").textContent = d.risk || "—";
+
+    $("dExplain").innerHTML = renderExplain(d.explain || []);
+    $("dEvidence").innerHTML = renderEvidence(d.evidence);
+
+    if (d.series) renderChart(d.series);
   }catch(e){
-    byId("top10").innerHTML = `<div class="footnote">No data yet. Run the GitHub Action once to generate <span class="mono">docs/data/full.json</span>.</div>`;
-    return;
+    $("dAsOf").textContent = "Error";
+    $("dExplain").innerHTML = `<div class="notice">${e.message}</div>`;
   }
+}
 
-  byId("asOf").textContent = full.as_of || "—";
+async function init(){
+  try{
+    FULL = await loadFull();
+    $("asOf").textContent = "• " + (FULL.as_of || "");
+    $("status").textContent = "ready";
 
-  let items = full.items || [];
-  let sortMode = "default";
+    const items = FULL.items || [];
+    ROWS = items.map((r, idx)=>({
+      ...r,
+      rank: r.rank ?? (idx+1),
+      typ1: r.typical?.["1Y"] ?? null,
+      typ3: r.typical?.["3Y"] ?? null,
+      typ5: r.typical?.["5Y"] ?? null,
+    }));
 
-  function renderTable(list){
-    byId("rows").innerHTML = list.map(rowHtml).join("");
+    applyFilters();
+
+    $("search").addEventListener("input", applyFilters);
+    $("verdictFilter").addEventListener("change", applyFilters);
+    $("sortBy").addEventListener("change", applyFilters);
+
+    if (ROWS.length) showDetails(ROWS[0].ticker);
+  }catch(e){
+    $("status").textContent = "error";
+    $("status").className = "badge bad";
+    document.querySelector("#tbl tbody").innerHTML =
+      `<tr><td colspan="10" class="small">${e.message}</td></tr>`;
   }
+}
 
-  async function loadDetail(ticker){
-    const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
-    if (embedded) return embedded;
-    return await loadJSON(`./data/tickers/${ticker}.json`);
-  }
-
-  async function renderTop10(list){
-    const c = byId("top10");
-    c.innerHTML = "";
-    const top = list.slice(0,10);
-    for (const it of top){
-      const detail = await loadDetail(it.ticker);
-      renderCard(c, it, detail);
-    }
-  }
-
-  function applySort(){
-    const list = [...items];
-    if (sortMode === "score"){
-      list.sort((a,b)=> (b.score - a.score) || (b.confidence - a.confidence) || (b.stability - a.stability));
-    }else if (sortMode === "confidence"){
-      list.sort((a,b)=> (b.confidence - a.confidence) || (b.score - a.score) || (b.stability - a.stability));
-    }else if (sortMode === "stability"){
-      list.sort((a,b)=> (b.stability - a.stability) || (b.score - a.score) || (b.confidence - a.confidence));
-    }else if (sortMode === "washout"){
-      const wa = (x)=> (x.washout_top_pct==null || !Number.isFinite(x.washout_top_pct)) ? 1e9 : Number(x.washout_top_pct);
-      list.sort((a,b)=> (wa(a) - wa(b)) || (b.score - a.score) || (b.confidence - a.confidence) || (b.stability - a.stability));
-    }
-    return list;
-  }
-
-  async function rerender(){
-    const list = applySort();
-    renderTable(list);
-    await renderTop10(list);
-  }
-
-  document.querySelectorAll(".btn-lite").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
-      sortMode = btn.dataset.sort;
-      setSortButtons(sortMode);
-      await rerender();
-    });
-  });
-  setSortButtons("default");
-
-  await rerender();
-
-  byId("rows").addEventListener("click", async (e)=>{
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-    const t = tr.dataset.ticker;
-    if (!t) return;
-
-    document.querySelectorAll("#rows tr").forEach(r=>r.classList.remove("highlight"));
-    tr.classList.add("highlight");
-
-    const current = applySort();
-    const inTop = current.slice(0,10).some(x=>x.ticker===t);
-    if (inTop){
-      document.querySelector(".masthead").scrollIntoView({behavior:"smooth"});
-      return;
-    }
-
-    const top = byId("top10");
-    const existing = top.querySelector("[data-selected='1']");
-    if (existing) existing.remove();
-
-    const it = items.find(x=>x.ticker===t);
-    if (!it) return;
-
-    const detail = await loadDetail(t);
-    const holder = document.createElement("div");
-    holder.dataset.selected = "1";
-    holder.className = "card";
-    holder.innerHTML = `<div class="section-title">Selected</div>`;
-    top.prepend(holder);
-
-    renderCard(holder, it, detail);
-
-    holder.scrollIntoView({behavior:"smooth"});
-  });
-
-  const q = byId("q");
-  const go = byId("go");
-  function normalizeTicker(s){ return (s||"").trim().toUpperCase().replace(".", "-"); }
-
-  async function doSearch(){
-    const t = normalizeTicker(q.value);
-    if (!t) return;
-    const row = document.querySelector(`#rows tr[data-ticker="${t}"]`);
-    if (row){
-      row.scrollIntoView({behavior:"smooth", block:"center"});
-      row.click();
-      return;
-    }
-    alert("Ticker not in today’s universe (Russell 1000 / IWB holdings).");
-  }
-  go.addEventListener("click", doSearch);
-  q.addEventListener("keydown", (e)=>{ if (e.key==="Enter") doSearch(); });
-
-})();
+init();
