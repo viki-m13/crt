@@ -26,8 +26,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
 ALWAYS_INCLUDE = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA"]
@@ -210,7 +210,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("CASH", case=False, na=False)) &
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
-    if len(keep) < 10:
+    if len(keep) < 50:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
@@ -562,6 +562,66 @@ def risk_label(h_summaries: dict, beta: float):
         return "Choppy / volatile"
     return "Moderate"
 
+# =========================
+# Evidence (top 10% washout days vs a normal day)
+# =========================
+def evidence_light(feat: pd.DataFrame) -> dict:
+    """
+    Evidence compares two groups across the stock’s full history:
+
+      A) "Washout days" = the TOP 10% of days by Washout Meter for this stock
+      B) "Normal days"  = ANY historical day for this stock (baseline)
+
+    For each horizon, we summarize forward returns for A vs B:
+      - win rate (chance of gain)
+      - median (typical)
+      - 10th percentile (downside, ~1 in 10)
+
+    Returns a dict keyed by "1Y","3Y","5Y".
+    """
+    out = {}
+    if "washout_meter" not in feat.columns:
+        return out
+
+    wm = pd.to_numeric(feat["washout_meter"], errors="coerce").dropna()
+    wm = wm[wm > 0]
+    if len(wm) < 250:
+        return out
+
+    thr = float(wm.quantile(0.90))  # top 10% threshold
+    wash_mask = pd.to_numeric(feat["washout_meter"], errors="coerce") >= thr
+
+    for h in HORIZONS_DAYS.keys():
+        col = f"fwd_{h}"
+        if col not in feat.columns:
+            continue
+        y = pd.to_numeric(feat[col], errors="coerce")
+        valid = y.notna()
+
+        wash = wash_mask & valid
+        normal = valid  # baseline = all valid days
+
+        n_wash = int(wash.sum())
+        n_norm = int(normal.sum())
+        if n_wash < 50 or n_norm < 200:
+            continue
+
+        yw = y[wash].astype(float).values
+        yn = y[normal].astype(float).values
+
+        out[h] = {
+            "thr_wash": thr,
+            "n_wash": n_wash,
+            "win_wash": float(np.mean(yw > 0)),
+            "med_wash": float(np.median(yw)),
+            "p10_wash": float(np.quantile(yw, 0.10)),
+            "n_norm": n_norm,
+            "win_norm": float(np.mean(yn > 0)),
+            "med_norm": float(np.median(yn)),
+            "p10_norm": float(np.quantile(yn, 0.10)),
+        }
+    return out
+
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
@@ -744,6 +804,7 @@ def main():
         risk = risk_label(h_summaries, beta_today)
         verdict = verdict_line(rebound_score, confidence, stab_score, fragile)
         explain_lines = build_explain(feat, now_idx)
+        ev = evidence_light(feat)
 
         cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
         d = feat.loc[feat.index >= cutoff].copy()
@@ -770,6 +831,7 @@ def main():
                 "5Y": h_summaries.get("5Y", {"n":0}),
             },
             "explain": explain_lines,
+            "evidence": ev,
             "series": {
                 "dates": [str(x.date()) for x in series.index],
                 "prices": [float(x) for x in series["px"].astype(float).values],
