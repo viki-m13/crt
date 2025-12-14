@@ -125,8 +125,9 @@ h1{
 
 .cards{display:grid;grid-template-columns:1fr;gap:12px}
 .card{
-  border-top:1px solid var(--rule);
-  padding-top:12px;
+  border-top:2px solid var(--rule);
+  border-bottom:1px solid var(--rule2);
+  padding:16px 0 18px;
 }
 .card-head{
   display:flex; gap:14px; align-items:baseline; justify-content:space-between; flex-wrap:wrap;
@@ -155,12 +156,39 @@ h1{
   width:100%;
   border-left:1px solid var(--rule2);
   padding-left:12px;
+  position:relative;
 }
 .canvas{
   width:100%;
   height:180px;
   display:block;
 }
+
+.chart-legend{
+  position:absolute;
+  left:12px;
+  bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  background:rgba(0,0,0,.015);
+  border:1px solid var(--rule2);
+  padding:6px 8px;
+  border-radius:14px;
+}
+.legend-bar{
+  width:44px;
+  height:10px;
+  border-radius:10px;
+  border:1px solid var(--rule2);
+  background:linear-gradient(90deg, rgba(15,61,46,.10), rgba(15,61,46,.85));
+}
+.legend-label{letter-spacing:.04em}
+.legend-note{color:var(--muted)}
+
 .bullets{
   margin:0;
   padding-left:16px;
@@ -202,19 +230,18 @@ h1{
 .details{border:1px solid var(--rule2);border-radius:14px;padding:10px 12px;background:rgba(0,0,0,.015)}
 .details-summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;list-style:none}
 .details-summary::-webkit-details-marker{display:none}
+.details-summary .section-title{margin:0}
 .details .plus{font-family:var(--mono);font-size:18px;line-height:1;transition:transform .15s ease}
 .details[open] .plus{transform:rotate(45deg)}
 .details-body{padding-top:10px}
 
 /* Evidence block inside ticker cards (full-width, below chart) */
-.evidence-block{margin-top:14px;padding:12px;border:1px solid var(--rule2);border-radius:14px;background:rgba(0,0,0,.015)}
+.evidence-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule2)}
+.ev-sub{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted);margin-top:2px}
 .ev-title{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted)}
 .ev-explain{color:var(--muted);font-size:13px;margin-top:8px;max-width:100ch}
 .ev-grid{
   margin-top:10px;
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap:12px;
   font-family:var(--mono);
   font-size:12px;
 }
@@ -238,66 +265,4 @@ h1{
   .chart{border-left:none;padding-left:0}
   .outcomes{grid-template-columns:1fr}
   .ev-grid{grid-template-columns:1fr}
-}
-
-/* Evidence boxes should match the outcome boxes */
-.evidence-outbox .sub{
-  margin:-2px 0 8px;
-  font-family:var(--mono);
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  font-size:10px;
-  color:var(--muted);
-}
-
-/* Evidence section uses the same 3-column grid as outcomes */
-.evidence-block .outcomes{margin-top:10px}
-
-/* Small legend beside the chart */
-.chart-legend{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-top:8px;
-  font-family:var(--mono);
-  font-size:11px;
-  color:var(--muted);
-}
-.chart-legend .swatch{
-  width:14px;
-  height:10px;
-  border-radius:4px;
-  border:1px solid var(--rule2);
-}
-.chart-legend .swatch.low{background:rgba(15,61,46,.20)}
-.chart-legend .swatch.high{background:rgba(15,61,46,.85)}
-.chart-legend .lab{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
-.chart-legend .hint{margin-left:auto;white-space:nowrap}
-
-/* Clearer separation between ticker sections */
-.card-divider{
-  height:2px;
-  background:var(--rule2);
-  margin:14px 0;
-}
-@media (max-width: 880px){
-  .card-divider{margin:16px 0}
-  .chart-legend .hint{display:none}
-}
-
-/* Make STATS NERDS header match other section labels */
-.details-summary{
-  font-family:var(--mono);
-  letter-spacing:.10em;
-  text-transform:uppercase;
-  font-size:12px;
-  color:var(--muted);
-  padding:10px 0;
-  border-top:1px solid var(--rule2);
-}
-.details-body{
-  border:1px solid var(--rule2);
-  border-radius:14px;
-  padding:12px;
-  background:rgba(0,0,0,.015);
 }

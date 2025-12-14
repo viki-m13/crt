@@ -25,28 +25,27 @@ function fmtPP(x){
   const sign = (s>0?"+":"");
   return `${sign}${s}pp`;
 }
-
-function pctRank(values, value){
-  // Percentile rank in [0,1]: fraction of values <= value
-  const arr = (values || []).map(Number).filter(v=>Number.isFinite(v));
-  const v0 = Number(value);
-  if (!arr.length || !Number.isFinite(v0)) return null;
-  let c = 0;
-  for (const v of arr){ if (v <= v0) c++; }
-  return c / arr.length;
-}
-function fmtPct0to100(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  return `${Math.round(v)} / 100`;
-}
 function fmtNum(x){
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
   const v = Number(x);
   if (!Number.isFinite(v)) return "—";
   return `${v.toFixed(0)}`;
 }
+function washoutTopRankText(wash){
+  const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
+  if (arr.length < 60) return null;
+  const v = arr[arr.length - 1];
+
+  let le = 0;
+  for (const x of arr){ if (x <= v) le++; }
+
+  const pct = le / arr.length;      // percentile (higher = more washed-out)
+  const topPct = (1 - pct) * 100;   // "top X%" most washed-out days
+
+  if (topPct < 1) return "Top <1%";
+  return `Top ${Math.round(topPct)}%`;
+}
+
 function byId(id){ return document.getElementById(id); }
 
 function drawGradientLine(canvas, dates, prices, wash){
@@ -97,6 +96,7 @@ function drawGradientLine(canvas, dates, prices, wash){
 }
 
 function renderCard(container, item, detail){
+  const washRank = washoutTopRankText(detail.series?.wash);
   const card = document.createElement("div");
   card.className = "card";
   const h = document.createElement("div");
@@ -110,6 +110,7 @@ function renderCard(container, item, detail){
       <div class="metric"><span>Score</span> <strong>${item.score.toFixed(1)}</strong></div>
       <div class="metric"><span>Conf</span> <strong>${fmtNum(item.confidence)}</strong></div>
       <div class="metric"><span>Stab</span> <strong>${fmtNum(item.stability)}</strong></div>
+      <div class="metric"><span>Washout</span> <strong>${washRank || "—"}</strong></div>
       <div class="metric"><span>Risk</span> <strong>${item.risk}</strong></div>
     </div>
   `;
@@ -122,19 +123,7 @@ function renderCard(container, item, detail){
 
   const ul = document.createElement("ul");
   ul.className = "bullets";
-  const explainLines = Array.isArray(detail.explain) ? [...detail.explain] : [];
-  // Context: where today sits in this stock's own washout distribution
-  if (detail.series && Array.isArray(detail.series.wash) && detail.series.wash.length){
-    const wSeries = detail.series.wash;
-    const wToday = Number(wSeries[wSeries.length-1]);
-    const pr = pctRank(wSeries, wToday);
-    if (Number.isFinite(wToday) && pr !== null){
-      const pct = Math.round(pr*100);
-      const top = Math.max(0, 100 - pct);
-      explainLines.unshift(`Today\'s washout level is <strong>${fmtPct0to100(wToday)}</strong> — more washed-out than <strong>${pct}%</strong> of this stock\'s historical days (top <strong>${top}%</strong>).`);
-    }
-  }
-  for (const line of explainLines){
+  for (const line of (detail.explain || [])){
     const li = document.createElement("li");
     li.innerHTML = line;
     ul.appendChild(li);
@@ -148,11 +137,11 @@ function renderCard(container, item, detail){
     const b = document.createElement("div");
     b.className = "outbox";
     if (!s || !Number.isFinite(s.n) || s.n<=0){
-      b.innerHTML = `<div class="h">${label}</div><div class="sub">10% WASHOUT vs NORMAL</div><div class="r"><span>Not enough</span><strong>—</strong></div>`;
+      b.innerHTML = `<div class="h">${label}</div><div class="r"><span>Not enough</span><strong>—</strong></div>`;
       return b;
     }
     b.innerHTML = `
-      <div class="h">${label}</div><div class="sub">10% WASHOUT vs NORMAL</div>
+      <div class="h">${label}</div>
       <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
       <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
       <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
@@ -174,16 +163,13 @@ function renderCard(container, item, detail){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `
-    <span class="swatch low" aria-hidden="true"></span><span class="lab">lower</span>
-    <span class="swatch high" aria-hidden="true"></span><span class="lab">higher</span>
-    <span class="hint">washout (darker green = more washed-out)</span>
-  `;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-label">Washout</span><span class="legend-note">higher → darker</span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
   grid.appendChild(right);
   card.appendChild(grid);
+
 
   // Evidence: broad alpha check (top-decile washout days vs any normal day)
   const ev = detail.evidence || null;
@@ -191,20 +177,22 @@ function renderCard(container, item, detail){
     const box = document.createElement("div");
     box.className = "evidence-block";
     box.innerHTML = `
-      <div class="ev-title">Evidence (top 10% washout days vs a normal historical day)</div>      <div class="ev-explain">
-        This is the “show me the receipts” section, and it’s deliberately simple.
-        For each horizon, we split this stock’s history into two groups:
-        <strong>(A) Washout days</strong> = the 10% most washed‑out days for this stock, and
-        <strong>(B) Normal days</strong> = any random historical day (baseline).
-        The numbers are written as <strong>A vs B</strong> (and the parentheses show the difference).
-        <span class="mono">pp</span> means percentage points (e.g., 90% vs 83% = +7pp).
-        <span class="mono">N</span> is how many historical days were in each group (bigger N = stronger evidence).
-        This is separate from the “similar past situations” boxes above (those match the closest analogs to today).
+      <div class="evidence-head">
+        <div class="section-title">EVIDENCE</div>
+        <div class="ev-sub">Top 10% washout days vs normal days</div>
       </div>
-      <div class="outcomes evidence-grid"></div>
+      <div class="ev-explain">
+        Think of this as a simple A/B check across the stock’s entire history.
+        <strong>A</strong> = the <strong>10% most washed‑out</strong> days for this stock.
+        <strong>B</strong> = a <strong>normal</strong> historical day (baseline).
+        Each line is written as <strong>A vs B</strong>.
+        <span class="mono">pp</span> = percentage points. <span class="mono">N</span> = how many days were in each group.
+        (This is separate from the “similar past situations” boxes above, which match close analogs to today.)
+      </div>
+      <div class="outcomes ev-grid"></div>
     `;
 
-    const gridEl = box.querySelector(".evidence-grid");
+    const gridEl = box.querySelector(".ev-grid");
     const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
     for (const [k,label] of horizons){
       const e = ev[k];
@@ -215,9 +203,9 @@ function renderCard(container, item, detail){
       const dP10 = (e.p10_wash - e.p10_norm);
 
       const b = document.createElement("div");
-      b.className = "outbox evidence-outbox";
+      b.className = "outbox";
       b.innerHTML = `
-        <div class="h">${label}</div><div class="sub">10% WASHOUT vs NORMAL</div>
+        <div class="h">${label}</div>
         <div class="r"><span>Chance of gain</span><strong>${Math.round(e.win_wash*100)}% vs ${Math.round(e.win_norm*100)}% (${fmtPP(dWin)})</strong></div>
         <div class="r"><span>Typical</span><strong>${fmtPct(e.med_wash)} vs ${fmtPct(e.med_norm)} (${fmtSignedPct(dMed)})</strong></div>
         <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(e.p10_wash)} vs ${fmtPct(e.p10_norm)} (${fmtSignedPct(dP10)})</strong></div>
@@ -237,14 +225,7 @@ function renderCard(container, item, detail){
   }
 
   container.appendChild(card);
-  // Stronger separation between ticker sections (especially on mobile)
-  if (!(container.classList && container.classList.contains("card"))){
-    const div = document.createElement("div");
-    div.className = "card-divider";
-    container.appendChild(div);
-  }
 }
-
 
 function rowHtml(item){
   const t = item.ticker;
