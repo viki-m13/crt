@@ -138,40 +138,6 @@ function renderCard(container, item, detail){
   outcomes.appendChild(makeBox("5 years", detail.outcomes?.["5Y"]));
   left.appendChild(outcomes);
 
-  // Evidence: alpha vs a random historical day for the same stock
-  const ev = detail.evidence || null;
-  if (ev && (ev["1Y"] || ev["3Y"] || ev["5Y"])){
-    const box = document.createElement("div");
-    box.className = "evidence";
-    box.innerHTML = `
-      <div class="ev-title">Evidence (top 10% washout days vs a normal historical day)</div>
-      <div class="ev-sub">Same stock, same horizons. This is the “alpha” this scanner is built to surface.</div>
-    `;
-
-    const lines = document.createElement("div");
-    lines.className = "ev-lines";
-    const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
-    for (const [k,label] of horizons){
-      const e = ev[k];
-      if (!e) continue;
-      const dWin = (e.win_wash - e.win_norm);
-      const dMed = (e.med_wash - e.med_norm);
-      const dP10 = (e.p10_wash - e.p10_norm);
-      const row = document.createElement("div");
-      row.className = "ev-row";
-      row.innerHTML = `
-        <div class="ev-h">${label}</div>
-        <div class="ev-m"><span>Chance of gain</span><strong>${Math.round(e.win_wash*100)}% vs ${Math.round(e.win_norm*100)}% (${fmtPP(dWin)})</strong></div>
-        <div class="ev-m"><span>Typical</span><strong>${fmtPct(e.med_wash)} vs ${fmtPct(e.med_norm)} (${fmtSignedPct(dMed)})</strong></div>
-        <div class="ev-m"><span>Downside (1 in 10)</span><strong>${fmtPct(e.p10_wash)} vs ${fmtPct(e.p10_norm)} (${fmtSignedPct(dP10)})</strong></div>
-        <div class="ev-n">N=${e.n_wash} vs ${e.n_norm}</div>
-      `;
-      lines.appendChild(row);
-    }
-    box.appendChild(lines);
-    left.appendChild(box);
-  }
-
   const right = document.createElement("div");
   right.className = "chart";
   const canvas = document.createElement("canvas");
@@ -181,6 +147,52 @@ function renderCard(container, item, detail){
   grid.appendChild(left);
   grid.appendChild(right);
   card.appendChild(grid);
+
+  // Evidence: broad alpha check (top-decile washout days vs any normal day)
+  const ev = detail.evidence || null;
+  if (ev && (ev["1Y"] || ev["3Y"] || ev["5Y"])){
+    const box = document.createElement("div");
+    box.className = "evidence-block";
+    box.innerHTML = `
+      <div class="ev-title">Evidence (top 10% washout days vs a normal historical day)</div>      <div class="ev-explain">
+        This is the “show me the receipts” section, and it’s deliberately simple.
+        For each horizon, we split this stock’s history into two groups:
+        <strong>(A) Washout days</strong> = the 10% most washed‑out days for this stock, and
+        <strong>(B) Normal days</strong> = any random historical day (baseline).
+        The numbers are written as <strong>A vs B</strong> (and the parentheses show the difference).
+        <span class="mono">pp</span> means percentage points (e.g., 90% vs 83% = +7pp).
+        <span class="mono">N</span> is how many historical days were in each group (bigger N = stronger evidence).
+        This is separate from the “similar past situations” boxes above (those match the closest analogs to today).
+      </div>
+      <div class="ev-grid"></div>
+    `;
+
+    const gridEl = box.querySelector(".ev-grid");
+    const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
+    for (const [k,label] of horizons){
+      const e = ev[k];
+      if (!e) continue;
+
+      const dWin = (e.win_wash - e.win_norm);
+      const dMed = (e.med_wash - e.med_norm);
+      const dP10 = (e.p10_wash - e.p10_norm);
+
+      const b = document.createElement("div");
+      b.className = "evbox";
+      b.innerHTML = `
+        <div class="h">${label}</div>
+        <div class="r"><span>Chance of gain</span><strong>${Math.round(e.win_wash*100)}% vs ${Math.round(e.win_norm*100)}% (${fmtPP(dWin)})</strong></div>
+        <div class="r"><span>Typical</span><strong>${fmtPct(e.med_wash)} vs ${fmtPct(e.med_norm)} (${fmtSignedPct(dMed)})</strong></div>
+        <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(e.p10_wash)} vs ${fmtPct(e.p10_norm)} (${fmtSignedPct(dP10)})</strong></div>
+        <div class="r"><span>N</span><strong>${e.n_wash} vs ${e.n_norm}</strong></div>
+      `;
+      gridEl.appendChild(b);
+    }
+
+    if (gridEl.children.length){
+      card.appendChild(box);
+    }
+  }
 
   const series = detail.series || null;
   if (series && series.prices && series.prices.length){

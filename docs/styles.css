@@ -199,31 +199,43 @@ h1{
 .footnote{color:var(--muted);font-size:13px;margin-top:10px}
 
 /* Collapsible “Stats nerds” */
-.details{border:1px solid var(--rule2);border-radius:14px;padding:10px 12px;background:#fff}
+.details{border:1px solid var(--rule2);border-radius:14px;padding:10px 12px;background:rgba(0,0,0,.015)}
 .details-summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;list-style:none}
 .details-summary::-webkit-details-marker{display:none}
 .details .plus{font-family:var(--mono);font-size:18px;line-height:1;transition:transform .15s ease}
 .details[open] .plus{transform:rotate(45deg)}
 .details-body{padding-top:10px}
 
-/* Evidence block inside ticker cards */
-.evidence{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule2)}
+/* Evidence block inside ticker cards (full-width, below chart) */
+.evidence-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule2)}
 .ev-title{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted)}
-.ev-sub{color:var(--muted);font-size:13px;margin-top:6px}
-.ev-lines{margin-top:10px;display:flex;flex-direction:column;gap:10px}
-.ev-row{padding:10px 12px;border:1px solid var(--rule2);border-radius:14px;background:#fff}
-.ev-h{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted);margin-bottom:6px}
-.ev-m{display:flex;justify-content:space-between;gap:12px;margin:4px 0}
-.ev-m span{color:var(--muted)}
-.ev-m strong{font-weight:500;color:var(--ink);text-align:right}
-.ev-n{margin-top:6px;color:var(--muted);font-family:var(--mono);font-size:12px}
+.ev-explain{color:var(--muted);font-size:13px;margin-top:8px;max-width:100ch}
+.ev-grid{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap:12px;
+  font-family:var(--mono);
+  font-size:12px;
+}
+.evbox{
+  padding:10px;
+  border:1px solid var(--rule2);
+  border-radius:14px;
+  background:rgba(0,0,0,.015);
+}
+.evbox .h{color:var(--muted);text-transform:uppercase;letter-spacing:.10em;font-size:11px;margin-bottom:6px}
+.evbox .r{display:flex;justify-content:space-between;gap:12px;margin:4px 0}
+.evbox .r span:first-child{color:var(--muted)}
+.evbox .r strong{font-weight:500;color:var(--ink);text-align:right}
 
-.footer{max-width:1120px;margin:0 auto;padding:0 18px 28px}
-.footer-inner{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}
-@media (max-width: 980px){
+/* Responsive */
+@media (max-width: 880px){
   .brand{grid-template-columns: 72px 1fr}
-  .meta{grid-column:1 / -1;border-left:none;padding-left:0;border-top:1px solid var(--rule2);padding-top:10px}
+  .meta{border-left:none;padding-left:0}
   .explain-grid{grid-template-columns:1fr}
   .grid2{grid-template-columns:1fr}
-  h1{font-size:36px}
+  .chart{border-left:none;padding-left:0}
+  .outcomes{grid-template-columns:1fr}
+  .ev-grid{grid-template-columns:1fr}
 }
