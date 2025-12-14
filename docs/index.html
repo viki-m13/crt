@@ -14,102 +14,108 @@
       <div class="brand-text">
         <div class="kicker">DAILY MARKET NOTE</div>
         <h1>Rebound Ledger</h1>
-        <div class="subhead">A once‑daily scan for oversold stocks with unusually strong historical rebound odds — measured against each stock’s own history, and cross‑checked against the broader market.</div>
+        <div class="subhead">A once-daily scan that removes broad market moves to flag stock-specific “washouts” — then shows, using <em>that stock’s own history</em>, how similar setups typically rebounded versus buying on a normal day.</div>
       </div>
       <div class="meta">
         <div class="meta-row"><span class="meta-label">Updated</span> <span id="asOf">—</span></div>
-        <div class="meta-row"><span class="meta-label">Universe</span> Russell 1000 (IWB holdings) + benchmarks</div>
+        <div class="meta-row"><span class="meta-label">Universe</span> Russell 1000 (IWB holdings)</div>
       </div>
     </div>
     <div class="rule"></div>
 
     <section class="explain">
-  <div class="explain-grid">
-    <div>
-      <div class="section-title">What this does</div>
-      <p>
-        Each day, it scans the <span class="mono">Russell 1000</span> and flags stocks that look unusually “washed‑out” for <em>that specific stock</em>.
-        Then it answers one practical question: <strong>when this stock looked like this before, what tended to happen next?</strong>
-      </p>
-      <p class="muted">
-        You’re not comparing AAPL to other stocks. You’re comparing AAPL today to AAPL’s own past.
-      </p>
-    </div>
+      <div class="explain-grid">
+        <div>
+          <div class="section-title">What this does</div>
+          <p>
+            Rebound Ledger runs once a day and asks a simple question for each Russell 1000 stock:
+            is the stock unusually weak <em>for itself</em> after accounting for what the overall market did?
+            If yes, it finds the <span class="mono">K</span> most similar historical days for <em>that same stock</em>
+            and summarizes what tended to happen next over 1, 3, and 5 years.
+          </p>
+          <p>
+            The edge is that the signal is <strong>stock-specific</strong> and <strong>market-adjusted</strong>.
+            A -8% slide means something totally different for a low-vol staple than for a high-beta growth name.
+            This normalizes today’s “washed-out” condition to <em>that stock’s own history</em>, not a one-size-fits-all rule.
+          </p>
 
-    <div>
-      <div class="section-title">Why this works</div>
-      <ul>
-        <li><strong>Stock‑specific, not cross‑sectional.</strong> “Cheap” is defined relative to the stock’s own history, not a market-wide rule.</li>
-        <li><strong>Market‑adjusted signal.</strong> It estimates how much of the move is explained by the broad market (via rolling beta to <span class="mono">SPY</span>) and focuses on the <em>residual</em>—what’s stock‑specific.</li>
-        <li><strong>Pattern matching, not a single trigger.</strong> It matches today to past days with a similar mix of drawdown, range position, volatility, and volume—then reads the historical outcomes.</li>
-        <li><strong>Built‑in “did this add value?” check.</strong> The Evidence block compares outcomes after washed‑out days vs <em>any random day</em> for the same stock.</li>
-      </ul>
-      <p class="muted">
-        This is not simple mean‑reversion (“down a lot = buy”). The model requires the <em>type</em> of selloff to match prior setups and explicitly separates market moves from stock moves.
-      </p>
-    </div>
+          <div class="section-title" style="margin-top:14px">What this is not</div>
+          <ul>
+            <li><strong>Not market advice.</strong> It does not tell you what you “should” own or how to build your portfolio.</li>
+            <li><strong>Not a trading strategy.</strong> No entries/exits, position sizing, timing rules, or risk management plan.</li>
+            <li><strong>Not a forecast.</strong> It summarizes historical outcomes; it does not predict the future.</li>
+            <li><strong>Not a guarantee.</strong> Stocks can keep falling — including to zero.</li>
+          </ul>
+        </div>
 
-    <div>
-      <div class="section-title">What this is not</div>
-      <ul>
-        <li><strong>Not investment advice.</strong> It does not tell you what you “should” own or how to build a portfolio.</li>
-        <li><strong>Not a forecast.</strong> It reports historical statistics from similar past situations; it cannot guarantee future results.</li>
-        <li><strong>Not a trading strategy.</strong> It does not give position sizing, entries/exits, risk limits, or timing rules.</li>
-        <li><strong>Losses can be severe.</strong> Individual stocks can drop further—even to zero. Use your own judgment and risk controls.</li>
-      </ul>
-    </div>
-  </div>
+        <div>
+          <div class="section-title">How it works</div>
+          <ol>
+            <li>
+              <strong>Measure today (per stock).</strong>
+              Drawdown from the 52-week high, position inside the 52-week range, volatility/volume stress,
+              and <strong>market-adjusted weakness</strong> (how much the stock underperformed broad benchmarks on the way down).
+            </li>
+            <li>
+              <strong>Remove the “market did it” excuse.</strong>
+              If the whole market dropped, that’s not special.
+              The model focuses on days where the stock looks weak even <em>after</em> you account for broad moves.
+            </li>
+            <li>
+              <strong>Match to the closest historical analogs.</strong>
+              It searches the stock’s own history for the <span class="mono">K</span> most similar days (same stock, similar conditions),
+              rather than comparing different companies to each other.
+            </li>
+            <li>
+              <strong>Show the evidence vs “typical.”</strong>
+              For each horizon (1Y/3Y/5Y), it summarizes what happened after those similar “washout” days and compares that to
+              what the stock usually did after a random day. That gap is the <em>alpha</em> you care about.
+            </li>
+            <li>
+              <strong>Rank by strength + reliability.</strong>
+              A higher score means rebounds were historically stronger <em>and</em> the evidence is more consistent.
+              Confidence/Stability penalize “one lucky episode” patterns.
+            </li>
+          </ol>
+        </div>
 
-  <div class="rule light"></div>
+        <div>
+          <div class="section-title">How to read the numbers</div>
+          <ul>
+            <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
+            <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
+            <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad-but-plausible case).</li>
+            <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
+            <li>
+              The <strong>Evidence</strong> bullets inside each card compare “washout-like” outcomes to that stock’s <em>typical</em>
+              outcomes — that’s how you see whether the signal adds alpha for that specific ticker.
+            </li>
+          </ul>
+        </div>
+      </div>
 
-  <div class="explain-grid two">
-    <div>
-      <div class="section-title">How it works</div>
-      <ol>
-        <li><strong>Collect history.</strong> Download each stock’s daily price/volume history.</li>
-        <li><strong>Measure “washout.”</strong> Compute drawdown from the 1‑year high, position inside the 1‑year range, short‑term trend, and stress (volatility + volume).</li>
-        <li><strong>Remove the market.</strong> Estimate rolling beta to <span class="mono">SPY</span>, subtract the market component, and recompute “washout” on the stock‑specific residual path.</li>
-        <li><strong>Find close historical matches.</strong> For <em>that same stock</em>, find the <span class="mono">K</span> most similar past days (balanced across market regimes).</li>
-        <li><strong>Summarize outcomes.</strong> Compute what happened next over 1Y / 3Y / 5Y: chance of gain, typical return, and downside.</li>
-        <li><strong>Score + rank.</strong> Combine the horizons into a single score and rank the daily list from strongest to weakest historical edge.</li>
-      </ol>
-    </div>
+      <div class="rule"></div>
 
-    <div>
-      <div class="section-title">How to read the numbers</div>
-      <ul>
-        <li><span class="mono">Chance of gain</span>: percent of similar past days where the forward return was positive.</li>
-        <li><span class="mono">Typical</span>: the median forward return (half the outcomes were higher, half lower).</li>
-        <li><span class="mono">Downside (1 in 10)</span>: the 10th percentile (a bad‑but‑plausible outcome).</li>
-        <li><span class="mono">N</span>: how many similar past days were used for that horizon.</li>
-        <li><span class="mono">Market‑adjusted</span>: statistics computed after subtracting the stock’s typical move explained by the market.</li>
-      </ul>
-    </div>
-  </div>
-
-  <details class="nerds">
-    <summary>For stats nerds</summary>
-    <div class="nerds-body">
-      <p>
-        The scan is a stock‑specific analog model. For each stock and day, we build a feature vector <span class="mono">x(t)</span> and
-        find nearest neighbors in that stock’s own history (only days strictly before today).
-      </p>
-      <ul>
-        <li><strong>Market adjustment.</strong> Using log returns, estimate rolling <span class="mono">β</span>:
-          <span class="mono">β(t)=Cov(r_stock,r_spy)/Var(r_spy)</span>, then residual <span class="mono">ε(t)=r_stock−β(t)·r_spy</span>.
-          A cumulative residual price path is used to compute stock‑specific drawdown and range position.</li>
-        <li><strong>Robust scaling.</strong> Features are standardized with rolling median/MAD (robust z‑scores) to reduce outlier distortion.</li>
-        <li><strong>Similarity search.</strong> Distance is computed in feature space (Euclidean). Neighbors are selected with a simple market‑regime balancing step to avoid overfitting to one regime.</li>
-        <li><strong>Outcome summaries.</strong> Forward returns are computed at 1Y/3Y/5Y; we report win rate, median, and 10th percentile.</li>
-        <li><strong>Score, confidence, stability.</strong> The score is a weighted blend of horizon “quality” (win/median/downside).
-          Confidence increases with sample size, regime variety, and stability under small perturbations (varying <span class="mono">K</span> and shifting the evaluation day backward).</li>
-      </ul>
-      <p class="muted">
-        Nothing here prevents false positives. The purpose is to surface statistically interesting “washed‑out” setups for your own review.
-      </p>
-    </div>
-  </details>
-</section>
+      <div>
+        <div class="section-title">Stats nerds</div>
+        <p>
+          Conceptually, each stock has a daily feature vector <span class="mono">x<sub>t</sub></span> that captures “washout-ness”:
+          drawdown, range percentile, volatility/volume stress, and market-adjusted underperformance.
+          The model standardizes these features within the stock’s own history, then finds the <span class="mono">K</span>
+          nearest historical days by a weighted distance.
+        </p>
+        <ul>
+          <li><span class="mono">Similarity</span>: find past days <span class="mono">s</span> minimizing <span class="mono">d(t,s)=\sqrt{\sum_j w_j (x_{t,j}-x_{s,j})^2}</span>.</li>
+          <li><span class="mono">Forward return</span>: <span class="mono">r_{t,h}=P_{t+h}/P_t - 1</span> for horizons <span class="mono">h</span> ∈ {1Y, 3Y, 5Y}.</li>
+          <li><span class="mono">Evidence vs baseline</span>: compare the distribution of <span class="mono">r_{s,h}</span> on similar days to the stock’s unconditional “any day” distribution.</li>
+          <li><span class="mono">Alpha (intuition)</span>: higher when the similar-day median is meaningfully above the baseline median and the win rate is high.</li>
+          <li><span class="mono">Reliability</span>: smaller when <span class="mono">N</span> is low or outcomes are noisy; Stability favors patterns that don’t depend on one regime or one episode.</li>
+        </ul>
+        <p class="footnote">
+          Nothing here eliminates risk: it’s a conditional historical summary, not a promise. Use it as an evidence layer, not as a mandate.
+        </p>
+      </div>
+    </section>
 
     <div class="rule"></div>
 
