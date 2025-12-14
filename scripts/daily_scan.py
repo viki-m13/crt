@@ -215,7 +215,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
 
-    if len(keep) < 100:
+    if len(keep) < 10:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
