@@ -26,8 +26,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
 ALWAYS_INCLUDE = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA"]
@@ -210,7 +210,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("CASH", case=False, na=False)) &
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
-    if len(keep) < 10:
+    if len(keep) < 50:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
@@ -562,60 +562,6 @@ def risk_label(h_summaries: dict, beta: float):
         return "Choppy / volatile"
     return "Moderate"
 
-# =========================
-# Evidence (explicit alpha)
-# =========================
-def evidence_light(feat: pd.DataFrame):
-    """\
-    Evidence compares:
-      A) "Washout days" = TOP 10% of Washout Meter days (greenest days)
-      B) "Normal days"  = ALL historical days with a valid forward return
-
-    This is the simplest way to quantify per‑ticker alpha without implying a forecast.
-    """
-    out = {}
-
-    wm = feat.get("washout_meter", pd.Series(dtype=float)).dropna()
-    wm = wm[wm > 0]
-    if len(wm) < 250:
-        return out
-
-    thr = float(wm.quantile(0.90))  # top 10% washout
-    wash_mask = feat["washout_meter"] >= thr
-
-    for h in HORIZONS_DAYS.keys():
-        y = feat.get(f"fwd_{h}", None)
-        if y is None:
-            continue
-        valid = y.notna()
-
-        wash = wash_mask & valid
-        normal = valid
-
-        n_wash = int(wash.sum())
-        n_norm = int(normal.sum())
-        if n_wash < 50 or n_norm < 200:
-            continue
-
-        yw = y[wash].astype(float).values
-        yn = y[normal].astype(float).values
-
-        out[h] = {
-            "thr_wash": float(thr),
-            "n_wash": n_wash,
-            "win_wash": float(np.mean(yw > 0)),
-            "med_wash": float(np.median(yw)),
-            "p10_wash": float(np.quantile(yw, 0.10)),
-            "p90_wash": float(np.quantile(yw, 0.90)),
-            "n_norm": n_norm,
-            "win_norm": float(np.mean(yn > 0)),
-            "med_norm": float(np.median(yn)),
-            "p10_norm": float(np.quantile(yn, 0.10)),
-            "p90_norm": float(np.quantile(yn, 0.90)),
-        }
-
-    return out
-
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
@@ -742,6 +688,15 @@ def main():
 
         confirm_today = safe_float(feat.loc[now_idx, "bottom_confirm"])
         wash_today = safe_float(feat.loc[now_idx, "washout_meter"])
+        wash_top_pct = None
+        try:
+            arr = pd.to_numeric(feat["washout_meter"], errors="coerce").dropna().values.astype(float)
+            if len(arr) >= 60 and np.isfinite(wash_today):
+                pct = float(np.mean(arr <= float(wash_today)))  # percentile (higher = more washed-out)
+                wash_top_pct = float((1.0 - pct) * 100.0)       # "top X%" most washed-out days
+        except Exception:
+            wash_top_pct = None
+
         beta_today = safe_float(feat.loc[now_idx, "beta"])
 
         h_summaries = {}
@@ -790,19 +745,6 @@ def main():
         verdict = verdict_line(rebound_score, confidence, stab_score, fragile)
         explain_lines = build_explain(feat, now_idx)
 
-        # Explicit evidence vs baseline (per‑ticker alpha, no forecasting implied)
-        ev = evidence_light(feat)
-        alpha = {}
-        for hh, e in ev.items():
-            try:
-                alpha[hh] = {
-                    "win": float(e["win_wash"] - e["win_norm"]),
-                    "median": float(e["med_wash"] - e["med_norm"]),
-                    "p10": float(e["p10_wash"] - e["p10_norm"]),
-                }
-            except Exception:
-                pass
-
         cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
         d = feat.loc[feat.index >= cutoff].copy()
         if d.empty:
@@ -821,8 +763,7 @@ def main():
             "stability": float(stab_score),
             "risk": risk,
             "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
-            "evidence": ev,
-            "alpha": alpha,
+            "washout_top_pct": float(wash_top_pct) if (wash_top_pct is not None and np.isfinite(wash_top_pct)) else None,
             "outcomes": {
                 "1Y": h_summaries.get("1Y", {"n":0}),
                 "3Y": h_summaries.get("3Y", {"n":0}),
@@ -848,8 +789,8 @@ def main():
             "confidence": float(confidence),
             "stability": float(stab_score),
             "risk": risk,
-            "typical": typical,
-            "alpha": alpha,
+            "washout_top_pct": float(wash_top_pct) if (wash_top_pct is not None and np.isfinite(wash_top_pct)) else None,
+            "typical": typical
         }
         scored.append((row, detail))
 
