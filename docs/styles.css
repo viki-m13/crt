@@ -126,7 +126,6 @@ h1{
 .cards{display:grid;grid-template-columns:1fr;gap:12px}
 .card{
   border-top:2px solid var(--rule);
-  border-bottom:1px solid var(--rule2);
   padding:16px 0 18px;
 }
 .card-head{
@@ -165,10 +164,8 @@ h1{
 }
 
 .chart-legend{
-  position:absolute;
-  left:12px;
-  bottom:10px;
-  display:flex;
+  position:static;
+  display:inline-flex;
   align-items:center;
   gap:8px;
   font-family:var(--mono);
@@ -178,6 +175,7 @@ h1{
   border:1px solid var(--rule2);
   padding:6px 8px;
   border-radius:14px;
+  margin-top:10px;
 }
 .legend-bar{
   width:44px;
@@ -266,3 +264,7 @@ h1{
   .outcomes{grid-template-columns:1fr}
   .ev-grid{grid-template-columns:1fr}
 }
+
+.evidence-details{margin-top:14px}
+.evidence-summary-left{display:flex;flex-direction:column;gap:2px}
+.evidence-summary-left .ev-sub{margin-top:0}

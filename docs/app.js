@@ -31,6 +31,17 @@ function fmtNum(x){
   if (!Number.isFinite(v)) return "—";
   return `${v.toFixed(0)}`;
 }
+function washoutTopPct(wash){
+  const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
+  if (arr.length < 60) return null;
+  const v = arr[arr.length - 1];
+  let le = 0;
+  for (const x of arr){ if (x <= v) le++; }
+  const pct = le / arr.length;
+  const topPct = (1 - pct) * 100;
+  return topPct;
+}
+
 function washoutTopRankText(wash){
   const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
   if (arr.length < 60) return null;
@@ -96,7 +107,11 @@ function drawGradientLine(canvas, dates, prices, wash){
 }
 
 function renderCard(container, item, detail){
-  const washRank = washoutTopRankText(detail.series?.wash);
+  const seriesWash = detail.series?.wash;
+  const topPctFromItem = (item.washout_top_pct != null && Number.isFinite(item.washout_top_pct)) ? Number(item.washout_top_pct) : null;
+  const topPctFromSeries = washoutTopPct(seriesWash);
+  const topPct = (topPctFromItem != null) ? topPctFromItem : topPctFromSeries;
+  const washRank = (topPct == null) ? null : (topPct < 1 ? "Top <1%" : `Top ${Math.round(topPct)}%`);
   const card = document.createElement("div");
   card.className = "card";
   const h = document.createElement("div");
@@ -174,24 +189,28 @@ function renderCard(container, item, detail){
   // Evidence: broad alpha check (top-decile washout days vs any normal day)
   const ev = detail.evidence || null;
   if (ev && (ev["1Y"] || ev["3Y"] || ev["5Y"])){
-    const box = document.createElement("div");
-    box.className = "evidence-block";
+    const box = document.createElement("details");
+    box.className = "details evidence-details";
     box.innerHTML = `
-      <div class="evidence-head">
-        <div class="section-title">EVIDENCE</div>
-        <div class="ev-sub">Top 10% washout days vs normal days</div>
+      <summary class="details-summary">
+        <div class="evidence-summary-left">
+          <span class="section-title">EVIDENCE</span>
+          <span class="ev-sub">Top 10% washout vs normal</span>
+        </div>
+        <span class="plus" aria-hidden="true">+</span>
+      </summary>
+      <div class="details-body">
+        <div class="ev-explain">
+          Think of this as a simple A/B check across the stock’s entire history.
+          <strong>A</strong> = the <strong>10% most washed‑out</strong> days for this stock.
+          <strong>B</strong> = a <strong>normal</strong> historical day (baseline).
+          Each line is written as <strong>A vs B</strong>.
+          <span class="mono">pp</span> = percentage points. <span class="mono">N</span> = how many days were in each group.
+          (This is separate from the “similar past situations” boxes above, which match close analogs to today.)
+        </div>
+        <div class="outcomes ev-grid"></div>
       </div>
-      <div class="ev-explain">
-        Think of this as a simple A/B check across the stock’s entire history.
-        <strong>A</strong> = the <strong>10% most washed‑out</strong> days for this stock.
-        <strong>B</strong> = a <strong>normal</strong> historical day (baseline).
-        Each line is written as <strong>A vs B</strong>.
-        <span class="mono">pp</span> = percentage points. <span class="mono">N</span> = how many days were in each group.
-        (This is separate from the “similar past situations” boxes above, which match close analogs to today.)
-      </div>
-      <div class="outcomes ev-grid"></div>
     `;
-
     const gridEl = box.querySelector(".ev-grid");
     const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
     for (const [k,label] of horizons){
@@ -301,6 +320,9 @@ function setSortButtons(active){
       list.sort((a,b)=> (b.confidence - a.confidence) || (b.score - a.score) || (b.stability - a.stability));
     }else if (sortMode === "stability"){
       list.sort((a,b)=> (b.stability - a.stability) || (b.score - a.score) || (b.confidence - a.confidence));
+    }else if (sortMode === "washout"){
+      const wa = (x)=> (x.washout_top_pct==null || !Number.isFinite(x.washout_top_pct)) ? 1e9 : Number(x.washout_top_pct);
+      list.sort((a,b)=> (wa(a) - wa(b)) || (b.score - a.score) || (b.confidence - a.confidence) || (b.stability - a.stability));
     }
     return list;
   }

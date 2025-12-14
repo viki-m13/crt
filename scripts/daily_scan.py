@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-# Rebound Ledger — static daily scan generator
+# Rebound Ledger — static daily scan generator (Option A: precompute and publish)
 # Writes:
 #   - docs/data/full.json (ranking + top10 embedded details)
 #   - docs/data/tickers/{TICKER}.json (details for every scored ticker)
 #
-# Runs once per day after 5pm America/New_York (the workflow is hourly; the script gates itself).
+# Runs once per day after ~5pm America/New_York (the workflow is hourly; the script gates itself).
 
 import os, math, json, warnings
 warnings.filterwarnings("ignore")
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from io import StringIO
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import requests
+from io import StringIO
 
 # =========================
 # CONFIG
@@ -26,8 +26,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
 ALWAYS_INCLUDE = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA"]
@@ -49,11 +49,7 @@ POS_THR = 0.20
 GATE_DD_SCALE  = 0.12
 GATE_POS_SCALE = 0.10
 
-# Soft gate: avoid crushing scores on moderately washed-out days
-CONF_GATE_CENTER = 0.18   # confirm at which gate is ~50%
-CONF_GATE_SCALE  = 0.05   # smaller = sharper gate
-
-# liquidity/eligibility
+# eligibility
 MIN_MED_DVOL_USD = 5_000_000
 MAX_MISSING_FRAC = 0.10
 MIN_HISTORY_BARS = LB_LT + BETA_LB + LB_ST + 220
@@ -81,48 +77,35 @@ VERDICT = dict(
     OK_STAB=60.0,
 )
 
-# Relative “Top pick today” label (keeps “don’t force trades” while avoiding all-muted UI)
-TOP_PICK_PCT = 0.98
-TOP_PICK_MIN_CONF = 45.0
-TOP_PICK_MIN_STAB = 45.0
-
 OUT_DIR = os.path.join("docs","data")
 TICKER_DIR = os.path.join(OUT_DIR,"tickers")
 
 # =========================
-# Time gate
+# Time gate (after 5pm NY)
 # =========================
-NY_TZ = ZoneInfo("America/New_York")
-FORCE_RUN = os.getenv("FORCE_RUN", "").strip().lower() in {"1", "true", "yes"}
-
-RUN_HOUR_NY = 17        # 5PM
-RUN_WINDOW_MIN = 20     # 5:00–5:19pm ET window
-STAMP_PATH = os.path.join(OUT_DIR, "last_run.txt")
-
 def should_run_now():
-    if FORCE_RUN:
+    if os.getenv("FORCE_RUN","").strip() == "1":
         return True
-    now = datetime.now(NY_TZ)
-    if not (now.hour == RUN_HOUR_NY and 0 <= now.minute < RUN_WINDOW_MIN):
+    tz = ZoneInfo("America/New_York")
+    now = datetime.now(tz)
+    if now.hour < 17:
         return False
+    stamp_path = os.path.join(OUT_DIR, "last_run.txt")
     today = now.strftime("%Y-%m-%d")
-    if os.path.exists(STAMP_PATH):
-        try:
-            prev = open(STAMP_PATH, "r", encoding="utf-8").read().strip()
-            if prev == today:
-                return False
-        except Exception:
-            pass
+    if os.path.exists(stamp_path):
+        prev = open(stamp_path, "r").read().strip()
+        if prev == today:
+            return False
     return True
 
 def mark_ran_today():
     os.makedirs(OUT_DIR, exist_ok=True)
-    today = datetime.now(NY_TZ).strftime("%Y-%m-%d")
-    with open(STAMP_PATH, "w", encoding="utf-8") as f:
-        f.write(today)
+    tz = ZoneInfo("America/New_York")
+    today = datetime.now(tz).strftime("%Y-%m-%d")
+    open(os.path.join(OUT_DIR, "last_run.txt"), "w").write(today)
 
 # =========================
-# Helpers
+# Math helpers
 # =========================
 def sigmoid(x: float) -> float:
     x = float(np.clip(x, -20, 20))
@@ -154,6 +137,9 @@ def fmt_rank(p01: float) -> str:
     p = p01 * 100.0
     return f"{p:.1f}%" if p < 1.0 else f"{p:.0f}%"
 
+# =========================
+# Verdict labeling
+# =========================
 def verdict_line(score: float, confidence: float, stability: float, fragile: bool) -> str:
     s = safe_float(score); c = safe_float(confidence); st = safe_float(stability)
     if not np.isfinite(s) or not np.isfinite(c) or not np.isfinite(st):
@@ -177,13 +163,14 @@ def verdict_line(score: float, confidence: float, stability: float, fragile: boo
     return "Not compelling today"
 
 # =========================
-# Holdings fetch
+# Holdings
 # =========================
 def fetch_ishares_holdings_tickers(url: str) -> list:
     headers = {"User-Agent": "Mozilla/5.0"}
     resp = requests.get(url, headers=headers, timeout=60)
     if resp.status_code != 200 or not resp.content:
         raise RuntimeError(f"Holdings download failed (HTTP {resp.status_code}).")
+
     raw_text = resp.content.decode("utf-8", errors="ignore")
     lines = raw_text.splitlines()
 
@@ -223,7 +210,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("CASH", case=False, na=False)) &
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
-    if len(keep) < 10:
+    if len(keep) < 50:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
@@ -292,7 +279,7 @@ def download_ohlcv_period(tickers, period="max", interval="1d", chunk_size=80):
             "Close": _cat(C_list), "Volume": _cat(V_list), "AdjClose": _cat(A_list)}
 
 # =========================
-# Features
+# Feature engineering
 # =========================
 def compute_core_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     d = ohlcv.copy()
@@ -428,16 +415,6 @@ def summarize(vals: np.ndarray) -> dict:
             "p10": float(np.quantile(vals, 0.10)),
             "p90": float(np.quantile(vals, 0.90))}
 
-def baseline_stats(X: pd.DataFrame, y: pd.Series, regimes: pd.Series, now_idx: pd.Timestamp) -> dict:
-    cand = X.index[(X.notna().all(axis=1)) & (y.notna()) & (X.index < now_idx)]
-    if len(cand) == 0:
-        return {"all": {"n": 0}, "same_regime": {"n": 0}}
-    all_stats = summarize(y.loc[cand].dropna().values.astype(float))
-    now_reg = regimes.get(now_idx, "UNK")
-    same = cand[regimes.reindex(cand).fillna("UNK").values == now_reg]
-    same_stats = summarize(y.loc[same].dropna().values.astype(float)) if len(same) else {"n": 0}
-    return {"all": all_stats, "same_regime": same_stats}
-
 def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     n = stats.get("n", 0)
     if n <= 0:
@@ -448,9 +425,7 @@ def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     tail_pen = sigmoid(max(0.0, -p10) / 0.25)
     raw = 0.62 * win + 0.38 * med_term - 0.35 * tail_pen
     raw = float(np.clip(raw, 0, 1))
-    c = float(np.clip(confirm, 0, 1))
-    gate = sigmoid((c - CONF_GATE_CENTER) / max(1e-9, CONF_GATE_SCALE))
-    return float(np.clip(gate * sample_conf * raw, 0, 1))
+    return float(np.clip(confirm * sample_conf * raw, 0, 1))
 
 def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Series,
                                   now_idx: pd.Timestamp, k: int, min_sep_days: int):
@@ -649,6 +624,7 @@ def main():
     spy_h = H[BENCH].reindex(spy_px.index).dropna()
     spy_l = L[BENCH].reindex(spy_px.index).dropna()
     spy_px = spy_px.reindex(spy_h.index).reindex(spy_l.index).dropna()
+
     mkt = compute_market_regime(spy_px, spy_h, spy_l)
 
     usable = [t for t in universe if t in O.columns and t in H.columns and t in L.columns and t in V.columns and t in PX.columns]
@@ -662,6 +638,7 @@ def main():
     zwin = max(63, LB_ST)
 
     scored = []
+    top_details = {}
 
     for i, t in enumerate(usable, start=1):
         df = pd.DataFrame({
@@ -715,8 +692,8 @@ def main():
         try:
             arr = pd.to_numeric(feat["washout_meter"], errors="coerce").dropna().values.astype(float)
             if len(arr) >= 60 and np.isfinite(wash_today):
-                pct = float(np.mean(arr <= float(wash_today)))
-                wash_top_pct = float((1.0 - pct) * 100.0)
+                pct = float(np.mean(arr <= float(wash_today)))  # percentile (higher = more washed-out)
+                wash_top_pct = float((1.0 - pct) * 100.0)       # "top X%" most washed-out days
         except Exception:
             wash_top_pct = None
 
@@ -725,21 +702,15 @@ def main():
         h_summaries = {}
         h_units = {}
         h_n = []
-        evidence = {}
         analog_regimes_for_conf = None
 
         for h, w in HORIZON_WEIGHTS.items():
             y = feat.get(f"fwd_{h}", None)
             if y is None:
                 continue
-
             analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
             vals = y.loc[analog_idx].dropna().values.astype(float)
             s = summarize(vals)
-
-            base = baseline_stats(X, y, regimes, now_idx)
-            evidence[h] = {"similar_days": s, "normal_days": base["all"], "normal_same_regime": base["same_regime"]}
-
             if s["n"] >= ANALOG_MIN:
                 h_summaries[h] = s
                 h_units[h] = horizon_unit(confirm_today, s, n_target=ANALOG_K)
@@ -793,8 +764,11 @@ def main():
             "risk": risk,
             "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
             "washout_top_pct": float(wash_top_pct) if (wash_top_pct is not None and np.isfinite(wash_top_pct)) else None,
-            "outcomes": {"1Y": h_summaries.get("1Y", {"n":0}), "3Y": h_summaries.get("3Y", {"n":0}), "5Y": h_summaries.get("5Y", {"n":0})},
-            "evidence": evidence,
+            "outcomes": {
+                "1Y": h_summaries.get("1Y", {"n":0}),
+                "3Y": h_summaries.get("3Y", {"n":0}),
+                "5Y": h_summaries.get("5Y", {"n":0}),
+            },
             "explain": explain_lines,
             "series": {
                 "dates": [str(x.date()) for x in series.index],
@@ -803,16 +777,21 @@ def main():
             }
         }
 
-        typical = {"1Y": h_summaries.get("1Y", {}).get("median", None),
-                   "3Y": h_summaries.get("3Y", {}).get("median", None),
-                   "5Y": h_summaries.get("5Y", {}).get("median", None)}
-
-        row = {"ticker": t, "verdict": verdict, "score": float(rebound_score),
-               "confidence": float(confidence), "stability": float(stab_score),
-               "risk": risk,
-               "washout_top_pct": float(wash_top_pct) if (wash_top_pct is not None and np.isfinite(wash_top_pct)) else None,
-               "typical": typical}
-
+        typical = {
+            "1Y": h_summaries.get("1Y", {}).get("median", None),
+            "3Y": h_summaries.get("3Y", {}).get("median", None),
+            "5Y": h_summaries.get("5Y", {}).get("median", None),
+        }
+        row = {
+            "ticker": t,
+            "verdict": verdict,
+            "score": float(rebound_score),
+            "confidence": float(confidence),
+            "stability": float(stab_score),
+            "risk": risk,
+            "washout_top_pct": float(wash_top_pct) if (wash_top_pct is not None and np.isfinite(wash_top_pct)) else None,
+            "typical": typical
+        }
         scored.append((row, detail))
 
         if i % 100 == 0:
@@ -823,32 +802,20 @@ def main():
 
     scored.sort(key=lambda x: (x[0]["score"], x[0]["confidence"], x[0]["stability"]), reverse=True)
 
-    scores_arr = np.array([r["score"] for r,_ in scored], dtype=float)
-    for j, (row, detail) in enumerate(scored, start=1):
-        row["rank"] = j
-        detail["rank"] = j
-        pct = float(np.mean(scores_arr <= row["score"])) if len(scores_arr) else float("nan")
-        row["score_pct"] = pct
-        detail["score_pct"] = pct
-        if (np.isfinite(pct) and pct >= TOP_PICK_PCT and
-            row["confidence"] >= TOP_PICK_MIN_CONF and row["stability"] >= TOP_PICK_MIN_STAB):
-            row["verdict"] = "Top pick today"
-            detail["verdict"] = "Top pick today"
-
-    # write per-ticker details
     for row, detail in scored:
         path = os.path.join(TICKER_DIR, f"{row['ticker']}.json")
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, "w") as f:
             json.dump(detail, f, separators=(",", ":"), ensure_ascii=False)
 
-    top_details = {row["ticker"]: detail for row, detail in scored[:TOP10_EMBED]}
+    for row, detail in scored[:TOP10_EMBED]:
+        top_details[row["ticker"]] = detail
 
     full = {
-        "as_of": str(datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M %Z")),
+        "as_of": str(datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M %Z")),
         "items": [r for r,_ in scored],
         "details": top_details,
     }
-    with open(os.path.join(OUT_DIR, "full.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
         json.dump(full, f, separators=(",", ":"), ensure_ascii=False)
 
     mark_ran_today()
