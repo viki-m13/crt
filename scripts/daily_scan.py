@@ -9,9 +9,6 @@
 import os, math, json, warnings
 warnings.filterwarnings("ignore")
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 import numpy as np
 import pandas as pd
 import yfinance as yf
