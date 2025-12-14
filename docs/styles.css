@@ -158,7 +158,11 @@ h1{
   position:relative;
   display:flex;
   flex-direction:column;
+
+  position: relative;
+  padding-bottom: 38px;
 }
+
 .canvas{
   width:100%;
   height:180px;
@@ -166,19 +170,16 @@ h1{
 }
 
 .chart-legend{
-  position:static;
-  display:inline-flex;
+  position:absolute;
+  right:12px;
+  bottom:10px;
+  display:flex;
   align-items:center;
-  gap:8px;
-  font-family:var(--mono);
-  font-size:11px;
+  justify-content:flex-end;
+  gap:10px;
+  font-size:12px;
   color:var(--muted);
-  background:rgba(0,0,0,.015);
-  border:1px solid var(--rule2);
-  padding:6px 8px;
-  border-radius:14px;
-  margin-top:0;
-  align-self:flex-end;
+  user-select:none;
 }
 .legend-bar{
   width:44px;
@@ -271,3 +272,16 @@ h1{
 .evidence-details{margin-top:14px}
 .evidence-summary-left{display:flex;flex-direction:column;gap:2px}
 .evidence-summary-left .ev-sub{margin-top:0}
+
+
+.meta-value{ color:var(--ink); }
+
+@media (max-width: 520px){
+  .brand{ grid-template-columns: 68px 1fr; gap:14px; }
+  .meta{ grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:14px; padding-top:10px; border-left:none; border-top:1px solid var(--rule2); padding-left:0; }
+  .meta-row{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:0; }
+  .meta-label{ margin-right:0; }
+  #asOf{ white-space:nowrap; }
+  .meta-value{ text-align:right; }
+  .meta-row:last-child .meta-value{ white-space:normal; text-align:right; }
+}

@@ -395,14 +395,12 @@ function formatAsOf(asOf){
   function applySort(){
     const list = [...items];
     if (sortMode === "final"){
-      list.sort((a,b)=> (b.final_score - a.final_score) || (b.confidence - a.confidence) || (b.stability - a.stability));
-    }else if (sortMode === "confidence"){
-      list.sort((a,b)=> (b.confidence - a.confidence) || (b.final_score - a.final_score) || (b.stability - a.stability));
-    }else if (sortMode === "stability"){
-      list.sort((a,b)=> (b.stability - a.stability) || (b.final_score - a.final_score) || (b.confidence - a.confidence));
+      list.sort((a,b)=> (b.final_score - a.final_score) || (b.confidence - a.confidence) || (b.washout_today - a.washout_today));
     }else if (sortMode === "washout"){
       // higher washout_today = more washed-out
       list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.final_score - a.final_score) || (b.confidence - a.confidence));
+    }else if (sortMode === "confidence"){
+      list.sort((a,b)=> (b.confidence - a.confidence) || (b.final_score - a.final_score) || (b.washout_today - a.washout_today));
     }
     return list;
   }
