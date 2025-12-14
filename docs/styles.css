@@ -207,7 +207,7 @@ h1{
 .details-body{padding-top:10px}
 
 /* Evidence block inside ticker cards (full-width, below chart) */
-.evidence-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule2)}
+.evidence-block{margin-top:14px;padding:12px;border:1px solid var(--rule2);border-radius:14px;background:rgba(0,0,0,.015)}
 .ev-title{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted)}
 .ev-explain{color:var(--muted);font-size:13px;margin-top:8px;max-width:100ch}
 .ev-grid{
@@ -238,4 +238,66 @@ h1{
   .chart{border-left:none;padding-left:0}
   .outcomes{grid-template-columns:1fr}
   .ev-grid{grid-template-columns:1fr}
+}
+
+/* Evidence boxes should match the outcome boxes */
+.evidence-outbox .sub{
+  margin:-2px 0 8px;
+  font-family:var(--mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-size:10px;
+  color:var(--muted);
+}
+
+/* Evidence section uses the same 3-column grid as outcomes */
+.evidence-block .outcomes{margin-top:10px}
+
+/* Small legend beside the chart */
+.chart-legend{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+}
+.chart-legend .swatch{
+  width:14px;
+  height:10px;
+  border-radius:4px;
+  border:1px solid var(--rule2);
+}
+.chart-legend .swatch.low{background:rgba(15,61,46,.20)}
+.chart-legend .swatch.high{background:rgba(15,61,46,.85)}
+.chart-legend .lab{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.chart-legend .hint{margin-left:auto;white-space:nowrap}
+
+/* Clearer separation between ticker sections */
+.card-divider{
+  height:2px;
+  background:var(--rule2);
+  margin:14px 0;
+}
+@media (max-width: 880px){
+  .card-divider{margin:16px 0}
+  .chart-legend .hint{display:none}
+}
+
+/* Make STATS NERDS header match other section labels */
+.details-summary{
+  font-family:var(--mono);
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  font-size:12px;
+  color:var(--muted);
+  padding:10px 0;
+  border-top:1px solid var(--rule2);
+}
+.details-body{
+  border:1px solid var(--rule2);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(0,0,0,.015);
 }
