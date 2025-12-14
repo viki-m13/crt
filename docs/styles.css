@@ -31,7 +31,7 @@ body{
   align-items:start;
 }
 .logo{
-  width:72px;height:72px;border-radius:999px;background:var(--green);
+  width:60px;height:60px;border-radius:999px;background:var(--green);
   margin-top:6px;
 }
 .kicker{
@@ -206,51 +206,4 @@ h1{
   .explain-grid{grid-template-columns:1fr}
   .grid2{grid-template-columns:1fr}
   h1{font-size:36px}
-}
-
-
-
-/* --- Explain add-ons --- */
-.explain-grid.two{
-  grid-template-columns: 1.3fr 1fr;
-}
-.rule.light{
-  opacity:0.35;
-}
-
-.muted{
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.45;
-  margin-top: 10px;
-}
-
-details.nerds{
-  margin-top: 16px;
-  border-top: 1px solid rgba(0,0,0,0.10);
-  padding-top: 12px;
-}
-details.nerds > summary{
-  cursor: pointer;
-  list-style: none;
-  font-family: var(--mono);
-  font-size: 12.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(0,0,0,0.78);
-}
-details.nerds > summary::-webkit-details-marker{ display:none; }
-details.nerds[open] > summary{
-  color: rgba(0,0,0,0.90);
-}
-.nerds-body{
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.55;
-}
-.nerds-body ul{
-  margin: 10px 0 0 18px;
-}
-.nerds-body li{
-  margin: 8px 0;
 }
