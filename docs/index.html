@@ -3,47 +3,56 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CRT Rebound Scanner</title>
-  <link rel="icon" href="assets/icon-192.png" />
+  <title>GreenDot Rebound</title>
+  <meta name="theme-color" content="#0b3d24" />
+  <link rel="icon" href="assets/favicon.svg" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="wrap header">
     <div class="brand">
-      <img class="logo" src="assets/logo.svg" alt="" />
+      <img class="logo" src="assets/logo.svg" alt="logo" />
       <div class="brand-text">
-        <div class="title">CRT Rebound Scanner</div>
-        <div class="subtitle" id="subtitle">Precomputed daily • static</div>
+        <div class="title">GreenDot Rebound</div>
+        <div class="subtitle" id="subtitle">Precomputed daily at ~5pm ET</div>
       </div>
     </div>
 
     <div class="controls">
-      <input id="search" class="search" placeholder="Search ticker (universe only)" spellcheck="false" />
+      <input id="search" class="search" placeholder="Search ticker (press Enter)" spellcheck="false" />
     </div>
   </header>
 
   <main class="wrap">
     <section id="status" class="status"></section>
 
-    <section>
-      <h2 class="h2">Top 10</h2>
-      <div id="top10" class="cards"></div>
+    <section class="section">
+      <div class="h2">Top 10 today</div>
+      <div id="top10" class="top"></div>
     </section>
 
-    <section>
-      <h2 class="h2">All tickers</h2>
+    <section class="section" id="spotlight_wrap">
+      <div class="h2" id="spotlight_hdr"></div>
+      <div id="spotlight" class="top"></div>
+    </section>
+
+    <section class="section">
+      <div class="h2">All tickers</div>
       <div class="table-wrap">
-        <table id="table" class="table">
+        <table class="table">
           <thead>
             <tr>
-              <th data-sort="Ticker">Ticker</th>
-              <th data-sort="ReboundScore">Score</th>
-              <th data-sort="Confidence">Conf</th>
-              <th data-sort="Stability">Stab</th>
-              <th data-sort="Verdict">Verdict</th>
-              <th data-sort="Risk">Risk</th>
-              <th data-sort="WashoutToday">Washout</th>
+              <th data-k="Ticker">Ticker</th>
+              <th data-k="Verdict">Verdict</th>
+              <th data-k="ReboundScore">Score</th>
+              <th data-k="Confidence">Confidence</th>
+              <th data-k="Stability">Stability</th>
+              <th data-k="Risk">Risk</th>
+              <th data-k="WashoutToday">Washout</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -51,6 +60,17 @@
       </div>
     </section>
   </main>
+
+  <section class="wrap section defs">
+    <div class="h2">Plain-English definitions</div>
+    <div class="defs-grid">
+      <div><b>Rebound Score (0–100)</b><div class="muted">Higher = better historical rebounds after similar past days for the <i>same stock</i>.</div></div>
+      <div><b>Chance of profit</b><div class="muted">Percent of similar past days where price was higher after the horizon.</div></div>
+      <div><b>Typical</b><div class="muted">Median return after the horizon (the middle outcome).</div></div>
+      <div><b>Bad case (1 in 10)</b><div class="muted">10th percentile return (1 out of 10 similar cases did worse).</div></div>
+      <div><b>Similar past days</b><div class="muted">Number of historical dates used that most closely matched today’s setup.</div></div>
+    </div>
+  </section>
 
   <footer class="wrap footer">
     <div id="footnote"></div>

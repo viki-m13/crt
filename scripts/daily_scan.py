@@ -26,8 +26,8 @@ PERIOD   = "max"
 BENCH = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
@@ -35,6 +35,10 @@ ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOG
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # keep None to run full holdings universe
 PLOT_LAST_DAYS = 365 * 6
+
+# Static per-ticker detail files
+TICKER_DIR = "docs/data/tickers"
+EMBED_SERIES_TOP = 10  # embed chart series in full.json for top N only
 
 # Lookbacks (days)
 LB_LT = 252
@@ -211,7 +215,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
 
-    if len(keep) < 10:
+    if len(keep) < 100:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
@@ -615,38 +619,37 @@ def risk_label(h_summaries: dict, beta: float):
 # =========================
 # Explain
 # =========================
-def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
-    hist = feat.loc[:now_idx].copy()
-    if len(hist) < 200:
-        return ["Not enough history to explain clearly (need ~1 year+ of daily data)."]
-
-    dd = safe_float(hist["dd_lt"].iloc[-1])
-    pos = safe_float(hist["pos_lt"].iloc[-1])
-    idio_dd = safe_float(hist["idio_dd_lt"].iloc[-1])
-    volz = safe_float(hist["volu_z"].iloc[-1])
-    atrp = safe_float(hist["atr_pct"].iloc[-1])
-
-    dd_p  = percentile_rank(hist["dd_lt"], dd)
-    pos_p = percentile_rank(hist["pos_lt"], pos)
-    id_p  = percentile_rank(hist["idio_dd_lt"], idio_dd)
-    vz_p  = percentile_rank(hist["volu_z"], volz)
-    at_p  = percentile_rank(hist["atr_pct"], atrp)
-
+def build_explain(pos, pos_p, dd, dd_p, vz, vz_p, atr, atr_p, idio_dd, idio_p):
+    """
+    Build 3–5 short, plain-English "why today" lines.
+    Percentiles are per-ticker historical ranks (0..1).
+    """
     lines = []
-    if np.isfinite(dd) and np.isfinite(dd_p):
-        lines.append((dd_p, f"Price is {dd:.0%} below its 1-year high (more extreme than {fmt_rank(dd_p)} of past days)."))
-    if np.isfinite(pos) and np.isfinite(pos_p):
-        lines.append((1.0 - pos_p, f"Price sits in the bottom {pos*100:.0f}% of its 1-year range (only about {fmt_rank(pos_p)} of past days were this low-in-range or lower)."))
-    if np.isfinite(idio_dd) and np.isfinite(id_p):
-        lines.append((id_p, f"After removing market moves: stock-specific drawdown ~{idio_dd:.0%} (more extreme than {fmt_rank(id_p)} of past days)."))
-    if np.isfinite(volz) and np.isfinite(vz_p) and volz > 1.0:
-        lines.append((vz_p, f"Volume is unusually high (higher than {fmt_rank(vz_p)} of past days)."))
-    if np.isfinite(atrp) and np.isfinite(at_p) and at_p > 0.85:
-        lines.append((at_p, f"Daily price swings are unusually large (bigger than {fmt_rank(at_p)} of past days)."))
 
-    lines = sorted(lines, key=lambda x: x[0], reverse=True)
-    out = [txt for _, txt in lines[:3]]
-    return out if out else ["Nothing is extremely washed-out today; this looks mild rather than dramatic."]
+    if pos is not None and pos_p is not None:
+        lines.append(
+            f"Range: bottom {pos*100:.0f}% of its 1-year range (only {pos_p*100:.0f}% of days were lower)."
+        )
+
+    if dd is not None and dd_p is not None:
+        lines.append(
+            f"Drawdown: {dd*100:.0f}% below its 1-year high (more extreme than {dd_p*100:.0f}% of days)."
+        )
+
+    if vz_p is not None:
+        lines.append(f"Volume: higher than {vz_p*100:.0f}% of days.")
+
+    if atr_p is not None:
+        # "Swinginess" proxy: large True Range vs typical
+        lines.append(f"Swings: larger than {atr_p*100:.0f}% of days.")
+
+    if idio_dd is not None and idio_p is not None:
+        lines.append(
+            f"Market-adjusted drop: {idio_dd*100:.0f}% (more extreme than {idio_p*100:.0f}% of days)."
+        )
+
+    # Keep it tight
+    return lines[:5]
 
 # =========================
 # MAIN
@@ -831,16 +834,46 @@ def main():
     res = sorted(results, key=lambda r: (r.get("ReboundScore", -1e9), r.get("Confidence", -1e9), r.get("Stability", -1e9)), reverse=True)
     now_ny = datetime.now(tz=NY)
 
+    
+    # --- Write per-ticker detail JSON (static) ---
+    os.makedirs(TICKER_DIR, exist_ok=True)
+
+    # Sort exactly like the UI (best to worst)
+    res_sorted = sorted(res, key=lambda r: (-float(r.get("ReboundScore", -1e18)),
+                                           -float(r.get("Confidence", -1e18)),
+                                           -float(r.get("Stability", -1e18))))
+
+    # Build FULL rows: summary for all, embed series only for top N
+    full_rows = []
+    for i, r in enumerate(res_sorted):
+        tkr = r.get("Ticker")
+        if not tkr:
+            continue
+
+        # Write per-ticker detail file (includes series + explain + outcomes)
+        detail_path = os.path.join(TICKER_DIR, f"{tkr}.json")
+        with open(detail_path, "w") as df:
+            json.dump(r, df, separators=(",", ":"))
+
+        # Summary row for full.json
+        s = {k: r.get(k) for k in [
+            "Ticker","Verdict","ReboundScore","Confidence","Stability","Risk","WashoutToday","AsOf",
+            "Explain","Outcomes"
+        ]}
+        if i < EMBED_SERIES_TOP:
+            s["Series"] = r.get("Series")
+        full_rows.append(s)
+
     payload = {
         "meta": {
             "asof": now_ny.strftime("%Y-%m-%d %H:%M"),
-            "note": "Universe is iShares Russell 1000 holdings (IWB) plus a small always-list. Search only matches this universe.",
+            "note": "Universe is iShares Russell 1000 (IWB) holdings + a small always-list. Search only matches this universe.",
             "interval": INTERVAL,
             "period": PERIOD,
             "bench": BENCH,
-            "count_scored": len(res),
+            "count_scored": len(full_rows),
         },
-        "rows": res
+        "rows": full_rows,
     }
 
     os.makedirs("docs/data", exist_ok=True)
@@ -848,7 +881,7 @@ def main():
         json.dump(payload, f, separators=(",", ":"))
 
     write_run_stamp()
-    print(f"[DONE] wrote docs/data/full.json with {len(res)} tickers.")
+    print(f"[DONE] wrote docs/data/full.json with {len(full_rows)} tickers. Wrote per-ticker files to {TICKER_DIR}.")
 
 if __name__ == "__main__":
     main()
