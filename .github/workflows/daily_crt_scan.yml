@@ -3,10 +3,15 @@ name: Daily CRT Scan
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 * * * *"   # hourly; script gates to 5:00–5:19pm America/New_York
+    # 5:00pm America/New_York (EST) = 22:00 UTC
+    - cron: "0 22 * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: daily-crt-scan
+  cancel-in-progress: false
 
 jobs:
   scan:
@@ -19,6 +24,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements.txt
 
       - name: Install deps
         run: |
@@ -27,6 +34,7 @@ jobs:
 
       - name: Run scan
         env:
+          # your daily_scan.py can keep using this if you want manual runs to override any gating
           FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           mkdir -p docs/data
