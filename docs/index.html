@@ -2,78 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GreenDot Rebound</title>
-  <meta name="theme-color" content="#0b3d24" />
-  <link rel="icon" href="assets/favicon.svg" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rebound Ledger</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="wrap header">
+  <header class="masthead">
     <div class="brand">
-      <img class="logo" src="assets/logo.svg" alt="logo" />
+      <div class="logo" aria-hidden="true"></div>
       <div class="brand-text">
-        <div class="title">GreenDot Rebound</div>
-        <div class="subtitle" id="subtitle">Precomputed daily at ~5pm ET</div>
+        <div class="kicker">DAILY MARKET NOTE</div>
+        <h1>Rebound Ledger</h1>
+        <div class="subhead">A once‑daily scan for stocks that look unusually “washed‑out” compared with their own history.</div>
+      </div>
+      <div class="meta">
+        <div class="meta-row"><span class="meta-label">Updated</span> <span id="asOf">—</span></div>
+        <div class="meta-row"><span class="meta-label">Universe</span> Russell 1000 (IWB holdings) + benchmarks</div>
+      </div>
+    </div>
+    <div class="rule"></div>
+
+    <section class="explain">
+      <div class="explain-grid">
+        <div>
+          <div class="section-title">What this does</div>
+          <p>
+            For each stock, the model measures how far the price has fallen, where it sits inside its 1‑year range,
+            and whether the move looks stock‑specific (not just “the market”). It then finds the <span class="mono">K</span> most similar
+            historical days for <em>that same stock</em> and checks what happened next.
+          </p>
+        </div>
+        <div>
+          <div class="section-title">How it works</div>
+          <ol>
+            <li><strong>Measure today.</strong> Drawdown, range position, volatility/volume stress, and market‑adjusted weakness.</li>
+            <li><strong>Find similar past days.</strong> Uses a feature‑distance match, balanced across market regimes.</li>
+            <li><strong>Summarize outcomes.</strong> 1Y / 3Y / 5Y forward returns from those similar days.</li>
+            <li><strong>Score + rank.</strong> Higher score means rebounds were historically stronger after similar setups.</li>
+          </ol>
+        </div>
+        <div>
+          <div class="section-title">How to read the numbers</div>
+          <ul>
+            <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
+            <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
+            <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad-but-plausible case).</li>
+            <li><span class="mono">N</span> = count of similar past days used in the summary.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="rule"></div>
+
+    <div class="controls">
+      <div class="search">
+        <label for="q" class="visually-hidden">Search ticker</label>
+        <input id="q" class="search-input" type="text" placeholder="Search ticker (e.g., AAPL)" autocomplete="off" />
+        <button id="go" class="btn">Find</button>
+      </div>
+      <div class="sort">
+        <span class="sort-label">Sort</span>
+        <button class="btn-lite" data-sort="default">Model rank</button>
+        <button class="btn-lite" data-sort="score">Score</button>
+        <button class="btn-lite" data-sort="confidence">Confidence</button>
+        <button class="btn-lite" data-sort="stability">Stability</button>
       </div>
     </div>
 
-    <div class="controls">
-      <input id="search" class="search" placeholder="Search ticker (press Enter)" spellcheck="false" />
-    </div>
+    <div class="rule"></div>
   </header>
 
   <main class="wrap">
-    <section id="status" class="status"></section>
-
-    <section class="section">
-      <div class="h2">Top 10 today</div>
-      <div id="top10" class="top"></div>
+    <section>
+      <div class="section-title">Top 10 today</div>
+      <div id="top10" class="cards"></div>
     </section>
 
-    <section class="section" id="spotlight_wrap">
-      <div class="h2" id="spotlight_hdr"></div>
-      <div id="spotlight" class="top"></div>
-    </section>
-
-    <section class="section">
-      <div class="h2">All tickers</div>
+    <section class="spacer">
+      <div class="section-title">All tickers</div>
       <div class="table-wrap">
-        <table class="table">
+        <table class="tbl" id="tbl">
           <thead>
             <tr>
-              <th data-k="Ticker">Ticker</th>
-              <th data-k="Verdict">Verdict</th>
-              <th data-k="ReboundScore">Score</th>
-              <th data-k="Confidence">Confidence</th>
-              <th data-k="Stability">Stability</th>
-              <th data-k="Risk">Risk</th>
-              <th data-k="WashoutToday">Washout</th>
+              <th>Ticker</th>
+              <th>Verdict</th>
+              <th class="num">Score</th>
+              <th class="num">Conf</th>
+              <th class="num">Stab</th>
+              <th>Risk</th>
+              <th class="num">1Y typ</th>
+              <th class="num">3Y typ</th>
+              <th class="num">5Y typ</th>
             </tr>
           </thead>
-          <tbody id="tbody"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+      </div>
+      <div class="footnote">
+        The scan is informational only. It summarizes how this stock behaved after similar past setups; it does not predict the future.
       </div>
     </section>
   </main>
 
-  <section class="wrap section defs">
-    <div class="h2">Plain-English definitions</div>
-    <div class="defs-grid">
-      <div><b>Rebound Score (0–100)</b><div class="muted">Higher = better historical rebounds after similar past days for the <i>same stock</i>.</div></div>
-      <div><b>Chance of profit</b><div class="muted">Percent of similar past days where price was higher after the horizon.</div></div>
-      <div><b>Typical</b><div class="muted">Median return after the horizon (the middle outcome).</div></div>
-      <div><b>Bad case (1 in 10)</b><div class="muted">10th percentile return (1 out of 10 similar cases did worse).</div></div>
-      <div><b>Similar past days</b><div class="muted">Number of historical dates used that most closely matched today’s setup.</div></div>
+  <footer class="footer">
+    <div class="rule"></div>
+    <div class="footer-inner">
+      <span>Rebound Ledger • updated once daily after 5pm New York time</span>
+      <span class="mono">v1</span>
     </div>
-  </section>
-
-  <footer class="wrap footer">
-    <div id="footnote"></div>
   </footer>
 
   <script src="app.js"></script>

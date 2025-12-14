@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-# ============================================================
-# CRT REBOUND SCANNER — Static Precompute (GitHub Pages)
-# Option A: precompute daily universe + embed chart series for all
-# Output: docs/data/full.json
-# Runs once/day after ~5PM New York time (when RUN_MODE=scheduled)
-# ============================================================
+# Rebound Ledger — static daily scan generator (Option A: precompute and publish)
+# Writes:
+#   - docs/data/full.json (ranking + top10 embedded details)
+#   - docs/data/tickers/{TICKER}.json (details for every scored ticker)
+#
+# Runs once per day after ~5pm America/New_York (the workflow is hourly; the script gates itself).
 
 import os, math, json, warnings
 warnings.filterwarnings("ignore")
 
-from io import StringIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -17,44 +16,50 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 import requests
+from io import StringIO
 
 # =========================
 # CONFIG
 # =========================
 INTERVAL = "1d"
 PERIOD   = "max"
-BENCH = "SPY"
+BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
-ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
+ALWAYS_INCLUDE = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA"]
 
-CHUNK_SIZE = 80
-MAX_TICKERS = None          # keep None to run full holdings universe
+CHUNK_SIZE   = 80
+MAX_TICKERS  = None      # set to 200 for a quick smoke test
+TOP10_EMBED  = 10
 PLOT_LAST_DAYS = 365 * 6
 
-# Lookbacks (days)
+# lookbacks
 LB_LT = 252
 LB_ST = 63
 BETA_LB = 126
 ATR_N = 14
 
+# Bottom confirmation (soft)
 DD_THR  = 0.25
 POS_THR = 0.20
 GATE_DD_SCALE  = 0.12
 GATE_POS_SCALE = 0.10
 
+# eligibility
 MIN_MED_DVOL_USD = 5_000_000
 MAX_MISSING_FRAC = 0.10
 MIN_HISTORY_BARS = LB_LT + BETA_LB + LB_ST + 220
 
+# analogs
 ANALOG_K = 250
 ANALOG_MIN = 80
 ANALOG_MIN_SEP_DAYS = 10
 
+# stability
 STAB_K_SET = [150, 250, 350]
 STAB_SHIFT_STEPS = [0, -5, -10, -15]
 STAB_STD_SCALE_POINTS = 12.0
@@ -72,41 +77,35 @@ VERDICT = dict(
     OK_STAB=60.0,
 )
 
-NY = ZoneInfo("America/New_York")
+OUT_DIR = os.path.join("docs","data")
+TICKER_DIR = os.path.join(OUT_DIR,"tickers")
 
 # =========================
-# Time gate
+# Time gate (after 5pm NY)
 # =========================
-def should_run_today():
-    run_mode = os.getenv("RUN_MODE", "scheduled").lower().strip()
-    if run_mode == "manual":
+def should_run_now():
+    if os.getenv("FORCE_RUN","").strip() == "1":
         return True
-
-    now_ny = datetime.now(tz=NY)
-    if now_ny.hour < 17:
+    tz = ZoneInfo("America/New_York")
+    now = datetime.now(tz)
+    if now.hour < 17:
         return False
-
-    stamp_path = "docs/data/last_run.json"
+    stamp_path = os.path.join(OUT_DIR, "last_run.txt")
+    today = now.strftime("%Y-%m-%d")
     if os.path.exists(stamp_path):
-        try:
-            j = json.load(open(stamp_path, "r"))
-            if j.get("date_ny") == now_ny.strftime("%Y-%m-%d"):
-                return False
-        except Exception:
-            pass
+        prev = open(stamp_path, "r").read().strip()
+        if prev == today:
+            return False
     return True
 
-def write_run_stamp():
-    now_ny = datetime.now(tz=NY)
-    os.makedirs("docs/data", exist_ok=True)
-    json.dump(
-        {"date_ny": now_ny.strftime("%Y-%m-%d"), "asof": now_ny.strftime("%Y-%m-%d %H:%M")},
-        open("docs/data/last_run.json", "w"),
-        indent=2
-    )
+def mark_ran_today():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    tz = ZoneInfo("America/New_York")
+    today = datetime.now(tz).strftime("%Y-%m-%d")
+    open(os.path.join(OUT_DIR, "last_run.txt"), "w").write(today)
 
 # =========================
-# Helpers
+# Math helpers
 # =========================
 def sigmoid(x: float) -> float:
     x = float(np.clip(x, -20, 20))
@@ -126,38 +125,39 @@ def safe_float(x):
     except Exception:
         return np.nan
 
-def fmt_rank(p01: float) -> str:
-    if not np.isfinite(p01):
-        return "nan"
-    p = p01 * 100.0
-    return f"{p:.1f}%" if p < 1.0 else f"{p:.0f}%"
-
 def percentile_rank(series: pd.Series, value: float) -> float:
     s = series.dropna().values.astype(float)
     if len(s) < 30 or not np.isfinite(value):
         return np.nan
     return float(np.mean(s <= value))
 
+def fmt_rank(p01: float) -> str:
+    if not np.isfinite(p01):
+        return "—"
+    p = p01 * 100.0
+    return f"{p:.1f}%" if p < 1.0 else f"{p:.0f}%"
+
+# =========================
+# Verdict labeling
+# =========================
 def verdict_line(score: float, confidence: float, stability: float, fragile: bool) -> str:
     s = safe_float(score); c = safe_float(confidence); st = safe_float(stability)
     if not np.isfinite(s) or not np.isfinite(c) or not np.isfinite(st):
         return "Not enough data"
-
     strong = (s >= VERDICT["STRONG_SCORE"])
     ok     = (s >= VERDICT["OK_SCORE"])
     high_c = (c >= VERDICT["HIGH_CONF"])
     ok_c   = (c >= VERDICT["OK_CONF"])
     high_s = (st >= VERDICT["HIGH_STAB"])
     ok_s   = (st >= VERDICT["OK_STAB"])
-
     if strong and high_c and high_s and (not fragile):
         return "Strong + stable"
     if strong and (ok_c or high_c) and (not high_s or fragile):
-        return "High-score but unstable"
+        return "High-score, unstable"
     if ok and (not ok_c):
-        return "Promising but low confidence"
+        return "Promising, low confidence"
     if ok and ok_c and ok_s and fragile:
-        return "Mixed (watch stability)"
+        return "Mixed, watch stability"
     if ok and ok_c:
         return "Mixed"
     return "Not compelling today"
@@ -175,8 +175,8 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
     lines = raw_text.splitlines()
 
     header_idx = None
-    for i, line in enumerate(lines[:1200]):
-        if line.strip().replace('"', '').startswith("Ticker,"):
+    for i, line in enumerate(lines[:900]):
+        if line.strip().startswith("Ticker,") or line.strip().startswith('"Ticker",'):
             header_idx = i
             break
     if header_idx is None:
@@ -186,7 +186,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
                 header_idx = i
                 break
     if header_idx is None:
-        raise RuntimeError("Could not locate 'Ticker' header (CSV layout likely changed).")
+        raise RuntimeError("Could not locate 'Ticker' header in holdings CSV (layout changed).")
 
     trimmed = "\n".join(lines[header_idx:])
     df = pd.read_csv(StringIO(trimmed))
@@ -210,18 +210,16 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("CASH", case=False, na=False)) &
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
-
-    if len(keep) < 10:
+    if len(keep) < 50:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
 # =========================
-# yfinance download
+# yfinance MultiIndex-safe extraction
 # =========================
 def _extract_field(raw: pd.DataFrame, field: str) -> pd.DataFrame:
     if raw is None or len(raw) == 0:
         return pd.DataFrame()
-
     if isinstance(raw.columns, pd.MultiIndex):
         for lvl in (1, -1, 0):
             try:
@@ -240,7 +238,6 @@ def _extract_field(raw: pd.DataFrame, field: str) -> pd.DataFrame:
         out = tmp[keep].copy()
         out.columns = [c.split("|")[0] for c in out.columns]
         return out
-
     if field in raw.columns:
         s = raw[field].copy()
         if isinstance(s, pd.Series):
@@ -250,7 +247,6 @@ def _extract_field(raw: pd.DataFrame, field: str) -> pd.DataFrame:
 
 def download_ohlcv_period(tickers, period="max", interval="1d", chunk_size=80):
     tickers = sorted(set([t for t in tickers if isinstance(t, str) and t.strip()]))
-
     O_list, H_list, L_list, C_list, V_list, A_list = [], [], [], [], [], []
     for i in range(0, len(tickers), chunk_size):
         batch = tickers[i:i + chunk_size]
@@ -279,14 +275,8 @@ def download_ohlcv_period(tickers, period="max", interval="1d", chunk_size=80):
         x.index = pd.to_datetime(x.index, utc=True)
         return x
 
-    return {
-        "Open": _cat(O_list),
-        "High": _cat(H_list),
-        "Low":  _cat(L_list),
-        "Close": _cat(C_list),
-        "Volume": _cat(V_list),
-        "AdjClose": _cat(A_list),
-    }
+    return {"Open": _cat(O_list), "High": _cat(H_list), "Low": _cat(L_list),
+            "Close": _cat(C_list), "Volume": _cat(V_list), "AdjClose": _cat(A_list)}
 
 # =========================
 # Feature engineering
@@ -295,7 +285,6 @@ def compute_core_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     d = ohlcv.copy()
     for c in ["open","high","low","close","volume"]:
         d[c] = pd.to_numeric(d[c], errors="coerce")
-
     close = d["close"]; high = d["high"]; low = d["low"]; vol = d["volume"]; opn = d["open"]
 
     hi_lt = high.rolling(LB_LT).max()
@@ -336,28 +325,23 @@ def compute_bottom_confirmation(dd_lt: pd.Series, pos_lt: pd.Series) -> pd.Serie
 def compute_idiosyncratic_features(stock_px: pd.Series, spy_px: pd.Series) -> pd.DataFrame:
     r_s = np.log(stock_px).diff()
     r_m = np.log(spy_px).diff()
-
     cov = r_s.rolling(BETA_LB).cov(r_m)
     var = r_m.rolling(BETA_LB).var()
     beta = (cov / var).replace([np.inf, -np.inf], np.nan)
-
     resid = (r_s - beta * r_m).replace([np.inf, -np.inf], np.nan)
     resid_price = np.exp(resid.fillna(0).cumsum())
     if resid_price.notna().any() and resid_price.iloc[0] != 0:
         resid_price = resid_price / resid_price.iloc[0]
-
     hi_lt = resid_price.rolling(LB_LT).max()
     lo_lt = resid_price.rolling(LB_LT).min()
     rng_lt = (hi_lt - lo_lt).replace(0, np.nan)
     idio_pos_lt = ((resid_price - lo_lt) / rng_lt).replace([np.inf, -np.inf], np.nan)
     idio_dd_lt = (1.0 - resid_price / hi_lt).replace([np.inf, -np.inf], np.nan)
-
     hi_st = resid_price.rolling(LB_ST).max()
+    idio_dd_st = (1.0 - resid_price / hi_st).replace([np.inf, -np.inf], np.nan)
     lo_st = resid_price.rolling(LB_ST).min()
     rng_st = (hi_st - lo_st).replace(0, np.nan)
     idio_pos_st = ((resid_price - lo_st) / rng_st).replace([np.inf, -np.inf], np.nan)
-    idio_dd_st = (1.0 - resid_price / hi_st).replace([np.inf, -np.inf], np.nan)
-
     out = pd.DataFrame(index=stock_px.index)
     out["beta"] = beta
     out["idio_dd_lt"] = idio_dd_lt
@@ -370,15 +354,12 @@ def compute_market_regime(spy_px: pd.Series, spy_high: pd.Series, spy_low: pd.Se
     trend = (spy_px / spy_px.shift(LB_ST) - 1.0).replace([np.inf, -np.inf], np.nan)
     r = np.log(spy_px).diff()
     vol = r.rolling(LB_ST).std().replace([np.inf, -np.inf], np.nan)
-
     hi = spy_high.rolling(LB_LT).max()
     dd = (1.0 - spy_px / hi).replace([np.inf, -np.inf], np.nan)
-
     prev = spy_px.shift(1)
     tr = pd.concat([(spy_high-spy_low).abs(), (spy_high-prev).abs(), (spy_low-prev).abs()], axis=1).max(axis=1)
     atr = tr.rolling(ATR_N).mean()
     atr_pct = (atr / spy_px).replace([np.inf, -np.inf], np.nan)
-
     out = pd.DataFrame(index=spy_px.index)
     out["mkt_trend"] = trend
     out["mkt_vol"] = vol
@@ -414,14 +395,10 @@ def compute_washout_meter(feat: pd.DataFrame) -> pd.Series:
     )
     cap = ((cap + 1) / 2).clip(0, 1)
     confirm = feat["bottom_confirm"].clip(0, 1).fillna(0)
-
     wash = (0.55 * struct + 0.30 * idio + 0.15 * cap).clip(0, 1)
     wash = (wash * confirm).clip(0, 1)
     return 100.0 * wash
 
-# =========================
-# Analog engine
-# =========================
 def build_feature_matrix(feat: pd.DataFrame, feature_cols: list, zwin: int) -> pd.DataFrame:
     X = pd.DataFrame(index=feat.index)
     for c in feature_cols:
@@ -432,13 +409,11 @@ def summarize(vals: np.ndarray) -> dict:
     if vals is None or len(vals) == 0:
         return {"n": 0}
     vals = vals.astype(float)
-    return {
-        "n": int(len(vals)),
-        "win": float(np.mean(vals > 0)),
-        "median": float(np.median(vals)),
-        "p10": float(np.quantile(vals, 0.10)),
-        "p90": float(np.quantile(vals, 0.90)),
-    }
+    return {"n": int(len(vals)),
+            "win": float(np.mean(vals > 0)),
+            "median": float(np.median(vals)),
+            "p10": float(np.quantile(vals, 0.10)),
+            "p90": float(np.quantile(vals, 0.90))}
 
 def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     n = stats.get("n", 0)
@@ -457,12 +432,10 @@ def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Se
     cand = X.index[(X.notna().all(axis=1)) & (y.notna()) & (X.index < now_idx)]
     if len(cand) == 0:
         return []
-
     x0 = X.loc[now_idx].values.astype(float)
     Xc = X.loc[cand].values.astype(float)
     d = np.sqrt(((Xc - x0) ** 2).sum(axis=1))
     order = np.argsort(d)
-
     cand_sorted = cand[order]
     reg_sorted  = regimes.reindex(cand_sorted).fillna("UNK").values
 
@@ -478,7 +451,6 @@ def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Se
 
     chosen = []
     last_t = None
-
     def try_add(t):
         nonlocal last_t
         if last_t is None or abs((t - last_t).days) >= min_sep_days:
@@ -490,10 +462,8 @@ def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Se
     while active and len(chosen) < k:
         active = False
         for r in regs:
-            if len(chosen) >= k:
-                break
-            if quota.get(r, 0) <= 0 or not buckets[r]:
-                continue
+            if len(chosen) >= k: break
+            if quota.get(r, 0) <= 0 or not buckets[r]: continue
             t = buckets[r].pop(0)
             if try_add(t):
                 quota[r] -= 1
@@ -506,10 +476,8 @@ def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Se
         rank = {t: i for i, t in enumerate(cand_sorted)}
         remaining = sorted(set(remaining), key=lambda t: rank.get(t, 10**9))
         for t in remaining:
-            if len(chosen) >= k:
-                break
+            if len(chosen) >= k: break
             try_add(t)
-
     return chosen[:k]
 
 def regime_entropy_score(regimes_for_analogs: list) -> float:
@@ -522,14 +490,10 @@ def regime_entropy_score(regimes_for_analogs: list) -> float:
     ent_max = np.log(len(counts) + 1e-12)
     return float(np.clip(ent / ent_max if ent_max > 0 else 0.0, 0, 1))
 
-# =========================
-# Stability / Fragility
-# =========================
 def stability_metrics(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, now_idx: pd.Timestamp):
     ok_idx = X.index[X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()]
     if len(ok_idx) < 30:
         return 0.0, True, []
-
     try:
         pos = ok_idx.get_loc(now_idx)
     except Exception:
@@ -539,31 +503,22 @@ def stability_metrics(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, n
     samples = []
     for shift in STAB_SHIFT_STEPS:
         p2 = pos + shift
-        if p2 < 0 or p2 >= len(ok_idx):
-            continue
+        if p2 < 0 or p2 >= len(ok_idx): continue
         idx2 = ok_idx[p2]
         confirm2 = safe_float(feat.loc[idx2, "bottom_confirm"])
-        if not np.isfinite(confirm2):
-            continue
-
+        if not np.isfinite(confirm2): continue
         for k in STAB_K_SET:
-            units = []
-            weights = []
+            units, weights = [], []
             for h, w in HORIZON_WEIGHTS.items():
                 y = feat.get(f"fwd_{h}", None)
-                if y is None:
-                    continue
+                if y is None: continue
                 analog_idx = select_analogs_regime_balanced(X, y, regimes, idx2, k=k, min_sep_days=ANALOG_MIN_SEP_DAYS)
                 vals = y.loc[analog_idx].dropna().values.astype(float)
                 s = summarize(vals)
-                if s["n"] < ANALOG_MIN:
-                    continue
+                if s["n"] < ANALOG_MIN: continue
                 units.append(horizon_unit(confirm2, s, n_target=k))
                 weights.append(w)
-
-            if len(units) == 0:
-                continue
-
+            if not units: continue
             wsum = float(np.sum(weights))
             comp = float(np.dot(units, weights) / wsum) if wsum > 0 else float(np.mean(units))
             samples.append(100.0 * comp)
@@ -575,18 +530,13 @@ def stability_metrics(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, n
     mean = float(np.mean(samples))
     std  = float(np.std(samples))
     mn   = float(np.min(samples))
-
     disp = np.clip(std / STAB_STD_SCALE_POINTS, 0, 1)
     worst_pen = 0.0 if mean <= 1e-9 else np.clip((STAB_MIN_MEAN_RATIO - (mn / mean)) / STAB_MIN_MEAN_RATIO, 0, 1)
     stab = 100.0 * (1.0 - 0.75*disp - 0.25*worst_pen)
     stab = float(np.clip(stab, 0, 100))
-
     fragile = (stab < 60) or (std > STAB_STD_SCALE_POINTS) or (mean > 1e-9 and (mn / mean) < STAB_MIN_MEAN_RATIO)
     return stab, fragile, samples.tolist()
 
-# =========================
-# Confidence + Risk
-# =========================
 def compute_confidence(n_eff: int, k_target: int, market_variety: float, stability: float) -> float:
     conf_n = np.clip(n_eff / max(1, k_target), 0, 1)
     conf_m = np.clip(market_variety, 0, 1)
@@ -612,14 +562,10 @@ def risk_label(h_summaries: dict, beta: float):
         return "Choppy / volatile"
     return "Moderate"
 
-# =========================
-# Explain
-# =========================
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
-        return ["Not enough history to explain clearly (need ~1 year+ of daily data)."]
-
+        return ["Not enough history yet to explain this clearly."]
     dd = safe_float(hist["dd_lt"].iloc[-1])
     pos = safe_float(hist["pos_lt"].iloc[-1])
     idio_dd = safe_float(hist["idio_dd_lt"].iloc[-1])
@@ -634,51 +580,55 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
 
     lines = []
     if np.isfinite(dd) and np.isfinite(dd_p):
-        lines.append((dd_p, f"Price is {dd:.0%} below its 1-year high (more extreme than {fmt_rank(dd_p)} of past days)."))
+        lines.append((dd_p, f"<strong>Drawdown</strong>: {dd:.0%} below its 1‑year high (more extreme than {fmt_rank(dd_p)} of past days)."))
     if np.isfinite(pos) and np.isfinite(pos_p):
-        lines.append((1.0 - pos_p, f"Price sits in the bottom {pos*100:.0f}% of its 1-year range (only about {fmt_rank(pos_p)} of past days were this low-in-range or lower)."))
+        lines.append((1.0-pos_p, f"<strong>Range</strong>: in the bottom {pos*100:.0f}% of its 1‑year range (only {fmt_rank(pos_p)} of days were this low‑in‑range or lower)."))
     if np.isfinite(idio_dd) and np.isfinite(id_p):
-        lines.append((id_p, f"After removing market moves: stock-specific drawdown ~{idio_dd:.0%} (more extreme than {fmt_rank(id_p)} of past days)."))
+        lines.append((id_p, f"<strong>Stock‑specific</strong>: after removing market moves, drawdown is ~{idio_dd:.0%} (more extreme than {fmt_rank(id_p)} of days)."))
     if np.isfinite(volz) and np.isfinite(vz_p) and volz > 1.0:
-        lines.append((vz_p, f"Volume is unusually high (higher than {fmt_rank(vz_p)} of past days)."))
+        lines.append((vz_p, f"<strong>Volume</strong>: unusually high (higher than {fmt_rank(vz_p)} of past days)."))
     if np.isfinite(atrp) and np.isfinite(at_p) and at_p > 0.85:
-        lines.append((at_p, f"Daily price swings are unusually large (bigger than {fmt_rank(at_p)} of past days)."))
-
+        lines.append((at_p, f"<strong>Volatility</strong>: daily swings are unusually large (bigger than {fmt_rank(at_p)} of days)."))
     lines = sorted(lines, key=lambda x: x[0], reverse=True)
-    out = [txt for _, txt in lines[:3]]
-    return out if out else ["Nothing is extremely washed-out today; this looks mild rather than dramatic."]
+    out = [t for _, t in lines[:3]]
+    if not out:
+        out = ["Nothing looks extremely washed‑out today; this is a mild setup."]
+    return out
 
 # =========================
-# MAIN
+# Main
 # =========================
 def main():
-    if not should_run_today():
-        print("Skip: not in run window or already ran today.")
+    if not should_run_now():
+        print("Not in run window (after 5pm ET) or already ran today. Exiting.")
         return
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(TICKER_DIR, exist_ok=True)
 
     tickers = fetch_ishares_holdings_tickers(ISHARES_HOLDINGS_URL)
     if MAX_TICKERS is not None:
         tickers = tickers[:int(MAX_TICKERS)]
-    universe = sorted(set(tickers + ALWAYS_PLOT + [BENCH]))
+    universe = sorted(set(tickers + ALWAYS_INCLUDE + [BENCH]))
 
-    print(f"[UNIVERSE] holdings={len(tickers)} | universe={len(universe)}")
-    print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers ...")
+    print(f"Universe: holdings={len(tickers)} | universe={len(universe)}")
+    print(f"Downloading yfinance OHLCV ({INTERVAL}, {PERIOD}) ...")
 
     data = download_ohlcv_period(universe, period=PERIOD, interval=INTERVAL, chunk_size=CHUNK_SIZE)
     O, H, L, C, V, A = data["Open"], data["High"], data["Low"], data["Close"], data["Volume"], data["AdjClose"]
     if C.empty or BENCH not in C.columns:
         raise RuntimeError("Missing price data or SPY missing.")
-
     PX = A if (not A.empty and BENCH in A.columns) else C
 
     spy_px = PX[BENCH].dropna()
     spy_h = H[BENCH].reindex(spy_px.index).dropna()
     spy_l = L[BENCH].reindex(spy_px.index).dropna()
     spy_px = spy_px.reindex(spy_h.index).reindex(spy_l.index).dropna()
+
     mkt = compute_market_regime(spy_px, spy_h, spy_l)
 
     usable = [t for t in universe if t in O.columns and t in H.columns and t in L.columns and t in V.columns and t in PX.columns]
-    print(f"[DATA] usable tickers={len(usable)}/{len(universe)}")
+    print(f"Usable tickers: {len(usable)}/{len(universe)}")
 
     feature_cols = [
         "dd_lt","pos_lt","dd_st","pos_st","atr_pct","volu_z","gap","trend_st",
@@ -687,7 +637,9 @@ def main():
     ]
     zwin = max(63, LB_ST)
 
-    results = []
+    scored = []
+    top_details = {}
+
     for i, t in enumerate(usable, start=1):
         df = pd.DataFrame({
             "open": O[t],
@@ -716,7 +668,6 @@ def main():
         idx = feat.index.intersection(spy_px.index).intersection(mkt.index)
         if len(idx) < MIN_HISTORY_BARS:
             continue
-
         feat = feat.reindex(idx)
         spy_aligned = spy_px.reindex(idx)
 
@@ -729,12 +680,10 @@ def main():
         feat["washout_meter"] = compute_washout_meter(feat)
 
         X = build_feature_matrix(feat, feature_cols, zwin=zwin)
-
         ok_now = X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()
         if ok_now.sum() == 0:
             continue
         now_idx = ok_now[ok_now].index[-1]
-
         regimes = feat.apply(make_regime_bucket, axis=1)
 
         confirm_today = safe_float(feat.loc[now_idx, "bottom_confirm"])
@@ -764,8 +713,8 @@ def main():
             continue
 
         weights, units = [], []
-        for hh, unit in h_units.items():
-            weights.append(HORIZON_WEIGHTS.get(hh, 0.0))
+        for h, unit in h_units.items():
+            weights.append(HORIZON_WEIGHTS.get(h, 0.0))
             units.append(unit)
         wsum = float(np.sum(weights))
         comp_unit = float(np.dot(units, weights) / wsum) if wsum > 0 else float(np.mean(units))
@@ -788,67 +737,78 @@ def main():
         explain_lines = build_explain(feat, now_idx)
 
         cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
-        d = feat[feat.index >= cutoff].copy()
+        d = feat.loc[feat.index >= cutoff].copy()
         if d.empty:
             d = feat.copy()
+        series = d[["px","washout_meter"]].dropna()
+        if len(series) > 1800:
+            step = int(np.ceil(len(series)/1800))
+            series = series.iloc[::step]
 
-        px = pd.to_numeric(d["px"], errors="coerce").astype(float)
-        wm = pd.to_numeric(d["washout_meter"], errors="coerce").clip(0,100).astype(float)
-
-        ok = px.notna()
-        px = px[ok]
-        wm = wm.reindex(px.index).fillna(0.0)
-
-        dates = [ts.tz_convert("UTC").strftime("%Y%m%d") for ts in px.index]
-
-        out_row = {
-            "Ticker": t,
-            "Verdict": verdict,
-            "ReboundScore": float(rebound_score),
-            "Confidence": float(confidence),
-            "Stability": float(stab_score),
-            "Fragile": bool(fragile),
-            "Risk": risk,
-            "WashoutToday": float(wash_today) if np.isfinite(wash_today) else None,
-            "SimilarCases": int(np.median(h_n)) if h_n else 0,
-            "AsOf": now_idx.tz_convert("UTC").strftime("%Y-%m-%d"),
-            "Explain": explain_lines,
-            "Outcomes": {k: h_summaries.get(k, {"n":0}) for k in ["1Y","3Y","5Y"]},
-            "Series": {
-                "d": dates,
-                "px": [float(x) if np.isfinite(x) else None for x in px.values.tolist()],
-                "wm": [float(x) if np.isfinite(x) else 0.0 for x in wm.values.tolist()],
+        detail = {
+            "ticker": t,
+            "as_of": str(now_idx.date()),
+            "verdict": verdict,
+            "score": float(rebound_score),
+            "confidence": float(confidence),
+            "stability": float(stab_score),
+            "risk": risk,
+            "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
+            "outcomes": {
+                "1Y": h_summaries.get("1Y", {"n":0}),
+                "3Y": h_summaries.get("3Y", {"n":0}),
+                "5Y": h_summaries.get("5Y", {"n":0}),
             },
+            "explain": explain_lines,
+            "series": {
+                "dates": [str(x.date()) for x in series.index],
+                "prices": [float(x) for x in series["px"].astype(float).values],
+                "wash": [float(x) for x in series["washout_meter"].astype(float).fillna(0).clip(0,100).values],
+            }
         }
-        results.append(out_row)
+
+        typical = {
+            "1Y": h_summaries.get("1Y", {}).get("median", None),
+            "3Y": h_summaries.get("3Y", {}).get("median", None),
+            "5Y": h_summaries.get("5Y", {}).get("median", None),
+        }
+        row = {
+            "ticker": t,
+            "verdict": verdict,
+            "score": float(rebound_score),
+            "confidence": float(confidence),
+            "stability": float(stab_score),
+            "risk": risk,
+            "typical": typical
+        }
+        scored.append((row, detail))
 
         if i % 100 == 0:
-            print(f"[PROGRESS] processed {i}/{len(usable)} | scored={len(results)}")
+            print(f"Processed {i}/{len(usable)} | scored={len(scored)}")
 
-    if not results:
+    if not scored:
         raise RuntimeError("No tickers scored. Consider lowering MIN_MED_DVOL_USD or ANALOG_MIN.")
 
-    res = sorted(results, key=lambda r: (r.get("ReboundScore", -1e9), r.get("Confidence", -1e9), r.get("Stability", -1e9)), reverse=True)
-    now_ny = datetime.now(tz=NY)
+    scored.sort(key=lambda x: (x[0]["score"], x[0]["confidence"], x[0]["stability"]), reverse=True)
 
-    payload = {
-        "meta": {
-            "asof": now_ny.strftime("%Y-%m-%d %H:%M"),
-            "note": "Universe is iShares Russell 1000 holdings (IWB) plus a small always-list. Search only matches this universe.",
-            "interval": INTERVAL,
-            "period": PERIOD,
-            "bench": BENCH,
-            "count_scored": len(res),
-        },
-        "rows": res
+    for row, detail in scored:
+        path = os.path.join(TICKER_DIR, f"{row['ticker']}.json")
+        with open(path, "w") as f:
+            json.dump(detail, f, separators=(",", ":"), ensure_ascii=False)
+
+    for row, detail in scored[:TOP10_EMBED]:
+        top_details[row["ticker"]] = detail
+
+    full = {
+        "as_of": str(datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M %Z")),
+        "items": [r for r,_ in scored],
+        "details": top_details,
     }
+    with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
+        json.dump(full, f, separators=(",", ":"), ensure_ascii=False)
 
-    os.makedirs("docs/data", exist_ok=True)
-    with open("docs/data/full.json", "w") as f:
-        json.dump(payload, f, separators=(",", ":"))
-
-    write_run_stamp()
-    print(f"[DONE] wrote docs/data/full.json with {len(res)} tickers.")
+    mark_ran_today()
+    print("Wrote docs/data/full.json and per-ticker detail files.")
 
 if __name__ == "__main__":
     main()
