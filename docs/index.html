@@ -87,6 +87,12 @@
             <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
             <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad‑but‑plausible case).</li>
             <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
+            <li><span class="mono">Final score (0–100)</span> = the single ranked score used across the site. It is the Edge Score amplified by today’s Washout Meter.</li>
+            <li><span class="mono">Washout Meter (0–100)</span> = how unusually “washed‑out” the stock looks for its own history, after adjusting for the market.</li>
+            <li><span class="mono">Edge Score (0–100)</span> = how strong rebounds were after the most similar historical setups for this same stock.</li>
+            <li><span class="mono">Confidence (0–100)</span> = higher when there are more comparable historical examples and the signal behaves consistently.</li>
+            <li><span class="mono">Stability (0–100)</span> = higher when the score does not swing wildly under small, reasonable tweaks (low stability = fragile).</li>
+
             <li>
               The <strong>Evidence A/B</strong> bullets inside each card compare “signal days” to that stock’s <em>typical</em>
               outcomes — that’s how you see whether the signal historically added edge for that specific ticker.
@@ -133,9 +139,7 @@
       </div>
       <div class="sort">
         <span class="sort-label">Sort</span>
-        <button class="btn-lite" data-sort="default">Model rank</button>
-        <button class="btn-lite" data-sort="final">Final</button>
-        <button class="btn-lite" data-sort="edge">Edge</button>
+        <button class="btn-lite" data-sort="final">Final score</button>
         <button class="btn-lite" data-sort="confidence">Confidence</button>
         <button class="btn-lite" data-sort="stability">Stability</button>
         <button class="btn-lite" data-sort="washout">Washout</button>
@@ -159,7 +163,7 @@
             <tr>
               <th>Ticker</th>
               <th>Verdict</th>
-              <th class="num">Final</th>
+              <th class="num">Final score</th>
               <th class="num">Wash</th>
               <th class="num">Edge</th>
               <th class="num">Conf</th>
