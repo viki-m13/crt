@@ -49,6 +49,11 @@ POS_THR = 0.20
 GATE_DD_SCALE  = 0.12
 GATE_POS_SCALE = 0.10
 
+# Soft gate: avoid crushing scores on moderately washed-out days
+# (0..1 bottom_confirm -> mapped through a sigmoid)
+CONF_GATE_CENTER = 0.18   # confirm at which gate is ~50%
+CONF_GATE_SCALE  = 0.05   # smaller = sharper gate
+
 # eligibility
 MIN_MED_DVOL_USD = 5_000_000
 MAX_MISSING_FRAC = 0.10
@@ -416,16 +421,29 @@ def summarize(vals: np.ndarray) -> dict:
             "p90": float(np.quantile(vals, 0.90))}
 
 def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
+    """Convert a horizon summary into a 0..1 unit score.
+
+    We apply a *soft sigmoid gate* to `confirm` (bottom_confirm) instead of a
+    linear multiplier. This keeps normal days low, but avoids crushing scores on
+    legitimately washed-out days that are not necessarily 25%+ off the 1Y high.
+    """
     n = stats.get("n", 0)
     if n <= 0:
         return 0.0
+
     win = stats["win"]; med = stats["median"]; p10 = stats["p10"]
+
     sample_conf = min(1.0, n / max(1, n_target))
+
     med_term = sigmoid(med / 0.25)
     tail_pen = sigmoid(max(0.0, -p10) / 0.25)
     raw = 0.62 * win + 0.38 * med_term - 0.35 * tail_pen
     raw = float(np.clip(raw, 0, 1))
-    return float(np.clip(confirm * sample_conf * raw, 0, 1))
+
+    c = float(np.clip(confirm, 0, 1))
+    gate = sigmoid((c - CONF_GATE_CENTER) / max(1e-9, CONF_GATE_SCALE))
+
+    return float(np.clip(gate * sample_conf * raw, 0, 1))
 
 def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Series,
                                   now_idx: pd.Timestamp, k: int, min_sep_days: int):
