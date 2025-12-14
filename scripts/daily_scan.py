@@ -26,8 +26,8 @@ PERIOD   = "max"
 BENCH = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
+    ""https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
@@ -211,7 +211,7 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
 
-    if len(keep) < 100:
+    if len(keep) < 10:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
