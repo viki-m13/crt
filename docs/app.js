@@ -1,4 +1,3 @@
-
 const DATA_URL = "./data/full.json";
 
 function fmtPct(x){
@@ -281,9 +280,10 @@ function setSortButtons(active){
       row.click();
       return;
     }
-    alert("Ticker not in today’s universe (Russell 1000 holdings + benchmarks).");
+    alert("Ticker not in today’s universe (Russell 1000 / IWB holdings).");
   }
   go.addEventListener("click", doSearch);
-  q.addEventListener("keydown", (e)=>{ if (e.key==="Enter") doSearch(); });
+  q.addEventListener("keydown", (e)=>{ if (e.key==="Enter\") doSearch(); });
 
 })();
+
