@@ -635,7 +635,7 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
 # =========================
 def main():
     if not should_run_now():
-        print("Not in run window (after 5pm ET) or already ran today. Exiting.")
+        print("Not in scheduled run window (5:00–5:19pm ET) or already ran today. Exiting.")
         return
 
     os.makedirs(OUT_DIR, exist_ok=True)
