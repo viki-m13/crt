@@ -42,8 +42,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A"]  
@@ -1024,7 +1024,9 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
 
     # Top-% washed-out (readable): "Top X%" of days by Washout Meter
     wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
-    ftop = final_top_pct(fs_evid, final_today)
+    # FinalScore "rank" = percentile of today's FinalScore vs this ticker's own historical FinalScore distribution.
+    # Use the same evidence series we computed for plotting/evidence (sparse-sampled then forward-filled).
+    ftop = final_top_pct(final_series_full, final_today)
 
     detail = {
         "ticker": t,
@@ -1156,7 +1158,9 @@ def main():
         return
 
     res = pd.DataFrame(rows)
-    res = res.sort_values(["final_score", "confidence", "stability"], ascending=False).reset_index(drop=True)
+    # Default ranking order (high -> low): FinalScore, then WashoutToday, then EdgeScore.
+    # (Confidence is still reported, but no longer used for sorting.)
+    res = res.sort_values(["final_score", "washout_today", "edge_score"], ascending=False).reset_index(drop=True)
 
     # Embed top10 details in full.json (fewer network calls)
     top10 = res.head(TOP10_EMBED)["ticker"].tolist()
