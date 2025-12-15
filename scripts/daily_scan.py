@@ -42,34 +42,9 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/" 
-    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
+    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"   
 )
-
-ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A",  
-
-    # Large-cap / widely-followed L1s & L2s
-    "BTC-USD", "ETH-USD", "SOL-USD","BNB-USD","XRP-USD","ADA-USD","AVAX-USD","DOT-USD","MATIC-USD","POL-USD",
-    "LINK-USD","ATOM-USD","NEAR-USD","ALGO-USD","XTZ-USD","EGLD-USD","HBAR-USD",
-
-    # DeFi / infra
-    "UNI-USD","AAVE-USD","MKR-USD","SNX-USD","CRV-USD","COMP-USD","SUSHI-USD",
-    "LDO-USD","RPL-USD","FXS-USD","GMX-USD",
-
-    # “Money / payments / exchange” style
-    "LTC-USD","BCH-USD","XLM-USD","TRX-USD","XMR-USD","ETC-USD","DASH-USD",
-
-    # Memes (liquid, noisy but common)
-    "DOGE-USD","SHIB-USD","PEPE-USD","BONK-USD","WIF-USD",
-
-    # Oracles / data / compute / AI-ish
-    "FET-USD","RNDR-USD","GRT-USD","INJ-USD","AR-USD","FIL-USD",
-
-    # L2 / scaling ecosystem odds-and-ends (only keep what exists in your data source)
-    "OP-USD","ARB-USD","IMX-USD","STX-USD",
-
-    # Gaming / metaverse legacy names (optional)
-    "SAND-USD","MANA-USD","AXS-USD"]
 
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
