@@ -313,10 +313,8 @@ function rowHtml(item){
   `;
 }
 
-async function loadJSON(url) {
-  const bust = "v=" + Date.now();
-  const sep = url.includes("?") ? "&" : "?";
-  const r = await fetch(url + sep + bust, { cache: "no-store" });
+async function loadJSON(url){
+  const r = await fetch(url, {cache: "no-cache"});
   if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
   return await r.json();
 }
