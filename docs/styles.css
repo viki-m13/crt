@@ -21,8 +21,21 @@ body{
   line-height:1.35;
 }
 
-.masthead{max-width:1120px;margin:0 auto;padding:26px 18px 0}
-.wrap{max-width:1120px;margin:0 auto;padding:14px 18px 44px}
+/* ------------------------------------------------------------
+   Container: ONE system everywhere (header/main/footer)
+------------------------------------------------------------ */
+.masthead{padding:0} /* no max-width here; .wrap handles it */
+
+.wrap{
+  max-width:1120px;
+  margin:0 auto;
+  padding:14px 18px 44px;
+}
+
+/* Keep your original header top spacing */
+.masthead-wrap{padding-top:26px}
+
+/* ------------------------------------------------------------ */
 
 .brand{
   display:grid;
@@ -151,6 +164,8 @@ h1{
   gap:16px;
   align-items:start;
 }
+
+/* Chart: cleaned (no duplicates) + reserved legend lane */
 .chart{
   width:100%;
   border-left:1px solid var(--rule2);
@@ -158,9 +173,7 @@ h1{
   position:relative;
   display:flex;
   flex-direction:column;
-
-  position: relative;
-  padding-bottom: 38px;
+  padding-bottom:52px; /* reserved lane for legend so it never blocks the line */
 }
 
 .canvas{
@@ -169,10 +182,11 @@ h1{
   display:block;
 }
 
+/* Legend: bottom-right and below the plot area */
 .chart-legend{
   position:absolute;
-  right:12px;
-  bottom:10px;
+  right:0;
+  bottom:6px;
   display:flex;
   align-items:center;
   justify-content:flex-end;
@@ -180,7 +194,14 @@ h1{
   font-size:12px;
   color:var(--muted);
   user-select:none;
+
+  padding:8px 10px;
+  border:1px solid var(--rule2);
+  border-radius:999px;
+  background:rgba(251,250,247,.92); /* matches --bg */
+  backdrop-filter: blur(6px);
 }
+
 .legend-bar{
   width:44px;
   height:10px;
@@ -228,7 +249,7 @@ h1{
 
 .footnote{color:var(--muted);font-size:13px;margin-top:10px}
 
-/* Collapsible “Stats nerds” */
+/* Collapsible sections */
 .details{border:1px solid var(--rule2);border-radius:14px;padding:10px 12px;background:rgba(0,0,0,.015)}
 .details-summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;list-style:none}
 .details-summary::-webkit-details-marker{display:none}
@@ -258,6 +279,20 @@ h1{
 .evbox .r span:first-child{color:var(--muted)}
 .evbox .r strong{font-weight:500;color:var(--ink);text-align:right}
 
+/* Footer aligned + styled like the rest (no v8) */
+.site-footer{
+  margin-top: 18px;
+  padding: 14px 0 26px;
+  border-top: 1px solid var(--rule2);
+}
+.site-footer .footer-inner{
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* Responsive */
 @media (max-width: 880px){
   .brand{grid-template-columns: 72px 1fr}
@@ -272,7 +307,6 @@ h1{
 .evidence-details{margin-top:14px}
 .evidence-summary-left{display:flex;flex-direction:column;gap:2px}
 .evidence-summary-left .ev-sub{margin-top:0}
-
 
 .meta-value{ color:var(--ink); }
 
