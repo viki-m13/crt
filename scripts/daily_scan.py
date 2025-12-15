@@ -46,6 +46,8 @@ ISHARES_HOLDINGS_URL = (
     "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"   
 )
 
+ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
+
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
 TOP10_EMBED = 10
