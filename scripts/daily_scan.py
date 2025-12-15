@@ -42,8 +42,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239707/ishares-russell-1000-etf/" 
-    "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A"]  
@@ -166,6 +166,15 @@ def washout_top_pct(series: pd.Series, value: float) -> float:
         return np.nan
     return float((1.0 - p) * 100.0)
 
+
+def final_top_pct(final_series: pd.Series, final_today: float) -> float:
+    """Top-X% of today's Final Score versus this ticker's own history (higher is better)."""
+    s = pd.to_numeric(final_series, errors="coerce").dropna()
+    v = safe_float(final_today)
+    if s.empty or not np.isfinite(v):
+        return np.nan
+    p = float(np.mean(s.values.astype(float) <= v))  # percentile rank (0..1)
+    return float(np.clip((1.0 - p) * 100.0, 0.0, 100.0))
 def final_score(edge_score: float, washout: float) -> float:
     """FinalScore = EdgeScore amplified by how washed-out it is today."""
     e = safe_float(edge_score)
@@ -1015,6 +1024,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
 
     # Top-% washed-out (readable): "Top X%" of days by Washout Meter
     wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
+    ftop = final_top_pct(fs_evid, final_today)
 
     detail = {
         "ticker": t,
@@ -1048,6 +1058,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "edge_score": float(edge_score),
         "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
         "washout_top_pct": float(wtop) if np.isfinite(wtop) else None,
+        "final_top_pct": float(ftop) if np.isfinite(ftop) else None,
         "confidence": float(confidence),
         "stability": float(stab_score),
         "fragile": bool(fragile),
