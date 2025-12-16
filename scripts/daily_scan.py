@@ -48,7 +48,7 @@ ISHARES_HOLDINGS_URL = (
     "1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
 )
 
-ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A", "SMCI", "ARM"]
+ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A", "ARM"]
 
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
