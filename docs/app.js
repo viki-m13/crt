@@ -62,7 +62,7 @@ function washoutTopPctFromSeries(wash){
   return topPct;
 }
 
-function finalScoreTopPctFromSeries(final){
+function finalTopPctFromSeries(final){
   const arr = (final || []).map(Number).filter(v => Number.isFinite(v));
   if (arr.length < 60) return null;
   const v = arr[arr.length - 1];
@@ -71,6 +71,57 @@ function finalScoreTopPctFromSeries(final){
   const pct = le / arr.length;              // percentile (higher = stronger signal)
   const topPct = (1 - pct) * 100;           // "top X%" strongest Final Score days
   return topPct;
+}
+
+function upperBound(sortedArr, v){
+  // index of first element > v
+  let lo = 0, hi = sortedArr.length;
+  while (lo < hi){
+    const mid = (lo + hi) >> 1;
+    if (sortedArr[mid] <= v) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+function quantileSorted(sortedArr, q){
+  if (!sortedArr || !sortedArr.length) return null;
+  const n = sortedArr.length;
+  const qq = Math.max(0, Math.min(1, Number(q)));
+  const pos = (n - 1) * qq;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sortedArr[lo];
+  const w = pos - lo;
+  return sortedArr[lo] * (1 - w) + sortedArr[hi] * w;
+}
+
+function topPctFromValue(sortedArr, v){
+  if (!sortedArr || sortedArr.length < 60) return null;
+  const vv = Number(v);
+  if (!Number.isFinite(vv)) return null;
+  const le = upperBound(sortedArr, vv);
+  const pct = le / sortedArr.length;
+  return (1 - pct) * 100;
+}
+
+function fmtRange(a, b, decimals=1){
+  const x = Number(a), y = Number(b);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return "—";
+  const fx = decimals === 0 ? x.toFixed(0) : x.toFixed(1);
+  const fy = decimals === 0 ? y.toFixed(0) : y.toFixed(1);
+  return `${fx}–${fy}`;
+}
+
+function verdictFromRanks(finalTopPct, washTopPct){
+  const f = (finalTopPct != null && Number.isFinite(finalTopPct)) ? Number(finalTopPct) : null;
+  const w = (washTopPct != null && Number.isFinite(washTopPct)) ? Number(washTopPct) : null;
+  const inF = (f != null && f <= 10);
+  const inW = (w != null && w <= 10);
+  if (inF && inW) return "Signal today";
+  if (inF) return "Strong setup (final-score signal)";
+  if (inW) return "Washed-out (needs edge confirmation)";
+  return "Not compelling today";
 }
 
 
@@ -225,24 +276,16 @@ function evidenceSection(kind, ev){
   return box;
 }
 
-function renderCard(container, item, detail){
+function renderCard(container, item, detail, derived){
   const series = detail.series || {};
 
-  // Washed-out rank (higher washout = more washed-out)
-  const topPctFromItem = (item.washout_top_pct != null && Number.isFinite(item.washout_top_pct))
-    ? Number(item.washout_top_pct)
-    : null;
-  const topPctFromSeries = washoutTopPctFromSeries(series.wash);
-  const topPct = (topPctFromItem != null) ? topPctFromItem : topPctFromSeries;
-  const washRank = washoutTopRankText(topPct) || "—";
-
-  // Final-score rank (higher final = stronger signal)
-  const finalTopPctFromItem = (item.final_score_top_pct != null && Number.isFinite(item.final_score_top_pct))
-    ? Number(item.final_score_top_pct)
-    : null;
-  const finalTopPctSeries = finalScoreTopPctFromSeries(series.final);
-  const finalTopPct = (finalTopPctFromItem != null) ? finalTopPctFromItem : finalTopPctSeries;
-  const finalRank = washoutTopRankText(finalTopPct) || "—";
+  // Derived stats (computed once in main() for consistency across the table + cards)
+  const d = derived || {};
+  const washRank = d.washRank || "—";
+  const finalRank = d.finalRank || "—";
+  const washTop10Range = d.washTop10Range || "—";
+  const finalTop10Range = d.finalTop10Range || "—";
+  const verdict = d.verdict || item.verdict || "—";
 
   const card = document.createElement("div");
   card.className = "card";
@@ -252,17 +295,23 @@ function renderCard(container, item, detail){
   h.innerHTML = `
     <div>
       <div class="ticker">${item.ticker}</div>
-      <div class="verdict">${item.verdict}</div>
+      <div class="verdict">${verdict}</div>
     </div>
     <div class="metrics">
-      <div class="metric"><span>Final score</span> <strong>${fmtNum1(item.final_score)}</strong></div>
-      <div class="metric"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
-      <div class="metric"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}</strong></div>
-      <div class="metric"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}</strong></div>
-      <div class="metric"><span>Conf</span> <strong>${fmtNum0(item.confidence)}</strong></div>
-      <div class="metric"><span>Stab</span> <strong>${fmtNum0(item.stability)}</strong></div>
-      <div class="metric"><span>Washed‑out rank</span> <strong>${washRank}</strong></div>
-      <div class="metric"><span>Risk</span> <strong>${item.risk || "—"}</strong></div>
+      <div class="metric"><div class="mline"><span>Final score</span> <strong>${fmtNum1(item.final_score)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div></div>
+      <div class="metric">
+        <div class="mline"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
+        <div class="msub">Top‑10% range ${finalTop10Range}</div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Washed‑out rank</span> <strong>${washRank}</strong></div>
+        <div class="msub">Top‑10% range ${washTop10Range}</div>
+      </div>
+      <div class="metric"><div class="mline"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Conf</span> <strong>${fmtNum0(item.confidence)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Stab</span> <strong>${fmtNum0(item.stability)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Risk</span> <strong>${item.risk || "—"}</strong></div></div>
     </div>
   `;
   card.appendChild(h);
@@ -323,15 +372,16 @@ function renderCard(container, item, detail){
   container.appendChild(card);
 }
 
-function rowHtml(item){
+function rowHtml(item, derived){
   const t = item.ticker;
+  const verdict = derived?.verdict || item.verdict || "—";
   const t1 = item.typical?.["1Y"];
   const t3 = item.typical?.["3Y"];
   const t5 = item.typical?.["5Y"];
   return `
     <tr data-ticker="${t}">
       <td class="tcell">${t}</td>
-      <td>${item.verdict}</td>
+      <td>${verdict}</td>
       <td class="num">${fmtNum1(item.final_score)}</td>
       <td class="num">${fmtNum0(item.washout_today)}</td>
       <td class="num">${fmtNum1(item.edge_score)}</td>
@@ -343,6 +393,73 @@ function rowHtml(item){
       <td class="num">${fmtPct(t5)}</td>
     </tr>
   `;
+}
+
+function renderHistoricalSignals(full, derivedByTicker){
+  const host = byId("histRows");
+  if (!host) return;
+
+  const signals = [];
+  const H1 = 252, H3 = 252*3, H5 = 252*5;
+
+  for (const [ticker, det] of Object.entries(full.details || {})){
+    const s = det?.series;
+    if (!s || !Array.isArray(s.dates) || !Array.isArray(s.prices) || !Array.isArray(s.final) || !Array.isArray(s.wash)) continue;
+    const n = s.dates.length;
+    if (n < 260) continue;
+
+    const finalArr = s.final.map(Number).filter(Number.isFinite);
+    const washArr  = s.wash.map(Number).filter(Number.isFinite);
+    if (finalArr.length < 60 || washArr.length < 60) continue;
+    const sortedFinal = [...finalArr].sort((a,b)=>a-b);
+    const sortedWash  = [...washArr].sort((a,b)=>a-b);
+
+    // Use full-history cutoffs so the “Top X%” text matches how we describe ranks elsewhere.
+    for (let i=0;i<n;i++){
+      const fv = s.final[i];
+      const wv = s.wash[i];
+      const fTop = topPctFromValue(sortedFinal, fv);
+      const wTop = topPctFromValue(sortedWash, wv);
+      if (!(Number.isFinite(fTop) && Number.isFinite(wTop))) continue;
+      if (fTop > 10 || wTop > 10) continue;
+
+      const p0 = Number(s.prices[i]);
+      if (!Number.isFinite(p0) || p0 <= 0) continue;
+
+      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
+      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
+      const r5 = (i+H5 < n) ? (Number(s.prices[i+H5]) / p0 - 1) : null;
+
+      signals.push({
+        date: String(s.dates[i] || ""),
+        ticker,
+        final_score: Number(fv),
+        wash: Number(wv),
+        final_rank: washoutTopRankText(fTop) || "—",
+        wash_rank: washoutTopRankText(wTop) || "—",
+        r1, r3, r5,
+      });
+    }
+  }
+
+  signals.sort((a,b)=> (b.date.localeCompare(a.date)) || (a.ticker.localeCompare(b.ticker)));
+  const last10 = signals.slice(0, 10);
+
+  host.innerHTML = last10.map(s=>{
+    return `
+      <tr data-ticker="${s.ticker}">
+        <td class="mono">${s.date || "—"}</td>
+        <td class="tcell">${s.ticker}</td>
+        <td class="num">${fmtNum1(s.final_score)}</td>
+        <td class="num">${fmtNum0(s.wash)}</td>
+        <td>${s.final_rank}</td>
+        <td>${s.wash_rank}</td>
+        <td class="num">${fmtPct(s.r1)}</td>
+        <td class="num">${fmtPct(s.r3)}</td>
+        <td class="num">${fmtPct(s.r5)}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 async function loadJSON(url){
@@ -411,10 +528,50 @@ function formatAsOf(asOf){
   byId("asOf").textContent = formatAsOf(full.as_of);
 
   let items = full.items || [];
+  const derivedByTicker = {};
+
+  // Precompute per-ticker rank text + top-decile score ranges so:
+  //   - the Top 10 cards and the All Tickers table stay consistent
+  //   - users can see whether a “10.3/100” is actually high for that ticker
+  for (const it of items){
+    const t = it.ticker;
+    const det = full.details?.[t];
+    const s = det?.series || {};
+
+    const finalArr = (s.final || []).map(Number).filter(Number.isFinite);
+    const washArr  = (s.wash  || []).map(Number).filter(Number.isFinite);
+    const sortedFinal = (finalArr.length ? [...finalArr].sort((a,b)=>a-b) : null);
+    const sortedWash  = (washArr.length  ? [...washArr].sort((a,b)=>a-b) : null);
+
+    // Today's ranks
+    const finalTopPct = finalTopPctFromSeries(s.final);
+    const washTopPct  = (it.washout_top_pct != null && Number.isFinite(it.washout_top_pct))
+      ? Number(it.washout_top_pct)
+      : washoutTopPctFromSeries(s.wash);
+
+    const finalRank = washoutTopRankText(finalTopPct) || "—";
+    const washRank  = washoutTopRankText(washTopPct)  || "—";
+
+    // Top-decile score ranges (90th percentile .. max)
+    const f90 = sortedFinal ? quantileSorted(sortedFinal, 0.90) : null;
+    const fmx = sortedFinal ? sortedFinal[sortedFinal.length-1] : null;
+    const w90 = sortedWash  ? quantileSorted(sortedWash, 0.90)  : null;
+    const wmx = sortedWash  ? sortedWash[sortedWash.length-1]   : null;
+
+    const verdict = verdictFromRanks(finalTopPct, washTopPct);
+
+    derivedByTicker[t] = {
+      finalTopPct, washTopPct,
+      finalRank, washRank,
+      finalTop10Range: fmtRange(f90, fmx, 1),
+      washTop10Range: fmtRange(w90, wmx, 0),
+      verdict,
+    };
+  }
   let sortMode = "final";
 
   function renderTable(list){
-    byId("rows").innerHTML = list.map(rowHtml).join("");
+    byId("rows").innerHTML = list.map(it=>rowHtml(it, derivedByTicker[it.ticker])).join("");
   }
 
   async function loadDetail(ticker){
@@ -442,7 +599,7 @@ function formatAsOf(asOf){
           series: {},
         };
       }
-      renderCard(c, it, detail);
+      renderCard(c, it, detail, derivedByTicker[it.ticker]);
     }
   }
 
@@ -475,6 +632,26 @@ async function rerender(){
   setSortButtons(sortMode);
 
   await rerender();
+
+  // One-time: show the latest 10 historical signals across all tickers.
+  renderHistoricalSignals(full, derivedByTicker);
+
+  // Clicking a historical signal row jumps you to that ticker's card.
+  const histBody = byId("histRows");
+  if (histBody){
+    histBody.addEventListener("click", async (e)=>{
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const t = tr.dataset.ticker;
+      if (!t) return;
+      const current = applySort();
+      const idx = current.findIndex(x=>x.ticker===t);
+      if (idx < 0) return;
+      const rotated = [current[idx], ...current.filter((_,i)=>i!==idx)];
+      await renderTop10(rotated);
+      document.querySelector(".masthead").scrollIntoView({behavior:"smooth"});
+    });
+  }
 
   byId("rows").addEventListener("click", async (e)=>{
     const tr = e.target.closest("tr");

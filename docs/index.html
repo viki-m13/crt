@@ -138,6 +138,38 @@
             </details>
           </div>
         </details>
+
+        <details class="details hist">
+          <summary class="details-summary">
+            <span class="section-title">HISTORICAL SIGNALS</span>
+            <span class="plus" aria-hidden="true">+</span>
+          </summary>
+          <div class="details-body">
+            <div class="footnote" style="margin:0 0 10px 0">
+              Most recent 10 historical days where a ticker met today’s strict “signal” definition:
+              <strong>Final‑score rank</strong> and <strong>Washed‑out rank</strong> were both inside that ticker’s <strong>top 10%</strong>.
+              Returns are the realized forward performance from that date.
+            </div>
+            <div class="table-wrap">
+              <table class="tbl" id="histTbl">
+                <thead>
+                  <tr>
+                    <th class="mono">Date</th>
+                    <th>Ticker</th>
+                    <th class="num">Final</th>
+                    <th class="num">Wash</th>
+                    <th>Final‑rank</th>
+                    <th>Wash‑rank</th>
+                    <th class="num">1Y</th>
+                    <th class="num">3Y</th>
+                    <th class="num">5Y</th>
+                  </tr>
+                </thead>
+                <tbody id="histRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
       </section>
 
       <div class="rule"></div>
