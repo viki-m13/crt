@@ -53,15 +53,6 @@ function washoutTopPctFromSeries(wash){
   return topPct;
 }
 
-function finalTopPctFromSeries(finalSeries, finalToday) {
-  // Top-X% of today's Final Score versus this ticker's own history (higher is better)
-  if (!Array.isArray(finalSeries) || finalSeries.length < 50 || !isFiniteNum(finalToday)) return null;
-  const p = percentileRank(finalSeries, finalToday); // 0..1
-  if (!isFiniteNum(p)) return null;
-  const topPct = clamp((1 - p) * 100, 0, 100);
-  return topPct;
-}
-
 function washoutTopRankText(topPct){
   if (topPct === null || topPct === undefined || Number.isNaN(topPct)) return null;
   const v = Number(topPct);
@@ -221,10 +212,6 @@ function renderCard(container, item, detail){
   const topPctFromSeries = washoutTopPctFromSeries(series.wash);
   const topPct = (topPctFromItem != null) ? topPctFromItem : topPctFromSeries;
   const washRank = washoutTopRankText(topPct) || "—";
-  const finalTopFromItem = isFiniteNum(item.final_top_pct) ? item.final_top_pct : null;
-  const finalTopFromSeries = finalTopPctFromSeries((item.series||{}).final, item.final_score);
-  const finalTopPct = isFiniteNum(finalTopFromItem) ? finalTopFromItem : finalTopFromSeries;
-  const finalRank = washoutTopRankText(finalTopPct);
 
   const card = document.createElement("div");
   card.className = "card";
@@ -238,7 +225,6 @@ function renderCard(container, item, detail){
     </div>
     <div class="metrics">
       <div class="metric"><span>Final score</span> <strong>${fmtNum1(item.final_score)}</strong></div>
-      <div class="metric"><span>Final score rank</span> <strong>${finalRank}</strong></div>
       <div class="metric"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}</strong></div>
       <div class="metric"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}</strong></div>
       <div class="metric"><span>Conf</span> <strong>${fmtNum0(item.confidence)}</strong></div>
@@ -327,12 +313,10 @@ function rowHtml(item){
   `;
 }
 
-async function loadJSON(url) {
-  const bust = "v=" + Date.now();
-  const sep = url.includes("?") ? "&" : "?";
-  const res = await fetch(url + sep + bust, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+async function loadJSON(url){
+  const r = await fetch(url, {cache: "no-cache"});
+  if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
+  return await r.json();
 }
 
 function setSortButtons(active){
