@@ -62,7 +62,7 @@ function washoutTopPctFromSeries(wash){
   return topPct;
 }
 
-function finalTopPctFromSeries(final){
+function finalScoreTopPctFromSeries(final){
   const arr = (final || []).map(Number).filter(v => Number.isFinite(v));
   if (arr.length < 60) return null;
   const v = arr[arr.length - 1];
@@ -240,8 +240,8 @@ function renderCard(container, item, detail){
   const finalTopPctFromItem = (item.final_score_top_pct != null && Number.isFinite(item.final_score_top_pct))
     ? Number(item.final_score_top_pct)
     : null;
-  const finalTopPctFromSeries = finalTopPctFromSeries(series.final);
-  const finalTopPct = (finalTopPctFromItem != null) ? finalTopPctFromItem : finalTopPctFromSeries;
+  const finalTopPctSeries = finalScoreTopPctFromSeries(series.final);
+  const finalTopPct = (finalTopPctFromItem != null) ? finalTopPctFromItem : finalTopPctSeries;
   const finalRank = washoutTopRankText(finalTopPct) || "—";
 
   const card = document.createElement("div");
