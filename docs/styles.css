@@ -77,7 +77,7 @@ h1{
   margin-right:8px;
 }
 
-.rule{height:1px;background:var(--rule);margin:18px 0}
+.rule{height:1px;background:var(--rule);margin:12px 0 8px}
 
 .section-title{
   font-family:var(--mono);
@@ -322,3 +322,7 @@ h1{
   .meta-value{ text-align:right; }
   .meta-row:last-child .meta-value{ white-space:normal; text-align:right; }
 }
+
+
+/* Reduce header-to-content gap (Top 10 today section) */
+main.wrap{padding-top:6px}

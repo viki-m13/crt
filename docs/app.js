@@ -298,15 +298,19 @@ function renderCard(container, item, detail, derived){
       <div class="verdict">${verdict}</div>
     </div>
     <div class="metrics">
-      <div class="metric"><div class="mline"><span>Final score</span> <strong>${fmtNum1(item.final_score)}/100</strong></div></div>
-      <div class="metric"><div class="mline"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div></div>
       <div class="metric">
-        <div class="mline"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
+        <div class="mline"><span>Final score</span> <strong>${fmtNum1(item.final_score)}/100</strong></div>
         <div class="msub">Top‑10% range ${finalTop10Range}</div>
       </div>
       <div class="metric">
-        <div class="mline"><span>Washed‑out rank</span> <strong>${washRank}</strong></div>
+        <div class="mline"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
         <div class="msub">Top‑10% range ${washTop10Range}</div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Washed‑out rank</span> <strong>${washRank}</strong></div>
       </div>
       <div class="metric"><div class="mline"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}/100</strong></div></div>
       <div class="metric"><div class="mline"><span>Conf</span> <strong>${fmtNum0(item.confidence)}/100</strong></div></div>
@@ -427,6 +431,8 @@ function renderHistoricalSignals(full, derivedByTicker){
       if (!Number.isFinite(p0) || p0 <= 0) continue;
 
       const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
+      if (!(r1 !== null && Number.isFinite(r1))) continue; // require ≥1Y forward performance
+
       const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
       const r5 = (i+H5 < n) ? (Number(s.prices[i+H5]) / p0 - 1) : null;
 
@@ -538,16 +544,34 @@ function formatAsOf(asOf){
     const det = full.details?.[t];
     const s = det?.series || {};
 
-    const finalArr = (s.final || []).map(Number).filter(Number.isFinite);
-    const washArr  = (s.wash  || []).map(Number).filter(Number.isFinite);
+    const finalArrRaw = (s.final || []).map(Number).filter(Number.isFinite);
+    const washArrRaw  = (s.wash  || []).map(Number).filter(Number.isFinite);
+
+    // For UI stats we want the distributions to include TODAY's displayed values.
+    // Some detail series are sparsely computed/ffilled and may not include the exact latest value.
+    const finalToday = Number(it.final_score);
+    const washToday  = Number(it.washout_today);
+    const finalArr = (finalArrRaw.length ? [...finalArrRaw] : []);
+    const washArr  = (washArrRaw.length  ? [...washArrRaw]  : []);
+    if (Number.isFinite(finalToday)){
+      const has = finalArr.some(v => Math.abs(v - finalToday) < 1e-9);
+      if (!has) finalArr.push(finalToday);
+    }
+    if (Number.isFinite(washToday)){
+      const has = washArr.some(v => Math.abs(v - washToday) < 1e-9);
+      if (!has) washArr.push(washToday);
+    }
+
     const sortedFinal = (finalArr.length ? [...finalArr].sort((a,b)=>a-b) : null);
     const sortedWash  = (washArr.length  ? [...washArr].sort((a,b)=>a-b) : null);
 
-    // Today's ranks
-    const finalTopPct = finalTopPctFromSeries(s.final);
+    // Today's ranks (Top X% strongest)
+    const finalTopPct = (it.finalscore_top_pct != null && Number.isFinite(it.finalscore_top_pct))
+      ? Number(it.finalscore_top_pct)
+      : topPctFromValue(sortedFinal, finalToday);
     const washTopPct  = (it.washout_top_pct != null && Number.isFinite(it.washout_top_pct))
       ? Number(it.washout_top_pct)
-      : washoutTopPctFromSeries(s.wash);
+      : topPctFromValue(sortedWash, washToday);
 
     const finalRank = washoutTopRankText(finalTopPct) || "—";
     const washRank  = washoutTopRankText(washTopPct)  || "—";
