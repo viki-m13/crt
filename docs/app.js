@@ -217,7 +217,7 @@ function evidenceAnalogVsNormalSection(detail){
   // One consistent evidence block:
   //   A = the SAME closest-analog days used to compute the main 1/3/5Y outcomes above
   //   B = a "normal" historical day baseline (unconditional) for this ticker
-  const base = detail?.evidence_finalscore || detail?.evidence_washout || null;
+  const base = detail?.evidence_baseline || detail?.evidence_finalscore || detail?.evidence_washout || null;
   const outs = detail?.outcomes || null;
   if (!base || !outs) return null;
 
@@ -227,13 +227,13 @@ function evidenceAnalogVsNormalSection(detail){
     <summary class="details-summary">
       <div class="evidence-summary-left">
         <span class="section-title">EVIDENCE</span>
-        <span class="ev-sub">Similar past setups vs normal</span>
+        <span class="ev-sub">Top-decile Final Score analogs vs normal</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
       <div class="ev-explain">
-        <strong>A</strong> = the same closest historical “analog” days used for the main recommendation above.
+        <strong>A</strong> = the closest historical “analog” days <em>restricted to</em> days that were in this stock’s <strong>top decile</strong> of Final Score historically.
         <strong>B</strong> = a normal historical day baseline for this stock.
         Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.
       </div>
@@ -399,7 +399,7 @@ function renderHistoricalSignals(full, derivedByTicker){
   const host = byId("histRows");
   if (!host) return;
 
-  const signals = [];
+  const bestByTicker = {};
   const H1 = 252, H3 = 252*3, H5 = 252*5;
 
   for (const [ticker, det] of Object.entries(full.details || {})){
@@ -414,8 +414,8 @@ function renderHistoricalSignals(full, derivedByTicker){
     const sortedFinal = [...finalArr].sort((a,b)=>a-b);
     const sortedWash  = [...washArr].sort((a,b)=>a-b);
 
-    // Use full-history cutoffs so the “Top X%” text matches how we describe ranks elsewhere.
-    for (let i=0;i<n;i++){
+    // Find the most recent qualifying signal day for THIS ticker.
+    for (let i=n-1;i>=0;i--){
       const fv = s.final[i];
       const wv = s.wash[i];
       const fTop = topPctFromValue(sortedFinal, fv);
@@ -432,7 +432,7 @@ function renderHistoricalSignals(full, derivedByTicker){
       const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
       const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
 
-      signals.push({
+      const sig = {
         date: String(s.dates[i] || ""),
         ticker,
         final_score: Number(fv),
@@ -440,10 +440,14 @@ function renderHistoricalSignals(full, derivedByTicker){
         final_rank: washoutTopRankText(fTop) || "—",
         wash_rank: washoutTopRankText(wTop) || "—",
         r1, r3, r5,
-      });
+      };
+
+      bestByTicker[ticker] = sig;
+      break; // only the most recent for this ticker
     }
   }
 
+  const signals = Object.values(bestByTicker);
   signals.sort((a,b)=> (b.date.localeCompare(a.date)) || (a.ticker.localeCompare(b.ticker)));
   const last10 = signals.slice(0, 10);
 
