@@ -503,13 +503,8 @@ def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     return float(np.clip(confirm * sample_conf * raw, 0, 1))
 
 def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Series,
-                                  now_idx: pd.Timestamp, k: int, min_sep_days: int,
-                                  eligible: pd.Series | None = None):
+                                  now_idx: pd.Timestamp, k: int, min_sep_days: int):
     cand = X.index[(X.notna().all(axis=1)) & (y.notna()) & (X.index < now_idx)]
-    if eligible is not None:
-        em = eligible.reindex(cand).fillna(False).values
-        cand = cand[em]
-
     if len(cand) == 0:
         return []
 
@@ -672,31 +667,6 @@ def risk_label(h_summaries: dict, beta: float):
     return "Moderate"
 
 # =========================
-# Baseline stats (ALL days)
-# =========================
-def baseline_stats(feat: pd.DataFrame):
-    """Per-horizon baseline stats over ALL valid historical days.
-    Returns keys used by the website evidence block: win_norm / med_norm / p10_norm / n_norm.
-    """
-    out = {}
-    for h in HORIZONS_DAYS.keys():
-        y = feat.get(f"fwd_{h}", None)
-        if y is None:
-            continue
-        valid = y.notna()
-        vals = y.loc[valid].values.astype(float)
-        if len(vals) == 0:
-            continue
-        s = summarize(vals)
-        out[h] = {
-            "win_norm": float(np.mean(vals > 0)),
-            "med_norm": float(np.median(vals)),
-            "p10_norm": float(np.quantile(vals, 0.10)),
-            "n_norm": int(len(vals)),
-        }
-    return out
-
-# =========================
 # Evidence A: pure washout
 # =========================
 def evidence_washout_light(feat: pd.DataFrame):
@@ -855,10 +825,7 @@ def compute_edge_score_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Serie
         y = feat.get(f"fwd_{h}", None)
         if y is None:
             continue
-        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible_topdecile)
-        # Fallback: if the restricted pool is too thin, allow all eligible past days.
-        if len(analog_idx) < ANALOG_MIN:
-            analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
         vals = y.loc[analog_idx].dropna().values.astype(float)
         s = summarize(vals)
         if s.get("n", 0) >= ANALOG_MIN:
@@ -967,19 +934,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         if (not np.isfinite(wash_today)) or (wash_today < MIN_WASHOUT_TODAY):
             return None
 
-    
-    # Candidate pool for analogs: restrict to this stock's top-decile historical Final Score days.
-    # We compute a (sparsely sampled) historical Final Score series first, then take its 90th percentile cutoff.
-    final_series_hist = compute_final_score_series(
-        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
-    )
-    eligible_topdecile = None
-    fs_vals = final_series_hist.dropna()
-    if len(fs_vals) >= 100:
-        thr90 = float(fs_vals.quantile(0.90))
-        eligible_topdecile = (final_series_hist >= thr90)
-
-# Analogs -> horizon summaries + units
+    # Analogs -> horizon summaries + units
     h_summaries = {}
     h_units = {}
     h_n = []
@@ -990,10 +945,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         if y is None:
             continue
 
-        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible_topdecile)
-        # Fallback: if the restricted pool is too thin, allow all eligible past days.
-        if len(analog_idx) < ANALOG_MIN:
-            analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
         vals = y.loc[analog_idx].dropna().values.astype(float)
         s = summarize(vals)
         if s["n"] >= ANALOG_MIN:
@@ -1041,16 +993,15 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     # Verdict (FinalScore)
     verdict = verdict_line(final_today, confidence, stab_score, fragile)
 
-    # Explain
+    # Explain + Evidence A
     explain_lines = build_explain(feat, now_idx)
+    ev_wash = evidence_washout_light(feat)
 
-    # Baseline stats (ALL days) used by the website evidence block (A = analogs, B = normal baseline).
-    ev_base = baseline_stats(feat)
-
-    # Keep a FinalScore series for chart shading (sparsely computed).
+    # Evidence B uses FinalScore series over full history (sparsely computed)
     final_series_full = compute_final_score_series(
         feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
     )
+    ev_final = evidence_finalscore(feat, final_series_full)
 
     # Series payload for chart window
     cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
@@ -1080,9 +1031,9 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "risk": risk,
         "similar_cases": int(n_eff),
         "explain": explain_lines,
-        "outcomes": {h: h_summaries.get(h, {"n": 0}) for h in ["1Y", "3Y", "5Y"]},
-        "evidence_baseline": ev_base,
-        
+        "outcomes": {h: {"n": ev_final.get(h, {}).get("n_top", 0), "win": ev_final.get(h, {}).get("win_top", None), "median": ev_final.get(h, {}).get("med_top", None), "p10": ev_final.get(h, {}).get("p10_top", None)} for h in ["1Y", "3Y", "5Y"]},
+        "evidence_washout": ev_wash,
+        "evidence_finalscore": ev_final,
         "series": {
             "dates": [str(x.date()) for x in px.index],
             "prices": [safe_float(v) for v in px.values],
@@ -1104,11 +1055,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "fragile": bool(fragile),
         "risk": risk,
         "similar_cases": int(n_eff),
-        "typical": {
-            "1Y": h_summaries.get("1Y", {}).get("median", None),
-            "3Y": h_summaries.get("3Y", {}).get("median", None),
-            "5Y": h_summaries.get("5Y", {}).get("median", None),
-        },
+        "typical": {"1Y": ev_final.get("1Y", {}).get("med_top", None), "3Y": ev_final.get("3Y", {}).get("med_top", None), "5Y": ev_final.get("5Y", {}).get("med_top", None)},
     }
 
     return row, detail
