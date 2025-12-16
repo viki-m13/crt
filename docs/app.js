@@ -1,6 +1,15 @@
 
 const DATA_URL = "./data/full.json";
 
+// One cache-buster per page load so *every* JSON request bypasses GitHub Pages/CDN caches.
+// (Stable per-load keeps URLs consistent across all requests during a single page render.)
+const CACHE_BUST = String(Date.now());
+
+function withBust(url){
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}v=${encodeURIComponent(CACHE_BUST)}`;
+}
+
 function fmtPct(x){
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
   const v = Number(x);
@@ -337,7 +346,16 @@ function rowHtml(item){
 }
 
 async function loadJSON(url){
-  const r = await fetch(url, {cache: "no-cache"});
+  // Force a unique URL + ask the browser not to cache the response.
+  // This avoids stale JSON on GitHub Pages/CDNs after Actions pushes new data.
+  const u = withBust(url);
+  const r = await fetch(u, {
+    cache: "no-store",
+    headers: {
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache",
+    },
+  });
   if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
   return await r.json();
 }
@@ -410,7 +428,20 @@ function formatAsOf(asOf){
     c.innerHTML = "";
     const top = list.slice(0,10);
     for (const it of top){
-      const detail = await loadDetail(it.ticker);
+      let detail;
+      try{
+        detail = await loadDetail(it.ticker);
+      }catch(err){
+        // Don't let one missing/stale ticker JSON blank the entire Top 10 section.
+        detail = {
+          explain: [
+            `⚠️ Detail JSON failed to load for <strong>${it.ticker}</strong>.`,
+            `This is almost always a caching or deploy timing issue. Try a hard refresh, or wait a minute and reload.`,
+          ],
+          outcomes: {},
+          series: {},
+        };
+      }
       renderCard(c, it, detail);
     }
   }
