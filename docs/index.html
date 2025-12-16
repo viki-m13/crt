@@ -74,17 +74,16 @@
                     That’s why this is not just mean reversion: it’s looking for <em>abnormal</em> weakness for that stock after accounting for the market.
                   </li>
                   <li>
-                    <strong>Match historical analogs (same stock).</strong>
-                    It searches the stock’s own history for the most similar days (same stock, similar conditions), then measures what happened next.
+                    <strong>Define “signal days” by Final Score.</strong>
+                    For each stock, a “signal day” is a day that lands in the <strong>top 10%</strong> of that stock’s own historical <strong>Final Score</strong> readings. The 1/3/5‑year stats summarize what happened after those days.
                   </li>
                   <li>
                     <strong>Show evidence, not vibes.</strong>
-                    The evidence block compares outcomes after the <strong>same “similar past setups”</strong> used in the recommendation
-                    versus that stock’s <strong>normal</strong> historical baseline.
+                    The evidence block is a simple A/B check: <strong>A</strong> = the stock’s <strong>top 10% Final Score days</strong>, <strong>B</strong> = a <strong>normal</strong> historical day baseline. Each horizon shows A vs B.
                   </li>
                   <li>
                     <strong>Rank by one consistent score.</strong>
-                    <strong>Edge Score (0–100)</strong> measures rebound edge from analogs.
+                    <strong>Edge Score (0–100)</strong> measures rebound edge from the stock’s own history.
                     <strong>Final Score (0–100)</strong> amplifies Edge by how washed-out it is today — this is the single score used for ranking and the chart color.
                     Confidence/Stability penalize “one lucky episode” patterns.
                   </li>
@@ -98,12 +97,12 @@
                   <li><strong>Washout (0–100)</strong> = how washed-out/sold-off the stock looks vs its own history (market-adjusted).</li>
                   <li><strong>Confidence (0–100)</strong> = higher when there are more comparable past cases and behavior is consistent.</li>
                   <li><strong>Stability (0–100)</strong> = whether the score holds up under small, reasonable tweaks (higher = less fragile).</li>
-                  <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
+                  <li><span class="mono">Chance of gain</span> = % of <strong>top 10% Final Score days</strong> where the forward return was positive.</li>
                   <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
                   <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad-but-plausible case).</li>
-                  <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
+                  <li><span class="mono">Based on N</span> = number of <strong>top 10% Final Score days</strong> used for that horizon (only days with a full forward return available).</li>
                   <li>
-                    <strong>Evidence</strong> compares the “similar past setups” group to the stock’s normal baseline
+                    <strong>Evidence</strong> compares the “top 10% Final Score days” group to the stock’s normal baseline
                     so you can see whether the setup historically added edge for that ticker.
                   </li>
                 </ul>
@@ -129,22 +128,20 @@
                   Those metrics form a single “today snapshot” for the stock.
                 </p>
                 <p>
-                  To decide what’s “similar,” it compares today’s snapshot to the same snapshot from every historical day for that stock.
-                  Before comparing, it scales each feature using a robust z‑score (median/MAD) so one noisy metric can’t dominate.
-                  It then computes a simple distance (small distance = very similar) and selects the closest ~250 past days from within the stock’s top‑decile Final Score days (“analogs”),
-                  while preventing them from being clustered right next to each other and balancing across broad SPY regimes.
+                  <strong>How the 1/3/5‑year numbers are computed</strong><br />
+                  For each stock, Final Score is computed for every historical day. A <strong>signal day</strong> is a day in the
+                  <strong>top 10%</strong> of that stock’s Final Score history. The 1, 3, and 5‑year rows summarize what happened
+                  after those signal days: chance of gain, typical (median) return, and downside (10th percentile).
+                  The baseline is the same stats computed across <strong>all</strong> historical days.
                 </p>
                 <p>
-                  Once it has those analogs, it looks at what happened after them. For 1, 3, and 5 years forward it computes the fraction
-                  of analogs that ended up positive (chance of gain), the median return (typical), and a bad‑but‑plausible case (10th percentile).
-                  That becomes the <strong>Edge</strong>. Separately, the <strong>Washout</strong> score is how extreme today’s snapshot looks versus the
-                  stock’s own history (including after removing the market). The <strong>Final Score</strong> is essentially “edge from similar setups,”
-                  boosted when today is especially washed‑out. There isn’t a trained machine‑learning model here; it’s nearest‑neighbor matching
-                  plus straightforward statistics on what followed those matched days.
+                  <strong>Final Score (0–100)</strong> is the single score used everywhere: ranking, the chart shading, and the evidence definition.
+                  Higher Final Score means the stock looks more unusually washed‑out <em>for itself</em> (after accounting for the market)
+                  and its historical outcomes after high‑score days have tended to be stronger.
                 </p>
 
                 <ul>
-                  <li><strong>Outlier</strong> = “unusually washed‑out vs itself” + “historically rebounds from similar setups.” No trained ML model.</li>
+                  <li><strong>Outlier</strong> = “unusually washed‑out vs itself” + “historically rebounds after high‑score days.” No trained ML model.</li>
                 </ul>
 
                 <ol>
@@ -168,19 +165,21 @@
                     </ul>
                   </li>
                   <li>
-                    <strong>Find “similar instances” (analog days)</strong>
+                    <strong>Define “signal days” (top‑decile Final Score)</strong>
                     <ul>
-                      <li>Robust‑standardize each feature: <span class="mono">z = (x − median) / (1.4826×MAD)</span></li>
-                      <li>Distance: <span class="mono">dist(day) = sqrt(Σ (z(day) − z(today))²)</span></li>
-                      <li>Pick <span class="mono">K ≈ 250</span> closest past days, enforcing minimum spacing and regime balancing</li>
+                      <li>Compute Final Score for every day in the stock’s history.</li>
+                      <li>Compute the 90th percentile threshold for that stock.</li>
+                      <li><strong>Signal days</strong> = days where Final Score is at or above that threshold (the top 10%).</li>
                     </ul>
+                  </li>
+</ul>
                   </li>
                   <li>
                     <strong>Scores</strong>
                     <ul>
                       <li><strong>Washout (0–100)</strong>: blend of drawdown/position/idiosyncratic washout + ATR/volume stress, with a “bottom gate”</li>
                       <li>
-                        <strong>Edge (0–100)</strong>: from analog forward returns at 1/3/5 years:
+                        <strong>Edge (0–100)</strong>: from forward returns following high‑score days at 1/3/5 years:
                         chance = mean(<span class="mono">fwd_return &gt; 0</span>), typical = median, downside = 10th percentile;
                         downweighted when <span class="mono">N</span> is small
                       </li>
@@ -204,9 +203,9 @@
           </summary>
           <div class="details-body">
             <div class="footnote" style="margin:0 0 10px 0">
-              Most recent 10 historical days where a ticker met today’s strict “signal” definition:
-              <strong>Final‑score rank</strong> and <strong>Washed‑out rank</strong> were both inside that ticker’s <strong>top 10%</strong>.
-              Included only when <strong>5‑year</strong> realized forward performance is available (so the 1Y/3Y/5Y columns are comparable).
+              Most recent 10 historical days where a ticker met the “signal day” definition:
+              <strong>Final‑score rank</strong> was inside that ticker’s <strong>top 10%</strong>.
+              Only rows with at least a <strong>1‑year</strong> forward performance value are shown.
             </div>
             <div class="table-wrap">
               <table class="tbl" id="histTbl">
@@ -279,7 +278,7 @@
         </table>
       </div>
       <div class="footnote">
-        The scan is informational only. It summarizes how this stock behaved after similar past setups; it does not predict the future.
+        The scan is informational only. It summarizes how this stock behaved after top 10% Final Score days; it does not predict the future.
       </div>
     </section>
   </main>
