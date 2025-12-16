@@ -32,6 +32,9 @@ body{
   padding:14px 18px 44px;
 }
 
+/* Slightly tighter spacing at the top of the main content (keeps header unchanged) */
+main.wrap{padding-top:8px}
+
 .masthead-wrap{
   padding-top:26px;
   padding-bottom:8px; /* try 8px–16px */
@@ -215,8 +218,13 @@ h1{
   border:1px solid var(--rule2);
   background:linear-gradient(90deg, rgba(15,61,46,.10), rgba(15,61,46,.85));
 }
+.legend-text{
+  display:flex;
+  flex-direction:column;
+  line-height:1.05;
+}
 .legend-label{letter-spacing:.04em}
-.legend-note{color:var(--muted)}
+.legend-note{color:var(--muted); margin-top:2px}
 
 .bullets{
   margin:0;
@@ -263,6 +271,17 @@ h1{
 .details .plus{font-family:var(--mono);font-size:18px;line-height:1;transition:transform .15s ease}
 .details[open] .plus{transform:rotate(45deg)}
 .details-body{padding-top:10px}
+
+/* Small breathing room between the two header explainer sections */
+.details.whathow{margin-bottom:10px}
+
+/* Make the WHAT & HOW typography consistent and readable */
+.whathow .details-body p{margin:0 0 10px 0}
+.whathow .details-body p:last-child{margin-bottom:0}
+.whathow .details-body ul,
+.whathow .details-body ol{margin:0 0 10px 0}
+.whathow .details-body li{margin:6px 0}
+.section-title--spaced{margin-top:14px}
 
 /* Evidence block inside ticker cards (full-width, below chart) */
 .evidence-block{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule2)}

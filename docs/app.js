@@ -208,34 +208,35 @@ function outcomeBox(label, s){
     <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
     <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
     <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
-    <div class="r"><span>Based on N</span><strong>${s.n}</strong></div>
+    <div class="r"><span>Based on N similar days</span><strong>${s.n}</strong></div>
   `;
   return b;
 }
 
-function evidenceSection(kind, ev){
-  // kind: "A" (washout) or "B" (final)
-  const title = (kind === "A") ? "EVIDENCE A" : "EVIDENCE B";
-  const subtitle = (kind === "A")
-    ? "Top 10% Washout Meter days vs normal"
-    : "Top 10% Final Score days vs normal";
-
-  const explain = (kind === "A")
-    ? `This is a broad A/B check across the stock’s entire history. <strong>A</strong> = the <strong>10% most washed‑out</strong> days for this stock. <strong>B</strong> = a <strong>normal</strong> historical day (baseline). Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.`
-    : `Same idea, but the “signal” days are defined by the <strong>same Final Score used for ranking</strong>. <strong>A</strong> = the top‑decile Final Score days for this stock. <strong>B</strong> = a normal historical day. Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.`;
+function evidenceAnalogVsNormalSection(detail){
+  // One consistent evidence block:
+  //   A = the SAME closest-analog days used to compute the main 1/3/5Y outcomes above
+  //   B = a "normal" historical day baseline (unconditional) for this ticker
+  const base = detail?.evidence_finalscore || detail?.evidence_washout || null;
+  const outs = detail?.outcomes || null;
+  if (!base || !outs) return null;
 
   const box = document.createElement("details");
   box.className = "details evidence-details";
   box.innerHTML = `
     <summary class="details-summary">
       <div class="evidence-summary-left">
-        <span class="section-title">${title}</span>
-        <span class="ev-sub">${subtitle}</span>
+        <span class="section-title">EVIDENCE</span>
+        <span class="ev-sub">Similar past setups vs normal</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
-      <div class="ev-explain">${explain}</div>
+      <div class="ev-explain">
+        <strong>A</strong> = the same closest historical “analog” days used for the main recommendation above.
+        <strong>B</strong> = a normal historical day baseline for this stock.
+        Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.
+      </div>
       <div class="outcomes ev-grid"></div>
     </div>
   `;
@@ -244,32 +245,31 @@ function evidenceSection(kind, ev){
   const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
 
   for (const [k,label] of horizons){
-    const e = ev?.[k];
-    if (!e) continue;
+    const a = outs?.[k];
+    const b = base?.[k];
+    if (!a || !b) continue;
 
-    const winA = (kind === "A") ? e.win_wash : e.win_top;
-    const winB = e.win_norm;
-    const medA = (kind === "A") ? e.med_wash : e.med_top;
-    const medB = e.med_norm;
-    const p10A = (kind === "A") ? e.p10_wash : e.p10_top;
-    const p10B = e.p10_norm;
-    const nA   = (kind === "A") ? e.n_wash : e.n_top;
-    const nB   = e.n_norm;
+    const winA = a.win,    winB = b.win_norm;
+    const medA = a.median, medB = b.med_norm;
+    const p10A = a.p10,    p10B = b.p10_norm;
+    const nA   = a.n,      nB   = b.n_norm;
+
+    if (!(Number.isFinite(winA) && Number.isFinite(winB) && Number.isFinite(medA) && Number.isFinite(medB) && Number.isFinite(p10A) && Number.isFinite(p10B))) continue;
 
     const dWin = (winA - winB);
     const dMed = (medA - medB);
     const dP10 = (p10A - p10B);
 
-    const b = document.createElement("div");
-    b.className = "outbox";
-    b.innerHTML = `
+    const bx = document.createElement("div");
+    bx.className = "outbox";
+    bx.innerHTML = `
       <div class="h">${label}</div>
       <div class="r"><span>Chance of gain</span><strong>${Math.round(winA*100)}% vs ${Math.round(winB*100)}% (${fmtPP(dWin)})</strong></div>
       <div class="r"><span>Typical</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)} (${fmtSignedPct(dMed)})</strong></div>
       <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)} (${fmtSignedPct(dP10)})</strong></div>
       <div class="r"><span>N</span><strong>${nA} vs ${nB}</strong></div>
     `;
-    gridEl.appendChild(b);
+    gridEl.appendChild(bx);
   }
 
   if (!gridEl.children.length) return null;
@@ -354,20 +354,16 @@ function renderCard(container, item, detail, derived){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-label">Final Score</span><span class="legend-note">higher → darker</span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Final Score</span><span class="legend-note">higher → darker</span></span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
   grid.appendChild(right);
   card.appendChild(grid);
 
-  // Evidence A / B
-  const evA = detail.evidence_washout || null;
-  const evB = detail.evidence_finalscore || null;
-  const secA = evidenceSection("A", evA);
-  const secB = evidenceSection("B", evB);
-  if (secA) card.appendChild(secA);
-  if (secB) card.appendChild(secB);
+  // Evidence (consistent with the main recommendation): analogs vs baseline
+  const ev = evidenceAnalogVsNormalSection(detail);
+  if (ev) card.appendChild(ev);
 
   if (series && series.prices && series.prices.length){
     requestAnimationFrame(()=>drawGradientLine(canvas, series.dates, series.prices, series.final));
@@ -430,11 +426,11 @@ function renderHistoricalSignals(full, derivedByTicker){
       const p0 = Number(s.prices[i]);
       if (!Number.isFinite(p0) || p0 <= 0) continue;
 
-      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
-      if (!(r1 !== null && Number.isFinite(r1))) continue; // require ≥1Y forward performance
-
-      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
       const r5 = (i+H5 < n) ? (Number(s.prices[i+H5]) / p0 - 1) : null;
+      if (!(r5 !== null && Number.isFinite(r5))) continue; // require ≥5Y forward performance
+
+      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
+      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
 
       signals.push({
         date: String(s.dates[i] || ""),

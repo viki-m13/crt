@@ -51,7 +51,7 @@
                   It looks for <em>idiosyncratic</em> weakness (the part you can’t explain away with SPY).
                 </p>
 
-                <div class="section-title" style="margin-top:14px">What this is not</div>
+                <div class="section-title section-title--spaced">What this is not</div>
                 <ul>
                   <li><strong>Not market advice.</strong> It does not tell you what you “should” own or how to build your portfolio.</li>
                   <li><strong>Not a trading strategy.</strong> No entries/exits, position sizing, timing rules, or risk management plan.</li>
@@ -78,9 +78,9 @@
                     It searches the stock’s own history for the most similar days (same stock, similar conditions), then measures what happened next.
                   </li>
                   <li>
-                    <strong>Compute two kinds of evidence.</strong>
-                    <strong>Evidence A</strong> compares outcomes after the stock’s <strong>top-10% most washed-out days</strong> versus <strong>any normal day</strong>.
-                    <strong>Evidence B</strong> compares outcomes after the stock’s <strong>top-10% Final Score days</strong> versus <strong>any normal day</strong>.
+                    <strong>Show evidence, not vibes.</strong>
+                    The evidence block compares outcomes after the <strong>same “similar past setups”</strong> used in the recommendation
+                    versus that stock’s <strong>normal</strong> historical baseline.
                   </li>
                   <li>
                     <strong>Rank by one consistent score.</strong>
@@ -103,8 +103,8 @@
                   <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad-but-plausible case).</li>
                   <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
                   <li>
-                    The <strong>Evidence A/B</strong> bullets inside each card compare “signal days” to that stock’s <em>typical</em>
-                    outcomes — that’s how you see whether the signal historically added edge for that specific ticker.
+                    <strong>Evidence</strong> compares the “similar past setups” group to the stock’s normal baseline
+                    so you can see whether the setup historically added edge for that ticker.
                   </li>
                 </ul>
               </div>
@@ -119,20 +119,78 @@
               </summary>
               <div class="details-body">
                 <p>
-                  Each stock has a daily feature vector <span class="mono">x<sub>t</sub></span> describing “washout-ness”:
-                  drawdown, range percentile, volatility/volume stress, and market-adjusted underperformance.
-                  Features are standardized within the stock’s own history, then we search for the <span class="mono">K</span>
-                  nearest historical days by a distance in that feature space.
+                  <strong>Rebound Ledger — how the model works (plain English)</strong>
                 </p>
+                <p>
+                  Each day, for every stock, it measures how “beaten down” the stock is compared with its own past: drawdown from the last
+                  1‑year high, where today sits inside its 1‑year and 3‑month ranges, and whether volume and volatility look stressed.
+                  It also subtracts out the market’s move by estimating the stock’s beta to SPY and looking at the residual
+                  (<span class="mono">stock − beta×SPY</span>), so a stock can still look washed‑out even if the whole market fell.
+                  Those metrics form a single “today snapshot” for the stock.
+                </p>
+                <p>
+                  To decide what’s “similar,” it compares today’s snapshot to the same snapshot from every historical day for that stock.
+                  Before comparing, it scales each feature using a robust z‑score (median/MAD) so one noisy metric can’t dominate.
+                  It then computes a simple distance (small distance = very similar) and selects the closest ~250 past days (“analogs”),
+                  while preventing them from being clustered right next to each other and balancing across broad SPY regimes.
+                </p>
+                <p>
+                  Once it has those analogs, it looks at what happened after them. For 1, 3, and 5 years forward it computes the fraction
+                  of analogs that ended up positive (chance of gain), the median return (typical), and a bad‑but‑plausible case (10th percentile).
+                  That becomes the <strong>Edge</strong>. Separately, the <strong>Washout</strong> score is how extreme today’s snapshot looks versus the
+                  stock’s own history (including after removing the market). The <strong>Final Score</strong> is essentially “edge from similar setups,”
+                  boosted when today is especially washed‑out. There isn’t a trained machine‑learning model here; it’s nearest‑neighbor matching
+                  plus straightforward statistics on what followed those matched days.
+                </p>
+
                 <ul>
-                  <li><span class="mono">Similarity</span>: find past days <span class="mono">s</span> minimizing <span class="mono">d(t,s)=\sqrt{\sum_j w_j (x_{t,j}-x_{s,j})^2}</span>.</li>
-                  <li><span class="mono">Forward return</span>: <span class="mono">r_{t,h}=P_{t+h}/P_t - 1</span> for horizons <span class="mono">h</span> ∈ {1Y, 3Y, 5Y}.</li>
-                  <li><span class="mono">Market adjustment</span>: estimate a rolling beta vs SPY; analyze residual (stock-specific) moves so “market selloff” doesn’t masquerade as a signal.</li>
-                  <li><span class="mono">Evidence A/B</span>: compare outcomes after top-decile washout days <em>and</em> top-decile Final Score days to the unconditional “any day” outcome distribution for that ticker.</li>
-                  <li><span class="mono">Reliability</span>: Confidence/Stability penalize low-N or fragile patterns; Stability favors signals that don’t break under small, reasonable perturbations.</li>
+                  <li><strong>Outlier</strong> = “unusually washed‑out vs itself” + “historically rebounds from similar setups.” No trained ML model.</li>
                 </ul>
+
+                <ol>
+                  <li>
+                    <strong>Build features (per stock, per day)</strong>
+                    <ul>
+                      <li><span class="mono">dd_1y = Close / max(Close last 252) − 1</span></li>
+                      <li><span class="mono">pos_1y = (Close − min252) / (max252 − min252)</span></li>
+                      <li>Same for ~63 trading days (<span class="mono">dd_3m</span>, <span class="mono">pos_3m</span>)</li>
+                      <li><span class="mono">atr_pct = ATR14 / Close</span></li>
+                      <li><span class="mono">vol_z = robust_z(volume)</span> using median/MAD</li>
+                      <li><span class="mono">gap = Open / PrevClose − 1</span></li>
+                      <li><span class="mono">trend_3m = Close / SMA63 − 1</span></li>
+                      <li>
+                        <strong>Market‑adjusted (idiosyncratic)</strong>: rolling beta vs SPY, then
+                        <span class="mono">resid_ret = stock_ret − beta×spy_ret</span> and compute washout features on the residual series
+                      </li>
+                      <li>
+                        <strong>Market regime (SPY)</strong>: SPY drawdown/trend/vol/ATR to avoid learning from only one kind of tape
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Find “similar instances” (analog days)</strong>
+                    <ul>
+                      <li>Robust‑standardize each feature: <span class="mono">z = (x − median) / (1.4826×MAD)</span></li>
+                      <li>Distance: <span class="mono">dist(day) = sqrt(Σ (z(day) − z(today))²)</span></li>
+                      <li>Pick <span class="mono">K ≈ 250</span> closest past days, enforcing minimum spacing and regime balancing</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Scores</strong>
+                    <ul>
+                      <li><strong>Washout (0–100)</strong>: blend of drawdown/position/idiosyncratic washout + ATR/volume stress, with a “bottom gate”</li>
+                      <li>
+                        <strong>Edge (0–100)</strong>: from analog forward returns at 1/3/5 years:
+                        chance = mean(<span class="mono">fwd_return &gt; 0</span>), typical = median, downside = 10th percentile;
+                        downweighted when <span class="mono">N</span> is small
+                      </li>
+                      <li><strong>Final Score (0–100)</strong>: Edge amplified by Washout (washout boosts edge)</li>
+                    </ul>
+                  </li>
+                </ol>
+
                 <p class="footnote">
-                  This is a conditional historical summary, not a promise. Use it as an evidence layer, not as a mandate.
+                  It’s a conditional historical summary, not a promise. Use it as an evidence layer, not a mandate.
                 </p>
               </div>
             </details>
@@ -148,7 +206,7 @@
             <div class="footnote" style="margin:0 0 10px 0">
               Most recent 10 historical days where a ticker met today’s strict “signal” definition:
               <strong>Final‑score rank</strong> and <strong>Washed‑out rank</strong> were both inside that ticker’s <strong>top 10%</strong>.
-              Returns are the realized forward performance from that date.
+              Included only when <strong>5‑year</strong> realized forward performance is available (so the 1Y/3Y/5Y columns are comparable).
             </div>
             <div class="table-wrap">
               <table class="tbl" id="histTbl">
