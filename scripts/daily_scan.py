@@ -47,8 +47,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
+    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A"]  
