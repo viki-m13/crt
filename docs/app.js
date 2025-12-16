@@ -53,6 +53,18 @@ function washoutTopPctFromSeries(wash){
   return topPct;
 }
 
+function finalTopPctFromSeries(final){
+  const arr = (final || []).map(Number).filter(v => Number.isFinite(v));
+  if (arr.length < 60) return null;
+  const v = arr[arr.length - 1];
+  let le = 0;
+  for (const x of arr){ if (x <= v) le++; }
+  const pct = le / arr.length;              // percentile (higher = stronger signal)
+  const topPct = (1 - pct) * 100;           // "top X%" strongest Final Score days
+  return topPct;
+}
+
+
 function washoutTopRankText(topPct){
   if (topPct === null || topPct === undefined || Number.isNaN(topPct)) return null;
   const v = Number(topPct);
@@ -206,12 +218,22 @@ function evidenceSection(kind, ev){
 
 function renderCard(container, item, detail){
   const series = detail.series || {};
+
+  // Washed-out rank (higher washout = more washed-out)
   const topPctFromItem = (item.washout_top_pct != null && Number.isFinite(item.washout_top_pct))
     ? Number(item.washout_top_pct)
     : null;
   const topPctFromSeries = washoutTopPctFromSeries(series.wash);
   const topPct = (topPctFromItem != null) ? topPctFromItem : topPctFromSeries;
   const washRank = washoutTopRankText(topPct) || "—";
+
+  // Final-score rank (higher final = stronger signal)
+  const finalTopPctFromItem = (item.final_score_top_pct != null && Number.isFinite(item.final_score_top_pct))
+    ? Number(item.final_score_top_pct)
+    : null;
+  const finalTopPctFromSeries = finalTopPctFromSeries(series.final);
+  const finalTopPct = (finalTopPctFromItem != null) ? finalTopPctFromItem : finalTopPctFromSeries;
+  const finalRank = washoutTopRankText(finalTopPct) || "—";
 
   const card = document.createElement("div");
   card.className = "card";
@@ -225,6 +247,7 @@ function renderCard(container, item, detail){
     </div>
     <div class="metrics">
       <div class="metric"><span>Final score</span> <strong>${fmtNum1(item.final_score)}</strong></div>
+      <div class="metric"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
       <div class="metric"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}</strong></div>
       <div class="metric"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}</strong></div>
       <div class="metric"><span>Conf</span> <strong>${fmtNum0(item.confidence)}</strong></div>
@@ -395,17 +418,17 @@ function formatAsOf(asOf){
   function applySort(){
     const list = [...items];
     if (sortMode === "final"){
-      list.sort((a,b)=> (b.final_score - a.final_score) || (b.confidence - a.confidence) || (b.washout_today - a.washout_today));
+      list.sort((a,b)=> (b.final_score - a.final_score) || (b.washout_today - a.washout_today) || (b.edge_score - a.edge_score));
     }else if (sortMode === "washout"){
       // higher washout_today = more washed-out
-      list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.final_score - a.final_score) || (b.confidence - a.confidence));
-    }else if (sortMode === "confidence"){
-      list.sort((a,b)=> (b.confidence - a.confidence) || (b.final_score - a.final_score) || (b.washout_today - a.washout_today));
+      list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.final_score - a.final_score) || (b.edge_score - a.edge_score));
+    }else if (sortMode === "edge"){
+      list.sort((a,b)=> (b.edge_score - a.edge_score) || (b.final_score - a.final_score) || (b.washout_today - a.washout_today));
     }
     return list;
   }
 
-  async function rerender(){
+async function rerender(){
     const list = applySort();
     renderTable(list);
     await renderTop10(list);
