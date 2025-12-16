@@ -25,6 +25,8 @@ import json
 import warnings
 warnings.filterwarnings("ignore")
 
+from pathlib import Path
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from io import StringIO
@@ -34,6 +36,9 @@ import pandas as pd
 import yfinance as yf
 import requests
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 # =========================
 # CONFIG (KEEP SIMPLE)
 # =========================
@@ -42,8 +47,8 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=ITOT_holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A"]  
@@ -215,13 +220,74 @@ def verdict_line(score: float, confidence: float, stability: float, fragile: boo
 # Holdings
 # =========================
 def fetch_ishares_holdings_tickers(url: str) -> list:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-    }
-    resp = requests.get(url, headers=headers, timeout=45)
-    if resp.status_code != 200 or not resp.content:
-        raise RuntimeError(f"Holdings download failed (HTTP {resp.status_code}).")
+    """
+    Robust holdings fetch with:
+      - retries + longer read timeout (iShares is flaky in GitHub Actions)
+      - on-success cache (docs/data/_cache/holdings_tickers.json)
+      - fallback to cached tickers if the live download fails
+
+    If both live fetch and cache fail, returns an empty list (caller still runs with ALWAYS_INCLUDE + BENCH).
+    """
+
+    repo_root = Path(__file__).resolve().parents[1]
+    cache_path = repo_root / "docs" / "data" / "_cache" / "holdings_tickers.json"
+
+    def _load_cache() -> list:
+        try:
+            if cache_path.exists():
+                obj = json.loads(cache_path.read_text())
+                if isinstance(obj, list):
+                    out = [str(x).strip().upper() for x in obj if str(x).strip()]
+                    out = sorted(set(out))
+                    if len(out) >= 5:
+                        return out
+        except Exception:
+            pass
+        return []
+
+    def _save_cache(tickers: list) -> None:
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(json.dumps(sorted(set(tickers)), indent=2))
+        except Exception:
+            pass
+
+    def _get_with_retries() -> requests.Response:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept": "text/csv,*/*;q=0.9",
+        }
+
+        retry = Retry(
+            total=5,
+            connect=5,
+            read=5,
+            status=5,
+            backoff_factor=0.8,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(["GET"]),
+            raise_on_status=False,
+            respect_retry_after_header=True,
+        )
+        session = requests.Session()
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        # (connect timeout, read timeout)
+        return session.get(url, headers=headers, timeout=(15, 120))
+
+    try:
+        resp = _get_with_retries()
+        if resp.status_code != 200 or not resp.content:
+            raise RuntimeError(f"Holdings download failed (HTTP {resp.status_code}).")
+    except Exception as e:
+        cached = _load_cache()
+        if cached:
+            print(f"[HOLDINGS] WARNING: iShares fetch failed ({type(e).__name__}: {e}). Using cached tickers: {cache_path}")
+            return cached
+        print(f"[HOLDINGS] WARNING: iShares fetch failed ({type(e).__name__}: {e}). No cache found. Proceeding with ALWAYS_INCLUDE only.")
+        return []
 
     raw_text = resp.content.decode("utf-8", errors="ignore")
     lines = raw_text.splitlines()
@@ -263,9 +329,17 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         (~tick.str.contains("DERIV", case=False, na=False))
     ].dropna().unique().tolist()
 
+    keep = sorted(keep)
     if len(keep) < 5:
-        raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
-    return sorted(keep)
+        cached = _load_cache()
+        if cached:
+            print(f"[HOLDINGS] WARNING: parsed too few tickers ({len(keep)}). Using cached tickers: {cache_path}")
+            return cached
+        print(f"[HOLDINGS] WARNING: parsed too few tickers ({len(keep)}). No cache found. Proceeding with ALWAYS_INCLUDE only.")
+        return []
+
+    _save_cache(keep)
+    return keep
 
 # =========================
 # yfinance download
