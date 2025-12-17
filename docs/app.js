@@ -118,8 +118,9 @@ function verdictFromRanks(finalTopPct, washTopPct){
   const w = (washTopPct != null && Number.isFinite(washTopPct)) ? Number(washTopPct) : null;
   const inF = (f != null && f <= 10);
   const inW = (w != null && w <= 10);
-  if (inF) return "Signal today";
-  if (inW) return "Washed-out (not a Final Score signal)";
+  if (inF && inW) return "Signal today";
+  if (inF) return "Strong setup (final-score signal)";
+  if (inW) return "Washed-out (needs edge confirmation)";
   return "Not compelling today";
 }
 
@@ -207,17 +208,18 @@ function outcomeBox(label, s){
     <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
     <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
     <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
-    <div class="r"><span>Based on N historical signal days</span><strong>${s.n}</strong></div>
+    <div class="r"><span>Based on N similar days</span><strong>${s.n}</strong></div>
   `;
   return b;
 }
 
-function evidenceFinalDecileVsNormalSection(detail){
+function evidenceAnalogVsNormalSection(detail){
   // One consistent evidence block:
-  //   A = this ticker's own historical top-decile Final Score days
-  //   B = this ticker's all-days baseline (unconditional)
-  const ev = detail?.evidence_finalscore || null;
-  if (!ev) return null;
+  //   A = the SAME closest-analog days used to compute the main 1/3/5Y outcomes above
+  //   B = a "normal" historical day baseline (unconditional) for this ticker
+  const base = detail?.evidence_baseline || detail?.evidence_finalscore || detail?.evidence_washout || null;
+  const outs = detail?.outcomes || null;
+  if (!base || !outs) return null;
 
   const box = document.createElement("details");
   box.className = "details evidence-details";
@@ -225,14 +227,14 @@ function evidenceFinalDecileVsNormalSection(detail){
     <summary class="details-summary">
       <div class="evidence-summary-left">
         <span class="section-title">EVIDENCE</span>
-        <span class="ev-sub">Top-decile Final Score days vs normal</span>
+        <span class="ev-sub">Top-decile Final Score analogs vs normal</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
       <div class="ev-explain">
-        <strong>A</strong> = days when this stock’s <strong>Final Score</strong> was in its own historical <strong>top 10%</strong> (signal days).
-        <strong>B</strong> = any random historical day for this stock (baseline).
+        <strong>A</strong> = the closest historical “analog” days <em>restricted to</em> days that were in this stock’s <strong>top decile</strong> of Final Score historically.
+        <strong>B</strong> = a normal historical day baseline for this stock.
         Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.
       </div>
       <div class="outcomes ev-grid"></div>
@@ -243,13 +245,14 @@ function evidenceFinalDecileVsNormalSection(detail){
   const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
 
   for (const [k,label] of horizons){
-    const e = ev?.[k];
-    if (!e) continue;
+    const a = outs?.[k];
+    const b = base?.[k];
+    if (!a || !b) continue;
 
-    const winA = e.win_top,    winB = e.win_norm;
-    const medA = e.med_top,    medB = e.med_norm;
-    const p10A = e.p10_top,    p10B = e.p10_norm;
-    const nA   = e.n_top,      nB   = e.n_norm;
+    const winA = a.win,    winB = b.win_norm;
+    const medA = a.median, medB = b.med_norm;
+    const p10A = a.p10,    p10B = b.p10_norm;
+    const nA   = a.n,      nB   = b.n_norm;
 
     if (!(Number.isFinite(winA) && Number.isFinite(winB) && Number.isFinite(medA) && Number.isFinite(medB) && Number.isFinite(p10A) && Number.isFinite(p10B))) continue;
 
@@ -358,8 +361,8 @@ function renderCard(container, item, detail, derived){
   grid.appendChild(right);
   card.appendChild(grid);
 
-  // Evidence (consistent with the main recommendation): signal days vs baseline
-  const ev = evidenceFinalDecileVsNormalSection(detail);
+  // Evidence (consistent with the main recommendation): analogs vs baseline
+  const ev = evidenceAnalogVsNormalSection(detail);
   if (ev) card.appendChild(ev);
 
   if (series && series.prices && series.prices.length){
@@ -418,8 +421,7 @@ function renderHistoricalSignals(full, derivedByTicker){
       const fTop = topPctFromValue(sortedFinal, fv);
       const wTop = topPctFromValue(sortedWash, wv);
       if (!(Number.isFinite(fTop) && Number.isFinite(wTop))) continue;
-      // Signal definition for the site: Final Score in this stock's top decile.
-      if (fTop > 10) continue;
+      if (fTop > 10 || wTop > 10) continue;
 
       const p0 = Number(s.prices[i]);
       if (!Number.isFinite(p0) || p0 <= 0) continue;
