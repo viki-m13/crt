@@ -11,12 +11,12 @@
 #   - This script self-gates to run once per day after 5pm America/New_York.
 #   - Set FORCE_RUN=1 to bypass gating (manual runs).
 #
-#+#+#+#+#+#+#+#+#+#+#+#+
-# Model: CRT REBOUND SCANNER — v8 (pure top‑decile Final Score evidence)
+# Model: CRT REBOUND SCANNER — v8
 #   • Washout Meter (0–100): how washed-out/sold-off it looks (stock-specific + market-adjusted).
-#   • Edge Score    (0–100): a simple “rebound readiness” blend (short-term trend + gap/volume stress), not a forecast.
+#   • Edge Score    (0–100): rebound edge from historical analogs (same stock, similar setups).
 #   • Final Score   (0–100): Edge Score amplified by Washout (the ONE score used for ranking + charts).
-#   • Evidence: outcomes on this stock’s own top‑decile Final Score days vs its all‑days baseline.
+#   • Evidence A: top 10% Washout days vs all days.
+#   • Evidence B: top 10% Final Score days vs all days.
 # ============================================================
 
 import os
@@ -42,10 +42,10 @@ PERIOD   = "max"
 BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
-    #"https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf/"
-    #"1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
+    #"https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    #"1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
 )
 
 ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A", "ARM"]
@@ -468,38 +468,6 @@ def compute_washout_meter(feat: pd.DataFrame) -> pd.Series:
     wash = (0.55 * struct + 0.30 * idio + 0.15 * cap).clip(0, 1)
     wash = (wash * confirm).clip(0, 1)
     return 100.0 * wash
-
-# =========================
-# Edge Score (simple, no analogs)
-# =========================
-def _sigmoid_series(x: pd.Series) -> pd.Series:
-    x = x.clip(-20, 20)
-    return 1.0 / (1.0 + np.exp(-x))
-
-def compute_edge_score_series(feat: pd.DataFrame) -> pd.Series:
-    """A simple 0–100 "rebound readiness" score.
-
-    Intuition: we still want *washed-out* stocks, but "edge" is slightly higher when
-    there are early signs of stabilization/reversal (trend), plus stress markers
-    (gap/volume) that often coincide with capitulation.
-
-    This is intentionally feature-only (no analog matching, no ML training).
-    """
-    trend = _sigmoid_series((feat["trend_st"].fillna(0) / 0.06).clip(-5, 5))
-    gapdn = _sigmoid_series(((-feat["gap"].fillna(0) - 0.01) / 0.05).clip(-5, 5))
-    volsp = _sigmoid_series(((feat["volu_z"].fillna(0) - 0.5) / 1.0).clip(-5, 5))
-    confirm = feat["bottom_confirm"].clip(0, 1).fillna(0)
-
-    # Blend to 0..1, then gate by confirmation.
-    unit = (0.55 * trend + 0.25 * gapdn + 0.20 * volsp).clip(0, 1)
-    unit = (unit * (0.35 + 0.65 * confirm)).clip(0, 1)
-    return 100.0 * unit
-
-def final_score_series(edge: pd.Series, washout: pd.Series) -> pd.Series:
-    e = pd.to_numeric(edge, errors="coerce")
-    w = pd.to_numeric(washout, errors="coerce")
-    ww = (w / 100.0).clip(0, 1)
-    return (e * (FINAL_WASH_FLOOR + FINAL_WASH_WEIGHT * ww)).replace([np.inf, -np.inf], np.nan)
 
 # =========================
 # Analog engine
@@ -982,21 +950,16 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     feat = feat.join(forward_returns(feat["px"]), how="left")
     feat["washout_meter"] = compute_washout_meter(feat)
 
-    # ------------------------------------------------------------
-    # Pure Final Score series (feature-only; no analog matching)
-    # ------------------------------------------------------------
-    edge_series = compute_edge_score_series(feat)
-    final_series_full = final_score_series(edge_series, feat["washout_meter"])
-
-    ok_now = final_series_full.notna() & feat["px"].notna() & feat["washout_meter"].notna()
+    X = build_feature_matrix(feat, feature_cols, zwin=zwin)
+    ok_now = X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()
     if ok_now.sum() == 0:
         return None
     now_idx = ok_now[ok_now].index[-1]
 
+    regimes = feat.apply(make_regime_bucket, axis=1)
+
     confirm_today = safe_float(feat.loc[now_idx, "bottom_confirm"])
     wash_today = safe_float(feat.loc[now_idx, "washout_meter"])
-    edge_score = safe_float(edge_series.loc[now_idx])
-    final_today = safe_float(final_series_full.loc[now_idx])
     beta_today = safe_float(feat.loc[now_idx, "beta"])
 
     # Gate: this scan is about washed-out setups (ALWAYS_PLOT + SPY bypasses)
@@ -1004,49 +967,75 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         if (not np.isfinite(wash_today)) or (wash_today < MIN_WASHOUT_TODAY):
             return None
 
+    
+    # Candidate pool for analogs: restrict to this stock's top-decile historical Final Score days.
+    # We compute a (sparsely sampled) historical Final Score series first, then take its 90th percentile cutoff.
+    final_series_hist = compute_final_score_series(
+        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
+    )
+    eligible_topdecile = None
+    fs_vals = final_series_hist.dropna()
+    if len(fs_vals) >= 100:
+        thr90 = float(fs_vals.quantile(0.90))
+        eligible_topdecile = (final_series_hist >= thr90)
+
+# Analogs -> horizon summaries + units
+    h_summaries = {}
+    h_units = {}
+    h_n = []
+    analog_regimes_for_conf = None
+
+    for h, _w in HORIZON_WEIGHTS.items():
+        y = feat.get(f"fwd_{h}", None)
+        if y is None:
+            continue
+
+        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible_topdecile)
+        # Fallback: if the restricted pool is too thin, allow all eligible past days.
+        if len(analog_idx) < ANALOG_MIN:
+            analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+        vals = y.loc[analog_idx].dropna().values.astype(float)
+        s = summarize(vals)
+        if s["n"] >= ANALOG_MIN:
+            h_summaries[h] = s
+            h_units[h] = horizon_unit(confirm_today, s, n_target=ANALOG_K)
+            h_n.append(s["n"])
+            if analog_regimes_for_conf is None and h == "1Y":
+                analog_regimes_for_conf = regimes.loc[analog_idx].fillna("UNK").tolist()
+
+    if not h_units:
+        return None
+
+    # Edge Score (0–100)
+    weights, units = [], []
+    for h, unit in h_units.items():
+        weights.append(HORIZON_WEIGHTS.get(h, 0.0))
+        units.append(unit)
+    wsum = float(np.sum(weights))
+    comp_unit = float(np.dot(units, weights) / wsum) if wsum > 0 else float(np.mean(units))
+    edge_score = 100.0 * comp_unit
+
+    # Final Score (0–100)
+    final_today = final_score(edge_score, wash_today)
     if not np.isfinite(final_today):
         return None
 
-    # Evidence: top-decile Final Score days vs all-days baseline
-    ev_base = baseline_stats(feat)
-    ev_final = evidence_finalscore(feat, final_series_full)
+    # Stability (on EdgeScore behavior)
+    stab_score, fragile, stab_samples = stability_metrics(feat, X, regimes, now_idx)
 
-    # Outcomes shown on the cards are the top-decile Final Score group.
-    h_summaries = {}
-    n_list = []
-    for h in ["1Y", "3Y", "5Y"]:
-        e = ev_final.get(h, None)
-        if not isinstance(e, dict) or e.get("n_top", 0) <= 0:
-            continue
-        h_summaries[h] = {
-            "n": int(e.get("n_top", 0)),
-            "win": float(e.get("win_top", 0.0)),
-            "median": float(e.get("med_top", 0.0)),
-            "p10": float(e.get("p10_top", 0.0)),
-        }
-        n_list.append(int(e.get("n_top", 0)))
+    # Market variety (entropy of analog regimes)
+    if analog_regimes_for_conf is None:
+        h0 = list(h_summaries.keys())[0]
+        y0 = feat[f"fwd_{h0}"]
+        idx0 = select_analogs_regime_balanced(X, y0, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+        analog_regimes_for_conf = regimes.loc[idx0].fillna("UNK").tolist()
+    market_variety = regime_entropy_score(analog_regimes_for_conf)
 
-    # If we can't compute top-decile outcomes, we can't justify a signal.
-    if not h_summaries:
-        return None
+    # Confidence
+    n_eff = int(np.median(h_n)) if len(h_n) else 0
+    confidence = compute_confidence(n_eff, ANALOG_K, market_variety, stab_score)
 
-    # Stability: how noisy the Final Score is recently (higher = steadier)
-    tail = final_series_full.dropna().tail(252)
-    if len(tail) >= 30:
-        std = float(np.std(tail.values.astype(float)))
-        stab_score = float(100.0 * (1.0 - min(1.0, std / 18.0)))
-    else:
-        stab_score = 0.0
-    stab_score = float(np.clip(stab_score, 0.0, 100.0))
-    fragile = bool(stab_score < VERDICT["OK_STAB"])
-
-    # Confidence: mostly sample size of the top-decile group (penalize tiny histories)
-    n_eff = int(np.min(n_list)) if n_list else 0
-    sample_term = min(1.0, math.sqrt(max(0.0, n_eff) / 250.0))
-    confidence = float(100.0 * sample_term * (0.60 + 0.40 * (stab_score / 100.0)))
-    confidence = float(np.clip(confidence, 0.0, 100.0))
-
-    # Risk label uses the signal group's downside stats + beta
+    # Risk
     risk = risk_label(h_summaries, beta_today)
 
     # Verdict (FinalScore)
@@ -1055,6 +1044,14 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     # Explain
     explain_lines = build_explain(feat, now_idx)
 
+    # Baseline stats (ALL days) used by the website evidence block (A = analogs, B = normal baseline).
+    ev_base = baseline_stats(feat)
+
+    # Keep a FinalScore series for chart shading (sparsely computed).
+    final_series_full = compute_final_score_series(
+        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
+    )
+
     # Series payload for chart window
     cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
     win = feat[(feat.index >= cutoff) & (feat.index <= now_idx)].copy()
@@ -1062,7 +1059,10 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         win = feat.loc[:now_idx].copy()
     px = win["px"].astype(float)
     wash = win["washout_meter"].astype(float)
-    final_win = final_series_full.reindex(win.index).ffill().fillna(0).astype(float)
+    final_series_window = compute_final_score_series(
+        feat, X, regimes, start_idx=cutoff, end_idx=now_idx, step_bars=PLOT_SCORE_STEP_BARS
+    )
+    final_win = final_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
     # Top-% washed-out (readable): "Top X%" of days by Washout Meter
     wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
@@ -1082,7 +1082,6 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "explain": explain_lines,
         "outcomes": {h: h_summaries.get(h, {"n": 0}) for h in ["1Y", "3Y", "5Y"]},
         "evidence_baseline": ev_base,
-        "evidence_finalscore": ev_final,
         
         "series": {
             "dates": [str(x.date()) for x in px.index],
@@ -1090,7 +1089,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "wash": [safe_float(v) for v in wash.values],
             "final": [safe_float(v) for v in final_win.values],
         },
-        "stability_samples": [],
+        "stability_samples": stab_samples,
     }
 
     row = {
@@ -1132,7 +1131,7 @@ def main():
         extra_tickers = [x.strip().upper().replace(".", "-") for x in extra.split(",") if x.strip()]
 
     print("=" * 110)
-    print("REBOUND SCANNER (v8) — pure top-decile Final Score evidence")
+    print("REBOUND SCANNER (v8) — FinalScore everywhere + two evidence blocks")
     print("=" * 110)
 
     # Universe
