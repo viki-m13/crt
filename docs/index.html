@@ -131,7 +131,7 @@
                 <p>
                   To decide what’s “similar,” it compares today’s snapshot to the same snapshot from every historical day for that stock.
                   Before comparing, it scales each feature using a robust z‑score (median/MAD) so one noisy metric can’t dominate.
-                  It then computes a simple distance (small distance = very similar) and selects the closest ~250 past days from within the stock’s top‑decile Final Score days (“analogs”),
+                  It then computes a simple distance (small distance = very similar) and selects the closest ~250 past days (“analogs”),
                   while preventing them from being clustered right next to each other and balancing across broad SPY regimes.
                 </p>
                 <p>
