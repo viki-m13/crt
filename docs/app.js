@@ -118,9 +118,8 @@ function verdictFromRanks(finalTopPct, washTopPct){
   const w = (washTopPct != null && Number.isFinite(washTopPct)) ? Number(washTopPct) : null;
   const inF = (f != null && f <= 10);
   const inW = (w != null && w <= 10);
-  if (inF && inW) return "Signal today";
-  if (inF) return "Strong setup (final-score signal)";
-  if (inW) return "Washed-out (needs edge confirmation)";
+  if (inF) return "Signal today";
+  if (inW) return "Washed-out (not a Final Score signal)";
   return "Not compelling today";
 }
 
@@ -208,15 +207,17 @@ function outcomeBox(label, s){
     <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
     <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
     <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
-    <div class="r"><span>Based on N top‑decile days</span><strong>${s.n}</strong></div>
+    <div class="r"><span>Based on N historical signal days</span><strong>${s.n}</strong></div>
   `;
   return b;
 }
 
-function evidenceFinalScoreSection(detail){
-  // Evidence: Top 10% Final Score days vs ALL days (baseline) for this stock.
-  const base = detail?.evidence_finalscore || null;
-  if (!base) return null;
+function evidenceFinalDecileVsNormalSection(detail){
+  // One consistent evidence block:
+  //   A = this ticker's own historical top-decile Final Score days
+  //   B = this ticker's all-days baseline (unconditional)
+  const ev = detail?.evidence_finalscore || null;
+  if (!ev) return null;
 
   const box = document.createElement("details");
   box.className = "details evidence-details";
@@ -224,36 +225,33 @@ function evidenceFinalScoreSection(detail){
     <summary class="details-summary">
       <div class="evidence-summary-left">
         <span class="section-title">EVIDENCE</span>
-        <span class="ev-sub">Top 10% Final Score days vs normal</span>
+        <span class="ev-sub">Top-decile Final Score days vs normal</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
       <div class="ev-explain">
-        <strong>A</strong> = the <strong>top 10%</strong> of historical days for this stock by <strong>Final Score</strong>.
-        <strong>B</strong> = a <strong>normal</strong> historical day (all days baseline).
+        <strong>A</strong> = days when this stock’s <strong>Final Score</strong> was in its own historical <strong>top 10%</strong> (signal days).
+        <strong>B</strong> = any random historical day for this stock (baseline).
         Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.
       </div>
-      <div class="outcomes ev-grid" data-ev-grid="1"></div>
+      <div class="outcomes ev-grid"></div>
     </div>
   `;
 
-  const gridEl = box.querySelector('[data-ev-grid="1"]');
-  const order = ["1Y","3Y","5Y"];
-  const labels = { "1Y":"1 YEAR", "3Y":"3 YEARS", "5Y":"5 YEARS" };
+  const gridEl = box.querySelector(".ev-grid");
+  const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
 
-  for (const h of order){
-    const s = base[h];
-    if (!s) continue;
+  for (const [k,label] of horizons){
+    const e = ev?.[k];
+    if (!e) continue;
 
-    const winA = s.win_top,  winB = s.win_norm;
-    const medA = s.med_top,  medB = s.med_norm;
-    const p10A = s.p10_top,  p10B = s.p10_norm;
-    const nA   = s.n_top,    nB   = s.n_norm;
+    const winA = e.win_top,    winB = e.win_norm;
+    const medA = e.med_top,    medB = e.med_norm;
+    const p10A = e.p10_top,    p10B = e.p10_norm;
+    const nA   = e.n_top,      nB   = e.n_norm;
 
-    if (!(Number.isFinite(winA) && Number.isFinite(winB) &&
-          Number.isFinite(medA) && Number.isFinite(medB) &&
-          Number.isFinite(p10A) && Number.isFinite(p10B))) continue;
+    if (!(Number.isFinite(winA) && Number.isFinite(winB) && Number.isFinite(medA) && Number.isFinite(medB) && Number.isFinite(p10A) && Number.isFinite(p10B))) continue;
 
     const dWin = (winA - winB);
     const dMed = (medA - medB);
@@ -262,7 +260,7 @@ function evidenceFinalScoreSection(detail){
     const bx = document.createElement("div");
     bx.className = "outbox";
     bx.innerHTML = `
-      <div class="h">${labels[h] || h}</div>
+      <div class="h">${label}</div>
       <div class="r"><span>Chance of gain</span><strong>${Math.round(winA*100)}% vs ${Math.round(winB*100)}% (${fmtPP(dWin)})</strong></div>
       <div class="r"><span>Typical</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)} (${fmtSignedPct(dMed)})</strong></div>
       <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)} (${fmtSignedPct(dP10)})</strong></div>
@@ -274,7 +272,6 @@ function evidenceFinalScoreSection(detail){
   if (!gridEl.children.length) return null;
   return box;
 }
-
 
 function renderCard(container, item, detail, derived){
   const series = detail.series || {};
@@ -361,8 +358,8 @@ function renderCard(container, item, detail, derived){
   grid.appendChild(right);
   card.appendChild(grid);
 
-  // Evidence (consistent with the main recommendation): top‑decile vs baseline
-  const ev = evidenceFinalScoreSection(detail);
+  // Evidence (consistent with the main recommendation): signal days vs baseline
+  const ev = evidenceFinalDecileVsNormalSection(detail);
   if (ev) card.appendChild(ev);
 
   if (series && series.prices && series.prices.length){
@@ -399,7 +396,7 @@ function renderHistoricalSignals(full, derivedByTicker){
   const host = byId("histRows");
   if (!host) return;
 
-  const signals = [];
+  const bestByTicker = {};
   const H1 = 252, H3 = 252*3, H5 = 252*5;
 
   for (const [ticker, det] of Object.entries(full.details || {})){
@@ -414,25 +411,26 @@ function renderHistoricalSignals(full, derivedByTicker){
     const sortedFinal = [...finalArr].sort((a,b)=>a-b);
     const sortedWash  = [...washArr].sort((a,b)=>a-b);
 
-    // Use full-history cutoffs so the “Top X%” text matches how we describe ranks elsewhere.
-    for (let i=0;i<n;i++){
+    // Find the most recent qualifying signal day for THIS ticker.
+    for (let i=n-1;i>=0;i--){
       const fv = s.final[i];
       const wv = s.wash[i];
       const fTop = topPctFromValue(sortedFinal, fv);
       const wTop = topPctFromValue(sortedWash, wv);
       if (!(Number.isFinite(fTop) && Number.isFinite(wTop))) continue;
+      // Signal definition for the site: Final Score in this stock's top decile.
       if (fTop > 10) continue;
 
       const p0 = Number(s.prices[i]);
       if (!Number.isFinite(p0) || p0 <= 0) continue;
 
-      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
-      if (!(r1 !== null && Number.isFinite(r1))) continue; // require ≥1Y forward performance
-
-      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
       const r5 = (i+H5 < n) ? (Number(s.prices[i+H5]) / p0 - 1) : null;
+      if (!(r5 !== null && Number.isFinite(r5))) continue; // require ≥5Y forward performance
 
-      signals.push({
+      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
+      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
+
+      const sig = {
         date: String(s.dates[i] || ""),
         ticker,
         final_score: Number(fv),
@@ -440,10 +438,14 @@ function renderHistoricalSignals(full, derivedByTicker){
         final_rank: washoutTopRankText(fTop) || "—",
         wash_rank: washoutTopRankText(wTop) || "—",
         r1, r3, r5,
-      });
+      };
+
+      bestByTicker[ticker] = sig;
+      break; // only the most recent for this ticker
     }
   }
 
+  const signals = Object.values(bestByTicker);
   signals.sort((a,b)=> (b.date.localeCompare(a.date)) || (a.ticker.localeCompare(b.ticker)));
   const last10 = signals.slice(0, 10);
 
