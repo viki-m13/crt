@@ -1,270 +1,482 @@
-// Rebound Ledger — website renderer (v7 schema)
 
 const DATA_URL = "./data/full.json";
 
-// -----------------------
-// Small utilities
-// -----------------------
-const byId = (id)=>document.getElementById(id);
+// One cache-buster per page load so *every* JSON request bypasses GitHub Pages/CDN caches.
+// (Stable per-load keeps URLs consistent across all requests during a single page render.)
+const CACHE_BUST = String(Date.now());
 
 function withBust(url){
-  const bust = "v=" + Date.now();
   const sep = url.includes("?") ? "&" : "?";
-  return url + sep + bust;
+  return `${url}${sep}v=${encodeURIComponent(CACHE_BUST)}`;
 }
 
-async function loadJSON(url){
-  const u = withBust(url);
-  const r = await fetch(u, {
-    cache: "no-store",
-    headers: {"Pragma":"no-cache","Cache-Control":"no-cache"},
-  });
-  if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
-  return await r.json();
+function fmtPct(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  return `${Math.round(v*100)}%`;
+}
+
+function fmtSignedPct(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  const s = Math.round(v*100);
+  const sign = (s>0?"+":"");
+  return `${sign}${s}%`;
+}
+
+function fmtPP(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  const s = Math.round(v*100);
+  const sign = (s>0?"+":"");
+  return `${sign}${s}pp`;
+}
+
+function fmtNum0(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
+  const v = Number(x);
+  if (!Number.isFinite(v)) return "—";
+  return `${v.toFixed(0)}`;
 }
 
 function fmtNum1(x){
-  const v = Number(x);
-  return Number.isFinite(v) ? v.toFixed(1) : "—";
-}
-function fmtNum0(x){
-  const v = Number(x);
-  return Number.isFinite(v) ? v.toFixed(0) : "—";
-}
-function fmtPct(x){
+  if (x === null || x === undefined || Number.isNaN(x)) return "—";
   const v = Number(x);
   if (!Number.isFinite(v)) return "—";
-  return (v*100).toFixed(0) + "%";
+  return `${v.toFixed(1)}`;
 }
+
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+function washoutTopPctFromSeries(wash){
+  const arr = (wash || []).map(Number).filter(v => Number.isFinite(v));
+  if (arr.length < 60) return null;
+  const v = arr[arr.length - 1];
+  let le = 0;
+  for (const x of arr){ if (x <= v) le++; }
+  const pct = le / arr.length;              // percentile (higher = more washed-out)
+  const topPct = (1 - pct) * 100;           // "top X%" most washed-out days
+  return topPct;
+}
+
+function finalTopPctFromSeries(final){
+  const arr = (final || []).map(Number).filter(v => Number.isFinite(v));
+  if (arr.length < 60) return null;
+  const v = arr[arr.length - 1];
+  let le = 0;
+  for (const x of arr){ if (x <= v) le++; }
+  const pct = le / arr.length;              // percentile (higher = stronger signal)
+  const topPct = (1 - pct) * 100;           // "top X%" strongest Final Score days
+  return topPct;
+}
+
+function upperBound(sortedArr, v){
+  // index of first element > v
+  let lo = 0, hi = sortedArr.length;
+  while (lo < hi){
+    const mid = (lo + hi) >> 1;
+    if (sortedArr[mid] <= v) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+function quantileSorted(sortedArr, q){
+  if (!sortedArr || !sortedArr.length) return null;
+  const n = sortedArr.length;
+  const qq = Math.max(0, Math.min(1, Number(q)));
+  const pos = (n - 1) * qq;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sortedArr[lo];
+  const w = pos - lo;
+  return sortedArr[lo] * (1 - w) + sortedArr[hi] * w;
+}
+
+function topPctFromValue(sortedArr, v){
+  if (!sortedArr || sortedArr.length < 60) return null;
+  const vv = Number(v);
+  if (!Number.isFinite(vv)) return null;
+  const le = upperBound(sortedArr, vv);
+  const pct = le / sortedArr.length;
+  return (1 - pct) * 100;
+}
+
+function fmtRange(a, b, decimals=1){
+  const x = Number(a), y = Number(b);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return "—";
+  const fx = decimals === 0 ? x.toFixed(0) : x.toFixed(1);
+  const fy = decimals === 0 ? y.toFixed(0) : y.toFixed(1);
+  return `${fx}–${fy}`;
+}
+
+function verdictFromRanks(finalTopPct, washTopPct){
+  const f = (finalTopPct != null && Number.isFinite(finalTopPct)) ? Number(finalTopPct) : null;
+  const w = (washTopPct != null && Number.isFinite(washTopPct)) ? Number(washTopPct) : null;
+  const inF = (f != null && f <= 10);
+  const inW = (w != null && w <= 10);
+  if (inF && inW) return "Signal today";
+  if (inF) return "Strong setup (final-score signal)";
+  if (inW) return "Washed-out (needs edge confirmation)";
+  return "Not compelling today";
+}
+
 
 function washoutTopRankText(topPct){
-  const p = Number(topPct);
-  if (!Number.isFinite(p)) return "—";
-  if (p < 1) return `Top ${p.toFixed(1)}%`;
-  return `Top ${p.toFixed(0)}%`;
+  if (topPct === null || topPct === undefined || Number.isNaN(topPct)) return null;
+  const v = Number(topPct);
+  if (!Number.isFinite(v)) return null;
+  if (v < 1) return "Top <1%";
+  return `Top ${Math.round(v)}%`;
 }
 
-function fmtRange(lo, hi, decimals=0){
-  const a = Number(lo), b = Number(hi);
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return "—";
-  const fa = decimals===0 ? a.toFixed(0) : a.toFixed(1);
-  const fb = decimals===0 ? b.toFixed(0) : b.toFixed(1);
-  return `${fa}–${fb}`;
-}
+function byId(id){ return document.getElementById(id); }
 
-function clamp01(x){
-  const v = Number(x);
-  if (!Number.isFinite(v)) return 0;
-  return Math.max(0, Math.min(1, v));
-}
-
-// -----------------------
-// Mini chart (canvas)
-// -----------------------
-
-function scoreToGreenRGBA(score01, alphaMin=0.18, alphaMax=0.95){
-  const a = alphaMin + (alphaMax - alphaMin) * clamp01(score01);
-  // deep green (matches site theme)
-  return `rgba(15, 61, 46, ${a})`;
-}
-
-function drawWashoutGradientLine(canvas, dates, prices, wash, markerScore){
-  if (!canvas) return;
+// Gradient line: dark green = higher score (0..100)
+function drawGradientLine(canvas, dates, prices, score){
   const ctx = canvas.getContext("2d");
-  const w = canvas.width, h = canvas.height;
+  const w = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
+  const h = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
   ctx.clearRect(0,0,w,h);
 
-  const p = (Array.isArray(prices) ? prices : []).map(Number);
-  const xN = p.length;
-  if (xN < 5) {
-    // placeholder
-    ctx.fillStyle = "rgba(0,0,0,0.08)";
-    ctx.fillRect(0, h-1, w, 1);
-    return;
+  const n = prices.length;
+  if (n < 3) return;
+
+  const pad = 12 * devicePixelRatio;
+  let minP = Infinity, maxP = -Infinity;
+  for (let i=0;i<n;i++){
+    const p = Number(prices[i]);
+    if (!Number.isFinite(p)) continue;
+    if (p<minP) minP=p;
+    if (p>maxP) maxP=p;
   }
+  if (!(maxP>minP)) return;
 
-  const wsh = (Array.isArray(wash) ? wash : []).map(Number);
-  const n = Math.min(p.length, wsh.length || p.length);
+  const x0=pad, x1=w-pad, y0=pad, y1=h-pad;
+  function xAt(i){ return x0 + (x1-x0) * (i/(n-1)); }
+  function yAt(p){ return y1 - (y1-y0) * ((p-minP)/(maxP-minP)); }
 
-  const ys = p.slice(0,n).filter(Number.isFinite);
-  const ymin = Math.min(...ys);
-  const ymax = Math.max(...ys);
-  const pad = (ymax > ymin) ? 0.07*(ymax-ymin) : 1;
-  const y0 = ymin - pad;
-  const y1 = ymax + pad;
-  const yMap = (v)=>{
-    const t = (v - y0) / (y1 - y0);
-    return h - 6 - t*(h-12);
-  };
+  // Base price line (thin)
+  ctx.lineWidth = 2.2*devicePixelRatio;
+  ctx.strokeStyle = "rgba(0,0,0,.35)";
+  ctx.beginPath();
+  for (let i=0;i<n;i++){
+    const p = Number(prices[i]);
+    if (!Number.isFinite(p)) continue;
+    const x=xAt(i), y=yAt(p);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
 
-  const xMap = (i)=> 6 + (i/(n-1))*(w-12);
-
-  // Draw colored segments (no grey base)
-  ctx.lineWidth = 3.2;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  // Score overlay (thicker; darker with higher score)
   for (let i=0;i<n-1;i++){
-    const a = p[i], b = p[i+1];
-    if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
-    const wx = Number.isFinite(wsh[i]) ? wsh[i] : 0;
-    ctx.strokeStyle = scoreToGreenRGBA(wx/100);
+    const s = Number(score?.[i]);
+    if (!Number.isFinite(s)) continue;
+    const a = clamp01(s/100);
+    if (a <= 0.02) continue;
+    ctx.lineWidth = 3.4*devicePixelRatio;
+    ctx.strokeStyle = `rgba(15,61,46,${0.18 + 0.70*a})`;
     ctx.beginPath();
-    ctx.moveTo(xMap(i), yMap(a));
-    ctx.lineTo(xMap(i+1), yMap(b));
+    ctx.moveTo(xAt(i), yAt(prices[i]));
+    ctx.lineTo(xAt(i+1), yAt(prices[i+1]));
     ctx.stroke();
   }
 
-  // Today marker (colored by Rebound Score, like baseline v7)
-  const ms = Number(markerScore);
-  const last = p[n-1];
-  if (Number.isFinite(ms) && Number.isFinite(last)){
-    const cx = xMap(n-1);
-    const cy = yMap(last);
-    ctx.fillStyle = scoreToGreenRGBA(ms/100, 0.35, 0.98);
-    ctx.strokeStyle = "#0a0a0a";
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 5.7, 0, Math.PI*2);
-    ctx.fill();
-    ctx.stroke();
-  }
+  // Today marker (colored by score)
+  const lastScore = Number(score?.[n-1]);
+  const a = clamp01((Number.isFinite(lastScore)?lastScore:0)/100);
+  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70*a})`;
+  ctx.strokeStyle = "rgba(0,0,0,.85)";
+  ctx.lineWidth = 1.2*devicePixelRatio;
+  ctx.beginPath();
+  ctx.arc(xAt(n-1), yAt(prices[n-1]), 4.3*devicePixelRatio, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
 }
 
-// -----------------------
-// Rendering
-// -----------------------
+function outcomeBox(label, s){
+  const b = document.createElement("div");
+  b.className = "outbox";
+  if (!s || !Number.isFinite(s.n) || s.n<=0){
+    b.innerHTML = `<div class="h">${label}</div><div class="r"><span>Not enough</span><strong>—</strong></div>`;
+    return b;
+  }
+  b.innerHTML = `
+    <div class="h">${label}</div>
+    <div class="r"><span>Chance of gain</span><strong>${Math.round(s.win*100)}%</strong></div>
+    <div class="r"><span>Typical</span><strong>${fmtPct(s.median)}</strong></div>
+    <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
+    <div class="r"><span>Based on N similar days</span><strong>${s.n}</strong></div>
+  `;
+  return b;
+}
 
-function rowHtml(it){
+function evidenceAnalogVsNormalSection(detail){
+  // One consistent evidence block:
+  //   A = the SAME closest-analog days used to compute the main 1/3/5Y outcomes above
+  //   B = a "normal" historical day baseline (unconditional) for this ticker
+  const base = detail?.evidence_finalscore || detail?.evidence_washout || null;
+  const outs = detail?.outcomes || null;
+  if (!base || !outs) return null;
+
+  const box = document.createElement("details");
+  box.className = "details evidence-details";
+  box.innerHTML = `
+    <summary class="details-summary">
+      <div class="evidence-summary-left">
+        <span class="section-title">EVIDENCE</span>
+        <span class="ev-sub">Similar past setups vs normal</span>
+      </div>
+      <span class="plus" aria-hidden="true">+</span>
+    </summary>
+    <div class="details-body">
+      <div class="ev-explain">
+        <strong>A</strong> = the same closest historical “analog” days used for the main recommendation above.
+        <strong>B</strong> = a normal historical day baseline for this stock.
+        Each line is written as <strong>A vs B</strong>. <span class="mono">pp</span> = percentage points.
+      </div>
+      <div class="outcomes ev-grid"></div>
+    </div>
+  `;
+
+  const gridEl = box.querySelector(".ev-grid");
+  const horizons = [["1Y","1 year"],["3Y","3 years"],["5Y","5 years"]];
+
+  for (const [k,label] of horizons){
+    const a = outs?.[k];
+    const b = base?.[k];
+    if (!a || !b) continue;
+
+    const winA = a.win,    winB = b.win_norm;
+    const medA = a.median, medB = b.med_norm;
+    const p10A = a.p10,    p10B = b.p10_norm;
+    const nA   = a.n,      nB   = b.n_norm;
+
+    if (!(Number.isFinite(winA) && Number.isFinite(winB) && Number.isFinite(medA) && Number.isFinite(medB) && Number.isFinite(p10A) && Number.isFinite(p10B))) continue;
+
+    const dWin = (winA - winB);
+    const dMed = (medA - medB);
+    const dP10 = (p10A - p10B);
+
+    const bx = document.createElement("div");
+    bx.className = "outbox";
+    bx.innerHTML = `
+      <div class="h">${label}</div>
+      <div class="r"><span>Chance of gain</span><strong>${Math.round(winA*100)}% vs ${Math.round(winB*100)}% (${fmtPP(dWin)})</strong></div>
+      <div class="r"><span>Typical</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)} (${fmtSignedPct(dMed)})</strong></div>
+      <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)} (${fmtSignedPct(dP10)})</strong></div>
+      <div class="r"><span>N</span><strong>${nA} vs ${nB}</strong></div>
+    `;
+    gridEl.appendChild(bx);
+  }
+
+  if (!gridEl.children.length) return null;
+  return box;
+}
+
+function renderCard(container, item, detail, derived){
+  const series = detail.series || {};
+
+  // Derived stats (computed once in main() for consistency across the table + cards)
+  const d = derived || {};
+  const washRank = d.washRank || "—";
+  const finalRank = d.finalRank || "—";
+  const washTop10Range = d.washTop10Range || "—";
+  const finalTop10Range = d.finalTop10Range || "—";
+  const verdict = d.verdict || item.verdict || "—";
+
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const h = document.createElement("div");
+  h.className = "card-head";
+  h.innerHTML = `
+    <div>
+      <div class="ticker">${item.ticker}</div>
+      <div class="verdict">${verdict}</div>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="mline"><span>Final score</span> <strong>${fmtNum1(item.final_score)}/100</strong></div>
+        <div class="msub">Top‑10% range ${finalTop10Range}</div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Wash</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
+        <div class="msub">Top‑10% range ${washTop10Range}</div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Final‑score rank</span> <strong>${finalRank}</strong></div>
+      </div>
+      <div class="metric">
+        <div class="mline"><span>Washed‑out rank</span> <strong>${washRank}</strong></div>
+      </div>
+      <div class="metric"><div class="mline"><span>Edge</span> <strong>${fmtNum1(item.edge_score)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Conf</span> <strong>${fmtNum0(item.confidence)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Stab</span> <strong>${fmtNum0(item.stability)}/100</strong></div></div>
+      <div class="metric"><div class="mline"><span>Risk</span> <strong>${item.risk || "—"}</strong></div></div>
+    </div>
+  `;
+  card.appendChild(h);
+
+  const grid = document.createElement("div");
+  grid.className = "grid2";
+
+  const left = document.createElement("div");
+
+  const ul = document.createElement("ul");
+  ul.className = "bullets";
+  for (const line of (detail.explain || [])){
+    const li = document.createElement("li");
+    li.innerHTML = line;
+    ul.appendChild(li);
+  }
+  if (!ul.children.length){
+    const li = document.createElement("li");
+    li.innerHTML = "No plain‑English explanation available for this ticker today.";
+    ul.appendChild(li);
+  }
+  left.appendChild(ul);
+
+  const outcomes = document.createElement("div");
+  outcomes.className = "outcomes";
+  outcomes.appendChild(outcomeBox("1 year", detail.outcomes?.["1Y"]));
+  outcomes.appendChild(outcomeBox("3 years", detail.outcomes?.["3Y"]));
+  outcomes.appendChild(outcomeBox("5 years", detail.outcomes?.["5Y"]));
+  left.appendChild(outcomes);
+
+  const right = document.createElement("div");
+  right.className = "chart";
+  const canvas = document.createElement("canvas");
+  canvas.className = "canvas";
+  right.appendChild(canvas);
+
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Final Score</span><span class="legend-note">higher → darker</span></span>`;
+  right.appendChild(legend);
+
+  grid.appendChild(left);
+  grid.appendChild(right);
+  card.appendChild(grid);
+
+  // Evidence (consistent with the main recommendation): analogs vs baseline
+  const ev = evidenceAnalogVsNormalSection(detail);
+  if (ev) card.appendChild(ev);
+
+  if (series && series.prices && series.prices.length){
+    requestAnimationFrame(()=>drawGradientLine(canvas, series.dates, series.prices, series.final));
+  }
+
+  container.appendChild(card);
+}
+
+function rowHtml(item, derived){
+  const t = item.ticker;
+  const verdict = derived?.verdict || item.verdict || "—";
+  const t1 = item.typical?.["1Y"];
+  const t3 = item.typical?.["3Y"];
+  const t5 = item.typical?.["5Y"];
   return `
-    <tr data-ticker="${it.ticker}">
-      <td class="tcell mono">${it.ticker}</td>
-      <td>${it.verdict || "—"}</td>
-      <td class="num">${fmtNum1(it.rebound_score)}</td>
-      <td class="num">${fmtNum0(it.washout_today)}</td>
-      <td class="num">${fmtNum0(it.confidence)}</td>
-      <td class="num">${fmtNum0(it.stability)}</td>
-      <td>${it.risk || "—"}</td>
-      <td class="num">${fmtPct(it.y1_typical)}</td>
-      <td class="num">${fmtPct(it.y3_typical)}</td>
-      <td class="num">${fmtPct(it.y5_typical)}</td>
+    <tr data-ticker="${t}">
+      <td class="tcell">${t}</td>
+      <td>${verdict}</td>
+      <td class="num">${fmtNum1(item.final_score)}</td>
+      <td class="num">${fmtNum0(item.washout_today)}</td>
+      <td class="num">${fmtNum1(item.edge_score)}</td>
+      <td class="num">${fmtNum0(item.confidence)}</td>
+      <td class="num">${fmtNum0(item.stability)}</td>
+      <td>${item.risk || "—"}</td>
+      <td class="num">${fmtPct(t1)}</td>
+      <td class="num">${fmtPct(t3)}</td>
+      <td class="num">${fmtPct(t5)}</td>
     </tr>
   `;
 }
 
-function outcomesBlock(outcomes){
-  const order = ["1Y","3Y","5Y"];
-  const rows = [];
-  for (const h of order){
-    const o = outcomes?.[h];
-    if (!o || !Number.isFinite(Number(o.n)) || Number(o.n) <= 0) continue;
-    rows.push(`
-      <div class="ob">
-        <div class="ob-h">${h}</div>
-        <div class="ob-k">Win chance</div>
-        <div class="ob-v">${fmtPct(o.win)}</div>
-        <div class="ob-k">Typical</div>
-        <div class="ob-v">${fmtPct(o.median)}</div>
-        <div class="ob-k">Bad-case (P10)</div>
-        <div class="ob-v">${fmtPct(o.p10)}</div>
-        <div class="ob-k">Good-case (P90)</div>
-        <div class="ob-v">${fmtPct(o.p90)}</div>
-        <div class="ob-k">Similar cases</div>
-        <div class="ob-v">${fmtNum0(o.n)}</div>
-      </div>
-    `);
+function renderHistoricalSignals(full, derivedByTicker){
+  const host = byId("histRows");
+  if (!host) return;
+
+  const signals = [];
+  const H1 = 252, H3 = 252*3, H5 = 252*5;
+
+  for (const [ticker, det] of Object.entries(full.details || {})){
+    const s = det?.series;
+    if (!s || !Array.isArray(s.dates) || !Array.isArray(s.prices) || !Array.isArray(s.final) || !Array.isArray(s.wash)) continue;
+    const n = s.dates.length;
+    if (n < 260) continue;
+
+    const finalArr = s.final.map(Number).filter(Number.isFinite);
+    const washArr  = s.wash.map(Number).filter(Number.isFinite);
+    if (finalArr.length < 60 || washArr.length < 60) continue;
+    const sortedFinal = [...finalArr].sort((a,b)=>a-b);
+    const sortedWash  = [...washArr].sort((a,b)=>a-b);
+
+    // Use full-history cutoffs so the “Top X%” text matches how we describe ranks elsewhere.
+    for (let i=0;i<n;i++){
+      const fv = s.final[i];
+      const wv = s.wash[i];
+      const fTop = topPctFromValue(sortedFinal, fv);
+      const wTop = topPctFromValue(sortedWash, wv);
+      if (!(Number.isFinite(fTop) && Number.isFinite(wTop))) continue;
+      if (fTop > 10 || wTop > 10) continue;
+
+      const p0 = Number(s.prices[i]);
+      if (!Number.isFinite(p0) || p0 <= 0) continue;
+
+      const r5 = (i+H5 < n) ? (Number(s.prices[i+H5]) / p0 - 1) : null;
+      if (!(r5 !== null && Number.isFinite(r5))) continue; // require ≥5Y forward performance
+
+      const r1 = (i+H1 < n) ? (Number(s.prices[i+H1]) / p0 - 1) : null;
+      const r3 = (i+H3 < n) ? (Number(s.prices[i+H3]) / p0 - 1) : null;
+
+      signals.push({
+        date: String(s.dates[i] || ""),
+        ticker,
+        final_score: Number(fv),
+        wash: Number(wv),
+        final_rank: washoutTopRankText(fTop) || "—",
+        wash_rank: washoutTopRankText(wTop) || "—",
+        r1, r3, r5,
+      });
+    }
   }
-  if (!rows.length) return `<div class="muted">Not enough similar past cases to summarize.</div>`;
-  return `<div class="outcome-grid">${rows.join("")}</div>`;
+
+  signals.sort((a,b)=> (b.date.localeCompare(a.date)) || (a.ticker.localeCompare(b.ticker)));
+  const last10 = signals.slice(0, 10);
+
+  host.innerHTML = last10.map(s=>{
+    return `
+      <tr data-ticker="${s.ticker}">
+        <td class="mono">${s.date || "—"}</td>
+        <td class="tcell">${s.ticker}</td>
+        <td class="num">${fmtNum1(s.final_score)}</td>
+        <td class="num">${fmtNum0(s.wash)}</td>
+        <td>${s.final_rank}</td>
+        <td>${s.wash_rank}</td>
+        <td class="num">${fmtPct(s.r1)}</td>
+        <td class="num">${fmtPct(s.r3)}</td>
+        <td class="num">${fmtPct(s.r5)}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
-function evidenceBlock(evidence){
-  const order = ["1Y","3Y","5Y"];
-  const lines = [];
-  for (const h of order){
-    const e = evidence?.[h];
-    if (!e) continue;
-    const nw = Number(e.n_wash);
-    const nn = Number(e.n_norm);
-    if (!(Number.isFinite(nw) && Number.isFinite(nn)) || nw < 30 || nn < 120) continue;
-    lines.push(`
-      <div class="ev-row">
-        <div class="ev-h">${h}</div>
-        <div class="ev-m">
-          <div><span class="pill">Washout days (top 10%)</span> win ${fmtPct(e.win_wash)} • typical ${fmtPct(e.med_wash)} • bad-case ${fmtPct(e.p10_wash)} <span class="muted">(n=${fmtNum0(nw)})</span></div>
-          <div><span class="pill pill-lite">Normal days (all)</span> win ${fmtPct(e.win_norm)} • typical ${fmtPct(e.med_norm)} • bad-case ${fmtPct(e.p10_norm)} <span class="muted">(n=${fmtNum0(nn)})</span></div>
-        </div>
-      </div>
-    `);
-  }
-  if (!lines.length) return `<div class="muted">Not enough history to compute evidence.</div>`;
-  return `
-    <div class="evidence">
-      ${lines.join("")}
-      <div class="footnote">
-        Evidence uses the same definition as the model: <b>washout days</b> are the <b>top 10% Washout Meter</b> days for this stock; <b>normal days</b> are <b>all days</b> for this stock.
-      </div>
-    </div>
-  `;
-}
-
-function renderCard(host, it, detail){
-  const washRank = washoutTopRankText(it.washout_top_pct);
-  const washTop10Range = fmtRange(it.washout_top10_lo, it.washout_top10_hi, 0);
-  const card = document.createElement("article");
-  card.className = "card";
-  card.innerHTML = `
-    <div class="card-top">
-      <div>
-        <div class="ticker">${it.ticker}</div>
-        <div class="sub">${it.verdict || "—"}</div>
-      </div>
-      <div class="mini-metrics">
-        <div class="mm"><div class="mm-k">Rebound score</div><div class="mm-v">${fmtNum1(it.rebound_score)}/100</div></div>
-        <div class="mm"><div class="mm-k">Washout today</div><div class="mm-v">${fmtNum0(it.washout_today)}/100</div></div>
-      </div>
-    </div>
-
-    <div class="mini">
-      <canvas class="spark" width="560" height="130"></canvas>
-      <div class="legend">
-        <div><span class="dot dot-line"></span> Line color = Washout Meter (0 → 100)</div>
-        <div><span class="dot dot-today"></span> Dot = today (colored by Rebound Score)</div>
-      </div>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-k">Confidence</div><div class="kpi-v">${fmtNum0(it.confidence)}/100</div></div>
-      <div class="kpi"><div class="kpi-k">Stability</div><div class="kpi-v">${fmtNum0(it.stability)}/100</div></div>
-      <div class="kpi"><div class="kpi-k">Washed-out rank</div><div class="kpi-v">${washRank}</div><div class="kpi-s">Top‑10% range: ${washTop10Range}</div></div>
-      <div class="kpi"><div class="kpi-k">Similar cases</div><div class="kpi-v">${fmtNum0(it.similar_cases)}</div></div>
-      <div class="kpi"><div class="kpi-k">Risk</div><div class="kpi-v">${it.risk || "—"}</div></div>
-      <div class="kpi"><div class="kpi-k">As of</div><div class="kpi-v">${String(it.as_of||"—").slice(0,10)}</div></div>
-    </div>
-
-    <div class="block">
-      <div class="block-h">Why is it flagged today?</div>
-      <ol class="why">
-        ${(detail?.explain || []).map(x=>`<li>${x}</li>`).join("") || `<li class="muted">No explanation available.</li>`}
-      </ol>
-    </div>
-
-    <div class="block">
-      <div class="block-h">Current projection (based on similar past setups for this stock)</div>
-      ${outcomesBlock(detail?.outcomes)}
-    </div>
-
-    <div class="block">
-      <div class="block-h">Evidence (washout days vs normal days)</div>
-      ${evidenceBlock(detail?.evidence)}
-    </div>
-  `;
-
-  host.appendChild(card);
-
-  // Draw chart
-  const c = card.querySelector("canvas");
-  const s = detail?.series || {};
-  drawWashoutGradientLine(c, s.dates, s.prices, s.wash, it.rebound_score);
+async function loadJSON(url){
+  // Force a unique URL + ask the browser not to cache the response.
+  // This avoids stale JSON on GitHub Pages/CDNs after Actions pushes new data.
+  const u = withBust(url);
+  const r = await fetch(u, {
+    cache: "no-store",
+    headers: {
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache",
+    },
+  });
+  if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
+  return await r.json();
 }
 
 function setSortButtons(active){
@@ -276,8 +488,14 @@ function setSortButtons(active){
 function formatAsOf(asOf){
   if (!asOf) return "—";
   let s = String(asOf).trim();
+  // Accept "YYYY-MM-DD HH:MM:SS...-05:00" and ISO variants.
   if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
   let d = new Date(s);
+  if (Number.isNaN(d.getTime())){
+    // Last resort: try stripping fractional seconds
+    s = s.replace(/\.(\d+)(Z|[+-]\d\d:\d\d)?$/, "$2");
+    d = new Date(s);
+  }
   if (Number.isNaN(d.getTime())) return String(asOf);
 
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -297,36 +515,8 @@ function formatAsOf(asOf){
   const hh = get("hour");
   const min = get("minute");
   const ap = get("dayPeriod");
-  return `${yyyy}-${mm}-${dd} ${hh}:${min} ${ap} ET`;
+  return `${yyyy}-${mm}-${dd} ${hh}:${min} ${ap} EST`;
 }
-
-function renderHistoricalSignals(full){
-  const host = byId("histRows");
-  if (!host) return;
-  const sigs = Array.isArray(full.historical_signals) ? full.historical_signals : [];
-  if (!sigs.length){
-    host.innerHTML = `<tr><td colspan="6" class="muted">No historical signals available.</td></tr>`;
-    return;
-  }
-
-  host.innerHTML = sigs.map(s=>{
-    return `
-      <tr data-ticker="${s.ticker}">
-        <td class="mono">${s.date || "—"}</td>
-        <td class="tcell">${s.ticker}</td>
-        <td class="num">${fmtNum0(s.washout)}</td>
-        <td>${washoutTopRankText(s.washout_top_pct)}</td>
-        <td class="num">${fmtPct(s.r1)}</td>
-        <td class="num">${fmtPct(s.r3)}</td>
-        <td class="num">${fmtPct(s.r5)}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-// -----------------------
-// Main
-// -----------------------
 
 (async function main(){
   let full;
@@ -338,53 +528,120 @@ function renderHistoricalSignals(full){
   }
 
   byId("asOf").textContent = formatAsOf(full.as_of);
-  const items = Array.isArray(full.items) ? full.items : [];
+
+  let items = full.items || [];
+  const derivedByTicker = {};
+
+  // Precompute per-ticker rank text + top-decile score ranges so:
+  //   - the Top 10 cards and the All Tickers table stay consistent
+  //   - users can see whether a “10.3/100” is actually high for that ticker
+  for (const it of items){
+    const t = it.ticker;
+    const det = full.details?.[t];
+    const s = det?.series || {};
+
+    const finalArrRaw = (s.final || []).map(Number).filter(Number.isFinite);
+    const washArrRaw  = (s.wash  || []).map(Number).filter(Number.isFinite);
+
+    // For UI stats we want the distributions to include TODAY's displayed values.
+    // Some detail series are sparsely computed/ffilled and may not include the exact latest value.
+    const finalToday = Number(it.final_score);
+    const washToday  = Number(it.washout_today);
+    const finalArr = (finalArrRaw.length ? [...finalArrRaw] : []);
+    const washArr  = (washArrRaw.length  ? [...washArrRaw]  : []);
+    if (Number.isFinite(finalToday)){
+      const has = finalArr.some(v => Math.abs(v - finalToday) < 1e-9);
+      if (!has) finalArr.push(finalToday);
+    }
+    if (Number.isFinite(washToday)){
+      const has = washArr.some(v => Math.abs(v - washToday) < 1e-9);
+      if (!has) washArr.push(washToday);
+    }
+
+    const sortedFinal = (finalArr.length ? [...finalArr].sort((a,b)=>a-b) : null);
+    const sortedWash  = (washArr.length  ? [...washArr].sort((a,b)=>a-b) : null);
+
+    // Today's ranks (Top X% strongest)
+    const finalTopPct = (it.finalscore_top_pct != null && Number.isFinite(it.finalscore_top_pct))
+      ? Number(it.finalscore_top_pct)
+      : topPctFromValue(sortedFinal, finalToday);
+    const washTopPct  = (it.washout_top_pct != null && Number.isFinite(it.washout_top_pct))
+      ? Number(it.washout_top_pct)
+      : topPctFromValue(sortedWash, washToday);
+
+    const finalRank = washoutTopRankText(finalTopPct) || "—";
+    const washRank  = washoutTopRankText(washTopPct)  || "—";
+
+    // Top-decile score ranges (90th percentile .. max)
+    const f90 = sortedFinal ? quantileSorted(sortedFinal, 0.90) : null;
+    const fmx = sortedFinal ? sortedFinal[sortedFinal.length-1] : null;
+    const w90 = sortedWash  ? quantileSorted(sortedWash, 0.90)  : null;
+    const wmx = sortedWash  ? sortedWash[sortedWash.length-1]   : null;
+
+    const verdict = verdictFromRanks(finalTopPct, washTopPct);
+
+    derivedByTicker[t] = {
+      finalTopPct, washTopPct,
+      finalRank, washRank,
+      finalTop10Range: fmtRange(f90, fmx, 1),
+      washTop10Range: fmtRange(w90, wmx, 0),
+      verdict,
+    };
+  }
+  let sortMode = "final";
+
+  function renderTable(list){
+    byId("rows").innerHTML = list.map(it=>rowHtml(it, derivedByTicker[it.ticker])).join("");
+  }
 
   async function loadDetail(ticker){
-    const embedded = full.details?.[ticker];
+    const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
     if (embedded) return embedded;
     return await loadJSON(`./data/tickers/${ticker}.json`);
   }
 
-  let sortMode = "rebound";
-  function applySort(){
-    const list = [...items];
-    if (sortMode === "rebound"){
-      list.sort((a,b)=> (b.rebound_score - a.rebound_score) || (b.confidence - a.confidence) || (b.stability - a.stability));
-    }else if (sortMode === "washout"){
-      list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.rebound_score - a.rebound_score));
-    }else if (sortMode === "confidence"){
-      list.sort((a,b)=> (b.confidence - a.confidence) || (b.rebound_score - a.rebound_score));
-    }
-    return list;
-  }
-
-  function renderTable(list){
-    byId("rows").innerHTML = list.map(rowHtml).join("");
-  }
-
   async function renderTop10(list){
-    const host = byId("top10");
-    host.innerHTML = "";
+    const c = byId("top10");
+    c.innerHTML = "";
     const top = list.slice(0,10);
     for (const it of top){
       let detail;
       try{
         detail = await loadDetail(it.ticker);
       }catch(err){
-        detail = { explain: [`⚠️ Detail JSON failed to load for <strong>${it.ticker}</strong>.`], outcomes:{}, evidence:{}, series:{} };
+        // Don't let one missing/stale ticker JSON blank the entire Top 10 section.
+        detail = {
+          explain: [
+            `⚠️ Detail JSON failed to load for <strong>${it.ticker}</strong>.`,
+            `This is almost always a caching or deploy timing issue. Try a hard refresh, or wait a minute and reload.`,
+          ],
+          outcomes: {},
+          series: {},
+        };
       }
-      renderCard(host, it, detail);
+      renderCard(c, it, detail, derivedByTicker[it.ticker]);
     }
   }
 
-  async function rerender(){
+  function applySort(){
+    const list = [...items];
+    if (sortMode === "final"){
+      list.sort((a,b)=> (b.final_score - a.final_score) || (b.washout_today - a.washout_today) || (b.edge_score - a.edge_score));
+    }else if (sortMode === "washout"){
+      // higher washout_today = more washed-out
+      list.sort((a,b)=> (b.washout_today - a.washout_today) || (b.final_score - a.final_score) || (b.edge_score - a.edge_score));
+    }else if (sortMode === "edge"){
+      list.sort((a,b)=> (b.edge_score - a.edge_score) || (b.final_score - a.final_score) || (b.washout_today - a.washout_today));
+    }
+    return list;
+  }
+
+async function rerender(){
     const list = applySort();
     renderTable(list);
     await renderTop10(list);
   }
 
-  // Controls
   document.querySelectorAll(".btn-lite").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       sortMode = btn.dataset.sort;
@@ -394,39 +651,12 @@ function renderHistoricalSignals(full){
   });
   setSortButtons(sortMode);
 
-  byId("go").addEventListener("click", ()=>applySearch());
-  byId("q").addEventListener("input", ()=>applySearch());
+  await rerender();
 
-  async function applySearch(){
-    const q = (byId("q").value || "").trim().toUpperCase();
-    if (!q){
-      await rerender();
-      return;
-    }
-    const filtered = applySort().filter(x=>String(x.ticker||"").includes(q));
-    renderTable(filtered);
-    await renderTop10(filtered);
-  }
+  // One-time: show the latest 10 historical signals across all tickers.
+  renderHistoricalSignals(full, derivedByTicker);
 
-  // Table click -> focus ticker
-  byId("rows").addEventListener("click", async (e)=>{
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-    const t = tr.dataset.ticker;
-    if (!t) return;
-
-    document.querySelectorAll("#rows tr").forEach(r=>r.classList.remove("highlight"));
-    tr.classList.add("highlight");
-
-    const current = applySort();
-    const idx = current.findIndex(x=>x.ticker===t);
-    if (idx < 0) return;
-    const rotated = [current[idx], ...current.filter((_,i)=>i!==idx)];
-    await renderTop10(rotated);
-    document.querySelector(".masthead").scrollIntoView({behavior:"smooth"});
-  });
-
-  // Historical signals click -> focus ticker
+  // Clicking a historical signal row jumps you to that ticker's card.
   const histBody = byId("histRows");
   if (histBody){
     histBody.addEventListener("click", async (e)=>{
@@ -443,6 +673,39 @@ function renderHistoricalSignals(full){
     });
   }
 
-  await rerender();
-  renderHistoricalSignals(full);
+  byId("rows").addEventListener("click", async (e)=>{
+    const tr = e.target.closest("tr");
+    if (!tr) return;
+    const t = tr.dataset.ticker;
+    if (!t) return;
+
+    document.querySelectorAll("#rows tr").forEach(r=>r.classList.remove("highlight"));
+    tr.classList.add("highlight");
+
+    // scroll to top10 and highlight there by re-rendering top10 with that ticker first
+    const current = applySort();
+    const idx = current.findIndex(x=>x.ticker===t);
+    if (idx < 0) return;
+    const rotated = [current[idx], ...current.filter((_,i)=>i!==idx)];
+    await renderTop10(rotated);
+    document.querySelector(".masthead").scrollIntoView({behavior:"smooth"});
+  });
+
+  function applySearch(){
+    const q = (byId("q").value || "").trim().toUpperCase();
+    if (!q){
+      rerender();
+      return;
+    }
+    const filtered = applySort().filter(x=>x.ticker.includes(q));
+    renderTable(filtered);
+    // show top10 as the best 10 from the filtered list
+    (async ()=>{ await renderTop10(filtered); })();
+  }
+
+  byId("go").addEventListener("click", applySearch);
+  byId("q").addEventListener("input", ()=>{
+    // lightweight live filter
+    applySearch();
+  });
 })();
