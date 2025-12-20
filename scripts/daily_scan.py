@@ -1,55 +1,58 @@
 #!/usr/bin/env python3
 # ============================================================
-# CRT REBOUND SCANNER — v7 (website generator)
-# ------------------------------------------------------------
-# Website-facing outputs (no plotting):
-#   - docs/data/full.json                (ranking table + top10 embedded details)
-#   - docs/data/tickers/<TICKER>.json    (per-ticker details)
+# Rebound Ledger — static daily scan generator
 #
-# Model notes (matches the user's baseline v7):
-#   - Washout Meter is a stock-specific "how washed-out" score (0..100)
-#   - Rebound Score is based on what happened after similar past setups
-#   - Evidence compares:
-#       • Washout days = top 10% Washout Meter days for THIS stock
-#       • Normal days  = ALL days for THIS stock (baseline)
+# Writes:
+#   - docs/data/full.json                (ranking table + top10 embedded details)
+#   - docs/data/tickers/{TICKER}.json    (detail payload for every scored ticker)
+#
+# Scheduling:
+#   - GitHub Action runs hourly.
+#   - This script self-gates to run once per day after 5pm America/New_York.
+#   - Set FORCE_RUN=1 to bypass gating (manual runs).
+#
+# Model: CRT REBOUND SCANNER — v8
+#   • Washout Meter (0–100): how washed-out/sold-off it looks (stock-specific + market-adjusted).
+#   • Edge Score    (0–100): rebound edge from historical analogs (same stock, similar setups).
+#   • Final Score   (0–100): Edge Score amplified by Washout (the ONE score used for ranking + charts).
+#   • Evidence A: top 10% Washout days vs all days.
+#   • Evidence B: top 10% Final Score days vs all days.
 # ============================================================
 
 import os
-import json
 import math
+import json
 import warnings
+warnings.filterwarnings("ignore")
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from io import StringIO
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import requests
-from io import StringIO
-
-warnings.filterwarnings("ignore")
 
 # =========================
 # CONFIG (KEEP SIMPLE)
 # =========================
 INTERVAL = "1d"
 PERIOD   = "max"
-BENCH = "SPY"
+BENCH    = "SPY"
 
 ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    #"https://www.ishares.com/us/products/339779/ishares-top-20-u-s-stocks-etf/"
+    #"1467271812596.ajax?fileType=csv&fileName=holdings&dataType=fund"
+    "https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf/"
+    "1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
 )
 
-ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
+ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A", "ARM"]
 
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
-
-# Top10 cards embed (reduces network calls)
 TOP10_EMBED = 10
-
-# Store up to 6 years of daily points for the website chart
 PLOT_LAST_DAYS = 365 * 6
 
 # Lookbacks (days)
@@ -84,7 +87,7 @@ STAB_MIN_MEAN_RATIO = 0.60
 HORIZONS_DAYS = {"1Y": 252, "3Y": 252*3, "5Y": 252*5}
 HORIZON_WEIGHTS = {"1Y": 0.50, "3Y": 0.35, "5Y": 0.15}
 
-# Verdict thresholds (single-line)
+# Verdict thresholds (simple, readable)
 VERDICT = dict(
     STRONG_SCORE=72.0,
     OK_SCORE=60.0,
@@ -94,6 +97,15 @@ VERDICT = dict(
     OK_STAB=60.0,
 )
 
+# Final score knobs (dominant washout but still requires edge)
+MIN_WASHOUT_TODAY = 55.0      # gate for the scan (set 0 to disable). ALWAYS_PLOT bypasses.
+FINAL_WASH_FLOOR  = 0.35      # baseline multiplier even if washout is low
+FINAL_WASH_WEIGHT = 0.65      # how much washout amplifies the edge score
+
+# Plot-time performance (FinalScore series is computed sparsely, then forward-filled)
+PLOT_SCORE_STEP_BARS = 12
+EVID_SCORE_STEP_BARS = 18
+
 # Outputs
 OUT_DIR = os.path.join("docs", "data")
 TICKER_DIR = os.path.join(OUT_DIR, "tickers")
@@ -102,7 +114,6 @@ TICKER_DIR = os.path.join(OUT_DIR, "tickers")
 # Time gate (after 5pm NY)
 # =========================
 def should_run_now() -> bool:
-    # Manual runs can set FORCE_RUN=1
     if os.getenv("FORCE_RUN", "").strip() == "1":
         return True
     tz = ZoneInfo("America/New_York")
@@ -117,13 +128,11 @@ def should_run_now() -> bool:
             return False
     return True
 
-
 def mark_ran_today() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
     tz = ZoneInfo("America/New_York")
     today = datetime.now(tz).strftime("%Y-%m-%d")
     open(os.path.join(OUT_DIR, "last_run.txt"), "w").write(today)
-
 
 # =========================
 # Helpers
@@ -132,14 +141,12 @@ def sigmoid(x: float) -> float:
     x = float(np.clip(x, -20, 20))
     return 1.0 / (1.0 + math.exp(-x))
 
-
 def robust_z(x: pd.Series, win: int) -> pd.Series:
     med = x.rolling(win).median()
     mad = (x - med).abs().rolling(win).median()
     denom = (1.4826 * mad).replace(0, np.nan)
     z = (x - med) / denom
     return z.replace([np.inf, -np.inf], np.nan)
-
 
 def safe_float(x):
     try:
@@ -148,53 +155,33 @@ def safe_float(x):
     except Exception:
         return np.nan
 
-
-def fmt_rank(p01: float) -> str:
-    """Percentile formatting that never shows confusing '0%'."""
-    if not np.isfinite(p01):
-        return "nan"
-    p = p01 * 100.0
-    if p < 1.0:
-        return f"{p:.1f}%"
-    return f"{p:.0f}%"
-
-
 def percentile_rank(series: pd.Series, value: float) -> float:
     s = series.dropna().values.astype(float)
     if len(s) < 30 or not np.isfinite(value):
         return np.nan
     return float(np.mean(s <= value))
 
-
-def top_pct_most_extreme_high(series: pd.Series, value: float) -> float:
-    """Return "top X%" where *higher* is more extreme; smaller is better (e.g. 2.3 means Top 2.3%)."""
+def washout_top_pct(series: pd.Series, value: float) -> float:
+    """Return 'top X% most washed-out' where higher washout is more extreme."""
     p = percentile_rank(series, value)
     if not np.isfinite(p):
         return np.nan
     return float((1.0 - p) * 100.0)
 
-
-def md_bold_to_html(s: str) -> str:
-    # Minimal conversion for the explain lines ("**bold**" -> "<strong>bold</strong>")
-    out = str(s)
-    while "**" in out:
-        a = out.find("**")
-        b = out.find("**", a + 2)
-        if b < 0:
-            break
-        inner = out[a + 2 : b]
-        out = out[:a] + f"<strong>{inner}</strong>" + out[b + 2 :]
-    return out
-
+def final_score(edge_score: float, washout: float) -> float:
+    """FinalScore = EdgeScore amplified by how washed-out it is today."""
+    e = safe_float(edge_score)
+    w = safe_float(washout)
+    if not np.isfinite(e) or not np.isfinite(w):
+        return np.nan
+    ww = float(np.clip(w / 100.0, 0.0, 1.0))
+    return float(e * (FINAL_WASH_FLOOR + FINAL_WASH_WEIGHT * ww))
 
 # =========================
-# Verdict (single-line)
+# Verdict
 # =========================
 def verdict_line(score: float, confidence: float, stability: float, fragile: bool) -> str:
-    s = safe_float(score)
-    c = safe_float(confidence)
-    st = safe_float(stability)
-
+    s = safe_float(score); c = safe_float(confidence); st = safe_float(stability)
     if not np.isfinite(s) or not np.isfinite(c) or not np.isfinite(st):
         return "Verdict: Not enough data"
 
@@ -216,7 +203,6 @@ def verdict_line(score: float, confidence: float, stability: float, fragile: boo
     if ok and ok_c:
         return "Verdict: Mixed"
     return "Verdict: Not compelling today"
-
 
 # =========================
 # Holdings
@@ -274,7 +260,6 @@ def fetch_ishares_holdings_tickers(url: str) -> list:
         raise RuntimeError(f"Parsed too few tickers ({len(keep)}). CSV layout likely changed.")
     return sorted(keep)
 
-
 # =========================
 # yfinance download
 # =========================
@@ -308,7 +293,6 @@ def _extract_field(raw: pd.DataFrame, field: str) -> pd.DataFrame:
             return s.to_frame()
         return s
     return pd.DataFrame()
-
 
 def download_ohlcv_period(tickers, period="max", interval="1d", chunk_size=80):
     tickers = sorted(set([t for t in tickers if isinstance(t, str) and t.strip()]))
@@ -350,13 +334,12 @@ def download_ohlcv_period(tickers, period="max", interval="1d", chunk_size=80):
         "AdjClose": _cat(A_list),
     }
 
-
 # =========================
 # Features
 # =========================
 def compute_core_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     d = ohlcv.copy()
-    for c in ["open","high","low","close","volume"]:
+    for c in ["open", "high", "low", "close", "volume"]:
         d[c] = pd.to_numeric(d[c], errors="coerce")
 
     close = d["close"]; high = d["high"]; low = d["low"]; vol = d["volume"]; opn = d["open"]
@@ -391,12 +374,10 @@ def compute_core_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     out["trend_st"] = trend_st
     return out
 
-
 def compute_bottom_confirmation(dd_lt: pd.Series, pos_lt: pd.Series) -> pd.Series:
     dd_comp = ((dd_lt - DD_THR) / GATE_DD_SCALE).clip(-5, 5).apply(sigmoid)
     pos_comp = ((POS_THR - pos_lt) / GATE_POS_SCALE).clip(-5, 5).apply(sigmoid)
     return (dd_comp * pos_comp).clip(0, 1)
-
 
 def compute_idiosyncratic_features(stock_px: pd.Series, spy_px: pd.Series) -> pd.DataFrame:
     r_s = np.log(stock_px).diff()
@@ -431,7 +412,6 @@ def compute_idiosyncratic_features(stock_px: pd.Series, spy_px: pd.Series) -> pd
     out["idio_pos_st"] = idio_pos_st
     return out
 
-
 def compute_market_regime(spy_px: pd.Series, spy_high: pd.Series, spy_low: pd.Series) -> pd.DataFrame:
     trend = (spy_px / spy_px.shift(LB_ST) - 1.0).replace([np.inf, -np.inf], np.nan)
     r = np.log(spy_px).diff()
@@ -452,7 +432,6 @@ def compute_market_regime(spy_px: pd.Series, spy_high: pd.Series, spy_low: pd.Se
     out["mkt_atr_pct"] = atr_pct
     return out
 
-
 def make_regime_bucket(mkt_row: pd.Series) -> str:
     tr = safe_float(mkt_row.get("mkt_trend", np.nan))
     dd = safe_float(mkt_row.get("mkt_dd", np.nan))
@@ -467,13 +446,11 @@ def make_regime_bucket(mkt_row: pd.Series) -> str:
     else: vol_b = "VHI"
     return f"{tr_b}_{dd_b}_{vol_b}"
 
-
 def forward_returns(px: pd.Series) -> pd.DataFrame:
     out = pd.DataFrame(index=px.index)
     for name, days in HORIZONS_DAYS.items():
         out[f"fwd_{name}"] = (px.shift(-days) / px - 1.0).replace([np.inf, -np.inf], np.nan)
     return out
-
 
 # =========================
 # Washout Meter
@@ -492,7 +469,6 @@ def compute_washout_meter(feat: pd.DataFrame) -> pd.Series:
     wash = (wash * confirm).clip(0, 1)
     return 100.0 * wash
 
-
 # =========================
 # Analog engine
 # =========================
@@ -501,7 +477,6 @@ def build_feature_matrix(feat: pd.DataFrame, feature_cols: list, zwin: int) -> p
     for c in feature_cols:
         X[c] = robust_z(feat[c], zwin)
     return X
-
 
 def summarize(vals: np.ndarray) -> dict:
     if vals is None or len(vals) == 0:
@@ -515,7 +490,6 @@ def summarize(vals: np.ndarray) -> dict:
         "p90": float(np.quantile(vals, 0.90)),
     }
 
-
 def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     n = stats.get("n", 0)
     if n <= 0:
@@ -528,17 +502,13 @@ def horizon_unit(confirm: float, stats: dict, n_target: int) -> float:
     raw = float(np.clip(raw, 0, 1))
     return float(np.clip(confirm * sample_conf * raw, 0, 1))
 
-
-def select_analogs_regime_balanced(
-    X: pd.DataFrame,
-    y: pd.Series,
-    regimes: pd.Series,
-    now_idx: pd.Timestamp,
-    k: int,
-    min_sep_days: int,
-):
+def select_analogs_regime_balanced(X: pd.DataFrame, y: pd.Series, regimes: pd.Series,
+                                  now_idx: pd.Timestamp, k: int, min_sep_days: int):
     cand = X.index[(X.notna().all(axis=1)) & (y.notna()) & (X.index < now_idx)]
     if len(cand) == 0:
+        return []
+
+    if now_idx not in X.index or not X.loc[now_idx].notna().all():
         return []
 
     x0 = X.loc[now_idx].values.astype(float)
@@ -595,7 +565,6 @@ def select_analogs_regime_balanced(
 
     return chosen[:k]
 
-
 def regime_entropy_score(regimes_for_analogs: list) -> float:
     if not regimes_for_analogs:
         return 0.0
@@ -605,7 +574,6 @@ def regime_entropy_score(regimes_for_analogs: list) -> float:
     ent = -np.sum(p * np.log(p + 1e-12))
     ent_max = np.log(len(counts) + 1e-12)
     return float(np.clip(ent / ent_max if ent_max > 0 else 0.0, 0, 1))
-
 
 # =========================
 # Stability / Fragility
@@ -669,7 +637,6 @@ def stability_metrics(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, n
     fragile = (stab < 60) or (std > STAB_STD_SCALE_POINTS) or (mean > 1e-9 and (mn / mean) < STAB_MIN_MEAN_RATIO)
     return stab, fragile, samples.tolist()
 
-
 # =========================
 # Confidence + Risk labels
 # =========================
@@ -679,7 +646,6 @@ def compute_confidence(n_eff: int, k_target: int, market_variety: float, stabili
     conf_s = np.clip(stability / 100.0, 0, 1)
     conf = 100.0 * (0.45*conf_n + 0.30*conf_m + 0.25*conf_s)
     return float(np.clip(conf, 0, 100))
-
 
 def risk_label(h_summaries: dict, beta: float):
     p10s = []
@@ -700,16 +666,11 @@ def risk_label(h_summaries: dict, beta: float):
         return "Choppy / volatile"
     return "Moderate"
 
-
 # =========================
-# Evidence (explicit)
+# Evidence A: pure washout
 # =========================
-def evidence_light(feat: pd.DataFrame):
-    """
-    Evidence compares:
-      A) "Washout days" = TOP 10% of Washout Meter days for THIS stock
-      B) "Normal days"  = ALL days (baseline)
-    """
+def evidence_washout_light(feat: pd.DataFrame):
+    """Top 10% Washout Meter days vs ALL days (baseline)."""
     out = {}
     wm = feat["washout_meter"].dropna()
     wm = wm[wm > 0]
@@ -749,10 +710,60 @@ def evidence_light(feat: pd.DataFrame):
         }
     return out
 
+# =========================
+# Evidence B: top FinalScore days
+# =========================
+def evidence_finalscore(feat: pd.DataFrame, final_score_series: pd.Series):
+    """Top 10% FinalScore days vs ALL days (baseline)."""
+    out = {}
+    s = final_score_series.dropna()
+    if len(s) < 250:
+        return out
+
+    thr = float(s.quantile(0.90))
+    top_mask = final_score_series >= thr
+
+    for h in HORIZONS_DAYS.keys():
+        y = feat.get(f"fwd_{h}", None)
+        if y is None:
+            continue
+        valid = y.notna()
+
+        top = top_mask.reindex(feat.index).fillna(False) & valid
+        normal = valid
+
+        n_top = int(top.sum())
+        n_norm = int(normal.sum())
+        if n_top < 50 or n_norm < 200:
+            continue
+
+        yt = y[top].astype(float).values
+        yn = y[normal].astype(float).values
+
+        out[h] = {
+            "thr_final": thr,
+            "n_top": n_top,
+            "win_top": float(np.mean(yt > 0)),
+            "med_top": float(np.median(yt)),
+            "p10_top": float(np.quantile(yt, 0.10)),
+            "n_norm": n_norm,
+            "win_norm": float(np.mean(yn > 0)),
+            "med_norm": float(np.median(yn)),
+            "p10_norm": float(np.quantile(yn, 0.10)),
+        }
+    return out
 
 # =========================
 # Explain (simple)
 # =========================
+def fmt_rank(p01: float) -> str:
+    if not np.isfinite(p01):
+        return "nan"
+    p = p01 * 100.0
+    if p < 1.0:
+        return f"{p:.1f}%"
+    return f"{p:.0f}%"
+
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
@@ -784,7 +795,7 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
 
     if np.isfinite(idio_dd) and np.isfinite(id_p):
         lines.append(
-            (id_p, f"Even after removing market moves, the stock looks weak: **stock-specific drawdown ~{idio_dd:.0%}** (more extreme than **{fmt_rank(id_p)}** of past days).")
+            (id_p, f"After removing market moves, the stock-specific drawdown is **~{idio_dd:.0%}** (more extreme than **{fmt_rank(id_p)}** of past days).")
         )
 
     if np.isfinite(volz) and np.isfinite(vz_p) and volz > 1.0:
@@ -794,16 +805,77 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
         lines.append((at_p, f"Daily price swings are unusually large (bigger than **{fmt_rank(at_p)}** of past days)."))
 
     lines = sorted(lines, key=lambda x: x[0], reverse=True)
-    out = [md_bold_to_html(txt) for _, txt in lines[:3]]
+    out = [txt for _, txt in lines[:3]]
     if not out:
         out = ["Nothing is extremely washed-out today; this looks like a mild setup rather than a dramatic selloff."]
     return out
 
+# =========================
+# FinalScore series (for charts/evidence)
+# =========================
+def compute_edge_score_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, now_idx: pd.Timestamp) -> float:
+    confirm = safe_float(feat.loc[now_idx, "bottom_confirm"])
+    if not np.isfinite(confirm):
+        return np.nan
+    if now_idx not in X.index or (not X.loc[now_idx].notna().all()):
+        return np.nan
+
+    h_units = {}
+    for h, _w in HORIZON_WEIGHTS.items():
+        y = feat.get(f"fwd_{h}", None)
+        if y is None:
+            continue
+        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+        vals = y.loc[analog_idx].dropna().values.astype(float)
+        s = summarize(vals)
+        if s.get("n", 0) >= ANALOG_MIN:
+            h_units[h] = horizon_unit(confirm, s, n_target=ANALOG_K)
+
+    if not h_units:
+        return np.nan
+
+    weights, units = [], []
+    for h, unit in h_units.items():
+        weights.append(HORIZON_WEIGHTS.get(h, 0.0))
+        units.append(unit)
+    wsum = float(np.sum(weights))
+    comp_unit = float(np.dot(units, weights) / wsum) if wsum > 0 else float(np.mean(units))
+    return float(100.0 * comp_unit)
+
+def compute_final_score_series(
+    feat: pd.DataFrame,
+    X: pd.DataFrame,
+    regimes: pd.Series,
+    start_idx: pd.Timestamp,
+    end_idx: pd.Timestamp,
+    step_bars: int,
+) -> pd.Series:
+    ok_idx = X.index[X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()]
+    idx = ok_idx[(ok_idx >= start_idx) & (ok_idx <= end_idx)]
+    if len(idx) < 50:
+        return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
+
+    sample_idx = idx[::max(1, int(step_bars))]
+    vals = {}
+    for t in sample_idx:
+        edge = compute_edge_score_at(feat, X, regimes, t)
+        w = safe_float(feat.loc[t, "washout_meter"])
+        vals[t] = final_score(edge, w)
+
+    s = pd.Series(vals).sort_index()
+    full = pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
+    full.loc[s.index] = s.values
+    return full.ffill()
 
 # =========================
-# Scoring one ticker
+# Build one ticker payload
 # =========================
-def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataFrame, feature_cols: list, zwin: int):
+def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, C: pd.DataFrame, V: pd.DataFrame, PX: pd.DataFrame,
+                     spy_px: pd.Series, mkt: pd.DataFrame,
+                     feature_cols: list, zwin: int):
+    if t not in O.columns or t not in H.columns or t not in L.columns or t not in C.columns or t not in V.columns or t not in PX.columns:
+        return None
+
     df = pd.DataFrame({
         "open": O[t],
         "high": H[t],
@@ -811,7 +883,7 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
         "close": C[t],
         "volume": V[t],
         "px": PX[t],
-    }).dropna(subset=["open","high","low","close","volume","px"])
+    }).dropna(subset=["open", "high", "low", "close", "volume", "px"])
 
     if len(df) < MIN_HISTORY_BARS:
         return None
@@ -821,13 +893,13 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
     if med_dvol.dropna().empty or float(med_dvol.dropna().iloc[-1]) < MIN_MED_DVOL_USD:
         return None
 
-    # Missing check
+    # Missing check (strict recent window)
     recent = df.tail(MIN_HISTORY_BARS)
     miss_frac = 1.0 - (len(recent) / float(MIN_HISTORY_BARS))
     if miss_frac > MAX_MISSING_FRAC:
         return None
 
-    feat = compute_core_features(df[["open","high","low","close","volume"]])
+    feat = compute_core_features(df[["open", "high", "low", "close", "volume"]])
     feat["px"] = df["px"]
 
     # Align to SPY + market regime
@@ -837,17 +909,15 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
     feat = feat.reindex(idx)
     spy_aligned = spy_px.reindex(idx)
 
-    # Idiosyncratic features
+    # Idiosyncratic features + market
     idio = compute_idiosyncratic_features(feat["px"], spy_aligned)
     feat = feat.join(idio, how="left")
-
     feat["bottom_confirm"] = compute_bottom_confirmation(feat["dd_lt"], feat["pos_lt"])
     feat = feat.join(mkt.reindex(idx), how="left")
     feat = feat.join(forward_returns(feat["px"]), how="left")
     feat["washout_meter"] = compute_washout_meter(feat)
 
     X = build_feature_matrix(feat, feature_cols, zwin=zwin)
-
     ok_now = X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()
     if ok_now.sum() == 0:
         return None
@@ -859,12 +929,18 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
     wash_today = safe_float(feat.loc[now_idx, "washout_meter"])
     beta_today = safe_float(feat.loc[now_idx, "beta"])
 
+    # Gate: this scan is about washed-out setups (ALWAYS_PLOT + SPY bypasses)
+    if MIN_WASHOUT_TODAY > 0 and (t not in ALWAYS_PLOT) and (t != BENCH):
+        if (not np.isfinite(wash_today)) or (wash_today < MIN_WASHOUT_TODAY):
+            return None
+
+    # Analogs -> horizon summaries + units
     h_summaries = {}
     h_units = {}
     h_n = []
     analog_regimes_for_conf = None
 
-    for h, w in HORIZON_WEIGHTS.items():
+    for h, _w in HORIZON_WEIGHTS.items():
         y = feat.get(f"fwd_{h}", None)
         if y is None:
             continue
@@ -882,19 +958,24 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
     if not h_units:
         return None
 
-    # Composite rebound score
+    # Edge Score (0–100)
     weights, units = [], []
     for h, unit in h_units.items():
         weights.append(HORIZON_WEIGHTS.get(h, 0.0))
         units.append(unit)
     wsum = float(np.sum(weights))
     comp_unit = float(np.dot(units, weights) / wsum) if wsum > 0 else float(np.mean(units))
-    rebound_score = 100.0 * comp_unit
+    edge_score = 100.0 * comp_unit
 
-    # Stability
+    # Final Score (0–100)
+    final_today = final_score(edge_score, wash_today)
+    if not np.isfinite(final_today):
+        return None
+
+    # Stability (on EdgeScore behavior)
     stab_score, fragile, stab_samples = stability_metrics(feat, X, regimes, now_idx)
 
-    # Market variety
+    # Market variety (entropy of analog regimes)
     if analog_regimes_for_conf is None:
         h0 = list(h_summaries.keys())[0]
         y0 = feat[f"fwd_{h0}"]
@@ -909,153 +990,109 @@ def score_one_ticker(t: str, O, H, L, C, V, PX, spy_px: pd.Series, mkt: pd.DataF
     # Risk
     risk = risk_label(h_summaries, beta_today)
 
-    # Verdict
-    verdict = verdict_line(rebound_score, confidence, stab_score, fragile)
+    # Verdict (FinalScore)
+    verdict = verdict_line(final_today, confidence, stab_score, fragile)
 
-    # Explain + Evidence
+    # Explain + Evidence A
     explain_lines = build_explain(feat, now_idx)
-    ev = evidence_light(feat)
+    ev_wash = evidence_washout_light(feat)
 
-    # Washout rank + top10 range
-    wm_hist = feat["washout_meter"].dropna()
-    wash_top_pct = top_pct_most_extreme_high(wm_hist, wash_today)
-    w90 = float(wm_hist.quantile(0.90)) if len(wm_hist) >= 60 else np.nan
-    wmx = float(wm_hist.max()) if len(wm_hist) >= 60 else np.nan
+    # Evidence B uses FinalScore series over full history (sparsely computed)
+    final_series_full = compute_final_score_series(
+        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
+    )
+    ev_final = evidence_finalscore(feat, final_series_full)
 
-    # Series for chart (last ~6y)
+    # Series payload for chart window
     cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
-    dplot = feat.loc[feat.index >= cutoff].copy()
-    if dplot.empty:
-        dplot = feat.copy()
-    dplot = dplot.dropna(subset=["px"]).copy()
-    series = {
-        "dates": [str(x.date()) for x in dplot.index],
-        "prices": [float(x) if np.isfinite(x) else None for x in dplot["px"].astype(float).values],
-        "wash": [float(x) if np.isfinite(x) else 0.0 for x in pd.to_numeric(dplot["washout_meter"], errors="coerce").fillna(0.0).clip(0,100).values],
-    }
+    win = feat[(feat.index >= cutoff) & (feat.index <= now_idx)].copy()
+    if win.empty:
+        win = feat.loc[:now_idx].copy()
+    px = win["px"].astype(float)
+    wash = win["washout_meter"].astype(float)
+    final_series_window = compute_final_score_series(
+        feat, X, regimes, start_idx=cutoff, end_idx=now_idx, step_bars=PLOT_SCORE_STEP_BARS
+    )
+    final_win = final_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
-    # Outcomes block (analog summaries)
-    outcomes = {}
-    for hh in ["1Y","3Y","5Y"]:
-        if hh in h_summaries:
-            s = h_summaries[hh]
-            outcomes[hh] = {
-                "n": int(s["n"]),
-                "win": float(s["win"]),
-                "median": float(s["median"]),
-                "p10": float(s["p10"]),
-                "p90": float(s["p90"]),
-            }
+    # Top-% washed-out (readable): "Top X%" of days by Washout Meter
+    wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
 
-    row = {
+    detail = {
         "ticker": t,
+        "as_of": str(now_idx),
         "verdict": verdict.replace("Verdict: ", ""),
-        "rebound_score": float(rebound_score),
+        "final_score": float(final_today),
+        "edge_score": float(edge_score),
+        "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
         "confidence": float(confidence),
         "stability": float(stab_score),
         "fragile": bool(fragile),
-        "risk": str(risk),
-        "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
-        "washout_top_pct": float(wash_top_pct) if np.isfinite(wash_top_pct) else None,
-        "washout_top10_lo": float(w90) if np.isfinite(w90) else None,
-        "washout_top10_hi": float(wmx) if np.isfinite(wmx) else None,
+        "risk": risk,
         "similar_cases": int(n_eff),
-        "as_of": str(now_idx),
-        # convenient table fields
-        "y1_typical": float(h_summaries.get("1Y", {}).get("median", np.nan)),
-        "y3_typical": float(h_summaries.get("3Y", {}).get("median", np.nan)),
-        "y5_typical": float(h_summaries.get("5Y", {}).get("median", np.nan)),
-    }
-
-    det = {
-        "ticker": t,
-        "as_of": str(now_idx),
-        "verdict": row["verdict"],
-        "rebound_score": row["rebound_score"],
-        "confidence": row["confidence"],
-        "stability": row["stability"],
-        "fragile": row["fragile"],
-        "risk": row["risk"],
-        "washout_today": row["washout_today"],
-        "washout_top_pct": row["washout_top_pct"],
-        "washout_top10_lo": row["washout_top10_lo"],
-        "washout_top10_hi": row["washout_top10_hi"],
-        "similar_cases": row["similar_cases"],
         "explain": explain_lines,
-        "outcomes": outcomes,
-        "evidence": ev,
+        "outcomes": {h: h_summaries.get(h, {"n": 0}) for h in ["1Y", "3Y", "5Y"]},
+        "evidence_washout": ev_wash,
+        "evidence_finalscore": ev_final,
+        "series": {
+            "dates": [str(x.date()) for x in px.index],
+            "prices": [safe_float(v) for v in px.values],
+            "wash": [safe_float(v) for v in wash.values],
+            "final": [safe_float(v) for v in final_win.values],
+        },
         "stability_samples": stab_samples,
-        "series": series,
     }
 
-    # Most recent historical "washout day" for this ticker (top 10% washout), requiring >=1Y realized
-    hist_signal = None
-    try:
-        wm = feat["washout_meter"].dropna()
-        if len(wm) >= 260:
-            thr = float(wm.quantile(0.90))
-            px = feat["px"].astype(float)
-            # search backwards for last day with washout>=thr and 1Y forward price exists
-            idxs = wm.index
-            # map index position for forward lookup
-            pos_map = {ts: i for i, ts in enumerate(px.index)}
-            for ts in reversed(list(idxs)):
-                if not (np.isfinite(wm.loc[ts]) and wm.loc[ts] >= thr):
-                    continue
-                i0 = pos_map.get(ts, None)
-                if i0 is None:
-                    continue
-                p0 = safe_float(px.iloc[i0])
-                if not np.isfinite(p0) or p0 <= 0:
-                    continue
-                # require >=1Y forward
-                if i0 + HORIZONS_DAYS["1Y"] >= len(px):
-                    continue
-                p1 = safe_float(px.iloc[i0 + HORIZONS_DAYS["1Y"]])
-                r1 = (p1 / p0 - 1.0) if np.isfinite(p1) else np.nan
-                r3 = np.nan
-                r5 = np.nan
-                if i0 + HORIZONS_DAYS["3Y"] < len(px):
-                    p3 = safe_float(px.iloc[i0 + HORIZONS_DAYS["3Y"]])
-                    if np.isfinite(p3):
-                        r3 = (p3 / p0 - 1.0)
-                if i0 + HORIZONS_DAYS["5Y"] < len(px):
-                    p5 = safe_float(px.iloc[i0 + HORIZONS_DAYS["5Y"]])
-                    if np.isfinite(p5):
-                        r5 = (p5 / p0 - 1.0)
+    row = {
+        "ticker": t,
+        "verdict": detail["verdict"],
+        "final_score": float(final_today),
+        "edge_score": float(edge_score),
+        "washout_today": float(wash_today) if np.isfinite(wash_today) else None,
+        "washout_top_pct": float(wtop) if np.isfinite(wtop) else None,
+        "confidence": float(confidence),
+        "stability": float(stab_score),
+        "fragile": bool(fragile),
+        "risk": risk,
+        "similar_cases": int(n_eff),
+        "typical": {
+            "1Y": h_summaries.get("1Y", {}).get("median", None),
+            "3Y": h_summaries.get("3Y", {}).get("median", None),
+            "5Y": h_summaries.get("5Y", {}).get("median", None),
+        },
+    }
 
-                top_pct = top_pct_most_extreme_high(wm, safe_float(wm.loc[ts]))
-                hist_signal = {
-                    "date": str(ts.date()),
-                    "ticker": t,
-                    "wash": float(wm.loc[ts]),
-                    "wash_rank": (f"Top {top_pct:.1f}%" if np.isfinite(top_pct) and top_pct < 1.0 else (f"Top {top_pct:.0f}%" if np.isfinite(top_pct) else "—")),
-                    "r1": float(r1) if np.isfinite(r1) else None,
-                    "r3": float(r3) if np.isfinite(r3) else None,
-                    "r5": float(r5) if np.isfinite(r5) else None,
-                }
-                break
-    except Exception:
-        hist_signal = None
+    return row, detail
 
-    return row, det, hist_signal
-
-
+# =========================
+# MAIN
+# =========================
 def main():
-    if not should_run_now():
-        print("[SKIP] Not after 5pm New York time, or already ran today. Set FORCE_RUN=1 to override.")
-        return
-
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(TICKER_DIR, exist_ok=True)
 
+    if not should_run_now():
+        print("[gate] Not time to run yet (or already ran today). Exiting.")
+        return
+
+    # Optional manual add-ons: EXTRA_TICKERS="TSM,UBER" etc.
+    extra = os.getenv("EXTRA_TICKERS", "").strip()
+    extra_tickers = []
+    if extra:
+        extra_tickers = [x.strip().upper().replace(".", "-") for x in extra.split(",") if x.strip()]
+
+    print("=" * 110)
+    print("REBOUND SCANNER (v8) — FinalScore everywhere + two evidence blocks")
+    print("=" * 110)
+
+    # Universe
     tickers = fetch_ishares_holdings_tickers(ISHARES_HOLDINGS_URL)
     if MAX_TICKERS is not None:
         tickers = tickers[:int(MAX_TICKERS)]
-    universe = sorted(set(tickers + ALWAYS_PLOT + [BENCH]))
+    universe = sorted(set(tickers + ALWAYS_PLOT + [BENCH] + extra_tickers))
+    print(f"[UNIVERSE] holdings={len(tickers)} | extra={len(extra_tickers)} | universe={len(universe)}")
 
-    print(f"[UNIVERSE] holdings={len(tickers)} | universe={len(universe)}")
-    print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers ...")
+    print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers...")
     data = download_ohlcv_period(universe, period=PERIOD, interval=INTERVAL, chunk_size=CHUNK_SIZE)
     O, H, L, C, V, A = data["Open"], data["High"], data["Low"], data["Close"], data["Volume"], data["AdjClose"]
     if C.empty or BENCH not in C.columns:
@@ -1063,7 +1100,7 @@ def main():
 
     PX = A if (not A.empty and BENCH in A.columns) else C
 
-    # Market regime features
+    # Market regime features (SPY)
     spy_px = PX[BENCH].dropna()
     spy_h = H[BENCH].reindex(spy_px.index).dropna()
     spy_l = L[BENCH].reindex(spy_px.index).dropna()
@@ -1081,10 +1118,9 @@ def main():
     zwin = max(63, LB_ST)
 
     rows = []
-    embedded_details = {}
-    hist_best_by_ticker = {}
+    details = {}
 
-    # Clear previous per-ticker details for a clean publish
+    # Clear previous ticker details for a clean publish
     for fn in os.listdir(TICKER_DIR):
         if fn.endswith(".json"):
             try:
@@ -1096,63 +1132,56 @@ def main():
         out = score_one_ticker(t, O, H, L, C, V, PX, spy_px, mkt, feature_cols, zwin)
         if out is None:
             continue
-        row, det, hist_sig = out
+        row, det = out
         rows.append(row)
 
-        # Write per-ticker detail JSON
+        # Write per-ticker detail
         with open(os.path.join(TICKER_DIR, f"{t}.json"), "w") as f:
             json.dump(det, f)
-
-        if hist_sig is not None:
-            hist_best_by_ticker[t] = hist_sig
 
         if i % 50 == 0:
             print(f"[PROGRESS] processed {i}/{len(usable)} | scored={len(rows)}")
 
     if not rows:
-        print("No tickers scored. Try lowering MIN_MED_DVOL_USD.")
+        print("No tickers scored. Try lowering MIN_MED_DVOL_USD or MIN_WASHOUT_TODAY.")
         return
 
     res = pd.DataFrame(rows)
-    res = res.sort_values(["rebound_score", "confidence", "stability"], ascending=False).reset_index(drop=True)
+    res = res.sort_values(["final_score", "confidence", "stability"], ascending=False).reset_index(drop=True)
 
-    # Embed top10 details
+    # Embed top10 details in full.json (fewer network calls)
     top10 = res.head(TOP10_EMBED)["ticker"].tolist()
     for t in top10:
         try:
             with open(os.path.join(TICKER_DIR, f"{t}.json"), "r") as f:
-                embedded_details[t] = json.load(f)
+                details[t] = json.load(f)
         except Exception:
             pass
 
-    # Historical signals: last 10 most recent (1 per ticker)
-    hist = list(hist_best_by_ticker.values())
-    hist.sort(key=lambda x: (x.get("date", ""), x.get("ticker", "")), reverse=True)
-    hist = hist[:10]
-
+    # Full payload
     as_of = str(datetime.now(ZoneInfo("America/New_York")))
     payload = {
         "as_of": as_of,
         "model": {
-            "version": "v7",
+            "version": "v8",
             "bench": BENCH,
             "interval": INTERVAL,
             "universe": "iShares Top 20 U.S. Stocks ETF holdings + ALWAYS_PLOT",
-            "evidence": {
-                "washout_days": "Top 10% Washout Meter days for this stock",
-                "normal_days": "All historical days for this stock",
+            "min_washout_today": MIN_WASHOUT_TODAY,
+            "final_score": {
+                "wash_floor": FINAL_WASH_FLOOR,
+                "wash_weight": FINAL_WASH_WEIGHT,
             },
         },
         "items": res.to_dict(orient="records"),
-        "details": embedded_details,
-        "historical_signals": hist,
+        "details": details,
     }
 
     with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
         json.dump(payload, f)
 
     mark_ran_today()
-    print(f"[OK] Wrote {len(res)} tickers -> docs/data (as_of={as_of})")
+    print(f"[OK] Wrote {len(rows)} tickers -> docs/data (as_of={as_of})")
 
 
 if __name__ == "__main__":
