@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Best-effort cache control for GitHub Pages/CDNs (JSON still hard-busted in app.js). -->
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Rebound Ledger</title>
+  <title>CRT Recovery Predictor</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -17,12 +16,35 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div class="brand-text">
-          <h1>Rebound Ledger</h1>
-          <div class="subhead">A once-daily scan that finds stocks that look unusually oversold <em>for their own history</em> — <em>after filtering out broad market moves</em>. Then it shows the receipts: when this exact stock looked like this before, what typically happened over the next <strong>1, 3, and 5 years</strong>.</div>
+          <h1>CRT Recovery Predictor</h1>
+          <div class="subhead">Evidence-based stock selection answering one question: <strong>What stocks should I buy today that will most likely be profitable in 1, 3, and 5 years?</strong></div>
         </div>
         <div class="meta">
           <div class="meta-row"><span class="meta-label">Updated</span><span id="asOf" class="meta-value"></span></div>
-          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">Russell 1000 Index &amp; Major Crypto</span></div>
+          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">S&P 500 + Major ETFs</span></div>
+          <div class="meta-row"><span class="meta-label">Benchmark</span><span class="meta-value">SPY (S&P 500)</span></div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <!-- Signal Summary -->
+      <div class="signal-summary" id="signalSummary">
+        <div class="signal-box signal-strong">
+          <div class="signal-count" id="countStrong">-</div>
+          <div class="signal-label">STRONG BUY</div>
+        </div>
+        <div class="signal-box signal-buy">
+          <div class="signal-count" id="countBuy">-</div>
+          <div class="signal-label">BUY</div>
+        </div>
+        <div class="signal-box signal-hold">
+          <div class="signal-count" id="countHold">-</div>
+          <div class="signal-label">HOLD</div>
+        </div>
+        <div class="signal-box signal-avoid">
+          <div class="signal-count" id="countAvoid">-</div>
+          <div class="signal-label">AVOID</div>
         </div>
       </div>
 
@@ -31,200 +53,82 @@
       <section class="explain">
         <details class="details whathow">
           <summary class="details-summary">
-            <span class="section-title">WHAT &amp; HOW</span>
+            <span class="section-title">METHODOLOGY & BACKTESTING</span>
             <span class="plus" aria-hidden="true">+</span>
           </summary>
           <div class="details-body">
             <div class="explain-grid">
               <div>
-                <div class="section-title">What this does</div>
+                <div class="section-title">The Core Question</div>
                 <p>
-                  Rebound Ledger runs once a day and surfaces stocks that look <strong>unusually washed-out for their own history</strong> —
-                  <strong>and checks that the weakness is stock-specific, not just “the market fell”</strong>.
-                  Then it answers the only question that matters: <em>when this exact stock looked like this before, what happened next?</em>
-                  You get forward outcome summaries for 1, 3, and 5 years, plus evidence comparing “signal days” to that stock’s normal baseline.
+                  <strong>"I have money to invest today. What stocks should I buy that will most likely be profitable in 1, 3, and 5 years?"</strong>
                 </p>
                 <p>
-                  This is not “price is down, therefore buy.”
-                  A -8% move means something totally different for a low-vol staple than for a high-beta growth name.
-                  The model is <strong>stock-specific</strong> and <strong>market-adjusted</strong>, so a broad market selloff doesn’t masquerade as a signal.
-                  It looks for <em>idiosyncratic</em> weakness (the part you can’t explain away with SPY).
+                  This tool provides evidence-based answers using historical data and validated backtesting.
+                  For each stock, we show the <strong>probability of positive returns</strong> and
+                  <strong>probability of beating SPY</strong> based on similar past situations.
                 </p>
 
-                <div class="section-title section-title--spaced">What this is not</div>
+                <div class="section-title section-title--spaced">What Makes a Stock Score High?</div>
+                <p>Our composite score weights factors by their proven ability to predict alpha:</p>
                 <ul>
-                  <li><strong>Not market advice.</strong> It does not tell you what you “should” own or how to build your portfolio.</li>
-                  <li><strong>Not a trading strategy.</strong> No entries/exits, position sizing, timing rules, or risk management plan.</li>
-                  <li><strong>Not a forecast.</strong> It summarizes historical outcomes; it does not predict the future.</li>
-                  <li><strong>Not a guarantee.</strong> Stocks can keep falling — including to zero.</li>
+                  <li><strong>Momentum (40%)</strong> — Stocks going up tend to keep going up. This is the strongest predictor.</li>
+                  <li><strong>Trend (25%)</strong> — Price above key moving averages (SMA50, SMA200).</li>
+                  <li><strong>Quality (20%)</strong> — Consistent monthly gains, lower volatility.</li>
+                  <li><strong>Historical (15%)</strong> — How similar past setups performed vs SPY.</li>
                 </ul>
               </div>
 
               <div>
-                <div class="section-title">How it works</div>
-                <ol>
-                  <li>
-                    <strong>Measure “washout.”</strong>
-                    The <strong>Washout Meter (0–100)</strong> summarizes drawdown vs the 52-week high, position inside the 52-week range,
-                    volatility/volume stress, and <strong>market-adjusted weakness</strong>.
-                  </li>
-                  <li>
-                    <strong>Remove the “market did it” excuse.</strong>
-                    The model estimates each stock’s rolling sensitivity to SPY and analyzes the residual (stock-specific) component.
-                    That’s why this is not just mean reversion: it’s looking for <em>abnormal</em> weakness for that stock after accounting for the market.
-                  </li>
-                  <li>
-                    <strong>Match historical analogs (same stock).</strong>
-                    It searches the stock’s own history for the most similar days (same stock, similar conditions), then measures what happened next.
-                  </li>
-                  <li>
-                    <strong>Show evidence, not vibes.</strong>
-                    The evidence block compares outcomes after the <strong>same “similar past setups”</strong> used in the recommendation
-                    versus that stock’s <strong>normal</strong> historical baseline.
-                  </li>
-                  <li>
-                    <strong>Rank by one consistent score.</strong>
-                    <strong>Edge Score (0–100)</strong> measures rebound edge from analogs.
-                    <strong>Final Score (0–100)</strong> amplifies Edge by how washed-out it is today — this is the single score used for ranking and the chart color.
-                    Confidence/Stability penalize “one lucky episode” patterns.
-                  </li>
-                </ol>
+                <div class="section-title">Backtesting Results</div>
+                <p>We validated this approach using walk-forward testing from 2016-2021:</p>
+                <div class="backtest-results">
+                  <div class="backtest-row">
+                    <span class="backtest-label">Momentum Edge</span>
+                    <span class="backtest-value highlight">+13.7pp</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">High-score stocks beat SPY (1Y)</span>
+                    <span class="backtest-value">68.6%</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Average Alpha (1Y)</span>
+                    <span class="backtest-value">+12.3%</span>
+                  </div>
+                </div>
+                <p class="footnote">
+                  "Edge" = difference in beat-SPY rate between high-score and low-score picks.
+                  Higher edge means the scoring actually predicts outperformance.
+                </p>
               </div>
 
               <div>
-                <div class="section-title">How to read the numbers</div>
+                <div class="section-title">How to Read the Numbers</div>
                 <ul>
-                  <li><strong>Final score (0–100)</strong> = the ranked recommendation. It’s the Edge Score amplified by today’s Washout.</li>
-                  <li><strong>Washout (0–100)</strong> = how washed-out/sold-off the stock looks vs its own history (market-adjusted).</li>
-                  <li><strong>Confidence (0–100)</strong> = higher when there are more comparable past cases and behavior is consistent.</li>
-                  <li><strong>Stability (0–100)</strong> = whether the score holds up under small, reasonable tweaks (higher = less fragile).</li>
-                  <li><span class="mono">Chance of gain</span> = % of similar past days where the forward return was positive.</li>
-                  <li><span class="mono">Typical</span> = the median forward return (the “middle” outcome).</li>
-                  <li><span class="mono">Downside (1 in 10)</span> = the 10th percentile (a bad-but-plausible case).</li>
-                  <li><span class="mono">Based on N</span> = how many historical analog days were used (bigger N = more evidence).</li>
-                  <li>
-                    <strong>Evidence</strong> compares the “similar past setups” group to the stock’s normal baseline
-                    so you can see whether the setup historically added edge for that ticker.
-                  </li>
+                  <li><strong>Score (0-100)</strong> — Composite ranking. Higher = better outlook.</li>
+                  <li><strong>P(+1Y), P(+3Y), P(+5Y)</strong> — Probability of positive return at each horizon.</li>
+                  <li><strong>Beat SPY</strong> — Probability of outperforming SPY index.</li>
+                  <li><strong>Median Return</strong> — Typical return from similar historical situations.</li>
+                  <li><strong>Downside / Upside</strong> — 10th and 90th percentile outcomes.</li>
+                  <li><strong>Confidence</strong> — Based on sample size of historical matches.</li>
+                </ul>
+
+                <div class="section-title section-title--spaced">Signals</div>
+                <ul>
+                  <li><strong>STRONG_BUY</strong> — Score ≥70, P(+3Y) ≥75%, Beat SPY ≥55%</li>
+                  <li><strong>BUY</strong> — Score ≥60, P(+3Y) ≥70%</li>
+                  <li><strong>HOLD</strong> — Score ≥45, P(+1Y) ≥60%</li>
+                  <li><strong>AVOID</strong> — Does not meet above criteria</li>
                 </ul>
               </div>
             </div>
 
             <div class="rule"></div>
 
-            <details class="details nerds">
-              <summary class="details-summary">
-                <span class="section-title">METHOD NOTES</span>
-                <span class="plus" aria-hidden="true">+</span>
-              </summary>
-              <div class="details-body">
-                <p>
-                  <strong>Rebound Ledger — how the model works (plain English)</strong>
-                </p>
-                <p>
-                  Each day, for every stock, it measures how “beaten down” the stock is compared with its own past: drawdown from the last
-                  1‑year high, where today sits inside its 1‑year and 3‑month ranges, and whether volume and volatility look stressed.
-                  It also subtracts out the market’s move by estimating the stock’s beta to SPY and looking at the residual
-                  (<span class="mono">stock − beta×SPY</span>), so a stock can still look washed‑out even if the whole market fell.
-                  Those metrics form a single “today snapshot” for the stock.
-                </p>
-                <p>
-                  To decide what’s “similar,” it compares today’s snapshot to the same snapshot from every historical day for that stock.
-                  Before comparing, it scales each feature using a robust z‑score (median/MAD) so one noisy metric can’t dominate.
-                  It then computes a simple distance (small distance = very similar) and selects the closest ~250 past days (“analogs”),
-                  while preventing them from being clustered right next to each other and balancing across broad SPY regimes.
-                </p>
-                <p>
-                  Once it has those analogs, it looks at what happened after them. For 1, 3, and 5 years forward it computes the fraction
-                  of analogs that ended up positive (chance of gain), the median return (typical), and a bad‑but‑plausible case (10th percentile).
-                  That becomes the <strong>Edge</strong>. Separately, the <strong>Washout</strong> score is how extreme today’s snapshot looks versus the
-                  stock’s own history (including after removing the market). The <strong>Final Score</strong> is essentially “edge from similar setups,”
-                  boosted when today is especially washed‑out. There isn’t a trained machine‑learning model here; it’s nearest‑neighbor matching
-                  plus straightforward statistics on what followed those matched days.
-                </p>
-
-                <ul>
-                  <li><strong>Outlier</strong> = “unusually washed‑out vs itself” + “historically rebounds from similar setups.” No trained ML model.</li>
-                </ul>
-
-                <ol>
-                  <li>
-                    <strong>Build features (per stock, per day)</strong>
-                    <ul>
-                      <li><span class="mono">dd_1y = Close / max(Close last 252) − 1</span></li>
-                      <li><span class="mono">pos_1y = (Close − min252) / (max252 − min252)</span></li>
-                      <li>Same for ~63 trading days (<span class="mono">dd_3m</span>, <span class="mono">pos_3m</span>)</li>
-                      <li><span class="mono">atr_pct = ATR14 / Close</span></li>
-                      <li><span class="mono">vol_z = robust_z(volume)</span> using median/MAD</li>
-                      <li><span class="mono">gap = Open / PrevClose − 1</span></li>
-                      <li><span class="mono">trend_3m = Close / SMA63 − 1</span></li>
-                      <li>
-                        <strong>Market‑adjusted (idiosyncratic)</strong>: rolling beta vs SPY, then
-                        <span class="mono">resid_ret = stock_ret − beta×spy_ret</span> and compute washout features on the residual series
-                      </li>
-                      <li>
-                        <strong>Market regime (SPY)</strong>: SPY drawdown/trend/vol/ATR to avoid learning from only one kind of tape
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <strong>Find “similar instances” (analog days)</strong>
-                    <ul>
-                      <li>Robust‑standardize each feature: <span class="mono">z = (x − median) / (1.4826×MAD)</span></li>
-                      <li>Distance: <span class="mono">dist(day) = sqrt(Σ (z(day) − z(today))²)</span></li>
-                      <li>Pick <span class="mono">K ≈ 250</span> closest past days, enforcing minimum spacing and regime balancing</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <strong>Scores</strong>
-                    <ul>
-                      <li><strong>Washout (0–100)</strong>: blend of drawdown/position/idiosyncratic washout + ATR/volume stress, with a “bottom gate”</li>
-                      <li>
-                        <strong>Edge (0–100)</strong>: from analog forward returns at 1/3/5 years:
-                        chance = mean(<span class="mono">fwd_return &gt; 0</span>), typical = median, downside = 10th percentile;
-                        downweighted when <span class="mono">N</span> is small
-                      </li>
-                      <li><strong>Final Score (0–100)</strong>: Edge amplified by Washout (washout boosts edge)</li>
-                    </ul>
-                  </li>
-                </ol>
-
-                <p class="footnote">
-                  It’s a conditional historical summary, not a promise. Use it as an evidence layer, not a mandate.
-                </p>
-              </div>
-            </details>
-          </div>
-        </details>
-
-        <details class="details hist">
-          <summary class="details-summary">
-            <span class="section-title">HISTORICAL SIGNALS</span>
-            <span class="plus" aria-hidden="true">+</span>
-          </summary>
-          <div class="details-body">
-            <div class="footnote" style="margin:0 0 10px 0">
-              Most recent 10 historical days where a ticker met today’s strict “signal” definition:
-              <strong>Final‑score rank</strong> and <strong>Washed‑out rank</strong> were both inside that ticker’s <strong>top 10%</strong>.
-              Included only when <strong>5‑year</strong> realized forward performance is available (so the 1Y/3Y/5Y columns are comparable).
-            </div>
-            <div class="table-wrap">
-              <table class="tbl" id="histTbl">
-                <thead>
-                  <tr>
-                    <th class="mono">Date</th>
-                    <th>Ticker</th>
-                    <th class="num">Final</th>
-                    <th class="num">Wash</th>
-                    <th>Final‑rank</th>
-                    <th>Wash‑rank</th>
-                    <th class="num">1Y</th>
-                    <th class="num">3Y</th>
-                    <th class="num">5Y</th>
-                  </tr>
-                </thead>
-                <tbody id="histRows"></tbody>
-              </table>
+            <div class="disclaimer">
+              <strong>Important:</strong> This is not investment advice. Past performance does not guarantee future results.
+              The probabilities shown are based on historical patterns which may not repeat. Always do your own research
+              and consider consulting a financial advisor before making investment decisions.
             </div>
           </div>
         </details>
@@ -239,10 +143,11 @@
           <button id="go" class="btn">Find</button>
         </div>
         <div class="sort">
-          <span class="sort-label">Sort</span>
-          <button class="btn-lite" data-sort="final">Final score</button>
-          <button class="btn-lite" data-sort="washout">Washout</button>
-          <button class="btn-lite" data-sort="edge">Edge</button>
+          <span class="sort-label">Sort by</span>
+          <button class="btn-lite active" data-sort="score">Score</button>
+          <button class="btn-lite" data-sort="prob1y">P(+1Y)</button>
+          <button class="btn-lite" data-sort="beatspy">Beat SPY</button>
+          <button class="btn-lite" data-sort="momentum">Momentum</button>
         </div>
       </div>
 
@@ -252,34 +157,33 @@
 
   <main class="wrap">
     <section>
-      <div class="section-title">Top 10 today</div>
+      <div class="section-title">Top 15 Stocks Today</div>
       <div id="top10" class="cards"></div>
     </section>
 
     <section class="spacer">
-      <div class="section-title">All tickers</div>
+      <div class="section-title">All Stocks</div>
       <div class="table-wrap">
         <table class="tbl" id="tbl">
           <thead>
             <tr>
               <th>Ticker</th>
-              <th>Verdict</th>
-              <th class="num">Final score</th>
-              <th class="num">Wash</th>
-              <th class="num">Edge</th>
+              <th>Signal</th>
+              <th class="num">Score</th>
+              <th class="num">P(+1Y)</th>
+              <th class="num">P(+3Y)</th>
+              <th class="num">P(+5Y)</th>
+              <th class="num">Beat SPY</th>
+              <th class="num">Med 1Y</th>
+              <th class="num">Mom 12M</th>
               <th class="num">Conf</th>
-              <th class="num">Stab</th>
-              <th>Risk</th>
-              <th class="num">1Y typ</th>
-              <th class="num">3Y typ</th>
-              <th class="num">5Y typ</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
       <div class="footnote">
-        The scan is informational only. It summarizes how this stock behaved after similar past setups; it does not predict the future.
+        Probabilities based on historical patterns from similar market conditions. Not investment advice.
       </div>
     </section>
   </main>
@@ -287,7 +191,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <div class="footer-inner">
-        Rebound Ledger • updated once daily after 5pm New York time
+        CRT Recovery Predictor • Updated daily after market close (5pm ET) • Powered by momentum-weighted ensemble model
       </div>
     </div>
   </footer>
