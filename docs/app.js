@@ -1,11 +1,20 @@
 /**
  * CRT Recovery Predictor v3.0 - Frontend JavaScript
- * Displays undervalued stocks with recovery potential
+ * Professional stock analysis with historical buy zone visualization
  */
 
 const DATA_URL = "./data/full.json";
 const CACHE_BUST = String(Date.now());
 
+// State
+let allItems = [];
+let currentItem = null;
+let chartRange = '10y'; // Default range
+let signalFilters = { STRONG_BUY: true, BUY: true, WATCH: true };
+let filterRecoveryOnly = false;
+let sortMode = 'score';
+
+// Helpers
 function withBust(url) {
   const sep = url.includes("?") ? "&" : "?";
   return `${url}${sep}v=${encodeURIComponent(CACHE_BUST)}`;
@@ -31,13 +40,6 @@ function fmtNum0(x) {
   const v = Number(x);
   if (!Number.isFinite(v)) return "—";
   return `${v.toFixed(0)}`;
-}
-
-function fmtNum1(x) {
-  if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "—";
-  return `${v.toFixed(1)}`;
 }
 
 function fmtPrice(x) {
@@ -67,384 +69,626 @@ function signalText(signal) {
   }
 }
 
-// Draw price chart with gradient based on trend
-function drawPriceChart(canvas, dates, prices) {
+function valueClass(value, threshold = 0) {
+  if (value === null || value === undefined) return '';
+  return value > threshold ? 'positive' : (value < threshold ? 'negative' : '');
+}
+
+// Calculate rolling 52-week high for historical buy zones
+function calculateBuyZones(dates, prices) {
+  const n = prices.length;
+  if (n < 252) return null; // Need at least 1 year
+
+  const zones = [];
+  const lookback = 252; // ~1 year of trading days
+
+  for (let i = lookback; i < n; i++) {
+    // Find 52-week high up to this point
+    let high52w = -Infinity;
+    for (let j = i - lookback; j <= i; j++) {
+      if (prices[j] > high52w) high52w = prices[j];
+    }
+
+    const price = prices[i];
+    const discount = ((high52w - price) / high52w) * 100;
+
+    // Determine zone
+    let zone = null;
+    if (discount >= 30) zone = 'strong';
+    else if (discount >= 20) zone = 'buy';
+    else if (discount >= 10) zone = 'watch';
+
+    zones.push({ date: dates[i], price, discount, zone, high52w });
+  }
+
+  return zones;
+}
+
+// Filter data based on date range
+function filterByRange(dates, prices, range) {
+  const n = dates.length;
+  if (n === 0) return { dates: [], prices: [] };
+
+  const lastDate = new Date(dates[n - 1]);
+  let cutoffDate;
+
+  if (range === '5y') {
+    cutoffDate = new Date(lastDate);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 5);
+  } else if (range === '10y') {
+    cutoffDate = new Date(lastDate);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 10);
+  } else {
+    // Max - return all
+    return { dates, prices };
+  }
+
+  const filteredDates = [];
+  const filteredPrices = [];
+
+  for (let i = 0; i < n; i++) {
+    const d = new Date(dates[i]);
+    if (d >= cutoffDate) {
+      filteredDates.push(dates[i]);
+      filteredPrices.push(prices[i]);
+    }
+  }
+
+  return { dates: filteredDates, prices: filteredPrices };
+}
+
+// Draw enhanced chart with buy zones
+function drawChart(canvas, dates, prices, range = '10y') {
   const ctx = canvas.getContext("2d");
-  const w = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
-  const h = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = rect.height;
   ctx.clearRect(0, 0, w, h);
 
-  const n = prices.length;
-  if (n < 3) return;
+  // Filter by range
+  const filtered = filterByRange(dates, prices, range);
+  const filteredDates = filtered.dates;
+  const filteredPrices = filtered.prices;
 
-  const pad = 12 * devicePixelRatio;
+  const n = filteredPrices.length;
+  if (n < 3) {
+    ctx.font = "14px IBM Plex Mono";
+    ctx.fillStyle = "#666";
+    ctx.textAlign = "center";
+    ctx.fillText("Not enough data for this range", w / 2, h / 2);
+    return;
+  }
+
+  const pad = { top: 20, right: 20, bottom: 30, left: 60 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  // Find min/max
   let minP = Infinity, maxP = -Infinity;
   for (let i = 0; i < n; i++) {
-    const p = Number(prices[i]);
-    if (!Number.isFinite(p)) continue;
-    if (p < minP) minP = p;
-    if (p > maxP) maxP = p;
+    const p = Number(filteredPrices[i]);
+    if (Number.isFinite(p)) {
+      if (p < minP) minP = p;
+      if (p > maxP) maxP = p;
+    }
   }
-  if (!(maxP > minP)) return;
 
-  const x0 = pad, x1 = w - pad, y0 = pad, y1 = h - pad;
-  function xAt(i) { return x0 + (x1 - x0) * (i / (n - 1)); }
-  function yAt(p) { return y1 - (y1 - y0) * ((p - minP) / (maxP - minP)); }
+  const range_p = maxP - minP;
+  minP -= range_p * 0.05;
+  maxP += range_p * 0.05;
 
-  // Calculate overall trend for color
-  const firstPrice = prices[0];
-  const lastPrice = prices[n - 1];
-  const trend = (lastPrice - firstPrice) / firstPrice;
-  const isUp = trend > 0;
+  function xAt(i) { return pad.left + chartW * (i / (n - 1)); }
+  function yAt(p) { return pad.top + chartH * (1 - (p - minP) / (maxP - minP)); }
 
-  // Draw the line
-  ctx.lineWidth = 2.5 * devicePixelRatio;
-  ctx.strokeStyle = isUp ? "rgba(15, 120, 70, 0.85)" : "rgba(180, 50, 50, 0.75)";
+  // Calculate buy zones for the filtered data
+  const zones = calculateBuyZones(filteredDates, filteredPrices);
+
+  // Draw buy zone backgrounds
+  if (zones && zones.length > 0) {
+    const zoneStartIdx = filteredDates.length - zones.length;
+
+    // Group consecutive zones
+    let currentZone = null;
+    let zoneStart = null;
+
+    for (let i = 0; i < zones.length; i++) {
+      const z = zones[i];
+      const idx = zoneStartIdx + i;
+
+      if (z.zone !== currentZone) {
+        // Draw previous zone
+        if (currentZone && zoneStart !== null) {
+          const x1 = xAt(zoneStart);
+          const x2 = xAt(idx);
+
+          ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.25)' :
+                          currentZone === 'buy' ? 'rgba(15, 120, 70, 0.15)' :
+                          'rgba(251, 191, 36, 0.15)';
+          ctx.fillRect(x1, pad.top, x2 - x1, chartH);
+        }
+
+        currentZone = z.zone;
+        zoneStart = z.zone ? idx : null;
+      }
+    }
+
+    // Draw final zone
+    if (currentZone && zoneStart !== null) {
+      const x1 = xAt(zoneStart);
+      const x2 = xAt(n - 1);
+
+      ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.25)' :
+                      currentZone === 'buy' ? 'rgba(15, 120, 70, 0.15)' :
+                      'rgba(251, 191, 36, 0.15)';
+      ctx.fillRect(x1, pad.top, x2 - x1, chartH);
+    }
+  }
+
+  // Draw grid lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth = 1;
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.top + (chartH / gridLines) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+
+    // Price labels
+    const price = maxP - ((maxP - minP) / gridLines) * i;
+    ctx.fillStyle = '#666';
+    ctx.font = "10px IBM Plex Mono";
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${price.toFixed(0)}`, pad.left - 8, y + 3);
+  }
+
+  // Draw date labels
+  const dateLabels = 5;
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= dateLabels; i++) {
+    const idx = Math.floor((n - 1) * i / dateLabels);
+    const x = xAt(idx);
+    const date = new Date(filteredDates[idx]);
+    const label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    ctx.fillText(label, x, h - 8);
+  }
+
+  // Draw the price line
+  const firstPrice = filteredPrices[0];
+  const lastPrice = filteredPrices[n - 1];
+  const isUp = lastPrice > firstPrice;
+
+  ctx.strokeStyle = isUp ? 'rgba(15, 120, 70, 0.9)' : 'rgba(180, 50, 50, 0.9)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
+
   for (let i = 0; i < n; i++) {
-    const p = Number(prices[i]);
+    const p = Number(filteredPrices[i]);
     if (!Number.isFinite(p)) continue;
     const x = xAt(i), y = yAt(p);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
   ctx.stroke();
 
-  // Today marker
-  ctx.fillStyle = isUp ? "rgba(15, 120, 70, 0.9)" : "rgba(180, 50, 50, 0.85)";
-  ctx.strokeStyle = "rgba(0,0,0,0.7)";
-  ctx.lineWidth = 1.2 * devicePixelRatio;
+  // Draw current price marker
+  const lastX = xAt(n - 1);
+  const lastY = yAt(lastPrice);
+
+  ctx.fillStyle = isUp ? 'rgba(15, 120, 70, 1)' : 'rgba(180, 50, 50, 1)';
   ctx.beginPath();
-  ctx.arc(xAt(n - 1), yAt(prices[n - 1]), 5 * devicePixelRatio, 0, Math.PI * 2);
+  ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 2;
   ctx.stroke();
+
+  // Current price label
+  ctx.fillStyle = '#111';
+  ctx.font = "bold 11px IBM Plex Mono";
+  ctx.textAlign = 'left';
+  ctx.fillText(`$${lastPrice.toFixed(2)}`, lastX + 10, lastY + 4);
 }
 
-// Outcome box for 1Y/3Y/5Y
-function outcomeBox(label, item, horizon) {
-  const prob = item[`prob_positive_${horizon}`];
-  const beatSpy = item[`prob_beat_spy_${horizon}`];
-  const median = item[`median_return_${horizon}`];
-  const downside = item[`downside_${horizon}`];
-  const upside = item[`upside_${horizon}`];
-  const samples = item[`sample_size_${horizon}`];
+// Render detail panel
+function renderDetail(item) {
+  currentItem = item;
 
-  const b = document.createElement("div");
-  b.className = "outbox";
-
-  if (!Number.isFinite(prob) || !samples || samples === 0) {
-    b.innerHTML = `<div class="h">${label}</div><div class="r"><span>Not enough data</span><strong>—</strong></div>`;
-    return b;
-  }
-
-  b.innerHTML = `
-    <div class="h">${label}</div>
-    <div class="r"><span>Prob positive</span><strong class="prob-value">${fmtPct(prob)}</strong></div>
-    ${beatSpy !== null && beatSpy !== undefined ? `<div class="r"><span>Beat SPY</span><strong>${fmtPct(beatSpy)}</strong></div>` : ""}
-    <div class="r"><span>Median return</span><strong>${fmtSignedPct(median)}</strong></div>
-    ${downside !== null && upside !== null ? `<div class="r"><span>Range (10-90th)</span><strong>${fmtSignedPct(downside)} to ${fmtSignedPct(upside)}</strong></div>` : ""}
-    <div class="r"><span>Based on</span><strong>${samples} similar cases</strong></div>
-  `;
-  return b;
-}
-
-// Render a stock card
-function renderCard(container, item) {
-  const card = document.createElement("div");
-  card.className = "card";
+  const panel = byId('detailPanel');
+  panel.classList.remove('hidden');
 
   // Header
-  const h = document.createElement("div");
-  h.className = "card-head";
-  h.innerHTML = `
-    <div>
-      <div class="ticker">${item.ticker}</div>
-      <div class="signal-badge ${signalClass(item.signal)}">${signalText(item.signal)}</div>
-      <div class="price">${fmtPrice(item.price)}</div>
-    </div>
-    <div class="metrics">
-      <div class="metric">
-        <div class="mline"><span>Score</span> <strong>${fmtNum0(item.opportunity_score)}/100</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Discount</span> <strong class="prob-highlight">${fmtPct(item.discount_from_high)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Beat SPY (1Y)</span> <strong>${fmtPct(item.prob_beat_spy_1y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>5Y Return</span> <strong>${fmtSignedPct(item.five_year_return)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Recovery</span> <strong>${item.early_recovery ? 'Yes' : 'No'}</strong></div>
-      </div>
-    </div>
-  `;
-  card.appendChild(h);
+  byId('detailTicker').textContent = item.ticker;
+  const signalEl = byId('detailSignal');
+  signalEl.textContent = signalText(item.signal);
+  signalEl.className = 'detail-signal ' + signalClass(item.signal);
+  byId('detailPrice').textContent = fmtPrice(item.price);
 
   // Thesis
-  if (item.thesis) {
-    const thesis = document.createElement("div");
-    thesis.className = "thesis";
-    thesis.innerHTML = `<strong>Why buy now?</strong> ${item.thesis}`;
-    card.appendChild(thesis);
-  }
-
-  const grid = document.createElement("div");
-  grid.className = "grid2";
-
-  // Left: Key metrics + Outcomes
-  const left = document.createElement("div");
-
-  // Key metrics list
-  const ul = document.createElement("ul");
-  ul.className = "bullets";
-
-  const trendStatus = item.above_sma20 ? "above" : "below";
-  const trendColor = item.above_sma20 ? "positive" : "negative";
-  const trend50Status = item.above_sma50 ? "above" : "below";
-  const trend50Color = item.above_sma50 ? "positive" : "negative";
-
-  ul.innerHTML = `
-    <li>Trading <strong class="prob-highlight">${fmtPct(item.discount_from_high)}</strong> below 52-week high of <strong>${fmtPrice(item.high_52w)}</strong></li>
-    <li>Position in 52-week range: <strong>${fmtNum0(item.position_in_52w_range)}%</strong> (0% = at low, 100% = at high)</li>
-    <li>Price is <strong class="${trendColor}">${trendStatus}</strong> the 20-day moving average</li>
-    <li>Price is <strong class="${trend50Color}">${trend50Status}</strong> the 50-day moving average</li>
-    <li>1-month momentum: <strong>${fmtSignedPct(item.momentum_1m)}</strong></li>
-    <li>Monthly win rate: <strong>${fmtPct(item.monthly_win_rate)}</strong></li>
+  byId('detailThesis').innerHTML = `
+    <div class="detail-thesis-title">Why Buy ${item.ticker} Now?</div>
+    <div class="detail-thesis-text">${item.thesis || 'No thesis available.'}</div>
   `;
-  left.appendChild(ul);
 
-  // Outcomes grid
-  const outcomes = document.createElement("div");
-  outcomes.className = "outcomes";
-  outcomes.appendChild(outcomeBox("1 Year", item, "1y"));
-  outcomes.appendChild(outcomeBox("3 Years", item, "3y"));
-  outcomes.appendChild(outcomeBox("5 Years", item, "5y"));
-  left.appendChild(outcomes);
+  // Metrics
+  const metricsHtml = `
+    <div class="detail-metric">
+      <div class="detail-metric-label">Opportunity Score</div>
+      <div class="detail-metric-value">${fmtNum0(item.opportunity_score)}/100</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">Discount from High</div>
+      <div class="detail-metric-value positive">${fmtPct(item.discount_from_high)}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">52-Week High</div>
+      <div class="detail-metric-value">${fmtPrice(item.high_52w)}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">52-Week Low</div>
+      <div class="detail-metric-value">${fmtPrice(item.low_52w)}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">5-Year Return</div>
+      <div class="detail-metric-value ${valueClass(item.five_year_return)}">${fmtSignedPct(item.five_year_return)}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">Monthly Win Rate</div>
+      <div class="detail-metric-value">${fmtPct(item.monthly_win_rate)}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">Above SMA-20</div>
+      <div class="detail-metric-value ${item.above_sma20 ? 'positive' : ''}">${item.above_sma20 ? 'Yes' : 'No'}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="detail-metric-label">Early Recovery</div>
+      <div class="detail-metric-value ${item.early_recovery ? 'positive' : ''}">${item.early_recovery ? 'Yes' : 'No'}</div>
+    </div>
+  `;
+  byId('detailMetrics').innerHTML = metricsHtml;
 
-  // Right: Chart
-  const right = document.createElement("div");
-  right.className = "chart";
-  const canvas = document.createElement("canvas");
-  canvas.className = "canvas";
-  right.appendChild(canvas);
+  // Outcomes
+  const outcomesHtml = `
+    <div class="detail-outcome">
+      <div class="detail-outcome-title">1 Year Outlook</div>
+      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_1y, 50)}">${fmtPct(item.prob_positive_1y)}</strong></div>
+      <div class="detail-outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</strong></div>
+      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</strong></div>
+      <div class="detail-outcome-row"><span>Downside (10th)</span><strong class="negative">${fmtSignedPct(item.downside_1y)}</strong></div>
+      <div class="detail-outcome-row"><span>Upside (90th)</span><strong class="positive">${fmtSignedPct(item.upside_1y)}</strong></div>
+      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_1y || '—'}</strong></div>
+    </div>
+    <div class="detail-outcome">
+      <div class="detail-outcome-title">3 Year Outlook</div>
+      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_3y, 50)}">${fmtPct(item.prob_positive_3y)}</strong></div>
+      <div class="detail-outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_3y, 50)}">${fmtPct(item.prob_beat_spy_3y)}</strong></div>
+      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</strong></div>
+      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_3y || '—'}</strong></div>
+    </div>
+    <div class="detail-outcome">
+      <div class="detail-outcome-title">5 Year Outlook</div>
+      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_5y, 50)}">${fmtPct(item.prob_positive_5y)}</strong></div>
+      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</strong></div>
+      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_5y || '—'}</strong></div>
+    </div>
+  `;
+  byId('detailOutcomes').innerHTML = outcomesHtml;
 
-  const legend = document.createElement("div");
-  legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-text">5-Year Price History</span>`;
-  right.appendChild(legend);
-
-  grid.appendChild(left);
-  grid.appendChild(right);
-  card.appendChild(grid);
-
-  // Draw chart if we have data
+  // Draw chart
   const series = item.series;
-  if (series && series.prices && series.prices.length) {
-    requestAnimationFrame(() => drawPriceChart(canvas, series.dates, series.prices));
+  if (series && series.prices && series.prices.length > 0) {
+    const canvas = byId('detailCanvas');
+    drawChart(canvas, series.dates, series.prices, chartRange);
   }
 
-  container.appendChild(card);
+  // Scroll to detail
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Close detail panel
+function closeDetail() {
+  byId('detailPanel').classList.add('hidden');
+  currentItem = null;
+  document.querySelectorAll('#rows tr').forEach(r => r.classList.remove('selected'));
 }
 
 // Table row HTML
 function rowHtml(item) {
-  const t = item.ticker;
-  const thesisShort = item.thesis ? (item.thesis.length > 80 ? item.thesis.substring(0, 80) + '...' : item.thesis) : '';
+  const thesisShort = item.thesis ?
+    (item.thesis.length > 60 ? item.thesis.substring(0, 60) + '...' : item.thesis) : '';
+
   return `
-    <tr data-ticker="${t}">
-      <td class="tcell">${t}</td>
+    <tr data-ticker="${item.ticker}">
+      <td class="tcell">${item.ticker}</td>
       <td><span class="signal-badge-sm ${signalClass(item.signal)}">${signalText(item.signal)}</span></td>
       <td class="num">${fmtNum0(item.opportunity_score)}</td>
       <td class="num">${fmtPct(item.discount_from_high)}</td>
-      <td class="num">${fmtPct(item.prob_beat_spy_1y)}</td>
-      <td class="num">${fmtSignedPct(item.median_return_1y)}</td>
-      <td class="num">${fmtSignedPct(item.median_return_3y)}</td>
+      <td class="num ${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</td>
+      <td class="num ${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</td>
+      <td class="num ${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</td>
+      <td class="num ${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</td>
       <td class="num">${fmtNum0(item.sample_size_1y)}</td>
-      <td><span class="${item.early_recovery ? 'recovery-yes' : 'recovery-no'}">${item.early_recovery ? 'YES' : 'No'}</span></td>
+      <td><span class="${item.early_recovery ? 'recovery-yes' : 'recovery-no'}">${item.early_recovery ? 'YES' : '—'}</span></td>
       <td class="thesis-cell">${thesisShort}</td>
     </tr>
   `;
 }
 
-async function loadJSON(url) {
-  const u = withBust(url);
-  const r = await fetch(u, {
-    cache: "no-store",
-    headers: {
-      "Pragma": "no-cache",
-      "Cache-Control": "no-cache",
-    },
-  });
-  if (!r.ok) throw new Error(`Fetch failed ${r.status}: ${url}`);
-  return await r.json();
+// Get filtered items
+function getFilteredItems() {
+  let list = [...allItems];
+
+  // Signal filters
+  list = list.filter(x => signalFilters[x.signal]);
+
+  // Recovery filter
+  if (filterRecoveryOnly) {
+    list = list.filter(x => x.early_recovery);
+  }
+
+  return list;
 }
 
-function setSortButtons(active) {
-  document.querySelectorAll(".btn-lite").forEach(b => {
-    b.classList.toggle("active", b.dataset.sort === active);
+// Apply sort
+function applySort(list) {
+  const sorted = [...list];
+
+  switch (sortMode) {
+    case 'score':
+      sorted.sort((a, b) => (b.opportunity_score || 0) - (a.opportunity_score || 0));
+      break;
+    case 'discount':
+      sorted.sort((a, b) => (b.discount_from_high || 0) - (a.discount_from_high || 0));
+      break;
+    case 'beatspy1y':
+      sorted.sort((a, b) => (b.prob_beat_spy_1y || 0) - (a.prob_beat_spy_1y || 0));
+      break;
+    case 'beatspy3y':
+      sorted.sort((a, b) => (b.prob_beat_spy_3y || 0) - (a.prob_beat_spy_3y || 0));
+      break;
+    case 'median1y':
+      sorted.sort((a, b) => (b.median_return_1y || 0) - (a.median_return_1y || 0));
+      break;
+    case 'median3y':
+      sorted.sort((a, b) => (b.median_return_3y || 0) - (a.median_return_3y || 0));
+      break;
+    case 'median5y':
+      sorted.sort((a, b) => (b.median_return_5y || 0) - (a.median_return_5y || 0));
+      break;
+    case 'prob1y':
+      sorted.sort((a, b) => (b.prob_positive_1y || 0) - (a.prob_positive_1y || 0));
+      break;
+    case 'prob3y':
+      sorted.sort((a, b) => (b.prob_positive_3y || 0) - (a.prob_positive_3y || 0));
+      break;
+    case 'samples':
+      sorted.sort((a, b) => (b.sample_size_1y || 0) - (a.sample_size_1y || 0));
+      break;
+    case '5yreturn':
+      sorted.sort((a, b) => (b.five_year_return || 0) - (a.five_year_return || 0));
+      break;
+    case 'ticker':
+      sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
+      break;
+  }
+
+  return sorted;
+}
+
+// Render table
+function renderTable(list) {
+  byId('rows').innerHTML = list.map(it => rowHtml(it)).join('');
+  byId('filteredCount').textContent = `(${list.length})`;
+}
+
+// Full rerender
+function rerender() {
+  const filtered = getFilteredItems();
+  const sorted = applySort(filtered);
+  renderTable(sorted);
+
+  // Apply search if any
+  const q = (byId('q').value || '').trim().toUpperCase();
+  if (q) {
+    const searched = sorted.filter(x => x.ticker.includes(q));
+    renderTable(searched);
+  }
+}
+
+// Update signal box states
+function updateSignalBoxes() {
+  document.querySelectorAll('.signal-box.clickable').forEach(box => {
+    const signal = box.dataset.signal;
+    if (signal === 'ALL') {
+      const allActive = signalFilters.STRONG_BUY && signalFilters.BUY && signalFilters.WATCH;
+      box.classList.toggle('active', allActive);
+    } else {
+      box.classList.toggle('active', signalFilters[signal]);
+    }
   });
 }
 
+// Format date
 function formatAsOf(asOf) {
   if (!asOf) return "—";
   let s = String(asOf).trim();
   if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
   let d = new Date(s);
-  if (Number.isNaN(d.getTime())) {
-    s = s.replace(/\.(\d+)(Z|[+-]\d\d:\d\d)?$/, "$2");
-    d = new Date(s);
-  }
   if (Number.isNaN(d.getTime())) return String(asOf);
 
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).formatToParts(d);
-
-  const get = (type) => (parts.find(p => p.type === type)?.value || "");
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")} ${get("dayPeriod")} ET`;
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
 }
 
+// Load JSON
+async function loadJSON(url) {
+  const u = withBust(url);
+  const r = await fetch(u, { cache: "no-store" });
+  if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
+  return await r.json();
+}
+
+// Main
 (async function main() {
   let full;
   try {
     full = await loadJSON(DATA_URL);
   } catch (e) {
-    byId("top10").innerHTML = `<div class="footnote">No data yet. Run the daily scan to generate data.</div>`;
+    byId('rows').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#666;">No data available. Run the daily scan to generate data.</td></tr>';
     return;
   }
 
-  byId("asOf").textContent = formatAsOf(full.as_of);
+  byId('asOf').textContent = formatAsOf(full.as_of);
 
-  // Update signal counts
+  // Update counts
   if (full.summary) {
-    byId("countStrong").textContent = full.summary.strong_buy || 0;
-    byId("countBuy").textContent = full.summary.buy || 0;
-    byId("countWatch").textContent = full.summary.watch || 0;
+    byId('countStrong').textContent = full.summary.strong_buy || 0;
+    byId('countBuy').textContent = full.summary.buy || 0;
+    byId('countWatch').textContent = full.summary.watch || 0;
+    byId('countAll').textContent = full.summary.total_analyzed ||
+      ((full.summary.strong_buy || 0) + (full.summary.buy || 0) + (full.summary.watch || 0));
   }
 
-  let items = full.items || [];
-  let sortMode = "score";
-  let filterRecoveryOnly = false;
+  allItems = full.items || [];
 
-  function getFilteredItems() {
-    let list = [...items];
-    if (filterRecoveryOnly) {
-      list = list.filter(x => x.early_recovery);
-    }
-    return list;
-  }
+  // Initial render
+  rerender();
 
-  function renderTable(list) {
-    byId("rows").innerHTML = list.map(it => rowHtml(it)).join("");
-  }
+  // Signal box click handlers
+  document.querySelectorAll('.signal-box.clickable').forEach(box => {
+    box.addEventListener('click', () => {
+      const signal = box.dataset.signal;
 
-  async function loadDetail(ticker) {
-    // Check if embedded
-    if (full.details && full.details[ticker]) {
-      return full.details[ticker];
-    }
-    // Load from individual file
-    try {
-      return await loadJSON(`./data/tickers/${ticker}.json`);
-    } catch (e) {
-      // Return the basic item if detail load fails
-      return items.find(it => it.ticker === ticker) || null;
-    }
-  }
+      if (signal === 'ALL') {
+        // Toggle all on
+        signalFilters.STRONG_BUY = true;
+        signalFilters.BUY = true;
+        signalFilters.WATCH = true;
+      } else {
+        // Toggle individual
+        signalFilters[signal] = !signalFilters[signal];
 
-  async function renderTop(list, count = 10) {
-    const c = byId("top10");
-    c.innerHTML = "";
-    const top = list.slice(0, count);
-    for (const it of top) {
-      let detail;
-      try {
-        detail = await loadDetail(it.ticker);
-      } catch (err) {
-        detail = it;
+        // Ensure at least one is selected
+        if (!signalFilters.STRONG_BUY && !signalFilters.BUY && !signalFilters.WATCH) {
+          signalFilters[signal] = true;
+        }
       }
-      renderCard(c, detail || it);
-    }
-  }
 
-  function applySort(list) {
-    const sorted = [...list];
-    if (sortMode === "score") {
-      sorted.sort((a, b) => (b.opportunity_score - a.opportunity_score));
-    } else if (sortMode === "discount") {
-      sorted.sort((a, b) => (b.discount_from_high - a.discount_from_high));
-    } else if (sortMode === "beatspy") {
-      sorted.sort((a, b) => ((b.prob_beat_spy_1y || 0) - (a.prob_beat_spy_1y || 0)));
-    } else if (sortMode === "median") {
-      sorted.sort((a, b) => ((b.median_return_1y || 0) - (a.median_return_1y || 0)));
-    }
-    return sorted;
-  }
-
-  async function rerender() {
-    const filtered = getFilteredItems();
-    const list = applySort(filtered);
-    renderTable(list);
-    await renderTop(list);
-  }
-
-  // Sort button handlers
-  document.querySelectorAll(".btn-lite").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      sortMode = btn.dataset.sort;
-      setSortButtons(sortMode);
-      await rerender();
+      updateSignalBoxes();
+      closeDetail();
+      rerender();
     });
   });
-  setSortButtons(sortMode);
 
-  // Filter checkbox handler
-  byId("filterRecovery").addEventListener("change", async (e) => {
+  // Recovery filter
+  byId('filterRecovery').addEventListener('change', (e) => {
     filterRecoveryOnly = e.target.checked;
-    await rerender();
+    closeDetail();
+    rerender();
   });
 
-  await rerender();
+  // Sort select
+  byId('sortSelect').addEventListener('change', (e) => {
+    sortMode = e.target.value;
+    rerender();
+  });
 
-  // Table row click handler
-  byId("rows").addEventListener("click", async (e) => {
-    const tr = e.target.closest("tr");
+  // Table header click sorting
+  document.querySelectorAll('.tbl th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const sort = th.dataset.sort;
+      if (sort) {
+        sortMode = sort;
+        byId('sortSelect').value = sort;
+        rerender();
+      }
+    });
+  });
+
+  // Table row click
+  byId('rows').addEventListener('click', async (e) => {
+    const tr = e.target.closest('tr');
     if (!tr) return;
-    const t = tr.dataset.ticker;
-    if (!t) return;
 
-    document.querySelectorAll("#rows tr").forEach(r => r.classList.remove("highlight"));
-    tr.classList.add("highlight");
+    const ticker = tr.dataset.ticker;
+    if (!ticker) return;
 
-    const filtered = getFilteredItems();
-    const current = applySort(filtered);
-    const idx = current.findIndex(x => x.ticker === t);
-    if (idx < 0) return;
-    const rotated = [current[idx], ...current.filter((_, i) => i !== idx)];
-    await renderTop(rotated, 1);
-    document.querySelector(".masthead").scrollIntoView({ behavior: "smooth" });
+    // Update selection
+    document.querySelectorAll('#rows tr').forEach(r => r.classList.remove('selected'));
+    tr.classList.add('selected');
+
+    // Find item and render detail
+    const item = allItems.find(x => x.ticker === ticker);
+    if (item) {
+      // Try to load detailed data
+      try {
+        const detail = await loadJSON(`./data/tickers/${ticker}.json`);
+        renderDetail({ ...item, ...detail });
+      } catch {
+        renderDetail(item);
+      }
+    }
   });
 
-  // Search handler
+  // Close detail button
+  byId('detailClose').addEventListener('click', closeDetail);
+
+  // Chart range buttons
+  document.querySelectorAll('.chart-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      chartRange = btn.dataset.range;
+
+      if (currentItem && currentItem.series) {
+        const canvas = byId('detailCanvas');
+        drawChart(canvas, currentItem.series.dates, currentItem.series.prices, chartRange);
+      }
+    });
+  });
+
+  // Search
   function applySearch() {
-    const q = (byId("q").value || "").trim().toUpperCase();
+    const q = (byId('q').value || '').trim().toUpperCase();
     const filtered = getFilteredItems();
+    const sorted = applySort(filtered);
+
     if (!q) {
-      rerender();
+      renderTable(sorted);
       return;
     }
-    const searched = applySort(filtered).filter(x => x.ticker.includes(q));
+
+    const searched = sorted.filter(x => x.ticker.includes(q));
     renderTable(searched);
-    (async () => { await renderTop(searched); })();
   }
 
-  byId("go").addEventListener("click", applySearch);
-  byId("q").addEventListener("input", applySearch);
+  byId('go').addEventListener('click', applySearch);
+  byId('q').addEventListener('input', applySearch);
+
+  // Escape key closes detail
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDetail();
+  });
+
+  // Window resize - redraw chart
+  window.addEventListener('resize', () => {
+    if (currentItem && currentItem.series) {
+      const canvas = byId('detailCanvas');
+      drawChart(canvas, currentItem.series.dates, currentItem.series.prices, chartRange);
+    }
+  });
 })();
