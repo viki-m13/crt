@@ -179,23 +179,23 @@
     <section class="spacer">
       <div class="section-header">
         <div class="section-title">All Opportunities <span id="filteredCount"></span></div>
-        <div class="table-hint">Click any row to expand details and chart</div>
+        <div class="table-hint">Click + to expand details and chart</div>
       </div>
       <div class="table-wrap">
         <table class="tbl" id="tbl">
           <thead>
             <tr>
+              <th class="col-toggle"></th>
               <th class="sortable" data-sort="ticker">Ticker</th>
               <th>Signal</th>
               <th class="num sortable" data-sort="score">Score</th>
               <th class="num sortable" data-sort="discount">Discount</th>
-              <th class="num sortable" data-sort="beatspy1y">Beat SPY 1Y</th>
-              <th class="num sortable" data-sort="median1y">Med 1Y</th>
-              <th class="num sortable" data-sort="median3y">Med 3Y</th>
-              <th class="num sortable" data-sort="median5y">Med 5Y</th>
-              <th class="num sortable" data-sort="samples">Samples</th>
-              <th>Recovery</th>
-              <th class="thesis-header">Why Buy Now</th>
+              <th class="num sortable" data-sort="beatspy1y">Beat SPY</th>
+              <th class="num sortable" data-sort="median1y">1Y</th>
+              <th class="num sortable" data-sort="median3y">3Y</th>
+              <th class="num sortable" data-sort="median5y">5Y</th>
+              <th class="num sortable hide-mobile" data-sort="samples">Samples</th>
+              <th class="hide-mobile">Recov</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>

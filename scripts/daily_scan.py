@@ -53,11 +53,8 @@ def get_sp500_tickers():
         print(f"    Warning: Could not fetch S&P 500 list: {e}")
         return []
 
-def download_price_data(tickers, years=10):
+def download_price_data(tickers, use_max_period=True):
     """Download historical price data for all tickers."""
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365 * years)
-
     all_close = {}
     all_high = {}
     all_low = {}
@@ -72,8 +69,7 @@ def download_price_data(tickers, years=10):
         try:
             data = yf.download(
                 batch,
-                start=start_date,
-                end=end_date,
+                period="max",  # Get ALL available history
                 progress=False,
                 group_by='ticker',
                 auto_adjust=True,
@@ -416,7 +412,7 @@ def main():
 
     # 2. Download data
     print("\n[2] Downloading price data (max history)...")
-    close_df, high_df, low_df = download_price_data(tickers, years=25)  # Fetch max available history
+    close_df, high_df, low_df = download_price_data(tickers)  # Fetch max available history
 
     if close_df.empty:
         print("[ERROR] No data downloaded")
