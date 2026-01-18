@@ -4,197 +4,70 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>CRT Recovery Predictor</title>
+  <title>CRT Recovery Predictor - Find Undervalued Stocks</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="masthead">
-    <div class="wrap masthead-wrap">
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="brand-text">
-          <h1>CRT Recovery Predictor</h1>
-          <div class="subhead">Evidence-based stock selection answering one question: <strong>What stocks should I buy today that will most likely be profitable in 1, 3, and 5 years?</strong></div>
-        </div>
-        <div class="meta">
-          <div class="meta-row"><span class="meta-label">Updated</span><span id="asOf" class="meta-value"></span></div>
-          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">S&P 500 + Major ETFs</span></div>
-          <div class="meta-row"><span class="meta-label">Benchmark</span><span class="meta-value">SPY (S&P 500)</span></div>
-        </div>
-      </div>
-
-      <div class="rule"></div>
-
-      <!-- Signal Summary -->
-      <div class="signal-summary" id="signalSummary">
-        <div class="signal-box signal-strong">
-          <div class="signal-count" id="countStrong">-</div>
-          <div class="signal-label">STRONG BUY</div>
-        </div>
-        <div class="signal-box signal-buy">
-          <div class="signal-count" id="countBuy">-</div>
-          <div class="signal-label">BUY</div>
-        </div>
-        <div class="signal-box signal-hold">
-          <div class="signal-count" id="countHold">-</div>
-          <div class="signal-label">HOLD</div>
-        </div>
-        <div class="signal-box signal-avoid">
-          <div class="signal-count" id="countAvoid">-</div>
-          <div class="signal-label">AVOID</div>
-        </div>
-      </div>
-
-      <div class="rule"></div>
-
-      <section class="explain">
-        <details class="details whathow">
-          <summary class="details-summary">
-            <span class="section-title">METHODOLOGY & BACKTESTING</span>
-            <span class="plus" aria-hidden="true">+</span>
-          </summary>
-          <div class="details-body">
-            <div class="explain-grid">
-              <div>
-                <div class="section-title">The Core Question</div>
-                <p>
-                  <strong>"I have money to invest today. What stocks should I buy that will most likely be profitable in 1, 3, and 5 years?"</strong>
-                </p>
-                <p>
-                  This tool provides evidence-based answers using historical data and validated backtesting.
-                  For each stock, we show the <strong>probability of positive returns</strong> and
-                  <strong>probability of beating SPY</strong> based on similar past situations.
-                </p>
-
-                <div class="section-title section-title--spaced">What Makes a Stock Score High?</div>
-                <p>Our composite score weights factors by their proven ability to predict alpha:</p>
-                <ul>
-                  <li><strong>Momentum (40%)</strong> — Stocks going up tend to keep going up. This is the strongest predictor.</li>
-                  <li><strong>Trend (25%)</strong> — Price above key moving averages (SMA50, SMA200).</li>
-                  <li><strong>Quality (20%)</strong> — Consistent monthly gains, lower volatility.</li>
-                  <li><strong>Historical (15%)</strong> — How similar past setups performed vs SPY.</li>
-                </ul>
-              </div>
-
-              <div>
-                <div class="section-title">Backtesting Results</div>
-                <p>We validated this approach using walk-forward testing from 2016-2021:</p>
-                <div class="backtest-results">
-                  <div class="backtest-row">
-                    <span class="backtest-label">Momentum Edge</span>
-                    <span class="backtest-value highlight">+13.7pp</span>
-                  </div>
-                  <div class="backtest-row">
-                    <span class="backtest-label">High-score stocks beat SPY (1Y)</span>
-                    <span class="backtest-value">68.6%</span>
-                  </div>
-                  <div class="backtest-row">
-                    <span class="backtest-label">Average Alpha (1Y)</span>
-                    <span class="backtest-value">+12.3%</span>
-                  </div>
-                </div>
-                <p class="footnote">
-                  "Edge" = difference in beat-SPY rate between high-score and low-score picks.
-                  Higher edge means the scoring actually predicts outperformance.
-                </p>
-              </div>
-
-              <div>
-                <div class="section-title">How to Read the Numbers</div>
-                <ul>
-                  <li><strong>Score (0-100)</strong> — Composite ranking. Higher = better outlook.</li>
-                  <li><strong>P(+1Y), P(+3Y), P(+5Y)</strong> — Probability of positive return at each horizon.</li>
-                  <li><strong>Beat SPY</strong> — Probability of outperforming SPY index.</li>
-                  <li><strong>Median Return</strong> — Typical return from similar historical situations.</li>
-                  <li><strong>Downside / Upside</strong> — 10th and 90th percentile outcomes.</li>
-                  <li><strong>Confidence</strong> — Based on sample size of historical matches.</li>
-                </ul>
-
-                <div class="section-title section-title--spaced">Signals</div>
-                <ul>
-                  <li><strong>STRONG_BUY</strong> — Score ≥70, P(+3Y) ≥75%, Beat SPY ≥55%</li>
-                  <li><strong>BUY</strong> — Score ≥60, P(+3Y) ≥70%</li>
-                  <li><strong>HOLD</strong> — Score ≥45, P(+1Y) ≥60%</li>
-                  <li><strong>AVOID</strong> — Does not meet above criteria</li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="rule"></div>
-
-            <div class="disclaimer">
-              <strong>Important:</strong> This is not investment advice. Past performance does not guarantee future results.
-              The probabilities shown are based on historical patterns which may not repeat. Always do your own research
-              and consider consulting a financial advisor before making investment decisions.
-            </div>
-          </div>
-        </details>
-      </section>
-
-      <div class="rule"></div>
-
-      <div class="controls">
-        <div class="search">
-          <label for="q" class="visually-hidden">Search ticker</label>
-          <input id="q" class="search-input" type="text" placeholder="Search ticker (e.g., AAPL)" autocomplete="off" />
-          <button id="go" class="btn">Find</button>
-        </div>
-        <div class="sort">
-          <span class="sort-label">Sort by</span>
-          <button class="btn-lite active" data-sort="score">Score</button>
-          <button class="btn-lite" data-sort="prob1y">P(+1Y)</button>
-          <button class="btn-lite" data-sort="beatspy">Beat SPY</button>
-          <button class="btn-lite" data-sort="momentum">Momentum</button>
-        </div>
-      </div>
-
-      <div class="rule"></div>
+    <div class="wrap">
+      <h1 class="title">CRT Recovery Predictor</h1>
+      <p class="subtitle">Find undervalued quality stocks likely to outperform SPY</p>
+      <div class="updated">Updated: <span id="asOf">-</span></div>
     </div>
   </header>
 
   <main class="wrap">
-    <section>
-      <div class="section-title">Top 15 Stocks Today</div>
-      <div id="top10" class="cards"></div>
-    </section>
-
-    <section class="spacer">
-      <div class="section-title">All Stocks</div>
-      <div class="table-wrap">
-        <table class="tbl" id="tbl">
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Signal</th>
-              <th class="num">Score</th>
-              <th class="num">P(+1Y)</th>
-              <th class="num">P(+3Y)</th>
-              <th class="num">P(+5Y)</th>
-              <th class="num">Beat SPY</th>
-              <th class="num">Med 1Y</th>
-              <th class="num">Mom 12M</th>
-              <th class="num">Conf</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+    <!-- Summary Cards -->
+    <div class="summary-row" id="summary">
+      <div class="summary-card strong">
+        <div class="summary-count" id="countStrong">-</div>
+        <div class="summary-label">Strong Buy</div>
       </div>
-      <div class="footnote">
-        Probabilities based on historical patterns from similar market conditions. Not investment advice.
+      <div class="summary-card buy">
+        <div class="summary-count" id="countBuy">-</div>
+        <div class="summary-label">Buy</div>
       </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-inner">
-        CRT Recovery Predictor • Updated daily after market close (5pm ET) • Powered by momentum-weighted ensemble model
+      <div class="summary-card watch">
+        <div class="summary-count" id="countWatch">-</div>
+        <div class="summary-label">Watch</div>
       </div>
     </div>
-  </footer>
+
+    <!-- How It Works -->
+    <details class="how-it-works">
+      <summary>How does this work?</summary>
+      <div class="how-content">
+        <p><strong>We find stocks that are:</strong></p>
+        <ol>
+          <li><strong>Undervalued</strong> — Trading 10-50% below their 52-week high</li>
+          <li><strong>Quality</strong> — Positive 5-year returns, consistent track record</li>
+          <li><strong>Recovering</strong> — Showing early signs of bouncing back</li>
+          <li><strong>Statistically Backed</strong> — 15+ similar historical situations to estimate probability</li>
+        </ol>
+        <p>We analyze what happened when each stock was in a similar situation historically, then calculate the probability of positive returns and beating SPY.</p>
+        <p class="disclaimer"><strong>Not investment advice.</strong> Past performance doesn't guarantee future results.</p>
+      </div>
+    </details>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Search ticker..." />
+    </div>
+
+    <!-- Stock List -->
+    <div class="stock-list" id="stockList">
+      <div class="loading">Loading...</div>
+    </div>
+  </main>
+
+  <!-- Detail Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

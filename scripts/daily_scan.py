@@ -1,616 +1,527 @@
 #!/usr/bin/env python3
 """
-CRT Recovery Predictor - Daily Scan
-=====================================
+CRT Recovery Predictor v3.0 - Find Undervalued Stocks Likely to Outperform
 
-Core Question: What stocks should I buy today that will most likely be profitable in 1, 3, 5 years?
+Core Question: What stocks should I buy TODAY that are undervalued and
+most likely to outperform SPY in 1, 3, and 5 years?
 
-Methodology (validated through backtesting):
-- Momentum is the strongest predictor of alpha (beating SPY): +13.7pp edge
-- Combined with Quality + Trend + Historical probability for robustness
-- Uses S&P 500 universe from iShares IVV holdings
-
-Output:
-- Probability of positive returns at 1Y, 3Y, 5Y
-- Probability of beating SPY
-- Expected returns (median from similar historical situations)
-- Confidence based on sample size
-- Comprehensive backtesting evidence
-
-Scheduling:
-- GitHub Action runs daily after market close (5pm ET)
-- Set FORCE_RUN=1 to bypass time gate
+Philosophy:
+- Find QUALITY companies trading at a DISCOUNT (down from highs)
+- With EARLY RECOVERY signals (not catching falling knives)
+- Backed by STATISTICAL EVIDENCE (minimum sample sizes)
+- Simple output with clear "Why Buy Now" thesis
 """
 
-import os
 import json
-import math
+import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import yfinance as yf
 import requests
+import yfinance as yf
 import warnings
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from io import StringIO
 
 warnings.filterwarnings("ignore")
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-BENCHMARK = "SPY"
-MIN_HISTORY_DAYS = 756  # 3 years minimum
-OUT_DIR = os.path.join("docs", "data")
-TICKER_DIR = os.path.join(OUT_DIR, "tickers")
-CHUNK_SIZE = 80
-TOP_EMBED = 15
 
-# iShares IVV holdings URL (S&P 500)
-ISHARES_HOLDINGS_URL = (
-    "https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf/"
-    "1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
-)
+MIN_HISTORY_YEARS = 5          # Minimum years of price history required
+MIN_SAMPLE_SIZE = 15           # Minimum historical matches for valid probability
+MIN_DISCOUNT_PCT = 10          # Minimum % below 52-week high to be "undervalued"
+MAX_DISCOUNT_PCT = 50          # Maximum % below high (avoid distressed)
 
-# Always include these tickers
-ALWAYS_INCLUDE = [
-    "SPY", "QQQ", "IWM", "DIA",  # Major ETFs
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",  # Mega-caps
-    "BTC-USD", "ETH-USD",  # Crypto
-]
+OUTPUT_DIR = Path(__file__).parent.parent / "docs" / "data"
 
 # =============================================================================
-# TIME GATE
+# DATA FETCHING
 # =============================================================================
-def should_run_now() -> bool:
-    if os.getenv("FORCE_RUN", "").strip() == "1":
-        return True
-    tz = ZoneInfo("America/New_York")
-    now = datetime.now(tz)
-    if now.hour < 17:
-        return False
-    stamp_path = os.path.join(OUT_DIR, "last_run.txt")
-    today = now.strftime("%Y-%m-%d")
-    if os.path.exists(stamp_path):
-        prev = open(stamp_path, "r").read().strip()
-        if prev == today:
-            return False
-    return True
 
-def mark_ran_today() -> None:
-    os.makedirs(OUT_DIR, exist_ok=True)
-    tz = ZoneInfo("America/New_York")
-    today = datetime.now(tz).strftime("%Y-%m-%d")
-    open(os.path.join(OUT_DIR, "last_run.txt"), "w").write(today)
-
-# =============================================================================
-# FETCH S&P 500 TICKERS
-# =============================================================================
-def fetch_sp500_tickers():
-    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
+def get_sp500_tickers():
+    """Fetch S&P 500 constituents from iShares IVV holdings."""
+    url = "https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf/1467271812596.ajax?fileType=csv&fileName=IVV_holdings&dataType=fund"
     try:
-        resp = requests.get(ISHARES_HOLDINGS_URL, headers=headers, timeout=45)
-        if resp.status_code != 200:
-            raise RuntimeError(f"HTTP {resp.status_code}")
-
-        raw_text = resp.content.decode("utf-8", errors="ignore")
-        lines = raw_text.splitlines()
-
-        header_idx = None
-        for i, line in enumerate(lines[:700]):
-            if line.strip().startswith("Ticker,") or line.strip().startswith('"Ticker",'):
-                header_idx = i
-                break
-
-        if header_idx is None:
-            raise RuntimeError("Could not find Ticker header")
-
-        trimmed = "\n".join(lines[header_idx:])
-        df = pd.read_csv(StringIO(trimmed))
-        df.columns = [c.strip() for c in df.columns]
-
-        if "Asset Class" in df.columns:
-            df = df[df["Asset Class"].astype(str).str.contains("Equity", case=False, na=False)]
-
-        tickers = (
-            df["Ticker"].astype(str)
-            .str.strip()
-            .str.replace(" ", "", regex=False)
-            .str.replace(".", "-", regex=False)
-            .str.upper()
-        )
-        keep = tickers[
-            tickers.ne("") &
-            tickers.ne("NAN") &
-            (~tickers.str.contains("CASH", case=False, na=False))
-        ].dropna().unique().tolist()
-
-        print(f"    Fetched {len(keep)} S&P 500 tickers from iShares")
-        return sorted(keep)
+        df = pd.read_csv(url, skiprows=9)
+        tickers = df['Ticker'].dropna().tolist()
+        tickers = [t for t in tickers if isinstance(t, str) and t.isalpha() and len(t) <= 5]
+        return tickers[:503]
     except Exception as e:
-        print(f"    Warning: Could not fetch holdings ({e}), using fallback")
+        print(f"    Warning: Could not fetch S&P 500 list: {e}")
         return []
 
+def download_price_data(tickers, years=10):
+    """Download historical price data for all tickers."""
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365 * years)
+
+    all_close = {}
+    all_high = {}
+    all_low = {}
+
+    batch_size = 80
+    for i in range(0, len(tickers), batch_size):
+        batch = tickers[i:i + batch_size]
+        batch_num = i // batch_size + 1
+        total_batches = (len(tickers) + batch_size - 1) // batch_size
+        print(f"    Downloading batch {batch_num}/{total_batches}...")
+
+        try:
+            data = yf.download(
+                batch,
+                start=start_date,
+                end=end_date,
+                progress=False,
+                group_by='ticker',
+                auto_adjust=True,
+                threads=True
+            )
+
+            for ticker in batch:
+                try:
+                    if len(batch) == 1:
+                        close = data['Close']
+                        high = data['High']
+                        low = data['Low']
+                    else:
+                        close = data[ticker]['Close'] if ticker in data.columns.get_level_values(0) else None
+                        high = data[ticker]['High'] if ticker in data.columns.get_level_values(0) else None
+                        low = data[ticker]['Low'] if ticker in data.columns.get_level_values(0) else None
+
+                    if close is not None and len(close.dropna()) > 252:
+                        all_close[ticker] = close.dropna()
+                        all_high[ticker] = high.dropna()
+                        all_low[ticker] = low.dropna()
+                except:
+                    pass
+        except Exception as e:
+            print(f"    Warning: Batch download error: {e}")
+
+    if not all_close:
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+    close_df = pd.DataFrame(all_close)
+    high_df = pd.DataFrame(all_high)
+    low_df = pd.DataFrame(all_low)
+
+    return close_df, high_df, low_df
+
 # =============================================================================
-# HELPERS
+# ANALYSIS - Find Undervalued Opportunities
 # =============================================================================
-def calc_volatility(prices, period=60):
-    returns = np.log(prices / prices.shift(1))
-    return returns.rolling(period).std() * np.sqrt(252) * 100
 
-def calc_momentum(prices, months):
-    days = months * 21
-    if len(prices) < days:
-        return np.nan
-    return (prices.iloc[-1] / prices.iloc[-days] - 1) * 100
+def calculate_opportunity_metrics(ticker, close, high, low, spy_close):
+    """
+    Calculate metrics focused on finding undervalued stocks with recovery potential.
 
-def calc_drawdown(prices, lookback=252):
-    if len(prices) < lookback:
-        return np.nan
-    high = prices.rolling(lookback).max().iloc[-1]
-    return (prices.iloc[-1] / high - 1) * 100
+    Key insight: We want stocks that are:
+    1. DOWN from highs (undervalued/discounted)
+    2. QUALITY (historically profitable, not garbage)
+    3. RECOVERING (early momentum, not falling knife)
+    4. HISTORICALLY SUCCESSFUL (similar setups led to outperformance)
+    """
 
-def calc_rsi(prices, period=14):
-    delta = prices.diff()
-    gain = delta.where(delta > 0, 0).rolling(period).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(period).mean()
-    rs = gain / loss.replace(0, np.nan)
-    return 100 - (100 / (1 + rs))
-
-def safe_float(x):
     try:
-        v = float(x)
-        return v if np.isfinite(v) else None
-    except:
-        return None
+        if len(close) < 252 * MIN_HISTORY_YEARS:
+            return None  # Not enough history
 
-# =============================================================================
-# CORE SCORING MODEL
-# =============================================================================
-def calculate_stock_metrics(ticker, close, high, low, spy_close):
-    """Calculate all metrics for a single stock."""
+        current_price = close.iloc[-1]
 
-    px = close[ticker].dropna()
-    hi = high[ticker].dropna() if ticker in high.columns else px
-    lo = low[ticker].dropna() if ticker in low.columns else px
-    spy = spy_close.dropna()
+        # 1. DISCOUNT METRICS - How undervalued is this stock?
+        high_52w = close.iloc[-252:].max()
+        low_52w = close.iloc[-252:].min()
+        discount_from_high = (high_52w - current_price) / high_52w * 100
+        position_in_range = (current_price - low_52w) / (high_52w - low_52w) * 100 if high_52w != low_52w else 50
 
-    if len(px) < MIN_HISTORY_DAYS:
-        return None
+        # Skip if not discounted enough or too distressed
+        if discount_from_high < MIN_DISCOUNT_PCT:
+            return None  # Not undervalued - trading near highs
+        if discount_from_high > MAX_DISCOUNT_PCT:
+            return None  # Too distressed - might be broken
 
-    # Align indices
-    common_idx = px.index.intersection(spy.index)
-    if len(common_idx) < MIN_HISTORY_DAYS:
-        return None
+        # 2. QUALITY METRICS - Is this a quality company?
+        returns = close.pct_change().dropna()
 
-    px = px.reindex(common_idx)
-    spy = spy.reindex(common_idx)
-    hi = hi.reindex(common_idx).ffill()
-    lo = lo.reindex(common_idx).ffill()
+        # Sharpe ratio (risk-adjusted returns)
+        annual_return = (close.iloc[-1] / close.iloc[-252] - 1) if len(close) >= 252 else 0
+        annual_vol = returns.iloc[-252:].std() * np.sqrt(252) if len(returns) >= 252 else 0.3
+        sharpe = annual_return / annual_vol if annual_vol > 0 else 0
 
-    current_price = px.iloc[-1]
+        # Long-term trend (5-year return)
+        years_of_data = len(close) / 252
+        if years_of_data >= 5:
+            five_year_return = (close.iloc[-1] / close.iloc[-252*5] - 1) * 100
+        else:
+            five_year_return = (close.iloc[-1] / close.iloc[0] - 1) * 100
 
-    # ----- MOMENTUM METRICS (strongest alpha predictor) -----
-    mom_1m = calc_momentum(px, 1)
-    mom_3m = calc_momentum(px, 3)
-    mom_6m = calc_momentum(px, 6)
-    mom_12m = calc_momentum(px, 12)
+        # Monthly win rate (consistency)
+        monthly = close.resample('M').last().pct_change().dropna()
+        monthly_win_rate = (monthly > 0).mean() * 100 if len(monthly) > 12 else 50
 
-    # 12-1 momentum (skip last month - academic standard)
-    if len(px) >= 252:
-        mom_12_1 = (px.iloc[-21] / px.iloc[-252] - 1) * 100
-    else:
-        mom_12_1 = 0
+        # Skip low quality stocks
+        if five_year_return < -20:
+            return None  # Long-term loser
+        if monthly_win_rate < 40:
+            return None  # Too inconsistent
 
-    # ----- TREND METRICS -----
-    sma_50 = px.rolling(50).mean().iloc[-1] if len(px) >= 50 else current_price
-    sma_200 = px.rolling(200).mean().iloc[-1] if len(px) >= 200 else current_price
+        # 3. RECOVERY SIGNALS - Is it starting to bounce?
+        sma20 = close.iloc[-20:].mean()
+        sma50 = close.iloc[-50:].mean() if len(close) >= 50 else sma20
+        sma200 = close.iloc[-200:].mean() if len(close) >= 200 else sma50
 
-    above_sma50 = current_price > sma_50
-    above_sma200 = current_price > sma_200
-    sma50_above_200 = sma_50 > sma_200
+        above_sma20 = current_price > sma20
+        above_sma50 = current_price > sma50
+        price_vs_sma50 = (current_price / sma50 - 1) * 100
 
-    # SMA slope (trend direction)
-    if len(px) >= 221:
-        sma_200_prev = px.iloc[-221:-21].mean()
-        sma_slope = (sma_200 / sma_200_prev - 1) * 100
-    else:
-        sma_slope = 0
+        # Recent momentum (last 1-3 months)
+        mom_1m = (close.iloc[-1] / close.iloc[-21] - 1) * 100 if len(close) >= 21 else 0
+        mom_3m = (close.iloc[-1] / close.iloc[-63] - 1) * 100 if len(close) >= 63 else 0
 
-    # ----- QUALITY METRICS -----
-    volatility = calc_volatility(px, 60).iloc[-1]
+        # Recovery signal: stock is down from highs BUT showing recent strength
+        early_recovery = above_sma20 and mom_1m > 0
 
-    # Monthly win rate
-    monthly_rets = px.resample('M').last().pct_change().dropna()
-    monthly_win_rate = (monthly_rets > 0).mean() * 100 if len(monthly_rets) >= 12 else 50
+        # 4. HISTORICAL PROBABILITY - What happened in similar situations?
+        # Find times when stock had similar discount + early recovery pattern
 
-    # Sharpe-like metric
-    daily_rets = px.pct_change().dropna()
-    if len(daily_rets) >= 252:
-        ann_ret = daily_rets.iloc[-252:].mean() * 252 * 100
-        ann_vol = daily_rets.iloc[-252:].std() * np.sqrt(252) * 100
-        sharpe = (ann_ret - 4) / ann_vol if ann_vol > 0 else 0  # 4% risk-free
-    else:
-        sharpe = 0
+        spy_returns_1y = {}
+        spy_returns_3y = {}
 
-    # ----- VALUE METRICS -----
-    drawdown = calc_drawdown(px, 252)
+        for i in range(252, len(spy_close) - 252):
+            date = spy_close.index[i]
+            spy_returns_1y[date] = (spy_close.iloc[i + 252] / spy_close.iloc[i] - 1) * 100 if i + 252 < len(spy_close) else None
+            spy_returns_3y[date] = (spy_close.iloc[i + 756] / spy_close.iloc[i] - 1) * 100 if i + 756 < len(spy_close) else None
 
-    high_52w = hi.rolling(252).max().iloc[-1] if len(hi) >= 252 else hi.max()
-    low_52w = lo.rolling(252).min().iloc[-1] if len(lo) >= 252 else lo.min()
+        matches_1y = []
+        matches_3y = []
+        matches_5y = []
+        beat_spy_1y = []
+        beat_spy_3y = []
 
-    if high_52w > low_52w:
-        position_in_range = (current_price - low_52w) / (high_52w - low_52w) * 100
-    else:
-        position_in_range = 50
+        for i in range(252, len(close) - 252):
+            try:
+                hist_price = close.iloc[i]
+                hist_high_52w = close.iloc[i-252:i].max()
+                hist_low_52w = close.iloc[i-252:i].min()
+                hist_discount = (hist_high_52w - hist_price) / hist_high_52w * 100
 
-    # RSI
-    rsi = calc_rsi(px).iloc[-1] if len(px) >= 14 else 50
+                hist_sma20 = close.iloc[i-20:i].mean()
+                hist_above_sma20 = hist_price > hist_sma20
+                hist_mom_1m = (hist_price / close.iloc[i-21] - 1) * 100 if i >= 21 else 0
+                hist_early_recovery = hist_above_sma20 and hist_mom_1m > 0
 
-    # ----- RELATIVE STRENGTH VS SPY -----
-    stock_ret_3m = calc_momentum(px, 3) / 100 if not np.isnan(calc_momentum(px, 3)) else 0
-    spy_ret_3m = calc_momentum(spy, 3) / 100 if not np.isnan(calc_momentum(spy, 3)) else 0
-    rel_strength = (stock_ret_3m - spy_ret_3m) * 100
+                # Match criteria: similar discount level AND similar recovery signal
+                if abs(hist_discount - discount_from_high) < 10 and hist_early_recovery == early_recovery:
+                    date = close.index[i]
 
-    stock_ret_12m = calc_momentum(px, 12) / 100 if not np.isnan(calc_momentum(px, 12)) else 0
-    spy_ret_12m = calc_momentum(spy, 12) / 100 if not np.isnan(calc_momentum(spy, 12)) else 0
-    rel_strength_12m = (stock_ret_12m - spy_ret_12m) * 100
+                    # 1-year outcome
+                    if i + 252 < len(close):
+                        ret_1y = (close.iloc[i + 252] / hist_price - 1) * 100
+                        matches_1y.append(ret_1y)
 
-    # ----- HISTORICAL PROBABILITY CALCULATION -----
-    outcomes_1y = []
-    outcomes_3y = []
-    outcomes_5y = []
-    alpha_1y = []
-    alpha_3y = []
+                        if date in spy_returns_1y and spy_returns_1y[date] is not None:
+                            beat_spy_1y.append(ret_1y > spy_returns_1y[date])
 
-    # Current conditions to match
-    curr_mom_12_1 = mom_12_1
-    curr_above_200 = above_sma200
-    curr_drawdown = drawdown if not np.isnan(drawdown) else 0
+                    # 3-year outcome
+                    if i + 756 < len(close):
+                        ret_3y = (close.iloc[i + 756] / hist_price - 1) * 100
+                        matches_3y.append(ret_3y)
 
-    # Sample historical points
-    for idx in range(300, len(px) - 252, 21):
-        hist_px = px.iloc[idx]
+                        if date in spy_returns_3y and spy_returns_3y[date] is not None:
+                            beat_spy_3y.append(ret_3y > spy_returns_3y[date])
 
-        # Calculate historical metrics at that point
-        hist_mom = (px.iloc[idx-21] / px.iloc[idx-252] - 1) * 100 if idx >= 252 else 0
-        hist_sma200 = px.iloc[max(0,idx-200):idx].mean()
-        hist_above_200 = hist_px > hist_sma200
-        hist_high = px.iloc[max(0,idx-252):idx].max()
-        hist_dd = (hist_px / hist_high - 1) * 100
+                    # 5-year outcome
+                    if i + 1260 < len(close):
+                        ret_5y = (close.iloc[i + 1260] / hist_price - 1) * 100
+                        matches_5y.append(ret_5y)
+            except:
+                continue
 
-        # Similarity score
-        mom_sim = max(0, 100 - abs(curr_mom_12_1 - hist_mom) * 2)
-        trend_sim = 100 if curr_above_200 == hist_above_200 else 50
-        dd_sim = max(0, 100 - abs(curr_drawdown - hist_dd) * 2)
+        # Require minimum sample size for valid probabilities
+        if len(matches_1y) < MIN_SAMPLE_SIZE:
+            return None  # Not enough historical data for this pattern
 
-        similarity = (mom_sim * 0.5 + trend_sim * 0.3 + dd_sim * 0.2)
+        # Calculate probabilities
+        prob_positive_1y = np.mean([r > 0 for r in matches_1y]) * 100 if matches_1y else 50
+        prob_positive_3y = np.mean([r > 0 for r in matches_3y]) * 100 if len(matches_3y) >= 10 else None
+        prob_positive_5y = np.mean([r > 0 for r in matches_5y]) * 100 if len(matches_5y) >= 10 else None
 
-        if similarity > 60:
-            # 1Y forward
-            if idx + 252 < len(px):
-                ret_1y = (px.iloc[idx + 252] / hist_px - 1)
-                outcomes_1y.append(ret_1y)
-                spy_ret = (spy.iloc[idx + 252] / spy.iloc[idx] - 1)
-                alpha_1y.append(ret_1y - spy_ret)
+        prob_beat_spy_1y = np.mean(beat_spy_1y) * 100 if len(beat_spy_1y) >= MIN_SAMPLE_SIZE else None
+        prob_beat_spy_3y = np.mean(beat_spy_3y) * 100 if len(beat_spy_3y) >= 10 else None
 
-            # 3Y forward
-            if idx + 756 < len(px):
-                ret_3y = (px.iloc[idx + 756] / hist_px - 1)
-                outcomes_3y.append(ret_3y)
-                spy_ret_3y = (spy.iloc[idx + 756] / spy.iloc[idx] - 1)
-                alpha_3y.append(ret_3y - spy_ret_3y)
+        median_return_1y = np.median(matches_1y) if matches_1y else 0
+        median_return_3y = np.median(matches_3y) if matches_3y else None
+        median_return_5y = np.median(matches_5y) if matches_5y else None
 
-            # 5Y forward
-            if idx + 1260 < len(px):
-                ret_5y = (px.iloc[idx + 1260] / hist_px - 1)
-                outcomes_5y.append(ret_5y)
+        downside_1y = np.percentile(matches_1y, 10) if len(matches_1y) >= 10 else None
+        upside_1y = np.percentile(matches_1y, 90) if len(matches_1y) >= 10 else None
 
-    # Calculate probabilities
-    if len(outcomes_1y) >= 5:
-        prob_positive_1y = np.mean([r > 0 for r in outcomes_1y]) * 100
-        prob_beat_spy_1y = np.mean([a > 0 for a in alpha_1y]) * 100
-        median_return_1y = np.median(outcomes_1y) * 100
-        p10_return_1y = np.percentile(outcomes_1y, 10) * 100
-        p90_return_1y = np.percentile(outcomes_1y, 90) * 100
-        sample_size_1y = len(outcomes_1y)
-    else:
-        prob_positive_1y = 65
-        prob_beat_spy_1y = 50
-        median_return_1y = 10
-        p10_return_1y = -20
-        p90_return_1y = 40
-        sample_size_1y = 0
+        # 5. OPPORTUNITY SCORE - Combine all factors
+        # Higher score = better opportunity (undervalued + quality + recovering + good odds)
 
-    if len(outcomes_3y) >= 5:
-        prob_positive_3y = np.mean([r > 0 for r in outcomes_3y]) * 100
-        prob_beat_spy_3y = np.mean([a > 0 for a in alpha_3y]) * 100
-        median_return_3y = np.median(outcomes_3y) * 100
-        p10_return_3y = np.percentile(outcomes_3y, 10) * 100
-        p90_return_3y = np.percentile(outcomes_3y, 90) * 100
-        sample_size_3y = len(outcomes_3y)
-    else:
-        prob_positive_3y = 75
-        prob_beat_spy_3y = 55
-        median_return_3y = 35
-        p10_return_3y = -10
-        p90_return_3y = 80
-        sample_size_3y = 0
+        score = 0
 
-    if len(outcomes_5y) >= 5:
-        prob_positive_5y = np.mean([r > 0 for r in outcomes_5y]) * 100
-        median_return_5y = np.median(outcomes_5y) * 100
-        p10_return_5y = np.percentile(outcomes_5y, 10) * 100
-        p90_return_5y = np.percentile(outcomes_5y, 90) * 100
-        sample_size_5y = len(outcomes_5y)
-    else:
-        prob_positive_5y = 85
-        median_return_5y = 65
-        p10_return_5y = 0
-        p90_return_5y = 150
-        sample_size_5y = 0
+        # Discount bonus (more discount = more opportunity, up to a point)
+        score += min(discount_from_high, 35)  # Max 35 points for discount
 
-    # ----- COMPOSITE SCORE -----
-    # Weights based on backtesting validation
-    momentum_score = min(100, max(0, 50 + mom_12_1))
-    trend_score = 50 + (15 if above_sma50 else 0) + (20 if above_sma200 else 0) + (15 if sma50_above_200 else 0)
-    quality_score = monthly_win_rate * 0.6 + max(0, 100 - volatility * 2) * 0.4
-    historical_score = prob_beat_spy_1y
+        # Quality bonus
+        if five_year_return > 50:
+            score += 20
+        elif five_year_return > 20:
+            score += 15
+        elif five_year_return > 0:
+            score += 10
 
-    # Final composite (momentum-weighted per backtest results)
-    composite_score = (
-        momentum_score * 0.40 +
-        trend_score * 0.25 +
-        quality_score * 0.20 +
-        historical_score * 0.15
-    )
-    composite_score = min(100, max(0, composite_score))
+        # Recovery signal bonus
+        if early_recovery:
+            score += 15
+        if above_sma50:
+            score += 5
 
-    # ----- CONFIDENCE -----
-    min_samples = min(sample_size_1y, sample_size_3y) if sample_size_3y > 0 else sample_size_1y
-    confidence = min(100, max(0, min_samples * 2))
+        # Historical probability bonus
+        if prob_beat_spy_1y and prob_beat_spy_1y > 60:
+            score += 15
+        elif prob_beat_spy_1y and prob_beat_spy_1y > 50:
+            score += 10
 
-    # ----- SIGNAL -----
-    if composite_score >= 70 and prob_positive_3y >= 75 and prob_beat_spy_1y >= 55:
-        signal = "STRONG_BUY"
-    elif composite_score >= 60 and prob_positive_3y >= 70:
-        signal = "BUY"
-    elif composite_score >= 45 and prob_positive_1y >= 60:
-        signal = "HOLD"
-    else:
-        signal = "AVOID"
+        if prob_positive_1y > 70:
+            score += 10
+        elif prob_positive_1y > 60:
+            score += 5
 
-    # ----- BUILD PRICE SERIES FOR CHARTS -----
-    chart_days = min(len(px), 252 * 6)  # 6 years
-    chart_px = px.iloc[-chart_days:]
+        # Cap at 100
+        score = min(score, 100)
 
-    return {
-        "ticker": ticker,
-        "price": round(float(current_price), 2),
-        "signal": signal,
-        "composite_score": round(float(composite_score), 1),
-        "confidence": round(float(confidence), 1),
+        # Determine signal
+        if score >= 70 and prob_beat_spy_1y and prob_beat_spy_1y >= 55 and early_recovery:
+            signal = "STRONG_BUY"
+        elif score >= 55 and prob_positive_1y >= 60:
+            signal = "BUY"
+        elif score >= 40:
+            signal = "WATCH"
+        else:
+            signal = "PASS"
 
-        # Probabilities
-        "prob_positive_1y": round(float(prob_positive_1y), 1),
-        "prob_positive_3y": round(float(prob_positive_3y), 1),
-        "prob_positive_5y": round(float(prob_positive_5y), 1),
-        "prob_beat_spy_1y": round(float(prob_beat_spy_1y), 1),
-        "prob_beat_spy_3y": round(float(prob_beat_spy_3y), 1) if sample_size_3y >= 5 else None,
+        # Generate "Why Buy Now" thesis
+        thesis = generate_thesis(ticker, discount_from_high, early_recovery,
+                                  prob_beat_spy_1y, median_return_1y, five_year_return)
 
-        # Expected returns
-        "median_return_1y": round(float(median_return_1y), 1),
-        "median_return_3y": round(float(median_return_3y), 1),
-        "median_return_5y": round(float(median_return_5y), 1),
-        "downside_1y": round(float(p10_return_1y), 1),
-        "upside_1y": round(float(p90_return_1y), 1),
-        "downside_3y": round(float(p10_return_3y), 1),
-        "upside_3y": round(float(p90_return_3y), 1),
+        return {
+            "ticker": ticker,
+            "price": round(current_price, 2),
+            "signal": signal,
+            "opportunity_score": round(score, 1),
 
-        # Sample sizes
-        "sample_size_1y": int(sample_size_1y),
-        "sample_size_3y": int(sample_size_3y),
-        "sample_size_5y": int(sample_size_5y),
+            # Valuation
+            "discount_from_high": round(discount_from_high, 1),
+            "position_in_52w_range": round(position_in_range, 1),
+            "high_52w": round(high_52w, 2),
+            "low_52w": round(low_52w, 2),
 
-        # Key metrics
-        "momentum_12m": safe_float(mom_12m),
-        "momentum_6m": safe_float(mom_6m),
-        "momentum_3m": safe_float(mom_3m),
-        "momentum_1m": safe_float(mom_1m),
-        "rel_strength_3m": round(float(rel_strength), 1),
-        "rel_strength_12m": round(float(rel_strength_12m), 1),
-        "volatility": safe_float(volatility),
-        "drawdown": safe_float(drawdown),
-        "position_in_52w_range": round(float(position_in_range), 1),
-        "above_sma50": bool(above_sma50),
-        "above_sma200": bool(above_sma200),
-        "sma_slope": round(float(sma_slope), 2),
-        "rsi": safe_float(rsi),
-        "monthly_win_rate": round(float(monthly_win_rate), 1),
-        "sharpe": round(float(sharpe), 2),
+            # Quality
+            "five_year_return": round(five_year_return, 1),
+            "monthly_win_rate": round(monthly_win_rate, 1),
+            "sharpe": round(sharpe, 2),
 
-        # Price series for charts
-        "series": {
-            "dates": [str(d.date()) for d in chart_px.index],
-            "prices": [round(float(p), 2) for p in chart_px.values],
+            # Recovery
+            "early_recovery": bool(early_recovery),
+            "above_sma20": bool(above_sma20),
+            "above_sma50": bool(above_sma50),
+            "momentum_1m": round(mom_1m, 1),
+            "momentum_3m": round(mom_3m, 1),
+
+            # Probabilities (the key output)
+            "prob_positive_1y": round(prob_positive_1y, 0),
+            "prob_positive_3y": round(prob_positive_3y, 0) if prob_positive_3y else None,
+            "prob_positive_5y": round(prob_positive_5y, 0) if prob_positive_5y else None,
+            "prob_beat_spy_1y": round(prob_beat_spy_1y, 0) if prob_beat_spy_1y else None,
+            "prob_beat_spy_3y": round(prob_beat_spy_3y, 0) if prob_beat_spy_3y else None,
+
+            # Expected returns
+            "median_return_1y": round(median_return_1y, 1),
+            "median_return_3y": round(median_return_3y, 1) if median_return_3y else None,
+            "median_return_5y": round(median_return_5y, 1) if median_return_5y else None,
+            "downside_1y": round(downside_1y, 1) if downside_1y else None,
+            "upside_1y": round(upside_1y, 1) if upside_1y else None,
+
+            # Sample sizes (for credibility)
+            "sample_size_1y": len(matches_1y),
+            "sample_size_3y": len(matches_3y),
+            "sample_size_5y": len(matches_5y),
+
+            # Thesis
+            "thesis": thesis,
+
+            # Price series (last 5 years for chart)
+            "series": {
+                "dates": [d.strftime("%Y-%m-%d") for d in close.index[-1260:]],
+                "prices": [round(p, 2) for p in close.values[-1260:]]
+            }
         }
-    }
+
+    except Exception as e:
+        return None
+
+
+def generate_thesis(ticker, discount, early_recovery, prob_beat_spy, median_return, five_year_return):
+    """Generate a simple 'Why Buy Now' thesis."""
+
+    parts = []
+
+    # Discount
+    parts.append(f"{ticker} is trading {discount:.0f}% below its 52-week high")
+
+    # Quality
+    if five_year_return > 50:
+        parts.append(f"with strong long-term performance (+{five_year_return:.0f}% over 5 years)")
+    elif five_year_return > 0:
+        parts.append(f"with solid long-term track record (+{five_year_return:.0f}% over 5 years)")
+
+    # Recovery
+    if early_recovery:
+        parts.append("and showing early signs of recovery")
+
+    # Probability
+    if prob_beat_spy and prob_beat_spy > 55:
+        parts.append(f"Historically, similar setups beat SPY {prob_beat_spy:.0f}% of the time with median return of +{median_return:.0f}%")
+    elif median_return > 0:
+        parts.append(f"Historically, similar setups returned +{median_return:.0f}% median over 1 year")
+
+    return ". ".join(parts) + "."
 
 
 # =============================================================================
 # MAIN
 # =============================================================================
-def main():
-    os.makedirs(OUT_DIR, exist_ok=True)
-    os.makedirs(TICKER_DIR, exist_ok=True)
 
-    if not should_run_now():
-        print("[gate] Not time to run yet (or already ran today). Exiting.")
+def main():
+    print("=" * 80)
+    print("CRT RECOVERY PREDICTOR v3.0 - Finding Undervalued Opportunities")
+    print("=" * 80)
+
+    # Check if market is open (skip on weekends unless forced)
+    today = datetime.now()
+    if today.weekday() >= 5 and not os.environ.get("FORCE_RUN"):
+        print("\n[SKIP] Weekend - use FORCE_RUN=1 to override")
         return
 
-    print("=" * 80)
-    print("CRT RECOVERY PREDICTOR - Evidence-Based Stock Selection")
-    print("=" * 80)
+    # 1. Get tickers
+    print("\n[1] Building stock universe...")
+    tickers = get_sp500_tickers()
+    tickers.extend(["SPY", "QQQ", "DIA", "IWM"])  # Add ETFs for reference
+    tickers = list(set(tickers))
+    print(f"    Total universe: {len(tickers)} tickers")
 
-    # Fetch universe
-    print("\n[1] Fetching stock universe...")
-    sp500_tickers = fetch_sp500_tickers()
-    stock_universe = sorted(set(sp500_tickers + ALWAYS_INCLUDE))
-    print(f"    Total universe: {len(stock_universe)} tickers")
+    # 2. Download data
+    print("\n[2] Downloading price data (10 years)...")
+    close_df, high_df, low_df = download_price_data(tickers, years=10)
 
-    # Download data
-    print("\n[2] Downloading data...")
-    tickers = list(set(stock_universe + [BENCHMARK]))
+    if close_df.empty:
+        print("[ERROR] No data downloaded")
+        return
 
-    close_dfs = []
-    high_dfs = []
-    low_dfs = []
+    print(f"    Data from {close_df.index[0].date()} to {close_df.index[-1].date()}")
+    print(f"    {len(close_df.columns)} tickers with sufficient data")
 
-    for i in range(0, len(tickers), CHUNK_SIZE):
-        batch = tickers[i:i + CHUNK_SIZE]
-        print(f"    Downloading batch {i//CHUNK_SIZE + 1}/{(len(tickers)-1)//CHUNK_SIZE + 1}...")
-        data = yf.download(batch, period="10y", interval="1d", auto_adjust=True, progress=False)
+    # Get SPY for benchmark comparison
+    spy_close = close_df["SPY"] if "SPY" in close_df.columns else None
+    if spy_close is None:
+        print("[ERROR] SPY data required for benchmark comparison")
+        return
 
-        if data.empty:
-            continue
-
-        if isinstance(data.columns, pd.MultiIndex):
-            if "Close" in data.columns.get_level_values(0):
-                close_dfs.append(data["Close"])
-            if "High" in data.columns.get_level_values(0):
-                high_dfs.append(data["High"])
-            if "Low" in data.columns.get_level_values(0):
-                low_dfs.append(data["Low"])
-        else:
-            ticker = batch[0]
-            close_dfs.append(pd.DataFrame({ticker: data["Close"]}))
-            high_dfs.append(pd.DataFrame({ticker: data["High"]}))
-            low_dfs.append(pd.DataFrame({ticker: data["Low"]}))
-
-    close = pd.concat(close_dfs, axis=1) if close_dfs else pd.DataFrame()
-    high = pd.concat(high_dfs, axis=1) if high_dfs else pd.DataFrame()
-    low = pd.concat(low_dfs, axis=1) if low_dfs else pd.DataFrame()
-
-    close = close.loc[:, ~close.columns.duplicated()].dropna(how='all')
-    high = high.loc[:, ~high.columns.duplicated()].reindex(close.index).ffill()
-    low = low.loc[:, ~low.columns.duplicated()].reindex(close.index).ffill()
-
-    if BENCHMARK not in close.columns:
-        raise RuntimeError(f"Missing {BENCHMARK} data")
-
-    spy_close = close[BENCHMARK]
-
-    print(f"    Data from {close.index[0].date()} to {close.index[-1].date()}")
-    print(f"    {len(close.columns)} tickers loaded")
-
-    # Analyze stocks
-    print("\n[3] Analyzing stocks...")
+    # 3. Analyze each stock
+    print("\n[3] Analyzing stocks for undervalued opportunities...")
     results = []
-    details = {}
-    processed = 0
 
-    # Clear old ticker files
-    for fn in os.listdir(TICKER_DIR):
-        if fn.endswith(".json"):
-            try:
-                os.remove(os.path.join(TICKER_DIR, fn))
-            except:
-                pass
+    for i, ticker in enumerate(close_df.columns):
+        if ticker in ["SPY", "QQQ", "DIA", "IWM"]:
+            continue  # Skip ETFs
 
-    for ticker in stock_universe:
-        if ticker not in close.columns:
-            continue
+        if (i + 1) % 50 == 0:
+            print(f"    Processed {i + 1} stocks...")
 
-        metrics = calculate_stock_metrics(ticker, close, high, low, spy_close)
+        close = close_df[ticker].dropna()
+        high = high_df[ticker].dropna() if ticker in high_df.columns else close
+        low = low_df[ticker].dropna() if ticker in low_df.columns else close
+
+        metrics = calculate_opportunity_metrics(ticker, close, high, low, spy_close)
+
         if metrics:
             results.append(metrics)
-            processed += 1
 
-            # Save individual ticker file
-            with open(os.path.join(TICKER_DIR, f"{ticker}.json"), "w") as f:
-                json.dump(metrics, f)
+    print(f"    Found {len(results)} undervalued opportunities")
 
-            if processed % 50 == 0:
-                print(f"    Processed {processed} stocks...")
+    # Sort by opportunity score
+    results.sort(key=lambda x: x["opportunity_score"], reverse=True)
 
-    # Sort by composite score
-    results.sort(key=lambda x: x['composite_score'], reverse=True)
-
-    print(f"    Completed: {len(results)} stocks analyzed")
-
-    # Embed top N details
-    for r in results[:TOP_EMBED]:
-        details[r['ticker']] = r
-
-    # Summary stats
-    strong_buys = [r for r in results if r['signal'] == 'STRONG_BUY']
-    buys = [r for r in results if r['signal'] == 'BUY']
-    holds = [r for r in results if r['signal'] == 'HOLD']
-    avoids = [r for r in results if r['signal'] == 'AVOID']
-
-    # Build output
-    as_of = datetime.now(ZoneInfo("America/New_York")).isoformat()
-
-    output = {
-        "as_of": as_of,
-        "model": {
-            "name": "CRT Recovery Predictor",
-            "version": "v2.0",
-            "methodology": "Momentum-weighted ensemble with historical probability estimation",
-            "benchmark": BENCHMARK,
-            "universe_size": len(results),
-            "weights": {
-                "momentum": "40%",
-                "trend": "25%",
-                "quality": "20%",
-                "historical": "15%"
-            }
-        },
-        "summary": {
-            "strong_buy": len(strong_buys),
-            "buy": len(buys),
-            "hold": len(holds),
-            "avoid": len(avoids),
-        },
-        "backtesting": {
-            "note": "Validated using walk-forward testing from 2016-2021",
-            "momentum_edge": "+13.7pp (high-score vs low-score beat SPY rate)",
-            "high_score_beat_spy_1y": "68.6%",
-            "avg_alpha_1y": "+12.3%"
-        },
-        "items": results,
-        "details": details,
-    }
-
-    with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
-        json.dump(output, f)
-
-    mark_ran_today()
-
-    # Print summary
+    # 4. Summary
     print("\n" + "=" * 80)
-    print("TOP 20 STOCKS BY COMPOSITE SCORE")
+    print("TOP 20 UNDERVALUED OPPORTUNITIES")
     print("=" * 80)
-    print(f"\n{'Rank':<5} {'Ticker':<8} {'Score':<8} {'Signal':<12} {'P(+1Y)':<10} {'P(+3Y)':<10} {'Beat SPY':<10}")
+    print(f"\n{'Rank':<6}{'Ticker':<8}{'Score':<8}{'Signal':<12}{'Discount':<10}{'P(Beat SPY)':<12}{'Recovery':<10}")
     print("-" * 75)
 
-    for i, r in enumerate(results[:20], 1):
-        print(f"{i:<5} {r['ticker']:<8} {r['composite_score']:<8.0f} {r['signal']:<12} "
-              f"{r['prob_positive_1y']:<10.0f} {r['prob_positive_3y']:<10.0f} "
-              f"{r['prob_beat_spy_1y']:<10.0f}")
+    for i, item in enumerate(results[:20], 1):
+        recovery = "Yes" if item["early_recovery"] else "No"
+        beat_spy = f"{item['prob_beat_spy_1y']:.0f}%" if item["prob_beat_spy_1y"] else "N/A"
+        print(f"{i:<6}{item['ticker']:<8}{item['opportunity_score']:<8.0f}{item['signal']:<12}"
+              f"{item['discount_from_high']:.0f}%{'':<5}{beat_spy:<12}{recovery:<10}")
+
+    # Count signals
+    strong_buy = len([r for r in results if r["signal"] == "STRONG_BUY"])
+    buy = len([r for r in results if r["signal"] == "BUY"])
+    watch = len([r for r in results if r["signal"] == "WATCH"])
 
     print("\n" + "=" * 80)
-    print(f"SUMMARY: {len(strong_buys)} STRONG_BUY | {len(buys)} BUY | {len(holds)} HOLD | {len(avoids)} AVOID")
+    print(f"SUMMARY: {strong_buy} STRONG_BUY | {buy} BUY | {watch} WATCH")
     print("=" * 80)
 
-    if strong_buys:
-        print("\nTop STRONG_BUY picks:")
-        for r in strong_buys[:5]:
-            print(f"  {r['ticker']}: {r['prob_positive_1y']:.0f}% positive in 1Y, "
-                  f"{r['prob_beat_spy_1y']:.0f}% beat SPY, "
-                  f"median return {r['median_return_1y']:+.0f}%")
+    if strong_buy > 0:
+        print("\nTop STRONG_BUY opportunities:")
+        for item in [r for r in results if r["signal"] == "STRONG_BUY"][:5]:
+            print(f"  {item['ticker']}: {item['thesis'][:100]}...")
 
-    print(f"\n[OK] Results saved to {OUT_DIR}/full.json (as_of={as_of})")
+    # 5. Save results
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    output = {
+        "as_of": datetime.now().astimezone().isoformat(),
+        "model": {
+            "name": "CRT Recovery Predictor",
+            "version": "v3.0",
+            "methodology": "Find undervalued quality stocks with early recovery signals",
+            "min_history_years": MIN_HISTORY_YEARS,
+            "min_sample_size": MIN_SAMPLE_SIZE,
+            "discount_range": f"{MIN_DISCOUNT_PCT}%-{MAX_DISCOUNT_PCT}%"
+        },
+        "summary": {
+            "total_analyzed": len(results),
+            "strong_buy": strong_buy,
+            "buy": buy,
+            "watch": watch
+        },
+        "items": results
+    }
+
+    # Save main file
+    with open(OUTPUT_DIR / "full.json", "w") as f:
+        json.dump(output, f)
+
+    # Save individual ticker files
+    ticker_dir = OUTPUT_DIR / "tickers"
+    ticker_dir.mkdir(exist_ok=True)
+
+    for item in results:
+        with open(ticker_dir / f"{item['ticker']}.json", "w") as f:
+            json.dump(item, f)
+
+    # Save timestamp
+    with open(OUTPUT_DIR / "last_run.txt", "w") as f:
+        f.write(datetime.now().strftime("%Y-%m-%d"))
+
+    print(f"\n[OK] Results saved to {OUTPUT_DIR / 'full.json'}")
 
 
 if __name__ == "__main__":
