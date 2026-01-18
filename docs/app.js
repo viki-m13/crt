@@ -97,14 +97,14 @@ function drawChart(canvas, dates, prices, range) {
       const z = visibleZones[i];
       if (z !== cur) {
         if (cur && start != null) {
-          ctx.fillStyle = cur === 'strong' ? 'rgba(34,197,94,0.25)' : cur === 'buy' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)';
+          ctx.fillStyle = cur === 'strong' ? 'rgba(10,102,64,0.35)' : cur === 'buy' ? 'rgba(10,102,64,0.18)' : 'rgba(180,140,0,0.22)';
           ctx.fillRect(x(start), pad.t, x(i) - x(start), ch);
         }
         cur = z; start = z ? i : null;
       }
     }
     if (cur && start != null) {
-      ctx.fillStyle = cur === 'strong' ? 'rgba(34,197,94,0.25)' : cur === 'buy' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)';
+      ctx.fillStyle = cur === 'strong' ? 'rgba(10,102,64,0.35)' : cur === 'buy' ? 'rgba(10,102,64,0.18)' : 'rgba(180,140,0,0.22)';
       ctx.fillRect(x(start), pad.t, x(n-1) - x(start), ch);
     }
   }
