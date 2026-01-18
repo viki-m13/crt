@@ -9,7 +9,7 @@ const CACHE_BUST = String(Date.now());
 // State
 let allItems = [];
 let currentItem = null;
-let chartRange = '10y'; // Default range
+let chartRange = 'max'; // Default range - show full history
 let signalFilters = { STRONG_BUY: true, BUY: true, WATCH: true };
 let filterRecoveryOnly = false;
 let sortMode = 'score';
