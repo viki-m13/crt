@@ -321,59 +321,93 @@ function createExpandedContent(item) {
           </div>
         </div>
 
-        <div class="expanded-grid">
-          <div class="expanded-chart-container">
-            <canvas class="expanded-canvas" id="expandedCanvas-${item.ticker}"></canvas>
-            <div class="chart-legend">
-              <span class="legend-item"><span class="legend-color legend-strong"></span> Strong Buy (30%+ discount)</span>
-              <span class="legend-item"><span class="legend-color legend-buy"></span> Buy (20-30% discount)</span>
-              <span class="legend-item"><span class="legend-color legend-watch"></span> Watch (10-20% discount)</span>
+        <div class="expanded-thesis">
+          <div class="thesis-title">Why Buy ${item.ticker} Now?</div>
+          <div class="thesis-text">${item.thesis || 'No thesis available.'}</div>
+        </div>
+
+        <div class="expanded-chart-section">
+          <canvas class="expanded-canvas" id="expandedCanvas-${item.ticker}"></canvas>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-color legend-strong"></span> Strong Buy (30%+)</span>
+            <span class="legend-item"><span class="legend-color legend-buy"></span> Buy (20-30%)</span>
+            <span class="legend-item"><span class="legend-color legend-watch"></span> Watch (10-20%)</span>
+          </div>
+        </div>
+
+        <div class="expanded-stats">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Score</span>
+              <span class="stat-value">${fmtNum0(item.opportunity_score)}/100</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Discount</span>
+              <span class="stat-value positive">${fmtPct(item.discount_from_high)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">52W High</span>
+              <span class="stat-value">${fmtPrice(item.high_52w)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">52W Low</span>
+              <span class="stat-value">${fmtPrice(item.low_52w)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">5Y Return</span>
+              <span class="stat-value ${valueClass(item.five_year_return)}">${fmtSignedPct(item.five_year_return)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Win Rate</span>
+              <span class="stat-value">${fmtPct(item.monthly_win_rate)}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Above SMA-20</span>
+              <span class="stat-value ${item.above_sma20 ? 'positive' : ''}">${item.above_sma20 ? 'Yes' : 'No'}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Recovery</span>
+              <span class="stat-value ${item.early_recovery ? 'positive' : ''}">${item.early_recovery ? 'Yes' : 'No'}</span>
             </div>
           </div>
+        </div>
 
-          <div class="expanded-details">
-            <div class="expanded-thesis">
-              <div class="thesis-title">Why Buy ${item.ticker} Now?</div>
-              <div class="thesis-text">${item.thesis || 'No thesis available.'}</div>
+        <div class="expanded-outlook">
+          <div class="outlook-card">
+            <div class="outlook-header">1 Year</div>
+            <div class="outlook-main">
+              <div class="outlook-prob ${valueClass(item.prob_positive_1y, 50)}">${fmtPct(item.prob_positive_1y)}</div>
+              <div class="outlook-prob-label">Prob Positive</div>
             </div>
-
-            <div class="expanded-metrics">
-              <div class="metric-group">
-                <div class="metric-title">Current Status</div>
-                <div class="metric-row"><span>Opportunity Score</span><strong>${fmtNum0(item.opportunity_score)}/100</strong></div>
-                <div class="metric-row"><span>Discount from High</span><strong class="positive">${fmtPct(item.discount_from_high)}</strong></div>
-                <div class="metric-row"><span>52-Week High</span><strong>${fmtPrice(item.high_52w)}</strong></div>
-                <div class="metric-row"><span>52-Week Low</span><strong>${fmtPrice(item.low_52w)}</strong></div>
-                <div class="metric-row"><span>5-Year Return</span><strong class="${valueClass(item.five_year_return)}">${fmtSignedPct(item.five_year_return)}</strong></div>
-                <div class="metric-row"><span>Monthly Win Rate</span><strong>${fmtPct(item.monthly_win_rate)}</strong></div>
-                <div class="metric-row"><span>Above SMA-20</span><strong class="${item.above_sma20 ? 'positive' : ''}">${item.above_sma20 ? 'Yes' : 'No'}</strong></div>
-                <div class="metric-row"><span>Early Recovery</span><strong class="${item.early_recovery ? 'positive' : ''}">${item.early_recovery ? 'Yes' : 'No'}</strong></div>
-              </div>
+            <div class="outlook-details">
+              <div class="outlook-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</strong></div>
+              <div class="outlook-row"><span>Median</span><strong class="${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</strong></div>
+              <div class="outlook-row"><span>Downside</span><strong class="negative">${fmtSignedPct(item.downside_1y)}</strong></div>
+              <div class="outlook-row"><span>Upside</span><strong class="positive">${fmtSignedPct(item.upside_1y)}</strong></div>
+              <div class="outlook-row"><span>Samples</span><strong>${item.sample_size_1y || '—'}</strong></div>
             </div>
-
-            <div class="expanded-outcomes">
-              <div class="outcome-group">
-                <div class="outcome-title">1 Year Outlook</div>
-                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_1y, 50)}">${fmtPct(item.prob_positive_1y)}</strong></div>
-                <div class="outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</strong></div>
-                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</strong></div>
-                <div class="outcome-row"><span>Downside (10th)</span><strong class="negative">${fmtSignedPct(item.downside_1y)}</strong></div>
-                <div class="outcome-row"><span>Upside (90th)</span><strong class="positive">${fmtSignedPct(item.upside_1y)}</strong></div>
-                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_1y || '—'}</strong></div>
-              </div>
-              <div class="outcome-group">
-                <div class="outcome-title">3 Year Outlook</div>
-                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_3y, 50)}">${fmtPct(item.prob_positive_3y)}</strong></div>
-                <div class="outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_3y, 50)}">${fmtPct(item.prob_beat_spy_3y)}</strong></div>
-                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</strong></div>
-                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_3y || '—'}</strong></div>
-              </div>
-              <div class="outcome-group">
-                <div class="outcome-title">5 Year Outlook</div>
-                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_5y, 50)}">${fmtPct(item.prob_positive_5y)}</strong></div>
-                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</strong></div>
-                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_5y || '—'}</strong></div>
-              </div>
+          </div>
+          <div class="outlook-card">
+            <div class="outlook-header">3 Year</div>
+            <div class="outlook-main">
+              <div class="outlook-prob ${valueClass(item.prob_positive_3y, 50)}">${fmtPct(item.prob_positive_3y)}</div>
+              <div class="outlook-prob-label">Prob Positive</div>
+            </div>
+            <div class="outlook-details">
+              <div class="outlook-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_3y, 50)}">${fmtPct(item.prob_beat_spy_3y)}</strong></div>
+              <div class="outlook-row"><span>Median</span><strong class="${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</strong></div>
+              <div class="outlook-row"><span>Samples</span><strong>${item.sample_size_3y || '—'}</strong></div>
+            </div>
+          </div>
+          <div class="outlook-card">
+            <div class="outlook-header">5 Year</div>
+            <div class="outlook-main">
+              <div class="outlook-prob ${valueClass(item.prob_positive_5y, 50)}">${fmtPct(item.prob_positive_5y)}</div>
+              <div class="outlook-prob-label">Prob Positive</div>
+            </div>
+            <div class="outlook-details">
+              <div class="outlook-row"><span>Median</span><strong class="${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</strong></div>
+              <div class="outlook-row"><span>Samples</span><strong>${item.sample_size_5y || '—'}</strong></div>
             </div>
           </div>
         </div>
