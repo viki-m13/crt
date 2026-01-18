@@ -3,236 +3,284 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CRT Recovery Predictor - Find Undervalued Stocks</title>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>CRT Recovery Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* Inline critical styles for reliability */
+    :root {
+      --bg: #fbfaf7;
+      --ink: #111;
+      --muted: #555;
+      --rule: rgba(0,0,0,.14);
+      --green: #0f5132;
+      --green-bg: #d1e7dd;
+      --blue: #084298;
+      --blue-bg: #cfe2ff;
+      --yellow: #664d03;
+      --yellow-bg: #fff3cd;
+      --red: #842029;
+      --serif: "Source Serif 4", Georgia, serif;
+      --mono: "IBM Plex Mono", monospace;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #1a1a1a; line-height: 1.5; }
-    .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.5;
+    }
 
-    /* Header */
-    .header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 30px 0; text-align: center; }
-    .header h1 { font-size: 28px; margin-bottom: 8px; }
-    .header p { opacity: 0.9; font-size: 16px; }
-    .updated { font-size: 13px; opacity: 0.7; margin-top: 10px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .rule { border-top: 1px solid var(--rule); margin: 20px 0; }
+    .rule-double { border-top: 3px double var(--ink); margin: 24px 0; }
 
-    /* Summary */
-    .summary { display: flex; gap: 15px; margin: 25px 0; flex-wrap: wrap; }
-    .summary-card { flex: 1; min-width: 120px; background: white; border-radius: 10px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .summary-card.strong { border-top: 4px solid #16a34a; }
-    .summary-card.buy { border-top: 4px solid #2563eb; }
-    .summary-card.watch { border-top: 4px solid #ca8a04; }
-    .summary-count { font-size: 36px; font-weight: 700; }
-    .summary-card.strong .summary-count { color: #16a34a; }
-    .summary-card.buy .summary-count { color: #2563eb; }
-    .summary-card.watch .summary-count { color: #ca8a04; }
-    .summary-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+    /* Masthead */
+    .masthead { padding: 32px 0 0; border-bottom: 1px solid var(--rule); }
+    .masthead-inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
+    .brand h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .brand .tagline { font-size: 15px; color: var(--muted); font-style: italic; }
+    .meta { text-align: right; font-size: 13px; color: var(--muted); }
+    .meta-label { font-weight: 600; }
 
-    /* Controls */
-    .controls { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .controls-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 15px; }
-    .controls-row:last-child { margin-bottom: 0; }
-    .control-group { display: flex; align-items: center; gap: 8px; }
-    .control-label { font-size: 13px; font-weight: 600; color: #666; white-space: nowrap; }
-
-    input[type="text"], select { padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white; }
-    input[type="text"]:focus, select:focus { outline: none; border-color: #2563eb; }
-    input[type="text"] { width: 200px; }
-    select { cursor: pointer; }
-
-    .btn { padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
-    .btn:hover { background: #1d4ed8; }
-    .btn-outline { background: white; color: #333; border: 1px solid #ddd; }
-    .btn-outline:hover { background: #f5f5f5; }
-    .btn-outline.active { background: #2563eb; color: white; border-color: #2563eb; }
-
-    .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chip { padding: 6px 12px; background: #e5e5e5; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-    .chip:hover { background: #d5d5d5; }
-    .chip.active { background: #2563eb; color: white; }
+    /* Summary boxes */
+    .summary-row { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+    .summary-box { flex: 1; min-width: 140px; padding: 16px 20px; border: 1px solid var(--rule); background: white; }
+    .summary-box.strong { border-left: 4px solid var(--green); }
+    .summary-box.buy { border-left: 4px solid var(--blue); }
+    .summary-box.watch { border-left: 4px solid var(--yellow); }
+    .summary-count { font-family: var(--mono); font-size: 36px; font-weight: 500; }
+    .summary-box.strong .summary-count { color: var(--green); }
+    .summary-box.buy .summary-count { color: var(--blue); }
+    .summary-box.watch .summary-count { color: var(--yellow); }
+    .summary-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 4px; }
 
     /* How it works */
-    .how-section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .how-section summary { cursor: pointer; font-weight: 600; color: #333; }
-    .how-section[open] summary { margin-bottom: 15px; }
-    .how-content { font-size: 14px; color: #666; }
-    .how-content ol { margin: 15px 0 15px 20px; }
-    .how-content li { margin-bottom: 8px; }
-    .disclaimer { background: #fef3c7; padding: 12px; border-radius: 6px; margin-top: 15px; font-size: 13px; }
+    .explain { margin: 20px 0; }
+    .explain summary { cursor: pointer; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .explain summary:hover { color: var(--ink); }
+    .explain[open] summary { margin-bottom: 16px; }
+    .explain-content { font-size: 15px; color: var(--muted); max-width: 800px; }
+    .explain-content ol { margin: 12px 0 12px 24px; }
+    .explain-content li { margin-bottom: 8px; }
+    .disclaimer { background: #fef3cd; border: 1px solid #ffecb5; padding: 12px 16px; font-size: 13px; margin-top: 16px; }
 
-    /* Stock list */
-    .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-    .stock-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.2s; border-left: 4px solid #ddd; }
-    .stock-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
-    .stock-card.strong { border-left-color: #16a34a; }
-    .stock-card.buy { border-left-color: #2563eb; }
-    .stock-card.watch { border-left-color: #ca8a04; }
+    /* Controls */
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    .control-group { display: flex; align-items: center; gap: 8px; }
+    .control-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
 
-    .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .stock-ticker { font-size: 22px; font-weight: 700; }
-    .stock-price { font-size: 16px; color: #666; }
-    .stock-signal { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; }
-    .stock-signal.strong { background: #dcfce7; color: #16a34a; }
-    .stock-signal.buy { background: #dbeafe; color: #2563eb; }
-    .stock-signal.watch { background: #fef9c3; color: #ca8a04; }
+    input[type="text"] { font-family: var(--mono); font-size: 14px; padding: 8px 12px; border: 1px solid var(--rule); background: white; width: 160px; }
+    input[type="text"]:focus { outline: none; border-color: var(--ink); }
 
-    .stock-thesis { font-size: 13px; color: #666; margin-bottom: 15px; line-height: 1.4; }
-    .stock-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .stock-stat { text-align: center; }
-    .stat-value { font-size: 18px; font-weight: 600; }
-    .stat-value.positive { color: #16a34a; }
-    .stat-value.negative { color: #dc2626; }
-    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; }
+    select { font-family: var(--serif); font-size: 14px; padding: 8px 12px; border: 1px solid var(--rule); background: white; cursor: pointer; }
+    select:focus { outline: none; border-color: var(--ink); }
 
-    .no-results { text-align: center; padding: 60px 20px; color: #666; }
-    .loading { text-align: center; padding: 60px 20px; color: #666; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { font-family: var(--mono); font-size: 12px; padding: 6px 12px; background: white; border: 1px solid var(--rule); cursor: pointer; transition: all 0.15s; }
+    .chip:hover { border-color: var(--ink); }
+    .chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+    /* Results */
+    .results-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .results-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .results-count { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+    /* Stock table */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .tbl th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--muted); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--ink); }
+    .tbl th.num { text-align: right; }
+    .tbl td { padding: 12px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+    .tbl td.num { text-align: right; font-family: var(--mono); font-size: 13px; }
+    .tbl tr { cursor: pointer; transition: background 0.1s; }
+    .tbl tr:hover { background: rgba(0,0,0,0.03); }
+
+    .ticker { font-family: var(--mono); font-weight: 500; font-size: 15px; }
+    .price { color: var(--muted); font-size: 13px; margin-left: 8px; }
+    .thesis { font-size: 13px; color: var(--muted); max-width: 300px; line-height: 1.4; }
+
+    .signal { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 4px 8px; border-radius: 2px; text-transform: uppercase; }
+    .signal.strong { background: var(--green-bg); color: var(--green); }
+    .signal.buy { background: var(--blue-bg); color: var(--blue); }
+    .signal.watch { background: var(--yellow-bg); color: var(--yellow); }
+
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    .no-results { text-align: center; padding: 60px 20px; color: var(--muted); font-style: italic; }
 
     /* Modal */
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; overflow-y: auto; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
     .modal.open { display: flex; justify-content: center; align-items: flex-start; }
-    .modal-content { background: white; border-radius: 12px; max-width: 600px; width: 100%; margin-top: 40px; padding: 30px; position: relative; }
-    .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 28px; cursor: pointer; color: #999; }
-    .modal-close:hover { color: #333; }
+    .modal-box { background: var(--bg); max-width: 640px; width: 100%; margin-top: 40px; padding: 32px; position: relative; border: 1px solid var(--rule); }
+    .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+    .modal-close:hover { color: var(--ink); }
 
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-    .modal-ticker { font-size: 32px; font-weight: 700; }
-    .modal-price { font-size: 24px; color: #666; }
-    .modal-thesis { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 25px; font-size: 15px; line-height: 1.6; }
-    .modal-section { margin-bottom: 25px; }
-    .modal-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #999; margin-bottom: 12px; letter-spacing: 1px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 2px solid var(--ink); margin-bottom: 20px; }
+    .modal-ticker { font-family: var(--mono); font-size: 28px; font-weight: 500; }
+    .modal-price { font-size: 20px; color: var(--muted); }
+
+    .modal-thesis { background: white; border: 1px solid var(--rule); padding: 20px; margin-bottom: 24px; font-size: 15px; line-height: 1.6; }
+
+    .modal-section { margin-bottom: 24px; }
+    .modal-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+
     .modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .modal-stat { background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; }
-    .modal-stat-value { font-size: 22px; font-weight: 600; }
-    .modal-stat-value.positive { color: #16a34a; }
-    .modal-stat-value.negative { color: #dc2626; }
-    .modal-stat-label { font-size: 11px; color: #999; margin-top: 4px; }
-    .sample-note { text-align: center; font-size: 12px; color: #999; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+    .modal-stat { background: white; border: 1px solid var(--rule); padding: 14px; text-align: center; }
+    .modal-stat-value { font-family: var(--mono); font-size: 20px; font-weight: 500; }
+    .modal-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
 
-    @media (max-width: 600px) {
-      .summary { flex-direction: column; }
-      .controls-row { flex-direction: column; align-items: stretch; }
-      input[type="text"] { width: 100%; }
-      .stock-stats { grid-template-columns: repeat(2, 1fr); }
+    .sample-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule); }
+
+    /* Footer */
+    .footer { margin-top: 48px; padding: 24px 0; border-top: 3px double var(--ink); font-size: 13px; color: var(--muted); text-align: center; }
+
+    @media (max-width: 768px) {
+      .masthead-inner { flex-direction: column; }
+      .meta { text-align: left; }
+      .summary-row { flex-direction: column; }
+      .controls { flex-direction: column; align-items: flex-start; }
+      .tbl { font-size: 13px; }
+      .tbl th, .tbl td { padding: 8px 6px; }
+      .thesis { display: none; }
       .modal-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <header class="header">
+  <header class="masthead">
     <div class="wrap">
-      <h1>CRT Recovery Predictor</h1>
-      <p>Find undervalued quality stocks likely to outperform SPY</p>
-      <div class="updated">Updated: <span id="asOf">Loading...</span></div>
+      <div class="masthead-inner">
+        <div class="brand">
+          <h1>CRT Recovery Predictor</h1>
+          <p class="tagline">Find undervalued quality stocks likely to outperform SPY</p>
+        </div>
+        <div class="meta">
+          <div><span class="meta-label">Updated:</span> <span id="asOf">—</span></div>
+          <div><span class="meta-label">Universe:</span> S&P 500</div>
+        </div>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-box strong">
+          <div class="summary-count" id="countStrong">—</div>
+          <div class="summary-label">Strong Buy</div>
+        </div>
+        <div class="summary-box buy">
+          <div class="summary-count" id="countBuy">—</div>
+          <div class="summary-label">Buy</div>
+        </div>
+        <div class="summary-box watch">
+          <div class="summary-count" id="countWatch">—</div>
+          <div class="summary-label">Watch</div>
+        </div>
+      </div>
+
+      <details class="explain">
+        <summary>How does this work?</summary>
+        <div class="explain-content">
+          <p><strong>We find stocks that are:</strong></p>
+          <ol>
+            <li><strong>Undervalued</strong> — Trading 10-50% below their 52-week high</li>
+            <li><strong>Quality</strong> — Positive 5-year returns, consistent track record</li>
+            <li><strong>Recovering</strong> — Showing early signs of bouncing back</li>
+            <li><strong>Statistically Backed</strong> — 15+ similar historical situations</li>
+          </ol>
+          <p>We analyze what happened when each stock was in a similar situation historically, then calculate the probability of positive returns and beating SPY.</p>
+          <div class="disclaimer"><strong>Not investment advice.</strong> Past performance doesn't guarantee future results.</div>
+        </div>
+      </details>
     </div>
   </header>
 
-  <main class="wrap" style="padding-top: 25px; padding-bottom: 50px;">
-    <!-- Summary Cards -->
-    <div class="summary">
-      <div class="summary-card strong">
-        <div class="summary-count" id="countStrong">-</div>
-        <div class="summary-label">Strong Buy</div>
-      </div>
-      <div class="summary-card buy">
-        <div class="summary-count" id="countBuy">-</div>
-        <div class="summary-label">Buy</div>
-      </div>
-      <div class="summary-card watch">
-        <div class="summary-count" id="countWatch">-</div>
-        <div class="summary-label">Watch</div>
-      </div>
-    </div>
-
-    <!-- How It Works -->
-    <details class="how-section">
-      <summary>How does this work?</summary>
-      <div class="how-content">
-        <p><strong>We find stocks that are:</strong></p>
-        <ol>
-          <li><strong>Undervalued</strong> — Trading 10-50% below their 52-week high</li>
-          <li><strong>Quality</strong> — Positive 5-year returns, consistent track record</li>
-          <li><strong>Recovering</strong> — Showing early signs of bouncing back</li>
-          <li><strong>Statistically Backed</strong> — 15+ similar historical situations to estimate probability</li>
-        </ol>
-        <p>We analyze what happened when each stock was in a similar situation historically, then calculate the probability of positive returns and beating SPY.</p>
-        <div class="disclaimer"><strong>Not investment advice.</strong> Past performance doesn't guarantee future results. Always do your own research.</div>
-      </div>
-    </details>
-
-    <!-- Controls -->
+  <main class="wrap">
     <div class="controls">
-      <div class="controls-row">
-        <div class="control-group">
-          <span class="control-label">Search:</span>
-          <input type="text" id="search" placeholder="Ticker symbol...">
-        </div>
-        <div class="control-group">
-          <span class="control-label">Signal:</span>
-          <div class="filter-chips" id="signalFilter">
-            <span class="chip active" data-signal="all">All</span>
-            <span class="chip" data-signal="STRONG_BUY">Strong Buy</span>
-            <span class="chip" data-signal="BUY">Buy</span>
-            <span class="chip" data-signal="WATCH">Watch</span>
-          </div>
+      <div class="control-group">
+        <span class="control-label">Search</span>
+        <input type="text" id="search" placeholder="Ticker...">
+      </div>
+      <div class="control-group">
+        <span class="control-label">Signal</span>
+        <div class="chips" id="signalChips">
+          <span class="chip active" data-v="all">All</span>
+          <span class="chip" data-v="STRONG_BUY">Strong Buy</span>
+          <span class="chip" data-v="BUY">Buy</span>
+          <span class="chip" data-v="WATCH">Watch</span>
         </div>
       </div>
-      <div class="controls-row">
-        <div class="control-group">
-          <span class="control-label">Sort by:</span>
-          <select id="sortBy">
-            <option value="score">Opportunity Score</option>
-            <option value="discount">Discount from High</option>
-            <option value="beatSpy">Beat SPY Probability</option>
-            <option value="return1y">Median 1Y Return</option>
-            <option value="samples">Sample Size</option>
-            <option value="ticker">Ticker (A-Z)</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <span class="control-label">Min Discount:</span>
-          <select id="minDiscount">
-            <option value="0">Any</option>
-            <option value="15">15%+</option>
-            <option value="20">20%+</option>
-            <option value="25">25%+</option>
-            <option value="30">30%+</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <span class="control-label">Min Beat SPY:</span>
-          <select id="minBeatSpy">
-            <option value="0">Any</option>
-            <option value="50">50%+</option>
-            <option value="60">60%+</option>
-            <option value="70">70%+</option>
-            <option value="80">80%+</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <span class="control-label">Recovery:</span>
-          <select id="recoveryFilter">
-            <option value="all">All</option>
-            <option value="yes">Yes only</option>
-            <option value="no">No only</option>
-          </select>
-        </div>
+      <div class="control-group">
+        <span class="control-label">Sort</span>
+        <select id="sortBy">
+          <option value="score">Score</option>
+          <option value="discount">Discount</option>
+          <option value="beatSpy">Beat SPY %</option>
+          <option value="return1y">Median Return</option>
+          <option value="samples">Samples</option>
+          <option value="ticker">Ticker</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Min Discount</span>
+        <select id="minDiscount">
+          <option value="0">Any</option>
+          <option value="15">15%+</option>
+          <option value="20">20%+</option>
+          <option value="25">25%+</option>
+          <option value="30">30%+</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Min Beat SPY</span>
+        <select id="minBeatSpy">
+          <option value="0">Any</option>
+          <option value="50">50%+</option>
+          <option value="60">60%+</option>
+          <option value="70">70%+</option>
+          <option value="80">80%+</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Recovery</span>
+        <select id="recovery">
+          <option value="all">All</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
       </div>
     </div>
 
-    <!-- Results count -->
-    <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
-      Showing <strong id="resultCount">0</strong> stocks
+    <div class="results-header">
+      <span class="results-title">Opportunities</span>
+      <span class="results-count">Showing <span id="count">0</span> stocks</span>
     </div>
 
-    <!-- Stock Grid -->
-    <div class="stock-grid" id="stockGrid">
-      <div class="loading">Loading stock data...</div>
-    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Signal</th>
+          <th class="num">Discount</th>
+          <th class="num">Beat SPY</th>
+          <th class="num">Med 1Y</th>
+          <th class="num">Samples</th>
+          <th>Why Buy Now</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <div class="no-results" id="noResults" style="display:none;">No stocks match your filters.</div>
+
+    <footer class="footer">
+      CRT Recovery Predictor · Updated daily after market close · Data from Yahoo Finance
+    </footer>
   </main>
 
   <!-- Modal -->
   <div class="modal" id="modal">
-    <div class="modal-content">
+    <div class="modal-box">
       <button class="modal-close" id="modalClose">&times;</button>
       <div id="modalBody"></div>
     </div>
@@ -241,72 +289,48 @@
   <script>
     const DATA_URL = "./data/full.json";
     let allStocks = [];
-    let currentFilters = { signal: 'all', sort: 'score', minDiscount: 0, minBeatSpy: 0, recovery: 'all', search: '' };
+    let filters = { signal: 'all', sort: 'score', minDiscount: 0, minBeatSpy: 0, recovery: 'all', search: '' };
 
-    // Helpers
     const $ = id => document.getElementById(id);
     const fmtPct = x => x != null ? Math.round(x) + '%' : '—';
-    const fmtReturn = x => x != null ? (x > 0 ? '+' : '') + Math.round(x) + '%' : '—';
+    const fmtRet = x => x != null ? (x > 0 ? '+' : '') + Math.round(x) + '%' : '—';
 
-    // Load data
     async function loadData() {
       try {
         const res = await fetch(DATA_URL + '?v=' + Date.now());
         const data = await res.json();
 
-        // Update header
         if (data.as_of) {
-          const date = new Date(data.as_of);
-          $('asOf').textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const d = new Date(data.as_of);
+          $('asOf').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        // Update counts
         $('countStrong').textContent = data.summary?.strong_buy || 0;
         $('countBuy').textContent = data.summary?.buy || 0;
         $('countWatch').textContent = data.summary?.watch || 0;
 
         allStocks = data.items || [];
-        applyFilters();
-      } catch (err) {
-        console.error('Failed to load:', err);
-        $('stockGrid').innerHTML = '<div class="no-results">Failed to load data. Please refresh the page.</div>';
+        render();
+      } catch (e) {
+        console.error(e);
+        $('tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#666;">Failed to load data</td></tr>';
       }
     }
 
-    // Apply filters and render
-    function applyFilters() {
-      let filtered = [...allStocks];
+    function render() {
+      let list = [...allStocks];
 
-      // Search
-      if (currentFilters.search) {
-        filtered = filtered.filter(s => s.ticker.toLowerCase().includes(currentFilters.search.toLowerCase()));
-      }
-
-      // Signal filter
-      if (currentFilters.signal !== 'all') {
-        filtered = filtered.filter(s => s.signal === currentFilters.signal);
-      }
-
-      // Min discount
-      if (currentFilters.minDiscount > 0) {
-        filtered = filtered.filter(s => s.discount_from_high >= currentFilters.minDiscount);
-      }
-
-      // Min beat SPY
-      if (currentFilters.minBeatSpy > 0) {
-        filtered = filtered.filter(s => s.prob_beat_spy_1y && s.prob_beat_spy_1y >= currentFilters.minBeatSpy);
-      }
-
-      // Recovery filter
-      if (currentFilters.recovery === 'yes') {
-        filtered = filtered.filter(s => s.early_recovery === true);
-      } else if (currentFilters.recovery === 'no') {
-        filtered = filtered.filter(s => s.early_recovery === false);
-      }
+      // Filters
+      if (filters.search) list = list.filter(s => s.ticker.toLowerCase().includes(filters.search.toLowerCase()));
+      if (filters.signal !== 'all') list = list.filter(s => s.signal === filters.signal);
+      if (filters.minDiscount > 0) list = list.filter(s => s.discount_from_high >= filters.minDiscount);
+      if (filters.minBeatSpy > 0) list = list.filter(s => s.prob_beat_spy_1y && s.prob_beat_spy_1y >= filters.minBeatSpy);
+      if (filters.recovery === 'yes') list = list.filter(s => s.early_recovery);
+      if (filters.recovery === 'no') list = list.filter(s => !s.early_recovery);
 
       // Sort
-      filtered.sort((a, b) => {
-        switch (currentFilters.sort) {
+      list.sort((a, b) => {
+        switch (filters.sort) {
           case 'discount': return (b.discount_from_high || 0) - (a.discount_from_high || 0);
           case 'beatSpy': return (b.prob_beat_spy_1y || 0) - (a.prob_beat_spy_1y || 0);
           case 'return1y': return (b.median_return_1y || 0) - (a.median_return_1y || 0);
@@ -316,62 +340,37 @@
         }
       });
 
-      renderStocks(filtered);
-    }
+      $('count').textContent = list.length;
+      $('noResults').style.display = list.length === 0 ? 'block' : 'none';
 
-    // Render stock cards
-    function renderStocks(stocks) {
-      $('resultCount').textContent = stocks.length;
-
-      if (stocks.length === 0) {
-        $('stockGrid').innerHTML = '<div class="no-results">No stocks match your filters. Try adjusting your criteria.</div>';
+      if (list.length === 0) {
+        $('tbody').innerHTML = '';
         return;
       }
 
-      $('stockGrid').innerHTML = stocks.map(s => {
+      $('tbody').innerHTML = list.map(s => {
         const cls = s.signal === 'STRONG_BUY' ? 'strong' : s.signal === 'BUY' ? 'buy' : 'watch';
         const label = s.signal === 'STRONG_BUY' ? 'Strong Buy' : s.signal === 'BUY' ? 'Buy' : 'Watch';
-        const thesis = s.thesis ? (s.thesis.length > 100 ? s.thesis.substring(0, 100) + '...' : s.thesis) : '';
-
+        const thesis = s.thesis ? (s.thesis.length > 80 ? s.thesis.substring(0, 80) + '…' : s.thesis) : '';
         return `
-          <div class="stock-card ${cls}" data-ticker="${s.ticker}">
-            <div class="stock-header">
-              <div>
-                <span class="stock-ticker">${s.ticker}</span>
-                <span class="stock-price">$${s.price?.toFixed(2) || '—'}</span>
-              </div>
-              <span class="stock-signal ${cls}">${label}</span>
-            </div>
-            <div class="stock-thesis">${thesis}</div>
-            <div class="stock-stats">
-              <div class="stock-stat">
-                <div class="stat-value">${fmtPct(s.discount_from_high)}</div>
-                <div class="stat-label">Discount</div>
-              </div>
-              <div class="stock-stat">
-                <div class="stat-value ${s.prob_beat_spy_1y > 50 ? 'positive' : ''}">${fmtPct(s.prob_beat_spy_1y)}</div>
-                <div class="stat-label">Beat SPY</div>
-              </div>
-              <div class="stock-stat">
-                <div class="stat-value ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtReturn(s.median_return_1y)}</div>
-                <div class="stat-label">Med 1Y</div>
-              </div>
-              <div class="stock-stat">
-                <div class="stat-value">${s.sample_size_1y || '—'}</div>
-                <div class="stat-label">Samples</div>
-              </div>
-            </div>
-          </div>
+          <tr data-ticker="${s.ticker}">
+            <td><span class="ticker">${s.ticker}</span><span class="price">$${s.price?.toFixed(2) || '—'}</span></td>
+            <td><span class="signal ${cls}">${label}</span></td>
+            <td class="num">${fmtPct(s.discount_from_high)}</td>
+            <td class="num ${s.prob_beat_spy_1y > 50 ? 'positive' : ''}">${fmtPct(s.prob_beat_spy_1y)}</td>
+            <td class="num ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_1y)}</td>
+            <td class="num">${s.sample_size_1y || '—'}</td>
+            <td class="thesis">${thesis}</td>
+          </tr>
         `;
       }).join('');
 
-      // Add click handlers
-      document.querySelectorAll('.stock-card').forEach(card => {
-        card.onclick = () => showModal(allStocks.find(s => s.ticker === card.dataset.ticker));
+      // Row clicks
+      document.querySelectorAll('#tbody tr').forEach(row => {
+        row.onclick = () => showModal(allStocks.find(s => s.ticker === row.dataset.ticker));
       });
     }
 
-    // Show modal
     function showModal(s) {
       if (!s) return;
       const cls = s.signal === 'STRONG_BUY' ? 'strong' : s.signal === 'BUY' ? 'buy' : 'watch';
@@ -379,10 +378,10 @@
       $('modalBody').innerHTML = `
         <div class="modal-header">
           <div>
-            <div class="modal-ticker">${s.ticker}</div>
-            <span class="stock-signal ${cls}">${s.signal.replace('_', ' ')}</span>
+            <span class="modal-ticker">${s.ticker}</span>
+            <span class="signal ${cls}" style="margin-left:12px">${s.signal.replace('_', ' ')}</span>
           </div>
-          <div class="modal-price">$${s.price?.toFixed(2) || '—'}</div>
+          <span class="modal-price">$${s.price?.toFixed(2) || '—'}</span>
         </div>
 
         <div class="modal-thesis">
@@ -409,24 +408,6 @@
         </div>
 
         <div class="modal-section">
-          <div class="modal-section-title">Probability of Positive Return</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.prob_positive_1y > 60 ? 'positive' : ''}">${fmtPct(s.prob_positive_1y)}</div>
-              <div class="modal-stat-label">1 Year</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.prob_positive_3y > 60 ? 'positive' : ''}">${fmtPct(s.prob_positive_3y)}</div>
-              <div class="modal-stat-label">3 Years</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.prob_positive_5y > 60 ? 'positive' : ''}">${fmtPct(s.prob_positive_5y)}</div>
-              <div class="modal-stat-label">5 Years</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-section">
           <div class="modal-section-title">Probability of Beating SPY</div>
           <div class="modal-grid">
             <div class="modal-stat">
@@ -448,15 +429,15 @@
           <div class="modal-section-title">Expected Returns (Median)</div>
           <div class="modal-grid">
             <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtReturn(s.median_return_1y)}</div>
+              <div class="modal-stat-value ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_1y)}</div>
               <div class="modal-stat-label">1 Year</div>
             </div>
             <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_3y > 0 ? 'positive' : 'negative'}">${fmtReturn(s.median_return_3y)}</div>
+              <div class="modal-stat-value ${s.median_return_3y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_3y)}</div>
               <div class="modal-stat-label">3 Years</div>
             </div>
             <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_5y > 0 ? 'positive' : 'negative'}">${fmtReturn(s.median_return_5y)}</div>
+              <div class="modal-stat-value ${s.median_return_5y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_5y)}</div>
               <div class="modal-stat-label">5 Years</div>
             </div>
           </div>
@@ -466,25 +447,25 @@
           <div class="modal-section-title">Risk / Reward (1 Year)</div>
           <div class="modal-grid">
             <div class="modal-stat">
-              <div class="modal-stat-value negative">${fmtReturn(s.downside_1y)}</div>
+              <div class="modal-stat-value negative">${fmtRet(s.downside_1y)}</div>
               <div class="modal-stat-label">Worst 10%</div>
             </div>
             <div class="modal-stat">
-              <div class="modal-stat-value">${fmtReturn(s.median_return_1y)}</div>
+              <div class="modal-stat-value">${fmtRet(s.median_return_1y)}</div>
               <div class="modal-stat-label">Median</div>
             </div>
             <div class="modal-stat">
-              <div class="modal-stat-value positive">${fmtReturn(s.upside_1y)}</div>
+              <div class="modal-stat-value positive">${fmtRet(s.upside_1y)}</div>
               <div class="modal-stat-label">Best 10%</div>
             </div>
           </div>
         </div>
 
         <div class="modal-section">
-          <div class="modal-section-title">Quality Indicators</div>
+          <div class="modal-section-title">Quality</div>
           <div class="modal-grid">
             <div class="modal-stat">
-              <div class="modal-stat-value ${s.five_year_return > 0 ? 'positive' : 'negative'}">${fmtReturn(s.five_year_return)}</div>
+              <div class="modal-stat-value ${s.five_year_return > 0 ? 'positive' : 'negative'}">${fmtRet(s.five_year_return)}</div>
               <div class="modal-stat-label">5 Year Return</div>
             </div>
             <div class="modal-stat">
@@ -499,8 +480,8 @@
         </div>
 
         <div class="sample-note">
-          Based on <strong>${s.sample_size_1y || 0}</strong> similar historical situations (1Y) •
-          <strong>${s.sample_size_3y || 0}</strong> (3Y) •
+          Based on <strong>${s.sample_size_1y || 0}</strong> similar historical situations (1Y) ·
+          <strong>${s.sample_size_3y || 0}</strong> (3Y) ·
           <strong>${s.sample_size_5y || 0}</strong> (5Y)
         </div>
       `;
@@ -508,30 +489,24 @@
       $('modal').classList.add('open');
     }
 
-    // Event listeners
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
 
-      // Search
-      $('search').oninput = e => { currentFilters.search = e.target.value; applyFilters(); };
+      $('search').oninput = e => { filters.search = e.target.value; render(); };
+      $('sortBy').onchange = e => { filters.sort = e.target.value; render(); };
+      $('minDiscount').onchange = e => { filters.minDiscount = +e.target.value; render(); };
+      $('minBeatSpy').onchange = e => { filters.minBeatSpy = +e.target.value; render(); };
+      $('recovery').onchange = e => { filters.recovery = e.target.value; render(); };
 
-      // Signal chips
-      document.querySelectorAll('#signalFilter .chip').forEach(chip => {
+      document.querySelectorAll('#signalChips .chip').forEach(chip => {
         chip.onclick = () => {
-          document.querySelectorAll('#signalFilter .chip').forEach(c => c.classList.remove('active'));
+          document.querySelectorAll('#signalChips .chip').forEach(c => c.classList.remove('active'));
           chip.classList.add('active');
-          currentFilters.signal = chip.dataset.signal;
-          applyFilters();
+          filters.signal = chip.dataset.v;
+          render();
         };
       });
 
-      // Dropdowns
-      $('sortBy').onchange = e => { currentFilters.sort = e.target.value; applyFilters(); };
-      $('minDiscount').onchange = e => { currentFilters.minDiscount = parseInt(e.target.value); applyFilters(); };
-      $('minBeatSpy').onchange = e => { currentFilters.minBeatSpy = parseInt(e.target.value); applyFilters(); };
-      $('recoveryFilter').onchange = e => { currentFilters.recovery = e.target.value; applyFilters(); };
-
-      // Modal close
       $('modalClose').onclick = () => $('modal').classList.remove('open');
       $('modal').onclick = e => { if (e.target === $('modal')) $('modal').classList.remove('open'); };
       document.onkeydown = e => { if (e.key === 'Escape') $('modal').classList.remove('open'); };
