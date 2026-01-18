@@ -8,7 +8,7 @@ const CACHE_BUST = String(Date.now());
 
 // State
 let allItems = [];
-let currentItem = null;
+let expandedTicker = null;
 let chartRange = 'max'; // Default range - show full history
 let signalFilters = { STRONG_BUY: true, BUY: true, WATCH: true };
 let filterRecoveryOnly = false;
@@ -112,7 +112,10 @@ function filterByRange(dates, prices, range) {
   const lastDate = new Date(dates[n - 1]);
   let cutoffDate;
 
-  if (range === '5y') {
+  if (range === '1y') {
+    cutoffDate = new Date(lastDate);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+  } else if (range === '5y') {
     cutoffDate = new Date(lastDate);
     cutoffDate.setFullYear(cutoffDate.getFullYear() - 5);
   } else if (range === '10y') {
@@ -138,7 +141,7 @@ function filterByRange(dates, prices, range) {
 }
 
 // Draw enhanced chart with buy zones
-function drawChart(canvas, dates, prices, range = '10y') {
+function drawChart(canvas, dates, prices, range = 'max') {
   const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -189,7 +192,7 @@ function drawChart(canvas, dates, prices, range = '10y') {
   // Calculate buy zones for the filtered data
   const zones = calculateBuyZones(filteredDates, filteredPrices);
 
-  // Draw buy zone backgrounds
+  // Draw buy zone backgrounds with clearer colors
   if (zones && zones.length > 0) {
     const zoneStartIdx = filteredDates.length - zones.length;
 
@@ -207,9 +210,10 @@ function drawChart(canvas, dates, prices, range = '10y') {
           const x1 = xAt(zoneStart);
           const x2 = xAt(idx);
 
-          ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.25)' :
-                          currentZone === 'buy' ? 'rgba(15, 120, 70, 0.15)' :
-                          'rgba(251, 191, 36, 0.15)';
+          // Clearer, more distinct colors
+          ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.35)' :   // Dark green - Strong Buy
+                          currentZone === 'buy' ? 'rgba(34, 197, 94, 0.25)' :    // Medium green - Buy
+                          'rgba(251, 191, 36, 0.25)';                             // Yellow - Watch
           ctx.fillRect(x1, pad.top, x2 - x1, chartH);
         }
 
@@ -223,9 +227,9 @@ function drawChart(canvas, dates, prices, range = '10y') {
       const x1 = xAt(zoneStart);
       const x2 = xAt(n - 1);
 
-      ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.25)' :
-                      currentZone === 'buy' ? 'rgba(15, 120, 70, 0.15)' :
-                      'rgba(251, 191, 36, 0.15)';
+      ctx.fillStyle = currentZone === 'strong' ? 'rgba(6, 78, 59, 0.35)' :
+                      currentZone === 'buy' ? 'rgba(34, 197, 94, 0.25)' :
+                      'rgba(251, 191, 36, 0.25)';
       ctx.fillRect(x1, pad.top, x2 - x1, chartH);
     }
   }
@@ -298,106 +302,84 @@ function drawChart(canvas, dates, prices, range = '10y') {
   ctx.fillText(`$${lastPrice.toFixed(2)}`, lastX + 10, lastY + 4);
 }
 
-// Render detail panel
-function renderDetail(item) {
-  currentItem = item;
+// Create expanded row content HTML
+function createExpandedContent(item) {
+  return `
+    <td colspan="11" class="expanded-cell">
+      <div class="expanded-content">
+        <div class="expanded-header">
+          <div class="expanded-title">
+            <span class="expanded-ticker">${item.ticker}</span>
+            <span class="signal-badge ${signalClass(item.signal)}">${signalText(item.signal)}</span>
+            <span class="expanded-price">${fmtPrice(item.price)}</span>
+          </div>
+          <div class="chart-range-selector">
+            <button class="chart-range-btn ${chartRange === '1y' ? 'active' : ''}" data-range="1y">1Y</button>
+            <button class="chart-range-btn ${chartRange === '5y' ? 'active' : ''}" data-range="5y">5Y</button>
+            <button class="chart-range-btn ${chartRange === '10y' ? 'active' : ''}" data-range="10y">10Y</button>
+            <button class="chart-range-btn ${chartRange === 'max' ? 'active' : ''}" data-range="max">Max</button>
+          </div>
+        </div>
 
-  const panel = byId('detailPanel');
-  panel.classList.remove('hidden');
+        <div class="expanded-grid">
+          <div class="expanded-chart-container">
+            <canvas class="expanded-canvas" id="expandedCanvas-${item.ticker}"></canvas>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-color legend-strong"></span> Strong Buy (30%+ discount)</span>
+              <span class="legend-item"><span class="legend-color legend-buy"></span> Buy (20-30% discount)</span>
+              <span class="legend-item"><span class="legend-color legend-watch"></span> Watch (10-20% discount)</span>
+            </div>
+          </div>
 
-  // Header
-  byId('detailTicker').textContent = item.ticker;
-  const signalEl = byId('detailSignal');
-  signalEl.textContent = signalText(item.signal);
-  signalEl.className = 'detail-signal ' + signalClass(item.signal);
-  byId('detailPrice').textContent = fmtPrice(item.price);
+          <div class="expanded-details">
+            <div class="expanded-thesis">
+              <div class="thesis-title">Why Buy ${item.ticker} Now?</div>
+              <div class="thesis-text">${item.thesis || 'No thesis available.'}</div>
+            </div>
 
-  // Thesis
-  byId('detailThesis').innerHTML = `
-    <div class="detail-thesis-title">Why Buy ${item.ticker} Now?</div>
-    <div class="detail-thesis-text">${item.thesis || 'No thesis available.'}</div>
+            <div class="expanded-metrics">
+              <div class="metric-group">
+                <div class="metric-title">Current Status</div>
+                <div class="metric-row"><span>Opportunity Score</span><strong>${fmtNum0(item.opportunity_score)}/100</strong></div>
+                <div class="metric-row"><span>Discount from High</span><strong class="positive">${fmtPct(item.discount_from_high)}</strong></div>
+                <div class="metric-row"><span>52-Week High</span><strong>${fmtPrice(item.high_52w)}</strong></div>
+                <div class="metric-row"><span>52-Week Low</span><strong>${fmtPrice(item.low_52w)}</strong></div>
+                <div class="metric-row"><span>5-Year Return</span><strong class="${valueClass(item.five_year_return)}">${fmtSignedPct(item.five_year_return)}</strong></div>
+                <div class="metric-row"><span>Monthly Win Rate</span><strong>${fmtPct(item.monthly_win_rate)}</strong></div>
+                <div class="metric-row"><span>Above SMA-20</span><strong class="${item.above_sma20 ? 'positive' : ''}">${item.above_sma20 ? 'Yes' : 'No'}</strong></div>
+                <div class="metric-row"><span>Early Recovery</span><strong class="${item.early_recovery ? 'positive' : ''}">${item.early_recovery ? 'Yes' : 'No'}</strong></div>
+              </div>
+            </div>
+
+            <div class="expanded-outcomes">
+              <div class="outcome-group">
+                <div class="outcome-title">1 Year Outlook</div>
+                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_1y, 50)}">${fmtPct(item.prob_positive_1y)}</strong></div>
+                <div class="outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</strong></div>
+                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</strong></div>
+                <div class="outcome-row"><span>Downside (10th)</span><strong class="negative">${fmtSignedPct(item.downside_1y)}</strong></div>
+                <div class="outcome-row"><span>Upside (90th)</span><strong class="positive">${fmtSignedPct(item.upside_1y)}</strong></div>
+                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_1y || '—'}</strong></div>
+              </div>
+              <div class="outcome-group">
+                <div class="outcome-title">3 Year Outlook</div>
+                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_3y, 50)}">${fmtPct(item.prob_positive_3y)}</strong></div>
+                <div class="outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_3y, 50)}">${fmtPct(item.prob_beat_spy_3y)}</strong></div>
+                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</strong></div>
+                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_3y || '—'}</strong></div>
+              </div>
+              <div class="outcome-group">
+                <div class="outcome-title">5 Year Outlook</div>
+                <div class="outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_5y, 50)}">${fmtPct(item.prob_positive_5y)}</strong></div>
+                <div class="outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</strong></div>
+                <div class="outcome-row"><span>Sample Size</span><strong>${item.sample_size_5y || '—'}</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </td>
   `;
-
-  // Metrics
-  const metricsHtml = `
-    <div class="detail-metric">
-      <div class="detail-metric-label">Opportunity Score</div>
-      <div class="detail-metric-value">${fmtNum0(item.opportunity_score)}/100</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">Discount from High</div>
-      <div class="detail-metric-value positive">${fmtPct(item.discount_from_high)}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">52-Week High</div>
-      <div class="detail-metric-value">${fmtPrice(item.high_52w)}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">52-Week Low</div>
-      <div class="detail-metric-value">${fmtPrice(item.low_52w)}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">5-Year Return</div>
-      <div class="detail-metric-value ${valueClass(item.five_year_return)}">${fmtSignedPct(item.five_year_return)}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">Monthly Win Rate</div>
-      <div class="detail-metric-value">${fmtPct(item.monthly_win_rate)}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">Above SMA-20</div>
-      <div class="detail-metric-value ${item.above_sma20 ? 'positive' : ''}">${item.above_sma20 ? 'Yes' : 'No'}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="detail-metric-label">Early Recovery</div>
-      <div class="detail-metric-value ${item.early_recovery ? 'positive' : ''}">${item.early_recovery ? 'Yes' : 'No'}</div>
-    </div>
-  `;
-  byId('detailMetrics').innerHTML = metricsHtml;
-
-  // Outcomes
-  const outcomesHtml = `
-    <div class="detail-outcome">
-      <div class="detail-outcome-title">1 Year Outlook</div>
-      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_1y, 50)}">${fmtPct(item.prob_positive_1y)}</strong></div>
-      <div class="detail-outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_1y, 50)}">${fmtPct(item.prob_beat_spy_1y)}</strong></div>
-      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_1y)}">${fmtSignedPct(item.median_return_1y)}</strong></div>
-      <div class="detail-outcome-row"><span>Downside (10th)</span><strong class="negative">${fmtSignedPct(item.downside_1y)}</strong></div>
-      <div class="detail-outcome-row"><span>Upside (90th)</span><strong class="positive">${fmtSignedPct(item.upside_1y)}</strong></div>
-      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_1y || '—'}</strong></div>
-    </div>
-    <div class="detail-outcome">
-      <div class="detail-outcome-title">3 Year Outlook</div>
-      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_3y, 50)}">${fmtPct(item.prob_positive_3y)}</strong></div>
-      <div class="detail-outcome-row"><span>Beat SPY</span><strong class="${valueClass(item.prob_beat_spy_3y, 50)}">${fmtPct(item.prob_beat_spy_3y)}</strong></div>
-      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_3y)}">${fmtSignedPct(item.median_return_3y)}</strong></div>
-      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_3y || '—'}</strong></div>
-    </div>
-    <div class="detail-outcome">
-      <div class="detail-outcome-title">5 Year Outlook</div>
-      <div class="detail-outcome-row"><span>Prob Positive</span><strong class="${valueClass(item.prob_positive_5y, 50)}">${fmtPct(item.prob_positive_5y)}</strong></div>
-      <div class="detail-outcome-row"><span>Median Return</span><strong class="${valueClass(item.median_return_5y)}">${fmtSignedPct(item.median_return_5y)}</strong></div>
-      <div class="detail-outcome-row"><span>Sample Size</span><strong>${item.sample_size_5y || '—'}</strong></div>
-    </div>
-  `;
-  byId('detailOutcomes').innerHTML = outcomesHtml;
-
-  // Draw chart
-  const series = item.series;
-  if (series && series.prices && series.prices.length > 0) {
-    const canvas = byId('detailCanvas');
-    drawChart(canvas, series.dates, series.prices, chartRange);
-  }
-
-  // Scroll to detail
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// Close detail panel
-function closeDetail() {
-  byId('detailPanel').classList.add('hidden');
-  currentItem = null;
-  document.querySelectorAll('#rows tr').forEach(r => r.classList.remove('selected'));
 }
 
 // Table row HTML
@@ -405,8 +387,10 @@ function rowHtml(item) {
   const thesisShort = item.thesis ?
     (item.thesis.length > 60 ? item.thesis.substring(0, 60) + '...' : item.thesis) : '';
 
+  const isExpanded = expandedTicker === item.ticker;
+
   return `
-    <tr data-ticker="${item.ticker}">
+    <tr data-ticker="${item.ticker}" class="${isExpanded ? 'selected' : ''}">
       <td class="tcell">${item.ticker}</td>
       <td><span class="signal-badge-sm ${signalClass(item.signal)}">${signalText(item.signal)}</span></td>
       <td class="num">${fmtNum0(item.opportunity_score)}</td>
@@ -469,6 +453,9 @@ function applySort(list) {
     case 'prob3y':
       sorted.sort((a, b) => (b.prob_positive_3y || 0) - (a.prob_positive_3y || 0));
       break;
+    case 'prob5y':
+      sorted.sort((a, b) => (b.prob_positive_5y || 0) - (a.prob_positive_5y || 0));
+      break;
     case 'samples':
       sorted.sort((a, b) => (b.sample_size_1y || 0) - (a.sample_size_1y || 0));
       break;
@@ -514,6 +501,73 @@ function updateSignalBoxes() {
       box.classList.toggle('active', signalFilters[signal]);
     }
   });
+}
+
+// Collapse any expanded row
+function collapseExpanded() {
+  const existingExpanded = document.querySelector('.expanded-row');
+  if (existingExpanded) {
+    existingExpanded.remove();
+  }
+  document.querySelectorAll('#rows tr.selected').forEach(r => r.classList.remove('selected'));
+  expandedTicker = null;
+}
+
+// Expand row inline
+async function expandRow(tr, ticker) {
+  // Find item
+  const item = allItems.find(x => x.ticker === ticker);
+  if (!item) return;
+
+  // Collapse any existing expanded row first
+  collapseExpanded();
+
+  // Mark this row as selected
+  tr.classList.add('selected');
+  expandedTicker = ticker;
+
+  // Try to load detailed data
+  let fullItem = item;
+  try {
+    const detail = await loadJSON(`./data/tickers/${ticker}.json`);
+    fullItem = { ...item, ...detail };
+  } catch {
+    // Use base item
+  }
+
+  // Create expanded row
+  const expandedRow = document.createElement('tr');
+  expandedRow.className = 'expanded-row';
+  expandedRow.innerHTML = createExpandedContent(fullItem);
+
+  // Insert after the clicked row
+  tr.after(expandedRow);
+
+  // Draw the chart
+  const canvas = document.getElementById(`expandedCanvas-${ticker}`);
+  if (canvas && fullItem.series && fullItem.series.prices && fullItem.series.prices.length > 0) {
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      drawChart(canvas, fullItem.series.dates, fullItem.series.prices, chartRange);
+    }, 50);
+  }
+
+  // Add chart range button handlers
+  expandedRow.querySelectorAll('.chart-range-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      expandedRow.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      chartRange = btn.dataset.range;
+
+      if (fullItem.series && fullItem.series.prices) {
+        drawChart(canvas, fullItem.series.dates, fullItem.series.prices, chartRange);
+      }
+    });
+  });
+
+  // Scroll the expanded row into view
+  expandedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Format date
@@ -589,7 +643,7 @@ async function loadJSON(url) {
       }
 
       updateSignalBoxes();
-      closeDetail();
+      collapseExpanded();
       rerender();
     });
   });
@@ -597,7 +651,7 @@ async function loadJSON(url) {
   // Recovery filter
   byId('filterRecovery').addEventListener('change', (e) => {
     filterRecoveryOnly = e.target.checked;
-    closeDetail();
+    collapseExpanded();
     rerender();
   });
 
@@ -619,46 +673,25 @@ async function loadJSON(url) {
     });
   });
 
-  // Table row click
+  // Table row click - inline expansion
   byId('rows').addEventListener('click', async (e) => {
     const tr = e.target.closest('tr');
     if (!tr) return;
 
+    // Ignore clicks on expanded row
+    if (tr.classList.contains('expanded-row')) return;
+
     const ticker = tr.dataset.ticker;
     if (!ticker) return;
 
-    // Update selection
-    document.querySelectorAll('#rows tr').forEach(r => r.classList.remove('selected'));
-    tr.classList.add('selected');
-
-    // Find item and render detail
-    const item = allItems.find(x => x.ticker === ticker);
-    if (item) {
-      // Try to load detailed data
-      try {
-        const detail = await loadJSON(`./data/tickers/${ticker}.json`);
-        renderDetail({ ...item, ...detail });
-      } catch {
-        renderDetail(item);
-      }
+    // If clicking same row, collapse it
+    if (expandedTicker === ticker) {
+      collapseExpanded();
+      return;
     }
-  });
 
-  // Close detail button
-  byId('detailClose').addEventListener('click', closeDetail);
-
-  // Chart range buttons
-  document.querySelectorAll('.chart-range-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      chartRange = btn.dataset.range;
-
-      if (currentItem && currentItem.series) {
-        const canvas = byId('detailCanvas');
-        drawChart(canvas, currentItem.series.dates, currentItem.series.prices, chartRange);
-      }
-    });
+    // Expand this row
+    await expandRow(tr, ticker);
   });
 
   // Search
@@ -679,16 +712,19 @@ async function loadJSON(url) {
   byId('go').addEventListener('click', applySearch);
   byId('q').addEventListener('input', applySearch);
 
-  // Escape key closes detail
+  // Escape key collapses expanded row
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeDetail();
+    if (e.key === 'Escape') collapseExpanded();
   });
 
-  // Window resize - redraw chart
+  // Window resize - redraw chart if expanded
   window.addEventListener('resize', () => {
-    if (currentItem && currentItem.series) {
-      const canvas = byId('detailCanvas');
-      drawChart(canvas, currentItem.series.dates, currentItem.series.prices, chartRange);
+    if (expandedTicker) {
+      const canvas = document.getElementById(`expandedCanvas-${expandedTicker}`);
+      const item = allItems.find(x => x.ticker === expandedTicker);
+      if (canvas && item && item.series) {
+        drawChart(canvas, item.series.dates, item.series.prices, chartRange);
+      }
     }
   });
 })();

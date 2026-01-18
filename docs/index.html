@@ -163,6 +163,7 @@
             <option value="median5y">Median Return (5Y)</option>
             <option value="prob1y">Prob Positive (1Y)</option>
             <option value="prob3y">Prob Positive (3Y)</option>
+            <option value="prob5y">Prob Positive (5Y)</option>
             <option value="samples">Sample Size</option>
             <option value="5yreturn">5-Year Return</option>
             <option value="ticker">Ticker A-Z</option>
@@ -175,47 +176,10 @@
   </header>
 
   <main class="wrap">
-    <!-- Expanded Stock Detail Panel -->
-    <section id="detailPanel" class="detail-panel hidden">
-      <div class="detail-header">
-        <div class="detail-title">
-          <span class="detail-ticker" id="detailTicker"></span>
-          <span class="detail-signal" id="detailSignal"></span>
-          <span class="detail-price" id="detailPrice"></span>
-        </div>
-        <button class="detail-close" id="detailClose">&times;</button>
-      </div>
-      <div class="detail-content">
-        <div class="detail-grid">
-          <div class="detail-left">
-            <div class="detail-thesis" id="detailThesis"></div>
-            <div class="detail-metrics" id="detailMetrics"></div>
-            <div class="detail-outcomes" id="detailOutcomes"></div>
-          </div>
-          <div class="detail-right">
-            <div class="detail-chart-container">
-              <div class="chart-controls">
-                <span class="chart-controls-label">Time Range:</span>
-                <button class="chart-range-btn" data-range="5y">5 Years</button>
-                <button class="chart-range-btn" data-range="10y">10 Years</button>
-                <button class="chart-range-btn active" data-range="max">Max</button>
-              </div>
-              <canvas id="detailCanvas" class="detail-canvas"></canvas>
-              <div class="chart-legend-box">
-                <span class="legend-item"><span class="legend-dot strong"></span> Strong Buy Zone (≥30% discount)</span>
-                <span class="legend-item"><span class="legend-dot buy"></span> Buy Zone (20-30%)</span>
-                <span class="legend-item"><span class="legend-dot watch"></span> Watch Zone (10-20%)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="spacer">
       <div class="section-header">
         <div class="section-title">All Opportunities <span id="filteredCount"></span></div>
-        <div class="table-hint">Click any row to expand details and see historical chart</div>
+        <div class="table-hint">Click any row to expand details and chart</div>
       </div>
       <div class="table-wrap">
         <table class="tbl" id="tbl">
