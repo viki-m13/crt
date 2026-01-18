@@ -3,48 +3,253 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Stock Recovery Predictor</title>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>CRT Recovery Predictor</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <h1 class="masthead">Stock Recovery Predictor</h1>
-      <p class="tagline">Undervalued S&P 500 stocks showing early recovery signals</p>
-      <div class="meta">Updated <span id="asOf">—</span></div>
-    </div>
-  </header>
-
-  <nav class="filters">
-    <div class="container">
-      <div class="filter-row">
-        <div class="filter-pills" id="filterPills">
-          <button class="pill active" data-filter="all">All <span id="countAll">0</span></button>
-          <button class="pill active" data-filter="STRONG_BUY">Strong Buy <span id="countStrong">0</span></button>
-          <button class="pill active" data-filter="BUY">Buy <span id="countBuy">0</span></button>
-          <button class="pill active" data-filter="WATCH">Watch <span id="countWatch">0</span></button>
+  <header class="masthead">
+    <div class="wrap masthead-wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="brand-text">
+          <h1>CRT Recovery Predictor</h1>
+          <div class="subhead">Evidence-based stock selection: <strong>Find undervalued quality stocks with early recovery signals that historically outperform SPY.</strong></div>
         </div>
-        <div class="filter-controls">
-          <input type="text" id="search" placeholder="Search..." class="search-input" />
+        <div class="meta">
+          <div class="meta-row"><span class="meta-label">Updated</span><span id="asOf" class="meta-value"></span></div>
+          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">S&P 500</span></div>
+          <div class="meta-row"><span class="meta-label">Benchmark</span><span class="meta-value">SPY (S&P 500)</span></div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <!-- Signal Summary - Clickable Filters -->
+      <div class="signal-summary" id="signalSummary">
+        <div class="signal-box signal-strong clickable active" data-signal="STRONG_BUY">
+          <div class="signal-count" id="countStrong">-</div>
+          <div class="signal-label">STRONG BUY</div>
+          <div class="signal-hint">Click to filter</div>
+        </div>
+        <div class="signal-box signal-buy clickable active" data-signal="BUY">
+          <div class="signal-count" id="countBuy">-</div>
+          <div class="signal-label">BUY</div>
+          <div class="signal-hint">Click to filter</div>
+        </div>
+        <div class="signal-box signal-watch clickable active" data-signal="WATCH">
+          <div class="signal-count" id="countWatch">-</div>
+          <div class="signal-label">WATCH</div>
+          <div class="signal-hint">Click to filter</div>
+        </div>
+        <div class="signal-box signal-all clickable" data-signal="ALL">
+          <div class="signal-count" id="countAll">-</div>
+          <div class="signal-label">TOTAL</div>
+          <div class="signal-hint">Show all</div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <section class="explain">
+        <details class="details whathow">
+          <summary class="details-summary">
+            <span class="section-title">METHODOLOGY & HOW IT WORKS</span>
+            <span class="plus" aria-hidden="true">+</span>
+          </summary>
+          <div class="details-body">
+            <div class="explain-grid">
+              <div>
+                <div class="section-title">The Core Question</div>
+                <p>
+                  <strong>"What stocks should I buy TODAY that are undervalued and most likely to outperform SPY in 1, 3, and 5 years?"</strong>
+                </p>
+                <p>
+                  This tool finds quality stocks that are temporarily beaten down (10-50% below their 52-week high)
+                  but showing early signs of recovery. We use historical pattern matching to estimate
+                  the probability of positive returns and outperforming the market.
+                </p>
+
+                <div class="section-title section-title--spaced">What Makes a Stock Score High?</div>
+                <ul>
+                  <li><strong>Undervalued</strong> — Trading 10-50% below 52-week high (not overpriced, not distressed)</li>
+                  <li><strong>Quality Track Record</strong> — Positive 5-year returns, consistent monthly gains</li>
+                  <li><strong>Early Recovery Signals</strong> — Price above 20-day moving average, positive recent momentum</li>
+                  <li><strong>Statistical Significance</strong> — Minimum 5 years of history, 15+ similar past situations</li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="section-title">Selection Criteria</div>
+                <div class="backtest-results">
+                  <div class="backtest-row">
+                    <span class="backtest-label">Discount Range</span>
+                    <span class="backtest-value highlight">10% - 50%</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Min History Required</span>
+                    <span class="backtest-value">5 Years</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Min Sample Size</span>
+                    <span class="backtest-value">15 Similar Cases</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Quality Filter</span>
+                    <span class="backtest-value">Positive 5Y Return</span>
+                  </div>
+                </div>
+                <p class="footnote">
+                  Stocks near all-time highs are filtered out (already expensive).
+                  Stocks down more than 50% are filtered out (potentially distressed).
+                </p>
+              </div>
+
+              <div>
+                <div class="section-title">How to Read the Numbers</div>
+                <ul>
+                  <li><strong>Score (0-100)</strong> — Opportunity ranking. Higher = better setup.</li>
+                  <li><strong>Discount</strong> — How far below 52-week high (sweet spot: 20-40%).</li>
+                  <li><strong>Beat SPY</strong> — Historical probability of outperforming S&P 500.</li>
+                  <li><strong>Median Return</strong> — Typical return from similar historical situations.</li>
+                  <li><strong>Downside / Upside</strong> — 10th and 90th percentile outcomes (risk/reward).</li>
+                </ul>
+
+                <div class="section-title section-title--spaced">Chart Legend</div>
+                <ul>
+                  <li><span class="legend-strong"></span> <strong>Dark Green Zone</strong> — Historical "Strong Buy" periods (discount ≥30%)</li>
+                  <li><span class="legend-buy"></span> <strong>Light Green Zone</strong> — Historical "Buy" periods (discount 20-30%)</li>
+                  <li><span class="legend-watch"></span> <strong>Yellow Zone</strong> — Historical "Watch" periods (discount 10-20%)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="rule"></div>
+
+            <div class="disclaimer">
+              <strong>Important:</strong> This is not investment advice. Past performance does not guarantee future results.
+              The probabilities shown are based on historical patterns which may not repeat. Always do your own research
+              and consider consulting a financial advisor before making investment decisions.
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="rule"></div>
+
+      <div class="controls">
+        <div class="search">
+          <label for="q" class="visually-hidden">Search ticker</label>
+          <input id="q" class="search-input" type="text" placeholder="Search ticker (e.g., AAPL)" autocomplete="off" />
+          <button id="go" class="btn">Find</button>
+        </div>
+        <div class="filters">
+          <label class="filter-label">
+            <input type="checkbox" id="filterRecovery" /> Early Recovery Only
+          </label>
+        </div>
+        <div class="sort">
+          <span class="sort-label">Sort by</span>
           <select id="sortSelect" class="sort-select">
-            <option value="score">Score</option>
-            <option value="discount">Discount</option>
-            <option value="beatspy1y">Beat SPY</option>
-            <option value="median1y">1Y Return</option>
-            <option value="prob5y">5Y Prob+</option>
+            <option value="score" selected>Score</option>
+            <option value="discount">Discount %</option>
+            <option value="beatspy1y">Beat SPY (1Y)</option>
+            <option value="beatspy3y">Beat SPY (3Y)</option>
+            <option value="median1y">Median Return (1Y)</option>
+            <option value="median3y">Median Return (3Y)</option>
+            <option value="median5y">Median Return (5Y)</option>
+            <option value="prob1y">Prob Positive (1Y)</option>
+            <option value="prob3y">Prob Positive (3Y)</option>
+            <option value="samples">Sample Size</option>
+            <option value="5yreturn">5-Year Return</option>
+            <option value="ticker">Ticker A-Z</option>
           </select>
         </div>
       </div>
-    </div>
-  </nav>
 
-  <main class="main">
-    <div class="container">
-      <div class="list" id="stockList"><p style="text-align:center;padding:40px;color:#666">Loading...</p></div>
-      <p class="disclaimer">Historical patterns. Not investment advice.</p>
+      <div class="rule"></div>
     </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Expanded Stock Detail Panel -->
+    <section id="detailPanel" class="detail-panel hidden">
+      <div class="detail-header">
+        <div class="detail-title">
+          <span class="detail-ticker" id="detailTicker"></span>
+          <span class="detail-signal" id="detailSignal"></span>
+          <span class="detail-price" id="detailPrice"></span>
+        </div>
+        <button class="detail-close" id="detailClose">&times;</button>
+      </div>
+      <div class="detail-content">
+        <div class="detail-grid">
+          <div class="detail-left">
+            <div class="detail-thesis" id="detailThesis"></div>
+            <div class="detail-metrics" id="detailMetrics"></div>
+            <div class="detail-outcomes" id="detailOutcomes"></div>
+          </div>
+          <div class="detail-right">
+            <div class="detail-chart-container">
+              <div class="chart-controls">
+                <span class="chart-controls-label">Time Range:</span>
+                <button class="chart-range-btn" data-range="5y">5 Years</button>
+                <button class="chart-range-btn active" data-range="10y">10 Years</button>
+                <button class="chart-range-btn" data-range="max">Max</button>
+              </div>
+              <canvas id="detailCanvas" class="detail-canvas"></canvas>
+              <div class="chart-legend-box">
+                <span class="legend-item"><span class="legend-dot strong"></span> Strong Buy Zone (≥30% discount)</span>
+                <span class="legend-item"><span class="legend-dot buy"></span> Buy Zone (20-30%)</span>
+                <span class="legend-item"><span class="legend-dot watch"></span> Watch Zone (10-20%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="spacer">
+      <div class="section-header">
+        <div class="section-title">All Opportunities <span id="filteredCount"></span></div>
+        <div class="table-hint">Click any row to expand details and see historical chart</div>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="ticker">Ticker</th>
+              <th>Signal</th>
+              <th class="num sortable" data-sort="score">Score</th>
+              <th class="num sortable" data-sort="discount">Discount</th>
+              <th class="num sortable" data-sort="beatspy1y">Beat SPY 1Y</th>
+              <th class="num sortable" data-sort="median1y">Med 1Y</th>
+              <th class="num sortable" data-sort="median3y">Med 3Y</th>
+              <th class="num sortable" data-sort="median5y">Med 5Y</th>
+              <th class="num sortable" data-sort="samples">Samples</th>
+              <th>Recovery</th>
+              <th class="thesis-header">Why Buy Now</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="footnote">
+        Probabilities based on historical patterns from similar market conditions. Click any row to see full details. Not investment advice.
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-inner">
+        CRT Recovery Predictor v3.0 • Updated daily after market close (5pm ET) • Finding undervalued stocks with recovery potential
+      </div>
+    </div>
+  </footer>
 
   <script src="app.js"></script>
 </body>
