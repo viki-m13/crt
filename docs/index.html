@@ -1,516 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>CRT Recovery Predictor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #fbfaf7;
-      --ink: #111;
-      --muted: #555;
-      --rule: rgba(0,0,0,.14);
-      --green: #0f5132;
-      --green-bg: #d1e7dd;
-      --blue: #084298;
-      --blue-bg: #cfe2ff;
-      --yellow: #664d03;
-      --yellow-bg: #fff3cd;
-      --red: #842029;
-      --serif: "Source Serif 4", Georgia, serif;
-      --mono: "IBM Plex Mono", monospace;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-    .rule { border-top: 1px solid var(--rule); margin: 20px 0; }
-    .rule-double { border-top: 3px double var(--ink); margin: 24px 0; }
-
-    /* Masthead */
-    .masthead { padding: 32px 0 0; border-bottom: 1px solid var(--rule); }
-    .masthead-inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
-    .brand h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
-    .brand .tagline { font-size: 15px; color: var(--muted); font-style: italic; }
-    .meta { text-align: right; font-size: 13px; color: var(--muted); }
-    .meta-label { font-weight: 600; }
-
-    /* Summary boxes */
-    .summary-row { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
-    .summary-box { flex: 1; min-width: 140px; padding: 16px 20px; border: 1px solid var(--rule); background: white; }
-    .summary-box.strong { border-left: 4px solid var(--green); }
-    .summary-box.buy { border-left: 4px solid var(--blue); }
-    .summary-box.watch { border-left: 4px solid var(--yellow); }
-    .summary-count { font-family: var(--mono); font-size: 36px; font-weight: 500; }
-    .summary-box.strong .summary-count { color: var(--green); }
-    .summary-box.buy .summary-count { color: var(--blue); }
-    .summary-box.watch .summary-count { color: var(--yellow); }
-    .summary-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 4px; }
-
-    /* How it works */
-    .explain { margin: 20px 0; }
-    .explain summary { cursor: pointer; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-    .explain summary:hover { color: var(--ink); }
-    .explain[open] summary { margin-bottom: 16px; }
-    .explain-content { font-size: 15px; color: var(--muted); max-width: 800px; }
-    .explain-content ol { margin: 12px 0 12px 24px; }
-    .explain-content li { margin-bottom: 8px; }
-    .disclaimer { background: #fef3cd; border: 1px solid #ffecb5; padding: 12px 16px; font-size: 13px; margin-top: 16px; }
-
-    /* Controls */
-    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-    .control-group { display: flex; align-items: center; gap: 8px; }
-    .control-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
-
-    input[type="text"] { font-family: var(--mono); font-size: 14px; padding: 8px 12px; border: 1px solid var(--rule); background: white; width: 160px; }
-    input[type="text"]:focus { outline: none; border-color: var(--ink); }
-
-    select { font-family: var(--serif); font-size: 14px; padding: 8px 12px; border: 1px solid var(--rule); background: white; cursor: pointer; }
-    select:focus { outline: none; border-color: var(--ink); }
-
-    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-    .chip { font-family: var(--mono); font-size: 12px; padding: 6px 12px; background: white; border: 1px solid var(--rule); cursor: pointer; transition: all 0.15s; }
-    .chip:hover { border-color: var(--ink); }
-    .chip.active { background: var(--ink); color: white; border-color: var(--ink); }
-
-    /* Results */
-    .results-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
-    .results-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    .results-count { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-
-    /* Stock table */
-    .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .tbl th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--muted); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--ink); }
-    .tbl th.num { text-align: right; }
-    .tbl td { padding: 12px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
-    .tbl td.num { text-align: right; font-family: var(--mono); font-size: 13px; }
-    .tbl tr { cursor: pointer; transition: background 0.1s; }
-    .tbl tr:hover { background: rgba(0,0,0,0.03); }
-
-    .ticker { font-family: var(--mono); font-weight: 500; font-size: 15px; }
-    .price { color: var(--muted); font-size: 13px; margin-left: 8px; }
-    .thesis { font-size: 13px; color: var(--muted); max-width: 300px; line-height: 1.4; }
-
-    .signal { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 4px 8px; border-radius: 2px; text-transform: uppercase; }
-    .signal.strong { background: var(--green-bg); color: var(--green); }
-    .signal.buy { background: var(--blue-bg); color: var(--blue); }
-    .signal.watch { background: var(--yellow-bg); color: var(--yellow); }
-
-    .positive { color: var(--green); }
-    .negative { color: var(--red); }
-
-    .no-results { text-align: center; padding: 60px 20px; color: var(--muted); font-style: italic; }
-
-    /* Modal */
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
-    .modal.open { display: flex; justify-content: center; align-items: flex-start; }
-    .modal-box { background: var(--bg); max-width: 640px; width: 100%; margin-top: 40px; padding: 32px; position: relative; border: 1px solid var(--rule); }
-    .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
-    .modal-close:hover { color: var(--ink); }
-
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 2px solid var(--ink); margin-bottom: 20px; }
-    .modal-ticker { font-family: var(--mono); font-size: 28px; font-weight: 500; }
-    .modal-price { font-size: 20px; color: var(--muted); }
-
-    .modal-thesis { background: white; border: 1px solid var(--rule); padding: 20px; margin-bottom: 24px; font-size: 15px; line-height: 1.6; }
-
-    .modal-section { margin-bottom: 24px; }
-    .modal-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
-
-    .modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .modal-stat { background: white; border: 1px solid var(--rule); padding: 14px; text-align: center; }
-    .modal-stat-value { font-family: var(--mono); font-size: 20px; font-weight: 500; }
-    .modal-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
-
-    .sample-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule); }
-
-    /* Footer */
-    .footer { margin-top: 48px; padding: 24px 0; border-top: 3px double var(--ink); font-size: 13px; color: var(--muted); text-align: center; }
-
-    @media (max-width: 768px) {
-      .masthead-inner { flex-direction: column; }
-      .meta { text-align: left; }
-      .summary-row { flex-direction: column; }
-      .controls { flex-direction: column; align-items: flex-start; }
-      .tbl { font-size: 13px; }
-      .tbl th, .tbl td { padding: 8px 6px; }
-      .thesis { display: none; }
-      .modal-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="masthead">
-    <div class="wrap">
-      <div class="masthead-inner">
-        <div class="brand">
+    <div class="wrap masthead-wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="brand-text">
           <h1>CRT Recovery Predictor</h1>
-          <p class="tagline">Find undervalued quality stocks likely to outperform SPY</p>
+          <div class="subhead">Evidence-based stock selection: <strong>Find undervalued quality stocks with early recovery signals that historically outperform SPY.</strong></div>
         </div>
         <div class="meta">
-          <div><span class="meta-label">Updated:</span> <span id="asOf">—</span></div>
-          <div><span class="meta-label">Universe:</span> S&P 500</div>
+          <div class="meta-row"><span class="meta-label">Updated</span><span id="asOf" class="meta-value"></span></div>
+          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">S&P 500</span></div>
+          <div class="meta-row"><span class="meta-label">Benchmark</span><span class="meta-value">SPY (S&P 500)</span></div>
         </div>
       </div>
 
-      <div class="summary-row">
-        <div class="summary-box strong">
-          <div class="summary-count" id="countStrong">—</div>
-          <div class="summary-label">Strong Buy</div>
+      <div class="rule"></div>
+
+      <!-- Signal Summary -->
+      <div class="signal-summary" id="signalSummary">
+        <div class="signal-box signal-strong">
+          <div class="signal-count" id="countStrong">-</div>
+          <div class="signal-label">STRONG BUY</div>
         </div>
-        <div class="summary-box buy">
-          <div class="summary-count" id="countBuy">—</div>
-          <div class="summary-label">Buy</div>
+        <div class="signal-box signal-buy">
+          <div class="signal-count" id="countBuy">-</div>
+          <div class="signal-label">BUY</div>
         </div>
-        <div class="summary-box watch">
-          <div class="summary-count" id="countWatch">—</div>
-          <div class="summary-label">Watch</div>
+        <div class="signal-box signal-watch">
+          <div class="signal-count" id="countWatch">-</div>
+          <div class="signal-label">WATCH</div>
         </div>
       </div>
 
-      <details class="explain">
-        <summary>How does this work?</summary>
-        <div class="explain-content">
-          <p><strong>We find stocks that are:</strong></p>
-          <ol>
-            <li><strong>Undervalued</strong> — Trading 10-50% below their 52-week high</li>
-            <li><strong>Quality</strong> — Positive 5-year returns, consistent track record</li>
-            <li><strong>Recovering</strong> — Showing early signs of bouncing back</li>
-            <li><strong>Statistically Backed</strong> — 15+ similar historical situations</li>
-          </ol>
-          <p>We analyze what happened when each stock was in a similar situation historically, then calculate the probability of positive returns and beating SPY.</p>
-          <div class="disclaimer"><strong>Not investment advice.</strong> Past performance doesn't guarantee future results.</div>
+      <div class="rule"></div>
+
+      <section class="explain">
+        <details class="details whathow">
+          <summary class="details-summary">
+            <span class="section-title">METHODOLOGY & HOW IT WORKS</span>
+            <span class="plus" aria-hidden="true">+</span>
+          </summary>
+          <div class="details-body">
+            <div class="explain-grid">
+              <div>
+                <div class="section-title">The Core Question</div>
+                <p>
+                  <strong>"What stocks should I buy TODAY that are undervalued and most likely to outperform SPY in 1, 3, and 5 years?"</strong>
+                </p>
+                <p>
+                  This tool finds quality stocks that are temporarily beaten down (10-50% below their 52-week high)
+                  but showing early signs of recovery. We use historical pattern matching to estimate
+                  the probability of positive returns and outperforming the market.
+                </p>
+
+                <div class="section-title section-title--spaced">What Makes a Stock Score High?</div>
+                <ul>
+                  <li><strong>Undervalued</strong> — Trading 10-50% below 52-week high (not overpriced, not distressed)</li>
+                  <li><strong>Quality Track Record</strong> — Positive 5-year returns, consistent monthly gains</li>
+                  <li><strong>Early Recovery Signals</strong> — Price above 20-day moving average, positive recent momentum</li>
+                  <li><strong>Statistical Significance</strong> — Minimum 5 years of history, 15+ similar past situations</li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="section-title">Selection Criteria</div>
+                <div class="backtest-results">
+                  <div class="backtest-row">
+                    <span class="backtest-label">Discount Range</span>
+                    <span class="backtest-value highlight">10% - 50%</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Min History Required</span>
+                    <span class="backtest-value">5 Years</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Min Sample Size</span>
+                    <span class="backtest-value">15 Similar Cases</span>
+                  </div>
+                  <div class="backtest-row">
+                    <span class="backtest-label">Quality Filter</span>
+                    <span class="backtest-value">Positive 5Y Return</span>
+                  </div>
+                </div>
+                <p class="footnote">
+                  Stocks near all-time highs are filtered out (already expensive).
+                  Stocks down more than 50% are filtered out (potentially distressed).
+                </p>
+              </div>
+
+              <div>
+                <div class="section-title">How to Read the Numbers</div>
+                <ul>
+                  <li><strong>Score (0-100)</strong> — Opportunity ranking. Higher = better setup.</li>
+                  <li><strong>Discount</strong> — How far below 52-week high (sweet spot: 20-40%).</li>
+                  <li><strong>Beat SPY</strong> — Historical probability of outperforming S&P 500.</li>
+                  <li><strong>Median Return</strong> — Typical return from similar historical situations.</li>
+                  <li><strong>Downside / Upside</strong> — 10th and 90th percentile outcomes (risk/reward).</li>
+                </ul>
+
+                <div class="section-title section-title--spaced">Signals</div>
+                <ul>
+                  <li><strong>STRONG BUY</strong> — Score ≥80, Beat SPY ≥60%, with early recovery signal</li>
+                  <li><strong>BUY</strong> — Score ≥65, Beat SPY ≥55%</li>
+                  <li><strong>WATCH</strong> — Score ≥50, shows promise but needs confirmation</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="rule"></div>
+
+            <div class="disclaimer">
+              <strong>Important:</strong> This is not investment advice. Past performance does not guarantee future results.
+              The probabilities shown are based on historical patterns which may not repeat. Always do your own research
+              and consider consulting a financial advisor before making investment decisions.
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="rule"></div>
+
+      <div class="controls">
+        <div class="search">
+          <label for="q" class="visually-hidden">Search ticker</label>
+          <input id="q" class="search-input" type="text" placeholder="Search ticker (e.g., AAPL)" autocomplete="off" />
+          <button id="go" class="btn">Find</button>
         </div>
-      </details>
+        <div class="filters">
+          <label class="filter-label">
+            <input type="checkbox" id="filterRecovery" /> Early Recovery Only
+          </label>
+        </div>
+        <div class="sort">
+          <span class="sort-label">Sort by</span>
+          <button class="btn-lite active" data-sort="score">Score</button>
+          <button class="btn-lite" data-sort="discount">Discount</button>
+          <button class="btn-lite" data-sort="beatspy">Beat SPY</button>
+          <button class="btn-lite" data-sort="median">Median 1Y</button>
+        </div>
+      </div>
+
+      <div class="rule"></div>
     </div>
   </header>
 
   <main class="wrap">
-    <div class="controls">
-      <div class="control-group">
-        <span class="control-label">Search</span>
-        <input type="text" id="search" placeholder="Ticker...">
-      </div>
-      <div class="control-group">
-        <span class="control-label">Signal</span>
-        <div class="chips" id="signalChips">
-          <span class="chip active" data-v="all">All</span>
-          <span class="chip" data-v="STRONG_BUY">Strong Buy</span>
-          <span class="chip" data-v="BUY">Buy</span>
-          <span class="chip" data-v="WATCH">Watch</span>
-        </div>
-      </div>
-      <div class="control-group">
-        <span class="control-label">Sort</span>
-        <select id="sortBy">
-          <option value="score">Score</option>
-          <option value="discount">Discount</option>
-          <option value="beatSpy">Beat SPY %</option>
-          <option value="return1y">Median Return</option>
-          <option value="samples">Samples</option>
-          <option value="ticker">Ticker</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">Min Discount</span>
-        <select id="minDiscount">
-          <option value="0">Any</option>
-          <option value="15">15%+</option>
-          <option value="20">20%+</option>
-          <option value="25">25%+</option>
-          <option value="30">30%+</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">Min Beat SPY</span>
-        <select id="minBeatSpy">
-          <option value="0">Any</option>
-          <option value="50">50%+</option>
-          <option value="60">60%+</option>
-          <option value="70">70%+</option>
-          <option value="80">80%+</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">Recovery</span>
-        <select id="recovery">
-          <option value="all">All</option>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </select>
-      </div>
-    </div>
+    <section>
+      <div class="section-title">Top Opportunities Today</div>
+      <div id="top10" class="cards"></div>
+    </section>
 
-    <div class="results-header">
-      <span class="results-title">Opportunities</span>
-      <span class="results-count">Showing <span id="count">0</span> stocks</span>
-    </div>
-
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Ticker</th>
-          <th>Signal</th>
-          <th class="num">Discount</th>
-          <th class="num">Beat SPY</th>
-          <th class="num">Med 1Y</th>
-          <th class="num">Samples</th>
-          <th>Why Buy Now</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-
-    <div class="no-results" id="noResults" style="display:none;">No stocks match your filters.</div>
-
-    <footer class="footer">
-      CRT Recovery Predictor · Updated daily after market close · Data from Yahoo Finance
-    </footer>
+    <section class="spacer">
+      <div class="section-title">All Stocks</div>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Signal</th>
+              <th class="num">Score</th>
+              <th class="num">Discount</th>
+              <th class="num">Beat SPY</th>
+              <th class="num">Med 1Y</th>
+              <th class="num">Med 3Y</th>
+              <th class="num">Samples</th>
+              <th>Recovery</th>
+              <th>Why Buy Now</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="footnote">
+        Probabilities based on historical patterns from similar market conditions. Not investment advice.
+      </div>
+    </section>
   </main>
 
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-box">
-      <button class="modal-close" id="modalClose">&times;</button>
-      <div id="modalBody"></div>
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-inner">
+        CRT Recovery Predictor v3.0 • Updated daily after market close (5pm ET) • Finding undervalued stocks with recovery potential
+      </div>
     </div>
-  </div>
+  </footer>
 
-  <script>
-    const DATA_URL = "./data/full.json";
-    let allStocks = [];
-    let filters = { signal: 'all', sort: 'score', minDiscount: 0, minBeatSpy: 0, recovery: 'all', search: '' };
-
-    const $ = id => document.getElementById(id);
-    const fmtPct = x => x != null ? Math.round(x) + '%' : '—';
-    const fmtRet = x => x != null ? (x > 0 ? '+' : '') + Math.round(x) + '%' : '—';
-
-    async function loadData() {
-      try {
-        const res = await fetch(DATA_URL + '?v=' + Date.now());
-        const data = await res.json();
-
-        if (data.as_of) {
-          const d = new Date(data.as_of);
-          $('asOf').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        }
-
-        $('countStrong').textContent = data.summary?.strong_buy || 0;
-        $('countBuy').textContent = data.summary?.buy || 0;
-        $('countWatch').textContent = data.summary?.watch || 0;
-
-        allStocks = data.items || [];
-        render();
-      } catch (e) {
-        console.error(e);
-        $('tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#666;">Failed to load data</td></tr>';
-      }
-    }
-
-    function render() {
-      let list = [...allStocks];
-
-      // Filters
-      if (filters.search) list = list.filter(s => s.ticker.toLowerCase().includes(filters.search.toLowerCase()));
-      if (filters.signal !== 'all') list = list.filter(s => s.signal === filters.signal);
-      if (filters.minDiscount > 0) list = list.filter(s => s.discount_from_high >= filters.minDiscount);
-      if (filters.minBeatSpy > 0) list = list.filter(s => s.prob_beat_spy_1y && s.prob_beat_spy_1y >= filters.minBeatSpy);
-      if (filters.recovery === 'yes') list = list.filter(s => s.early_recovery);
-      if (filters.recovery === 'no') list = list.filter(s => !s.early_recovery);
-
-      // Sort
-      list.sort((a, b) => {
-        switch (filters.sort) {
-          case 'discount': return (b.discount_from_high || 0) - (a.discount_from_high || 0);
-          case 'beatSpy': return (b.prob_beat_spy_1y || 0) - (a.prob_beat_spy_1y || 0);
-          case 'return1y': return (b.median_return_1y || 0) - (a.median_return_1y || 0);
-          case 'samples': return (b.sample_size_1y || 0) - (a.sample_size_1y || 0);
-          case 'ticker': return a.ticker.localeCompare(b.ticker);
-          default: return (b.opportunity_score || 0) - (a.opportunity_score || 0);
-        }
-      });
-
-      $('count').textContent = list.length;
-      $('noResults').style.display = list.length === 0 ? 'block' : 'none';
-
-      if (list.length === 0) {
-        $('tbody').innerHTML = '';
-        return;
-      }
-
-      $('tbody').innerHTML = list.map(s => {
-        const cls = s.signal === 'STRONG_BUY' ? 'strong' : s.signal === 'BUY' ? 'buy' : 'watch';
-        const label = s.signal === 'STRONG_BUY' ? 'Strong Buy' : s.signal === 'BUY' ? 'Buy' : 'Watch';
-        const thesis = s.thesis ? (s.thesis.length > 80 ? s.thesis.substring(0, 80) + '…' : s.thesis) : '';
-        return `
-          <tr data-ticker="${s.ticker}">
-            <td><span class="ticker">${s.ticker}</span><span class="price">$${s.price?.toFixed(2) || '—'}</span></td>
-            <td><span class="signal ${cls}">${label}</span></td>
-            <td class="num">${fmtPct(s.discount_from_high)}</td>
-            <td class="num ${s.prob_beat_spy_1y > 50 ? 'positive' : ''}">${fmtPct(s.prob_beat_spy_1y)}</td>
-            <td class="num ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_1y)}</td>
-            <td class="num">${s.sample_size_1y || '—'}</td>
-            <td class="thesis">${thesis}</td>
-          </tr>
-        `;
-      }).join('');
-
-      // Row clicks
-      document.querySelectorAll('#tbody tr').forEach(row => {
-        row.onclick = () => showModal(allStocks.find(s => s.ticker === row.dataset.ticker));
-      });
-    }
-
-    function showModal(s) {
-      if (!s) return;
-      const cls = s.signal === 'STRONG_BUY' ? 'strong' : s.signal === 'BUY' ? 'buy' : 'watch';
-
-      $('modalBody').innerHTML = `
-        <div class="modal-header">
-          <div>
-            <span class="modal-ticker">${s.ticker}</span>
-            <span class="signal ${cls}" style="margin-left:12px">${s.signal.replace('_', ' ')}</span>
-          </div>
-          <span class="modal-price">$${s.price?.toFixed(2) || '—'}</span>
-        </div>
-
-        <div class="modal-thesis">
-          <strong>Why buy now?</strong><br>
-          ${s.thesis || 'Analysis pending.'}
-        </div>
-
-        <div class="modal-section">
-          <div class="modal-section-title">Valuation</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value">${fmtPct(s.discount_from_high)}</div>
-              <div class="modal-stat-label">Below 52w High</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">$${s.high_52w?.toFixed(2) || '—'}</div>
-              <div class="modal-stat-label">52w High</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">$${s.low_52w?.toFixed(2) || '—'}</div>
-              <div class="modal-stat-label">52w Low</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-section">
-          <div class="modal-section-title">Probability of Beating SPY</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.prob_beat_spy_1y > 50 ? 'positive' : ''}">${fmtPct(s.prob_beat_spy_1y)}</div>
-              <div class="modal-stat-label">1 Year</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.prob_beat_spy_3y > 50 ? 'positive' : ''}">${fmtPct(s.prob_beat_spy_3y)}</div>
-              <div class="modal-stat-label">3 Years</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">—</div>
-              <div class="modal-stat-label">5 Years</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-section">
-          <div class="modal-section-title">Expected Returns (Median)</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_1y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_1y)}</div>
-              <div class="modal-stat-label">1 Year</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_3y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_3y)}</div>
-              <div class="modal-stat-label">3 Years</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.median_return_5y > 0 ? 'positive' : 'negative'}">${fmtRet(s.median_return_5y)}</div>
-              <div class="modal-stat-label">5 Years</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-section">
-          <div class="modal-section-title">Risk / Reward (1 Year)</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value negative">${fmtRet(s.downside_1y)}</div>
-              <div class="modal-stat-label">Worst 10%</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">${fmtRet(s.median_return_1y)}</div>
-              <div class="modal-stat-label">Median</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value positive">${fmtRet(s.upside_1y)}</div>
-              <div class="modal-stat-label">Best 10%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-section">
-          <div class="modal-section-title">Quality</div>
-          <div class="modal-grid">
-            <div class="modal-stat">
-              <div class="modal-stat-value ${s.five_year_return > 0 ? 'positive' : 'negative'}">${fmtRet(s.five_year_return)}</div>
-              <div class="modal-stat-label">5 Year Return</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">${fmtPct(s.monthly_win_rate)}</div>
-              <div class="modal-stat-label">Monthly Win Rate</div>
-            </div>
-            <div class="modal-stat">
-              <div class="modal-stat-value">${s.early_recovery ? '✓ Yes' : '✗ No'}</div>
-              <div class="modal-stat-label">Early Recovery</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sample-note">
-          Based on <strong>${s.sample_size_1y || 0}</strong> similar historical situations (1Y) ·
-          <strong>${s.sample_size_3y || 0}</strong> (3Y) ·
-          <strong>${s.sample_size_5y || 0}</strong> (5Y)
-        </div>
-      `;
-
-      $('modal').classList.add('open');
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      loadData();
-
-      $('search').oninput = e => { filters.search = e.target.value; render(); };
-      $('sortBy').onchange = e => { filters.sort = e.target.value; render(); };
-      $('minDiscount').onchange = e => { filters.minDiscount = +e.target.value; render(); };
-      $('minBeatSpy').onchange = e => { filters.minBeatSpy = +e.target.value; render(); };
-      $('recovery').onchange = e => { filters.recovery = e.target.value; render(); };
-
-      document.querySelectorAll('#signalChips .chip').forEach(chip => {
-        chip.onclick = () => {
-          document.querySelectorAll('#signalChips .chip').forEach(c => c.classList.remove('active'));
-          chip.classList.add('active');
-          filters.signal = chip.dataset.v;
-          render();
-        };
-      });
-
-      $('modalClose').onclick = () => $('modal').classList.remove('open');
-      $('modal').onclick = e => { if (e.target === $('modal')) $('modal').classList.remove('open'); };
-      document.onkeydown = e => { if (e.key === 'Escape') $('modal').classList.remove('open'); };
-    });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
