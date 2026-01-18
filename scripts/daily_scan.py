@@ -350,10 +350,10 @@ def calculate_opportunity_metrics(ticker, close, high, low, spy_close):
             # Thesis
             "thesis": thesis,
 
-            # Price series (last 5 years for chart)
+            # Price series (ALL available history for chart)
             "series": {
-                "dates": [d.strftime("%Y-%m-%d") for d in close.index[-1260:]],
-                "prices": [round(p, 2) for p in close.values[-1260:]]
+                "dates": [d.strftime("%Y-%m-%d") for d in close.index],
+                "prices": [round(p, 2) for p in close.values]
             }
         }
 

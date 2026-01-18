@@ -17,7 +17,8 @@ const fmtSign = x => x == null || !isFinite(x) ? '—' : `${x > 0 ? '+' : ''}${M
 const fmtPrice = x => x == null || !isFinite(x) ? '—' : `$${x.toFixed(2)}`;
 const valClass = (v, t = 0) => v > t ? 'pos' : v < t ? 'neg' : '';
 
-// Calculate buy zones
+// Calculate buy zones from FULL price history
+// Returns zones array with corresponding dates for proper range filtering
 function calcZones(dates, prices) {
   const n = prices.length;
   if (n < 252) return null;
@@ -26,7 +27,10 @@ function calcZones(dates, prices) {
     let high = -Infinity;
     for (let j = i - 252; j <= i; j++) if (prices[j] > high) high = prices[j];
     const disc = ((high - prices[i]) / high) * 100;
-    zones.push({ zone: disc >= 30 ? 'strong' : disc >= 20 ? 'buy' : disc >= 10 ? 'watch' : null });
+    zones.push({
+      date: dates[i],
+      zone: disc >= 30 ? 'strong' : disc >= 20 ? 'buy' : disc >= 10 ? 'watch' : null
+    });
   }
   return zones;
 }
@@ -57,6 +61,10 @@ function drawChart(canvas, dates, prices, range) {
   const w = rect.width, h = rect.height;
   ctx.clearRect(0, 0, w, h);
 
+  // Calculate zones from FULL data first (before filtering)
+  const fullZones = calcZones(dates, prices);
+
+  // Now filter data for display
   const { dates: fd, prices: fp } = filterRange(dates, prices, range);
   const n = fp.length;
   if (n < 3) {
@@ -75,19 +83,24 @@ function drawChart(canvas, dates, prices, range) {
   const x = i => pad.l + cw * i / (n - 1);
   const y = p => pad.t + ch * (1 - (p - min) / (max - min));
 
-  // Zones
-  const zones = calcZones(fd, fp);
-  if (zones) {
-    const off = fd.length - zones.length;
+  // Filter zones to match visible date range and draw
+  if (fullZones) {
+    // Create a map of date -> zone for quick lookup
+    const zoneMap = new Map();
+    fullZones.forEach(z => zoneMap.set(z.date, z.zone));
+
+    // Build zones array for visible dates
+    const visibleZones = fd.map(d => zoneMap.get(d) || null);
+
     let cur = null, start = null;
-    for (let i = 0; i < zones.length; i++) {
-      const z = zones[i].zone;
+    for (let i = 0; i < visibleZones.length; i++) {
+      const z = visibleZones[i];
       if (z !== cur) {
         if (cur && start != null) {
           ctx.fillStyle = cur === 'strong' ? 'rgba(10,102,64,0.3)' : cur === 'buy' ? 'rgba(10,102,64,0.15)' : 'rgba(200,150,0,0.2)';
-          ctx.fillRect(x(start), pad.t, x(off + i) - x(start), ch);
+          ctx.fillRect(x(start), pad.t, x(i) - x(start), ch);
         }
-        cur = z; start = z ? off + i : null;
+        cur = z; start = z ? i : null;
       }
     }
     if (cur && start != null) {
