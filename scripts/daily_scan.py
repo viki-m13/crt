@@ -415,8 +415,8 @@ def main():
     print(f"    Total universe: {len(tickers)} tickers")
 
     # 2. Download data
-    print("\n[2] Downloading price data (10 years)...")
-    close_df, high_df, low_df = download_price_data(tickers, years=10)
+    print("\n[2] Downloading price data (max history)...")
+    close_df, high_df, low_df = download_price_data(tickers, years=25)  # Fetch max available history
 
     if close_df.empty:
         print("[ERROR] No data downloaded")
