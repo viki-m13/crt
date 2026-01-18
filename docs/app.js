@@ -185,9 +185,9 @@ function renderItem(item, idx) {
             <canvas class="chart-canvas" id="chart-${item.ticker}"></canvas>
           </div>
           <div class="chart-legend">
-            <span><i class="leg-strong"></i>30%+ off high</span>
-            <span><i class="leg-buy"></i>20-30% off</span>
-            <span><i class="leg-watch"></i>10-20% off</span>
+            <span><i class="leg-strong"></i>Strong Buy (30%+)</span>
+            <span><i class="leg-buy"></i>Buy (20-30%)</span>
+            <span><i class="leg-watch"></i>Watch (10-20%)</span>
           </div>
         </div>
         <div class="stats">
