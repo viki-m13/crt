@@ -272,9 +272,13 @@ async function toggle(ticker) {
 
 // Init
 (async function init() {
+  console.log('Stock Recovery Predictor: Starting...');
   try {
+    console.log('Fetching data from:', DATA_URL);
     const r = await fetch(`${DATA_URL}?v=${Date.now()}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
     const data = await r.json();
+    console.log('Data loaded:', data.items?.length || 0, 'items');
 
     $('asOf').textContent = new Date(data.as_of).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
     $('countStrong').textContent = data.summary?.strong_buy || 0;
@@ -295,6 +299,7 @@ async function toggle(ticker) {
     }
 
     render();
+    console.log('Stock Recovery Predictor: Ready');
 
     // Event handlers
     $('filterPills').addEventListener('click', e => {
@@ -344,6 +349,7 @@ async function toggle(ticker) {
     });
 
   } catch (e) {
-    $('stockList').innerHTML = '<p style="text-align:center;padding:40px;color:#666">Unable to load data.</p>';
+    console.error('Init error:', e);
+    $('stockList').innerHTML = `<p style="text-align:center;padding:40px;color:#666">Unable to load data: ${e.message}</p>`;
   }
 })();
