@@ -527,6 +527,7 @@ function formatAsOf(asOf){
   try{
     full = await loadJSON(DATA_URL);
   }catch(e){
+    console.error("loadJSON error:", e);
     byId("top10").innerHTML = `<div class="footnote">No data yet. Run the GitHub Action to generate <span class="mono">docs/data/full.json</span>.</div>`;
     return;
   }

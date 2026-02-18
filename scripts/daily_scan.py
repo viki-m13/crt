@@ -155,6 +155,26 @@ def safe_float(x):
     except Exception:
         return np.nan
 
+def json_float(x):
+    """Like safe_float but returns None (-> JSON null) instead of NaN."""
+    try:
+        v = float(x)
+        return v if np.isfinite(v) else None
+    except Exception:
+        return None
+
+def sanitize_for_json(obj):
+    """Recursively replace NaN/Inf floats with None so json.dump produces valid JSON."""
+    if isinstance(obj, float):
+        return obj if np.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    if isinstance(obj, (np.floating, np.integer)):
+        return sanitize_for_json(float(obj))
+    return obj
+
 def percentile_rank(series: pd.Series, value: float) -> float:
     s = series.dropna().values.astype(float)
     if len(s) < 30 or not np.isfinite(value):
@@ -1088,9 +1108,9 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         
         "series": {
             "dates": [str(x.date()) for x in px.index],
-            "prices": [safe_float(v) for v in px.values],
-            "wash": [safe_float(v) for v in wash.values],
-            "final": [safe_float(v) for v in final_win.values],
+            "prices": [json_float(v) for v in px.values],
+            "wash": [json_float(v) for v in wash.values],
+            "final": [json_float(v) for v in final_win.values],
         },
         "stability_samples": stab_samples,
     }
@@ -1189,7 +1209,7 @@ def main():
 
         # Write per-ticker detail
         with open(os.path.join(TICKER_DIR, f"{t}.json"), "w") as f:
-            json.dump(det, f)
+            json.dump(sanitize_for_json(det), f)
 
         if i % 50 == 0:
             print(f"[PROGRESS] processed {i}/{len(usable)} | scored={len(rows)}")
@@ -1230,7 +1250,7 @@ def main():
     }
 
     with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
-        json.dump(payload, f)
+        json.dump(sanitize_for_json(payload), f)
 
     mark_ran_today()
     print(f"[OK] Wrote {len(rows)} tickers -> docs/data (as_of={as_of})")
