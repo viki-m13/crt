@@ -843,7 +843,7 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
 # =========================
 # FinalScore series (for charts/evidence)
 # =========================
-def compute_edge_score_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, now_idx: pd.Timestamp) -> float:
+def compute_edge_score_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series, now_idx: pd.Timestamp, eligible=None) -> float:
     confirm = safe_float(feat.loc[now_idx, "bottom_confirm"])
     if not np.isfinite(confirm):
         return np.nan
@@ -855,7 +855,7 @@ def compute_edge_score_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Serie
         y = feat.get(f"fwd_{h}", None)
         if y is None:
             continue
-        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible_topdecile)
+        analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible)
         # Fallback: if the restricted pool is too thin, allow all eligible past days.
         if len(analog_idx) < ANALOG_MIN:
             analog_idx = select_analogs_regime_balanced(X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
@@ -882,6 +882,7 @@ def compute_final_score_series(
     start_idx: pd.Timestamp,
     end_idx: pd.Timestamp,
     step_bars: int,
+    eligible=None,
 ) -> pd.Series:
     ok_idx = X.index[X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()]
     idx = ok_idx[(ok_idx >= start_idx) & (ok_idx <= end_idx)]
@@ -891,7 +892,7 @@ def compute_final_score_series(
     sample_idx = idx[::max(1, int(step_bars))]
     vals = {}
     for t in sample_idx:
-        edge = compute_edge_score_at(feat, X, regimes, t)
+        edge = compute_edge_score_at(feat, X, regimes, t, eligible=eligible)
         w = safe_float(feat.loc[t, "washout_meter"])
         vals[t] = final_score(edge, w)
 
@@ -1049,7 +1050,8 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
 
     # Keep a FinalScore series for chart shading (sparsely computed).
     final_series_full = compute_final_score_series(
-        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS
+        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS,
+        eligible=eligible_topdecile,
     )
 
     # Series payload for chart window
@@ -1060,7 +1062,8 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     px = win["px"].astype(float)
     wash = win["washout_meter"].astype(float)
     final_series_window = compute_final_score_series(
-        feat, X, regimes, start_idx=cutoff, end_idx=now_idx, step_bars=PLOT_SCORE_STEP_BARS
+        feat, X, regimes, start_idx=cutoff, end_idx=now_idx, step_bars=PLOT_SCORE_STEP_BARS,
+        eligible=eligible_topdecile,
     )
     final_win = final_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
