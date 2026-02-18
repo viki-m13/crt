@@ -527,9 +527,11 @@ function formatAsOf(asOf){
   try{
     full = await loadJSON(DATA_URL);
   }catch(e){
+    console.error("loadJSON error:", e);
     byId("top10").innerHTML = `<div class="footnote">No data yet. Run the GitHub Action to generate <span class="mono">docs/data/full.json</span>.</div>`;
     return;
   }
+  try{
 
   byId("asOf").textContent = formatAsOf(full.as_of);
 
@@ -712,4 +714,8 @@ async function rerender(){
     // lightweight live filter
     applySearch();
   });
+  }catch(err){
+    console.error("Rebound Ledger render error:", err);
+    byId("top10").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
+  }
 })();
