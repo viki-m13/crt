@@ -925,47 +925,60 @@ def fmt_rank(p01: float) -> str:
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
-        return ["Not enough price history yet — need at least one year of daily data."]
+        return ["Not enough price history to generate insights."]
 
-    dd = safe_float(hist["dd_lt"].iloc[-1])
-    pos = safe_float(hist["pos_lt"].iloc[-1])
-    idio_dd = safe_float(hist["idio_dd_lt"].iloc[-1])
-    volz = safe_float(hist["volu_z"].iloc[-1])
-    atrp = safe_float(hist["atr_pct"].iloc[-1])
+    dd = safe_float(hist["dd_lt"].iloc[-1])        # drawdown from 1Y high (negative or zero)
+    pos = safe_float(hist["pos_lt"].iloc[-1])       # position in 1Y range (0=bottom, 1=top)
+    idio_dd = safe_float(hist["idio_dd_lt"].iloc[-1])  # stock-specific drawdown after removing market
+    volz = safe_float(hist["volu_z"].iloc[-1])      # volume z-score
+    atrp = safe_float(hist["atr_pct"].iloc[-1])     # ATR as % of price
 
-    dd_p  = percentile_rank(hist["dd_lt"], dd)
-    pos_p = percentile_rank(hist["pos_lt"], pos)
-    id_p  = percentile_rank(hist["idio_dd_lt"], idio_dd)
-    vz_p  = percentile_rank(hist["volu_z"], volz)
     at_p  = percentile_rank(hist["atr_pct"], atrp)
 
     lines = []
 
-    if np.isfinite(dd) and np.isfinite(dd_p):
-        lines.append(
-            (dd_p, f"**{dd:.0%} off** its 1-year high — a bigger drop than **{fmt_rank(dd_p)}** of trading days.")
-        )
+    # 1. How far it has dropped — the single most important fact
+    if np.isfinite(dd):
+        pct = abs(dd)
+        if pct >= 0.40:
+            lines.append(f"Down <strong>{pct:.0%}</strong> from its 1-year high — a steep decline.")
+        elif pct >= 0.20:
+            lines.append(f"Down <strong>{pct:.0%}</strong> from its 1-year high — a significant pullback.")
+        elif pct >= 0.05:
+            lines.append(f"Down <strong>{pct:.0%}</strong> from its 1-year high.")
+        else:
+            lines.append(f"Only <strong>{pct:.0%}</strong> off its 1-year high — a small dip.")
 
-    if np.isfinite(pos) and np.isfinite(pos_p):
-        lines.append(
-            (1.0 - pos_p, f"Trading near the **bottom of its 1-year range** — lower than **{fmt_rank(1.0 - pos_p)}** of the past year.")
-        )
+    # 2. Stock-specific vs. market — is this the stock's problem or everything?
+    if np.isfinite(idio_dd) and np.isfinite(dd) and abs(dd) >= 0.03:
+        stock_pct = abs(idio_dd)
+        total_pct = max(abs(dd), 0.01)
+        ratio = stock_pct / total_pct
+        if ratio > 0.70:
+            lines.append("Most of this drop is <strong>specific to the stock</strong>, not the broader market.")
+        elif ratio < 0.30:
+            lines.append("The <strong>broader market</strong> is driving most of this decline — the stock itself is holding up.")
+        else:
+            lines.append("The decline is a <strong>mix</strong> of market-wide selling and stock-specific weakness.")
 
-    if np.isfinite(idio_dd) and np.isfinite(id_p):
-        lines.append(
-            (id_p, f"Down **~{idio_dd:.0%} on its own** (after removing broad market moves) — worse than **{fmt_rank(id_p)}** of past days.")
-        )
+    # 3. Where it sits in its range — only mention if it's notable
+    if np.isfinite(pos):
+        if pos <= 0.10:
+            lines.append("Trading near the <strong>lowest price</strong> of the past year.")
+        elif pos <= 0.25:
+            lines.append("In the <strong>lower quarter</strong> of its 1-year price range.")
 
-    if np.isfinite(volz) and np.isfinite(vz_p) and volz > 1.0:
-        lines.append((vz_p, f"**Unusually heavy trading volume** — more than **{fmt_rank(vz_p)}** of past days."))
+    # 4. Volume spike — plain language, only if notable
+    if np.isfinite(volz) and volz > 1.5:
+        lines.append("<strong>Elevated trading volume</strong>, which can signal selling pressure is peaking.")
 
-    if np.isfinite(atrp) and np.isfinite(at_p) and at_p > 0.85:
-        lines.append((at_p, f"**Large daily price swings** — bigger moves than **{fmt_rank(at_p)}** of past days."))
+    # 5. Volatility — only if extreme
+    if np.isfinite(at_p) and at_p > 0.90:
+        lines.append("<strong>Unusually large daily price swings</strong> — high uncertainty, but also potential opportunity.")
 
-    lines = sorted(lines, key=lambda x: x[0], reverse=True)
-    out = [txt for _, txt in lines[:3]]
+    out = lines[:3]
     if not out:
-        out = ["No significant pullback signals today — this looks like a mild setup."]
+        out = ["No major pullback signals right now — a mild or routine dip."]
     return out
 
 # =========================
