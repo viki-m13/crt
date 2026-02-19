@@ -207,6 +207,88 @@ function evidenceSection(detail){
   return box;
 }
 
+/* ---------- quality proof section ---------- */
+
+function proofSection(detail){
+  const qp = detail?.quality_parts;
+  const rh = detail?.recovery_history;
+  if (!qp && !rh) return null;
+
+  const box = document.createElement("details");
+  box.className = "details proof-details";
+
+  const hasTrend = qp?.trend != null && Number.isFinite(Number(qp.trend));
+  const hasRecov = qp?.recovery != null && Number.isFinite(Number(qp.recovery));
+  const hasMom   = qp?.momentum != null && Number.isFinite(Number(qp.momentum));
+
+  let barsHtml = "";
+  if (hasTrend || hasRecov || hasMom){
+    barsHtml += `<div class="proof-grid">`;
+    if (hasTrend){
+      const v = Math.round(Number(qp.trend));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Trend (45%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    if (hasRecov){
+      const v = Math.round(Number(qp.recovery));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Recovery (35%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    if (hasMom){
+      const v = Math.round(Number(qp.momentum));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Momentum (20%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    barsHtml += `</div>`;
+  }
+
+  let recovHtml = "";
+  if (rh && Number.isFinite(Number(rh.recovery_rate))){
+    const rate = Math.round(Number(rh.recovery_rate) * 100);
+    const nDd = rh.n_drawdowns != null ? Number(rh.n_drawdowns) : null;
+    const nRec = rh.n_recovered != null ? Number(rh.n_recovered) : null;
+    recovHtml = `
+      <div class="proof-recovery">
+        <div class="proof-recov-title">Drawdown Recovery Track Record</div>
+        <div class="proof-recov-stats">
+          <div class="proof-recov-stat"><span>Recovery rate</span><strong style="color:${rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--ink)' : '#8b4513'}">${rate}%</strong></div>
+          ${nDd != null ? `<div class="proof-recov-stat"><span>20%+ drawdowns found</span><strong>${nDd}</strong></div>` : ""}
+          ${nRec != null ? `<div class="proof-recov-stat"><span>Recovered within 3Y</span><strong>${nRec}</strong></div>` : ""}
+        </div>
+      </div>`;
+  }
+
+  if (!barsHtml && !recovHtml) return null;
+
+  box.innerHTML = `
+    <summary class="details-summary">
+      <div class="proof-summary-left">
+        <span class="section-title">QUALITY PROOF</span>
+        <span class="ev-sub">Trend health, recovery history &amp; selling momentum</span>
+      </div>
+      <span class="plus" aria-hidden="true">+</span>
+    </summary>
+    <div class="details-body">
+      ${barsHtml}
+      ${recovHtml}
+    </div>
+  `;
+
+  return box;
+}
+
 /* ---------- card rendering ---------- */
 
 function renderCard(container, item, detail){
@@ -300,6 +382,10 @@ function renderCard(container, item, detail){
   grid.appendChild(left);
   grid.appendChild(right);
   card.appendChild(grid);
+
+  // Quality proof
+  const proof = proofSection(detail);
+  if (proof) card.appendChild(proof);
 
   // Evidence
   const ev = evidenceSection(detail);
