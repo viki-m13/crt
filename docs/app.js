@@ -248,7 +248,7 @@ function renderCard(container, item, detail){
         <div class="mline"><span>Downside</span> <strong>${fmtPct(item.downside_1y)}</strong></div>
       </div>
       <div class="metric">
-        <div class="mline"><span>Analogs</span> <strong>${fmtNum0(item.n_analogs)}</strong></div>
+        <div class="mline"><span>Past Cases</span> <strong>${fmtNum0(item.n_analogs)}</strong></div>
       </div>
       <div class="metric">
         <div class="mline"><span>Pullback</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
@@ -469,9 +469,13 @@ function sortItems(items, mode){
     }
   }
 
-  // Top convictions: quality >= 60 AND prob_1y >= 65
+  // Broad index ETFs — useful as benchmarks in the table, but not as "picks"
+  const INDEX_ETFS = new Set(["SPY", "QQQ", "DIA", "IWM"]);
+
+  // Top convictions: quality >= 60 AND prob_1y >= 65, excluding index ETFs
   function getConvictions(list){
     return list.filter(it => {
+      if (INDEX_ETFS.has(it.ticker)) return false;
       const q = safeNum(it.quality);
       const p = safeNum(it.prob_1y);
       return q >= 60 && p >= 65;
