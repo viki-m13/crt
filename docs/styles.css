@@ -348,3 +348,33 @@ h1{
 
 /* Reduce header-to-content gap (Top 10 today section) */
 main.wrap{padding-top:6px}
+
+/* Section subtitle */
+.section-subtitle{
+  font-size:13px;
+  color:var(--muted);
+  margin:-6px 0 10px;
+}
+
+/* Quality / conviction badges */
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.04em;
+  font-weight:500;
+  white-space:nowrap;
+}
+.badge-high{background:rgba(15,61,46,.12);color:var(--green);border:1px solid rgba(15,61,46,.25)}
+.badge-med{background:rgba(0,0,0,.06);color:var(--ink);border:1px solid rgba(0,0,0,.12)}
+.badge-low{background:rgba(139,69,19,.08);color:#8b4513;border:1px solid rgba(139,69,19,.18)}
+.badge-na{background:rgba(0,0,0,.04);color:var(--muted);border:1px solid rgba(0,0,0,.08)}
+.badge-conviction{background:rgba(15,61,46,.08);color:var(--green);border:1px solid rgba(15,61,46,.18)}
+
+.card-badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+
+/* Sortable column headers */
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink)}

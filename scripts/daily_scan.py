@@ -198,6 +198,109 @@ def final_score(edge_score: float, washout: float) -> float:
     return float(e * (FINAL_WASH_FLOOR + FINAL_WASH_WEIGHT * ww))
 
 # =========================
+# QUALITY GATES (price-based)
+# =========================
+
+def trend_quality(px: pd.Series, sma_win: int = 200) -> float:
+    """Fraction of last 5 years the stock spent above its 200-day SMA. 0-100."""
+    if len(px) < sma_win + 10:
+        return np.nan
+    sma = px.rolling(sma_win).mean()
+    # Use last 5Y (1260 bars) or full history if shorter
+    lookback = min(len(px), 1260)
+    recent_px = px.iloc[-lookback:]
+    recent_sma = sma.iloc[-lookback:]
+    valid = recent_sma.notna()
+    if valid.sum() < 252:  # need at least 1 year
+        return np.nan
+    above = (recent_px[valid] > recent_sma[valid]).sum()
+    return float(100.0 * above / valid.sum())
+
+
+def recovery_track_record(px: pd.Series, dd_threshold: float = 0.20, recovery_window: int = 756) -> dict:
+    """How often has this stock recovered from drawdowns >= dd_threshold within recovery_window bars?
+    Returns dict with recovery_rate (0-1), n_drawdowns, n_recovered."""
+    if len(px) < 504:  # need 2+ years
+        return {"recovery_rate": np.nan, "n_drawdowns": 0, "n_recovered": 0}
+
+    # Find all drawdown episodes
+    cummax = px.cummax()
+    dd = (px / cummax) - 1.0  # negative values
+
+    # Find points where drawdown first crosses threshold
+    crossed = dd < -dd_threshold
+    # Group into episodes (require 63+ bars between episodes)
+    episodes = []
+    last_end = -100
+    for i in range(len(crossed)):
+        if crossed.iloc[i] and (i - last_end) > 63:
+            # Start of a new drawdown episode
+            trough_start = i
+            # Find the trough (deepest point in next 126 bars)
+            search_end = min(i + 126, len(dd))
+            trough_idx = dd.iloc[trough_start:search_end].idxmin()
+            trough_pos = px.index.get_loc(trough_idx)
+
+            # Check if it recovered to prior peak within recovery_window
+            prior_peak = cummax.iloc[trough_pos]
+            recovery_end = min(trough_pos + recovery_window, len(px))
+            future_px = px.iloc[trough_pos:recovery_end]
+            recovered = (future_px >= prior_peak * 0.95).any()  # within 5% of prior peak
+
+            episodes.append({
+                "trough_date": px.index[trough_pos],
+                "dd_depth": float(dd.iloc[trough_pos]),
+                "recovered": bool(recovered),
+                "has_forward_data": recovery_end > trough_pos + 252  # at least 1Y of forward data
+            })
+            last_end = trough_pos + 63
+
+    # Only count episodes with enough forward data
+    valid_episodes = [e for e in episodes if e["has_forward_data"]]
+    if len(valid_episodes) == 0:
+        return {"recovery_rate": np.nan, "n_drawdowns": 0, "n_recovered": 0}
+
+    n_recovered = sum(1 for e in valid_episodes if e["recovered"])
+    return {
+        "recovery_rate": float(n_recovered / len(valid_episodes)),
+        "n_drawdowns": len(valid_episodes),
+        "n_recovered": n_recovered,
+    }
+
+
+def selling_deceleration(px: pd.Series) -> float:
+    """Is selling slowing down? Returns 0-100 (higher = more deceleration = better entry).
+    Checks: 5d return vs 20d return, and RSI turning up."""
+    if len(px) < 30:
+        return np.nan
+
+    ret_5d = float(px.iloc[-1] / px.iloc[-6] - 1) if len(px) >= 6 else 0.0
+    ret_20d = float(px.iloc[-1] / px.iloc[-21] - 1) if len(px) >= 21 else 0.0
+
+    # Deceleration: 5d less negative than 20d (or positive)
+    if ret_20d < -0.01:  # stock is in a pullback
+        decel = float(np.clip((ret_5d - ret_20d) / abs(ret_20d), -1, 2))
+    else:
+        decel = 0.5  # not in pullback, neutral
+
+    # RSI(14)
+    delta = px.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / loss.replace(0, np.nan)
+    rsi = 100 - (100 / (1 + rs))
+    rsi_now = float(rsi.iloc[-1]) if np.isfinite(rsi.iloc[-1]) else 50.0
+
+    # RSI turning up from oversold
+    rsi_5d_ago = float(rsi.iloc[-6]) if len(rsi) >= 6 and np.isfinite(rsi.iloc[-6]) else 50.0
+    rsi_turn = 1.0 if (rsi_now > rsi_5d_ago and rsi_5d_ago < 35) else 0.0
+
+    # Combine: 50% deceleration + 30% RSI level + 20% RSI turn
+    rsi_score = float(np.clip((rsi_now - 20) / 40, 0, 1))  # 0 at RSI=20, 1 at RSI=60
+    score = 0.50 * float(np.clip((decel + 0.5) / 1.5, 0, 1)) + 0.30 * rsi_score + 0.20 * rsi_turn
+    return float(np.clip(score * 100, 0, 100))
+
+# =========================
 # Verdict
 # =========================
 def verdict_line(score: float, confidence: float, stability: float, fragile: bool) -> str:
@@ -501,9 +604,14 @@ def build_feature_matrix(feat: pd.DataFrame, feature_cols: list, zwin: int) -> p
 def summarize(vals: np.ndarray) -> dict:
     if vals is None or len(vals) == 0:
         return {"n": 0}
-    vals = vals.astype(float)
+    vals = np.array(vals, dtype=float)
+    # Survivorship fix: treat NaN (delisted/missing) as -100% loss
+    n_total = len(vals)
+    n_missing = int(np.isnan(vals).sum())
+    vals = np.where(np.isnan(vals), -1.0, vals)
     return {
         "n": int(len(vals)),
+        "n_missing": n_missing,
         "win": float(np.mean(vals > 0)),
         "median": float(np.median(vals)),
         "p10": float(np.quantile(vals, 0.10)),
@@ -988,7 +1096,28 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         if (not np.isfinite(wash_today)) or (wash_today < MIN_WASHOUT_TODAY):
             return None
 
-    
+    # Quality gates
+    stock_px = PX[t].dropna()
+    tq = trend_quality(stock_px)
+    rtr = recovery_track_record(stock_px)
+    sd = selling_deceleration(stock_px)
+
+    quality = 0.0
+    quality_parts = {}
+    if np.isfinite(tq):
+        quality_parts["trend"] = tq
+    if np.isfinite(rtr.get("recovery_rate", np.nan)):
+        quality_parts["recovery"] = rtr["recovery_rate"] * 100
+    if np.isfinite(sd):
+        quality_parts["momentum"] = sd
+
+    if quality_parts:
+        weights = {"trend": 0.45, "recovery": 0.35, "momentum": 0.20}
+        total_w = sum(weights[k] for k in quality_parts)
+        quality = sum(quality_parts[k] * weights[k] for k in quality_parts) / total_w
+    else:
+        quality = np.nan
+
     # Candidate pool for analogs: restrict to this stock's top-decile historical Final Score days.
     # We compute a (sparsely sampled) historical Final Score series first, then take its 90th percentile cutoff.
     final_series_hist = compute_final_score_series(
@@ -1113,6 +1242,9 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "final": [json_float(v) for v in final_win.values],
         },
         "stability_samples": stab_samples,
+        "quality": float(quality) if np.isfinite(quality) else None,
+        "quality_parts": sanitize_for_json(quality_parts),
+        "recovery_history": sanitize_for_json(rtr),
     }
 
     row = {
@@ -1132,6 +1264,16 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "3Y": h_summaries.get("3Y", {}).get("median", None),
             "5Y": h_summaries.get("5Y", {}).get("median", None),
         },
+        "prob_1y": float(h_summaries.get("1Y", {}).get("win", 0) * 100) if "1Y" in h_summaries else None,
+        "prob_3y": float(h_summaries.get("3Y", {}).get("win", 0) * 100) if "3Y" in h_summaries else None,
+        "prob_5y": float(h_summaries.get("5Y", {}).get("win", 0) * 100) if "5Y" in h_summaries else None,
+        "quality": float(quality) if np.isfinite(quality) else None,
+        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0)) if (np.isfinite(quality) and "1Y" in h_summaries) else None,
+        "median_1y": h_summaries.get("1Y", {}).get("median", None),
+        "median_3y": h_summaries.get("3Y", {}).get("median", None),
+        "median_5y": h_summaries.get("5Y", {}).get("median", None),
+        "downside_1y": h_summaries.get("1Y", {}).get("p10", None),
+        "n_analogs": int(n_eff),
     }
 
     return row, detail
@@ -1219,7 +1361,7 @@ def main():
         return
 
     res = pd.DataFrame(rows)
-    res = res.sort_values(["final_score", "confidence", "stability"], ascending=False).reset_index(drop=True)
+    res = res.sort_values(["prob_1y", "conviction"], ascending=[False, False]).reset_index(drop=True)
 
     # Embed top10 details in full.json (fewer network calls)
     top10 = res.head(TOP10_EMBED)["ticker"].tolist()
