@@ -469,16 +469,16 @@ function sortItems(items, mode){
     }
   }
 
-  // Broad index ETFs — useful as benchmarks in the table, but not as "picks"
-  const INDEX_ETFS = new Set(["SPY", "QQQ", "DIA", "IWM"]);
+  // Top convictions: quality >= 60, prob_1y >= 65, AND a meaningful pullback.
+  // Without a pullback there's no rebound opportunity — just a good stock at normal prices.
+  const MIN_PULLBACK_FOR_CONVICTION = 20;
 
-  // Top convictions: quality >= 60 AND prob_1y >= 65, excluding index ETFs
   function getConvictions(list){
     return list.filter(it => {
-      if (INDEX_ETFS.has(it.ticker)) return false;
       const q = safeNum(it.quality);
       const p = safeNum(it.prob_1y);
-      return q >= 60 && p >= 65;
+      const w = safeNum(it.washout_today);
+      return q >= 60 && p >= 65 && w >= MIN_PULLBACK_FOR_CONVICTION;
     }).sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
   }
 
