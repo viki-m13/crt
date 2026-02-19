@@ -141,10 +141,10 @@ function outcomeBox(label, s){
   }
   b.innerHTML = `
     <div class="h">${label}</div>
-    <div class="r"><span>Probability of gain</span><strong style="color:${probColor(s.win * 100)}">${Math.round(s.win * 100)}%</strong></div>
-    <div class="r"><span>Typical (median)</span><strong>${fmtPct(s.median)}</strong></div>
-    <div class="r"><span>Downside (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
-    <div class="r"><span>Based on</span><strong>${s.n} similar days</strong></div>
+    <div class="r"><span>Chance of gain</span><strong style="color:${probColor(s.win * 100)}">${Math.round(s.win * 100)}%</strong></div>
+    <div class="r"><span>Typical return</span><strong>${fmtPct(s.median)}</strong></div>
+    <div class="r"><span>Bad case (1 in 10)</span><strong>${fmtPct(s.p10)}</strong></div>
+    <div class="r"><span>Based on</span><strong>${s.n} past cases</strong></div>
   `;
   return b;
 }
@@ -162,15 +162,15 @@ function evidenceSection(detail){
     <summary class="details-summary">
       <div class="evidence-summary-left">
         <span class="section-title">EVIDENCE</span>
-        <span class="ev-sub">Signal analogs vs normal baseline</span>
+        <span class="ev-sub">This setup vs. normal history</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
       <div class="ev-explain">
-        <strong>A</strong> = outcomes after similar past setups (analogs).
-        <strong>B</strong> = normal historical baseline for this stock.
-        Difference shows whether this setup historically added edge.
+        <strong>A</strong> = what happened after similar past pullbacks.
+        <strong>B</strong> = what normally happens for this stock.
+        A bigger gap means this setup has historically produced better-than-average results.
       </div>
       <div class="outcomes ev-grid"></div>
     </div>
@@ -195,10 +195,10 @@ function evidenceSection(detail){
     bx.className = "outbox";
     bx.innerHTML = `
       <div class="h">${label}</div>
-      <div class="r"><span>Prob of gain</span><strong>${Math.round(winA * 100)}% vs ${Math.round(winB * 100)}%</strong></div>
-      <div class="r"><span>Typical</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)}</strong></div>
-      <div class="r"><span>Downside</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)}</strong></div>
-      <div class="r"><span>N</span><strong>${nA} vs ${nB}</strong></div>
+      <div class="r"><span>Chance of gain</span><strong>${Math.round(winA * 100)}% vs ${Math.round(winB * 100)}%</strong></div>
+      <div class="r"><span>Typical return</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)}</strong></div>
+      <div class="r"><span>Bad case</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)}</strong></div>
+      <div class="r"><span>Cases</span><strong>${nA} vs ${nB}</strong></div>
     `;
     gridEl.appendChild(bx);
   }
@@ -251,7 +251,7 @@ function renderCard(container, item, detail){
         <div class="mline"><span>Analogs</span> <strong>${fmtNum0(item.n_analogs)}</strong></div>
       </div>
       <div class="metric">
-        <div class="mline"><span>Washout</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
+        <div class="mline"><span>Pullback</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
       </div>
     </div>
   `;
@@ -272,7 +272,7 @@ function renderCard(container, item, detail){
   }
   if (!ul.children.length){
     const li = document.createElement("li");
-    li.innerHTML = "No explanation available for this ticker today.";
+    li.innerHTML = "No pullback details available for this stock today.";
     ul.appendChild(li);
   }
   left.appendChild(ul);
@@ -294,7 +294,7 @@ function renderCard(container, item, detail){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Final Score</span><span class="legend-note">higher = darker</span></span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Opportunity Score</span><span class="legend-note">darker = stronger signal</span></span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
@@ -413,7 +413,7 @@ function sortItems(items, mode){
       list.sort((a, b) => (a.ticker || "").localeCompare(b.ticker || ""));
       break;
     default:
-      list.sort((a, b) => safeNum(b.prob_1y) - safeNum(a.prob_1y));
+      list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
   }
   return list;
 }
@@ -426,7 +426,7 @@ function sortItems(items, mode){
     full = await loadJSON(DATA_URL);
   } catch (e){
     console.error("loadJSON error:", e);
-    byId("top10").innerHTML = `<div class="footnote">No data yet. Run the GitHub Action to generate <span class="mono">docs/data/full.json</span>.</div>`;
+    byId("top10").innerHTML = `<div class="footnote">No data available yet. The daily scan has not run.</div>`;
     return;
   }
   try {
@@ -434,7 +434,7 @@ function sortItems(items, mode){
   byId("asOf").textContent = formatAsOf(full.as_of);
 
   let items = full.items || [];
-  let sortMode = "prob_1y";
+  let sortMode = "conviction";
 
   function renderTable(list){
     byId("rows").innerHTML = list.map(it => rowHtml(it)).join("");
@@ -451,7 +451,7 @@ function sortItems(items, mode){
     c.innerHTML = "";
     const top = list.slice(0, 10);
     if (top.length === 0){
-      c.innerHTML = `<div class="footnote">No stocks currently meet the conviction threshold.</div>`;
+      c.innerHTML = `<div class="footnote">No stocks meet the conviction threshold today.</div>`;
       return;
     }
     for (const it of top){
@@ -460,7 +460,7 @@ function sortItems(items, mode){
         detail = await loadDetail(it.ticker);
       } catch (err){
         detail = {
-          explain: [`Detail JSON failed to load for <strong>${it.ticker}</strong>. Try a hard refresh.`],
+          explain: [`Details unavailable for <strong>${it.ticker}</strong>. Try refreshing the page.`],
           outcomes: {},
           series: {},
         };
@@ -489,7 +489,7 @@ function sortItems(items, mode){
     } else {
       // Fallback: show top 10 by current sort
       await renderTop10(sorted);
-      byId("convictionNote").textContent = "No stocks meet conviction threshold \u2014 showing top 10 by current sort";
+      byId("convictionNote").textContent = "No stocks meet the conviction threshold today \u2014 showing top 10 by current sort";
     }
   }
 

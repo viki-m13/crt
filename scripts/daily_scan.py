@@ -306,7 +306,7 @@ def selling_deceleration(px: pd.Series) -> float:
 def verdict_line(score: float, confidence: float, stability: float, fragile: bool) -> str:
     s = safe_float(score); c = safe_float(confidence); st = safe_float(stability)
     if not np.isfinite(s) or not np.isfinite(c) or not np.isfinite(st):
-        return "Verdict: Not enough data"
+        return "Verdict: Insufficient data"
 
     strong = (s >= VERDICT["STRONG_SCORE"])
     ok     = (s >= VERDICT["OK_SCORE"])
@@ -316,16 +316,16 @@ def verdict_line(score: float, confidence: float, stability: float, fragile: boo
     ok_s   = (st >= VERDICT["OK_STAB"])
 
     if strong and high_c and high_s and (not fragile):
-        return "Verdict: Strong + stable"
+        return "Verdict: Strong and consistent"
     if strong and (ok_c or high_c) and (not high_s or fragile):
-        return "Verdict: High-score but unstable"
+        return "Verdict: Strong signal, less consistent"
     if ok and (not ok_c):
-        return "Verdict: Promising but low confidence"
+        return "Verdict: Interesting but limited data"
     if ok and ok_c and ok_s and fragile:
-        return "Verdict: Mixed (watch stability)"
+        return "Verdict: Worth watching"
     if ok and ok_c:
-        return "Verdict: Mixed"
-    return "Verdict: Not compelling today"
+        return "Verdict: Moderate"
+    return "Verdict: No clear opportunity today"
 
 # =========================
 # Holdings
@@ -925,7 +925,7 @@ def fmt_rank(p01: float) -> str:
 def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
     hist = feat.loc[:now_idx].copy()
     if len(hist) < 200:
-        return ["Not enough history to explain clearly (need ~1 year+ of daily data)."]
+        return ["Not enough price history yet — need at least one year of daily data."]
 
     dd = safe_float(hist["dd_lt"].iloc[-1])
     pos = safe_float(hist["pos_lt"].iloc[-1])
@@ -943,29 +943,29 @@ def build_explain(feat: pd.DataFrame, now_idx: pd.Timestamp) -> list:
 
     if np.isfinite(dd) and np.isfinite(dd_p):
         lines.append(
-            (dd_p, f"Price is **{dd:.0%} below** its 1-year high (more extreme than **{fmt_rank(dd_p)}** of past days for this stock).")
+            (dd_p, f"**{dd:.0%} off** its 1-year high — a bigger drop than **{fmt_rank(dd_p)}** of trading days.")
         )
 
     if np.isfinite(pos) and np.isfinite(pos_p):
         lines.append(
-            (1.0 - pos_p, f"Price sits in the **bottom {pos*100:.0f}%** of its 1-year range (only about **{fmt_rank(pos_p)}** of past days were this low-in-range or lower).")
+            (1.0 - pos_p, f"Trading near the **bottom of its 1-year range** — lower than **{fmt_rank(1.0 - pos_p)}** of the past year.")
         )
 
     if np.isfinite(idio_dd) and np.isfinite(id_p):
         lines.append(
-            (id_p, f"After removing market moves, the stock-specific drawdown is **~{idio_dd:.0%}** (more extreme than **{fmt_rank(id_p)}** of past days).")
+            (id_p, f"Down **~{idio_dd:.0%} on its own** (after removing broad market moves) — worse than **{fmt_rank(id_p)}** of past days.")
         )
 
     if np.isfinite(volz) and np.isfinite(vz_p) and volz > 1.0:
-        lines.append((vz_p, f"Trading volume is unusually high (higher than **{fmt_rank(vz_p)}** of past days)."))
+        lines.append((vz_p, f"**Unusually heavy trading volume** — more than **{fmt_rank(vz_p)}** of past days."))
 
     if np.isfinite(atrp) and np.isfinite(at_p) and at_p > 0.85:
-        lines.append((at_p, f"Daily price swings are unusually large (bigger than **{fmt_rank(at_p)}** of past days)."))
+        lines.append((at_p, f"**Large daily price swings** — bigger moves than **{fmt_rank(at_p)}** of past days."))
 
     lines = sorted(lines, key=lambda x: x[0], reverse=True)
     out = [txt for _, txt in lines[:3]]
     if not out:
-        out = ["Nothing is extremely washed-out today; this looks like a mild setup rather than a dramatic selloff."]
+        out = ["No significant pullback signals today — this looks like a mild setup."]
     return out
 
 # =========================
@@ -1361,7 +1361,7 @@ def main():
         return
 
     res = pd.DataFrame(rows)
-    res = res.sort_values(["prob_1y", "conviction"], ascending=[False, False]).reset_index(drop=True)
+    res = res.sort_values(["conviction", "prob_1y"], ascending=[False, False]).reset_index(drop=True)
 
     # Embed top10 details in full.json (fewer network calls)
     top10 = res.head(TOP10_EMBED)["ticker"].tolist()
