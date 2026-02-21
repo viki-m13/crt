@@ -304,7 +304,7 @@ function renderCard(container, item, detail){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Rebound Signal</span><span class="legend-note">darker = better setup (higher recovery odds + deeper pullback)</span></span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Opportunity Score</span><span class="legend-note">darker = higher score at that point in time</span></span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
