@@ -192,6 +192,89 @@ function evidenceSection(detail){
   return box;
 }
 
+/* ---------- quality proof section ---------- */
+
+function proofSection(detail){
+  const qp = detail?.quality_parts;
+  const rh = detail?.recovery_history;
+  if (!qp && !rh) return null;
+
+  const box = document.createElement("details");
+  box.className = "details proof-details";
+
+  const hasTrend = qp?.trend != null && Number.isFinite(Number(qp.trend));
+  const hasRecov = qp?.recovery != null && Number.isFinite(Number(qp.recovery));
+  const hasMom   = qp?.momentum != null && Number.isFinite(Number(qp.momentum));
+
+  let barsHtml = "";
+  if (hasTrend || hasRecov || hasMom){
+    barsHtml += `<div class="proof-grid">`;
+    if (hasTrend){
+      const v = Math.round(Number(qp.trend));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Does it usually go up? (45%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    if (hasRecov){
+      const v = Math.round(Number(qp.recovery));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Does it bounce back from drops? (35%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    if (hasMom){
+      const v = Math.round(Number(qp.momentum));
+      barsHtml += `
+        <div class="proof-row">
+          <span class="proof-label">Is the selling slowing down? (20%)</span>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <strong class="proof-val">${v}</strong>
+        </div>`;
+    }
+    barsHtml += `</div>`;
+  }
+
+  let recovHtml = "";
+  if (rh && Number.isFinite(Number(rh.recovery_rate))){
+    const rate = Math.round(Number(rh.recovery_rate) * 100);
+    const nDd = rh.n_drawdowns != null ? Number(rh.n_drawdowns) : null;
+    const nRec = rh.n_recovered != null ? Number(rh.n_recovered) : null;
+    recovHtml = `
+      <div class="proof-recovery">
+        <div class="proof-recov-title">How often has it recovered from big drops?</div>
+        <div class="proof-recov-stats">
+          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--ink)' : '#8b4513'}">${rate}% of the time</strong></div>
+          ${nDd != null ? `<div class="proof-recov-stat"><span>Times it dropped 20%+</span><strong>${nDd}</strong></div>` : ""}
+          ${nRec != null ? `<div class="proof-recov-stat"><span>Times it recovered within 3 years</span><strong>${nRec}</strong></div>` : ""}
+        </div>
+      </div>`;
+  }
+
+  if (!barsHtml && !recovHtml) return null;
+
+  box.innerHTML = `
+    <summary class="details-summary">
+      <div class="proof-summary-left">
+        <span class="section-title">QUALITY BREAKDOWN</span>
+        <span class="ev-sub">Why this stock scored ${detail?.quality != null ? Math.round(Number(detail.quality)) + '/100' : 'its'} quality rating</span>
+      </div>
+      <span class="plus" aria-hidden="true">+</span>
+    </summary>
+    <div class="details-body">
+      <div class="proof-explain">Each bar shows how this stock scores on the three factors that make up its quality rating. Higher = better. The percentages show how much each factor counts.</div>
+      ${barsHtml}
+      ${recovHtml}
+    </div>
+  `;
+
+  return box;
+}
+
 /* ---------- rationale (top 10 only) ---------- */
 
 function buildRationale(item){
@@ -254,6 +337,10 @@ function renderCardBody(body, item, detail, isTop10){
   grid.appendChild(left);
   grid.appendChild(right);
   body.appendChild(grid);
+
+  // Quality proof
+  const proof = proofSection(detail);
+  if (proof) body.appendChild(proof);
 
   // Evidence
   const ev = evidenceSection(detail);
