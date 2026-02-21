@@ -428,7 +428,7 @@ main.wrap{padding-top:6px}
   margin:-6px 0 10px;
 }
 
-/* Quality / conviction badges */
+/* Score badges */
 .badge{
   display:inline-block;
   padding:2px 8px;
@@ -443,9 +443,38 @@ main.wrap{padding-top:6px}
 .badge-med{background:rgba(0,0,0,.06);color:var(--ink);border:1px solid rgba(0,0,0,.12)}
 .badge-low{background:rgba(139,69,19,.08);color:#8b4513;border:1px solid rgba(139,69,19,.18)}
 .badge-na{background:rgba(0,0,0,.04);color:var(--muted);border:1px solid rgba(0,0,0,.08)}
-.badge-conviction{background:rgba(15,61,46,.08);color:var(--green);border:1px solid rgba(15,61,46,.18)}
+/* Opportunity Score badges — prominent, filled */
+.badge-opp-high{background:var(--green);color:#fff;border:1px solid var(--green);font-weight:600}
+.badge-opp-med{background:rgba(15,61,46,.55);color:#fff;border:1px solid rgba(15,61,46,.6)}
+.badge-opp-low{background:rgba(0,0,0,.08);color:var(--muted);border:1px solid rgba(0,0,0,.12)}
 
-.card-badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.card-badges{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center}
+
+.quality-text{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.04em;
+  color:var(--muted);
+}
+
+/* Evidence columns header */
+.ev-cols-header{
+  display:flex;
+  justify-content:flex-end;
+  gap:0;
+  font-size:10px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:4px;
+  padding-bottom:3px;
+  border-bottom:1px solid var(--rule2);
+}
+.ev-cols-header span{width:72px;text-align:right}
+/* Evidence two-column values */
+.ev-grid .outbox .r{display:flex;justify-content:space-between;margin:4px 0;gap:4px}
+.ev-grid .outbox .r strong{font-weight:500;color:var(--ink);width:72px;text-align:right;flex-shrink:0}
+.ev-grid .outbox .r strong.ev-norm{color:var(--muted);font-weight:400}
 
 /* Sortable column headers */
 th.sortable{cursor:pointer;user-select:none}
