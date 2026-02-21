@@ -51,7 +51,15 @@ function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
 function byId(id){ return document.getElementById(id); }
 
-/* ---------- quality badge ---------- */
+/* ---------- score badges ---------- */
+
+function oppBadge(v){
+  if (v === null || v === undefined || !Number.isFinite(Number(v))) return `<span class="badge badge-na">N/A</span>`;
+  const n = Number(v);
+  if (n >= 65) return `<span class="badge badge-opp-high">${Math.round(n)}</span>`;
+  if (n >= 50) return `<span class="badge badge-opp-med">${Math.round(n)}</span>`;
+  return `<span class="badge badge-opp-low">${Math.round(n)}</span>`;
+}
 
 function qualityBadge(q){
   if (q === null || q === undefined || !Number.isFinite(Number(q))) return `<span class="badge badge-na">N/A</span>`;
@@ -162,15 +170,16 @@ function evidenceSection(detail){
     <summary class="details-summary">
       <div class="evidence-summary-left">
         <span class="section-title">EVIDENCE</span>
-        <span class="ev-sub">This setup vs. normal history</span>
+        <span class="ev-sub">Does this pullback actually help?</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
       <div class="ev-explain">
-        <strong>A</strong> = what happened after similar past pullbacks.
-        <strong>B</strong> = what normally happens for this stock.
-        A bigger gap means this setup has historically produced better-than-average results.
+        Each column compares two things: what happened when this stock was in a similar pullback before
+        (<strong>after pullback</strong>) vs. what normally happens on any random day (<strong>any day</strong>).
+        If the "after pullback" numbers are better, it means dips like this have historically been
+        good buying opportunities.
       </div>
       <div class="outcomes ev-grid"></div>
     </div>
@@ -195,10 +204,11 @@ function evidenceSection(detail){
     bx.className = "outbox";
     bx.innerHTML = `
       <div class="h">${label}</div>
-      <div class="r"><span>Chance of gain</span><strong>${Math.round(winA * 100)}% vs ${Math.round(winB * 100)}%</strong></div>
-      <div class="r"><span>Typical return</span><strong>${fmtPct(medA)} vs ${fmtPct(medB)}</strong></div>
-      <div class="r"><span>Bad case</span><strong>${fmtPct(p10A)} vs ${fmtPct(p10B)}</strong></div>
-      <div class="r"><span>Cases</span><strong>${nA} vs ${nB}</strong></div>
+      <div class="ev-cols-header"><span>After pullback</span><span>Any day</span></div>
+      <div class="r"><span>Chance of gain</span><strong>${Math.round(winA * 100)}%</strong><strong class="ev-norm">${Math.round(winB * 100)}%</strong></div>
+      <div class="r"><span>Typical return</span><strong>${fmtPct(medA)}</strong><strong class="ev-norm">${fmtPct(medB)}</strong></div>
+      <div class="r"><span>Bad case</span><strong>${fmtPct(p10A)}</strong><strong class="ev-norm">${fmtPct(p10B)}</strong></div>
+      <div class="r"><span>Cases</span><strong>${nA}</strong><strong class="ev-norm">${nB}</strong></div>
     `;
     gridEl.appendChild(bx);
   }
@@ -227,8 +237,8 @@ function renderCard(container, item, detail){
     <div>
       <div class="ticker">${item.ticker}</div>
       <div class="card-badges">
-        ${qualityBadge(quality)}
-        ${conviction != null && Number.isFinite(Number(conviction)) ? `<span class="badge badge-conviction">Conv ${Math.round(Number(conviction))}</span>` : ""}
+        ${oppBadge(conviction)}
+        <span class="quality-text">Quality ${quality != null ? Math.round(Number(quality)) : "\u2014"}</span>
       </div>
     </div>
     <div class="metrics">
@@ -294,7 +304,7 @@ function renderCard(container, item, detail){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Opportunity Score</span><span class="legend-note">darker = stronger signal</span></span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Rebound Signal</span><span class="legend-note">darker = better setup (higher recovery odds + deeper pullback)</span></span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
@@ -319,15 +329,15 @@ function rowHtml(item){
   return `
     <tr data-ticker="${t}">
       <td class="tcell">${t}</td>
-      <td class="num">${qualityBadge(item.quality)}</td>
+      <td class="num">${oppBadge(item.conviction)}</td>
+      <td class="num">${fmtNum0(item.washout_today)}</td>
       <td class="num" style="color:${probColor(item.prob_1y)};font-weight:600">${fmtPctWhole(item.prob_1y)}</td>
       <td class="num" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</td>
       <td class="num" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</td>
       <td class="num">${fmtPct(item.median_1y)}</td>
       <td class="num">${fmtPct(item.downside_1y)}</td>
       <td class="num">${fmtNum0(item.n_analogs)}</td>
-      <td class="num">${item.conviction != null && Number.isFinite(Number(item.conviction)) ? Math.round(Number(item.conviction)) : "\u2014"}</td>
-      <td class="num">${fmtNum0(item.washout_today)}</td>
+      <td class="num">${fmtNum0(item.quality)}</td>
     </tr>
   `;
 }
@@ -493,7 +503,7 @@ function sortItems(items, mode){
     } else {
       // Fallback: show top 10 by current sort
       await renderTop10(sorted);
-      byId("convictionNote").textContent = "No stocks meet the conviction threshold today \u2014 showing top 10 by current sort";
+      byId("convictionNote").textContent = "No stocks meet the opportunity threshold today \u2014 showing top 10 by current sort";
     }
   }
 
