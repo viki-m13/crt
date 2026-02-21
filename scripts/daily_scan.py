@@ -1042,6 +1042,63 @@ def compute_final_score_series(
     full.loc[s.index] = s.values
     return full.ffill()
 
+
+def _compute_1y_winrate_at(feat: pd.DataFrame, X: pd.DataFrame, regimes: pd.Series,
+                           now_idx: pd.Timestamp, eligible=None) -> float:
+    """1-year win probability from analog matching at a specific historical point."""
+    if now_idx not in X.index or (not X.loc[now_idx].notna().all()):
+        return np.nan
+    y = feat.get("fwd_1Y", None)
+    if y is None:
+        return np.nan
+    analog_idx = select_analogs_regime_balanced(
+        X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS, eligible=eligible)
+    if len(analog_idx) < ANALOG_MIN:
+        analog_idx = select_analogs_regime_balanced(
+            X, y, regimes, now_idx, k=ANALOG_K, min_sep_days=ANALOG_MIN_SEP_DAYS)
+    vals = y.loc[analog_idx].dropna().values.astype(float)
+    vals = np.where(np.isnan(vals), -1.0, vals)  # survivorship fix
+    if len(vals) < ANALOG_MIN:
+        return np.nan
+    return float(np.mean(vals > 0))
+
+
+def compute_conviction_series(
+    feat: pd.DataFrame,
+    X: pd.DataFrame,
+    regimes: pd.Series,
+    start_idx: pd.Timestamp,
+    end_idx: pd.Timestamp,
+    step_bars: int,
+    quality: float,
+    eligible=None,
+) -> pd.Series:
+    """Historical Opportunity Score (quality × 1Y prob) for chart shading.
+
+    Uses today's quality (stable over chart window) and the 1Y win rate
+    from analog matching at each sampled historical point — same formula
+    as the Opportunity Score shown in the badge/table.
+    """
+    if not np.isfinite(quality):
+        return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
+
+    ok_idx = X.index[X.notna().all(axis=1) & feat["px"].notna()]
+    idx = ok_idx[(ok_idx >= start_idx) & (ok_idx <= end_idx)]
+    if len(idx) < 50:
+        return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
+
+    sample_idx = idx[::max(1, int(step_bars))]
+    vals = {}
+    for t in sample_idx:
+        win_1y = _compute_1y_winrate_at(feat, X, regimes, t, eligible=eligible)
+        if np.isfinite(win_1y):
+            vals[t] = float(quality * win_1y)  # conviction = quality × 1Y win rate
+
+    s = pd.Series(vals).sort_index()
+    full = pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
+    full.loc[s.index] = s.values
+    return full.ffill()
+
 # =========================
 # Build one ticker payload
 # =========================
@@ -1210,12 +1267,6 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     # Baseline stats (ALL days) used by the website evidence block (A = analogs, B = normal baseline).
     ev_base = baseline_stats(feat)
 
-    # Keep a FinalScore series for chart shading (sparsely computed).
-    final_series_full = compute_final_score_series(
-        feat, X, regimes, start_idx=feat.index.min(), end_idx=now_idx, step_bars=EVID_SCORE_STEP_BARS,
-        eligible=eligible_topdecile,
-    )
-
     # Series payload for chart window
     cutoff = now_idx - pd.Timedelta(days=PLOT_LAST_DAYS)
     win = feat[(feat.index >= cutoff) & (feat.index <= now_idx)].copy()
@@ -1223,11 +1274,13 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         win = feat.loc[:now_idx].copy()
     px = win["px"].astype(float)
     wash = win["washout_meter"].astype(float)
-    final_series_window = compute_final_score_series(
+
+    # Opportunity Score (conviction) series for chart shading — same formula as the badge.
+    conv_series_window = compute_conviction_series(
         feat, X, regimes, start_idx=cutoff, end_idx=now_idx, step_bars=PLOT_SCORE_STEP_BARS,
-        eligible=eligible_topdecile,
+        quality=quality, eligible=eligible_topdecile,
     )
-    final_win = final_series_window.reindex(win.index).ffill().fillna(0).astype(float)
+    conv_win = conv_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
     # Top-% washed-out (readable): "Top X%" of days by Washout Meter
     wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
@@ -1252,7 +1305,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "dates": [str(x.date()) for x in px.index],
             "prices": [json_float(v) for v in px.values],
             "wash": [json_float(v) for v in wash.values],
-            "final": [json_float(v) for v in final_win.values],
+            "final": [json_float(v) for v in conv_win.values],
         },
         "stability_samples": stab_samples,
         "quality": float(quality) if np.isfinite(quality) else None,
