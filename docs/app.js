@@ -462,15 +462,15 @@ function sortItems(items, mode){
       summary.className = "ticker-row";
       summary.innerHTML = `
         <span class="row-ticker">${item.ticker}</span>
-        <span class="row-cell" data-label="Opp Score">${oppBadge(item.conviction)}</span>
-        <span class="row-cell" data-label="Pullback">${fmtNum0(item.washout_today)}</span>
-        <span class="row-cell" data-label="1Y Prob" style="color:${probColor(item.prob_1y)}">${fmtPctWhole(item.prob_1y)}</span>
-        <span class="row-cell" data-label="3Y Prob" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</span>
-        <span class="row-cell" data-label="5Y Prob" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</span>
-        <span class="row-cell" data-label="Typical">${fmtPct(item.median_1y)}</span>
-        <span class="row-cell" data-label="Bad case">${fmtPct(item.downside_1y)}</span>
-        <span class="row-cell" data-label="Cases">${fmtNum0(item.n_analogs)}</span>
-        <span class="row-cell" data-label="Quality">${fmtNum0(item.quality)}</span>
+        <span class="row-cell">${oppBadge(item.conviction)}</span>
+        <span class="row-cell">${fmtNum0(item.washout_today)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_1y)}">${fmtPctWhole(item.prob_1y)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</span>
+        <span class="row-cell">${fmtPct(item.median_1y)}</span>
+        <span class="row-cell">${fmtPct(item.downside_1y)}</span>
+        <span class="row-cell">${fmtNum0(item.n_analogs)}</span>
+        <span class="row-cell">${fmtNum0(item.quality)}</span>
       `;
       card.appendChild(summary);
 
