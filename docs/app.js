@@ -204,7 +204,7 @@ function evidenceSection(detail){
     bx.className = "outbox";
     bx.innerHTML = `
       <div class="h">${label}</div>
-      <div class="ev-cols-header"><span>After pullback</span><span>Any day</span></div>
+      <div class="ev-cols-header"><span></span><span>After pullback</span><span>Any day</span></div>
       <div class="r"><span>Chance of gain</span><strong>${Math.round(winA * 100)}%</strong><strong class="ev-norm">${Math.round(winB * 100)}%</strong></div>
       <div class="r"><span>Typical return</span><strong>${fmtPct(medA)}</strong><strong class="ev-norm">${fmtPct(medB)}</strong></div>
       <div class="r"><span>Bad case</span><strong>${fmtPct(p10A)}</strong><strong class="ev-norm">${fmtPct(p10B)}</strong></div>
@@ -461,7 +461,7 @@ function sortItems(items, mode){
     c.innerHTML = "";
     const top = list.slice(0, 10);
     if (top.length === 0){
-      c.innerHTML = `<div class="footnote">No stocks meet the conviction threshold today.</div>`;
+      c.innerHTML = `<div class="footnote">No data available yet.</div>`;
       return;
     }
     for (const it of top){
@@ -479,32 +479,13 @@ function sortItems(items, mode){
     }
   }
 
-  // Top convictions: quality >= 60, prob_1y >= 65, AND a meaningful pullback.
-  // Without a pullback there's no rebound opportunity — just a good stock at normal prices.
-  const MIN_PULLBACK_FOR_CONVICTION = 20;
-
-  function getConvictions(list){
-    return list.filter(it => {
-      const q = safeNum(it.quality);
-      const p = safeNum(it.prob_1y);
-      const w = safeNum(it.washout_today);
-      return q >= 60 && p >= 65 && w >= MIN_PULLBACK_FOR_CONVICTION;
-    }).sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
-  }
-
   async function rerender(){
     const sorted = sortItems(items, sortMode);
     renderTable(sorted);
 
-    // Top section shows convictions (quality >= 60 AND prob_1y >= 65)
-    const convictions = getConvictions(sorted);
-    if (convictions.length > 0){
-      await renderTop10(convictions);
-    } else {
-      // Fallback: show top 10 by current sort
-      await renderTop10(sorted);
-      byId("convictionNote").textContent = "No stocks meet the opportunity threshold today \u2014 showing top 10 by current sort";
-    }
+    // Top section always shows the 10 highest Opportunity Scores
+    const byOppScore = [...items].sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
+    await renderTop10(byOppScore);
   }
 
   // Sort button clicks

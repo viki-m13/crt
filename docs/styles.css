@@ -292,6 +292,9 @@ h1{
   margin-top:10px;
   font-family:var(--mono);
   font-size:12px;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
 }
 .evbox{
   padding:10px;
@@ -387,9 +390,9 @@ main.wrap{padding-top:6px}
 
 /* Evidence columns header */
 .ev-cols-header{
-  display:flex;
-  justify-content:flex-end;
-  gap:0;
+  display:grid;
+  grid-template-columns:1fr 80px 80px;
+  gap:4px;
   font-size:10px;
   letter-spacing:.06em;
   text-transform:uppercase;
@@ -398,10 +401,11 @@ main.wrap{padding-top:6px}
   padding-bottom:3px;
   border-bottom:1px solid var(--rule2);
 }
-.ev-cols-header span{width:72px;text-align:right}
+.ev-cols-header span{text-align:right}
 /* Evidence two-column values */
-.ev-grid .outbox .r{display:flex;justify-content:space-between;margin:4px 0;gap:4px}
-.ev-grid .outbox .r strong{font-weight:500;color:var(--ink);width:72px;text-align:right;flex-shrink:0}
+.ev-grid .outbox .r{display:grid;grid-template-columns:1fr 80px 80px;gap:4px;margin:4px 0}
+.ev-grid .outbox .r span:first-child{color:var(--muted)}
+.ev-grid .outbox .r strong{font-weight:500;color:var(--ink);text-align:right}
 .ev-grid .outbox .r strong.ev-norm{color:var(--muted);font-weight:400}
 
 /* Sortable column headers */
