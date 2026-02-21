@@ -90,10 +90,20 @@ function drawGradientLine(canvas, dates, prices, score){
   }
   ctx.stroke();
 
+  // Normalize scores to their own min/max so shading shows variation
+  let minS = Infinity, maxS = -Infinity;
+  for (let i = 0; i < n; i++){
+    const s = Number(score?.[i]);
+    if (!Number.isFinite(s)) continue;
+    if (s < minS) minS = s;
+    if (s > maxS) maxS = s;
+  }
+  const sRange = maxS > minS ? (maxS - minS) : 1;
+
   for (let i = 0; i < n - 1; i++){
     const s = Number(score?.[i]);
     if (!Number.isFinite(s)) continue;
-    const a = clamp01(s / 100);
+    const a = clamp01((s - minS) / sRange);
     if (a <= 0.02) continue;
     ctx.lineWidth = 3.4 * devicePixelRatio;
     ctx.strokeStyle = `rgba(15,61,46,${0.18 + 0.70 * a})`;
@@ -104,8 +114,8 @@ function drawGradientLine(canvas, dates, prices, score){
   }
 
   const lastScore = Number(score?.[n - 1]);
-  const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
-  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70 * a})`;
+  const aNorm = Number.isFinite(lastScore) ? clamp01((lastScore - minS) / sRange) : 0;
+  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70 * aNorm})`;
   ctx.strokeStyle = "rgba(0,0,0,.85)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
