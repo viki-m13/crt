@@ -90,20 +90,10 @@ function drawGradientLine(canvas, dates, prices, score){
   }
   ctx.stroke();
 
-  // Normalize scores to their own min/max so shading shows variation
-  let minS = Infinity, maxS = -Infinity;
-  for (let i = 0; i < n; i++){
-    const s = Number(score?.[i]);
-    if (!Number.isFinite(s)) continue;
-    if (s < minS) minS = s;
-    if (s > maxS) maxS = s;
-  }
-  const sRange = maxS > minS ? (maxS - minS) : 1;
-
   for (let i = 0; i < n - 1; i++){
     const s = Number(score?.[i]);
     if (!Number.isFinite(s)) continue;
-    const a = clamp01((s - minS) / sRange);
+    const a = clamp01(s / 100);
     if (a <= 0.02) continue;
     ctx.lineWidth = 3.4 * devicePixelRatio;
     ctx.strokeStyle = `rgba(15,61,46,${0.18 + 0.70 * a})`;
@@ -114,8 +104,8 @@ function drawGradientLine(canvas, dates, prices, score){
   }
 
   const lastScore = Number(score?.[n - 1]);
-  const aNorm = Number.isFinite(lastScore) ? clamp01((lastScore - minS) / sRange) : 0;
-  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70 * aNorm})`;
+  const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
+  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70 * a})`;
   ctx.strokeStyle = "rgba(0,0,0,.85)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
@@ -341,7 +331,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Opportunity Score</span><span class="legend-note">darker = higher score at that point in time</span></span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Pullback intensity</span><span class="legend-note">darker = deeper pullback</span></span>`;
   right.appendChild(legend);
 
   grid.appendChild(left);
@@ -358,7 +348,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   // Draw chart
   if (series.prices && series.prices.length){
-    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.final));
+    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.wash));
   }
 }
 
