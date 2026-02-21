@@ -104,16 +104,16 @@
         <table class="tbl" id="tbl">
           <thead>
             <tr>
-              <th class="sortable" data-col="ticker">Ticker</th>
-              <th class="num sortable" data-col="conviction">Opp. Score</th>
-              <th class="num sortable" data-col="washout_today">Pullback</th>
-              <th class="num sortable" data-col="prob_1y">1Y Prob</th>
-              <th class="num sortable" data-col="prob_3y">3Y Prob</th>
-              <th class="num sortable" data-col="prob_5y">5Y Prob</th>
-              <th class="num sortable" data-col="median_1y">Typical 1Y</th>
-              <th class="num sortable" data-col="downside_1y">Downside</th>
-              <th class="num sortable" data-col="n_analogs">Past Cases</th>
-              <th class="num sortable" data-col="quality">Quality</th>
+              <th class="sortable" data-col="ticker" title="Stock or crypto symbol">Ticker</th>
+              <th class="num sortable" data-col="conviction" title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</th>
+              <th class="num sortable" data-col="washout_today" title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</th>
+              <th class="num sortable" data-col="prob_1y" title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</th>
+              <th class="num sortable" data-col="prob_3y" title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</th>
+              <th class="num sortable" data-col="prob_5y" title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</th>
+              <th class="num sortable" data-col="median_1y" title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</th>
+              <th class="num sortable" data-col="downside_1y" title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</th>
+              <th class="num sortable" data-col="n_analogs" title="How many similar historical pullbacks the stats are based on. More = more reliable.">Past Cases</th>
+              <th class="num sortable" data-col="quality" title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
