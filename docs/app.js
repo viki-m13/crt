@@ -18,19 +18,10 @@ function fmtPct(x){
 }
 
 function fmtPctWhole(x){
-  // For values already in 0-100 scale (like prob_1y, quality)
   if (x === null || x === undefined || Number.isNaN(x)) return "\u2014";
   const v = Number(x);
   if (!Number.isFinite(v)) return "\u2014";
   return `${Math.round(v)}%`;
-}
-
-function fmtSignedPct(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "\u2014";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "\u2014";
-  const s = Math.round(v * 100);
-  return `${s > 0 ? "+" : ""}${s}%`;
 }
 
 function fmtNum0(x){
@@ -38,13 +29,6 @@ function fmtNum0(x){
   const v = Number(x);
   if (!Number.isFinite(v)) return "\u2014";
   return v.toFixed(0);
-}
-
-function fmtNum1(x){
-  if (x === null || x === undefined || Number.isNaN(x)) return "\u2014";
-  const v = Number(x);
-  if (!Number.isFinite(v)) return "\u2014";
-  return v.toFixed(1);
 }
 
 function clamp01(x){ return Math.max(0, Math.min(1, x)); }
@@ -61,16 +45,7 @@ function oppBadge(v){
   return `<span class="badge badge-opp-low">${Math.round(n)}</span>`;
 }
 
-function qualityBadge(q){
-  if (q === null || q === undefined || !Number.isFinite(Number(q))) return `<span class="badge badge-na">N/A</span>`;
-  const v = Number(q);
-  if (v >= 70) return `<span class="badge badge-high">High ${Math.round(v)}</span>`;
-  if (v >= 45) return `<span class="badge badge-med">Med ${Math.round(v)}</span>`;
-  return `<span class="badge badge-low">Low ${Math.round(v)}</span>`;
-}
-
 function probColor(p){
-  // Returns a CSS color based on probability (0-100)
   if (p === null || p === undefined || !Number.isFinite(Number(p))) return "var(--muted)";
   const v = Number(p);
   if (v >= 75) return "var(--green)";
@@ -238,7 +213,7 @@ function proofSection(detail){
       const v = Math.round(Number(qp.trend));
       barsHtml += `
         <div class="proof-row">
-          <span class="proof-label">Trend (45%)</span>
+          <span class="proof-label">Does it usually go up? (45%)</span>
           <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
@@ -247,7 +222,7 @@ function proofSection(detail){
       const v = Math.round(Number(qp.recovery));
       barsHtml += `
         <div class="proof-row">
-          <span class="proof-label">Recovery (35%)</span>
+          <span class="proof-label">Does it bounce back from drops? (35%)</span>
           <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
@@ -256,7 +231,7 @@ function proofSection(detail){
       const v = Math.round(Number(qp.momentum));
       barsHtml += `
         <div class="proof-row">
-          <span class="proof-label">Momentum (20%)</span>
+          <span class="proof-label">Is the selling slowing down? (20%)</span>
           <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
@@ -271,11 +246,11 @@ function proofSection(detail){
     const nRec = rh.n_recovered != null ? Number(rh.n_recovered) : null;
     recovHtml = `
       <div class="proof-recovery">
-        <div class="proof-recov-title">Drawdown Recovery Track Record</div>
+        <div class="proof-recov-title">How often has it recovered from big drops?</div>
         <div class="proof-recov-stats">
-          <div class="proof-recov-stat"><span>Recovery rate</span><strong style="color:${rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--ink)' : '#8b4513'}">${rate}%</strong></div>
-          ${nDd != null ? `<div class="proof-recov-stat"><span>20%+ drawdowns found</span><strong>${nDd}</strong></div>` : ""}
-          ${nRec != null ? `<div class="proof-recov-stat"><span>Recovered within 3Y</span><strong>${nRec}</strong></div>` : ""}
+          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--ink)' : '#8b4513'}">${rate}% of the time</strong></div>
+          ${nDd != null ? `<div class="proof-recov-stat"><span>Times it dropped 20%+</span><strong>${nDd}</strong></div>` : ""}
+          ${nRec != null ? `<div class="proof-recov-stat"><span>Times it recovered within 3 years</span><strong>${nRec}</strong></div>` : ""}
         </div>
       </div>`;
   }
@@ -285,12 +260,13 @@ function proofSection(detail){
   box.innerHTML = `
     <summary class="details-summary">
       <div class="proof-summary-left">
-        <span class="section-title">QUALITY PROOF</span>
-        <span class="ev-sub">Trend health, recovery history &amp; selling momentum</span>
+        <span class="section-title">QUALITY BREAKDOWN</span>
+        <span class="ev-sub">Why this stock scored ${detail?.quality != null ? Math.round(Number(detail.quality)) + '/100' : 'its'} quality rating</span>
       </div>
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
+      <div class="proof-explain">Each bar shows how this stock scores on the three factors that make up its quality rating. Higher = better. The percentages show how much each factor counts.</div>
       ${barsHtml}
       ${recovHtml}
     </div>
@@ -299,77 +275,47 @@ function proofSection(detail){
   return box;
 }
 
-/* ---------- card rendering ---------- */
+/* ---------- rationale (top 10 only) ---------- */
 
-function renderCard(container, item, detail){
+function buildRationale(item){
+  const pullback = Number(item.washout_today);
+  const prob1y = Number(item.prob_1y);
+  const cases = Number(item.n_analogs);
+  const typical = item.median_1y;
+  const downside = item.downside_1y;
+  const quality = Number(item.quality);
+
+  const parts = [];
+  if (Number.isFinite(pullback) && pullback > 0)
+    parts.push(`Dropped <strong>${fmtNum0(pullback)}/100</strong> from its normal range.`);
+  if (Number.isFinite(cases) && cases > 0 && Number.isFinite(prob1y))
+    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past pullbacks, it was higher 1 year later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
+  if (downside != null && Number.isFinite(Number(downside)))
+    parts.push(`Worst 1-in-10 scenario: <strong>${fmtPct(downside)}</strong>.`);
+  if (Number.isFinite(quality))
+    parts.push(`Quality score: <strong>${fmtNum0(quality)}</strong> — ${quality >= 70 ? "strong stock with a history of bouncing back" : quality >= 45 ? "decent stock, moderate recovery track record" : "weaker stock, less consistent recoveries"}.`);
+
+  return parts.join(" ");
+}
+
+/* ---------- card body (chart + outcomes + evidence) ---------- */
+
+function renderCardBody(body, item, detail, isTop10){
   const series = detail?.series || {};
 
-  const card = document.createElement("div");
-  card.className = "card";
+  // Rationale for top 10
+  if (isTop10){
+    const rat = document.createElement("div");
+    rat.className = "rationale";
+    rat.innerHTML = buildRationale(item);
+    body.appendChild(rat);
+  }
 
-  const prob1y = item.prob_1y;
-  const prob3y = item.prob_3y;
-  const prob5y = item.prob_5y;
-  const quality = item.quality;
-  const conviction = item.conviction;
-
-  const h = document.createElement("div");
-  h.className = "card-head";
-  h.innerHTML = `
-    <div>
-      <div class="ticker">${item.ticker}</div>
-      <div class="card-badges">
-        ${oppBadge(conviction)}
-        <span class="quality-text">Quality ${quality != null ? Math.round(Number(quality)) : "\u2014"}</span>
-      </div>
-    </div>
-    <div class="metrics">
-      <div class="metric">
-        <div class="mline"><span>1Y Prob</span> <strong style="color:${probColor(prob1y)};font-size:16px">${fmtPctWhole(prob1y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>3Y Prob</span> <strong style="color:${probColor(prob3y)}">${fmtPctWhole(prob3y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>5Y Prob</span> <strong style="color:${probColor(prob5y)}">${fmtPctWhole(prob5y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Typical 1Y</span> <strong>${fmtPct(item.median_1y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Downside</span> <strong>${fmtPct(item.downside_1y)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Past Cases</span> <strong>${fmtNum0(item.n_analogs)}</strong></div>
-      </div>
-      <div class="metric">
-        <div class="mline"><span>Pullback</span> <strong>${fmtNum0(item.washout_today)}/100</strong></div>
-      </div>
-    </div>
-  `;
-  card.appendChild(h);
-
+  // Grid: outcomes left, chart right
   const grid = document.createElement("div");
   grid.className = "grid2";
 
   const left = document.createElement("div");
-
-  // Explain bullets
-  const ul = document.createElement("ul");
-  ul.className = "bullets";
-  for (const line of (detail?.explain || [])){
-    const li = document.createElement("li");
-    li.innerHTML = line;
-    ul.appendChild(li);
-  }
-  if (!ul.children.length){
-    const li = document.createElement("li");
-    li.innerHTML = "No pullback details available for this stock today.";
-    ul.appendChild(li);
-  }
-  left.appendChild(ul);
-
-  // Outcome boxes
   const outcomes = document.createElement("div");
   outcomes.className = "outcomes";
   outcomes.appendChild(outcomeBox("1 Year", detail?.outcomes?.["1Y"]));
@@ -377,7 +323,6 @@ function renderCard(container, item, detail){
   outcomes.appendChild(outcomeBox("5 Years", detail?.outcomes?.["5Y"]));
   left.appendChild(outcomes);
 
-  // Chart
   const right = document.createElement("div");
   right.className = "chart";
   const canvas = document.createElement("canvas");
@@ -391,41 +336,20 @@ function renderCard(container, item, detail){
 
   grid.appendChild(left);
   grid.appendChild(right);
-  card.appendChild(grid);
+  body.appendChild(grid);
 
   // Quality proof
   const proof = proofSection(detail);
-  if (proof) card.appendChild(proof);
+  if (proof) body.appendChild(proof);
 
   // Evidence
   const ev = evidenceSection(detail);
-  if (ev) card.appendChild(ev);
+  if (ev) body.appendChild(ev);
 
+  // Draw chart
   if (series.prices && series.prices.length){
     requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.final));
   }
-
-  container.appendChild(card);
-}
-
-/* ---------- table row ---------- */
-
-function rowHtml(item){
-  const t = item.ticker;
-  return `
-    <tr data-ticker="${t}">
-      <td class="tcell">${t}</td>
-      <td class="num">${oppBadge(item.conviction)}</td>
-      <td class="num">${fmtNum0(item.washout_today)}</td>
-      <td class="num" style="color:${probColor(item.prob_1y)};font-weight:600">${fmtPctWhole(item.prob_1y)}</td>
-      <td class="num" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</td>
-      <td class="num" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</td>
-      <td class="num">${fmtPct(item.median_1y)}</td>
-      <td class="num">${fmtPct(item.downside_1y)}</td>
-      <td class="num">${fmtNum0(item.n_analogs)}</td>
-      <td class="num">${fmtNum0(item.quality)}</td>
-    </tr>
-  `;
 }
 
 /* ---------- data loading ---------- */
@@ -487,26 +411,8 @@ function sortItems(items, mode){
     case "prob_5y":
       list.sort((a, b) => safeNum(b.prob_5y) - safeNum(a.prob_5y) || safeNum(b.prob_1y) - safeNum(a.prob_1y));
       break;
-    case "quality":
-      list.sort((a, b) => safeNum(b.quality) - safeNum(a.quality) || safeNum(b.prob_1y) - safeNum(a.prob_1y));
-      break;
     case "conviction":
       list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction) || safeNum(b.prob_1y) - safeNum(a.prob_1y));
-      break;
-    case "washout_today":
-      list.sort((a, b) => safeNum(b.washout_today) - safeNum(a.washout_today));
-      break;
-    case "median_1y":
-      list.sort((a, b) => safeNum(b.median_1y) - safeNum(a.median_1y));
-      break;
-    case "downside_1y":
-      list.sort((a, b) => safeNum(b.downside_1y) - safeNum(a.downside_1y));
-      break;
-    case "n_analogs":
-      list.sort((a, b) => safeNum(b.n_analogs) - safeNum(a.n_analogs));
-      break;
-    case "ticker":
-      list.sort((a, b) => (a.ticker || "").localeCompare(b.ticker || ""));
       break;
     default:
       list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
@@ -522,7 +428,7 @@ function sortItems(items, mode){
     full = await loadJSON(DATA_URL);
   } catch (e){
     console.error("loadJSON error:", e);
-    byId("top10").innerHTML = `<div class="footnote">No data available yet. The daily scan has not run.</div>`;
+    byId("listing").innerHTML = `<div class="footnote">No data available yet. The daily scan has not run.</div>`;
     return;
   }
   try {
@@ -532,46 +438,79 @@ function sortItems(items, mode){
   let items = full.items || [];
   let sortMode = "conviction";
 
-  function renderTable(list){
-    byId("rows").innerHTML = list.map(it => rowHtml(it)).join("");
-  }
-
   async function loadDetail(ticker){
     const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
     if (embedded) return embedded;
     return await loadJSON(`./data/tickers/${ticker}.json`);
   }
 
-  async function renderTop10(list){
-    const c = byId("top10");
+  async function renderListing(sorted){
+    const c = byId("listing");
     c.innerHTML = "";
-    const top = list.slice(0, 10);
-    if (top.length === 0){
-      c.innerHTML = `<div class="footnote">No data available yet.</div>`;
-      return;
-    }
-    for (const it of top){
-      let detail;
-      try {
-        detail = await loadDetail(it.ticker);
-      } catch (err){
-        detail = {
-          explain: [`Details unavailable for <strong>${it.ticker}</strong>. Try refreshing the page.`],
-          outcomes: {},
-          series: {},
-        };
+
+    for (let i = 0; i < sorted.length; i++){
+      const item = sorted[i];
+      const isTop10 = i < 10;
+
+      const card = document.createElement("details");
+      card.className = "ticker-card";
+      card.dataset.ticker = item.ticker;
+      if (isTop10) card.open = true;
+
+      // Summary row (always visible)
+      const summary = document.createElement("summary");
+      summary.className = "ticker-row";
+      summary.innerHTML = `
+        <span class="row-ticker">${item.ticker}</span>
+        <span class="row-cell">${oppBadge(item.conviction)}</span>
+        <span class="row-cell">${fmtNum0(item.washout_today)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_1y)}">${fmtPctWhole(item.prob_1y)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</span>
+        <span class="row-cell" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</span>
+        <span class="row-cell">${fmtPct(item.median_1y)}</span>
+        <span class="row-cell">${fmtPct(item.downside_1y)}</span>
+        <span class="row-cell">${fmtNum0(item.n_analogs)}</span>
+        <span class="row-cell">${fmtNum0(item.quality)}</span>
+      `;
+      card.appendChild(summary);
+
+      // Body (expanded content)
+      const body = document.createElement("div");
+      body.className = "ticker-body";
+      card.appendChild(body);
+
+      // Top 10: load detail immediately
+      if (isTop10){
+        try {
+          const detail = await loadDetail(item.ticker);
+          renderCardBody(body, item, detail, true);
+        } catch (err){
+          body.innerHTML = `<div class="footnote">Details unavailable. Try refreshing.</div>`;
+        }
+      } else {
+        // Lazy load on expand
+        card.addEventListener("toggle", async function(){
+          if (card.open && !card.dataset.loaded){
+            card.dataset.loaded = "true";
+            body.innerHTML = `<div class="footnote" style="padding:10px 0">Loading...</div>`;
+            try {
+              const detail = await loadDetail(item.ticker);
+              body.innerHTML = "";
+              renderCardBody(body, item, detail, false);
+            } catch (err){
+              body.innerHTML = `<div class="footnote">Details unavailable. Try refreshing.</div>`;
+            }
+          }
+        });
       }
-      renderCard(c, it, detail);
+
+      c.appendChild(card);
     }
   }
 
   async function rerender(){
     const sorted = sortItems(items, sortMode);
-    renderTable(sorted);
-
-    // Top section always shows the 10 highest Opportunity Scores
-    const byOppScore = [...items].sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
-    await renderTop10(byOppScore);
+    await renderListing(sorted);
   }
 
   // Sort button clicks
@@ -583,39 +522,8 @@ function sortItems(items, mode){
     });
   });
 
-  // Column header clicks for sorting
-  document.querySelectorAll("th.sortable").forEach(th => {
-    th.style.cursor = "pointer";
-    th.addEventListener("click", async () => {
-      const col = th.dataset.col;
-      if (col){
-        sortMode = col;
-        setSortButtons(sortMode);
-        await rerender();
-      }
-    });
-  });
-
   setSortButtons(sortMode);
   await rerender();
-
-  // Table row click -> show that ticker's card at top
-  byId("rows").addEventListener("click", async (e) => {
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-    const t = tr.dataset.ticker;
-    if (!t) return;
-
-    document.querySelectorAll("#rows tr").forEach(r => r.classList.remove("highlight"));
-    tr.classList.add("highlight");
-
-    const sorted = sortItems(items, sortMode);
-    const idx = sorted.findIndex(x => x.ticker === t);
-    if (idx < 0) return;
-    const rotated = [sorted[idx], ...sorted.filter((_, i) => i !== idx)];
-    await renderTop10(rotated);
-    document.querySelector(".masthead").scrollIntoView({ behavior: "smooth" });
-  });
 
   // Search
   function applySearch(){
@@ -626,8 +534,7 @@ function sortItems(items, mode){
     }
     const sorted = sortItems(items, sortMode);
     const filtered = sorted.filter(x => x.ticker.includes(q));
-    renderTable(filtered);
-    (async () => { await renderTop10(filtered); })();
+    renderListing(filtered);
   }
 
   byId("go").addEventListener("click", applySearch);
@@ -635,6 +542,6 @@ function sortItems(items, mode){
 
   } catch (err){
     console.error("Rebound Ledger render error:", err);
-    byId("top10").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
+    byId("listing").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
   }
 })();
