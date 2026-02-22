@@ -545,7 +545,7 @@ strong{font-weight:600}
   font-size:12px;
 }
 .proof-row{display:contents}
-.proof-label{color:var(--muted);font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.proof-label{color:var(--muted);font-size:11px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .proof-bar-track{height:6px;background:rgba(0,0,0,.06);overflow:hidden}
 .proof-bar-fill{height:100%;transition:width .4s ease-in-out}
 .proof-val{text-align:right;font-weight:500;color:var(--ink);font-size:12px}
@@ -699,7 +699,7 @@ strong{font-weight:600}
   .explain-grid{grid-template-columns:1fr}
   .outcomes{grid-template-columns:1fr}
   .ev-grid{grid-template-columns:1fr}
-  .proof-grid{grid-template-columns:180px 1fr 36px}
+  .proof-grid{grid-template-columns:minmax(0,240px) 1fr 36px}
   .bt-canvas{height:220px}
   .bt-table{font-size:11px}
   .bt-table th,.bt-table td{padding:6px 7px}
@@ -733,6 +733,7 @@ strong{font-weight:600}
   .ticker-row .row-cell:nth-child(9){order:8}
   .ticker-row .row-cell:nth-child(10){order:9}
   .proof-grid{grid-template-columns:1fr 1fr 36px}
+  .proof-label{white-space:normal}
   .bt-canvas{height:180px}
   .bt-hold-tabs{flex-wrap:wrap}
   .bt-legend{gap:10px;font-size:10px}
