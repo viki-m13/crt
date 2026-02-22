@@ -96,7 +96,7 @@ VERDICT = dict(
 )
 
 # Final score knobs (dominant washout but still requires edge)
-MIN_WASHOUT_TODAY = 55.0      # gate for the scan (set 0 to disable). ALWAYS_PLOT bypasses.
+MIN_WASHOUT_TODAY = 0         # disabled — show all tickers, ranked by opportunity score
 FINAL_WASH_FLOOR  = 0.35      # baseline multiplier even if washout is low
 FINAL_WASH_WEIGHT = 0.65      # how much washout amplifies the edge score
 
