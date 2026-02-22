@@ -404,6 +404,13 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
 .bt-neg{color:#8b4513 !important}
 .bt-note{color:var(--muted);font-size:12px;font-family:var(--mono);margin-top:10px}
 .bt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bt-trades-section{margin-top:18px}
+.bt-trades-header{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.bt-trades-title{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:var(--ink)}
+.bt-trades-sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.bt-trades-table{font-size:11px}
+.bt-trades-group td{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:400;background:rgba(0,0,0,.02);padding:5px 10px;border-bottom:1px solid var(--rule2)}
+.bt-trade-open td{opacity:.75;font-style:italic}
 
 @media (max-width: 880px){
   .bt-metrics{grid-template-columns:repeat(2,1fr)}
