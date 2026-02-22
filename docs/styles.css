@@ -336,7 +336,9 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
   margin-left:10px;
   white-space:nowrap;
 }
+.search-status:not(:empty):not(.error){animation:pulse 1.5s ease-in-out infinite}
 .search-status.error{color:#8b4513}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* On-demand card (searched ticker) */
 .ondemand-card{border-top:2px solid var(--green) !important}

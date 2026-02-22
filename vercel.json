@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/analyze.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "250mb" }
+    },
+    {
+      "src": "docs/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/analyze.py" },
+    { "src": "/(.*)", "dest": "/docs/$1" }
+  ],
+  "functions": {
+    "api/analyze.py": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
+}
