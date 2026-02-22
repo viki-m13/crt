@@ -339,7 +339,13 @@ function buildRationale(item){
   return parts.join(" ");
 }
 
-/* ---------- card body (chart + outcomes + evidence) ---------- */
+/* ---------- card body (unified detail panel) ---------- */
+
+function fmtConfidence(v){
+  if (v == null || !Number.isFinite(v)) return "\u2014";
+  const pct = v <= 1 ? v * 100 : v;
+  return Math.round(pct) + "%";
+}
 
 function renderCardBody(body, item, detail, isTop10){
   const series = detail?.series || {};
@@ -352,34 +358,65 @@ function renderCardBody(body, item, detail, isTop10){
     body.appendChild(rat);
   }
 
-  // Grid: outcomes table left, chart right
-  const grid = document.createElement("div");
-  grid.className = "grid2";
+  // Unified detail panel
+  const panel = document.createElement("div");
+  panel.className = "detail-panel";
 
-  const left = document.createElement("div");
-  const tbl = outcomesTable(detail?.outcomes);
-  if (tbl) left.appendChild(tbl);
+  // -- Header: verdict + supplementary metrics (info NOT in summary row) --
+  const verdict = detail?.verdict || "";
+  const risk = detail?.risk || "\u2014";
+  const conf = detail?.confidence;
+  const stab = detail?.stability;
 
-  const right = document.createElement("div");
-  right.className = "chart";
+  const header = document.createElement("div");
+  header.className = "detail-header";
+  header.innerHTML = `
+    ${verdict ? `<div class="detail-verdict">${verdict}</div>` : ""}
+    <div class="detail-metrics">
+      <div class="detail-metric"><span class="detail-metric-label">Risk</span><span class="detail-metric-value">${risk}</span></div>
+      <div class="detail-metric"><span class="detail-metric-label">Confidence</span><span class="detail-metric-value">${fmtConfidence(conf)}</span></div>
+      <div class="detail-metric"><span class="detail-metric-label">Stability</span><span class="detail-metric-value">${fmtConfidence(stab)}</span></div>
+    </div>
+  `;
+  panel.appendChild(header);
+
+  // -- Chart --
+  const chartWrap = document.createElement("div");
+  chartWrap.className = "detail-chart";
   const canvas = document.createElement("canvas");
-  canvas.className = "canvas";
-  right.appendChild(canvas);
+  canvas.className = "detail-canvas";
+  chartWrap.appendChild(canvas);
 
-  const legend = document.createElement("div");
-  legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Pullback intensity</span><span class="legend-note">darker = deeper pullback</span></span>`;
-  right.appendChild(legend);
+  // Price + date footer
+  const chartFooter = document.createElement("div");
+  chartFooter.className = "detail-chart-footer";
+  if (series.prices?.length){
+    const lastPrice = Number(series.prices[series.prices.length - 1]);
+    const lastDate = series.dates?.[series.dates.length - 1] || "";
+    if (Number.isFinite(lastPrice)){
+      chartFooter.innerHTML = `<span class="detail-chart-price">$${lastPrice.toFixed(2)}</span><span class="detail-chart-date">${lastDate}</span>`;
+    }
+  }
+  const legendHtml = `<span class="detail-chart-legend"><span class="legend-bar"></span>Pullback intensity</span>`;
+  chartFooter.insertAdjacentHTML("beforeend", legendHtml);
+  chartWrap.appendChild(chartFooter);
+  panel.appendChild(chartWrap);
 
-  grid.appendChild(left);
-  grid.appendChild(right);
-  body.appendChild(grid);
+  // -- Outcomes table --
+  const tbl = outcomesTable(detail?.outcomes);
+  if (tbl){
+    const tblWrap = document.createElement("div");
+    tblWrap.className = "detail-outcomes";
+    tblWrap.appendChild(tbl);
+    panel.appendChild(tblWrap);
+  }
 
-  // Quality proof
+  body.appendChild(panel);
+
+  // Quality + Evidence below the panel
   const proof = proofSection(detail);
   if (proof) body.appendChild(proof);
 
-  // Evidence
   const ev = evidenceSection(detail);
   if (ev) body.appendChild(ev);
 
