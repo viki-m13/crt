@@ -478,17 +478,18 @@ async function runBacktest(full, loadDetailFn){
   const refPrices = spyDetail.series.prices;
 
   // For each ticker, build aligned arrays keyed by date
-  const tickerData = {};  // ticker -> { prices: Map<date,price>, wash: Map<date,wash> }
+  const tickerData = {};  // ticker -> { prices, oppScore (series.final = historical conviction) }
   for (const tk of tickers){
     const d = allDetails[tk];
     if (!d || !d.series) continue;
     const s = d.series;
-    const pm = new Map(), wm = new Map();
+    const pm = new Map(), fm = new Map();
     for (let i = 0; i < s.dates.length; i++){
       if (s.prices[i] != null) pm.set(s.dates[i], s.prices[i]);
-      if (s.wash[i] != null) wm.set(s.dates[i], s.wash[i]);
+      // series.final = historical opportunity score (quality × 1Y win probability)
+      if (s.final && s.final[i] != null && s.final[i] > 0) fm.set(s.dates[i], s.final[i]);
     }
-    tickerData[tk] = { prices: pm, wash: wm, quality: d.quality || 0 };
+    tickerData[tk] = { prices: pm, oppScore: fm };
   }
 
   // Get monthly boundaries (first trading day of each month)
@@ -553,19 +554,15 @@ async function runBacktest(full, loadDetailFn){
       const sellIdx = fwdIndex(mIdx, holdYears);
       if (sellIdx < 0) continue; // not enough future data
 
-      // Rank tickers by opportunity score at this date
-      // Opportunity = washout * quality_factor (approximate the conviction score)
+      // Rank tickers by historical opportunity score (conviction = quality × 1Y win prob)
       const ranked = [];
       for (const tk of tickers){
         if (tk === "SPY" || tk === "DIA" || tk === "QQQ" || tk === "IWM") continue;
         const td = tickerData[tk];
         if (!td) continue;
-        const wash = td.wash.get(date);
+        const score = td.oppScore.get(date);
         const price = td.prices.get(date);
-        if (wash == null || price == null || wash <= 0) continue;
-        // Simulate conviction: combine wash depth with quality
-        const q = td.quality || 50;
-        const score = wash * 0.6 + q * 0.4;
+        if (score == null || price == null || score <= 0) continue;
         ranked.push({ ticker: tk, score, price });
       }
       ranked.sort((a, b) => b.score - a.score);
@@ -639,12 +636,13 @@ async function runBacktest(full, loadDetailFn){
       return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
     })() : 0;
 
-    // Max drawdown on equity curve
-    let peak = 0, maxDd = 0;
+    // Max drawdown on return ratio (value / invested), not absolute value
+    // Absolute value almost never drops in DCA since new capital keeps flowing in
+    let peakRatio = 0, maxDd = 0;
     for (const pt of equityCurve){
-      const v = pt.strategyValue;
-      if (v > peak) peak = v;
-      const dd = peak > 0 ? (peak - v) / peak : 0;
+      const ratio = pt.invested > 0 ? pt.strategyValue / pt.invested : 1;
+      if (ratio > peakRatio) peakRatio = ratio;
+      const dd = peakRatio > 0 ? (peakRatio - ratio) / peakRatio : 0;
       if (dd > maxDd) maxDd = dd;
     }
 
@@ -729,14 +727,42 @@ function drawBacktestChart(canvas, curves, labels, colors){
     ctx.fillText(label, pad.left - 6 * dpr, y + 3 * dpr);
   }
 
-  // X-axis date labels
+  // X-axis date labels — show only year boundaries, short format
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(0,0,0,.35)";
-  const dateInterval = Math.max(1, Math.floor(n / 6));
-  for (let i = 0; i < n; i += dateInterval){
+  const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  // Pick ~4-6 evenly spaced labels that land on year or half-year boundaries
+  const allDates = curves[0].map(pt => pt.date);
+  const shownYears = new Set();
+  const labelIdxs = [];
+  for (let i = 0; i < n; i++){
+    const yr = allDates[i].slice(0, 4);
+    const mo = allDates[i].slice(5, 7);
+    if (mo === "01" && !shownYears.has(yr)){
+      shownYears.add(yr);
+      labelIdxs.push(i);
+    }
+  }
+  // Fallback: if too few labels, space evenly
+  if (labelIdxs.length < 2){
+    const step = Math.max(1, Math.floor(n / 5));
+    for (let i = 0; i < n; i += step) labelIdxs.push(i);
+  }
+  // Thin out if too many labels (keep max 7)
+  while (labelIdxs.length > 7){
+    const thinned = [];
+    for (let i = 0; i < labelIdxs.length; i++){
+      if (i % 2 === 0 || i === labelIdxs.length - 1) thinned.push(labelIdxs[i]);
+    }
+    labelIdxs.length = 0;
+    labelIdxs.push(...thinned);
+  }
+  for (const i of labelIdxs){
     const x = xAt(i);
-    const d = curves[0][i].date;
-    ctx.fillText(d.slice(0, 7), x, h - 6 * dpr);
+    const d = allDates[i];
+    const mo = parseInt(d.slice(5, 7), 10) - 1;
+    const yr = d.slice(2, 4); // '21
+    ctx.fillText(`${MONTH_NAMES[mo]} '${yr}`, x, h - 6 * dpr);
   }
 
   // Invested line (dashed)
