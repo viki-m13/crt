@@ -52,7 +52,7 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
 
 /* Controls — search bar + sort */
 .controls{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.search{display:flex;align-items:center;flex:1;max-width:440px;min-width:0}
+.search{display:flex;align-items:center;flex:1;max-width:440px;min-width:0;flex-wrap:wrap}
 .search-input{
   flex:1;min-width:0;
   padding:10px 12px;
@@ -133,109 +133,51 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
 .rationale strong{color:var(--ink);font-weight:600}
 
 /* ============================================================
-   Detail panel — unified card with header, chart, outcomes
+   Chart
    ============================================================ */
 
-.detail-panel{
-  border:1px solid var(--rule2);
-  border-radius:10px;
-  overflow:hidden;
-  margin-bottom:14px;
-  background:#fff;
-}
-
-/* Header: verdict + risk/confidence/stability */
-.detail-header{
-  padding:14px 18px;
-  border-bottom:1px solid var(--rule2);
-  background:rgba(0,0,0,.018);
-}
-.detail-verdict{
-  font-size:14px;
-  font-weight:600;
-  color:var(--green);
-  margin-bottom:10px;
-  line-height:1.3;
-}
-.detail-metrics{
-  display:flex;
-  gap:24px;
-  flex-wrap:wrap;
-}
-.detail-metric{
-  display:flex;
-  gap:6px;
-  align-items:baseline;
-}
-.detail-metric-label{
-  font-family:var(--mono);
-  font-size:10px;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--muted);
-}
-.detail-metric-value{
-  font-family:var(--mono);
-  font-size:13px;
-  font-weight:500;
-  color:var(--ink);
-}
-
-/* Chart inside detail panel */
-.detail-chart{
-  padding:16px 18px 12px;
-  border-bottom:1px solid var(--rule2);
-}
-.detail-canvas{
+.chart{
   width:100%;
-  height:200px;
-  display:block;
-}
-.detail-chart-footer{
+  position:relative;
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-top:10px;
-  gap:12px;
-  flex-wrap:wrap;
+  flex-direction:column;
+  padding-bottom:52px;
+  margin-bottom:4px;
 }
-.detail-chart-price{
+.canvas{width:100%;height:200px;display:block}
+
+.chart-legend{
+  position:absolute;right:0;bottom:6px;
+  display:flex;align-items:center;justify-content:flex-end;gap:10px;
+  font-size:12px;color:var(--muted);user-select:none;
+  padding:8px 10px;border:1px solid var(--rule2);border-radius:999px;
+  background:rgba(251,250,247,.92);backdrop-filter:blur(6px);
+}
+.legend-bar{width:44px;height:10px;border-radius:10px;border:1px solid var(--rule2);background:linear-gradient(90deg,rgba(15,61,46,.10),rgba(15,61,46,.85))}
+.legend-text{display:flex;flex-direction:column;line-height:1.05}
+.legend-label{letter-spacing:.04em}
+.legend-note{color:var(--muted);margin-top:2px}
+
+/* Price line below chart */
+.chart-price-line{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin-bottom:14px;
+}
+.chart-price-val{
   font-family:var(--mono);
   font-size:18px;
   font-weight:600;
   color:var(--ink);
-  letter-spacing:-.01em;
 }
-.detail-chart-date{
+.chart-price-date{
   font-family:var(--mono);
   font-size:11px;
   color:var(--muted);
-  margin-left:8px;
-}
-.detail-chart-legend{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--mono);
-  font-size:11px;
-  color:var(--muted);
-  letter-spacing:.03em;
-}
-.legend-bar{
-  width:36px;height:8px;border-radius:8px;
-  border:1px solid var(--rule2);
-  background:linear-gradient(90deg,rgba(15,61,46,.10),rgba(15,61,46,.85));
-  flex-shrink:0;
 }
 
-/* Outcomes table inside detail panel */
-.detail-outcomes{padding:0}
-.detail-outcomes .outcomes-table{
-  border:none;
-  border-radius:0;
-}
-
-/* Outcome table (shared) */
+/* Outcome table (used by evidence section) */
 .outcomes-table{
   font-family:var(--mono);
   font-size:12px;
@@ -271,7 +213,7 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
 }
 .outcomes-table tr:last-child td{border-bottom:none}
 
-/* Legacy outcome boxes (used by evidence section) */
+/* Outcome boxes (used by evidence section) */
 .outcomes{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -420,7 +362,6 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
   font-size:12px;
   color:var(--muted);
   margin-left:10px;
-  white-space:nowrap;
 }
 .search-status:not(:empty):not(.error){animation:pulse 1.5s ease-in-out infinite}
 .search-status.error{color:#8b4513}
@@ -469,8 +410,6 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
   .proof-grid{grid-template-columns:1fr 1fr 36px}
   .controls{flex-direction:column;align-items:stretch;gap:10px}
   .search{max-width:100%}
+  .search-status{flex-basis:100%;margin-left:0;margin-top:4px}
   .sort{justify-content:center}
-  .detail-metrics{gap:14px}
-  .detail-header{padding:12px 14px}
-  .detail-chart{padding:12px 14px 10px}
 }
