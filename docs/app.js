@@ -57,7 +57,7 @@ function probColor(p){
 
 /* ---------- chart ---------- */
 
-function drawGradientLine(canvas, dates, prices, wash, score){
+function drawGradientLine(canvas, dates, prices, score){
   const ctx = canvas.getContext("2d");
   const w = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
   const h = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
@@ -91,14 +91,15 @@ function drawGradientLine(canvas, dates, prices, wash, score){
   }
   ctx.stroke();
 
-  // Green overlay: only during pullbacks (wash >= 10), intensity = opportunity score
+  // Green overlay: intensity = opportunity score (quality × 1Y win rate)
+  // Uses squared curve so moderate scores are subtle, only high scores pop
   for (let i = 0; i < n - 1; i++){
-    const w = Number(wash?.[i]);
-    if (!Number.isFinite(w) || w < 10) continue;
     const s = Number(score?.[i]);
-    const a = Number.isFinite(s) ? clamp01(s / 100) : 0.3;
+    if (!Number.isFinite(s) || s <= 0) continue;
+    const t = clamp01(s / 100);
+    const a = t * t;  // squared: 40→0.16, 60→0.36, 75→0.56
     ctx.lineWidth = 3 * devicePixelRatio;
-    ctx.strokeStyle = `rgba(6,78,43,${0.12 + 0.65 * a})`;
+    ctx.strokeStyle = `rgba(6,78,43,${0.08 + 0.72 * a})`;
     ctx.beginPath();
     ctx.moveTo(xAt(i), yAt(prices[i]));
     ctx.lineTo(xAt(i + 1), yAt(prices[i + 1]));
@@ -388,7 +389,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   // Draw chart
   if (series.prices && series.prices.length){
-    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.wash, series.final));
+    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.final));
   }
 }
 
