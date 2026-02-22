@@ -52,7 +52,7 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
 
 /* Controls — search bar + sort */
 .controls{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.search{display:flex;align-items:center;flex:1;max-width:440px;min-width:0;flex-wrap:wrap}
+.search{display:flex;align-items:center;max-width:350px;min-width:0;flex-wrap:wrap}
 .search-input{
   flex:1;min-width:0;
   padding:10px 12px;
@@ -404,9 +404,21 @@ h1{margin:6px 0 8px;font-weight:600;font-size:42px;letter-spacing:-.01em}
   .meta-row:last-child .meta-value{white-space:normal;text-align:right}
   .listing-header{display:none}
   .ticker-row{grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px}
-  .row-ticker{grid-column:1/-1;font-size:14px;margin-bottom:2px}
+  .row-ticker{grid-column:1/-1;font-size:14px;margin-bottom:2px;order:0}
   .row-cell{display:flex;justify-content:space-between;align-items:center;text-align:right}
   .row-cell::before{content:attr(data-label);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:400}
+  /* Reorder for mobile so related metrics pair up in 2-col grid:
+     Left column: Opp Score, 1Y Prob, 3Y Prob, 5Y Prob, Quality
+     Right column: Pullback, Typical, Bad case, Cases */
+  .ticker-row .row-cell:nth-child(2){order:1}   /* Opp Score */
+  .ticker-row .row-cell:nth-child(3){order:2}   /* Pullback */
+  .ticker-row .row-cell:nth-child(4){order:3}   /* 1Y Prob */
+  .ticker-row .row-cell:nth-child(7){order:4}   /* Typical (pairs with 1Y) */
+  .ticker-row .row-cell:nth-child(5){order:5}   /* 3Y Prob */
+  .ticker-row .row-cell:nth-child(8){order:6}   /* Bad case (pairs with 3Y) */
+  .ticker-row .row-cell:nth-child(6){order:7}   /* 5Y Prob */
+  .ticker-row .row-cell:nth-child(9){order:8}   /* Cases */
+  .ticker-row .row-cell:nth-child(10){order:9}  /* Quality */
   .proof-grid{grid-template-columns:1fr 1fr 36px}
   .controls{flex-direction:column;align-items:stretch;gap:10px}
   .search{max-width:100%}
