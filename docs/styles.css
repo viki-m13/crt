@@ -338,7 +338,8 @@ strong{font-weight:600}
   color:var(--muted);
   cursor:default;
 }
-.listing-header span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listing-header span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.listing-header span:first-child{text-align:left}
 
 /* Ticker card = <details> */
 .ticker-card{border:none;padding:0;background:transparent}
