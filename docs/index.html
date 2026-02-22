@@ -59,46 +59,7 @@
     </div>
   </section>
 
-  <!-- ===== SCREENER / LISTING (moved above how-it-works for visibility) ===== -->
-  <section class="content-section listing-section" id="listing-section">
-    <div class="section-inner">
-
-      <div class="controls">
-        <div class="search">
-          <label for="q" class="visually-hidden">Search ticker</label>
-          <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
-          <button id="go" class="btn">Analyze</button>
-        </div>
-        <div class="sort">
-          <span class="sort-label">Sort</span>
-          <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
-          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
-          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
-        </div>
-      </div>
-
-      <div class="listing-header">
-        <span title="Stock or crypto symbol">Ticker</span>
-        <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
-        <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
-        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
-        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
-        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
-        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
-        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
-        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
-        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
-      </div>
-      <div id="listing"></div>
-      <div class="footnote">
-        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ===== HOW IT WORKS (collapsed by default) ===== -->
+  <!-- ===== HOW IT WORKS & BACKTEST (collapsed by default) ===== -->
   <section class="content-section" id="how-it-works">
     <div class="section-inner">
 
@@ -167,6 +128,45 @@
           </div>
         </div>
       </details>
+
+    </div>
+  </section>
+
+  <!-- ===== SCREENER / LISTING ===== -->
+  <section class="content-section listing-section" id="listing-section">
+    <div class="section-inner">
+
+      <div class="controls">
+        <div class="search">
+          <label for="q" class="visually-hidden">Search ticker</label>
+          <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
+          <button id="go" class="btn">Analyze</button>
+        </div>
+        <div class="sort">
+          <span class="sort-label">Sort</span>
+          <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
+          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
+          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
+          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
+        </div>
+      </div>
+
+      <div class="listing-header">
+        <span title="Stock or crypto symbol">Ticker</span>
+        <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
+        <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
+        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
+        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
+        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
+        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
+        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
+        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
+        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
+      </div>
+      <div id="listing"></div>
+      <div class="footnote">
+        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
+      </div>
 
     </div>
   </section>
