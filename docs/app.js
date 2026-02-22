@@ -564,7 +564,7 @@ async function runBacktest(full, loadDetailFn){
       // Rank tickers by normalized win probability (quality bias removed)
       const ranked = [];
       for (const tk of tickers){
-        if (tk === "SPY" || tk === "DIA" || tk === "QQQ" || tk === "IWM") continue;
+        if (tk === "SPY" || tk === "DIA" || tk === "QQQ" || tk === "IWM" || tk === "BTC-USD" || tk === "ETH-USD") continue;
         const td = tickerData[tk];
         if (!td) continue;
         const score = td.oppScore.get(date);
