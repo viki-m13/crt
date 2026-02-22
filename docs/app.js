@@ -920,37 +920,64 @@ function renderBacktestUI(results){
     tableWrap.appendChild(tbl);
     container.appendChild(tableWrap);
 
-    // Recent trades table (using Top 5 strategy)
+    // Trade log section (using Top 5 strategy)
     const top5 = data[5];
     if (top5){
-      const closed = (top5.tradeLog || []).slice().sort((a, b) => b.sellDate.localeCompare(a.sellDate));
-      const open = (top5.openTrades || []).slice().sort((a, b) => b.buyDate.localeCompare(a.buyDate));
-      const hasAny = closed.length > 0 || open.length > 0;
+      const closed = (top5.tradeLog || []).slice();
+      const open = (top5.openTrades || []).slice();
+      const allTrades = [...closed.map(t => ({...t, open: false})), ...open.map(t => ({...t, open: true}))];
+      const hasAny = allTrades.length > 0;
 
       if (hasAny){
         const tradesSection = document.createElement("div");
         tradesSection.className = "bt-trades-section";
 
-        const totalTrades = closed.length + open.length;
-        const winCount = closed.filter(t => t.ret > 0).length;
-        const winPct = closed.length > 0 ? ((winCount / closed.length) * 100).toFixed(0) : "—";
+        // Compute aggregate stats over ALL trades
+        const allRets = allTrades.map(t => t.ret);
+        const totalCount = allTrades.length;
+        const closedCount = closed.length;
+        const winCount = allTrades.filter(t => t.ret > 0).length;
+        const winPct = totalCount > 0 ? ((winCount / totalCount) * 100).toFixed(0) : "\u2014";
+        const avgRet = totalCount > 0 ? allRets.reduce((s, r) => s + r, 0) / totalCount : 0;
+        const sortedRets = allRets.slice().sort((a, b) => a - b);
+        const medRet = sortedRets.length > 0 ? (sortedRets.length % 2
+          ? sortedRets[Math.floor(sortedRets.length / 2)]
+          : (sortedRets[sortedRets.length / 2 - 1] + sortedRets[sortedRets.length / 2]) / 2) : 0;
+        const bestRet = sortedRets.length > 0 ? sortedRets[sortedRets.length - 1] : 0;
+        const worstRet = sortedRets.length > 0 ? sortedRets[0] : 0;
 
         const hdr = document.createElement("div");
         hdr.className = "bt-trades-header";
-        hdr.innerHTML = `<span class="bt-trades-title">RECENT TRADES</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold &bull; showing 20 of ${totalTrades} &bull; ${winPct}% win rate</span>`;
+        hdr.innerHTML = `<span class="bt-trades-title">TRADE LOG</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold &bull; ${totalCount} trades (${closedCount} closed, ${open.length} open)</span>`;
         tradesSection.appendChild(hdr);
 
+        // Aggregate stats row
+        const statsRow = document.createElement("div");
+        statsRow.className = "bt-trades-stats";
+        const fmtPct = (v) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+        statsRow.innerHTML = `
+          <span class="bt-ts"><b>Win rate:</b> ${winPct}%</span>
+          <span class="bt-ts"><b>Avg return:</b> <span class="${avgRet >= 0 ? "bt-pos" : "bt-neg"}">${fmtPct(avgRet)}</span></span>
+          <span class="bt-ts"><b>Median:</b> <span class="${medRet >= 0 ? "bt-pos" : "bt-neg"}">${fmtPct(medRet)}</span></span>
+          <span class="bt-ts"><b>Best:</b> <span class="bt-pos">${fmtPct(bestRet)}</span></span>
+          <span class="bt-ts"><b>Worst:</b> <span class="bt-neg">${fmtPct(worstRet)}</span></span>
+        `;
+        tradesSection.appendChild(statsRow);
+
+        // Build trade rows: open positions, then recent closed
         const tradesTbl = document.createElement("table");
         tradesTbl.className = "bt-perf-table bt-trades-table";
 
-        // Show open positions first, then most recent closed trades
+        const recentClosed = closed.slice().sort((a, b) => b.sellDate.localeCompare(a.sellDate));
+        const openSorted = open.slice().sort((a, b) => b.buyDate.localeCompare(a.buyDate));
+
         const MAX_ROWS = 20;
         let rows = "";
         let shown = 0;
 
-        if (open.length > 0){
+        if (openSorted.length > 0){
           rows += `<tr class="bt-trades-group"><td colspan="5">Open positions (unrealized)</td></tr>`;
-          for (const t of open.slice(0, 8)){
+          for (const t of openSorted.slice(0, 8)){
             if (shown >= MAX_ROWS) break;
             const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
             rows += `<tr class="bt-trade-open"><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>\u2014</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.curPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
@@ -958,9 +985,9 @@ function renderBacktestUI(results){
           }
         }
 
-        if (closed.length > 0){
-          rows += `<tr class="bt-trades-group"><td colspan="5">Closed trades</td></tr>`;
-          for (const t of closed){
+        if (recentClosed.length > 0){
+          rows += `<tr class="bt-trades-group"><td colspan="5">Latest closed trades</td></tr>`;
+          for (const t of recentClosed){
             if (shown >= MAX_ROWS) break;
             const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
             rows += `<tr><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>${t.sellDate.slice(0,7)}</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.sellPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
