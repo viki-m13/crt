@@ -813,7 +813,8 @@ function buildMarquee(items){
       }
 
       // 4. Run simulations
-      const availTickers = Object.keys(priceLookup).filter(t => t !== "SPY");
+      const CRYPTO = new Set(["BTC-USD", "ETH-USD"]);
+      const availTickers = Object.keys(priceLookup).filter(t => t !== "SPY" && !CRYPTO.has(t));
       const strategies = [1, 5, 10];
       const holdPeriods = [12, 36, 60];
 
@@ -1080,7 +1081,7 @@ function buildMarquee(items){
     // Disclaimer
     const disc = document.createElement("div");
     disc.className = "footnote";
-    disc.textContent = "Hypothetical backtest using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    disc.textContent = "Stocks only — crypto (BTC, ETH) excluded from this backtest. Including them would improve results further. Hypothetical simulation using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
     body.appendChild(disc);
   }
 
