@@ -8,6 +8,8 @@
   --bg: #ffffff;
   --ink: #000000;
   --muted: #767676;
+  --green: #0a7c42;
+  --orange: #b35900;
   --rule: #000000;
   --rule-light: #e5e5e5;
   --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -58,8 +60,18 @@ strong{font-weight:600}
   font-size:15px;
   letter-spacing:-0.03em;
   text-decoration:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
 .nav-logo:hover{text-decoration:none;opacity:.7}
+.nav-logo-dot{
+  display:inline-block;
+  width:12px;height:12px;
+  border-radius:50%;
+  background:var(--green);
+  flex-shrink:0;
+}
 .nav-links{display:flex;gap:28px}
 .nav-links a{
   font-size:15px;
@@ -132,7 +144,17 @@ strong{font-weight:600}
   color:var(--muted);
   padding-right:20px;
 }
-.marquee-dot{color:var(--rule-light);font-size:10px}
+.marquee-dot{color:var(--rule-light);font-size:10px;flex-shrink:0}
+.marquee-ticker{font-weight:600;color:var(--ink);letter-spacing:.02em}
+.marquee-score{
+  background:var(--green);
+  color:var(--bg);
+  font-size:10px;
+  padding:1px 6px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+.marquee-prob{color:var(--muted);font-size:12px}
 
 /* ============================================================
    STATS SECTION (large numbers)
@@ -385,7 +407,7 @@ strong{font-weight:600}
   padding:6px 12px;border:1px solid var(--rule-light);
   background:rgba(255,255,255,.92);backdrop-filter:blur(6px);
 }
-.legend-bar{width:44px;height:8px;border:1px solid var(--rule-light);background:linear-gradient(90deg,rgba(0,0,0,.08),rgba(0,0,0,.75))}
+.legend-bar{width:44px;height:8px;border:1px solid var(--rule-light);background:linear-gradient(90deg,rgba(10,124,66,.1),rgba(10,124,66,.85))}
 .legend-text{display:flex;flex-direction:column;line-height:1.1}
 .legend-label{letter-spacing:.04em;font-size:10px}
 .legend-note{color:var(--muted);margin-top:2px;font-size:10px}
@@ -551,8 +573,8 @@ strong{font-weight:600}
 
 .badge{display:inline-block;padding:3px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;font-weight:500;white-space:nowrap}
 .badge-na{background:transparent;color:var(--muted);border:1px solid var(--rule-light)}
-.badge-opp-high{background:var(--ink);color:var(--bg);border:1px solid var(--ink);font-weight:600}
-.badge-opp-med{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+.badge-opp-high{background:var(--green);color:var(--bg);border:1px solid var(--green);font-weight:600}
+.badge-opp-med{background:transparent;color:var(--green);border:1px solid var(--green)}
 .badge-opp-low{background:transparent;color:var(--muted);border:1px solid var(--rule-light)}
 
 /* ============================================================
@@ -583,9 +605,11 @@ strong{font-weight:600}
 .footer-inner{
   max-width:1280px;
   margin:0 auto;
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr 1.5fr;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
   gap:48px;
+  flex-wrap:wrap;
 }
 .footer-col{display:flex;flex-direction:column;gap:8px}
 .footer-col-logo{justify-content:flex-start}
@@ -609,7 +633,18 @@ strong{font-weight:600}
   font-weight:700;
   font-size:18px;
   letter-spacing:-0.03em;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
+.footer-logo-dot{
+  display:inline-block;
+  width:14px;height:14px;
+  border-radius:50%;
+  background:var(--green);
+  flex-shrink:0;
+}
+.footnote-text{font-size:12px;color:var(--muted)}
 
 /* ============================================================
    SEARCH STATUS
@@ -650,7 +685,7 @@ strong{font-weight:600}
   .stat-block{padding:20px 0;border-bottom:1px solid var(--rule-light)}
   .stat-block:last-child{border-bottom:none}
   .stat-divider{display:none}
-  .footer-inner{grid-template-columns:1fr 1fr;gap:32px}
+  .footer-inner{gap:32px}
 }
 
 @media (max-width: 768px){
@@ -708,7 +743,7 @@ strong{font-weight:600}
   .btn{padding:8px 12px;font-size:12px}
   .search-status{flex-basis:100%;margin-left:0;margin-top:4px}
   .sort{justify-content:center}
-  .footer-inner{grid-template-columns:1fr;gap:24px}
+  .footer-inner{gap:24px}
   .details-card{padding:20px 0}
 }
 
