@@ -70,6 +70,29 @@
         </details>
       </section>
 
+      <section class="explain">
+        <details class="details backtest-details" id="backtestSection">
+          <summary class="details-summary">
+            <span class="section-title">BACKTEST — DCA STRATEGY COMPARISON</span>
+            <span class="plus" aria-hidden="true">+</span>
+          </summary>
+          <div class="details-body">
+            <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:90ch">
+              Simulates investing $1,000 per month into the top-ranked stocks by opportunity score vs. the same amount into SPY.
+              Each purchase is held for the selected period, then sold. Shows how using this screener as a DCA optimizer would have performed historically.
+            </p>
+            <div class="bt-tabs" id="btHoldTabs">
+              <button class="bt-tab active" data-hold="1">1-Year Hold</button>
+              <button class="bt-tab" data-hold="3">3-Year Hold</button>
+              <button class="bt-tab" data-hold="5">5-Year Hold</button>
+            </div>
+            <div id="btContent">
+              <div class="footnote">Loading backtest data...</div>
+            </div>
+          </div>
+        </details>
+      </section>
+
       <div class="rule"></div>
 
       <div class="controls">
