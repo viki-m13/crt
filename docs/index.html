@@ -11,71 +11,150 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="masthead">
-    <div class="wrap masthead-wrap">
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="brand-text">
-          <h1>Rebound Ledger</h1>
-          <div class="subhead">Finds stocks that have pulled back hard relative to their own history, removes market noise, and shows the odds of recovery at 1, 3, and 5 years based on every similar past setup.</div>
-        </div>
-        <div class="meta">
-          <div class="meta-row"><span class="meta-label">Updated</span><span id="asOf" class="meta-value"></span></div>
-          <div class="meta-row"><span class="meta-label">Universe</span><span class="meta-value">Russell 1000 &amp; Major Crypto</span></div>
-        </div>
+
+  <!-- ===== FIXED NAV (Frame & Form style) ===== -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Rebound Ledger</a>
+      <div class="nav-links">
+        <a href="#how-it-works">How It Works</a>
+        <a href="#backtest-section">Backtest</a>
+        <a href="#listing-section">Screener</a>
       </div>
+    </div>
+  </nav>
 
-      <div class="rule"></div>
+  <!-- ===== HERO (large headline, tight letter-spacing) ===== -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1 class="hero-headline">Rebound Ledger finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
+      <p class="hero-sub">Removes market noise, matches every similar past setup, and reports what happened next at 1, 3, and 5 years. Not financial advice.</p>
+    </div>
+  </section>
 
-      <section class="explain">
-        <details class="details whathow">
-          <summary class="details-summary">
-            <span class="section-title">HOW TO READ THIS</span>
-            <span class="plus" aria-hidden="true">+</span>
-          </summary>
-          <div class="details-body">
-            <div class="explain-grid">
-              <div>
-                <div class="section-title">The numbers</div>
-                <ul>
-                  <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Combines stock quality (is this a strong stock?) with recovery odds (has it bounced back from pullbacks like this before?). Higher = better opportunity.</li>
-                  <li><strong>Pullback</strong> — How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff. Stocks need a meaningful pullback to appear as a top opportunity.</li>
-                  <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
-                  <li><strong>Quality</strong> — Is this a strong stock having a temporary dip, or a weak stock that might keep falling? Looks at: Does it usually trend up over time? Has it recovered from past drops? Is the selling slowing down?</li>
-                  <li><strong>Typical 1Y</strong> — The most common 1-year return when this stock was in a similar situation before.</li>
-                  <li><strong>Downside</strong> — A bad-but-realistic scenario (worst 1 in 10 outcomes).</li>
-                  <li><strong>Past Cases</strong> — How many similar historical situations the stats are based on. More = more reliable.</li>
-                </ul>
-              </div>
-              <div>
-                <div class="section-title">How it works</div>
-                <ol>
-                  <li><strong>Spot the pullback</strong> — Measure how far this stock has dropped relative to its own history.</li>
-                  <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness.</li>
-                  <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position.</li>
-                  <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back.</li>
-                  <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those past cases.</li>
-                </ol>
-              </div>
-              <div>
-                <div class="section-title">Important</div>
-                <ul>
-                  <li><strong>Not financial advice.</strong> This shows what happened in the past, not what will happen next.</li>
-                  <li><strong>Not a trading system.</strong> No buy/sell signals, position sizing, or timing.</li>
-                  <li><strong>No guarantees.</strong> Stocks can keep falling — including to zero.</li>
-                </ul>
-              </div>
+  <!-- ===== MARQUEE (scrolling ticker strip) ===== -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <div class="marquee-content">
+        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
+        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
+        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
+        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
+        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
+        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
+        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
+        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
+        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
+        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
+        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
+        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
+        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
+        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
+        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
+        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
+        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
+        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
+        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
+        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
+        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
+        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
+        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
+        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
+        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
+        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
+        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
+        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
+        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
+        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
+        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
+        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
+        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
+        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
+        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STATS ROW (large numbers) ===== -->
+  <section class="stats-section">
+    <div class="stats-inner">
+      <div class="stat-block">
+        <span class="stat-number" id="statUniverse">&mdash;</span>
+        <span class="stat-label">Stocks &amp; crypto tracked daily across Russell 1000 and major digital assets</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number">5Y+</span>
+        <span class="stat-label">Historical depth powering analog matching and probability estimates</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number" id="asOf">&mdash;</span>
+        <span class="stat-label">Last scan completed after market close, New York time</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS (collapsible, Frame & Form project-card style) ===== -->
+  <section class="content-section" id="how-it-works">
+    <div class="section-inner">
+
+      <details class="details-card" open>
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">How to Read This</span>
+            <span class="details-card-cat">The Numbers &amp; Methodology</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <div class="explain-grid">
+            <div>
+              <div class="section-title">The numbers</div>
+              <ul>
+                <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Combines stock quality (is this a strong stock?) with recovery odds (has it bounced back from pullbacks like this before?). Higher = better opportunity.</li>
+                <li><strong>Pullback</strong> — How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff. Stocks need a meaningful pullback to appear as a top opportunity.</li>
+                <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
+                <li><strong>Quality</strong> — Is this a strong stock having a temporary dip, or a weak stock that might keep falling? Looks at: Does it usually trend up over time? Has it recovered from past drops? Is the selling slowing down?</li>
+                <li><strong>Typical 1Y</strong> — The most common 1-year return when this stock was in a similar situation before.</li>
+                <li><strong>Downside</strong> — A bad-but-realistic scenario (worst 1 in 10 outcomes).</li>
+                <li><strong>Past Cases</strong> — How many similar historical situations the stats are based on. More = more reliable.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">How it works</div>
+              <ol>
+                <li><strong>Spot the pullback</strong> — Measure how far this stock has dropped relative to its own history.</li>
+                <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness.</li>
+                <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position.</li>
+                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back.</li>
+                <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those past cases.</li>
+              </ol>
+            </div>
+            <div>
+              <div class="section-title">Important</div>
+              <ul>
+                <li><strong>Not financial advice.</strong> This shows what happened in the past, not what will happen next.</li>
+                <li><strong>Not a trading system.</strong> No buy/sell signals, position sizing, or timing.</li>
+                <li><strong>No guarantees.</strong> Stocks can keep falling — including to zero.</li>
+              </ul>
             </div>
           </div>
-        </details>
-      </section>
+        </div>
+      </details>
 
-      <details class="details whathow" id="backtest-section">
-        <summary class="details-summary">
-          <span class="section-title">BACKTEST — DCA OPTIMIZER</span>
-          <span class="plus" aria-hidden="true">+</span>
+      <details class="details-card" id="backtest-section">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Backtest — DCA Optimizer</span>
+            <span class="details-card-cat">Historical Performance Simulation</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
         </summary>
-        <div class="details-body">
+        <div class="details-card-body">
           <p class="bt-intro">What if you invested $1,000 every month into the stocks this tool ranks highest, instead of just buying SPY?
           This backtest uses the historical opportunity scores to pick the top stocks each month, buys them, holds for a fixed period, then sells. All proceeds stay as cash — no reinvestment.</p>
           <div class="bt-hold-tabs">
@@ -89,7 +168,12 @@
         </div>
       </details>
 
-      <div class="rule"></div>
+    </div>
+  </section>
+
+  <!-- ===== SCREENER / LISTING ===== -->
+  <section class="content-section listing-section" id="listing-section">
+    <div class="section-inner">
 
       <div class="controls">
         <div class="search">
@@ -106,33 +190,50 @@
         </div>
       </div>
 
-      <div class="rule"></div>
-    </div>
-  </header>
+      <div class="listing-header">
+        <span title="Stock or crypto symbol">Ticker</span>
+        <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
+        <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
+        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
+        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
+        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
+        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
+        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
+        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
+        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
+      </div>
+      <div id="listing"></div>
+      <div class="footnote">
+        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
+      </div>
 
-  <main class="wrap">
-    <div class="listing-header">
-      <span title="Stock or crypto symbol">Ticker</span>
-      <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
-      <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
-      <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
-      <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
-      <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
-      <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
-      <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
-      <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
-      <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
     </div>
-    <div id="listing"></div>
-    <div class="footnote">
-      Past performance does not predict future results. This scan shows historical patterns, not investment advice.
-    </div>
-  </main>
+  </section>
 
+  <!-- ===== FOOTER (multi-column, Frame & Form style) ===== -->
   <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-inner">
-        Rebound Ledger &bull; updated once daily after 5pm New York time
+    <div class="footer-inner">
+      <div class="footer-col">
+        <span class="footer-heading">Data</span>
+        <span class="footer-text">Russell 1000</span>
+        <span class="footer-text">Major Crypto</span>
+        <span class="footer-text">Yahoo Finance</span>
+      </div>
+      <div class="footer-col">
+        <span class="footer-heading">Method</span>
+        <span class="footer-text">Analog Matching</span>
+        <span class="footer-text">Washout Detection</span>
+        <span class="footer-text">Quality Scoring</span>
+      </div>
+      <div class="footer-col">
+        <span class="footer-heading">Navigate</span>
+        <a href="#how-it-works" class="footer-link">How It Works</a>
+        <a href="#backtest-section" class="footer-link">Backtest</a>
+        <a href="#listing-section" class="footer-link">Screener</a>
+      </div>
+      <div class="footer-col footer-col-logo">
+        <span class="footer-logo-text">Rebound Ledger</span>
+        <span class="footer-text">Updated once daily after 5 pm New York time</span>
       </div>
     </div>
   </footer>
