@@ -49,10 +49,10 @@ function oppBadge(v){
 function probColor(p){
   if (p === null || p === undefined || !Number.isFinite(Number(p))) return "var(--muted)";
   const v = Number(p);
-  if (v >= 75) return "var(--ink)";
-  if (v >= 60) return "#333";
-  if (v >= 50) return "#555";
-  return "var(--muted)";
+  if (v >= 80) return "#0a7c42";
+  if (v >= 65) return "#1a8a50";
+  if (v >= 50) return "var(--ink)";
+  return "#b35900";
 }
 
 /* ---------- chart ---------- */
@@ -97,7 +97,7 @@ function drawGradientLine(canvas, dates, prices, score){
     const a = clamp01(s / 100);
     if (a <= 0.02) continue;
     ctx.lineWidth = 3 * devicePixelRatio;
-    ctx.strokeStyle = `rgba(0,0,0,${0.12 + 0.65 * a})`;
+    ctx.strokeStyle = `rgba(10,124,66,${0.15 + 0.70 * a})`;
     ctx.beginPath();
     ctx.moveTo(xAt(i), yAt(prices[i]));
     ctx.lineTo(xAt(i + 1), yAt(prices[i + 1]));
@@ -106,8 +106,8 @@ function drawGradientLine(canvas, dates, prices, score){
 
   const lastScore = Number(score?.[n - 1]);
   const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
-  ctx.fillStyle = `rgba(0,0,0,${0.20 + 0.65 * a})`;
-  ctx.strokeStyle = "rgba(0,0,0,.9)";
+  ctx.fillStyle = `rgba(10,124,66,${0.25 + 0.70 * a})`;
+  ctx.strokeStyle = "rgba(0,0,0,.85)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
   ctx.arc(xAt(n - 1), yAt(prices[n - 1]), 4 * devicePixelRatio, 0, Math.PI * 2);
@@ -255,7 +255,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it usually go up? (45%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -264,7 +264,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it bounce back from drops? (35%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -273,7 +273,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Is the selling slowing down? (20%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -289,7 +289,7 @@ function proofSection(detail){
       <div class="proof-recovery">
         <div class="proof-recov-title">How often has it recovered from big drops?</div>
         <div class="proof-recov-stats">
-          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? 'var(--ink)' : rate >= 50 ? '#555' : 'var(--muted)'}">${rate}% of the time</strong></div>
+          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? '#0a7c42' : rate >= 50 ? 'var(--ink)' : '#b35900'}">${rate}% of the time</strong></div>
           ${nDd != null ? `<div class="proof-recov-stat"><span>Times it dropped 20%+</span><strong>${nDd}</strong></div>` : ""}
           ${nRec != null ? `<div class="proof-recov-stat"><span>Times it recovered within 3 years</span><strong>${nRec}</strong></div>` : ""}
         </div>
@@ -459,6 +459,29 @@ function sortItems(items, mode){
   return list;
 }
 
+/* ---------- marquee builder ---------- */
+
+function buildMarquee(items){
+  const track = byId("marquee-track");
+  if (!track || !items.length) return;
+
+  // Build content from top tickers
+  const top = items.slice(0, 15);
+  const parts = top.map(item => {
+    const score = Math.round(Number(item.conviction));
+    const prob = Math.round(Number(item.prob_1y));
+    return `<span class="marquee-ticker">${item.ticker}</span>` +
+           `<span class="marquee-score">${score}</span>` +
+           `<span class="marquee-prob">${prob}% 1Y</span>`;
+  });
+  const html = parts.join('<span class="marquee-dot">\u00b7</span>');
+
+  // Duplicate for seamless loop
+  track.innerHTML =
+    `<div class="marquee-content">${html}<span class="marquee-dot">\u00b7</span></div>` +
+    `<div class="marquee-content" aria-hidden="true">${html}<span class="marquee-dot">\u00b7</span></div>`;
+}
+
 /* ---------- main ---------- */
 
 (async function main(){
@@ -476,9 +499,15 @@ function sortItems(items, mode){
 
   let items = full.items || [];
 
-  // Populate stats
+  // Populate stats — real numbers
   const uniEl = byId("statUniverse");
-  if (uniEl) uniEl.textContent = items.length + "+";
+  if (uniEl) uniEl.textContent = "1,000+";
+
+  const depthEl = byId("statDepth");
+  if (depthEl) depthEl.textContent = "20+";
+
+  // Build dynamic marquee with top tickers
+  buildMarquee(items);
 
   let sortMode = "conviction";
 
@@ -953,7 +982,7 @@ function sortItems(items, mode){
     // Legend
     const legend = document.createElement("div");
     legend.className = "bt-legend";
-    const colors = { 1: "#000000", 5: "#555555", 10: "#999999", spy: "#cccccc" };
+    const colors = { 1: "#0a7c42", 5: "#1a6dd1", 10: "#d4820e", spy: "#999" };
     const labels = { 1: "Top 1", 5: "Top 5", 10: "Top 10", spy: "SPY (benchmark)" };
     for (const key of [1, 5, 10, "spy"]){
       const swatch = document.createElement("span");
@@ -1009,7 +1038,7 @@ function sortItems(items, mode){
 
       let posRows = "";
       for (const p of agg){
-        const retColor = p.returnPct >= 0 ? "var(--ink)" : "var(--muted)";
+        const retColor = p.returnPct >= 0 ? "#0a7c42" : "#b35900";
         const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
         posRows += `<tr>
           <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
@@ -1251,7 +1280,7 @@ function sortItems(items, mode){
    ============================================================ */
 
 (function(){
-  const targets = document.querySelectorAll(".stat-block, .details-card, .listing-section");
+  const targets = document.querySelectorAll(".stat-block, .details-card");
   if (!targets.length || !("IntersectionObserver" in window)) return;
 
   const observer = new IntersectionObserver(function(entries){

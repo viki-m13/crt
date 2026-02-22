@@ -12,10 +12,10 @@
 </head>
 <body>
 
-  <!-- ===== FIXED NAV (Frame & Form style) ===== -->
+  <!-- ===== FIXED NAV ===== -->
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="#" class="nav-logo">Rebound Ledger</a>
+      <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Rebound Ledger</a>
       <div class="nav-links">
         <a href="#how-it-works">How It Works</a>
         <a href="#backtest-section">Backtest</a>
@@ -24,71 +24,32 @@
     </div>
   </nav>
 
-  <!-- ===== HERO (large headline, tight letter-spacing) ===== -->
+  <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Rebound Ledger finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
+      <h1 class="hero-headline">Finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
       <p class="hero-sub">Removes market noise, matches every similar past setup, and reports what happened next at 1, 3, and 5 years. Not financial advice.</p>
     </div>
   </section>
 
-  <!-- ===== MARQUEE (scrolling ticker strip) ===== -->
+  <!-- ===== MARQUEE (dynamically populated with top tickers) ===== -->
   <div class="marquee-strip">
-    <div class="marquee-track">
-      <div class="marquee-content">
-        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
-        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
-        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
-        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
-        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
-        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
-        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
-        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
-        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
-        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
-        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
-        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
-        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
-        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
-        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
-        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
-        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
-        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
-      </div>
-      <div class="marquee-content" aria-hidden="true">
-        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
-        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
-        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
-        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
-        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
-        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
-        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
-        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
-        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
-        <span>Russell 1000</span><span class="marquee-dot">&bull;</span>
-        <span>Major Crypto</span><span class="marquee-dot">&bull;</span>
-        <span>Updated Daily</span><span class="marquee-dot">&bull;</span>
-        <span>Historical Analogs</span><span class="marquee-dot">&bull;</span>
-        <span>1Y &middot; 3Y &middot; 5Y Probabilities</span><span class="marquee-dot">&bull;</span>
-        <span>Quality Scoring</span><span class="marquee-dot">&bull;</span>
-        <span>Washout Detection</span><span class="marquee-dot">&bull;</span>
-        <span>On-Demand Analysis</span><span class="marquee-dot">&bull;</span>
-        <span>DCA Backtester</span><span class="marquee-dot">&bull;</span>
-      </div>
+    <div class="marquee-track" id="marquee-track">
+      <!-- populated by JS with live ticker data -->
     </div>
   </div>
 
-  <!-- ===== STATS ROW (large numbers) ===== -->
+  <!-- ===== STATS ROW ===== -->
   <section class="stats-section">
     <div class="stats-inner">
       <div class="stat-block">
         <span class="stat-number" id="statUniverse">&mdash;</span>
-        <span class="stat-label">Stocks &amp; crypto tracked daily across Russell 1000 and major digital assets</span>
+        <span class="stat-label">Stocks &amp; crypto scanned every day from the Russell 1000 and top digital assets</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
-        <span class="stat-number">5Y+</span>
-        <span class="stat-label">Historical depth powering analog matching and probability estimates</span>
+        <span class="stat-number" id="statDepth">&mdash;</span>
+        <span class="stat-label">Years of daily price history powering every analog match and probability estimate</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
@@ -98,11 +59,50 @@
     </div>
   </section>
 
-  <!-- ===== HOW IT WORKS (collapsible, Frame & Form project-card style) ===== -->
+  <!-- ===== SCREENER / LISTING (moved above how-it-works for visibility) ===== -->
+  <section class="content-section listing-section" id="listing-section">
+    <div class="section-inner">
+
+      <div class="controls">
+        <div class="search">
+          <label for="q" class="visually-hidden">Search ticker</label>
+          <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
+          <button id="go" class="btn">Analyze</button>
+        </div>
+        <div class="sort">
+          <span class="sort-label">Sort</span>
+          <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
+          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
+          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
+          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
+        </div>
+      </div>
+
+      <div class="listing-header">
+        <span title="Stock or crypto symbol">Ticker</span>
+        <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
+        <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
+        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
+        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
+        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
+        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
+        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
+        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
+        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
+      </div>
+      <div id="listing"></div>
+      <div class="footnote">
+        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS (collapsed by default) ===== -->
   <section class="content-section" id="how-it-works">
     <div class="section-inner">
 
-      <details class="details-card" open>
+      <details class="details-card">
         <summary class="details-card-summary">
           <div class="details-card-left">
             <span class="details-card-title">How to Read This</span>
@@ -171,69 +171,19 @@
     </div>
   </section>
 
-  <!-- ===== SCREENER / LISTING ===== -->
-  <section class="content-section listing-section" id="listing-section">
-    <div class="section-inner">
-
-      <div class="controls">
-        <div class="search">
-          <label for="q" class="visually-hidden">Search ticker</label>
-          <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
-          <button id="go" class="btn">Analyze</button>
-        </div>
-        <div class="sort">
-          <span class="sort-label">Sort</span>
-          <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
-          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
-          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
-        </div>
-      </div>
-
-      <div class="listing-header">
-        <span title="Stock or crypto symbol">Ticker</span>
-        <span title="How good this buying opportunity looks. Combines stock quality with 1-year recovery odds. Higher = better.">Opp. Score</span>
-        <span title="How far this stock has dropped relative to its own history. 0 = no pullback, 100 = extreme selloff.">Pullback</span>
-        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
-        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
-        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
-        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
-        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
-        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
-        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
-      </div>
-      <div id="listing"></div>
-      <div class="footnote">
-        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ===== FOOTER (multi-column, Frame & Form style) ===== -->
+  <!-- ===== FOOTER (clean, minimal) ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-col">
-        <span class="footer-heading">Data</span>
-        <span class="footer-text">Russell 1000</span>
-        <span class="footer-text">Major Crypto</span>
-        <span class="footer-text">Yahoo Finance</span>
-      </div>
-      <div class="footer-col">
-        <span class="footer-heading">Method</span>
-        <span class="footer-text">Analog Matching</span>
-        <span class="footer-text">Washout Detection</span>
-        <span class="footer-text">Quality Scoring</span>
-      </div>
-      <div class="footer-col">
         <span class="footer-heading">Navigate</span>
+        <a href="#listing-section" class="footer-link">Screener</a>
         <a href="#how-it-works" class="footer-link">How It Works</a>
         <a href="#backtest-section" class="footer-link">Backtest</a>
-        <a href="#listing-section" class="footer-link">Screener</a>
       </div>
       <div class="footer-col footer-col-logo">
-        <span class="footer-logo-text">Rebound Ledger</span>
-        <span class="footer-text">Updated once daily after 5 pm New York time</span>
+        <span class="footer-logo-text"><span class="footer-logo-dot"></span>Rebound Ledger</span>
+        <span class="footer-text">Updated once daily after market close, New York time.</span>
+        <span class="footer-text footnote-text">Past performance does not predict future results.</span>
       </div>
     </div>
   </footer>
