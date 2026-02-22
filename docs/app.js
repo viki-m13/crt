@@ -783,10 +783,11 @@ function drawBacktestChart(canvas, curves, labels, colors){
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Draw each curve
+  // Draw each curve (Top 1 thickest, SPY thinnest)
+  const lineWidths = [2.8, 2.2, 1.8, 1.5];
   for (let c = 0; c < curves.length; c++){
     ctx.strokeStyle = colors[c];
-    ctx.lineWidth = (c === curves.length - 1 ? 2 : 2.2) * dpr; // SPY slightly thinner
+    ctx.lineWidth = (lineWidths[c] || 2) * dpr;
     ctx.beginPath();
     for (let i = 0; i < curves[c].length; i++){
       const x = xAt(i), y = yAt(curves[c][i].val);
@@ -816,9 +817,9 @@ function renderBacktestUI(results){
 
     const strats = [
       { label: "Top 1", n: 1, color: "var(--green)" },
-      { label: "Top 5", n: 5, color: "rgba(15,61,46,.6)" },
-      { label: "Top 10", n: 10, color: "rgba(15,61,46,.35)" },
-      { label: "SPY (benchmark)", n: "spy", color: "rgba(0,0,0,.4)" },
+      { label: "Top 5", n: 5, color: "#2478b3" },
+      { label: "Top 10", n: 10, color: "#8e6bbf" },
+      { label: "SPY (benchmark)", n: "spy", color: "#999" },
     ];
 
     for (const s of strats){
@@ -850,9 +851,9 @@ function renderBacktestUI(results){
     legend.className = "bt-legend";
     const legendItems = [
       { label: "Top 1", color: "var(--green)" },
-      { label: "Top 5", color: "rgba(15,61,46,.6)" },
-      { label: "Top 10", color: "rgba(15,61,46,.35)" },
-      { label: "SPY", color: "rgba(0,0,0,.4)" },
+      { label: "Top 5", color: "#2478b3" },
+      { label: "Top 10", color: "#8e6bbf" },
+      { label: "SPY", color: "#999" },
       { label: "Invested", color: "rgba(0,0,0,.18)", dashed: true },
     ];
     for (const li of legendItems){
@@ -974,7 +975,7 @@ function renderBacktestUI(results){
 
     // Draw chart
     const curves = [];
-    const colors = ["var(--green)", "rgba(15,61,46,.6)", "rgba(15,61,46,.35)", "rgba(0,0,0,.4)"];
+    const colors = ["#0f3d2e", "#2478b3", "#8e6bbf", "#999"];
     for (const n of [1, 5, 10]){
       const d = data[n];
       if (d && d.equityCurve.length){
