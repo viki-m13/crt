@@ -1,5 +1,6 @@
 
 const DATA_URL = "./data/full.json";
+const API_URL = window.REBOUND_API_URL || "http://localhost:5001";
 
 const CACHE_BUST = String(Date.now());
 
@@ -113,7 +114,7 @@ function drawGradientLine(canvas, dates, prices, score){
   ctx.fill(); ctx.stroke();
 }
 
-/* ---------- outcome box ---------- */
+/* ---------- outcome box (legacy, used by evidence section) ---------- */
 
 function outcomeBox(label, s){
   const b = document.createElement("div");
@@ -130,6 +131,46 @@ function outcomeBox(label, s){
     <div class="r"><span>Based on</span><strong>${s.n} past cases</strong></div>
   `;
   return b;
+}
+
+/* ---------- unified outcomes table ---------- */
+
+function outcomesTable(outcomes){
+  const horizons = [["1Y", "1 Year"], ["3Y", "3 Years"], ["5Y", "5 Years"]];
+  const has = horizons.filter(([k]) => {
+    const s = outcomes?.[k];
+    return s && Number.isFinite(s.n) && s.n > 0;
+  });
+  if (has.length === 0) return null;
+
+  const tbl = document.createElement("table");
+  tbl.className = "outcomes-table";
+
+  // Header row
+  let hdr = `<thead><tr><th></th>`;
+  for (const [k, label] of has) hdr += `<th>${label}</th>`;
+  hdr += `</tr></thead>`;
+
+  // Data rows
+  const metrics = [
+    ["Chance of gain", (s) => { const v = Math.round(s.win * 100); return `<span style="color:${probColor(v)}">${v}%</span>`; }],
+    ["Typical return", (s) => fmtPct(s.median)],
+    ["Bad case (1 in 10)", (s) => fmtPct(s.p10)],
+    ["Past cases", (s) => String(s.n)],
+  ];
+
+  let body = `<tbody>`;
+  for (const [label, fn] of metrics){
+    body += `<tr><td>${label}</td>`;
+    for (const [k] of has){
+      body += `<td>${fn(outcomes[k])}</td>`;
+    }
+    body += `</tr>`;
+  }
+  body += `</tbody>`;
+
+  tbl.innerHTML = hdr + body;
+  return tbl;
 }
 
 /* ---------- evidence section ---------- */
@@ -311,17 +352,13 @@ function renderCardBody(body, item, detail, isTop10){
     body.appendChild(rat);
   }
 
-  // Grid: outcomes left, chart right
+  // Grid: outcomes table left, chart right
   const grid = document.createElement("div");
   grid.className = "grid2";
 
   const left = document.createElement("div");
-  const outcomes = document.createElement("div");
-  outcomes.className = "outcomes";
-  outcomes.appendChild(outcomeBox("1 Year", detail?.outcomes?.["1Y"]));
-  outcomes.appendChild(outcomeBox("3 Years", detail?.outcomes?.["3Y"]));
-  outcomes.appendChild(outcomeBox("5 Years", detail?.outcomes?.["5Y"]));
-  left.appendChild(outcomes);
+  const tbl = outcomesTable(detail?.outcomes);
+  if (tbl) left.appendChild(tbl);
 
   const right = document.createElement("div");
   right.className = "chart";
@@ -525,20 +562,141 @@ function sortItems(items, mode){
   setSortButtons(sortMode);
   await rerender();
 
-  // Search
+  // Search — filter existing + on-demand analysis for unknown tickers
+  const onDemandCache = {};   // ticker -> { row, detail }
+  let searchDebounce = null;
+
+  function setSearchStatus(msg, isError){
+    let el = document.querySelector(".search-status");
+    if (!el){
+      el = document.createElement("span");
+      el.className = "search-status";
+      byId("go").parentNode.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.toggle("error", !!isError);
+  }
+
+  function clearSearchStatus(){
+    const el = document.querySelector(".search-status");
+    if (el) el.textContent = "";
+  }
+
   function applySearch(){
     const q = (byId("q").value || "").trim().toUpperCase();
+    clearSearchStatus();
     if (!q){
       rerender();
       return;
     }
     const sorted = sortItems(items, sortMode);
     const filtered = sorted.filter(x => x.ticker.includes(q));
+
+    // Also include any on-demand results that match
+    for (const [tk, cached] of Object.entries(onDemandCache)){
+      if (tk.includes(q) && !filtered.some(x => x.ticker === tk)){
+        filtered.unshift({...cached.row, _onDemand: true});
+      }
+    }
+
     renderListing(filtered);
   }
 
-  byId("go").addEventListener("click", applySearch);
-  byId("q").addEventListener("input", applySearch);
+  async function analyzeOnDemand(ticker){
+    ticker = ticker.trim().toUpperCase();
+    if (!ticker) return;
+
+    // Already in our dataset?
+    if (items.some(x => x.ticker === ticker)){
+      applySearch();
+      return;
+    }
+
+    // Already cached from a previous on-demand lookup?
+    if (onDemandCache[ticker]){
+      applySearch();
+      return;
+    }
+
+    setSearchStatus("Analyzing " + ticker + "...");
+    byId("go").disabled = true;
+
+    try {
+      const resp = await fetch(`${API_URL}/api/analyze?ticker=${encodeURIComponent(ticker)}`);
+      const data = await resp.json();
+
+      if (!resp.ok){
+        setSearchStatus(data.error || "Analysis failed", true);
+        byId("go").disabled = false;
+        return;
+      }
+
+      onDemandCache[ticker] = { row: data.row, detail: data.detail };
+      clearSearchStatus();
+
+      // Render the on-demand result
+      const c = byId("listing");
+      c.innerHTML = "";
+
+      const item = {...data.row, _onDemand: true};
+      const card = document.createElement("details");
+      card.className = "ticker-card ondemand-card";
+      card.dataset.ticker = item.ticker;
+      card.open = true;
+
+      const summary = document.createElement("summary");
+      summary.className = "ticker-row";
+      summary.innerHTML = `
+        <span class="row-ticker">${item.ticker}<span class="ondemand-label">Live analysis</span></span>
+        <span class="row-cell" data-label="Opp Score">${oppBadge(item.conviction)}</span>
+        <span class="row-cell" data-label="Pullback">${fmtNum0(item.washout_today)}</span>
+        <span class="row-cell" data-label="1Y Prob" style="color:${probColor(item.prob_1y)}">${fmtPctWhole(item.prob_1y)}</span>
+        <span class="row-cell" data-label="3Y Prob" style="color:${probColor(item.prob_3y)}">${fmtPctWhole(item.prob_3y)}</span>
+        <span class="row-cell" data-label="5Y Prob" style="color:${probColor(item.prob_5y)}">${fmtPctWhole(item.prob_5y)}</span>
+        <span class="row-cell" data-label="Typical">${fmtPct(item.median_1y)}</span>
+        <span class="row-cell" data-label="Bad case">${fmtPct(item.downside_1y)}</span>
+        <span class="row-cell" data-label="Cases">${fmtNum0(item.n_analogs)}</span>
+        <span class="row-cell" data-label="Quality">${fmtNum0(item.quality)}</span>
+      `;
+      card.appendChild(summary);
+
+      const body = document.createElement("div");
+      body.className = "ticker-body";
+      renderCardBody(body, item, data.detail, true);
+      card.appendChild(body);
+      c.appendChild(card);
+
+    } catch (err){
+      console.error("On-demand analysis error:", err);
+      setSearchStatus("Could not connect to analysis server", true);
+    }
+    byId("go").disabled = false;
+  }
+
+  // Wire up search: typing filters existing, "Find" button also triggers on-demand
+  byId("q").addEventListener("input", function(){
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(applySearch, 150);
+  });
+
+  byId("go").addEventListener("click", function(){
+    const q = (byId("q").value || "").trim().toUpperCase();
+    if (!q) { rerender(); return; }
+    // If exact match exists in items, just filter
+    if (items.some(x => x.ticker === q)){
+      applySearch();
+      return;
+    }
+    // Otherwise trigger on-demand analysis
+    analyzeOnDemand(q);
+  });
+
+  byId("q").addEventListener("keydown", function(e){
+    if (e.key === "Enter"){
+      e.preventDefault();
+      byId("go").click();
+    }
+  });
 
   } catch (err){
     console.error("Rebound Ledger render error:", err);
