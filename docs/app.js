@@ -527,14 +527,15 @@ async function runBacktest(full, loadDetailFn){
       for (let p = openPositions.length - 1; p >= 0; p--){
         const pos = openPositions[p];
         if (mIdx >= pos.sellIdx){
-          const sellPrice = tickerData[pos.ticker]?.prices.get(refDates[pos.sellIdx]);
+          const sellDate = refDates[pos.sellIdx];
+          const sellPrice = tickerData[pos.ticker]?.prices.get(sellDate);
           if (sellPrice != null){
             const ret = (sellPrice / pos.buyPrice) - 1;
             realizedPnl += pos.shares * sellPrice;
-            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, ret });
+            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice, ret });
           } else {
             realizedPnl += pos.shares * pos.buyPrice; // fallback: flat
-            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, ret: 0 });
+            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice: pos.buyPrice, ret: 0 });
           }
           openPositions.splice(p, 1);
         }
@@ -610,9 +611,12 @@ async function runBacktest(full, loadDetailFn){
     const lastDate = refDates[refDates.length - 1];
     const lastSpyPrice = refPrices[refPrices.length - 1];
     let finalStrat = realizedPnl;
+    const openTrades = [];
     for (const pos of openPositions){
       const curPrice = tickerData[pos.ticker]?.prices.get(lastDate);
-      finalStrat += pos.shares * (curPrice != null ? curPrice : pos.buyPrice);
+      const price = curPrice != null ? curPrice : pos.buyPrice;
+      finalStrat += pos.shares * price;
+      openTrades.push({ ticker: pos.ticker, buyDate: pos.buyDate, buyPrice: pos.buyPrice, curPrice: price, ret: (price / pos.buyPrice) - 1, open: true });
     }
     let finalSpy = spyRealized;
     for (const pos of spyOpenPositions){
@@ -654,6 +658,8 @@ async function runBacktest(full, loadDetailFn){
       totalReturn,
       spyReturn,
       trades: trades.length,
+      tradeLog: trades,
+      openTrades,
       winRate: trades.length > 0 ? winningTrades / trades.length : 0,
       avgTradeReturn,
       medianReturn,
@@ -904,6 +910,61 @@ function renderBacktestUI(results){
     tableWrap.className = "bt-table-wrap";
     tableWrap.appendChild(tbl);
     container.appendChild(tableWrap);
+
+    // Recent trades table (using Top 5 strategy)
+    const top5 = data[5];
+    if (top5){
+      const closed = (top5.tradeLog || []).slice().sort((a, b) => b.sellDate.localeCompare(a.sellDate));
+      const open = (top5.openTrades || []).slice().sort((a, b) => b.buyDate.localeCompare(a.buyDate));
+      const hasAny = closed.length > 0 || open.length > 0;
+
+      if (hasAny){
+        const tradesSection = document.createElement("div");
+        tradesSection.className = "bt-trades-section";
+
+        const hdr = document.createElement("div");
+        hdr.className = "bt-trades-header";
+        hdr.innerHTML = `<span class="bt-trades-title">RECENT TRADES</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold</span>`;
+        tradesSection.appendChild(hdr);
+
+        const tradesTbl = document.createElement("table");
+        tradesTbl.className = "bt-perf-table bt-trades-table";
+
+        // Show open positions first, then most recent closed trades
+        const MAX_ROWS = 20;
+        let rows = "";
+        let shown = 0;
+
+        if (open.length > 0){
+          rows += `<tr class="bt-trades-group"><td colspan="5">Open positions (unrealized)</td></tr>`;
+          for (const t of open.slice(0, 8)){
+            if (shown >= MAX_ROWS) break;
+            const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
+            rows += `<tr class="bt-trade-open"><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>\u2014</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.curPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
+            shown++;
+          }
+        }
+
+        if (closed.length > 0){
+          rows += `<tr class="bt-trades-group"><td colspan="5">Closed trades</td></tr>`;
+          for (const t of closed){
+            if (shown >= MAX_ROWS) break;
+            const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
+            rows += `<tr><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>${t.sellDate.slice(0,7)}</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.sellPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
+            shown++;
+          }
+        }
+
+        tradesTbl.innerHTML = `<thead><tr><th>Ticker</th><th>Bought</th><th>Sold</th><th>Price</th><th>Return</th></tr></thead><tbody>${rows}</tbody>`;
+
+        const tradesWrap = document.createElement("div");
+        tradesWrap.className = "bt-table-wrap";
+        tradesWrap.appendChild(tradesTbl);
+        tradesSection.appendChild(tradesWrap);
+
+        container.appendChild(tradesSection);
+      }
+    }
 
     // Note
     const note = document.createElement("div");
