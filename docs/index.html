@@ -70,28 +70,24 @@
         </details>
       </section>
 
-      <section class="explain">
-        <details class="details backtest-details" id="backtestSection">
-          <summary class="details-summary">
-            <span class="section-title">BACKTEST — DCA STRATEGY COMPARISON</span>
-            <span class="plus" aria-hidden="true">+</span>
-          </summary>
-          <div class="details-body">
-            <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:90ch">
-              Simulates investing $1,000 per month into the top-ranked stocks by opportunity score vs. the same amount into SPY.
-              Each purchase is held for the selected period, then sold. Shows how using this screener as a DCA optimizer would have performed historically.
-            </p>
-            <div class="bt-tabs" id="btHoldTabs">
-              <button class="bt-tab active" data-hold="1">1-Year Hold</button>
-              <button class="bt-tab" data-hold="3">3-Year Hold</button>
-              <button class="bt-tab" data-hold="5">5-Year Hold</button>
-            </div>
-            <div id="btContent">
-              <div class="footnote">Loading backtest data...</div>
-            </div>
+      <details class="details whathow" id="backtest-section">
+        <summary class="details-summary">
+          <span class="section-title">BACKTEST — DCA OPTIMIZER</span>
+          <span class="plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="details-body">
+          <p class="bt-intro">What if you invested $1,000 every month into the stocks this tool ranks highest, instead of just buying SPY?
+          This backtest uses the historical opportunity scores to pick the top stocks each month, buys them, holds for a fixed period, then sells. All proceeds stay as cash — no reinvestment.</p>
+          <div class="bt-hold-tabs">
+            <button class="btn-lite active" data-hold="12">1-Year Hold</button>
+            <button class="btn-lite" data-hold="36">3-Year Hold</button>
+            <button class="btn-lite" data-hold="60">5-Year Hold</button>
           </div>
-        </details>
-      </section>
+          <div id="backtest-body">
+            <div class="footnote">Click to load backtest data&hellip;</div>
+          </div>
+        </div>
+      </details>
 
       <div class="rule"></div>
 
