@@ -361,7 +361,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Pullback intensity</span><span class="legend-note">darker = deeper pullback</span></span>`;
+  legend.innerHTML = `<span class="legend-bar" aria-hidden="true"></span><span class="legend-text"><span class="legend-label">Opportunity score</span><span class="legend-note">darker = higher score</span></span>`;
   chartWrap.appendChild(legend);
   body.appendChild(chartWrap);
 
@@ -387,7 +387,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   // Draw chart
   if (series.prices && series.prices.length){
-    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.wash));
+    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.final));
   }
 }
 
