@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rebound Ledger — on-demand analysis API server.
+Daily Stock Guide — on-demand analysis API server.
 
 Provides a single endpoint:
     GET /api/analyze?ticker=AAPL
@@ -153,6 +153,6 @@ def api_health():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
-    print(f"[API] Rebound Ledger analysis server starting on port {port}")
+    print(f"[API] Daily Stock Guide analysis server starting on port {port}")
     print(f"[API] Try: http://localhost:{port}/api/analyze?ticker=AAPL")
     app.run(host="0.0.0.0", port=port, debug=False)
