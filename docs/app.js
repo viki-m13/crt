@@ -459,592 +459,6 @@ function sortItems(items, mode){
   return list;
 }
 
-/* ---------- backtest engine ---------- */
-
-async function runBacktest(full, loadDetailFn){
-  const items = full.items || [];
-  const tickers = items.map(x => x.ticker);
-
-  // Load all ticker details
-  const allDetails = {};
-  await Promise.all(tickers.map(async tk => {
-    try { allDetails[tk] = await loadDetailFn(tk); } catch(e){}
-  }));
-
-  // Build a unified date index from SPY (longest, most reliable)
-  const spyDetail = allDetails["SPY"];
-  if (!spyDetail || !spyDetail.series) return null;
-  const refDates = spyDetail.series.dates;
-  const refPrices = spyDetail.series.prices;
-
-  // For each ticker, build aligned arrays keyed by date
-  // Normalize oppScore per ticker: series.final = quality × win_1y, where quality
-  // is a CURRENT constant.  Dividing by max(final) removes today's quality and
-  // leaves only the historical win probability, preventing look-ahead bias.
-  const tickerData = {};  // ticker -> { prices, oppScore (normalized to ~win_1y) }
-  for (const tk of tickers){
-    const d = allDetails[tk];
-    if (!d || !d.series) continue;
-    const s = d.series;
-    const pm = new Map(), fm = new Map();
-    let maxFinal = 0;
-    for (let i = 0; i < s.dates.length; i++){
-      if (s.prices[i] != null) pm.set(s.dates[i], s.prices[i]);
-      if (s.final && s.final[i] != null && s.final[i] > 0){
-        if (s.final[i] > maxFinal) maxFinal = s.final[i];
-      }
-    }
-    for (let i = 0; i < s.dates.length; i++){
-      if (s.final && s.final[i] != null && s.final[i] > 0){
-        fm.set(s.dates[i], maxFinal > 0 ? s.final[i] / maxFinal : 0);
-      }
-    }
-    tickerData[tk] = { prices: pm, oppScore: fm };
-  }
-
-  // Get monthly boundaries (first trading day of each month)
-  const monthIdx = [];
-  let prevYM = "";
-  for (let i = 0; i < refDates.length; i++){
-    const ym = refDates[i].slice(0, 7);
-    if (ym !== prevYM){ monthIdx.push(i); prevYM = ym; }
-  }
-
-  // Find the index N trading days (~1Y=252, 3Y=756, 5Y=1260) forward
-  function fwdIndex(fromIdx, years){
-    const target = fromIdx + Math.round(years * 252);
-    return target < refDates.length ? target : -1;
-  }
-
-  // Run backtest for a given hold period and top-N selection
-  function simulate(holdYears, topN){
-    const monthlyInvest = 1000;
-    let totalInvested = 0;
-    const equityCurve = [];   // { date, strategyValue, spyValue }
-    const trades = [];        // individual trades for stats
-
-    // Track open positions: { ticker, buyDate, buyPrice, shares, sellIdx, lastPrice }
-    const openPositions = [];
-    let realizedPnl = 0;
-    let spyShares = 0;
-    let spyRealized = 0;
-    const spyOpenPositions = [];
-
-    for (const mIdx of monthIdx){
-      const date = refDates[mIdx];
-
-      // Close positions that have reached their hold period
-      for (let p = openPositions.length - 1; p >= 0; p--){
-        const pos = openPositions[p];
-        if (mIdx >= pos.sellIdx){
-          const sellDate = refDates[pos.sellIdx];
-          const sellPrice = tickerData[pos.ticker]?.prices.get(sellDate);
-          const sp = sellPrice != null ? sellPrice : pos.lastPrice;
-          const ret = (sp / pos.buyPrice) - 1;
-          realizedPnl += pos.shares * sp;
-          trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice: sp, ret });
-          openPositions.splice(p, 1);
-        }
-      }
-      // Close SPY positions
-      for (let p = spyOpenPositions.length - 1; p >= 0; p--){
-        const pos = spyOpenPositions[p];
-        if (mIdx >= pos.sellIdx){
-          const sellPrice = refPrices[pos.sellIdx];
-          if (sellPrice != null) spyRealized += pos.shares * sellPrice;
-          else spyRealized += pos.shares * pos.buyPrice;
-          spyOpenPositions.splice(p, 1);
-        }
-      }
-
-      // Can we buy and have a sell date?
-      const sellIdx = fwdIndex(mIdx, holdYears);
-      if (sellIdx < 0) continue; // not enough future data
-
-      // Rank tickers by normalized win probability (quality bias removed)
-      const ranked = [];
-      for (const tk of tickers){
-        if (tk === "SPY" || tk === "DIA" || tk === "QQQ" || tk === "IWM" || tk === "BTC-USD" || tk === "ETH-USD") continue;
-        const td = tickerData[tk];
-        if (!td) continue;
-        const score = td.oppScore.get(date);
-        const price = td.prices.get(date);
-        if (score == null || price == null || score <= 0) continue;
-        ranked.push({ ticker: tk, score, price });
-      }
-      ranked.sort((a, b) => b.score - a.score);
-      const picks = ranked.slice(0, topN);
-
-      if (picks.length === 0) continue;
-
-      totalInvested += monthlyInvest;
-      const perStock = monthlyInvest / picks.length;
-
-      // Buy strategy stocks
-      for (const pick of picks){
-        const shares = perStock / pick.price;
-        openPositions.push({
-          ticker: pick.ticker,
-          buyDate: date,
-          buyPrice: pick.price,
-          shares,
-          sellIdx,
-          lastPrice: pick.price,
-        });
-      }
-
-      // Buy SPY
-      const spyPrice = refPrices[mIdx];
-      if (spyPrice != null){
-        const shares = monthlyInvest / spyPrice;
-        spyOpenPositions.push({ buyPrice: spyPrice, shares, sellIdx });
-      }
-
-      // Calculate current portfolio value for equity curve
-      let stratVal = realizedPnl;
-      for (const pos of openPositions){
-        const curPrice = tickerData[pos.ticker]?.prices.get(date);
-        if (curPrice != null) pos.lastPrice = curPrice;
-        stratVal += pos.shares * pos.lastPrice;
-      }
-      let spyVal = spyRealized;
-      for (const pos of spyOpenPositions){
-        spyVal += pos.shares * spyPrice;
-      }
-
-      equityCurve.push({ date, strategyValue: stratVal, spyValue: spyVal, invested: totalInvested });
-    }
-
-    // Mark to market at last available date for remaining open positions
-    const lastDate = refDates[refDates.length - 1];
-    const lastSpyPrice = refPrices[refPrices.length - 1];
-    let finalStrat = realizedPnl;
-    const openTrades = [];
-    for (const pos of openPositions){
-      const curPrice = tickerData[pos.ticker]?.prices.get(lastDate);
-      const price = curPrice != null ? curPrice : pos.lastPrice;
-      finalStrat += pos.shares * price;
-      openTrades.push({ ticker: pos.ticker, buyDate: pos.buyDate, buyPrice: pos.buyPrice, curPrice: price, ret: (price / pos.buyPrice) - 1, open: true });
-    }
-    let finalSpy = spyRealized;
-    for (const pos of spyOpenPositions){
-      finalSpy += pos.shares * (lastSpyPrice != null ? lastSpyPrice : pos.buyPrice);
-    }
-
-    if (equityCurve.length > 0){
-      const last = equityCurve[equityCurve.length - 1];
-      last.strategyValue = finalStrat;
-      last.spyValue = finalSpy;
-    }
-
-    // Compute metrics
-    const winningTrades = trades.filter(t => t.ret > 0).length;
-    const totalReturn = totalInvested > 0 ? (finalStrat / totalInvested - 1) : 0;
-    const spyReturn = totalInvested > 0 ? (finalSpy / totalInvested - 1) : 0;
-    const avgTradeReturn = trades.length > 0 ? trades.reduce((s, t) => s + t.ret, 0) / trades.length : 0;
-    const medianReturn = trades.length > 0 ? (() => {
-      const sorted = trades.map(t => t.ret).sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-    })() : 0;
-
-    // Max drawdown on return ratio (value / invested), not absolute value
-    // Absolute value almost never drops in DCA since new capital keeps flowing in
-    let peakRatio = 0, maxDd = 0;
-    for (const pt of equityCurve){
-      const ratio = pt.invested > 0 ? pt.strategyValue / pt.invested : 1;
-      if (ratio > peakRatio) peakRatio = ratio;
-      const dd = peakRatio > 0 ? (peakRatio - ratio) / peakRatio : 0;
-      if (dd > maxDd) maxDd = dd;
-    }
-
-    return {
-      equityCurve,
-      totalInvested,
-      finalValue: finalStrat,
-      spyFinalValue: finalSpy,
-      totalReturn,
-      spyReturn,
-      trades: trades.length,
-      tradeLog: trades,
-      openTrades,
-      winRate: trades.length > 0 ? winningTrades / trades.length : 0,
-      avgTradeReturn,
-      medianReturn,
-      maxDrawdown: maxDd,
-    };
-  }
-
-  // Run all combinations
-  const results = {};
-  for (const hold of [1, 3, 5]){
-    results[hold] = {};
-    for (const topN of [1, 5, 10]){
-      results[hold][topN] = simulate(hold, topN);
-    }
-  }
-  return results;
-}
-
-/* ---------- backtest chart ---------- */
-
-function drawBacktestChart(canvas, curves, labels, colors){
-  const ctx = canvas.getContext("2d");
-  const dpr = devicePixelRatio || 1;
-  const w = canvas.width = Math.floor(canvas.clientWidth * dpr);
-  const h = canvas.height = Math.floor(canvas.clientHeight * dpr);
-  ctx.clearRect(0, 0, w, h);
-
-  if (!curves.length || !curves[0].length) return;
-
-  const pad = { top: 16 * dpr, right: 14 * dpr, bottom: 30 * dpr, left: 60 * dpr };
-  const plotW = w - pad.left - pad.right;
-  const plotH = h - pad.top - pad.bottom;
-
-  const n = curves[0].length;
-  let gMin = Infinity, gMax = -Infinity;
-  for (const c of curves){
-    for (const pt of c){
-      if (pt.val < gMin) gMin = pt.val;
-      if (pt.val > gMax) gMax = pt.val;
-    }
-  }
-  if (gMax <= gMin){ gMax = gMin + 1; }
-
-  // Also include invested line
-  const invested = curves[0].map(pt => pt.invested);
-  for (const v of invested){
-    if (v < gMin) gMin = v;
-    if (v > gMax) gMax = v;
-  }
-
-  // Add 5% padding
-  const range = gMax - gMin;
-  gMin -= range * 0.05;
-  gMax += range * 0.05;
-
-  function xAt(i){ return pad.left + plotW * (i / (n - 1)); }
-  function yAt(v){ return pad.top + plotH * (1 - (v - gMin) / (gMax - gMin)); }
-
-  // Grid lines
-  ctx.strokeStyle = "rgba(0,0,0,.06)";
-  ctx.lineWidth = 1;
-  const nGrid = 5;
-  ctx.font = `${10 * dpr}px "IBM Plex Mono", monospace`;
-  ctx.fillStyle = "rgba(0,0,0,.35)";
-  ctx.textAlign = "right";
-  for (let i = 0; i <= nGrid; i++){
-    const v = gMin + (gMax - gMin) * (i / nGrid);
-    const y = yAt(v);
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-    const label = v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`;
-    ctx.fillText(label, pad.left - 6 * dpr, y + 3 * dpr);
-  }
-
-  // X-axis date labels — show only year boundaries, short format
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(0,0,0,.35)";
-  const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  // Pick ~4-6 evenly spaced labels that land on year or half-year boundaries
-  const allDates = curves[0].map(pt => pt.date);
-  const shownYears = new Set();
-  const labelIdxs = [];
-  for (let i = 0; i < n; i++){
-    const yr = allDates[i].slice(0, 4);
-    const mo = allDates[i].slice(5, 7);
-    if (mo === "01" && !shownYears.has(yr)){
-      shownYears.add(yr);
-      labelIdxs.push(i);
-    }
-  }
-  // Fallback: if too few labels, space evenly
-  if (labelIdxs.length < 2){
-    const step = Math.max(1, Math.floor(n / 5));
-    for (let i = 0; i < n; i += step) labelIdxs.push(i);
-  }
-  // Thin out if too many labels (keep max 7)
-  while (labelIdxs.length > 7){
-    const thinned = [];
-    for (let i = 0; i < labelIdxs.length; i++){
-      if (i % 2 === 0 || i === labelIdxs.length - 1) thinned.push(labelIdxs[i]);
-    }
-    labelIdxs.length = 0;
-    labelIdxs.push(...thinned);
-  }
-  for (const i of labelIdxs){
-    const x = xAt(i);
-    const d = allDates[i];
-    const mo = parseInt(d.slice(5, 7), 10) - 1;
-    const yr = d.slice(2, 4); // '21
-    ctx.fillText(`${MONTH_NAMES[mo]} '${yr}`, x, h - 6 * dpr);
-  }
-
-  // Invested line (dashed)
-  ctx.setLineDash([6 * dpr, 4 * dpr]);
-  ctx.strokeStyle = "rgba(0,0,0,.18)";
-  ctx.lineWidth = 1.5 * dpr;
-  ctx.beginPath();
-  for (let i = 0; i < n; i++){
-    const x = xAt(i), y = yAt(invested[i]);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Draw each curve (Top 1 thickest, SPY thinnest)
-  const lineWidths = [2.8, 2.2, 1.8, 1.5];
-  for (let c = 0; c < curves.length; c++){
-    ctx.strokeStyle = colors[c];
-    ctx.lineWidth = (lineWidths[c] || 2) * dpr;
-    ctx.beginPath();
-    for (let i = 0; i < curves[c].length; i++){
-      const x = xAt(i), y = yAt(curves[c][i].val);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-}
-
-/* ---------- backtest UI ---------- */
-
-function renderBacktestUI(results){
-  const container = byId("btContent");
-  if (!container) return;
-
-  let activeHold = 1;
-
-  function render(){
-    const data = results[activeHold];
-    if (!data){ container.innerHTML = `<div class="footnote">No data for this period.</div>`; return; }
-
-    container.innerHTML = "";
-
-    // Metrics boxes
-    const metricsWrap = document.createElement("div");
-    metricsWrap.className = "bt-metrics";
-
-    const strats = [
-      { label: "Top 1", n: 1, color: "var(--green)" },
-      { label: "Top 5", n: 5, color: "#2478b3" },
-      { label: "Top 10", n: 10, color: "#8e6bbf" },
-      { label: "SPY (benchmark)", n: "spy", color: "#999" },
-    ];
-
-    for (const s of strats){
-      const d = s.n === "spy" ? null : data[s.n];
-      const box = document.createElement("div");
-      box.className = "bt-metric-box";
-      if (s.n === "spy"){
-        const spyRet = data[1]?.spyReturn ?? 0;
-        const cls = spyRet >= 0 ? "bt-pos" : "bt-neg";
-        box.innerHTML = `<div class="h">${s.label}</div><div class="val ${cls}">${(spyRet * 100).toFixed(1)}%</div><div class="sub">Total return on $${((data[1]?.totalInvested || 0) / 1000).toFixed(0)}k invested</div>`;
-      } else if (d){
-        const cls = d.totalReturn >= 0 ? "bt-pos" : "bt-neg";
-        box.innerHTML = `<div class="h">${s.label}</div><div class="val ${cls}">${(d.totalReturn * 100).toFixed(1)}%</div><div class="sub">vs SPY ${((d.totalReturn - d.spyReturn) * 100).toFixed(1)}pp &bull; ${d.trades} trades</div>`;
-      }
-      metricsWrap.appendChild(box);
-    }
-    container.appendChild(metricsWrap);
-
-    // Chart
-    const chartWrap = document.createElement("div");
-    chartWrap.className = "bt-chart-wrap";
-    const canvas = document.createElement("canvas");
-    canvas.className = "bt-canvas";
-    chartWrap.appendChild(canvas);
-    container.appendChild(chartWrap);
-
-    // Legend
-    const legend = document.createElement("div");
-    legend.className = "bt-legend";
-    const legendItems = [
-      { label: "Top 1", color: "var(--green)" },
-      { label: "Top 5", color: "#2478b3" },
-      { label: "Top 10", color: "#8e6bbf" },
-      { label: "SPY", color: "#999" },
-      { label: "Invested", color: "rgba(0,0,0,.18)", dashed: true },
-    ];
-    for (const li of legendItems){
-      const el = document.createElement("div");
-      el.className = "bt-legend-item";
-      el.innerHTML = `<span class="bt-legend-swatch" style="background:${li.color}${li.dashed ? ";border-top:2px dashed rgba(0,0,0,.3);background:transparent;height:0" : ""}"></span><span>${li.label}</span>`;
-      legend.appendChild(el);
-    }
-    container.appendChild(legend);
-
-    // Performance table
-    const tbl = document.createElement("table");
-    tbl.className = "bt-perf-table";
-    tbl.style.marginTop = "14px";
-    tbl.innerHTML = `
-      <thead><tr>
-        <th>Strategy</th>
-        <th>Total Return</th>
-        <th>vs SPY</th>
-        <th>Win Rate</th>
-        <th>Avg Trade</th>
-        <th>Median Trade</th>
-        <th>Max Drawdown</th>
-        <th>Trades</th>
-      </tr></thead>
-      <tbody>
-      ${[1, 5, 10].map(n => {
-        const d = data[n];
-        if (!d) return "";
-        const excess = d.totalReturn - d.spyReturn;
-        return `<tr>
-          <td>Top ${n}</td>
-          <td class="${d.totalReturn >= 0 ? "bt-pos" : "bt-neg"}">${(d.totalReturn * 100).toFixed(1)}%</td>
-          <td class="${excess >= 0 ? "bt-pos" : "bt-neg"}">${excess >= 0 ? "+" : ""}${(excess * 100).toFixed(1)}pp</td>
-          <td>${(d.winRate * 100).toFixed(0)}%</td>
-          <td class="${d.avgTradeReturn >= 0 ? "bt-pos" : "bt-neg"}">${(d.avgTradeReturn * 100).toFixed(1)}%</td>
-          <td class="${d.medianReturn >= 0 ? "bt-pos" : "bt-neg"}">${(d.medianReturn * 100).toFixed(1)}%</td>
-          <td>${(d.maxDrawdown * 100).toFixed(1)}%</td>
-          <td>${d.trades}</td>
-        </tr>`;
-      }).join("")}
-      <tr>
-        <td>SPY (DCA)</td>
-        <td class="${(data[1]?.spyReturn ?? 0) >= 0 ? "bt-pos" : "bt-neg"}">${((data[1]?.spyReturn ?? 0) * 100).toFixed(1)}%</td>
-        <td>\u2014</td>
-        <td>\u2014</td>
-        <td>\u2014</td>
-        <td>\u2014</td>
-        <td>\u2014</td>
-        <td>\u2014</td>
-      </tr>
-      </tbody>
-    `;
-    const tableWrap = document.createElement("div");
-    tableWrap.className = "bt-table-wrap";
-    tableWrap.appendChild(tbl);
-    container.appendChild(tableWrap);
-
-    // Trade log section (using Top 5 strategy)
-    const top5 = data[5];
-    if (top5){
-      const closed = (top5.tradeLog || []).slice();
-      const open = (top5.openTrades || []).slice();
-      const allTrades = [...closed.map(t => ({...t, open: false})), ...open.map(t => ({...t, open: true}))];
-      const hasAny = allTrades.length > 0;
-
-      if (hasAny){
-        const tradesSection = document.createElement("div");
-        tradesSection.className = "bt-trades-section";
-
-        // Compute aggregate stats over ALL trades
-        const allRets = allTrades.map(t => t.ret);
-        const totalCount = allTrades.length;
-        const closedCount = closed.length;
-        const winCount = allTrades.filter(t => t.ret > 0).length;
-        const winPct = totalCount > 0 ? ((winCount / totalCount) * 100).toFixed(0) : "\u2014";
-        const avgRet = totalCount > 0 ? allRets.reduce((s, r) => s + r, 0) / totalCount : 0;
-        const sortedRets = allRets.slice().sort((a, b) => a - b);
-        const medRet = sortedRets.length > 0 ? (sortedRets.length % 2
-          ? sortedRets[Math.floor(sortedRets.length / 2)]
-          : (sortedRets[sortedRets.length / 2 - 1] + sortedRets[sortedRets.length / 2]) / 2) : 0;
-        const bestRet = sortedRets.length > 0 ? sortedRets[sortedRets.length - 1] : 0;
-        const worstRet = sortedRets.length > 0 ? sortedRets[0] : 0;
-
-        const hdr = document.createElement("div");
-        hdr.className = "bt-trades-header";
-        hdr.innerHTML = `<span class="bt-trades-title">TRADE LOG</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold &bull; ${totalCount} trades (${closedCount} closed, ${open.length} open)</span>`;
-        tradesSection.appendChild(hdr);
-
-        // Aggregate stats row
-        const statsRow = document.createElement("div");
-        statsRow.className = "bt-trades-stats";
-        const fmtPct = (v) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
-        statsRow.innerHTML = `
-          <span class="bt-ts"><b>Win rate:</b> ${winPct}%</span>
-          <span class="bt-ts"><b>Avg return:</b> <span class="${avgRet >= 0 ? "bt-pos" : "bt-neg"}">${fmtPct(avgRet)}</span></span>
-          <span class="bt-ts"><b>Median:</b> <span class="${medRet >= 0 ? "bt-pos" : "bt-neg"}">${fmtPct(medRet)}</span></span>
-          <span class="bt-ts"><b>Best:</b> <span class="bt-pos">${fmtPct(bestRet)}</span></span>
-          <span class="bt-ts"><b>Worst:</b> <span class="bt-neg">${fmtPct(worstRet)}</span></span>
-        `;
-        tradesSection.appendChild(statsRow);
-
-        // Build trade rows: open positions, then recent closed
-        const tradesTbl = document.createElement("table");
-        tradesTbl.className = "bt-perf-table bt-trades-table";
-
-        const recentClosed = closed.slice().sort((a, b) => b.sellDate.localeCompare(a.sellDate));
-        const openSorted = open.slice().sort((a, b) => b.buyDate.localeCompare(a.buyDate));
-
-        const MAX_ROWS = 20;
-        let rows = "";
-        let shown = 0;
-
-        if (openSorted.length > 0){
-          rows += `<tr class="bt-trades-group"><td colspan="5">Open positions (unrealized)</td></tr>`;
-          for (const t of openSorted.slice(0, 8)){
-            if (shown >= MAX_ROWS) break;
-            const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
-            rows += `<tr class="bt-trade-open"><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>\u2014</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.curPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
-            shown++;
-          }
-        }
-
-        if (recentClosed.length > 0){
-          rows += `<tr class="bt-trades-group"><td colspan="5">Latest closed trades</td></tr>`;
-          for (const t of recentClosed){
-            if (shown >= MAX_ROWS) break;
-            const cls = t.ret >= 0 ? "bt-pos" : "bt-neg";
-            rows += `<tr><td>${t.ticker}</td><td>${t.buyDate.slice(0,7)}</td><td>${t.sellDate.slice(0,7)}</td><td>$${t.buyPrice.toFixed(0)} \u2192 $${t.sellPrice.toFixed(0)}</td><td class="${cls}">${t.ret >= 0 ? "+" : ""}${(t.ret * 100).toFixed(1)}%</td></tr>`;
-            shown++;
-          }
-        }
-
-        tradesTbl.innerHTML = `<thead><tr><th>Ticker</th><th>Bought</th><th>Sold</th><th>Price</th><th>Return</th></tr></thead><tbody>${rows}</tbody>`;
-
-        const tradesWrap = document.createElement("div");
-        tradesWrap.className = "bt-table-wrap";
-        tradesWrap.appendChild(tradesTbl);
-        tradesSection.appendChild(tradesWrap);
-
-        container.appendChild(tradesSection);
-      }
-    }
-
-    // Note
-    const note = document.createElement("div");
-    note.className = "bt-note";
-    note.textContent = `Simulated $1,000/month DCA from ${data[1]?.equityCurve?.[0]?.date?.slice(0,7) || "start"} to ${data[1]?.equityCurve?.[data[1].equityCurve.length-1]?.date?.slice(0,7) || "end"}. Each purchase held ${activeHold}Y then sold. Stock universe is today\u2019s screener picks applied retroactively. Past results do not predict future performance.`;
-    container.appendChild(note);
-
-    // Draw chart
-    const curves = [];
-    const colors = ["#0f3d2e", "#2478b3", "#8e6bbf", "#999"];
-    for (const n of [1, 5, 10]){
-      const d = data[n];
-      if (d && d.equityCurve.length){
-        curves.push(d.equityCurve.map(pt => ({ date: pt.date, val: pt.strategyValue, invested: pt.invested })));
-      }
-    }
-    // SPY curve (from top-1 data, same invested amount)
-    const spyCurve = data[1]?.equityCurve;
-    if (spyCurve && spyCurve.length){
-      curves.push(spyCurve.map(pt => ({ date: pt.date, val: pt.spyValue, invested: pt.invested })));
-    }
-
-    if (curves.length){
-      requestAnimationFrame(() => drawBacktestChart(canvas, curves, ["Top 1","Top 5","Top 10","SPY"], colors));
-    }
-  }
-
-  // Tab clicks
-  document.querySelectorAll("#btHoldTabs .bt-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll("#btHoldTabs .bt-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      activeHold = Number(tab.dataset.hold);
-      render();
-    });
-  });
-
-  render();
-}
-
 /* ---------- main ---------- */
 
 (async function main(){
@@ -1149,29 +563,6 @@ function renderBacktestUI(results){
 
   setSortButtons(sortMode);
   await rerender();
-
-  // Backtest — lazy load when section is opened
-  let backtestLoaded = false;
-  const backtestEl = byId("backtestSection");
-  if (backtestEl){
-    backtestEl.addEventListener("toggle", async function(){
-      if (backtestEl.open && !backtestLoaded){
-        backtestLoaded = true;
-        byId("btContent").innerHTML = `<div class="footnote">Running backtest — loading all ticker data...</div>`;
-        try {
-          const results = await runBacktest(full, loadDetail);
-          if (results){
-            renderBacktestUI(results);
-          } else {
-            byId("btContent").innerHTML = `<div class="footnote">Could not run backtest — SPY data not available.</div>`;
-          }
-        } catch (err){
-          console.error("Backtest error:", err);
-          byId("btContent").innerHTML = `<div class="footnote" style="color:#8b4513">Backtest error: ${err.message}</div>`;
-        }
-      }
-    });
-  }
 
   // Search — filter existing + on-demand analysis for unknown tickers
   const onDemandCache = {};   // ticker -> { row, detail }
@@ -1308,6 +699,521 @@ function renderBacktestUI(results){
       byId("go").click();
     }
   });
+
+  /* ============================================================
+     BACKTEST — DCA OPTIMIZER
+     ============================================================ */
+
+  const btSection = document.getElementById("backtest-section");
+  let btLoaded = false;
+  let btResults = null;   // cached results across tab switches
+  let btHoldMonths = 12;  // default
+
+  btSection.addEventListener("toggle", function(){
+    if (btSection.open && !btLoaded){
+      btLoaded = true;
+      runBacktest();
+    }
+  });
+
+  // Hold-period tab buttons
+  document.querySelectorAll(".bt-hold-tabs .btn-lite").forEach(btn => {
+    btn.addEventListener("click", function(){
+      document.querySelectorAll(".bt-hold-tabs .btn-lite").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      btHoldMonths = Number(btn.dataset.hold);
+      if (btResults) renderBacktestResults(btResults, btHoldMonths);
+    });
+  });
+
+  async function runBacktest(){
+    const body = byId("backtest-body");
+    body.innerHTML = `<div class="footnote">Loading all ticker data — this may take a moment&hellip;</div>`;
+
+    try {
+      // 1. Load all ticker data
+      const tickers = items.map(i => i.ticker);
+      const allData = {};
+      const promises = tickers.map(async tk => {
+        try {
+          allData[tk] = await loadDetail(tk);
+        } catch(e){ /* skip */ }
+      });
+      await Promise.all(promises);
+
+      // Ensure SPY is loaded
+      if (!allData["SPY"]){
+        body.innerHTML = `<div class="footnote" style="color:#b00">SPY data not available for benchmarking.</div>`;
+        return;
+      }
+
+      // 2. Build date→index maps and aligned date grid using SPY dates
+      const spySeries = allData["SPY"].series;
+      const allDates = spySeries.dates;
+
+      // Build price & score lookups per ticker (date string → value)
+      const priceLookup = {};  // tk → Map(date → price)
+      const scoreLookup = {};  // tk → Map(date → final score)
+      for (const [tk, data] of Object.entries(allData)){
+        const s = data.series;
+        if (!s || !s.dates) continue;
+        const pm = new Map();
+        const fm = new Map();
+        for (let i = 0; i < s.dates.length; i++){
+          pm.set(s.dates[i], Number(s.prices[i]));
+          fm.set(s.dates[i], Number(s.final[i]));
+        }
+        priceLookup[tk] = pm;
+        scoreLookup[tk] = fm;
+      }
+
+      // 3. Identify first trading day of each month
+      const monthFirstIdx = [];
+      let prevYM = "";
+      for (let i = 0; i < allDates.length; i++){
+        const ym = allDates[i].substring(0, 7);
+        if (ym !== prevYM){
+          monthFirstIdx.push(i);
+          prevYM = ym;
+        }
+      }
+
+      // 4. Run simulations
+      const availTickers = Object.keys(priceLookup).filter(t => t !== "SPY");
+      const strategies = [1, 5, 10];
+      const holdPeriods = [12, 36, 60];
+
+      // For each month, rank tickers by score and record top N
+      const monthlyRanks = [];  // [{ date, dateIdx, ranked: [ticker, ...] }]
+      for (const mIdx of monthFirstIdx){
+        const date = allDates[mIdx];
+        const scored = [];
+        for (const tk of availTickers){
+          const s = scoreLookup[tk]?.get(date);
+          const p = priceLookup[tk]?.get(date);
+          if (s != null && Number.isFinite(s) && p != null && Number.isFinite(p) && p > 0){
+            scored.push({ ticker: tk, score: s });
+          }
+        }
+        scored.sort((a, b) => b.score - a.score);
+        monthlyRanks.push({ date, dateIdx: mIdx, ranked: scored.map(s => s.ticker) });
+      }
+
+      // Precompute day→month ordinal for fast lookup
+      const dayToMonth = new Int32Array(allDates.length);
+      for (let m = 0; m < monthFirstIdx.length; m++){
+        const start = monthFirstIdx[m];
+        const end = m + 1 < monthFirstIdx.length ? monthFirstIdx[m + 1] : allDates.length;
+        for (let d = start; d < end; d++) dayToMonth[d] = m;
+      }
+
+      // Generic DCA simulation (works for both strategy picks and SPY)
+      function simulateDCA(holdMonths, picksFn){
+        const DCA = 1000;
+        const positions = [];
+        let cash = 0;
+        const equity = new Float64Array(allDates.length);
+
+        // Build positions
+        for (let m = 0; m < monthlyRanks.length; m++){
+          const date = monthlyRanks[m].date;
+          const picks = picksFn(m, date); // [{ticker, price}, ...]
+          if (picks.length === 0) continue;
+          const perStock = DCA / picks.length;
+          for (const { ticker, price } of picks){
+            if (!price || price <= 0) continue;
+            positions.push({ ticker, shares: perStock / price, cost: perStock, buyPrice: price, buyMonth: m, sellMonth: m + holdMonths, sold: false, sellPrice: 0 });
+          }
+        }
+
+        // Walk daily
+        let totalInvested = 0;
+        let currentMonth = -1;
+        for (let d = 0; d < allDates.length; d++){
+          const date = allDates[d];
+          const mOrd = dayToMonth[d];
+
+          if (mOrd !== currentMonth){
+            currentMonth = mOrd;
+            // Count investment
+            const picks = picksFn(mOrd, monthlyRanks[mOrd]?.date);
+            if (picks.length > 0) totalInvested += DCA;
+
+            // Sell expired positions
+            for (const pos of positions){
+              if (!pos.sold && pos.sellMonth <= mOrd){
+                const sp = priceLookup[pos.ticker]?.get(date);
+                if (sp && sp > 0){ cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
+              }
+            }
+          }
+
+          // Value open positions
+          let openVal = 0;
+          for (const pos of positions){
+            if (pos.sold || pos.buyMonth > mOrd) continue;
+            const p = priceLookup[pos.ticker]?.get(date);
+            if (p && Number.isFinite(p)) openVal += pos.shares * p;
+          }
+          equity[d] = cash + openVal;
+        }
+
+        return { equity, totalInvested, positions };
+      }
+
+      function simulate(topN, holdMonths){
+        return simulateDCA(holdMonths, (m, date) => {
+          const ranked = monthlyRanks[m]?.ranked || [];
+          const picks = ranked.slice(0, Math.min(topN, ranked.length));
+          return picks.map(tk => ({ ticker: tk, price: priceLookup[tk]?.get(date) }));
+        });
+      }
+
+      function simulateSPY(holdMonths){
+        return simulateDCA(holdMonths, (m, date) => {
+          const price = priceLookup["SPY"]?.get(date);
+          return price && price > 0 ? [{ ticker: "SPY", price }] : [];
+        });
+      }
+
+      // Pre-compute all results
+      btResults = { allDates, priceLookup, holdPeriods: {} };
+      for (const hp of holdPeriods){
+        const spy = simulateSPY(hp);
+        const strats = {};
+        for (const n of strategies){
+          strats[n] = simulate(n, hp);
+        }
+        btResults.holdPeriods[hp] = { spy, strats };
+      }
+
+      renderBacktestResults(btResults, btHoldMonths);
+
+    } catch(err){
+      console.error("Backtest error:", err);
+      body.innerHTML = `<div class="footnote" style="color:#b00">Backtest error: ${err.message}</div>`;
+    }
+  }
+
+  function aggregatePositions(positions, priceLookup, lastDate){
+    const map = {};  // ticker → { totalCost, totalShares, soldValue, soldShares, openShares }
+    for (const pos of positions){
+      if (!map[pos.ticker]) map[pos.ticker] = { totalCost: 0, totalShares: 0, soldValue: 0, soldShares: 0, openShares: 0, buys: 0 };
+      const agg = map[pos.ticker];
+      agg.totalCost += pos.cost;
+      agg.totalShares += pos.shares;
+      agg.buys++;
+      if (pos.sold){
+        agg.soldValue += pos.shares * pos.sellPrice;
+        agg.soldShares += pos.shares;
+      } else {
+        agg.openShares += pos.shares;
+      }
+    }
+
+    const result = [];
+    for (const [ticker, agg] of Object.entries(map)){
+      const currentPrice = priceLookup[ticker]?.get(lastDate) || 0;
+      const openValue = agg.openShares * currentPrice;
+      const totalValue = agg.soldValue + openValue;
+      const avgCost = agg.totalShares > 0 ? agg.totalCost / agg.totalShares : 0;
+      const blendedExit = agg.totalShares > 0 ? totalValue / agg.totalShares : 0;
+      const returnPct = agg.totalCost > 0 ? (totalValue - agg.totalCost) / agg.totalCost : 0;
+      const status = agg.openShares === 0 ? "closed" : agg.soldShares === 0 ? "open" : "partial";
+      result.push({ ticker, buys: agg.buys, totalInvested: agg.totalCost, totalShares: agg.totalShares, avgCost, blendedExit, totalValue, returnPct, status });
+    }
+    result.sort((a, b) => b.returnPct - a.returnPct);
+    return result;
+  }
+
+  function renderBacktestResults(results, holdMonths){
+    const body = byId("backtest-body");
+    body.innerHTML = "";
+
+    const { allDates, priceLookup } = results;
+    const data = results.holdPeriods[holdMonths];
+    if (!data){ body.innerHTML = `<div class="footnote">No data for this hold period.</div>`; return; }
+
+    const { spy, strats } = data;
+    const lastDate = allDates[allDates.length - 1];
+
+    // --- Equity Curve Chart ---
+    const chartWrap = document.createElement("div");
+    chartWrap.className = "bt-chart-wrap";
+
+    const canvas = document.createElement("canvas");
+    canvas.className = "bt-canvas";
+    chartWrap.appendChild(canvas);
+
+    // Legend
+    const legend = document.createElement("div");
+    legend.className = "bt-legend";
+    const colors = { 1: "#d4820e", 5: "#0f3d2e", 10: "#2563eb", spy: "#888" };
+    const labels = { 1: "Top 1", 5: "Top 5", 10: "Top 10", spy: "SPY (benchmark)" };
+    for (const key of [1, 5, 10, "spy"]){
+      const swatch = document.createElement("span");
+      swatch.className = "bt-legend-item";
+      swatch.innerHTML = `<span class="bt-swatch" style="background:${colors[key]}"></span>${labels[key]}`;
+      legend.appendChild(swatch);
+    }
+    chartWrap.appendChild(legend);
+    body.appendChild(chartWrap);
+
+    // Draw chart
+    requestAnimationFrame(() => drawBacktestChart(canvas, allDates, strats, spy, colors));
+
+    // --- Performance Metrics Table ---
+    const metrics = computeMetrics(allDates, strats, spy, holdMonths);
+    const table = document.createElement("table");
+    table.className = "outcomes-table bt-table";
+
+    const metricRows = [
+      ["Total Invested", (m) => "$" + m.totalInvested.toLocaleString()],
+      ["Final Value", (m) => "$" + m.finalValue.toLocaleString()],
+      ["Total Return", (m) => fmtPctSigned(m.totalReturn)],
+      ["CAGR", (m) => fmtPctSigned(m.cagr)],
+      ["Max Drawdown", (m) => fmtPctSigned(-m.maxDrawdown)],
+      ["Best Month", (m) => fmtPctSigned(m.bestMonth)],
+      ["Worst Month", (m) => fmtPctSigned(m.worstMonth)],
+      ["Win Rate (months)", (m) => Math.round(m.winRate * 100) + "%"],
+      ["Sharpe Ratio", (m) => m.sharpe.toFixed(2)],
+    ];
+
+    let hdr = `<thead><tr><th></th><th>Top 1</th><th>Top 5</th><th>Top 10</th><th>SPY</th></tr></thead>`;
+    let tbody = "<tbody>";
+    for (const [label, fn] of metricRows){
+      tbody += `<tr><td>${label}</td>`;
+      tbody += `<td>${fn(metrics[1])}</td>`;
+      tbody += `<td>${fn(metrics[5])}</td>`;
+      tbody += `<td>${fn(metrics[10])}</td>`;
+      tbody += `<td>${fn(metrics.spy)}</td>`;
+      tbody += `</tr>`;
+    }
+    tbody += "</tbody>";
+    table.innerHTML = hdr + tbody;
+    body.appendChild(table);
+
+    // --- DCA Positions by Strategy (collapsible) ---
+    for (const n of [1, 5, 10]){
+      const agg = aggregatePositions(strats[n].positions, priceLookup, lastDate);
+      if (agg.length === 0) continue;
+
+      const det = document.createElement("details");
+      det.className = "details bt-positions-details";
+      const stratLabel = n === 1 ? "Top 1" : n === 5 ? "Top 5" : "Top 10";
+
+      let posRows = "";
+      for (const p of agg){
+        const retColor = p.returnPct >= 0 ? "var(--green)" : "#8b4513";
+        const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
+        posRows += `<tr>
+          <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
+          <td>${p.buys}</td>
+          <td>$${Math.round(p.totalInvested).toLocaleString()}</td>
+          <td>$${p.avgCost < 1 ? p.avgCost.toFixed(4) : p.avgCost < 100 ? p.avgCost.toFixed(2) : Math.round(p.avgCost).toLocaleString()}</td>
+          <td>$${p.blendedExit < 1 ? p.blendedExit.toFixed(4) : p.blendedExit < 100 ? p.blendedExit.toFixed(2) : Math.round(p.blendedExit).toLocaleString()}</td>
+          <td>$${Math.round(p.totalValue).toLocaleString()}</td>
+          <td style="color:${retColor};font-weight:600">${fmtPctSigned(p.returnPct)}</td>
+        </tr>`;
+      }
+
+      det.innerHTML = `
+        <summary class="details-summary">
+          <div class="evidence-summary-left">
+            <span class="section-title">${stratLabel} — DCA POSITIONS</span>
+            <span class="ev-sub">${agg.length} stocks, averaged across ${agg.reduce((s,p) => s + p.buys, 0)} monthly purchases</span>
+          </div>
+          <span class="plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="details-body">
+          <table class="outcomes-table bt-pos-table">
+            <thead><tr>
+              <th style="text-align:left">Ticker</th>
+              <th>Buys</th>
+              <th>Invested</th>
+              <th>Avg Cost</th>
+              <th>Avg Exit</th>
+              <th>Value</th>
+              <th>Return</th>
+            </tr></thead>
+            <tbody>${posRows}</tbody>
+          </table>
+        </div>
+      `;
+      body.appendChild(det);
+    }
+
+    // Disclaimer
+    const disc = document.createElement("div");
+    disc.className = "footnote";
+    disc.textContent = "Hypothetical backtest using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    body.appendChild(disc);
+  }
+
+  function fmtPctSigned(v){
+    if (!Number.isFinite(v)) return "\u2014";
+    const sign = v >= 0 ? "+" : "";
+    return sign + (v * 100).toFixed(1) + "%";
+  }
+
+  function drawBacktestChart(canvas, dates, strats, spy, colors){
+    const ctx = canvas.getContext("2d");
+    const dpr = devicePixelRatio || 1;
+    const w = canvas.width = Math.floor(canvas.clientWidth * dpr);
+    const h = canvas.height = Math.floor(canvas.clientHeight * dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 16 * dpr, right: 14 * dpr, bottom: 28 * dpr, left: 60 * dpr };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+
+    // Collect all equity series
+    const series = [];
+    for (const n of [1, 5, 10]){
+      series.push({ key: n, eq: strats[n].equity, color: colors[n] });
+    }
+    series.push({ key: "spy", eq: spy.equity, color: colors.spy });
+
+    // Find global min/max (skip leading zeros)
+    let gMin = Infinity, gMax = -Infinity;
+    let startIdx = 0;
+    for (const s of series){
+      for (let i = 0; i < s.eq.length; i++){
+        if (s.eq[i] > 0 && startIdx === 0) startIdx = i;
+        if (s.eq[i] > 0){
+          if (s.eq[i] < gMin) gMin = s.eq[i];
+          if (s.eq[i] > gMax) gMax = s.eq[i];
+        }
+      }
+    }
+    // Find actual start (first non-zero across all)
+    startIdx = 0;
+    for (let i = 0; i < dates.length; i++){
+      if (series.some(s => s.eq[i] > 0)){ startIdx = i; break; }
+    }
+
+    if (gMax <= gMin){ gMin = 0; gMax = 1; }
+    const range = gMax - gMin;
+    gMin -= range * 0.05;
+    gMax += range * 0.05;
+
+    const n = dates.length - startIdx;
+    function xAt(i){ return pad.left + plotW * ((i - startIdx) / Math.max(1, n - 1)); }
+    function yAt(v){ return pad.top + plotH * (1 - (v - gMin) / (gMax - gMin)); }
+
+    // Grid lines & y-axis labels
+    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.font = `${10 * dpr}px "IBM Plex Mono", monospace`;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++){
+      const v = gMin + (gMax - gMin) * (i / yTicks);
+      const y = yAt(v);
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+      ctx.fillText("$" + Math.round(v).toLocaleString(), pad.left - 6 * dpr, y);
+    }
+
+    // X-axis: year labels
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    let prevYear = "";
+    for (let i = startIdx; i < dates.length; i++){
+      const yr = dates[i].substring(0, 4);
+      if (yr !== prevYear){
+        prevYear = yr;
+        const x = xAt(i);
+        ctx.fillText(yr, x, pad.top + plotH + 8 * dpr);
+      }
+    }
+
+    // Draw lines (SPY first so it's behind, then strategies)
+    const drawOrder = [{ key: "spy", eq: spy.equity, color: colors.spy }, ...([10, 5, 1].map(k => ({ key: k, eq: strats[k].equity, color: colors[k] })))];
+    for (const s of drawOrder){
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = (s.key === "spy" ? 1.8 : 2.4) * dpr;
+      ctx.setLineDash(s.key === "spy" ? [6 * dpr, 4 * dpr] : []);
+      ctx.beginPath();
+      let started = false;
+      for (let i = startIdx; i < dates.length; i++){
+        if (s.eq[i] <= 0) continue;
+        const x = xAt(i), y = yAt(s.eq[i]);
+        if (!started){ ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  function computeMetrics(dates, strats, spy, holdMonths){
+    const result = {};
+
+    function calcForSeries(eq, totalInvested){
+      // Find first non-zero
+      let start = 0;
+      for (let i = 0; i < eq.length; i++){ if (eq[i] > 0){ start = i; break; } }
+      const finalVal = eq[eq.length - 1];
+
+      // Monthly returns
+      const monthlyReturns = [];
+      let prevYM = "";
+      let monthStart = 0;
+      for (let i = start; i < eq.length; i++){
+        const ym = dates[i].substring(0, 7);
+        if (ym !== prevYM){
+          if (prevYM && eq[monthStart] > 0){
+            monthlyReturns.push((eq[i] - eq[monthStart]) / eq[monthStart]);
+          }
+          prevYM = ym;
+          monthStart = i;
+        }
+      }
+
+      // Max drawdown (from peak equity)
+      let peak = 0, maxDD = 0;
+      for (let i = start; i < eq.length; i++){
+        if (eq[i] > peak) peak = eq[i];
+        const dd = (peak - eq[i]) / peak;
+        if (dd > maxDD) maxDD = dd;
+      }
+
+      const totalReturn = totalInvested > 0 ? (finalVal - totalInvested) / totalInvested : 0;
+
+      // CAGR: approximate years from data
+      const startDate = new Date(dates[start]);
+      const endDate = new Date(dates[dates.length - 1]);
+      const years = (endDate - startDate) / (365.25 * 86400000);
+      const cagr = years > 0 ? Math.pow(finalVal / totalInvested, 1 / years) - 1 : 0;
+
+      // Sharpe (annualized from monthly)
+      const avgR = monthlyReturns.reduce((a, b) => a + b, 0) / (monthlyReturns.length || 1);
+      const stdR = Math.sqrt(monthlyReturns.reduce((a, b) => a + (b - avgR) ** 2, 0) / (monthlyReturns.length || 1));
+      const sharpe = stdR > 0 ? (avgR / stdR) * Math.sqrt(12) : 0;
+
+      const winRate = monthlyReturns.length > 0 ? monthlyReturns.filter(r => r > 0).length / monthlyReturns.length : 0;
+
+      return {
+        totalInvested: Math.round(totalInvested),
+        finalValue: Math.round(finalVal),
+        totalReturn,
+        cagr,
+        maxDrawdown: maxDD,
+        bestMonth: monthlyReturns.length ? Math.max(...monthlyReturns) : 0,
+        worstMonth: monthlyReturns.length ? Math.min(...monthlyReturns) : 0,
+        winRate,
+        sharpe,
+      };
+    }
+
+    for (const n of [1, 5, 10]){
+      result[n] = calcForSeries(strats[n].equity, strats[n].totalInvested);
+    }
+    result.spy = calcForSeries(spy.equity, spy.totalInvested);
+    return result;
+  }
 
   } catch (err){
     console.error("Rebound Ledger render error:", err);
