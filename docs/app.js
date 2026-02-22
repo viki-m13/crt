@@ -57,7 +57,7 @@ function probColor(p){
 
 /* ---------- chart ---------- */
 
-function drawGradientLine(canvas, dates, prices, score){
+function drawGradientLine(canvas, dates, prices, wash, score){
   const ctx = canvas.getContext("2d");
   const w = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
   const h = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
@@ -91,10 +91,12 @@ function drawGradientLine(canvas, dates, prices, score){
   }
   ctx.stroke();
 
+  // Green overlay: only during pullbacks (wash >= 10), intensity = opportunity score
   for (let i = 0; i < n - 1; i++){
+    const w = Number(wash?.[i]);
+    if (!Number.isFinite(w) || w < 10) continue;
     const s = Number(score?.[i]);
-    if (!Number.isFinite(s) || s < 25) continue;
-    const a = clamp01((s - 25) / 75);  // map 25–100 → 0–1
+    const a = Number.isFinite(s) ? clamp01(s / 100) : 0.3;
     ctx.lineWidth = 3 * devicePixelRatio;
     ctx.strokeStyle = `rgba(6,78,43,${0.12 + 0.65 * a})`;
     ctx.beginPath();
@@ -386,7 +388,7 @@ function renderCardBody(body, item, detail, isTop10){
 
   // Draw chart
   if (series.prices && series.prices.length){
-    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.final));
+    requestAnimationFrame(() => drawGradientLine(canvas, series.dates, series.prices, series.wash, series.final));
   }
 }
 
