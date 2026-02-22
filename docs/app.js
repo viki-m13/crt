@@ -822,7 +822,7 @@ function sortItems(items, mode){
           const perStock = DCA / picks.length;
           for (const { ticker, price } of picks){
             if (!price || price <= 0) continue;
-            positions.push({ ticker, shares: perStock / price, buyMonth: m, sellMonth: m + holdMonths, sold: false });
+            positions.push({ ticker, shares: perStock / price, cost: perStock, buyPrice: price, buyMonth: m, sellMonth: m + holdMonths, sold: false, sellPrice: 0 });
           }
         }
 
@@ -843,7 +843,7 @@ function sortItems(items, mode){
             for (const pos of positions){
               if (!pos.sold && pos.sellMonth <= mOrd){
                 const sp = priceLookup[pos.ticker]?.get(date);
-                if (sp && sp > 0){ cash += pos.shares * sp; pos.sold = true; }
+                if (sp && sp > 0){ cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
               }
             }
           }
@@ -858,7 +858,7 @@ function sortItems(items, mode){
           equity[d] = cash + openVal;
         }
 
-        return { equity, totalInvested };
+        return { equity, totalInvested, positions };
       }
 
       function simulate(topN, holdMonths){
@@ -877,7 +877,7 @@ function sortItems(items, mode){
       }
 
       // Pre-compute all results
-      btResults = { allDates, holdPeriods: {} };
+      btResults = { allDates, priceLookup, holdPeriods: {} };
       for (const hp of holdPeriods){
         const spy = simulateSPY(hp);
         const strats = {};
@@ -895,15 +895,47 @@ function sortItems(items, mode){
     }
   }
 
+  function aggregatePositions(positions, priceLookup, lastDate){
+    const map = {};  // ticker → { totalCost, totalShares, soldValue, soldShares, openShares }
+    for (const pos of positions){
+      if (!map[pos.ticker]) map[pos.ticker] = { totalCost: 0, totalShares: 0, soldValue: 0, soldShares: 0, openShares: 0, buys: 0 };
+      const agg = map[pos.ticker];
+      agg.totalCost += pos.cost;
+      agg.totalShares += pos.shares;
+      agg.buys++;
+      if (pos.sold){
+        agg.soldValue += pos.shares * pos.sellPrice;
+        agg.soldShares += pos.shares;
+      } else {
+        agg.openShares += pos.shares;
+      }
+    }
+
+    const result = [];
+    for (const [ticker, agg] of Object.entries(map)){
+      const currentPrice = priceLookup[ticker]?.get(lastDate) || 0;
+      const openValue = agg.openShares * currentPrice;
+      const totalValue = agg.soldValue + openValue;
+      const avgCost = agg.totalShares > 0 ? agg.totalCost / agg.totalShares : 0;
+      const blendedExit = agg.totalShares > 0 ? totalValue / agg.totalShares : 0;
+      const returnPct = agg.totalCost > 0 ? (totalValue - agg.totalCost) / agg.totalCost : 0;
+      const status = agg.openShares === 0 ? "closed" : agg.soldShares === 0 ? "open" : "partial";
+      result.push({ ticker, buys: agg.buys, totalInvested: agg.totalCost, totalShares: agg.totalShares, avgCost, blendedExit, totalValue, returnPct, status });
+    }
+    result.sort((a, b) => b.returnPct - a.returnPct);
+    return result;
+  }
+
   function renderBacktestResults(results, holdMonths){
     const body = byId("backtest-body");
     body.innerHTML = "";
 
-    const { allDates } = results;
+    const { allDates, priceLookup } = results;
     const data = results.holdPeriods[holdMonths];
     if (!data){ body.innerHTML = `<div class="footnote">No data for this hold period.</div>`; return; }
 
     const { spy, strats } = data;
+    const lastDate = allDates[allDates.length - 1];
 
     // --- Equity Curve Chart ---
     const chartWrap = document.createElement("div");
@@ -960,6 +992,56 @@ function sortItems(items, mode){
     tbody += "</tbody>";
     table.innerHTML = hdr + tbody;
     body.appendChild(table);
+
+    // --- DCA Positions by Strategy (collapsible) ---
+    for (const n of [1, 5, 10]){
+      const agg = aggregatePositions(strats[n].positions, priceLookup, lastDate);
+      if (agg.length === 0) continue;
+
+      const det = document.createElement("details");
+      det.className = "details bt-positions-details";
+      const stratLabel = n === 1 ? "Top 1" : n === 5 ? "Top 5" : "Top 10";
+
+      let posRows = "";
+      for (const p of agg){
+        const retColor = p.returnPct >= 0 ? "var(--green)" : "#8b4513";
+        const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
+        posRows += `<tr>
+          <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
+          <td>${p.buys}</td>
+          <td>$${Math.round(p.totalInvested).toLocaleString()}</td>
+          <td>$${p.avgCost < 1 ? p.avgCost.toFixed(4) : p.avgCost < 100 ? p.avgCost.toFixed(2) : Math.round(p.avgCost).toLocaleString()}</td>
+          <td>$${p.blendedExit < 1 ? p.blendedExit.toFixed(4) : p.blendedExit < 100 ? p.blendedExit.toFixed(2) : Math.round(p.blendedExit).toLocaleString()}</td>
+          <td>$${Math.round(p.totalValue).toLocaleString()}</td>
+          <td style="color:${retColor};font-weight:600">${fmtPctSigned(p.returnPct)}</td>
+        </tr>`;
+      }
+
+      det.innerHTML = `
+        <summary class="details-summary">
+          <div class="evidence-summary-left">
+            <span class="section-title">${stratLabel} — DCA POSITIONS</span>
+            <span class="ev-sub">${agg.length} stocks, averaged across ${agg.reduce((s,p) => s + p.buys, 0)} monthly purchases</span>
+          </div>
+          <span class="plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="details-body">
+          <table class="outcomes-table bt-pos-table">
+            <thead><tr>
+              <th style="text-align:left">Ticker</th>
+              <th>Buys</th>
+              <th>Invested</th>
+              <th>Avg Cost</th>
+              <th>Avg Exit</th>
+              <th>Value</th>
+              <th>Return</th>
+            </tr></thead>
+            <tbody>${posRows}</tbody>
+          </table>
+        </div>
+      `;
+      body.appendChild(det);
+    }
 
     // Disclaimer
     const disc = document.createElement("div");
