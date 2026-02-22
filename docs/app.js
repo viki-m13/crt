@@ -478,16 +478,26 @@ async function runBacktest(full, loadDetailFn){
   const refPrices = spyDetail.series.prices;
 
   // For each ticker, build aligned arrays keyed by date
-  const tickerData = {};  // ticker -> { prices, oppScore (series.final = historical conviction) }
+  // Normalize oppScore per ticker: series.final = quality × win_1y, where quality
+  // is a CURRENT constant.  Dividing by max(final) removes today's quality and
+  // leaves only the historical win probability, preventing look-ahead bias.
+  const tickerData = {};  // ticker -> { prices, oppScore (normalized to ~win_1y) }
   for (const tk of tickers){
     const d = allDetails[tk];
     if (!d || !d.series) continue;
     const s = d.series;
     const pm = new Map(), fm = new Map();
+    let maxFinal = 0;
     for (let i = 0; i < s.dates.length; i++){
       if (s.prices[i] != null) pm.set(s.dates[i], s.prices[i]);
-      // series.final = historical opportunity score (quality × 1Y win probability)
-      if (s.final && s.final[i] != null && s.final[i] > 0) fm.set(s.dates[i], s.final[i]);
+      if (s.final && s.final[i] != null && s.final[i] > 0){
+        if (s.final[i] > maxFinal) maxFinal = s.final[i];
+      }
+    }
+    for (let i = 0; i < s.dates.length; i++){
+      if (s.final && s.final[i] != null && s.final[i] > 0){
+        fm.set(s.dates[i], maxFinal > 0 ? s.final[i] / maxFinal : 0);
+      }
     }
     tickerData[tk] = { prices: pm, oppScore: fm };
   }
@@ -513,7 +523,7 @@ async function runBacktest(full, loadDetailFn){
     const equityCurve = [];   // { date, strategyValue, spyValue }
     const trades = [];        // individual trades for stats
 
-    // Track open positions: { ticker, buyDate, buyPrice, shares, sellIdx }
+    // Track open positions: { ticker, buyDate, buyPrice, shares, sellIdx, lastPrice }
     const openPositions = [];
     let realizedPnl = 0;
     let spyShares = 0;
@@ -529,14 +539,10 @@ async function runBacktest(full, loadDetailFn){
         if (mIdx >= pos.sellIdx){
           const sellDate = refDates[pos.sellIdx];
           const sellPrice = tickerData[pos.ticker]?.prices.get(sellDate);
-          if (sellPrice != null){
-            const ret = (sellPrice / pos.buyPrice) - 1;
-            realizedPnl += pos.shares * sellPrice;
-            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice, ret });
-          } else {
-            realizedPnl += pos.shares * pos.buyPrice; // fallback: flat
-            trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice: pos.buyPrice, ret: 0 });
-          }
+          const sp = sellPrice != null ? sellPrice : pos.lastPrice;
+          const ret = (sp / pos.buyPrice) - 1;
+          realizedPnl += pos.shares * sp;
+          trades.push({ ticker: pos.ticker, buyDate: pos.buyDate, sellDate, buyPrice: pos.buyPrice, sellPrice: sp, ret });
           openPositions.splice(p, 1);
         }
       }
@@ -555,7 +561,7 @@ async function runBacktest(full, loadDetailFn){
       const sellIdx = fwdIndex(mIdx, holdYears);
       if (sellIdx < 0) continue; // not enough future data
 
-      // Rank tickers by historical opportunity score (conviction = quality × 1Y win prob)
+      // Rank tickers by normalized win probability (quality bias removed)
       const ranked = [];
       for (const tk of tickers){
         if (tk === "SPY" || tk === "DIA" || tk === "QQQ" || tk === "IWM") continue;
@@ -583,6 +589,7 @@ async function runBacktest(full, loadDetailFn){
           buyPrice: pick.price,
           shares,
           sellIdx,
+          lastPrice: pick.price,
         });
       }
 
@@ -597,7 +604,8 @@ async function runBacktest(full, loadDetailFn){
       let stratVal = realizedPnl;
       for (const pos of openPositions){
         const curPrice = tickerData[pos.ticker]?.prices.get(date);
-        stratVal += pos.shares * (curPrice != null ? curPrice : pos.buyPrice);
+        if (curPrice != null) pos.lastPrice = curPrice;
+        stratVal += pos.shares * pos.lastPrice;
       }
       let spyVal = spyRealized;
       for (const pos of spyOpenPositions){
@@ -614,7 +622,7 @@ async function runBacktest(full, loadDetailFn){
     const openTrades = [];
     for (const pos of openPositions){
       const curPrice = tickerData[pos.ticker]?.prices.get(lastDate);
-      const price = curPrice != null ? curPrice : pos.buyPrice;
+      const price = curPrice != null ? curPrice : pos.lastPrice;
       finalStrat += pos.shares * price;
       openTrades.push({ ticker: pos.ticker, buyDate: pos.buyDate, buyPrice: pos.buyPrice, curPrice: price, ret: (price / pos.buyPrice) - 1, open: true });
     }
@@ -923,9 +931,13 @@ function renderBacktestUI(results){
         const tradesSection = document.createElement("div");
         tradesSection.className = "bt-trades-section";
 
+        const totalTrades = closed.length + open.length;
+        const winCount = closed.filter(t => t.ret > 0).length;
+        const winPct = closed.length > 0 ? ((winCount / closed.length) * 100).toFixed(0) : "—";
+
         const hdr = document.createElement("div");
         hdr.className = "bt-trades-header";
-        hdr.innerHTML = `<span class="bt-trades-title">RECENT TRADES</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold</span>`;
+        hdr.innerHTML = `<span class="bt-trades-title">RECENT TRADES</span><span class="bt-trades-sub">Top 5 strategy &bull; ${activeHold}Y hold &bull; showing 20 of ${totalTrades} &bull; ${winPct}% win rate</span>`;
         tradesSection.appendChild(hdr);
 
         const tradesTbl = document.createElement("table");
@@ -970,7 +982,7 @@ function renderBacktestUI(results){
     // Note
     const note = document.createElement("div");
     note.className = "bt-note";
-    note.textContent = `Simulated $1,000/month DCA from ${data[1]?.equityCurve?.[0]?.date?.slice(0,7) || "start"} to ${data[1]?.equityCurve?.[data[1].equityCurve.length-1]?.date?.slice(0,7) || "end"}. Each purchase held ${activeHold}Y then sold. Past results do not predict future performance.`;
+    note.textContent = `Simulated $1,000/month DCA from ${data[1]?.equityCurve?.[0]?.date?.slice(0,7) || "start"} to ${data[1]?.equityCurve?.[data[1].equityCurve.length-1]?.date?.slice(0,7) || "end"}. Each purchase held ${activeHold}Y then sold. Stock universe is today\u2019s screener picks applied retroactively. Past results do not predict future performance.`;
     container.appendChild(note);
 
     // Draw chart
