@@ -475,6 +475,11 @@ function sortItems(items, mode){
   byId("asOf").textContent = formatAsOf(full.as_of);
 
   let items = full.items || [];
+
+  // Populate stats
+  const uniEl = byId("statUniverse");
+  if (uniEl) uniEl.textContent = items.length + "+";
+
   let sortMode = "conviction";
 
   async function loadDetail(ticker){
@@ -1219,4 +1224,47 @@ function sortItems(items, mode){
     console.error("Rebound Ledger render error:", err);
     byId("listing").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
   }
+})();
+
+/* ============================================================
+   NAV — shrink on scroll + active section highlight
+   ============================================================ */
+
+(function(){
+  const nav = document.querySelector(".site-nav");
+  if (!nav) return;
+
+  let ticking = false;
+  window.addEventListener("scroll", function(){
+    if (!ticking){
+      requestAnimationFrame(function(){
+        nav.classList.toggle("nav-scrolled", window.scrollY > 10);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+})();
+
+/* ============================================================
+   INTERSECTION OBSERVER — fade-in sections on scroll
+   ============================================================ */
+
+(function(){
+  const targets = document.querySelectorAll(".stat-block, .details-card, .listing-section");
+  if (!targets.length || !("IntersectionObserver" in window)) return;
+
+  const observer = new IntersectionObserver(function(entries){
+    for (const entry of entries){
+      if (entry.isIntersecting){
+        entry.target.classList.add("visible");
+        observer.unobserve(entry.target);
+      }
+    }
+  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+
+  targets.forEach(function(el){
+    el.classList.add("fade-target");
+    observer.observe(el);
+  });
 })();
