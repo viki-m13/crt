@@ -39,7 +39,7 @@ function byId(id){ return document.getElementById(id); }
 /* ---------- score badges ---------- */
 
 function oppBadge(v){
-  if (v === null || v === undefined || !Number.isFinite(Number(v))) return `<span class="badge badge-na">N/A</span>`;
+  if (v === null || v === undefined || !Number.isFinite(Number(v))) return `<span class="badge badge-na">\u2014</span>`;
   const n = Number(v);
   if (n >= 65) return `<span class="badge badge-opp-high">${Math.round(n)}</span>`;
   if (n >= 50) return `<span class="badge badge-opp-med">${Math.round(n)}</span>`;
@@ -49,10 +49,10 @@ function oppBadge(v){
 function probColor(p){
   if (p === null || p === undefined || !Number.isFinite(Number(p))) return "var(--muted)";
   const v = Number(p);
-  if (v >= 75) return "var(--green)";
-  if (v >= 60) return "#3d6b3d";
-  if (v >= 50) return "var(--ink)";
-  return "#8b4513";
+  if (v >= 75) return "var(--ink)";
+  if (v >= 60) return "#333";
+  if (v >= 50) return "#555";
+  return "var(--muted)";
 }
 
 /* ---------- chart ---------- */
@@ -80,8 +80,8 @@ function drawGradientLine(canvas, dates, prices, score){
   function xAt(i){ return x0 + (x1 - x0) * (i / (n - 1)); }
   function yAt(p){ return y1 - (y1 - y0) * ((p - minP) / (maxP - minP)); }
 
-  ctx.lineWidth = 2.2 * devicePixelRatio;
-  ctx.strokeStyle = "rgba(0,0,0,.35)";
+  ctx.lineWidth = 1.8 * devicePixelRatio;
+  ctx.strokeStyle = "rgba(0,0,0,.25)";
   ctx.beginPath();
   for (let i = 0; i < n; i++){
     const p = Number(prices[i]);
@@ -96,8 +96,8 @@ function drawGradientLine(canvas, dates, prices, score){
     if (!Number.isFinite(s)) continue;
     const a = clamp01(s / 100);
     if (a <= 0.02) continue;
-    ctx.lineWidth = 3.4 * devicePixelRatio;
-    ctx.strokeStyle = `rgba(15,61,46,${0.18 + 0.70 * a})`;
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.strokeStyle = `rgba(0,0,0,${0.12 + 0.65 * a})`;
     ctx.beginPath();
     ctx.moveTo(xAt(i), yAt(prices[i]));
     ctx.lineTo(xAt(i + 1), yAt(prices[i + 1]));
@@ -106,11 +106,11 @@ function drawGradientLine(canvas, dates, prices, score){
 
   const lastScore = Number(score?.[n - 1]);
   const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
-  ctx.fillStyle = `rgba(15,61,46,${0.25 + 0.70 * a})`;
-  ctx.strokeStyle = "rgba(0,0,0,.85)";
+  ctx.fillStyle = `rgba(0,0,0,${0.20 + 0.65 * a})`;
+  ctx.strokeStyle = "rgba(0,0,0,.9)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
-  ctx.arc(xAt(n - 1), yAt(prices[n - 1]), 4.3 * devicePixelRatio, 0, Math.PI * 2);
+  ctx.arc(xAt(n - 1), yAt(prices[n - 1]), 4 * devicePixelRatio, 0, Math.PI * 2);
   ctx.fill(); ctx.stroke();
 }
 
@@ -255,7 +255,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it usually go up? (45%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -264,7 +264,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it bounce back from drops? (35%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -273,7 +273,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Is the selling slowing down? (20%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--ink)' : '#8b4513'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? 'var(--ink)' : v >= 40 ? '#555' : 'var(--muted)'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -289,7 +289,7 @@ function proofSection(detail){
       <div class="proof-recovery">
         <div class="proof-recov-title">How often has it recovered from big drops?</div>
         <div class="proof-recov-stats">
-          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--ink)' : '#8b4513'}">${rate}% of the time</strong></div>
+          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? 'var(--ink)' : rate >= 50 ? '#555' : 'var(--muted)'}">${rate}% of the time</strong></div>
           ${nDd != null ? `<div class="proof-recov-stat"><span>Times it dropped 20%+</span><strong>${nDd}</strong></div>` : ""}
           ${nRec != null ? `<div class="proof-recov-stat"><span>Times it recovered within 3 years</span><strong>${nRec}</strong></div>` : ""}
         </div>
@@ -948,7 +948,7 @@ function sortItems(items, mode){
     // Legend
     const legend = document.createElement("div");
     legend.className = "bt-legend";
-    const colors = { 1: "#d4820e", 5: "#0f3d2e", 10: "#2563eb", spy: "#888" };
+    const colors = { 1: "#000000", 5: "#555555", 10: "#999999", spy: "#cccccc" };
     const labels = { 1: "Top 1", 5: "Top 5", 10: "Top 10", spy: "SPY (benchmark)" };
     for (const key of [1, 5, 10, "spy"]){
       const swatch = document.createElement("span");
@@ -1004,7 +1004,7 @@ function sortItems(items, mode){
 
       let posRows = "";
       for (const p of agg){
-        const retColor = p.returnPct >= 0 ? "var(--green)" : "#8b4513";
+        const retColor = p.returnPct >= 0 ? "var(--ink)" : "var(--muted)";
         const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
         posRows += `<tr>
           <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
