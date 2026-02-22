@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ============================================================
-# Rebound Ledger — static daily scan generator
+# Daily Stock Guide — static daily scan generator
 #
 # Writes:
 #   - docs/data/full.json                (ranking table + top10 embedded details)

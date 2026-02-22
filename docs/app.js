@@ -1252,7 +1252,7 @@ function buildMarquee(items){
   }
 
   } catch (err){
-    console.error("Rebound Ledger render error:", err);
+    console.error("Daily Stock Guide render error:", err);
     byId("listing").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
   }
 })();
