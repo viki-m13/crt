@@ -93,11 +93,10 @@ function drawGradientLine(canvas, dates, prices, score){
 
   for (let i = 0; i < n - 1; i++){
     const s = Number(score?.[i]);
-    if (!Number.isFinite(s)) continue;
-    const a = clamp01(s / 100);
-    if (a <= 0.02) continue;
+    if (!Number.isFinite(s) || s < 25) continue;
+    const a = clamp01((s - 25) / 75);  // map 25–100 → 0–1
     ctx.lineWidth = 3 * devicePixelRatio;
-    ctx.strokeStyle = `rgba(6,78,43,${0.15 + 0.70 * a})`;
+    ctx.strokeStyle = `rgba(6,78,43,${0.12 + 0.65 * a})`;
     ctx.beginPath();
     ctx.moveTo(xAt(i), yAt(prices[i]));
     ctx.lineTo(xAt(i + 1), yAt(prices[i + 1]));
@@ -105,8 +104,8 @@ function drawGradientLine(canvas, dates, prices, score){
   }
 
   const lastScore = Number(score?.[n - 1]);
-  const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
-  ctx.fillStyle = `rgba(6,78,43,${0.25 + 0.70 * a})`;
+  const rawA = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
+  ctx.fillStyle = `rgba(6,78,43,${0.25 + 0.70 * rawA})`;
   ctx.strokeStyle = "rgba(0,0,0,.85)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
