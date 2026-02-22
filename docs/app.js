@@ -1,6 +1,6 @@
 
 const DATA_URL = "./data/full.json";
-const API_URL = window.REBOUND_API_URL || "http://localhost:5001";
+const API_URL = window.REBOUND_API_URL || "";
 
 const CACHE_BUST = String(Date.now());
 
@@ -618,7 +618,7 @@ function sortItems(items, mode){
       return;
     }
 
-    setSearchStatus("Analyzing " + ticker + "...");
+    setSearchStatus("Analyzing " + ticker + " — this may take up to a minute...");
     byId("go").disabled = true;
 
     try {
