@@ -49,8 +49,8 @@ function oppBadge(v){
 function probColor(p){
   if (p === null || p === undefined || !Number.isFinite(Number(p))) return "var(--muted)";
   const v = Number(p);
-  if (v >= 80) return "#0a7c42";
-  if (v >= 65) return "#1a8a50";
+  if (v >= 80) return "#064e2b";
+  if (v >= 65) return "#0a6636";
   if (v >= 50) return "var(--ink)";
   return "#b35900";
 }
@@ -97,7 +97,7 @@ function drawGradientLine(canvas, dates, prices, score){
     const a = clamp01(s / 100);
     if (a <= 0.02) continue;
     ctx.lineWidth = 3 * devicePixelRatio;
-    ctx.strokeStyle = `rgba(10,124,66,${0.15 + 0.70 * a})`;
+    ctx.strokeStyle = `rgba(6,78,43,${0.15 + 0.70 * a})`;
     ctx.beginPath();
     ctx.moveTo(xAt(i), yAt(prices[i]));
     ctx.lineTo(xAt(i + 1), yAt(prices[i + 1]));
@@ -106,7 +106,7 @@ function drawGradientLine(canvas, dates, prices, score){
 
   const lastScore = Number(score?.[n - 1]);
   const a = clamp01((Number.isFinite(lastScore) ? lastScore : 0) / 100);
-  ctx.fillStyle = `rgba(10,124,66,${0.25 + 0.70 * a})`;
+  ctx.fillStyle = `rgba(6,78,43,${0.25 + 0.70 * a})`;
   ctx.strokeStyle = "rgba(0,0,0,.85)";
   ctx.lineWidth = 1.2 * devicePixelRatio;
   ctx.beginPath();
@@ -255,7 +255,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it usually go up? (45%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#064e2b' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -264,7 +264,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Does it bounce back from drops? (35%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#064e2b' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -273,7 +273,7 @@ function proofSection(detail){
       barsHtml += `
         <div class="proof-row">
           <span class="proof-label">Is the selling slowing down? (20%)</span>
-          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#0a7c42' : v >= 40 ? '#555' : '#b35900'}"></div></div>
+          <div class="proof-bar-track"><div class="proof-bar-fill" style="width:${v}%;background:${v >= 60 ? '#064e2b' : v >= 40 ? '#555' : '#b35900'}"></div></div>
           <strong class="proof-val">${v}</strong>
         </div>`;
     }
@@ -289,7 +289,7 @@ function proofSection(detail){
       <div class="proof-recovery">
         <div class="proof-recov-title">How often has it recovered from big drops?</div>
         <div class="proof-recov-stats">
-          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? '#0a7c42' : rate >= 50 ? 'var(--ink)' : '#b35900'}">${rate}% of the time</strong></div>
+          <div class="proof-recov-stat"><span>Bounced back</span><strong style="color:${rate >= 75 ? '#064e2b' : rate >= 50 ? 'var(--ink)' : '#b35900'}">${rate}% of the time</strong></div>
           ${nDd != null ? `<div class="proof-recov-stat"><span>Times it dropped 20%+</span><strong>${nDd}</strong></div>` : ""}
           ${nRec != null ? `<div class="proof-recov-stat"><span>Times it recovered within 3 years</span><strong>${nRec}</strong></div>` : ""}
         </div>
@@ -683,7 +683,7 @@ function buildMarquee(items){
       const summary = document.createElement("summary");
       summary.className = "ticker-row";
       summary.innerHTML = `
-        <span class="row-ticker">${item.ticker}<span class="ondemand-label">Live analysis</span></span>
+        <span class="row-ticker">${item.ticker}</span>
         <span class="row-cell" data-label="Opp Score">${oppBadge(item.conviction)}</span>
         <span class="row-cell" data-label="Pullback">${fmtNum0(item.washout_today)}</span>
         <span class="row-cell" data-label="1Y Prob" style="color:${probColor(item.prob_1y)}">${fmtPctWhole(item.prob_1y)}</span>
@@ -982,7 +982,7 @@ function buildMarquee(items){
     // Legend
     const legend = document.createElement("div");
     legend.className = "bt-legend";
-    const colors = { 1: "#0a7c42", 5: "#1a6dd1", 10: "#d4820e", spy: "#999" };
+    const colors = { 1: "#064e2b", 5: "#1a6dd1", 10: "#d4820e", spy: "#999" };
     const labels = { 1: "Top 1", 5: "Top 5", 10: "Top 10", spy: "SPY (benchmark)" };
     for (const key of [1, 5, 10, "spy"]){
       const swatch = document.createElement("span");
@@ -1038,7 +1038,7 @@ function buildMarquee(items){
 
       let posRows = "";
       for (const p of agg){
-        const retColor = p.returnPct >= 0 ? "#0a7c42" : "#b35900";
+        const retColor = p.returnPct >= 0 ? "#064e2b" : "#b35900";
         const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
         posRows += `<tr>
           <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
