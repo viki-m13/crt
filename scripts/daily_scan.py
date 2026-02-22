@@ -51,7 +51,7 @@ ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT",
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
 TOP10_EMBED = 10
-PLOT_LAST_DAYS = 365 * 6
+PLOT_LAST_DAYS = 365 * 11
 
 # Lookbacks (days)
 LB_LT = 252                 # ~1 year
