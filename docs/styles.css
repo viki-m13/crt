@@ -286,15 +286,24 @@ strong{font-weight:600}
   margin-bottom:24px;
 }
 .search{display:flex;align-items:center;flex:1;min-width:0}
+.search-field{position:relative;flex:1;min-width:0;display:flex}
 .search-input{
   flex:1;min-width:0;
-  padding:11px 16px;
+  padding:11px 16px;padding-right:32px;
   border:1px solid var(--rule-light);border-right:none;
   background:transparent;
   font-family:var(--mono);font-size:13px;
   transition:border-color .2s ease-in-out;
 }
 .search-input:focus{outline:none;border-color:var(--ink)}
+.search-clear{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--muted);padding:4px;line-height:1;
+  display:none;
+}
+.search-clear.visible{display:block}
+.search-clear:hover{color:var(--ink)}
 .btn{
   padding:11px 20px;
   border:1px solid var(--ink);
@@ -699,6 +708,8 @@ strong{font-weight:600}
   .explain-grid{grid-template-columns:1fr}
   .outcomes{grid-template-columns:1fr}
   .ev-grid{grid-template-columns:1fr}
+  .ev-cols-header{grid-template-columns:1fr 64px 64px}
+  .ev-grid .outbox .r{grid-template-columns:1fr 64px 64px}
   .proof-grid{grid-template-columns:minmax(0,240px) 1fr 36px}
   .bt-canvas{height:220px}
   .bt-table{font-size:11px}
@@ -739,12 +750,14 @@ strong{font-weight:600}
   .bt-legend{gap:10px;font-size:10px}
   .bt-table{font-size:10px}
   .bt-table th,.bt-table td{padding:5px 5px}
-  .controls{flex-direction:column;align-items:stretch;gap:10px}
-  .search{max-width:none;width:100%}
-  .search-input{padding:8px 10px;font-size:12px}
-  .btn{padding:8px 12px;font-size:12px}
+  .controls{flex-direction:column;align-items:stretch;gap:12px}
+  .search{max-width:none;width:100%;gap:8px}
+  .search-input{padding:10px 12px;padding-right:32px;font-size:13px;border-right:1px solid var(--rule-light);border-radius:4px}
+  .btn{padding:10px 16px;font-size:13px;border-radius:4px}
   .search-status{flex-basis:100%;margin-left:0;margin-top:4px}
   .sort{justify-content:center}
+  .ev-cols-header{grid-template-columns:1fr 56px 56px}
+  .ev-grid .outbox .r{grid-template-columns:1fr 56px 56px}
   .footer-inner{gap:24px}
   .details-card{padding:20px 0}
 }
