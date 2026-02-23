@@ -91,7 +91,7 @@ function drawGradientLine(canvas, dates, prices, wash, score){
   }
   ctx.stroke();
 
-  // Green overlay: only during pullbacks (wash >= 10), intensity = opportunity score
+  // Green overlay: only during pullbacks (wash >= 10), intensity = pullback-gated opportunity score
   for (let i = 0; i < n - 1; i++){
     const w = Number(wash?.[i]);
     if (!Number.isFinite(w) || w < 10) continue;
