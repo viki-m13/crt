@@ -445,12 +445,23 @@ strong{font-weight:600}
    TABLES
    ============================================================ */
 
+/* Horizontal scroll wrapper for tables on mobile */
+.table-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin:0 -2px;
+  padding:0 2px;
+}
+.table-scroll::-webkit-scrollbar{height:4px}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--rule-light);border-radius:2px}
+
 .outcomes-table{
   font-family:var(--mono);
   font-size:12px;
   border:1px solid var(--rule-light);
   border-collapse:collapse;
   width:100%;
+  min-width:420px;
 }
 .outcomes-table th,
 .outcomes-table td{
@@ -600,7 +611,7 @@ strong{font-weight:600}
 .bt-swatch{display:inline-block;width:18px;height:3px}
 .bt-table{margin-top:8px;margin-bottom:12px}
 .bt-positions-details{margin-top:12px}
-.bt-pos-table{margin-top:6px}
+.bt-pos-table{margin-top:6px;min-width:520px}
 .bt-status-open{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);background:rgba(0,0,0,.06);padding:2px 6px;font-weight:500;margin-left:4px;vertical-align:middle}
 .bt-status-partial{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:rgba(0,0,0,.04);padding:2px 6px;font-weight:500;margin-left:4px;vertical-align:middle}
 
