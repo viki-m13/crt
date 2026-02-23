@@ -195,6 +195,23 @@ def final_score(edge_score: float, washout: float) -> float:
     ww = float(np.clip(w / 100.0, 0.0, 1.0))
     return float(e * (FINAL_WASH_FLOOR + FINAL_WASH_WEIGHT * ww))
 
+def pullback_gate(washout: float) -> float:
+    """Soft gate: kills score for stocks with no pullback, near-full credit once
+    washout ≥ ~40.  Acts as a filter (not a predictor).
+
+    Returns 0.05 at washout=0, ramps to 1.0 at washout≥45:
+      wash  0 → 0.05   (no pullback = no opportunity)
+      wash 10 → 0.17
+      wash 20 → 0.41
+      wash 30 → 0.64
+      wash 40 → 0.88
+      wash 45 → 1.00
+    """
+    w = safe_float(washout)
+    if not np.isfinite(w) or w <= 0:
+        return 0.05
+    return float(0.05 + 0.95 * min(1.0, max(0.0, w / 45.0)))
+
 # =========================
 # QUALITY GATES (price-based)
 # =========================
@@ -589,6 +606,58 @@ def compute_washout_meter(feat: pd.DataFrame) -> pd.Series:
     wash = (0.55 * struct + 0.30 * idio + 0.15 * cap).clip(0, 1)
     wash = (wash * confirm).clip(0, 1)
     return 100.0 * wash
+
+# =========================
+# Value Depth (stockpick-inspired)
+# =========================
+def compute_value_depth(feat: pd.DataFrame) -> pd.Series:
+    """Value depth score (0-100). Higher = deeper undervaluation opportunity.
+
+    Rewards stocks near 52-week lows, below their 200-day SMA, with oversold
+    RSI and significant drawdowns.  Penalises stocks near highs, above SMA,
+    with overbought RSI.  Modelled after the stockpick value-model scoring.
+    """
+    px = feat["px"]
+
+    # --- 1. Position in 52-week range (pos_lt: 0=at low, 1=at high) ---
+    pos = feat["pos_lt"].fillna(0.5)
+    pos_score = np.select(
+        [pos <= 0.20, pos <= 0.40, pos <= 0.60, pos >= 0.80],
+        [40, 25, 10, -10],
+        default=0,
+    )
+
+    # --- 2. Distance from 200-day SMA (%) ---
+    sma200 = px.rolling(200, min_periods=150).mean()
+    sma_dist = ((px - sma200) / sma200.replace(0, np.nan) * 100).fillna(0)
+    sma_score = np.select(
+        [sma_dist < -10, sma_dist < -5, sma_dist < 0, sma_dist > 10],
+        [25, 15, 5, -10],
+        default=0,
+    )
+
+    # --- 3. RSI-14 ---
+    delta = px.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / loss.replace(0, np.nan)
+    rsi = (100 - (100 / (1 + rs))).fillna(50)
+    rsi_score = np.select(
+        [rsi < 30, rsi < 40, rsi < 50, rsi > 70],
+        [20, 10, 5, -10],
+        default=0,
+    )
+
+    # --- 4. Drawdown depth from 52-week high (dd_lt: 0-1) ---
+    dd_pct = (feat["dd_lt"].fillna(0) * 100)  # e.g. 0.30 → 30
+    dd_score = np.select(
+        [dd_pct > 30, dd_pct > 20, dd_pct > 10],
+        [15, 10, 5],
+        default=0,
+    )
+
+    raw = (pos_score + sma_score + rsi_score + dd_score + 20).astype(float)
+    return pd.Series(np.clip(raw, 0, 100), index=feat.index, dtype=float)
 
 # =========================
 # Analog engine
@@ -1071,11 +1140,12 @@ def compute_conviction_series(
     quality: float,
     eligible=None,
 ) -> pd.Series:
-    """Historical Opportunity Score (quality × 1Y prob) for chart shading.
+    """Historical Opportunity Score (quality × 1Y prob × pullback gate) for chart shading.
 
-    Uses today's quality (stable over chart window) and the 1Y win rate
-    from analog matching at each sampled historical point — same formula
-    as the Opportunity Score shown in the badge/table.
+    Uses today's quality (stable over chart window), the 1Y win rate
+    from analog matching at each sampled historical point, and the
+    washout gate at that point — same formula as the Opportunity Score
+    shown in the badge/table.
     """
     if not np.isfinite(quality):
         return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
@@ -1090,7 +1160,10 @@ def compute_conviction_series(
     for t in sample_idx:
         win_1y = _compute_1y_winrate_at(feat, X, regimes, t, eligible=eligible)
         if np.isfinite(win_1y):
-            vals[t] = float(quality * win_1y)  # conviction = quality × 1Y win rate
+            w = safe_float(feat.loc[t, "washout_meter"]) if "washout_meter" in feat.columns else 0.0
+            if not np.isfinite(w):
+                w = 0.0
+            vals[t] = float(quality * win_1y * pullback_gate(w))
 
     s = pd.Series(vals).sort_index()
     full = pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
@@ -1146,6 +1219,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     feat = feat.join(mkt.reindex(idx), how="left")
     feat = feat.join(forward_returns(feat["px"]), how="left")
     feat["washout_meter"] = compute_washout_meter(feat)
+    feat["value_depth"] = compute_value_depth(feat)
 
     X = build_feature_matrix(feat, feature_cols, zwin=zwin)
     ok_now = X.notna().all(axis=1) & feat["bottom_confirm"].notna() & feat["px"].notna()
@@ -1157,6 +1231,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
 
     confirm_today = safe_float(feat.loc[now_idx, "bottom_confirm"])
     wash_today = safe_float(feat.loc[now_idx, "washout_meter"])
+    vdepth_today = safe_float(feat.loc[now_idx, "value_depth"])
     beta_today = safe_float(feat.loc[now_idx, "beta"])
 
     # Gate: this scan is about washed-out setups (ALWAYS_PLOT + SPY bypasses)
@@ -1332,7 +1407,8 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "prob_3y": float(h_summaries.get("3Y", {}).get("win", 0) * 100) if "3Y" in h_summaries else None,
         "prob_5y": float(h_summaries.get("5Y", {}).get("win", 0) * 100) if "5Y" in h_summaries else None,
         "quality": float(quality) if np.isfinite(quality) else None,
-        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0)) if (np.isfinite(quality) and "1Y" in h_summaries) else None,
+        "value_depth": float(vdepth_today) if np.isfinite(vdepth_today) else None,
+        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0) * pullback_gate(wash_today)) if (np.isfinite(quality) and "1Y" in h_summaries and np.isfinite(wash_today)) else None,
         "median_1y": h_summaries.get("1Y", {}).get("median", None),
         "median_3y": h_summaries.get("3Y", {}).get("median", None),
         "median_5y": h_summaries.get("5Y", {}).get("median", None),
