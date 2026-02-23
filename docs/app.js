@@ -321,6 +321,7 @@ function proofSection(detail){
 
 function buildRationale(item){
   const pullback = Number(item.washout_today);
+  const vdepth = Number(item.value_depth);
   const prob1y = Number(item.prob_1y);
   const cases = Number(item.n_analogs);
   const typical = item.median_1y;
@@ -328,16 +329,29 @@ function buildRationale(item){
   const quality = Number(item.quality);
 
   const parts = [];
-  if (Number.isFinite(pullback) && pullback > 0)
+
+  // Value depth summary — the headline
+  if (Number.isFinite(vdepth)) {
+    if (vdepth >= 70)
+      parts.push(`<strong>Deep value setup</strong> (${fmtNum0(vdepth)}/100) — near 52-week lows, well below its moving average.`);
+    else if (vdepth >= 45)
+      parts.push(`<strong>Moderate value</strong> (${fmtNum0(vdepth)}/100) — pulled back with some room to recover.`);
+    else if (vdepth >= 25)
+      parts.push(`<strong>Mild pullback</strong> (${fmtNum0(vdepth)}/100) — limited discount from recent highs.`);
+    else
+      parts.push(`<strong>Near highs</strong> (${fmtNum0(vdepth)}/100) — not in a pullback, limited opportunity.`);
+  } else if (Number.isFinite(pullback) && pullback > 0) {
     parts.push(`Dropped <strong>${fmtNum0(pullback)}/100</strong> from its normal range.`);
-  else
+  } else {
     parts.push(`No significant pullback detected.`);
+  }
+
   if (Number.isFinite(cases) && cases > 0 && Number.isFinite(prob1y))
-    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past ${pullback > 0 ? "pullbacks" : "setups"}, it was higher 1 year later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
+    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past pullbacks, it was higher 1 year later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
   if (downside != null && Number.isFinite(Number(downside)))
     parts.push(`Worst 1-in-10 scenario: <strong>${fmtPct(downside)}</strong>.`);
   if (Number.isFinite(quality))
-    parts.push(`Quality score: <strong>${fmtNum0(quality)}</strong> — ${quality >= 70 ? "strong stock with a history of bouncing back" : quality >= 45 ? "decent stock, moderate recovery track record" : "weaker stock, less consistent recoveries"}.`);
+    parts.push(`Quality: <strong>${fmtNum0(quality)}</strong> — ${quality >= 70 ? "strong stock with a history of bouncing back" : quality >= 45 ? "decent stock, moderate recovery track record" : "weaker stock, less consistent recoveries"}.`);
 
   return parts.join(" ");
 }
