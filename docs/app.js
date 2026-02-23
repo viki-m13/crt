@@ -710,8 +710,24 @@ function buildMarquee(items){
     byId("go").disabled = false;
   }
 
+  // Clear button visibility
+  const clearBtn = byId("clear-search");
+  function updateClearBtn(){
+    const hasText = byId("q").value.trim().length > 0;
+    clearBtn.classList.toggle("visible", hasText);
+  }
+
+  clearBtn.addEventListener("click", function(){
+    byId("q").value = "";
+    updateClearBtn();
+    clearSearchStatus();
+    rerender();
+    byId("q").focus();
+  });
+
   // Wire up search: typing filters existing, "Find" button also triggers on-demand
   byId("q").addEventListener("input", function(){
+    updateClearBtn();
     clearTimeout(searchDebounce);
     searchDebounce = setTimeout(applySearch, 150);
   });
