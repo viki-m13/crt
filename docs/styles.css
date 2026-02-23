@@ -605,6 +605,65 @@ strong{font-weight:600}
 .bt-status-partial{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:rgba(0,0,0,.04);padding:2px 6px;font-weight:500;margin-left:4px;vertical-align:middle}
 
 /* ============================================================
+   LEGAL PAGES
+   ============================================================ */
+
+.legal-page{
+  padding:calc(var(--nav-h) + 48px) 24px 64px;
+  min-height:100vh;
+}
+.legal-inner{
+  max-width:720px;
+  margin:0 auto;
+}
+.legal-inner h1{
+  font-family:var(--sans);
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  margin-bottom:8px;
+}
+.legal-updated{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--muted);
+  letter-spacing:.04em;
+  margin-bottom:32px;
+}
+.legal-inner h2{
+  font-family:var(--sans);
+  font-size:18px;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  margin-top:32px;
+  margin-bottom:12px;
+}
+.legal-inner p{
+  font-size:15px;
+  line-height:1.7;
+  color:var(--ink);
+  margin-bottom:12px;
+}
+.legal-inner ul{
+  margin:0 0 12px 20px;
+  padding:0;
+}
+.legal-inner li{
+  font-size:15px;
+  line-height:1.7;
+  color:var(--ink);
+  margin-bottom:6px;
+}
+.legal-inner a{
+  color:var(--ink);
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.legal-inner a:hover{
+  color:var(--muted);
+}
+
+/* ============================================================
    FOOTER (multi-column, Frame & Form style)
    ============================================================ */
 
