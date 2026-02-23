@@ -330,8 +330,10 @@ function buildRationale(item){
   const parts = [];
   if (Number.isFinite(pullback) && pullback > 0)
     parts.push(`Dropped <strong>${fmtNum0(pullback)}/100</strong> from its normal range.`);
+  else
+    parts.push(`No significant pullback detected.`);
   if (Number.isFinite(cases) && cases > 0 && Number.isFinite(prob1y))
-    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past pullbacks, it was higher 1 year later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
+    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past ${pullback > 0 ? "pullbacks" : "setups"}, it was higher 1 year later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
   if (downside != null && Number.isFinite(Number(downside)))
     parts.push(`Worst 1-in-10 scenario: <strong>${fmtPct(downside)}</strong>.`);
   if (Number.isFinite(quality))

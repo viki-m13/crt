@@ -1071,11 +1071,12 @@ def compute_conviction_series(
     quality: float,
     eligible=None,
 ) -> pd.Series:
-    """Historical Opportunity Score (quality × 1Y prob) for chart shading.
+    """Historical Opportunity Score (quality × 1Y prob × washout boost) for chart shading.
 
-    Uses today's quality (stable over chart window) and the 1Y win rate
-    from analog matching at each sampled historical point — same formula
-    as the Opportunity Score shown in the badge/table.
+    Uses today's quality (stable over chart window), the 1Y win rate
+    from analog matching at each sampled historical point, and the
+    washout meter at that point — same formula as the Opportunity Score
+    shown in the badge/table.
     """
     if not np.isfinite(quality):
         return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
@@ -1090,7 +1091,11 @@ def compute_conviction_series(
     for t in sample_idx:
         win_1y = _compute_1y_winrate_at(feat, X, regimes, t, eligible=eligible)
         if np.isfinite(win_1y):
-            vals[t] = float(quality * win_1y)  # conviction = quality × 1Y win rate
+            w = safe_float(feat.loc[t, "washout_meter"]) if "washout_meter" in feat.columns else 0.0
+            if not np.isfinite(w):
+                w = 0.0
+            washout_boost = 0.10 + 0.90 * float(np.clip(w / 100.0, 0.0, 1.0))
+            vals[t] = float(quality * win_1y * washout_boost)
 
     s = pd.Series(vals).sort_index()
     full = pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
@@ -1332,7 +1337,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "prob_3y": float(h_summaries.get("3Y", {}).get("win", 0) * 100) if "3Y" in h_summaries else None,
         "prob_5y": float(h_summaries.get("5Y", {}).get("win", 0) * 100) if "5Y" in h_summaries else None,
         "quality": float(quality) if np.isfinite(quality) else None,
-        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0)) if (np.isfinite(quality) and "1Y" in h_summaries) else None,
+        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0) * (0.10 + 0.90 * float(np.clip(wash_today / 100.0, 0.0, 1.0)))) if (np.isfinite(quality) and "1Y" in h_summaries and np.isfinite(wash_today)) else None,
         "median_1y": h_summaries.get("1Y", {}).get("median", None),
         "median_3y": h_summaries.get("3Y", {}).get("median", None),
         "median_5y": h_summaries.get("5Y", {}).get("median", None),
