@@ -1115,9 +1115,7 @@ function buildMarquee(items){
     const h = canvas.height = Math.floor(canvas.clientHeight * dpr);
     ctx.clearRect(0, 0, w, h);
 
-    const pad = { top: 16 * dpr, right: 14 * dpr, bottom: 28 * dpr, left: 60 * dpr };
-    const plotW = w - pad.left - pad.right;
-    const plotH = h - pad.top - pad.bottom;
+    const fontSize = (w < 400 * dpr ? 9 : 10) * dpr;
 
     // Collect all equity series
     const series = [];
@@ -1149,36 +1147,69 @@ function buildMarquee(items){
     gMin -= range * 0.05;
     gMax += range * 0.05;
 
-    const n = dates.length - startIdx;
-    function xAt(i){ return pad.left + plotW * ((i - startIdx) / Math.max(1, n - 1)); }
+    // Format dollar values — abbreviate large numbers
+    function fmtDollar(v){
+      const abs = Math.abs(v);
+      if (abs >= 1e6) return "$" + (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+      if (abs >= 1e3) return "$" + (v / 1e3).toFixed(abs >= 1e4 ? 0 : 1).replace(/\.0$/, "") + "K";
+      return "$" + Math.round(v).toLocaleString();
+    }
+
+    // Measure y-axis label width to set dynamic left padding
+    ctx.font = `${fontSize}px "IBM Plex Mono", monospace`;
+    const yTicks = w < 400 * dpr ? 4 : 5;
+    let maxLabelW = 0;
+    for (let i = 0; i <= yTicks; i++){
+      const v = gMin + (gMax - gMin) * (i / yTicks);
+      const tw = ctx.measureText(fmtDollar(v)).width;
+      if (tw > maxLabelW) maxLabelW = tw;
+    }
+
+    const pad = { top: 16 * dpr, right: 14 * dpr, bottom: 28 * dpr, left: Math.ceil(maxLabelW + 12 * dpr) };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+
+    const dataLen = dates.length - startIdx;
+    function xAt(i){ return pad.left + plotW * ((i - startIdx) / Math.max(1, dataLen - 1)); }
     function yAt(v){ return pad.top + plotH * (1 - (v - gMin) / (gMax - gMin)); }
 
     // Grid lines & y-axis labels
     ctx.strokeStyle = "rgba(0,0,0,0.06)";
     ctx.lineWidth = 1;
     ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.font = `${10 * dpr}px "IBM Plex Mono", monospace`;
+    ctx.font = `${fontSize}px "IBM Plex Mono", monospace`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    const yTicks = 5;
     for (let i = 0; i <= yTicks; i++){
       const v = gMin + (gMax - gMin) * (i / yTicks);
       const y = yAt(v);
       ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-      ctx.fillText("$" + Math.round(v).toLocaleString(), pad.left - 6 * dpr, y);
+      ctx.fillText(fmtDollar(v), pad.left - 6 * dpr, y);
     }
 
-    // X-axis: year labels
+    // X-axis: year labels with collision avoidance
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
+    const minGap = ctx.measureText("0000").width + 12 * dpr;
+    // Collect unique years with their x positions
+    const yearMarks = [];
     let prevYear = "";
     for (let i = startIdx; i < dates.length; i++){
       const yr = dates[i].substring(0, 4);
       if (yr !== prevYear){
         prevYear = yr;
-        const x = xAt(i);
-        ctx.fillText(yr, x, pad.top + plotH + 8 * dpr);
+        yearMarks.push({ yr, x: xAt(i) });
       }
+    }
+    // Determine step: show every Nth year so labels don't overlap
+    let step = 1;
+    if (yearMarks.length > 1){
+      const totalSpan = yearMarks[yearMarks.length - 1].x - yearMarks[0].x;
+      const maxLabels = Math.floor(totalSpan / minGap);
+      step = Math.max(1, Math.ceil(yearMarks.length / Math.max(1, maxLabels)));
+    }
+    for (let i = 0; i < yearMarks.length; i += step){
+      ctx.fillText(yearMarks[i].yr, yearMarks[i].x, pad.top + plotH + 8 * dpr);
     }
 
     // Draw lines (SPY first so it's behind, then strategies)
