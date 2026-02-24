@@ -1059,7 +1059,10 @@ function buildMarquee(items){
     }
     tbody += "</tbody>";
     table.innerHTML = hdr + tbody;
-    body.appendChild(table);
+    const tableScroll = document.createElement("div");
+    tableScroll.className = "table-scroll";
+    tableScroll.appendChild(table);
+    body.appendChild(tableScroll);
 
     // --- DCA Positions by Strategy (collapsible) ---
     for (const n of [1, 5, 10]){
@@ -1094,6 +1097,7 @@ function buildMarquee(items){
           <span class="plus" aria-hidden="true">+</span>
         </summary>
         <div class="details-body">
+          <div class="table-scroll">
           <table class="outcomes-table bt-pos-table">
             <thead><tr>
               <th style="text-align:left">Ticker</th>
@@ -1106,6 +1110,7 @@ function buildMarquee(items){
             </tr></thead>
             <tbody>${posRows}</tbody>
           </table>
+          </div>
         </div>
       `;
       body.appendChild(det);
