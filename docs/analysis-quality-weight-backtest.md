@@ -1,18 +1,17 @@
-# Backtest: Should Quality Score Have More Weight in the Opp Score?
+# Backtest: Quality Score Weight in the Opp Score — Results & Decision
 
-**Date:** 2026-02-25
+**Date:** 2026-02-25 | **Updated:** Quality ≥ 50 gate adopted into production
 **Script:** `scripts/backtest_quality_weight.py`
 **Universe:** 34 tickers, 33 years history (1993-2026), 3,883 eval points
 
-## Background
-
-The production Opportunity Score formula is:
+## Production Formula (adopted Feb 2026)
 
 ```
 OppScore = Quality × 1Y_Win_Rate × Pullback_Gate(washout)
+           ONLY if Quality ≥ 50 (otherwise no Opp Score)
 ```
 
-Quality enters **linearly**. This backtest asks: **what if we lean harder on quality?**
+This gate was adopted based on the backtest results below, which showed it cuts extreme downside by 43% while maintaining 83% hit rates during pullbacks.
 
 ## Formulas Tested
 
@@ -108,24 +107,20 @@ During moderate pullbacks, quality 70-85 has a P10 of -12.9% vs -39.7% for quali
 
 ---
 
-## Recommendation
-
-**Best formula change: Gate≥50 (Formula F)**
+## Decision: ADOPTED — Gate≥50 (Formula F) is now production
 
 ```
-OppScore = Quality × Win_1Y × Pullback_Gate(washout)   [if Quality ≥ 50, else drop]
+OppScore = Quality × Win_1Y × Pullback_Gate(washout)   [if Quality ≥ 50, else no score]
 ```
 
-Rationale:
-1. **Best P10 during pullbacks** (-7.5% vs -14.2% current) — the thing we care about most
-2. **Best P5 during pullbacks** (-20.0% vs -35.2% current) — 43% reduction in extreme downside
-3. **Maintains high hit rate** (83.1% vs 82.6% current)
+Implemented in `daily_scan.py` via `MIN_QUALITY_GATE = 50`. Stocks below quality 50 get `conviction = None` (no Opp Score), pushing them to the bottom of the ranking.
+
+Why this won:
+1. **Best P10 during pullbacks** (-7.5% vs -14.2% without gate) — the thing we care about most
+2. **Best P5 during pullbacks** (-20.0% vs -35.2% without gate) — 43% reduction in extreme downside
+3. **Maintains high hit rate** (83.1% vs 82.6% without gate)
 4. **Doesn't lose too many signals** (124 vs 149 — only drops 17% of signals, and those are the dangerous ones)
-5. Simple to implement — one `if` statement
-
-**Second best: Q^1.5 (Formula C)** — if you don't want to lose any signals, making quality nonlinear via `(Q/100)^1.5 × 100` is a good middle ground. It gives 83.2% hit rate and P10 of -9.1%.
-
-**Can combine both:** `(Q/100)^1.5 × 100 × Win × Gate` with a gate≥50 cutoff.
+5. Simple to implement — one `if` statement and a constant
 
 ---
 

@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-Backtest: Does leaning harder on Quality Score in the Opportunity Score improve outcomes?
+Backtest: Quality Score weight in the Opportunity Score formula.
 
-The production Opportunity Score (what ranks & drives the tool) is:
+PRODUCTION formula (adopted Feb 2026):
     OppScore = Quality × 1Y_Win_Rate × Pullback_Gate(washout)
+    WITH quality ≥ 50 gate (stocks below 50 get no Opp Score)
 
-Quality enters linearly. We test variants:
-  A) CURRENT:    Quality^1.0 × Win × Gate     (linear quality)
-  B) QUALITY²:   Quality^2.0 × Win × Gate     (quality squared — punishes low quality hard)
-  C) QUALITY^1.5: Quality^1.5 × Win × Gate    (moderate emphasis)
-  D) GATE+QUAL:  Quality × Win × Gate × QualityGate(60)  (hard floor at quality 60)
-  E) NO-QUALITY: 1.0 × Win × Gate             (quality removed entirely — baseline)
+This gate was adopted based on backtest results showing:
+    - P5 during pullbacks: -20% (vs -42% without the gate)
+    - Hit rate maintained: 83%
+    - Only 17% of signals dropped — the dangerous ones
 
-We sample at PULLBACK POINTS (washout ≥ 15) to test in realistic conditions.
-Also sample broadly to check signal across all market conditions.
+We also compare against alternative formulas for reference:
+  A) OLD (no gate): Quality × Win × Gate
+  B) Q-squared: (Q/100)² × Win × Gate
+  C) Q^1.5: moderate emphasis
+  D) Gate≥60: stricter gate
+  E) No quality: baseline
+  F) PRODUCTION: Quality × Win × Gate with quality≥50 gate
 
 Run:
     python scripts/backtest_quality_weight.py
@@ -86,8 +90,8 @@ ZWIN = max(63, LB_ST)
 # =========================
 # Opp Score Formula Variants
 # =========================
-def opp_A_current(quality: float, win_1y: float, washout: float) -> float:
-    """Current production: Quality × Win × Gate  (quality linear, 0-100 scale)"""
+def opp_A_old_no_gate(quality: float, win_1y: float, washout: float) -> float:
+    """OLD formula (no quality gate): Quality × Win × Gate"""
     return quality * win_1y * pullback_gate(washout)
 
 
@@ -104,31 +108,31 @@ def opp_C_quality_1p5(quality: float, win_1y: float, washout: float) -> float:
 
 
 def opp_D_quality_gate60(quality: float, win_1y: float, washout: float) -> float:
-    """Current formula + hard gate: drops to NaN if quality < 60"""
+    """Stricter gate: drops to NaN if quality < 60"""
     if quality < 60:
         return np.nan
     return quality * win_1y * pullback_gate(washout)
 
 
 def opp_E_no_quality(quality: float, win_1y: float, washout: float) -> float:
-    """Baseline: quality removed entirely — just Win × Gate × 100"""
+    """No quality at all: just Win × Gate × 100"""
     return 100 * win_1y * pullback_gate(washout)
 
 
-def opp_F_quality_gate50(quality: float, win_1y: float, washout: float) -> float:
-    """Softer gate: NaN if quality < 50"""
+def opp_F_production(quality: float, win_1y: float, washout: float) -> float:
+    """PRODUCTION formula: Q×W×G with quality≥50 gate (adopted Feb 2026)"""
     if quality < 50:
         return np.nan
     return quality * win_1y * pullback_gate(washout)
 
 
 FORMULAS = {
-    "A: Current (Q×W×G)":       opp_A_current,
-    "B: Q²×W×G (sq emphasis)":  opp_B_quality_sq,
-    "C: Q^1.5×W×G (moderate)":  opp_C_quality_1p5,
-    "D: Q×W×G + gate≥60":       opp_D_quality_gate60,
-    "E: No quality (W×G only)": opp_E_no_quality,
-    "F: Q×W×G + gate≥50":       opp_F_quality_gate50,
+    "A: Old (Q×W×G, no gate)":       opp_A_old_no_gate,
+    "B: Q²×W×G (sq emphasis)":       opp_B_quality_sq,
+    "C: Q^1.5×W×G (moderate)":       opp_C_quality_1p5,
+    "D: Q×W×G + gate≥60":            opp_D_quality_gate60,
+    "E: No quality (W×G only)":       opp_E_no_quality,
+    "F: PRODUCTION (Q×W×G gate≥50)":  opp_F_production,
 }
 
 
