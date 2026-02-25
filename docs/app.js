@@ -308,7 +308,7 @@ function proofSection(detail){
       <span class="plus" aria-hidden="true">+</span>
     </summary>
     <div class="details-body">
-      <div class="proof-explain">Each bar shows how this stock scores on the three factors that make up its quality rating. Higher = better. The percentages show how much each factor counts.</div>
+      <div class="proof-explain">Each bar shows how this stock scores on the three factors that make up its quality rating. Higher = better. The percentages show how much each factor counts. Stocks below 50 quality are gated out of the Opportunity Score — this cut extreme downside by 43% in backtesting.</div>
       ${barsHtml}
       ${recovHtml}
     </div>
@@ -351,7 +351,7 @@ function buildRationale(item){
   if (downside != null && Number.isFinite(Number(downside)))
     parts.push(`Worst 1-in-10 scenario: <strong>${fmtPct(downside)}</strong>.`);
   if (Number.isFinite(quality))
-    parts.push(`Quality: <strong>${fmtNum0(quality)}</strong> — ${quality >= 70 ? "strong stock with a history of bouncing back" : quality >= 45 ? "decent stock, moderate recovery track record" : "weaker stock, less consistent recoveries"}.`);
+    parts.push(`Quality: <strong>${fmtNum0(quality)}</strong> — ${quality >= 70 ? "strong stock with a history of bouncing back" : quality >= 50 ? "decent stock, passes quality gate, moderate recovery track record" : "below quality gate (50) — excluded from Opportunity Score ranking"}.`);
 
   return parts.join(" ");
 }

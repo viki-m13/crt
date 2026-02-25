@@ -99,6 +99,7 @@ VERDICT = dict(
 MIN_WASHOUT_TODAY = 0         # disabled — show all tickers, ranked by opportunity score
 FINAL_WASH_FLOOR  = 0.35      # baseline multiplier even if washout is low
 FINAL_WASH_WEIGHT = 0.65      # how much washout amplifies the edge score
+MIN_QUALITY_GATE  = 50        # quality gate: stocks below this get no Opp Score (conviction)
 
 # Plot-time performance (FinalScore series is computed sparsely, then forward-filled)
 PLOT_SCORE_STEP_BARS = 12
@@ -1145,9 +1146,9 @@ def compute_conviction_series(
     Uses today's quality (stable over chart window), the 1Y win rate
     from analog matching at each sampled historical point, and the
     washout gate at that point — same formula as the Opportunity Score
-    shown in the badge/table.
+    shown in the badge/table. Quality gate: returns empty if quality < MIN_QUALITY_GATE.
     """
-    if not np.isfinite(quality):
+    if not np.isfinite(quality) or quality < MIN_QUALITY_GATE:
         return pd.Series(index=feat.index[(feat.index >= start_idx) & (feat.index <= end_idx)], dtype=float)
 
     ok_idx = X.index[X.notna().all(axis=1) & feat["px"].notna()]
@@ -1408,7 +1409,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "prob_5y": float(h_summaries.get("5Y", {}).get("win", 0) * 100) if "5Y" in h_summaries else None,
         "quality": float(quality) if np.isfinite(quality) else None,
         "value_depth": float(vdepth_today) if np.isfinite(vdepth_today) else None,
-        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0) * pullback_gate(wash_today)) if (np.isfinite(quality) and "1Y" in h_summaries and np.isfinite(wash_today)) else None,
+        "conviction": float(quality * h_summaries.get("1Y", {}).get("win", 0) * pullback_gate(wash_today)) if (np.isfinite(quality) and quality >= MIN_QUALITY_GATE and "1Y" in h_summaries and np.isfinite(wash_today)) else None,
         "median_1y": h_summaries.get("1Y", {}).get("median", None),
         "median_3y": h_summaries.get("3Y", {}).get("median", None),
         "median_5y": h_summaries.get("5Y", {}).get("median", None),

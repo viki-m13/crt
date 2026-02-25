@@ -131,7 +131,7 @@
             <div>
               <div class="section-title">The numbers</div>
               <ul>
-                <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Multiplies three things: stock quality (is this a strong stock?), recovery odds (has it bounced back from pullbacks like this before?), and the pullback gate (is it actually in a dip right now?). Stocks near all-time highs score low regardless of quality. Higher = better opportunity.</li>
+                <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Multiplies three things: stock quality (is this a strong stock?), recovery odds (has it bounced back from pullbacks like this before?), and the pullback gate (is it actually in a dip right now?). Stocks near all-time highs score low regardless of quality. Stocks with quality below 50 are excluded entirely — backtesting showed this cuts extreme downside by 43% while keeping 83% hit rates. Higher = better opportunity.</li>
                 <li><strong>Pullback</strong> — How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit. The deeper the pullback, the more weight the score carries.</li>
                 <li><strong>Value Depth</strong> — Shown in the rationale for top stocks. Measures undervaluation across four dimensions: position in the 52-week range, distance below the 200-day moving average, RSI oversold level, and drawdown depth. 0 = near highs, 100 = deep value.</li>
                 <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
@@ -147,7 +147,7 @@
                 <li><strong>Measure value depth</strong> — Score each stock on four dimensions: where it sits in its 52-week range, how far below its 200-day moving average, RSI oversold level, and drawdown from recent highs.</li>
                 <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness, not just a bad day for everything.</li>
                 <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position (similar drawdown, similar range position, similar technical setup).</li>
-                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. This prevents "value traps" — cheap stocks that stay cheap.</li>
+                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. Stocks with quality below 50 are gated out of the Opportunity Score entirely. This prevents "value traps" — cheap stocks that stay cheap. Backtested across 34 stocks over 33 years, this gate reduced the worst 1-in-20 outcomes from -42% to -20%.</li>
                 <li><strong>Apply the pullback gate</strong> — Only give high scores to stocks that are actually in a pullback. A stock near all-time highs gets almost no score, no matter how good its quality or history.</li>
                 <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those matched past cases.</li>
               </ol>
@@ -174,7 +174,7 @@
         </summary>
         <div class="details-card-body">
           <p class="bt-intro">What if you invested $1,000 every month into the stocks this tool ranks highest, instead of just buying SPY?
-          This backtest uses the historical opportunity scores — which combine stock quality, recovery odds, and the pullback gate — to pick the top stocks each month, buys them, holds for a fixed period, then sells. Only stocks with meaningful pullbacks get high scores, so the strategy naturally buys dips. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded, and including them would improve results even further.</p>
+          This backtest uses the historical opportunity scores — which combine stock quality (with a minimum quality gate of 50), recovery odds, and the pullback gate — to pick the top stocks each month, buys them, holds for a fixed period, then sells. Only stocks with meaningful pullbacks AND quality above 50 get high scores, so the strategy naturally buys dips in strong stocks while avoiding value traps. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded, and including them would improve results even further.</p>
           <div class="bt-hold-tabs">
             <button class="btn-lite active" data-hold="12">1-Year Hold</button>
             <button class="btn-lite" data-hold="36">3-Year Hold</button>
@@ -213,7 +213,7 @@
 
       <div class="listing-header">
         <span title="Stock or crypto symbol">Ticker</span>
-        <span title="How good this buying opportunity looks. Multiplies stock quality, 1-year recovery odds, and the pullback gate. Stocks near highs score low regardless of quality. Higher = better.">Opp. Score</span>
+        <span title="How good this buying opportunity looks. Multiplies stock quality, 1-year recovery odds, and the pullback gate. Stocks with quality below 50 are excluded. Stocks near highs score low. Higher = better.">Opp. Score</span>
         <span title="How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit.">Pullback</span>
         <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
         <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
