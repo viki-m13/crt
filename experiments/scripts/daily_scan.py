@@ -112,7 +112,7 @@ def score_stock(ticker, features, close_series):
     )
 
     # Is this an actionable signal?
-    is_signal = has_mtmdi and has_direction and (has_cascade or has_momentum)
+    is_signal = bool(has_mtmdi and has_direction and (has_cascade or has_momentum))
 
     # Regime
     regime = detect_regime(
@@ -163,10 +163,10 @@ def score_stock(ticker, features, close_series):
         "position_in_range": round(float(pos_range) * 100, 1) if not np.isnan(pos_range) else None,
         "returns": rets,
         "signals": {
-            "mtmdi": has_mtmdi,
-            "direction": has_direction,
-            "cascade": has_cascade,
-            "momentum": has_momentum,
+            "mtmdi": bool(has_mtmdi),
+            "direction": bool(has_direction),
+            "cascade": bool(has_cascade),
+            "momentum": bool(has_momentum),
         },
         "chart": chart_data,
         "mtmdi_history": mtmdi_history,
@@ -288,6 +288,7 @@ def run_scan():
             "vol_regime": s["vol_regime"],
             "drawdown": s["drawdown"],
             "returns": s.get("returns", {}),
+            "signals": s.get("signals"),
         } for s in all_ranked],
         "backtest_summary": backtest_summary,
     }
