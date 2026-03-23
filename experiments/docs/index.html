@@ -234,7 +234,19 @@ function loadData() {
   const bust = Date.now();
   fetch(`./data/full.json?v=${bust}`)
     .then(r => r.json())
-    .then(d => { DATA = d; render(); })
+    .then(d => {
+      // Normalize booleans: Python numpy.bool_ serializes as string "True"/"False"
+      const fixBool = v => v === true || v === 'True';
+      for (const list of [d.all_stocks || [], d.top_10 || []]) {
+        for (const s of list) {
+          s.is_signal = fixBool(s.is_signal);
+          if (s.signals) {
+            for (const k of Object.keys(s.signals)) s.signals[k] = fixBool(s.signals[k]);
+          }
+        }
+      }
+      DATA = d; render();
+    })
     .catch(e => console.error('Failed to load data:', e));
 }
 
@@ -334,12 +346,17 @@ function renderActiveSignals() {
     const targetPrice = (entry * 1.39).toFixed(2);
     const rets = s.returns || {};
 
-    // Which conditions are met
+    // Which conditions are met — use signals sub-object if available, else infer
+    const sig = s.signals || {};
     const conditions = [];
-    if (s.mtmdi_zscore != null && Math.abs(s.mtmdi_zscore) >= 1.5) conditions.push(`MTMDI z = ${s.mtmdi_zscore.toFixed(2)} (≥ 1.5)`);
-    if (s.mtmdi_zscore != null && s.mtmdi_zscore > 0) conditions.push('Direction: positive');
-    if (s.cascade_score != null && s.cascade_score > 0.02) conditions.push(`Cascade = ${s.cascade_score.toFixed(4)} (> 0.02)`);
-    if (s.momentum_persistence != null && s.momentum_persistence > 0.5) conditions.push(`MPR = ${s.momentum_persistence.toFixed(2)} (> 0.5)`);
+    const hasMtmdi = sig.mtmdi != null ? sig.mtmdi : (s.mtmdi_zscore != null && Math.abs(s.mtmdi_zscore) >= 1.5);
+    const hasDir = sig.direction != null ? sig.direction : false;
+    const hasCascade = sig.cascade != null ? sig.cascade : (s.cascade_score != null && s.cascade_score > 0.02);
+    const hasMomentum = sig.momentum != null ? sig.momentum : (s.momentum_persistence != null && s.momentum_persistence > 0.5);
+    if (hasMtmdi) conditions.push(`MTMDI |z| = ${Math.abs(s.mtmdi_zscore).toFixed(2)} (\u2265 1.5 \u2713)`);
+    if (hasDir) conditions.push('Direction: positive \u2713');
+    if (hasCascade) conditions.push(`Cascade = ${s.cascade_score.toFixed(4)} (> 0.02 \u2713)`);
+    if (hasMomentum) conditions.push(`MPR = ${s.momentum_persistence.toFixed(2)} (> 0.5 \u2713)`);
 
     el.innerHTML += `
       <div style="background:var(--green-bg);border:1px solid rgba(63,185,80,.3);border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer" onclick="showDetail('${s.ticker}')">
