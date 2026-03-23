@@ -141,8 +141,12 @@
 
   <!-- Active Signals -->
   <div class="section" id="signals">
-    <div class="section-title">Top Conviction Stocks</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Ranked by TMD-ARC conviction score. Stocks with active BUY signals shown first.</p>
+    <div class="section-title">Active BUY Signals</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">These stocks currently meet all entry criteria: MTMDI z-score &ge; 1.5, positive direction, and either cascade &gt; 0.02 or momentum persistence &gt; 0.5. The strategy enters on signal, holds up to 21 days, and exits on take-profit (+39%), stop-loss (-7%), or time expiry.</p>
+    <div id="activeSignals"></div>
+
+    <div class="section-title" style="margin-top:32px">Top Conviction (All Stocks)</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Ranked by conviction score. Stocks with active BUY signals are highlighted.</p>
     <div id="topCards"></div>
   </div>
 
@@ -297,11 +301,47 @@ function render() {
     <tr><td>vs Random Pctile</td><td class="pnl-pos">${(perf.vs_random || {}).percentile || '100%'}</td><td colspan="2" style="color:var(--muted)">—</td></tr>
   `;
 
+  // Active signals section
+  renderActiveSignals();
+
   // Top conviction cards
   renderTopCards();
 
   // Full screener
   renderScreener();
+}
+
+function renderActiveSignals() {
+  const el = document.getElementById('activeSignals');
+  const signals = (DATA.all_stocks || []).filter(s => s.is_signal);
+  if (signals.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:16px 0">No active BUY signals today.</p>';
+    return;
+  }
+  signals.sort((a, b) => (b.conviction || 0) - (a.conviction || 0));
+  el.innerHTML = '';
+  for (const s of signals) {
+    const rets = s.returns || {};
+    el.innerHTML += `
+      <div style="background:var(--green-bg);border:1px solid rgba(63,185,80,.3);border-radius:8px;padding:16px;margin-bottom:8px;cursor:pointer" onclick="showDetail('${s.ticker}')">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="ticker-sym" style="font-size:18px">${s.ticker}</span>
+          <span style="color:var(--muted)">$${s.price}</span>
+          <span class="badge badge-signal">BUY SIGNAL</span>
+          <span class="badge badge-regime-${s.vol_regime}">${s.vol_regime} vol</span>
+          <span style="margin-left:auto;font-size:22px;font-weight:700;color:var(--green)">${s.conviction.toFixed(0)}</span>
+          <span style="font-size:11px;color:var(--muted)">conviction</span>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap">
+          <span>MTMDI z: <strong style="color:var(--ink)">${s.mtmdi_zscore != null ? s.mtmdi_zscore.toFixed(2) : '\u2014'}</strong></span>
+          <span>Cascade: <strong style="color:var(--ink)">${s.cascade_score != null ? s.cascade_score.toFixed(4) : '\u2014'}</strong></span>
+          <span>MPR: <strong style="color:var(--ink)">${s.momentum_persistence != null ? s.momentum_persistence.toFixed(2) : '\u2014'}</strong></span>
+          <span>DD: <strong style="color:var(--ink)">${s.drawdown != null ? s.drawdown.toFixed(1) + '%' : '\u2014'}</strong></span>
+          ${rets['5d'] != null ? `<span>5d: <strong class="${rets['5d'] >= 0 ? 'pnl-pos' : 'pnl-neg'}">${rets['5d'].toFixed(1)}%</strong></span>` : ''}
+          ${rets['21d'] != null ? `<span>21d: <strong class="${rets['21d'] >= 0 ? 'pnl-pos' : 'pnl-neg'}">${rets['21d'].toFixed(1)}%</strong></span>` : ''}
+        </div>
+      </div>`;
+  }
 }
 
 function renderTopCards() {
