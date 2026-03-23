@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-03-23T20:12:41.426913",
+  "best_config": {
+    "stop_loss": -0.07,
+    "take_profit": 0.39,
+    "max_hold_days": 21,
+    "mtmdi_zscore_entry": 1.5,
+    "cacs_entry_threshold": 0.02,
+    "mpr_threshold": 0.5
+  },
+  "validation_metrics": {
+    "total_return": 1.2402729319101855,
+    "cagr": 0.34028948106811696,
+    "sharpe": 2.242276393713466,
+    "sortino": 3.424605851759686,
+    "max_drawdown": -0.07687835011588585,
+    "calmar": 4.426336940831419,
+    "n_trades": 752,
+    "win_rate": 0.4787234042553192,
+    "profit_factor": 1.2738528260678912,
+    "avg_trade_pnl": 0.005322922379035666,
+    "avg_hold_days": 8.871010638297872,
+    "annual_turnover": 273.06051873198845
+  },
+  "validation_benchmark": {
+    "spy_total_return": 0.620247552871882,
+    "spy_sharpe": 0.9714504954104333,
+    "spy_max_drawdown": -0.2449638602811986,
+    "random_sharpe_mean": 0.7235739392620073,
+    "random_sharpe_std": 0.16919312306307158,
+    "strategy_vs_random_pctile": 1.0
+  },
+  "bootstrap": {
+    "sharpe": {
+      "point": 2.242276393713466,
+      "ci_low": 1.4579016386795816,
+      "ci_high": 3.5488315752982458,
+      "p_negative": 0.0
+    },
+    "cagr": {
+      "point": 0.34028948106811696,
+      "ci_low": 0.17362280177681827,
+      "ci_high": 0.507962124572172
+    },
+    "max_drawdown": {
+      "point": -0.07687835011588585,
+      "ci_low": -0.11402649278963697,
+      "ci_high": -0.042363422238689115
+    }
+  },
+  "test_metrics": {
+    "total_return": 1.863385495916686,
+    "cagr": 0.431517419489194,
+    "sharpe": 3.825447845946175,
+    "sortino": 6.804469554738837,
+    "max_drawdown": -0.03769592100238156,
+    "calmar": 11.447323954810162,
+    "n_trades": 988,
+    "win_rate": 0.507085020242915,
+    "profit_factor": 1.2918794751970517,
+    "avg_trade_pnl": 0.00501480534222883,
+    "avg_hold_days": 9.140688259109313,
+    "annual_turnover": 336.9093369418133
+  },
+  "test_benchmark": {
+    "spy_total_return": 0.670173549694058,
+    "spy_sharpe": 1.2392003169439942,
+    "spy_max_drawdown": -0.18755246925491073,
+    "random_sharpe_mean": 0.6370779128418274,
+    "random_sharpe_std": 0.16879448354577017,
+    "strategy_vs_random_pctile": 1.0
+  }
+}

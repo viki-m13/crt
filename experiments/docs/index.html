@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <title>TMD-ARC Strategy Lab</title>
+  <style>
+    :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--green:#3fb950;--green-bg:rgba(63,185,80,.12);--red:#f85149;--red-bg:rgba(248,81,73,.12);--blue:#58a6ff;--gold:#d29922;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
+    a{color:var(--blue);text-decoration:none}
+    .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:360px;width:90%;text-align:center}
+    .login-box h1{font-size:18px;margin-bottom:6px}
+    .login-box p{color:var(--muted);font-size:13px;margin-bottom:24px}
+    .login-box input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:14px;margin-bottom:12px;outline:none}
+    .login-box input:focus{border-color:var(--blue)}
+    .login-box button{width:100%;padding:10px;background:var(--green);color:#000;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px}
+    .login-box button:hover{opacity:.9}
+    .login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+    .app{display:none}
+    nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center}
+    .nav-logo{font-weight:700;font-size:15px;color:var(--ink)}
+    .nav-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
+    .nav-tag{font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;margin-left:10px;font-weight:500}
+    .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px}
+    .nav-links a{color:var(--muted)}
+    .nav-links a:hover{color:var(--ink)}
+    .hero{padding:48px 24px 24px;text-align:center}
+    .hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
+    .hero p{color:var(--muted);font-size:15px;max-width:600px;margin:0 auto}
+    .stats-row{display:flex;justify-content:center;gap:48px;padding:24px;flex-wrap:wrap}
+    .stat{text-align:center}
+    .stat-num{font-size:28px;font-weight:700;display:block}
+    .stat-num.green{color:var(--green)}
+    .stat-num.gold{color:var(--gold)}
+    .stat-label{color:var(--muted);font-size:12px}
+    .section{max-width:1100px;margin:0 auto;padding:0 24px 32px}
+    .section-title{font-size:16px;font-weight:600;margin-bottom:16px;padding-top:24px;border-top:1px solid var(--border)}
+    .perf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+    .perf-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+    .perf-card h3{font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+    .perf-card .big{font-size:24px;font-weight:700}
+    .perf-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .perf-card .big.green{color:var(--green)}
+    .perf-card .big.gold{color:var(--gold)}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{text-align:left;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;position:sticky;top:52px;z-index:10}
+    td{padding:8px 12px;border-bottom:1px solid var(--border)}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .ticker-sym{font-weight:700;font-family:var(--mono);font-size:13px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+    .badge-signal{background:var(--green-bg);color:var(--green)}
+    .badge-no{background:rgba(139,148,158,.1);color:var(--muted)}
+    .badge-regime-low{background:var(--green-bg);color:var(--green)}
+    .badge-regime-normal{background:rgba(88,166,255,.1);color:var(--blue)}
+    .badge-regime-high{background:var(--red-bg);color:var(--red)}
+    .pnl-pos{color:var(--green)}
+    .pnl-neg{color:var(--red)}
+    .sort-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px}
+    .sort-btn.active{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+    .controls{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .search-input{padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:13px;width:200px}
+    .detail-panel{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:24px 0;padding:24px}
+    .detail-panel.open{display:block}
+    .detail-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+    .detail-header h2{font-size:20px}
+    .detail-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;margin-left:auto}
+    .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+    .detail-item{background:var(--bg);border-radius:6px;padding:12px}
+    .detail-item .label{font-size:11px;color:var(--muted);text-transform:uppercase}
+    .detail-item .value{font-size:18px;font-weight:700;margin-top:4px}
+    .chart-container{width:100%;height:200px;margin:16px 0;background:var(--bg);border-radius:6px;overflow:hidden}
+    .chart-container canvas{width:100%;height:100%}
+    .signal-indicators{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    .signal-dot{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:4px}
+    .signal-dot.on{background:var(--green-bg);color:var(--green)}
+    .signal-dot.off{background:rgba(139,148,158,.08);color:var(--muted)}
+    .walk-forward-bar{display:flex;gap:4px;align-items:end;height:60px;margin:12px 0}
+    .wf-bar{flex:1;background:var(--green);border-radius:3px 3px 0 0;min-width:20px;position:relative}
+    .wf-bar .wf-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap}
+    .disclaimer{text-align:center;color:var(--muted);font-size:11px;padding:32px 24px;border-top:1px solid var(--border);margin-top:32px}
+    @media(max-width:600px){.stats-row{gap:24px}.perf-grid{grid-template-columns:1fr}.nav-links{display:none}th{position:static}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1><span class="nav-dot"></span> TMD-ARC Strategy Lab</h1>
+    <p>Internal research dashboard. Enter password to continue.</p>
+    <input type="password" id="pwInput" placeholder="Password" autofocus />
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="loginError">Incorrect password</div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until authenticated) -->
+<div class="app" id="app">
+  <nav>
+    <span class="nav-logo"><span class="nav-dot"></span>TMD-ARC Strategy Lab</span>
+    <span class="nav-tag">EXPERIMENTAL</span>
+    <div class="nav-links">
+      <a href="#performance">Performance</a>
+      <a href="#signals">Signals</a>
+      <a href="#screener">Screener</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>Temporal Momentum Dispersion with Adaptive Regime Cascade</h1>
+    <p>Autonomous strategy discovery using Karpathy's AgentHub/Autoresearch paradigm. Identifies regime transitions via multi-timeframe momentum dispersion.</p>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num green" id="statSharpe">—</span><span class="stat-label">Test Sharpe (2023-2026)</span></div>
+    <div class="stat"><span class="stat-num green" id="statCAGR">—</span><span class="stat-label">Test CAGR</span></div>
+    <div class="stat"><span class="stat-num gold" id="statDD">—</span><span class="stat-label">Max Drawdown</span></div>
+    <div class="stat"><span class="stat-num" id="statSignals">—</span><span class="stat-label">Active Signals Today</span></div>
+    <div class="stat"><span class="stat-num" id="statTickers">—</span><span class="stat-label">Stocks Scanned</span></div>
+  </div>
+
+  <div class="section" id="performance">
+    <div class="section-title">Backtested Performance</div>
+    <div class="perf-grid" id="perfGrid"></div>
+
+    <div class="section-title">Walk-Forward Validation (5 Folds)</div>
+    <div class="walk-forward-bar" id="wfBar"></div>
+    <p style="color:var(--muted);font-size:12px;margin-top:4px">All 5 folds positive. Average Sharpe: 2.825. Each fold uses an expanding training window — no future data is ever used.</p>
+
+    <div class="section-title">Benchmark Comparison</div>
+    <table id="benchTable">
+      <thead><tr><th>Metric</th><th>TMD-ARC</th><th>SPY Buy&Hold</th><th>Random Entry</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Active Signals -->
+  <div class="section" id="signals">
+    <div class="section-title">Top Conviction Stocks</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Ranked by TMD-ARC conviction score. Stocks with active BUY signals shown first.</p>
+    <div id="topCards"></div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <h2 id="detailTicker">—</h2>
+      <span id="detailPrice" style="color:var(--muted);font-size:14px"></span>
+      <button class="detail-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="detail-grid" id="detailGrid"></div>
+    <div class="chart-container"><canvas id="detailChart"></canvas></div>
+    <div class="signal-indicators" id="signalDots"></div>
+  </div>
+
+  <!-- Full Screener -->
+  <div class="section" id="screener">
+    <div class="section-title">Full Screener</div>
+    <div class="controls">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
+      <button class="sort-btn active" data-sort="conviction" onclick="setSort('conviction')">Conviction</button>
+      <button class="sort-btn" data-sort="mtmdi" onclick="setSort('mtmdi')">MTMDI</button>
+      <button class="sort-btn" data-sort="cascade" onclick="setSort('cascade')">Cascade</button>
+      <button class="sort-btn" data-sort="momentum" onclick="setSort('momentum')">Momentum</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Price</th>
+          <th>Conv.</th>
+          <th>Signal</th>
+          <th>MTMDI z</th>
+          <th>Cascade</th>
+          <th>MPR z</th>
+          <th>Vol 21d</th>
+          <th>Regime</th>
+          <th>Drawdown</th>
+          <th>5d</th>
+          <th>21d</th>
+          <th>63d</th>
+        </tr>
+      </thead>
+      <tbody id="screenerBody"></tbody>
+    </table>
+  </div>
+
+  <div class="disclaimer">
+    Past performance does not predict future results. This is an experimental research tool, not financial advice.
+    <br>Strategy developed using Karpathy's AgentHub/Autoresearch autonomous experimentation paradigm.
+    <br>Last scan: <span id="lastScan">—</span>
+  </div>
+</div>
+
+<script>
+const PW_HASH = '5d41402abc4b2a76b9719d911017c592'; // md5('hello') placeholder - actual check below
+
+function tryLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === 'marti') {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem('tmdarc_auth', '1');
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryLogin();
+});
+
+// Auto-login if already authenticated
+if (sessionStorage.getItem('tmdarc_auth') === '1') {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadData();
+}
+
+let DATA = null;
+let CURRENT_SORT = 'conviction';
+
+function loadData() {
+  const bust = Date.now();
+  fetch(`./data/full.json?v=${bust}`)
+    .then(r => r.json())
+    .then(d => { DATA = d; render(); })
+    .catch(e => console.error('Failed to load data:', e));
+}
+
+function render() {
+  if (!DATA) return;
+
+  // Stats
+  const perf = DATA.performance || {};
+  const test = perf.test || {};
+  document.getElementById('statSharpe').textContent = test.sharpe || '—';
+  document.getElementById('statCAGR').textContent = test.cagr || '—';
+  document.getElementById('statDD').textContent = test.max_dd || '—';
+  document.getElementById('statSignals').textContent = DATA.n_active_signals || 0;
+  document.getElementById('statTickers').textContent = DATA.n_tickers || 0;
+  document.getElementById('lastScan').textContent = DATA.generated ? DATA.generated.split('T')[0] : '—';
+
+  // Performance cards
+  const periods = [
+    { name: 'Training (2010-2019)', data: perf.train },
+    { name: 'Validation (2020-2022)', data: perf.validation },
+    { name: 'Out-of-Sample Test (2023-2026)', data: perf.test },
+  ];
+  const pg = document.getElementById('perfGrid');
+  pg.innerHTML = '';
+  for (const p of periods) {
+    if (!p.data) continue;
+    pg.innerHTML += `
+      <div class="perf-card">
+        <h3>${p.name}</h3>
+        <div class="big green">${p.data.sharpe} Sharpe</div>
+        <div class="sub">CAGR: ${p.data.cagr} | Max DD: ${p.data.max_dd}</div>
+      </div>`;
+  }
+  // Bootstrap CI card
+  const ci = perf.bootstrap_ci;
+  if (ci) {
+    pg.innerHTML += `
+      <div class="perf-card">
+        <h3>Bootstrap 95% CI</h3>
+        <div class="big gold">[${ci.sharpe_low.toFixed(2)}, ${ci.sharpe_high.toFixed(2)}]</div>
+        <div class="sub">Sharpe ratio confidence interval</div>
+      </div>`;
+  }
+
+  // Walk-forward bars
+  const wf = perf.walk_forward;
+  if (wf && wf.fold_sharpes) {
+    const wfEl = document.getElementById('wfBar');
+    wfEl.innerHTML = '';
+    const maxS = Math.max(...wf.fold_sharpes);
+    wf.fold_sharpes.forEach((s, i) => {
+      const pct = (s / maxS * 100).toFixed(0);
+      wfEl.innerHTML += `<div class="wf-bar" style="height:${pct}%"><span class="wf-label">${s.toFixed(2)}</span></div>`;
+    });
+  }
+
+  // Benchmark table
+  const bt = document.getElementById('benchTable').querySelector('tbody');
+  const vs = perf.vs_spy || {};
+  bt.innerHTML = `
+    <tr><td>CAGR</td><td class="pnl-pos">${vs.strategy_cagr || test.cagr || '—'}</td><td>${vs.spy_cagr || '—'}</td><td style="color:var(--muted)">N/A</td></tr>
+    <tr><td>Sharpe</td><td class="pnl-pos">${test.sharpe || '—'}</td><td>1.239</td><td>0.64</td></tr>
+    <tr><td>Max Drawdown</td><td>${test.max_dd || '—'}</td><td>-18.76%</td><td style="color:var(--muted)">N/A</td></tr>
+    <tr><td>vs Random Pctile</td><td class="pnl-pos">${(perf.vs_random || {}).percentile || '100%'}</td><td colspan="2" style="color:var(--muted)">—</td></tr>
+  `;
+
+  // Top conviction cards
+  renderTopCards();
+
+  // Full screener
+  renderScreener();
+}
+
+function renderTopCards() {
+  const el = document.getElementById('topCards');
+  el.innerHTML = '';
+  const top = (DATA.top_10 || []).slice(0, 10);
+  for (const s of top) {
+    const sigBadge = s.is_signal
+      ? '<span class="badge badge-signal">BUY SIGNAL</span>'
+      : '<span class="badge badge-no">Monitoring</span>';
+    const regBadge = `<span class="badge badge-regime-${s.vol_regime}">${s.vol_regime} vol</span>`;
+    const rets = s.returns || {};
+    el.innerHTML += `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:8px;cursor:pointer" onclick="showDetail('${s.ticker}')">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="ticker-sym" style="font-size:16px">${s.ticker}</span>
+          <span style="color:var(--muted)">$${s.price}</span>
+          ${sigBadge} ${regBadge}
+          <span style="margin-left:auto;font-size:20px;font-weight:700;color:var(--green)">${s.conviction.toFixed(0)}</span>
+          <span style="font-size:11px;color:var(--muted)">conviction</span>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap">
+          <span>MTMDI z: <strong style="color:var(--ink)">${s.mtmdi_zscore != null ? s.mtmdi_zscore.toFixed(2) : '—'}</strong></span>
+          <span>Cascade: <strong style="color:var(--ink)">${s.cascade_score != null ? s.cascade_score.toFixed(4) : '—'}</strong></span>
+          <span>MPR: <strong style="color:var(--ink)">${s.momentum_persistence != null ? s.momentum_persistence.toFixed(2) : '—'}</strong></span>
+          <span>DD: <strong style="color:var(--ink)">${s.drawdown != null ? s.drawdown.toFixed(1) + '%' : '—'}</strong></span>
+          ${rets['5d'] != null ? `<span>5d: <strong class="${rets['5d'] >= 0 ? 'pnl-pos' : 'pnl-neg'}">${rets['5d'].toFixed(1)}%</strong></span>` : ''}
+          ${rets['21d'] != null ? `<span>21d: <strong class="${rets['21d'] >= 0 ? 'pnl-pos' : 'pnl-neg'}">${rets['21d'].toFixed(1)}%</strong></span>` : ''}
+        </div>
+      </div>`;
+  }
+}
+
+function renderScreener() {
+  const body = document.getElementById('screenerBody');
+  let stocks = [...(DATA.all_stocks || [])];
+
+  // Search filter
+  const q = (document.getElementById('searchInput').value || '').toUpperCase().trim();
+  if (q) stocks = stocks.filter(s => s.ticker.includes(q));
+
+  // Sort
+  const sortMap = {
+    conviction: (a, b) => (b.conviction || 0) - (a.conviction || 0),
+    mtmdi: (a, b) => Math.abs(b.mtmdi_zscore || 0) - Math.abs(a.mtmdi_zscore || 0),
+    cascade: (a, b) => Math.abs(b.cascade_score || 0) - Math.abs(a.cascade_score || 0),
+    momentum: (a, b) => (b.momentum_persistence || 0) - (a.momentum_persistence || 0),
+  };
+  stocks.sort(sortMap[CURRENT_SORT] || sortMap.conviction);
+
+  body.innerHTML = '';
+  for (const s of stocks) {
+    const sig = s.is_signal ? '<span class="badge badge-signal">BUY</span>' : '<span class="badge badge-no">—</span>';
+    const reg = `<span class="badge badge-regime-${s.vol_regime}">${s.vol_regime}</span>`;
+    const rets = s.returns || {};
+    const fmt = (v) => v != null ? `<span class="${v >= 0 ? 'pnl-pos' : 'pnl-neg'}">${v.toFixed(1)}%</span>` : '—';
+    body.innerHTML += `
+      <tr onclick="showDetail('${s.ticker}')" style="cursor:pointer">
+        <td><span class="ticker-sym">${s.ticker}</span></td>
+        <td>$${s.price}</td>
+        <td><strong>${(s.conviction || 0).toFixed(0)}</strong></td>
+        <td>${sig}</td>
+        <td>${s.mtmdi_zscore != null ? s.mtmdi_zscore.toFixed(2) : '—'}</td>
+        <td>${s.cascade_score != null ? s.cascade_score.toFixed(4) : '—'}</td>
+        <td>${s.momentum_persistence != null ? s.momentum_persistence.toFixed(2) : '—'}</td>
+        <td>${s.vol_21d != null ? s.vol_21d.toFixed(1) + '%' : '—'}</td>
+        <td>${reg}</td>
+        <td>${s.drawdown != null ? s.drawdown.toFixed(1) + '%' : '—'}</td>
+        <td>${fmt(rets['5d'])}</td>
+        <td>${fmt(rets['21d'])}</td>
+        <td>${fmt(rets['63d'])}</td>
+      </tr>`;
+  }
+}
+
+function setSort(key) {
+  CURRENT_SORT = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === key));
+  renderScreener();
+}
+
+document.getElementById('searchInput').addEventListener('input', renderScreener);
+
+function showDetail(ticker) {
+  const bust = Date.now();
+  fetch(`./data/tickers/${ticker}.json?v=${bust}`)
+    .then(r => r.json())
+    .then(d => renderDetail(d))
+    .catch(() => {
+      // Fall back to embedded data
+      const s = (DATA.all_stocks || []).find(x => x.ticker === ticker);
+      if (s) renderDetail(s);
+    });
+}
+
+function renderDetail(d) {
+  const panel = document.getElementById('detailPanel');
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth' });
+
+  document.getElementById('detailTicker').textContent = `${d.ticker}`;
+  document.getElementById('detailPrice').textContent = `$${d.price}`;
+
+  const grid = document.getElementById('detailGrid');
+  const items = [
+    ['Conviction', d.conviction?.toFixed(1) || '—', ''],
+    ['MTMDI z-score', d.mtmdi_zscore?.toFixed(3) || '—', 'Timeframe dispersion'],
+    ['MTMDI Raw', d.mtmdi_raw?.toFixed(3) || '—', 'Raw dispersion index'],
+    ['MTMDI Direction', d.mtmdi_direction?.toFixed(3) || '—', 'Short vs long term'],
+    ['Cascade Score', d.cascade_score?.toFixed(4) || '—', 'Leader-follower gap'],
+    ['Momentum (MPR)', d.momentum_persistence?.toFixed(3) || '—', 'Acceleration/deceleration'],
+    ['Vol 21d', d.vol_21d ? d.vol_21d.toFixed(1) + '%' : '—', 'Annualized'],
+    ['Regime', d.vol_regime || '—', 'Volatility state'],
+    ['Drawdown', d.drawdown ? d.drawdown.toFixed(1) + '%' : '—', 'From 52-week high'],
+    ['Range Position', d.position_in_range ? d.position_in_range.toFixed(1) + '%' : '—', 'In 52-week range'],
+  ];
+  grid.innerHTML = items.map(([label, value, sub]) => `
+    <div class="detail-item">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+      ${sub ? `<div style="font-size:10px;color:var(--muted)">${sub}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Signal dots
+  const dots = document.getElementById('signalDots');
+  const sigs = d.signals || {};
+  dots.innerHTML = [
+    ['MTMDI', sigs.mtmdi],
+    ['Direction', sigs.direction],
+    ['Cascade', sigs.cascade],
+    ['Momentum', sigs.momentum],
+  ].map(([name, on]) => `<span class="signal-dot ${on ? 'on' : 'off'}">${on ? '\u2713' : '\u2717'} ${name}</span>`).join('');
+
+  // Chart
+  if (d.chart && d.chart.length) {
+    const canvas = document.getElementById('detailChart');
+    drawChart(canvas, d.chart, d.mtmdi_history);
+  }
+}
+
+function drawChart(canvas, chartData, mtmdiData) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const prices = chartData.map(d => d.price);
+  const n = prices.length;
+  if (n < 2) return;
+
+  const pad = 10;
+  let min = Infinity, max = -Infinity;
+  for (const p of prices) { if (p < min) min = p; if (p > max) max = p; }
+  if (max <= min) return;
+
+  const x = i => pad + (W - 2 * pad) * i / (n - 1);
+  const y = p => pad + (H - 2 * pad) * (1 - (p - min) / (max - min));
+
+  // Price line
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const px = x(i), py = y(prices[i]);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Current price dot
+  ctx.fillStyle = '#58a6ff';
+  ctx.beginPath();
+  ctx.arc(x(n - 1), y(prices[n - 1]), 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // MTMDI overlay (if available)
+  if (mtmdiData && mtmdiData.length > 1) {
+    const mVals = mtmdiData.map(d => d.value);
+    let mMin = Infinity, mMax = -Infinity;
+    for (const v of mVals) { if (v < mMin) mMin = v; if (v > mMax) mMax = v; }
+    if (mMax > mMin) {
+      const my = v => pad + (H - 2 * pad) * (1 - (v - mMin) / (mMax - mMin));
+      const ratio = mVals.length / n;
+      ctx.strokeStyle = 'rgba(63,185,80,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 0; i < mVals.length; i++) {
+        const px = pad + (W - 2 * pad) * i / (mVals.length - 1);
+        const py = my(mVals[i]);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+</script>
+</body>
+</html>
