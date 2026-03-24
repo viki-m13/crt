@@ -170,7 +170,7 @@
   <div class="section" id="screener">
     <div class="section-title">Full Screener</div>
     <div class="controls">
-      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
+      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." autocomplete="off" />
       <button class="sort-btn active" data-sort="conviction" onclick="setSort('conviction')">Conviction</button>
       <button class="sort-btn" data-sort="mtmdi" onclick="setSort('mtmdi')">MTMDI</button>
       <button class="sort-btn" data-sort="cascade" onclick="setSort('cascade')">Cascade</button>
@@ -421,6 +421,7 @@ function render() {
 }
 
 function renderActiveSignals() {
+  if (!DATA) return;
   const el = document.getElementById('activeSignals');
   const signals = (DATA.all_stocks || []).filter(s => s.is_signal);
   if (signals.length === 0) {
@@ -483,12 +484,12 @@ function renderActiveSignals() {
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Loss (${stopLabel})</div>
-            <div style="font-size:18px;font-weight:700;color:var(--red);margin-top:2px">$${stopPrice}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--red);margin-top:2px">${entry != null ? '$' + stopPrice : '—'}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if price drops here</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Take Profit (${tpLabel})</div>
-            <div style="font-size:18px;font-weight:700;color:var(--green);margin-top:2px">$${targetPrice}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--green);margin-top:2px">${entry != null ? '$' + targetPrice : '—'}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if price reaches here</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
@@ -514,6 +515,7 @@ function renderActiveSignals() {
 }
 
 function renderTopCards() {
+  if (!DATA) return;
   const el = document.getElementById('topCards');
   document.getElementById('topConvictionTitle').textContent = CURRENT_MODE === 'crypto' ? 'Top Conviction (All Crypto)' : 'Top Conviction (All Stocks)';
   el.innerHTML = '';
@@ -546,6 +548,7 @@ function renderTopCards() {
 }
 
 function renderScreener() {
+  if (!DATA) return;
   const body = document.getElementById('screenerBody');
   const isCryptoMode = CURRENT_MODE === 'crypto';
   document.getElementById('retCol1').textContent = isCryptoMode ? '7d' : '5d';
@@ -672,6 +675,7 @@ function drawChart(canvas, chartData, mtmdiData) {
   const W = rect.width, H = rect.height;
   ctx.clearRect(0, 0, W, H);
 
+  chartData = chartData.filter(d => d.price != null);
   const prices = chartData.map(d => d.price);
   const n = prices.length;
   if (n < 2) return;
