@@ -19,9 +19,30 @@ Output:
 import os
 import sys
 import json
+import math
 import datetime
 import numpy as np
 import pandas as pd
+
+
+class SafeJSONEncoder(json.JSONEncoder):
+    """JSON encoder that converts NaN/Infinity to null instead of invalid JSON."""
+    def default(self, obj):
+        if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+            return None
+        return str(obj)
+
+    def encode(self, o):
+        return super().encode(self._sanitize(o))
+
+    def _sanitize(self, o):
+        if isinstance(o, float) and (math.isnan(o) or math.isinf(o)):
+            return None
+        if isinstance(o, dict):
+            return {k: self._sanitize(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [self._sanitize(v) for v in o]
+        return o
 
 # Add experiments root to path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -296,14 +317,14 @@ def run_scan():
     # Write full.json
     full_path = os.path.join(DATA_OUT_DIR, "full.json")
     with open(full_path, "w") as f:
-        json.dump(full_data, f, indent=2, default=str)
+        json.dump(full_data, f, indent=2, cls=SafeJSONEncoder)
     print(f"\n  Wrote {full_path} ({os.path.getsize(full_path) / 1024:.0f} KB)")
 
     # Write per-ticker JSON files
     for score in all_scores:
         ticker_path = os.path.join(TICKERS_DIR, f"{score['ticker']}.json")
         with open(ticker_path, "w") as f:
-            json.dump(score, f, indent=2, default=str)
+            json.dump(score, f, indent=2, cls=SafeJSONEncoder)
 
     print(f"  Wrote {len(all_scores)} ticker files")
 
