@@ -74,9 +74,15 @@ def score_coin(ticker, features, close_series):
     if features is None or len(features) == 0:
         return None
 
+    # Use the last row that has valid mtmdi_zscore — the very last row
+    # may be all-NaN if today's data is incomplete from yfinance.
     latest = features.iloc[-1]
     if latest.isna().all():
-        return None
+        # Try the second-to-last row
+        if len(features) >= 2:
+            latest = features.iloc[-2]
+        if latest.isna().all():
+            return None
 
     mtmdi_z = latest.get("mtmdi_zscore", np.nan)
     mtmdi_dir = latest.get("mtmdi_direction", np.nan)
@@ -96,9 +102,12 @@ def score_coin(ticker, features, close_series):
 
     if len(close_series) == 0:
         return None
-    current_price = close_series.iloc[-1]
-    if np.isnan(current_price):
-        current_price = close_series.dropna().iloc[-1] if not close_series.dropna().empty else 0
+    # Use last valid (non-NaN) price — the latest row may be NaN if
+    # yfinance returned incomplete data for today's date.
+    clean_close = close_series.dropna()
+    if clean_close.empty:
+        return None
+    current_price = float(clean_close.iloc[-1])
 
     # Safe values
     cacs_val = cacs if not np.isnan(cacs) else 0
@@ -151,11 +160,13 @@ def score_coin(ticker, features, close_series):
         if not np.isnan(val):
             rets[f"{w}d"] = round(float(val) * 100, 2)
 
-    # Chart data (last 365 days)
+    # Chart data (last 365 days) — skip NaN prices
     chart_data = []
     chart_close = close_series.iloc[-365:] if len(close_series) >= 365 else close_series
     for date, price in chart_close.items():
-        chart_data.append({"date": str(date.date()), "price": round(float(price), 2)})
+        p = float(price)
+        if not (math.isnan(p) or math.isinf(p)):
+            chart_data.append({"date": str(date.date()), "price": round(p, 2)})
 
     # MTMDI history
     mtmdi_history = []
