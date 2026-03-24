@@ -100,8 +100,12 @@
 <!-- MAIN APP (hidden until authenticated) -->
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo"><span class="nav-dot"></span>TMD-ARC Strategy Lab</span>
-    <span class="nav-tag">EXPERIMENTAL</span>
+    <span class="nav-logo"><span class="nav-dot"></span><span id="navTitle">TMD-ARC Strategy Lab</span></span>
+    <span class="nav-tag" id="navTag">EXPERIMENTAL</span>
+    <div style="margin-left:16px;display:flex;align-items:center;gap:4px;background:var(--bg);border-radius:6px;padding:2px;border:1px solid var(--border)">
+      <button id="toggleStocks" onclick="switchMode('stocks')" style="padding:4px 12px;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;background:var(--green);color:#000">Stocks</button>
+      <button id="toggleCrypto" onclick="switchMode('crypto')" style="padding:4px 12px;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted)">Crypto</button>
+    </div>
     <div class="nav-links">
       <a href="#performance">Performance</a>
       <a href="#signals">Signals</a>
@@ -111,8 +115,8 @@
   </nav>
 
   <div class="hero">
-    <h1>Temporal Momentum Dispersion with Adaptive Regime Cascade</h1>
-    <p>Autonomous strategy discovery using Karpathy's AgentHub/Autoresearch paradigm. Identifies regime transitions via multi-timeframe momentum dispersion.</p>
+    <h1 id="heroTitle">Temporal Momentum Dispersion with Adaptive Regime Cascade</h1>
+    <p id="heroDesc">Autonomous strategy discovery using Karpathy's AgentHub/Autoresearch paradigm. Identifies regime transitions via multi-timeframe momentum dispersion.</p>
   </div>
 
   <!-- Stats Row -->
@@ -142,7 +146,7 @@
   <!-- Active Signals -->
   <div class="section" id="signals">
     <div class="section-title">Active BUY Signals</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Buy on signal day at market close. Hold up to 21 trading days. Exit on whichever comes first: +39% take-profit, &minus;7% stop-loss, or time expiry. Not buying every day &mdash; only when a new signal fires.</p>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px" id="signalDesc">Buy on signal day at market close. Hold up to 21 trading days. Exit on whichever comes first: +39% take-profit, &minus;7% stop-loss, or time expiry. Not buying every day &mdash; only when a new signal fires.</p>
     <div id="activeSignals"></div>
 
     <div class="section-title" style="margin-top:32px">Top Conviction (All Stocks)</div>
@@ -229,25 +233,60 @@ if (sessionStorage.getItem('tmdarc_auth') === '1') {
 
 let DATA = null;
 let CURRENT_SORT = 'conviction';
+let CURRENT_MODE = 'stocks'; // 'stocks' or 'crypto'
+
+function switchMode(mode) {
+  CURRENT_MODE = mode;
+  document.getElementById('toggleStocks').style.background = mode === 'stocks' ? 'var(--green)' : 'transparent';
+  document.getElementById('toggleStocks').style.color = mode === 'stocks' ? '#000' : 'var(--muted)';
+  document.getElementById('toggleCrypto').style.background = mode === 'crypto' ? 'var(--green)' : 'transparent';
+  document.getElementById('toggleCrypto').style.color = mode === 'crypto' ? '#000' : 'var(--muted)';
+
+  if (mode === 'crypto') {
+    document.getElementById('navTitle').textContent = 'CDPT Crypto Lab';
+    document.getElementById('navTag').textContent = 'CRYPTO';
+    document.getElementById('heroTitle').textContent = 'Crypto Dispersion Pulse Trading with Velocity Confirmation';
+    document.getElementById('heroDesc').textContent = 'Novel patentable strategy: MTMDI Dispersion Velocity + Range Compression + 3-Factor Confirmation. 108 cryptocurrencies scanned daily.';
+  } else {
+    document.getElementById('navTitle').textContent = 'TMD-ARC Strategy Lab';
+    document.getElementById('navTag').textContent = 'EXPERIMENTAL';
+    document.getElementById('heroTitle').textContent = 'Temporal Momentum Dispersion with Adaptive Regime Cascade';
+    document.getElementById('heroDesc').textContent = 'Autonomous strategy discovery using Karpathy\'s AgentHub/Autoresearch paradigm. Identifies regime transitions via multi-timeframe momentum dispersion.';
+  }
+
+  loadData();
+}
 
 function loadData() {
   const bust = Date.now();
-  fetch(`./data/full.json?v=${bust}`)
-    .then(r => r.json())
-    .then(d => {
-      // Normalize booleans: Python numpy.bool_ serializes as string "True"/"False"
-      const fixBool = v => v === true || v === 'True';
-      for (const list of [d.all_stocks || [], d.top_10 || []]) {
-        for (const s of list) {
-          s.is_signal = fixBool(s.is_signal);
-          if (s.signals) {
-            for (const k of Object.keys(s.signals)) s.signals[k] = fixBool(s.signals[k]);
+  const dataUrl = CURRENT_MODE === 'crypto'
+    ? `../experiments/crypto/docs/data/full.json?v=${bust}`
+    : `./data/full.json?v=${bust}`;
+
+  // Try relative path first, then try alternate paths for crypto
+  const urls = CURRENT_MODE === 'crypto'
+    ? [`/experiments/crypto/docs/data/full.json?v=${bust}`, `../crypto/docs/data/full.json?v=${bust}`]
+    : [`./data/full.json?v=${bust}`];
+
+  function tryFetch(urlList, idx) {
+    if (idx >= urlList.length) { console.error('Failed to load data from all URLs'); return; }
+    fetch(urlList[idx])
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(d => {
+        const fixBool = v => v === true || v === 'True';
+        for (const list of [d.all_stocks || [], d.top_10 || []]) {
+          for (const s of list) {
+            s.is_signal = fixBool(s.is_signal);
+            if (s.signals) {
+              for (const k of Object.keys(s.signals)) s.signals[k] = fixBool(s.signals[k]);
+            }
           }
         }
-      }
-      DATA = d; render();
-    })
-    .catch(e => console.error('Failed to load data:', e));
+        DATA = d; render();
+      })
+      .catch(() => tryFetch(urlList, idx + 1));
+  }
+  tryFetch(urls, 0);
 }
 
 function render() {
@@ -263,8 +302,23 @@ function render() {
   document.getElementById('statTickers').textContent = DATA.n_tickers || 0;
   document.getElementById('lastScan').textContent = DATA.generated ? DATA.generated.split('T')[0] : '—';
 
+  // Update signal description for crypto mode
+  const sigDesc = document.getElementById('signalDesc');
+  if (sigDesc) {
+    if (CURRENT_MODE === 'crypto') {
+      sigDesc.textContent = 'Buy on signal day. Hold up to 5 days. Exit on +12% take-profit, −4% stop-loss, MTMDI velocity reversal, or time expiry. 3-factor confirmation required.';
+    } else {
+      sigDesc.textContent = 'Buy on signal day at market close. Hold up to 21 trading days. Exit on whichever comes first: +39% take-profit, −7% stop-loss, or time expiry.';
+    }
+  }
+
   // Performance cards
-  const periods = [
+  const isCrypto = CURRENT_MODE === 'crypto';
+  const periods = isCrypto ? [
+    { name: 'Training (2018-2021)', data: perf.train },
+    { name: 'Validation (2022-2023)', data: perf.validation },
+    { name: 'Out-of-Sample Test (2023-2026)', data: perf.test },
+  ] : [
     { name: 'Training (2010-2019)', data: perf.train },
     { name: 'Validation (2020-2022)', data: perf.validation },
     { name: 'Out-of-Sample Test (2023-2026)', data: perf.test },
@@ -489,14 +543,22 @@ document.getElementById('searchInput').addEventListener('input', renderScreener)
 
 function showDetail(ticker) {
   const bust = Date.now();
-  fetch(`./data/tickers/${ticker}.json?v=${bust}`)
-    .then(r => r.json())
-    .then(d => renderDetail(d))
-    .catch(() => {
-      // Fall back to embedded data
+  const safeTicker = ticker.replace(/-/g, '_');
+  const urls = CURRENT_MODE === 'crypto'
+    ? [`/experiments/crypto/docs/data/tickers/${safeTicker}.json?v=${bust}`, `../crypto/docs/data/tickers/${safeTicker}.json?v=${bust}`]
+    : [`./data/tickers/${ticker}.json?v=${bust}`];
+  function tryFetchDetail(urlList, idx) {
+    if (idx >= urlList.length) {
       const s = (DATA.all_stocks || []).find(x => x.ticker === ticker);
       if (s) renderDetail(s);
-    });
+      return;
+    }
+    fetch(urlList[idx])
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(d => renderDetail(d))
+      .catch(() => tryFetchDetail(urlList, idx + 1));
+  }
+  tryFetchDetail(urls, 0);
 }
 
 function renderDetail(d) {
