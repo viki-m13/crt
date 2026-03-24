@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-24T14:42:13.620355",
+  "generated": "2026-03-24T22:45:10.793095",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
   "n_tickers": 119,
@@ -723,31 +723,6 @@
       }
     },
     {
-      "ticker": "XLRE",
-      "price": 40.62,
-      "conviction": 52.5,
-      "is_signal": false,
-      "mtmdi_zscore": 1.746,
-      "cascade_score": 0.0391,
-      "momentum_persistence": -1.264,
-      "vol_regime": "high",
-      "drawdown": -7.6,
-      "returns": {
-        "5d": -4.71,
-        "10d": -5.65,
-        "21d": -6.99,
-        "63d": 1.43,
-        "126d": -1.14,
-        "252d": 0.24
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
       "ticker": "KLAC",
       "price": 1511.43,
       "conviction": 51.6,
@@ -1173,6 +1148,31 @@
       }
     },
     {
+      "ticker": "XLRE",
+      "price": 40.62,
+      "conviction": 44.3,
+      "is_signal": false,
+      "mtmdi_zscore": 1.578,
+      "cascade_score": 0.0301,
+      "momentum_persistence": -1.264,
+      "vol_regime": "high",
+      "drawdown": -6.9,
+      "returns": {
+        "5d": -4.04,
+        "10d": -4.98,
+        "21d": -6.32,
+        "63d": 2.1,
+        "126d": -0.47,
+        "252d": 0.91
+      },
+      "signals": {
+        "mtmdi": true,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
       "ticker": "FTNT",
       "price": 82.77,
       "conviction": 44.3,
@@ -1194,31 +1194,6 @@
         "mtmdi": false,
         "direction": true,
         "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLV",
-      "price": 144.77,
-      "conviction": 44.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.842,
-      "cascade_score": 0.0547,
-      "momentum_persistence": -1.409,
-      "vol_regime": "normal",
-      "drawdown": -9.6,
-      "returns": {
-        "5d": -4.22,
-        "10d": -6.35,
-        "21d": -8.0,
-        "63d": -5.7,
-        "126d": 6.19,
-        "252d": 0.21
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
         "momentum": false
       }
     },
@@ -1398,6 +1373,56 @@
       }
     },
     {
+      "ticker": "XLV",
+      "price": 144.77,
+      "conviction": 40.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.645,
+      "cascade_score": 0.0492,
+      "momentum_persistence": -1.409,
+      "vol_regime": "normal",
+      "drawdown": -9.3,
+      "returns": {
+        "5d": -3.81,
+        "10d": -5.94,
+        "21d": -7.58,
+        "63d": -5.29,
+        "126d": 6.6,
+        "252d": 0.62
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "AVGO",
+      "price": 322.51,
+      "conviction": 40.3,
+      "is_signal": false,
+      "mtmdi_zscore": -0.759,
+      "cascade_score": -0.0461,
+      "momentum_persistence": -1.503,
+      "vol_regime": "high",
+      "drawdown": -21.6,
+      "returns": {
+        "5d": -0.53,
+        "10d": -6.75,
+        "21d": -2.89,
+        "63d": -1.86,
+        "126d": -6.15,
+        "252d": 53.43
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
       "ticker": "NFLX",
       "price": 93.38,
       "conviction": 39.6,
@@ -1514,56 +1539,6 @@
         "63d": -6.36,
         "126d": -21.5,
         "252d": -4.68
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AVGO",
-      "price": 322.51,
-      "conviction": 38.7,
-      "is_signal": false,
-      "mtmdi_zscore": -0.767,
-      "cascade_score": -0.0432,
-      "momentum_persistence": -1.503,
-      "vol_regime": "high",
-      "drawdown": -21.8,
-      "returns": {
-        "5d": -0.74,
-        "10d": -6.96,
-        "21d": -3.1,
-        "63d": -2.07,
-        "126d": -6.36,
-        "252d": 53.22
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLI",
-      "price": 163.05,
-      "conviction": 38.3,
-      "is_signal": false,
-      "mtmdi_zscore": 1.011,
-      "cascade_score": 0.0357,
-      "momentum_persistence": -0.836,
-      "vol_regime": "normal",
-      "drawdown": -8.9,
-      "returns": {
-        "5d": -1.83,
-        "10d": -4.73,
-        "21d": -8.34,
-        "63d": 5.71,
-        "126d": 7.04,
-        "252d": 21.77
       },
       "signals": {
         "mtmdi": false,
@@ -1839,6 +1814,31 @@
         "63d": -0.42,
         "126d": -1.1,
         "252d": 4.62
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLI",
+      "price": 163.05,
+      "conviction": 35.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.975,
+      "cascade_score": 0.032,
+      "momentum_persistence": -0.707,
+      "vol_regime": "normal",
+      "drawdown": -8.6,
+      "returns": {
+        "5d": -1.55,
+        "10d": -4.44,
+        "21d": -8.06,
+        "63d": 5.99,
+        "126d": 7.32,
+        "252d": 22.05
       },
       "signals": {
         "mtmdi": false,
@@ -2298,31 +2298,6 @@
       }
     },
     {
-      "ticker": "XLU",
-      "price": 44.78,
-      "conviction": 30.1,
-      "is_signal": false,
-      "mtmdi_zscore": 1.476,
-      "cascade_score": 0.0091,
-      "momentum_persistence": -1.697,
-      "vol_regime": "high",
-      "drawdown": -6.2,
-      "returns": {
-        "5d": -5.39,
-        "10d": -4.52,
-        "21d": -3.4,
-        "63d": 4.38,
-        "126d": 6.7,
-        "252d": 15.03
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
       "ticker": "BRK-B",
       "price": 479.98,
       "conviction": 29.6,
@@ -2648,6 +2623,31 @@
       }
     },
     {
+      "ticker": "XLU",
+      "price": 44.78,
+      "conviction": 20.7,
+      "is_signal": false,
+      "mtmdi_zscore": 1.221,
+      "cascade_score": -0.0005,
+      "momentum_persistence": -1.697,
+      "vol_regime": "high",
+      "drawdown": -5.5,
+      "returns": {
+        "5d": -4.69,
+        "10d": -3.82,
+        "21d": -2.71,
+        "63d": 5.08,
+        "126d": 7.4,
+        "252d": 15.73
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
       "ticker": "V",
       "price": 304.44,
       "conviction": 20.3,
@@ -2723,6 +2723,31 @@
       }
     },
     {
+      "ticker": "QQQ",
+      "price": 588.0,
+      "conviction": 17.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.089,
+      "cascade_score": -0.0265,
+      "momentum_persistence": -1.538,
+      "vol_regime": "normal",
+      "drawdown": -7.3,
+      "returns": {
+        "5d": -1.96,
+        "10d": -3.18,
+        "21d": -3.35,
+        "63d": -3.27,
+        "126d": -1.54,
+        "252d": 21.08
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
       "ticker": "AAPL",
       "price": 251.49,
       "conviction": 16.9,
@@ -2739,31 +2764,6 @@
         "63d": -7.82,
         "126d": 2.6,
         "252d": 16.53
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "QQQ",
-      "price": 588.0,
-      "conviction": 16.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.084,
-      "cascade_score": -0.0247,
-      "momentum_persistence": -1.538,
-      "vol_regime": "normal",
-      "drawdown": -7.4,
-      "returns": {
-        "5d": -2.08,
-        "10d": -3.31,
-        "21d": -3.48,
-        "63d": -3.4,
-        "126d": -1.67,
-        "252d": 20.95
       },
       "signals": {
         "mtmdi": false,
@@ -2839,6 +2839,31 @@
         "63d": -0.72,
         "126d": 0.34,
         "252d": 3.88
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLY",
+      "price": 110.12,
+      "conviction": 14.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.707,
+      "cascade_score": -0.0043,
+      "momentum_persistence": -1.404,
+      "vol_regime": "normal",
+      "drawdown": -11.4,
+      "returns": {
+        "5d": -1.67,
+        "10d": -3.78,
+        "21d": -6.24,
+        "63d": -10.12,
+        "126d": -8.59,
+        "252d": 12.35
       },
       "signals": {
         "mtmdi": false,
@@ -2943,31 +2968,6 @@
       "signals": {
         "mtmdi": false,
         "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLY",
-      "price": 110.12,
-      "conviction": 13.1,
-      "is_signal": false,
-      "mtmdi_zscore": -0.725,
-      "cascade_score": -0.0016,
-      "momentum_persistence": -1.404,
-      "vol_regime": "normal",
-      "drawdown": -11.6,
-      "returns": {
-        "5d": -1.87,
-        "10d": -3.98,
-        "21d": -6.44,
-        "63d": -10.33,
-        "126d": -8.8,
-        "252d": 12.14
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
         "cascade": false,
         "momentum": false
       }
@@ -3203,7 +3203,7 @@
       "conviction": 0.1,
       "is_signal": false,
       "mtmdi_zscore": -0.005,
-      "cascade_score": -0.0,
+      "cascade_score": 0.0,
       "momentum_persistence": -1.673,
       "vol_regime": "normal",
       "drawdown": -5.5,
