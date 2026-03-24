@@ -2,42 +2,38 @@
   "ticker": "ONE-USD",
   "display_name": "ONE",
   "price": 0.0,
-  "conviction": 22.4,
+  "conviction": 20.4,
   "is_signal": false,
-  "mtmdi_zscore": -1.033,
-  "mtmdi_raw": 0.249,
-  "mtmdi_direction": 0.069,
-  "mtmdi_velocity": -0.245,
-  "cascade_score": -0.0061,
-  "momentum_persistence": -0.961,
-  "range_compression": 0.273,
-  "vol_30d": 26.2,
-  "vol_regime": "normal",
-  "drawdown": -29.8,
-  "position_in_range": 16.1,
+  "mtmdi_zscore": -0.673,
+  "mtmdi_raw": 0.337,
+  "mtmdi_direction": 0.044,
+  "mtmdi_velocity": -0.173,
+  "cascade_score": 0.0128,
+  "momentum_persistence": 0.098,
+  "range_compression": 0.3,
+  "vol_30d": 24.0,
+  "vol_regime": "low",
+  "drawdown": -29.0,
+  "position_in_range": 18.3,
   "returns": {
-    "7d": -0.44,
-    "14d": 1.1,
-    "30d": -0.44,
-    "90d": -1.96,
-    "180d": -10.03,
-    "365d": -37.8
+    "7d": 0.0,
+    "14d": -1.08,
+    "30d": 3.77,
+    "90d": 0.0,
+    "180d": -10.12,
+    "365d": -32.87
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
-    "cascade": false,
-    "momentum": false,
+    "cascade": true,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-23",
-      "price": 0.0
-    },
     {
       "date": "2025-03-24",
       "price": 0.0
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-22",
       "price": 0.0
+    },
+    {
+      "date": "2026-03-23",
+      "price": 0.0
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-23",
-      "value": 0.525
-    },
     {
       "date": "2025-03-24",
       "value": 0.497
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-22",
       "value": -1.033
+    },
+    {
+      "date": "2026-03-23",
+      "value": -0.673
     }
   ]
 }
