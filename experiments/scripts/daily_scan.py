@@ -79,10 +79,14 @@ def score_stock(ticker, features, close_series):
     if features is None or len(features) == 0:
         return None
 
-    # Get latest row
+    # Get latest row — fall back to second-to-last if the last row is all NaN
+    # (can happen when yfinance returns incomplete data for today's date)
     latest = features.iloc[-1]
     if latest.isna().all():
-        return None
+        if len(features) >= 2:
+            latest = features.iloc[-2]
+        if latest.isna().all():
+            return None
 
     mtmdi_z = latest.get("mtmdi_zscore", np.nan)
     mtmdi_dir = latest.get("mtmdi_direction", np.nan)
@@ -99,10 +103,13 @@ def score_stock(ticker, features, close_series):
     if any(np.isnan(v) for v in [mtmdi_z, vol_21d]):
         return None
 
-    # Current price
+    # Current price — use last valid (non-NaN) value
     if len(close_series) == 0:
         return None
-    current_price = close_series.iloc[-1]
+    clean_close = close_series.dropna()
+    if clean_close.empty:
+        return None
+    current_price = float(clean_close.iloc[-1])
 
     # --- Signal Scoring ---
     # MTMDI signal strength (0-100)
@@ -149,14 +156,16 @@ def score_stock(ticker, features, close_series):
         if not np.isnan(val):
             rets[f"{w}d"] = round(float(val) * 100, 2)
 
-    # Build price chart data (last 252 days)
+    # Build price chart data (last 252 days) — skip NaN prices
     chart_data = []
     chart_close = close_series.iloc[-252:] if len(close_series) >= 252 else close_series
     for date, price in chart_close.items():
-        chart_data.append({
-            "date": str(date.date()),
-            "price": round(float(price), 2)
-        })
+        p = float(price)
+        if not (math.isnan(p) or math.isinf(p)):
+            chart_data.append({
+                "date": str(date.date()),
+                "price": round(p, 2)
+            })
 
     # MTMDI history for chart (last 252 days)
     mtmdi_history = []
