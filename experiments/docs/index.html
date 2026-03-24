@@ -259,34 +259,26 @@ function switchMode(mode) {
 
 function loadData() {
   const bust = Date.now();
-  const dataUrl = CURRENT_MODE === 'crypto'
-    ? `../experiments/crypto/docs/data/full.json?v=${bust}`
+  // Crypto data is served at /experiments/crypto/data/... via Vercel route
+  const url = CURRENT_MODE === 'crypto'
+    ? `/experiments/crypto/data/full.json?v=${bust}`
     : `./data/full.json?v=${bust}`;
 
-  // Try relative path first, then try alternate paths for crypto
-  const urls = CURRENT_MODE === 'crypto'
-    ? [`/experiments/crypto/docs/data/full.json?v=${bust}`, `../crypto/docs/data/full.json?v=${bust}`]
-    : [`./data/full.json?v=${bust}`];
-
-  function tryFetch(urlList, idx) {
-    if (idx >= urlList.length) { console.error('Failed to load data from all URLs'); return; }
-    fetch(urlList[idx])
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(d => {
-        const fixBool = v => v === true || v === 'True';
-        for (const list of [d.all_stocks || [], d.top_10 || []]) {
-          for (const s of list) {
-            s.is_signal = fixBool(s.is_signal);
-            if (s.signals) {
-              for (const k of Object.keys(s.signals)) s.signals[k] = fixBool(s.signals[k]);
-            }
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => {
+      const fixBool = v => v === true || v === 'True';
+      for (const list of [d.all_stocks || [], d.top_10 || []]) {
+        for (const s of list) {
+          s.is_signal = fixBool(s.is_signal);
+          if (s.signals) {
+            for (const k of Object.keys(s.signals)) s.signals[k] = fixBool(s.signals[k]);
           }
         }
-        DATA = d; render();
-      })
-      .catch(() => tryFetch(urlList, idx + 1));
-  }
-  tryFetch(urls, 0);
+      }
+      DATA = d; render();
+    })
+    .catch(e => console.error('Failed to load data:', e));
 }
 
 function render() {
@@ -347,7 +339,7 @@ function render() {
 
   // Walk-forward bars
   const wf = perf.walk_forward;
-  if (wf && wf.fold_sharpes) {
+  if (wf && wf.fold_sharpes && wf.fold_sharpes.length > 0) {
     const wfEl = document.getElementById('wfBar');
     wfEl.innerHTML = '';
     const maxS = Math.max(...wf.fold_sharpes);
@@ -386,18 +378,25 @@ function renderActiveSignals() {
   }
   signals.sort((a, b) => (b.conviction || 0) - (a.conviction || 0));
 
-  // Compute exit date (21 trading days ≈ 30 calendar days from scan date)
+  // Compute exit date
   const scanDate = DATA.generated ? new Date(DATA.generated) : new Date();
   const exitDate = new Date(scanDate);
-  exitDate.setDate(exitDate.getDate() + 30); // ~21 trading days
+  const isCryptoMode = CURRENT_MODE === 'crypto';
+  exitDate.setDate(exitDate.getDate() + (isCryptoMode ? 7 : 30));
   const exitStr = exitDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const scanStr = scanDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const stopPct = isCryptoMode ? 0.96 : 0.93;   // -4% vs -7%
+  const tpPct = isCryptoMode ? 1.12 : 1.39;      // +12% vs +39%
+  const stopLabel = isCryptoMode ? '−4%' : '−7%';
+  const tpLabel = isCryptoMode ? '+12%' : '+39%';
+  const holdLabel = isCryptoMode ? '5 days' : '21 days';
 
   el.innerHTML = '';
   for (const s of signals) {
     const entry = parseFloat(s.price);
-    const stopPrice = (entry * 0.93).toFixed(2);
-    const targetPrice = (entry * 1.39).toFixed(2);
+    const stopPrice = (entry * stopPct).toFixed(2);
+    const targetPrice = (entry * tpPct).toFixed(2);
     const rets = s.returns || {};
 
     // Which conditions are met — use signals sub-object if available, else infer
@@ -407,15 +406,18 @@ function renderActiveSignals() {
     const hasDir = sig.direction != null ? sig.direction : false;
     const hasCascade = sig.cascade != null ? sig.cascade : (s.cascade_score != null && s.cascade_score > 0.02);
     const hasMomentum = sig.momentum != null ? sig.momentum : (s.momentum_persistence != null && s.momentum_persistence > 0.5);
-    if (hasMtmdi) conditions.push(`MTMDI |z| = ${Math.abs(s.mtmdi_zscore).toFixed(2)} (\u2265 1.5 \u2713)`);
+    if (hasMtmdi) conditions.push(`MTMDI |z| = ${Math.abs(s.mtmdi_zscore).toFixed(2)} \u2713`);
     if (hasDir) conditions.push('Direction: positive \u2713');
-    if (hasCascade) conditions.push(`Cascade = ${s.cascade_score.toFixed(4)} (> 0.02 \u2713)`);
-    if (hasMomentum) conditions.push(`MPR = ${s.momentum_persistence.toFixed(2)} (> 0.5 \u2713)`);
+    if (hasCascade) conditions.push(`Cascade = ${(s.cascade_score||0).toFixed(4)} \u2713`);
+    if (hasMomentum) conditions.push(`MPR = ${(s.momentum_persistence||0).toFixed(2)} \u2713`);
+    if (sig.velocity) conditions.push(`Velocity = ${(s.mtmdi_velocity||0).toFixed(3)} \u2713`);
+    if (sig.range_compress) conditions.push(`Range compressed \u2713`);
+    if (sig.vol_surge) conditions.push(`Volume surge \u2713`);
 
     el.innerHTML += `
       <div style="background:var(--green-bg);border:1px solid rgba(63,185,80,.3);border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer" onclick="showDetail('${s.ticker}')">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <span class="ticker-sym" style="font-size:20px">${s.ticker}</span>
+          <span class="ticker-sym" style="font-size:20px">${s.display_name || s.ticker}</span>
           <span class="badge badge-signal">BUY SIGNAL</span>
           <span class="badge badge-regime-${s.vol_regime}">${s.vol_regime} vol</span>
           <span style="margin-left:auto;font-size:22px;font-weight:700;color:var(--green)">${s.conviction.toFixed(0)}</span>
@@ -429,17 +431,17 @@ function renderActiveSignals() {
             <div style="font-size:10px;color:var(--muted)">${scanStr}</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Loss (&minus;7%)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Loss (${stopLabel})</div>
             <div style="font-size:18px;font-weight:700;color:var(--red);margin-top:2px">$${stopPrice}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if price drops here</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Take Profit (+39%)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Take Profit (${tpLabel})</div>
             <div style="font-size:18px;font-weight:700;color:var(--green);margin-top:2px">$${targetPrice}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if price reaches here</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Time Exit (21 days)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Time Exit (${holdLabel})</div>
             <div style="font-size:18px;font-weight:700;margin-top:2px">${exitStr}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if still holding</div>
           </div>
@@ -516,19 +518,19 @@ function renderScreener() {
     const fmt = (v) => v != null ? `<span class="${v >= 0 ? 'pnl-pos' : 'pnl-neg'}">${v.toFixed(1)}%</span>` : '—';
     body.innerHTML += `
       <tr onclick="showDetail('${s.ticker}')" style="cursor:pointer">
-        <td><span class="ticker-sym">${s.ticker}</span></td>
+        <td><span class="ticker-sym">${s.display_name || s.ticker}</span></td>
         <td>$${s.price}</td>
         <td><strong>${(s.conviction || 0).toFixed(0)}</strong></td>
         <td>${sig}</td>
         <td>${s.mtmdi_zscore != null ? s.mtmdi_zscore.toFixed(2) : '—'}</td>
         <td>${s.cascade_score != null ? s.cascade_score.toFixed(4) : '—'}</td>
         <td>${s.momentum_persistence != null ? s.momentum_persistence.toFixed(2) : '—'}</td>
-        <td>${s.vol_21d != null ? s.vol_21d.toFixed(1) + '%' : '—'}</td>
+        <td>${(s.vol_21d || s.vol_30d) != null ? (s.vol_21d || s.vol_30d).toFixed(1) + '%' : '—'}</td>
         <td>${reg}</td>
         <td>${s.drawdown != null ? s.drawdown.toFixed(1) + '%' : '—'}</td>
-        <td>${fmt(rets['5d'])}</td>
-        <td>${fmt(rets['21d'])}</td>
-        <td>${fmt(rets['63d'])}</td>
+        <td>${fmt(rets['5d'] ?? rets['7d'])}</td>
+        <td>${fmt(rets['21d'] ?? rets['30d'])}</td>
+        <td>${fmt(rets['63d'] ?? rets['90d'])}</td>
       </tr>`;
   }
 }
@@ -544,21 +546,18 @@ document.getElementById('searchInput').addEventListener('input', renderScreener)
 function showDetail(ticker) {
   const bust = Date.now();
   const safeTicker = ticker.replace(/-/g, '_');
-  const urls = CURRENT_MODE === 'crypto'
-    ? [`/experiments/crypto/docs/data/tickers/${safeTicker}.json?v=${bust}`, `../crypto/docs/data/tickers/${safeTicker}.json?v=${bust}`]
-    : [`./data/tickers/${ticker}.json?v=${bust}`];
-  function tryFetchDetail(urlList, idx) {
-    if (idx >= urlList.length) {
+  const url = CURRENT_MODE === 'crypto'
+    ? `/experiments/crypto/data/tickers/${safeTicker}.json?v=${bust}`
+    : `./data/tickers/${ticker}.json?v=${bust}`;
+
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => renderDetail(d))
+    .catch(() => {
+      // Fall back to embedded data
       const s = (DATA.all_stocks || []).find(x => x.ticker === ticker);
       if (s) renderDetail(s);
-      return;
-    }
-    fetch(urlList[idx])
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(d => renderDetail(d))
-      .catch(() => tryFetchDetail(urlList, idx + 1));
-  }
-  tryFetchDetail(urls, 0);
+    });
 }
 
 function renderDetail(d) {
