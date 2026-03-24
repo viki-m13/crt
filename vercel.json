@@ -13,15 +13,10 @@
     {
       "src": "experiments/docs/**",
       "use": "@vercel/static"
-    },
-    {
-      "src": "experiments/crypto/docs/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/analyze.py" },
-    { "src": "/experiments/crypto/(.*)", "dest": "/experiments/crypto/docs/$1" },
     { "src": "/experiments/(.*)", "dest": "/experiments/docs/$1" },
     { "src": "/(.*)", "dest": "/docs/$1" }
   ]
