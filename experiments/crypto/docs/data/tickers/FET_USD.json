@@ -1,43 +1,39 @@
 {
   "ticker": "FET-USD",
   "display_name": "FET",
-  "price": 0.23,
-  "conviction": 31.5,
+  "price": 0.24,
+  "conviction": 28.0,
   "is_signal": false,
-  "mtmdi_zscore": 0.296,
-  "mtmdi_raw": 0.955,
-  "mtmdi_direction": 0.674,
-  "mtmdi_velocity": 0.153,
-  "cascade_score": -0.4771,
-  "momentum_persistence": -0.611,
-  "range_compression": 0.353,
-  "vol_30d": 116.6,
+  "mtmdi_zscore": -0.033,
+  "mtmdi_raw": 0.858,
+  "mtmdi_direction": 0.743,
+  "mtmdi_velocity": 0.044,
+  "cascade_score": -0.544,
+  "momentum_persistence": 0.266,
+  "range_compression": 0.362,
+  "vol_30d": 116.8,
   "vol_regime": "high",
-  "drawdown": -75.1,
-  "position_in_range": 11.2,
+  "drawdown": -73.5,
+  "position_in_range": 13.1,
   "returns": {
-    "7d": -4.86,
-    "14d": 46.18,
-    "30d": 32.19,
-    "90d": 7.9,
-    "180d": -95.53,
-    "365d": -82.43
+    "7d": 0.59,
+    "14d": 45.07,
+    "30d": 41.76,
+    "90d": 14.08,
+    "180d": -83.59,
+    "365d": -82.3
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-25",
-      "price": 0.57
-    },
     {
       "date": "2025-03-26",
       "price": 0.55
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-23",
       "price": 0.23
+    },
+    {
+      "date": "2026-03-24",
+      "price": 0.24
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-24",
-      "value": 2.288
-    },
     {
       "date": "2025-03-25",
       "value": 2.385
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-23",
       "value": 0.296
+    },
+    {
+      "date": "2026-03-24",
+      "value": -0.033
     }
   ]
 }

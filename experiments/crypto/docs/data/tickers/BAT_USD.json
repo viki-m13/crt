@@ -1,43 +1,39 @@
 {
   "ticker": "BAT-USD",
   "display_name": "BAT",
-  "price": 0.1,
-  "conviction": 16.9,
+  "price": 0.11,
+  "conviction": 56.4,
   "is_signal": false,
-  "mtmdi_zscore": -0.349,
-  "mtmdi_raw": 0.64,
-  "mtmdi_direction": 0.552,
-  "mtmdi_velocity": -0.347,
-  "cascade_score": 0.0317,
-  "momentum_persistence": -1.038,
-  "range_compression": 0.503,
-  "vol_30d": 67.6,
+  "mtmdi_zscore": 0.362,
+  "mtmdi_raw": 0.825,
+  "mtmdi_direction": 1.052,
+  "mtmdi_velocity": 0.834,
+  "cascade_score": -0.1193,
+  "momentum_persistence": 1.381,
+  "range_compression": 0.56,
+  "vol_30d": 77.4,
   "vol_regime": "high",
-  "drawdown": -65.0,
-  "position_in_range": 3.6,
+  "drawdown": -61.1,
+  "position_in_range": 9.4,
   "returns": {
-    "7d": -11.11,
-    "14d": 2.63,
-    "30d": -21.19,
-    "90d": -74.66,
-    "180d": -41.08,
-    "365d": -41.92
+    "7d": 1.66,
+    "14d": 12.44,
+    "30d": -7.54,
+    "90d": -71.45,
+    "180d": -24.27,
+    "365d": -35.69
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
-    "momentum": false,
+    "velocity": true,
+    "cascade": false,
+    "momentum": true,
     "range_compress": false,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-25",
-      "price": 0.16
-    },
     {
       "date": "2025-03-26",
       "price": 0.15
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-23",
       "price": 0.1
+    },
+    {
+      "date": "2026-03-24",
+      "price": 0.11
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-24",
-      "value": 1.068
-    },
     {
       "date": "2025-03-25",
       "value": 1.221
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-23",
       "value": -0.349
+    },
+    {
+      "date": "2026-03-24",
+      "value": 0.362
     }
   ]
 }
