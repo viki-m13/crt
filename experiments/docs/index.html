@@ -81,6 +81,10 @@
     .wf-bar{flex:1;background:var(--green);border-radius:3px 3px 0 0;min-width:20px;position:relative}
     .wf-bar .wf-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap}
     .disclaimer{text-align:center;color:var(--muted);font-size:11px;padding:32px 24px;border-top:1px solid var(--border);margin-top:32px}
+    .exit-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    .exit-stop{background:var(--red-bg);color:var(--red)}
+    .exit-profit{background:var(--green-bg);color:var(--green)}
+    .exit-time{background:rgba(88,166,255,.1);color:var(--blue)}
     @media(max-width:600px){.stats-row{gap:24px}.perf-grid{grid-template-columns:1fr}.nav-links{display:none}th{position:static}}
   </style>
 </head>
@@ -105,6 +109,7 @@
     <div class="nav-links">
       <a href="#performance">Performance</a>
       <a href="#signals">Signals</a>
+      <a href="#trades">Trades</a>
       <a href="#screener">Screener</a>
       <a href="/" style="color:var(--blue)">&larr; Main Site</a>
     </div>
@@ -160,6 +165,56 @@
     <div class="detail-grid" id="detailGrid"></div>
     <div class="chart-container"><canvas id="detailChart"></canvas></div>
     <div class="signal-indicators" id="signalDots"></div>
+  </div>
+
+  <!-- Trades & Equity Curve -->
+  <div class="section" id="trades">
+    <div class="section-title">Equity Curve</div>
+    <div class="chart-container" style="height:280px;margin-bottom:24px"><canvas id="equityCurveChart"></canvas></div>
+    <div class="perf-grid" id="tradesSummaryGrid"></div>
+
+    <div class="section-title" style="margin-top:24px">Open Positions</div>
+    <div id="openPositionsEmpty" style="display:none;color:var(--muted);font-size:13px;padding:12px 0">No open positions.</div>
+    <table id="openPositionsTable" style="display:none">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Entry Date</th>
+          <th>Entry Price</th>
+          <th>Current Price</th>
+          <th>P&L</th>
+          <th>Days Held</th>
+          <th>Stop Loss</th>
+          <th>Take Profit</th>
+          <th>Conviction</th>
+        </tr>
+      </thead>
+      <tbody id="openPositionsBody"></tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:24px">Closed Trades</div>
+    <div id="closedTradesEmpty" style="display:none;color:var(--muted);font-size:13px;padding:12px 0">No closed trades yet.</div>
+    <div class="controls" id="tradesControls" style="display:none">
+      <button class="sort-btn active" data-tsort="date" onclick="setTradeSort('date')">Recent</button>
+      <button class="sort-btn" data-tsort="pnl" onclick="setTradeSort('pnl')">P&L</button>
+      <button class="sort-btn" data-tsort="ticker" onclick="setTradeSort('ticker')">Ticker</button>
+    </div>
+    <table id="closedTradesTable" style="display:none">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Entry</th>
+          <th>Exit</th>
+          <th>Entry $</th>
+          <th>Exit $</th>
+          <th>P&L %</th>
+          <th>Days</th>
+          <th>Exit Reason</th>
+          <th>Conv.</th>
+        </tr>
+      </thead>
+      <tbody id="closedTradesBody"></tbody>
+    </table>
   </div>
 
   <!-- Full Screener -->
@@ -318,6 +373,9 @@ function render() {
 
   // Top conviction cards
   renderTopCards();
+
+  // Trades & equity curve
+  renderTrades();
 
   // Full screener
   renderScreener();
@@ -602,6 +660,199 @@ function drawChart(canvas, chartData, mtmdiData) {
       ctx.stroke();
     }
   }
+}
+
+let TRADE_SORT = 'date';
+
+function renderTrades() {
+  const trades = DATA.trades || {};
+  const summary = trades.summary || {};
+  const openPos = trades.open_positions || [];
+  const closedTrades = trades.closed_trades || [];
+  const equityCurve = trades.equity_curve || [];
+
+  // --- Summary Cards ---
+  const grid = document.getElementById('tradesSummaryGrid');
+  const cards = [
+    { label: 'Open Positions', value: summary.total_open || 0, cls: '' },
+    { label: 'Closed Trades', value: summary.total_closed || 0, cls: '' },
+    { label: 'Win Rate', value: summary.win_rate ? summary.win_rate + '%' : '—', cls: summary.win_rate >= 50 ? 'green' : '' },
+    { label: 'Avg P&L', value: summary.avg_pnl_pct ? summary.avg_pnl_pct + '%' : '—', cls: summary.avg_pnl_pct > 0 ? 'green' : (summary.avg_pnl_pct < 0 ? '' : '') },
+    { label: 'Best Trade', value: summary.best_trade_pct ? '+' + summary.best_trade_pct + '%' : '—', cls: 'green' },
+    { label: 'Worst Trade', value: summary.worst_trade_pct != null ? summary.worst_trade_pct + '%' : '—', cls: '' },
+    { label: 'Avg Hold Days', value: summary.avg_hold_days || '—', cls: '' },
+    { label: 'Total Realized P&L', value: summary.total_realized_pnl_pct ? summary.total_realized_pnl_pct + '%' : '—', cls: summary.total_realized_pnl_pct > 0 ? 'green' : '' },
+  ];
+  grid.innerHTML = cards.map(c => `
+    <div class="perf-card">
+      <h3>${c.label}</h3>
+      <div class="big ${c.cls}">${c.value}</div>
+    </div>`).join('');
+
+  // --- Equity Curve ---
+  if (equityCurve.length > 1) {
+    const canvas = document.getElementById('equityCurveChart');
+    drawEquityCurve(canvas, equityCurve);
+  }
+
+  // --- Open Positions ---
+  if (openPos.length === 0) {
+    document.getElementById('openPositionsEmpty').style.display = 'block';
+    document.getElementById('openPositionsTable').style.display = 'none';
+  } else {
+    document.getElementById('openPositionsEmpty').style.display = 'none';
+    document.getElementById('openPositionsTable').style.display = 'table';
+    const body = document.getElementById('openPositionsBody');
+    body.innerHTML = openPos.map(p => {
+      const pnlCls = (p.unrealized_pnl_pct || 0) >= 0 ? 'pnl-pos' : 'pnl-neg';
+      const pnlStr = (p.unrealized_pnl_pct || 0) >= 0 ? '+' + (p.unrealized_pnl_pct || 0).toFixed(2) + '%' : (p.unrealized_pnl_pct || 0).toFixed(2) + '%';
+      return `<tr>
+        <td><span class="ticker-sym">${p.ticker}</span></td>
+        <td>${p.entry_date}</td>
+        <td>$${p.entry_price}</td>
+        <td>$${p.current_price}</td>
+        <td class="${pnlCls}"><strong>${pnlStr}</strong></td>
+        <td>${p.days_held}d</td>
+        <td style="color:var(--red)">$${p.stop_loss_price}</td>
+        <td style="color:var(--green)">$${p.take_profit_price}</td>
+        <td>${p.conviction || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // --- Closed Trades ---
+  if (closedTrades.length === 0) {
+    document.getElementById('closedTradesEmpty').style.display = 'block';
+    document.getElementById('tradesControls').style.display = 'none';
+    document.getElementById('closedTradesTable').style.display = 'none';
+  } else {
+    document.getElementById('closedTradesEmpty').style.display = 'none';
+    document.getElementById('tradesControls').style.display = 'flex';
+    document.getElementById('closedTradesTable').style.display = 'table';
+    renderClosedTrades(closedTrades);
+  }
+}
+
+function renderClosedTrades(trades) {
+  const sorted = [...trades];
+  if (TRADE_SORT === 'date') sorted.sort((a, b) => b.exit_date.localeCompare(a.exit_date));
+  else if (TRADE_SORT === 'pnl') sorted.sort((a, b) => b.pnl_pct - a.pnl_pct);
+  else if (TRADE_SORT === 'ticker') sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
+
+  const body = document.getElementById('closedTradesBody');
+  body.innerHTML = sorted.map(t => {
+    const pnlCls = t.pnl_pct >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const pnlStr = t.pnl_pct >= 0 ? '+' + t.pnl_pct.toFixed(2) + '%' : t.pnl_pct.toFixed(2) + '%';
+    const reasonMap = { stop_loss: 'exit-stop', take_profit: 'exit-profit', time_exit: 'exit-time' };
+    const reasonLabel = { stop_loss: 'Stop Loss', take_profit: 'Take Profit', time_exit: 'Time Exit' };
+    const cls = reasonMap[t.exit_reason] || 'exit-time';
+    const label = reasonLabel[t.exit_reason] || t.exit_reason;
+    return `<tr>
+      <td><span class="ticker-sym">${t.ticker}</span></td>
+      <td>${t.entry_date}</td>
+      <td>${t.exit_date}</td>
+      <td>$${t.entry_price}</td>
+      <td>$${t.exit_price}</td>
+      <td class="${pnlCls}"><strong>${pnlStr}</strong></td>
+      <td>${t.days_held}d</td>
+      <td><span class="exit-badge ${cls}">${label}</span></td>
+      <td>${t.conviction || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setTradeSort(key) {
+  TRADE_SORT = key;
+  document.querySelectorAll('[data-tsort]').forEach(b => b.classList.toggle('active', b.dataset.tsort === key));
+  const trades = (DATA.trades || {}).closed_trades || [];
+  if (trades.length) renderClosedTrades(trades);
+}
+
+function drawEquityCurve(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const values = data.map(d => d.value);
+  const dates = data.map(d => d.date);
+  const n = values.length;
+  if (n < 2) return;
+
+  const padL = 60, padR = 20, padT = 20, padB = 30;
+  let min = Infinity, max = -Infinity;
+  for (const v of values) { if (v < min) min = v; if (v > max) max = v; }
+  const range = max - min || 1;
+  min -= range * 0.05;
+  max += range * 0.05;
+
+  const x = i => padL + (W - padL - padR) * i / (n - 1);
+  const y = v => padT + (H - padT - padB) * (1 - (v - min) / (max - min));
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(48,54,61,0.6)';
+  ctx.lineWidth = 0.5;
+  const nGrid = 5;
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.fillStyle = '#8b949e';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= nGrid; i++) {
+    const val = min + (max - min) * i / nGrid;
+    const yy = y(val);
+    ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(W - padR, yy); ctx.stroke();
+    ctx.fillText('$' + val.toFixed(0), padL - 6, yy + 3);
+  }
+
+  // Date labels
+  ctx.textAlign = 'center';
+  const step = Math.max(1, Math.floor(n / 6));
+  for (let i = 0; i < n; i += step) {
+    ctx.fillText(dates[i], x(i), H - 8);
+  }
+  if (n > 1) ctx.fillText(dates[n - 1], x(n - 1), H - 8);
+
+  // Fill area under curve
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(values[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(x(i), y(values[i]));
+  ctx.lineTo(x(n - 1), y(min));
+  ctx.lineTo(x(0), y(min));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, padT, 0, H - padB);
+  const lastVal = values[n - 1], firstVal = values[0];
+  const isUp = lastVal >= firstVal;
+  grad.addColorStop(0, isUp ? 'rgba(63,185,80,0.25)' : 'rgba(248,81,73,0.25)');
+  grad.addColorStop(1, 'rgba(13,17,23,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.strokeStyle = isUp ? '#3fb950' : '#f85149';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const px = x(i), py = y(values[i]);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // End dot
+  ctx.fillStyle = isUp ? '#3fb950' : '#f85149';
+  ctx.beginPath();
+  ctx.arc(x(n - 1), y(values[n - 1]), 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Value label
+  ctx.font = 'bold 12px -apple-system, sans-serif';
+  ctx.fillStyle = isUp ? '#3fb950' : '#f85149';
+  ctx.textAlign = 'left';
+  const pnl = ((lastVal / firstVal - 1) * 100).toFixed(2);
+  const pnlSign = lastVal >= firstVal ? '+' : '';
+  ctx.fillText('$' + lastVal.toFixed(0) + ' (' + pnlSign + pnl + '%)', x(n - 1) - 80, y(values[n - 1]) - 10);
 }
 
 function closeDetail() {

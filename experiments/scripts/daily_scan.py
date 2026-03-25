@@ -203,6 +203,192 @@ def score_stock(ticker, features, close_series):
     }
 
 
+def load_trades_state():
+    """Load persisted trade tracking state from disk."""
+    trades_path = os.path.join(DATA_OUT_DIR, "trades.json")
+    if os.path.exists(trades_path):
+        with open(trades_path) as f:
+            return json.load(f)
+    return {"open_positions": [], "closed_trades": [], "equity_curve": []}
+
+
+def save_trades_state(state):
+    """Persist trade tracking state to disk."""
+    trades_path = os.path.join(DATA_OUT_DIR, "trades.json")
+    with open(trades_path, "w") as f:
+        json.dump(state, f, indent=2, cls=SafeJSONEncoder)
+
+
+def update_trades(all_scores, data):
+    """
+    Update trade tracking: close expired/stopped positions, open new ones from signals.
+    Returns updated trades state dict.
+    """
+    state = load_trades_state()
+    today = datetime.date.today().isoformat()
+
+    # Build price lookup from scores
+    price_map = {s["ticker"]: s["price"] for s in all_scores}
+
+    # --- Close positions that hit exit conditions ---
+    still_open = []
+    for pos in state["open_positions"]:
+        ticker = pos["ticker"]
+        entry_price = pos["entry_price"]
+        entry_date = pos["entry_date"]
+
+        current_price = price_map.get(ticker)
+        if current_price is None:
+            # Ticker no longer in scan; try to get price from data
+            if ticker in data and "Close" in data[ticker].columns:
+                clean = data[ticker]["Close"].dropna()
+                current_price = round(float(clean.iloc[-1]), 2) if len(clean) > 0 else None
+            if current_price is None:
+                still_open.append(pos)
+                continue
+
+        pnl_pct = (current_price / entry_price - 1)
+        days_held = (datetime.date.fromisoformat(today) - datetime.date.fromisoformat(entry_date)).days
+        # Approximate trading days as ~70% of calendar days
+        trading_days_approx = int(days_held * 5 / 7)
+
+        exit_reason = None
+        if pnl_pct <= STOP_LOSS:
+            exit_reason = "stop_loss"
+        elif pnl_pct >= TAKE_PROFIT:
+            exit_reason = "take_profit"
+        elif trading_days_approx >= MAX_HOLD_DAYS:
+            exit_reason = "time_exit"
+
+        if exit_reason:
+            state["closed_trades"].append({
+                "ticker": ticker,
+                "entry_date": entry_date,
+                "entry_price": entry_price,
+                "exit_date": today,
+                "exit_price": current_price,
+                "pnl_pct": round(pnl_pct * 100, 2),
+                "days_held": days_held,
+                "exit_reason": exit_reason,
+                "conviction": pos.get("conviction", 0),
+            })
+        else:
+            # Update current price and unrealized P&L
+            pos["current_price"] = current_price
+            pos["unrealized_pnl_pct"] = round(pnl_pct * 100, 2)
+            pos["days_held"] = days_held
+            still_open.append(pos)
+
+    # --- Open new positions from active signals ---
+    open_tickers = {p["ticker"] for p in still_open}
+    closed_recently = {
+        t["ticker"] for t in state["closed_trades"]
+        if t.get("exit_date", "") >= (datetime.date.today() - datetime.timedelta(days=5)).isoformat()
+    }
+
+    active_signals = [s for s in all_scores if s["is_signal"]]
+    for s in active_signals:
+        if s["ticker"] not in open_tickers and s["ticker"] not in closed_recently:
+            still_open.append({
+                "ticker": s["ticker"],
+                "entry_date": today,
+                "entry_price": s["price"],
+                "current_price": s["price"],
+                "unrealized_pnl_pct": 0.0,
+                "days_held": 0,
+                "conviction": round(s["conviction"], 1),
+                "stop_loss_price": round(s["price"] * (1 + STOP_LOSS), 2),
+                "take_profit_price": round(s["price"] * (1 + TAKE_PROFIT), 2),
+            })
+
+    state["open_positions"] = still_open
+
+    # --- Update equity curve ---
+    # Compute portfolio value: start at 10000, equal weight per position
+    if not state["equity_curve"]:
+        prev_value = 10000.0
+    else:
+        prev_value = state["equity_curve"][-1]["value"]
+
+    # Daily return from open positions (equal-weighted)
+    n_open = len(still_open)
+    if n_open > 0:
+        avg_unrealized = sum(p.get("unrealized_pnl_pct", 0) for p in still_open) / n_open
+        # If this is not the first data point, compute incremental change
+        if state["equity_curve"]:
+            prev_avg = state["equity_curve"][-1].get("avg_unrealized", 0)
+            daily_change_pct = (avg_unrealized - prev_avg) / 100
+        else:
+            daily_change_pct = 0
+    else:
+        avg_unrealized = 0
+        daily_change_pct = 0
+
+    # Also account for closed trades today
+    closed_today = [t for t in state["closed_trades"] if t.get("exit_date") == today]
+    for ct in closed_today:
+        # Add realized P&L to equity
+        daily_change_pct += (ct["pnl_pct"] / 100) / max(n_open + len(closed_today), 1)
+
+    new_value = round(prev_value * (1 + daily_change_pct), 2)
+
+    # Don't add duplicate entry for same date
+    if state["equity_curve"] and state["equity_curve"][-1]["date"] == today:
+        state["equity_curve"][-1] = {
+            "date": today,
+            "value": new_value,
+            "n_open": n_open,
+            "avg_unrealized": round(avg_unrealized, 2),
+        }
+    else:
+        state["equity_curve"].append({
+            "date": today,
+            "value": new_value,
+            "n_open": n_open,
+            "avg_unrealized": round(avg_unrealized, 2),
+        })
+
+    save_trades_state(state)
+    return state
+
+
+def compute_trades_summary(state):
+    """Compute summary statistics for the trades section."""
+    closed = state["closed_trades"]
+    open_pos = state["open_positions"]
+
+    if not closed:
+        return {
+            "total_closed": 0,
+            "total_open": len(open_pos),
+            "win_rate": 0,
+            "avg_pnl_pct": 0,
+            "best_trade_pct": 0,
+            "worst_trade_pct": 0,
+            "avg_hold_days": 0,
+            "total_realized_pnl_pct": 0,
+            "wins": 0,
+            "losses": 0,
+        }
+
+    pnls = [t["pnl_pct"] for t in closed]
+    wins = [p for p in pnls if p > 0]
+    losses = [p for p in pnls if p <= 0]
+
+    return {
+        "total_closed": len(closed),
+        "total_open": len(open_pos),
+        "win_rate": round(len(wins) / len(closed) * 100, 1) if closed else 0,
+        "avg_pnl_pct": round(sum(pnls) / len(pnls), 2) if pnls else 0,
+        "best_trade_pct": round(max(pnls), 2) if pnls else 0,
+        "worst_trade_pct": round(min(pnls), 2) if pnls else 0,
+        "avg_hold_days": round(sum(t["days_held"] for t in closed) / len(closed), 1),
+        "total_realized_pnl_pct": round(sum(pnls), 2),
+        "wins": len(wins),
+        "losses": len(losses),
+    }
+
+
 def run_scan():
     """Run the full daily scan."""
     print(f"TMD-ARC Daily Scan — {datetime.datetime.now().isoformat()}")
@@ -255,6 +441,16 @@ def run_scan():
     # Create output directories
     os.makedirs(TICKERS_DIR, exist_ok=True)
 
+    # --- Update trade tracking ---
+    print("Updating trade tracking...")
+    trades_state = update_trades(all_scores, data)
+    trades_summary = compute_trades_summary(trades_state)
+    print(f"  Open positions: {trades_summary['total_open']}")
+    print(f"  Closed trades: {trades_summary['total_closed']}")
+    if trades_summary['total_closed'] > 0:
+        print(f"  Win rate: {trades_summary['win_rate']}%")
+        print(f"  Avg P&L: {trades_summary['avg_pnl_pct']}%")
+
     # Get top 10 for embedding in full.json
     top_10 = all_scores[:10]
 
@@ -294,6 +490,12 @@ def run_scan():
             "bootstrap_ci": {"sharpe_low": 1.458, "sharpe_high": 3.549},
             "vs_spy": {"strategy_cagr": "43.15%", "spy_cagr": "19.11%"},
             "vs_random": {"percentile": "100%"},
+        },
+        "trades": {
+            "summary": trades_summary,
+            "open_positions": trades_state["open_positions"],
+            "closed_trades": trades_state["closed_trades"],
+            "equity_curve": trades_state["equity_curve"],
         },
         "top_10": [{
             "ticker": s["ticker"],
