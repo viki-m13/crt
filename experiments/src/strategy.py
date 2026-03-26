@@ -91,6 +91,7 @@ class Signal:
     mpr: float
     vol_regime: str  # "low", "normal", "high"
     rationale: str
+    signal_price: float = 0.0  # Close price at signal generation (for gap-down check)
 
 
 @dataclass
@@ -130,6 +131,7 @@ class TMDArcStrategy:
         self.closed_trades: list[dict] = []
         self.signals_log: list[Signal] = []
         self.daily_pnl: list[dict] = []
+        self.pending_signals: list[Signal] = []
 
     def detect_vol_regime(self, vol_ratio_5_21: float, vol_21d: float) -> str:
         """
@@ -384,7 +386,58 @@ class TMDArcStrategy:
             total_exposure += size
             self.signals_log.append(signal)
 
-    def step(self, date, prices, features_dict):
+    def execute_pending_at_open(self, open_prices, features_dict):
+        """
+        Execute pending signals from previous day at today's open prices.
+        Includes gap-down protection: skip if open gaps past stop loss.
+        """
+        cfg = self.config
+        total_exposure = sum(p.size for p in self.positions.values())
+
+        for signal in self.pending_signals:
+            if total_exposure >= cfg.max_total_exposure:
+                break
+            if signal.ticker in self.positions:
+                continue
+
+            open_price = open_prices.get(signal.ticker)
+            if open_price is None or np.isnan(open_price):
+                continue
+
+            # Gap-down protection
+            if signal.signal_price > 0:
+                gap_pct = (open_price / signal.signal_price) - 1
+                if gap_pct <= cfg.stop_loss:
+                    continue
+
+            feat = features_dict.get(signal.ticker, {})
+            vol_21d = feat.get("vol_21d", 0.15)
+            if np.isnan(vol_21d):
+                vol_21d = 0.15
+
+            size = self.compute_position_size(
+                signal.strength, vol_21d, signal.vol_regime
+            )
+            remaining = cfg.max_total_exposure - total_exposure
+            size = min(size, remaining)
+
+            if size < 0.005:
+                continue
+
+            self.positions[signal.ticker] = Position(
+                ticker=signal.ticker,
+                entry_date=signal.date,
+                entry_price=open_price,  # Execute at open
+                direction=signal.direction,
+                size=size,
+                strength=signal.strength,
+            )
+            total_exposure += size
+            self.signals_log.append(signal)
+
+        self.pending_signals = []
+
+    def step(self, date, prices, features_dict, open_prices=None):
         """
         Execute one day of the strategy.
 
@@ -392,9 +445,14 @@ class TMDArcStrategy:
         - date: current date
         - prices: {ticker: close_price} for this date
         - features_dict: {ticker: {feature_name: value}} for this date
+        - open_prices: {ticker: open_price} for this date (enables next-day execution)
 
         Returns: dict with daily statistics
         """
+        # 0. Execute pending signals at today's open (next-day execution)
+        if open_prices is not None and self.pending_signals:
+            self.execute_pending_at_open(open_prices, features_dict)
+
         # 1. Update existing positions and check exits
         closed = self.update_positions(date, prices, features_dict)
         self.closed_trades.extend(closed)
@@ -402,8 +460,14 @@ class TMDArcStrategy:
         # 2. Generate new signals
         signals = self.generate_signals(date, features_dict)
 
-        # 3. Execute signals (open new positions)
-        self.execute_signals(signals, prices, features_dict)
+        # 3. Store signal prices and queue for next-day execution
+        if open_prices is not None:
+            for sig in signals:
+                sig.signal_price = prices.get(sig.ticker, 0)
+            self.pending_signals = signals
+        else:
+            # Legacy mode: execute immediately at close
+            self.execute_signals(signals, prices, features_dict)
 
         # 4. Compute daily portfolio statistics
         total_exposure = sum(p.size for p in self.positions.values())
@@ -444,3 +508,4 @@ class TMDArcStrategy:
         self.closed_trades = []
         self.signals_log = []
         self.daily_pnl = []
+        self.pending_signals = []

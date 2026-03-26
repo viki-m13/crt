@@ -1,333 +1,2089 @@
 {
-  "generated": "2026-03-25T22:46:06.241345",
+  "generated": "2026-03-26T15:58:11.213141",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
   "n_tickers": 119,
-  "n_active_signals": 0,
+  "n_active_signals": 5,
   "config": {
     "mtmdi_zscore_entry": 1.5,
+    "mtmdi_zscore_exit": 0.5,
     "cacs_entry_threshold": 0.02,
     "mpr_threshold": 0.5,
     "stop_loss": -0.07,
     "take_profit": 0.39,
-    "max_hold_days": 21
+    "max_hold_days": 21,
+    "transaction_cost_bps": 10,
+    "execution": "next_day_open"
   },
   "performance": {
     "train": {
       "period": "2010-2019",
-      "sharpe": 2.839,
-      "cagr": "32.68%",
-      "max_dd": "-7.52%"
+      "sharpe": 1.624,
+      "cagr": "15.15%",
+      "max_dd": "-6.90%"
     },
     "validation": {
       "period": "2020-2022",
-      "sharpe": 2.242,
-      "cagr": "34.03%",
-      "max_dd": "-7.69%"
+      "sharpe": 1.562,
+      "cagr": "18.53%",
+      "max_dd": "-7.64%"
     },
     "test": {
       "period": "2023-2026",
-      "sharpe": 3.825,
-      "cagr": "43.15%",
-      "max_dd": "-3.77%"
+      "sharpe": 2.354,
+      "cagr": "21.00%",
+      "max_dd": "-3.91%"
     },
     "walk_forward": {
-      "avg_sharpe": 2.825,
-      "folds_positive": "5/5",
-      "fold_sharpes": [
-        2.565,
-        4.007,
-        3.013,
-        2.633,
-        1.908
-      ]
+      "avg_sharpe": 0,
+      "folds_positive": "0/0",
+      "fold_sharpes": []
     },
     "bootstrap_ci": {
-      "sharpe_low": 1.458,
-      "sharpe_high": 3.549
+      "sharpe_low": 0,
+      "sharpe_high": 0
     },
     "vs_spy": {
-      "strategy_cagr": "43.15%",
+      "strategy_cagr": "21.00%",
       "spy_cagr": "19.11%"
     },
     "vs_random": {
-      "percentile": "100%"
+      "percentile": "N/A"
     }
   },
   "trades": {
     "summary": {
-      "total_closed": 0,
-      "total_open": 3,
-      "win_rate": 0,
-      "avg_pnl_pct": 0,
-      "best_trade_pct": 0,
-      "worst_trade_pct": 0,
-      "avg_hold_days": 0,
-      "total_realized_pnl_pct": 0,
-      "wins": 0,
-      "losses": 0
+      "total_closed": 119,
+      "total_open": 10,
+      "win_rate": 42.9,
+      "avg_pnl_pct": -0.9,
+      "best_trade_pct": 9.74,
+      "worst_trade_pct": -14.26,
+      "avg_hold_days": 9.2,
+      "total_realized_pnl_pct": -106.55,
+      "wins": 51,
+      "losses": 68
     },
     "open_positions": [
       {
+        "ticker": "NFLX",
+        "entry_date": "2026-02-26",
+        "entry_price": 83.2,
+        "current_price": 92.28,
+        "unrealized_pnl_pct": 10.91,
+        "days_held": 28,
+        "conviction": 69.8,
+        "stop_loss_price": 77.38,
+        "take_profit_price": 115.65
+      },
+      {
+        "ticker": "UNH",
+        "entry_date": "2026-03-02",
+        "entry_price": 285.94,
+        "current_price": 270.55,
+        "unrealized_pnl_pct": -5.38,
+        "days_held": 24,
+        "conviction": 53.5,
+        "stop_loss_price": 265.92,
+        "take_profit_price": 397.46
+      },
+      {
+        "ticker": "PANW",
+        "entry_date": "2026-03-03",
+        "entry_price": 149.07,
+        "current_price": 153.22,
+        "unrealized_pnl_pct": 2.78,
+        "days_held": 23,
+        "conviction": 71.2,
+        "stop_loss_price": 138.64,
+        "take_profit_price": 207.21
+      },
+      {
         "ticker": "SNPS",
-        "entry_date": "2026-03-24",
-        "entry_price": 432.48,
-        "current_price": 415.62,
-        "unrealized_pnl_pct": -3.9,
-        "days_held": 1,
-        "conviction": 73.0,
-        "stop_loss_price": 402.21,
-        "take_profit_price": 601.15
+        "entry_date": "2026-03-23",
+        "entry_price": 430.21,
+        "current_price": 410.13,
+        "unrealized_pnl_pct": -4.67,
+        "days_held": 3,
+        "conviction": 68.5,
+        "stop_loss_price": 400.1,
+        "take_profit_price": 597.99
       },
       {
         "ticker": "CI",
         "entry_date": "2026-03-24",
-        "entry_price": 261.49,
-        "current_price": 265.87,
-        "unrealized_pnl_pct": 1.68,
-        "days_held": 1,
+        "entry_price": 262.02,
+        "current_price": 270.36,
+        "unrealized_pnl_pct": 3.18,
+        "days_held": 2,
         "conviction": 56.4,
-        "stop_loss_price": 243.19,
-        "take_profit_price": 363.47
+        "stop_loss_price": 243.68,
+        "take_profit_price": 364.21
+      },
+      {
+        "ticker": "XLF",
+        "entry_date": "2026-03-26",
+        "entry_price": 49.59,
+        "current_price": 49.34,
+        "unrealized_pnl_pct": -0.5,
+        "days_held": 0,
+        "conviction": 42.1,
+        "stop_loss_price": 46.12,
+        "take_profit_price": 68.93
       },
       {
         "ticker": "WDAY",
-        "entry_date": "2026-03-24",
-        "entry_price": 137.06,
-        "current_price": 129.29,
-        "unrealized_pnl_pct": -5.67,
-        "days_held": 1,
-        "conviction": 49.5,
-        "stop_loss_price": 127.47,
-        "take_profit_price": 190.51
+        "entry_date": "2026-03-26",
+        "entry_price": 131.41,
+        "current_price": 127.07,
+        "unrealized_pnl_pct": -3.3,
+        "days_held": 0,
+        "conviction": 54.0,
+        "stop_loss_price": 122.21,
+        "take_profit_price": 182.66
+      },
+      {
+        "ticker": "ADBE",
+        "entry_date": "2026-03-26",
+        "entry_price": 241.2,
+        "current_price": 237.25,
+        "unrealized_pnl_pct": -1.64,
+        "days_held": 0,
+        "conviction": 59.4,
+        "stop_loss_price": 224.32,
+        "take_profit_price": 335.27
+      },
+      {
+        "ticker": "MA",
+        "entry_date": "2026-03-26",
+        "entry_price": 501.29,
+        "current_price": 502.76,
+        "unrealized_pnl_pct": 0.29,
+        "days_held": 0,
+        "conviction": 65.9,
+        "stop_loss_price": 466.2,
+        "take_profit_price": 696.79
+      },
+      {
+        "ticker": "V",
+        "entry_date": "2026-03-26",
+        "entry_price": 305.48,
+        "current_price": 304.91,
+        "unrealized_pnl_pct": -0.19,
+        "days_held": 0,
+        "conviction": 48.5,
+        "stop_loss_price": 284.1,
+        "take_profit_price": 424.62
       }
     ],
-    "closed_trades": [],
+    "closed_trades": [
+      {
+        "ticker": "V",
+        "entry_date": "2025-12-26",
+        "entry_price": 354.37,
+        "exit_date": "2025-12-26",
+        "exit_price": 354.27,
+        "pnl_pct": -0.23,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 66.7
+      },
+      {
+        "ticker": "LIN",
+        "entry_date": "2025-12-24",
+        "entry_price": 423.19,
+        "exit_date": "2025-12-31",
+        "exit_price": 424.96,
+        "pnl_pct": 0.22,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.9
+      },
+      {
+        "ticker": "SO",
+        "entry_date": "2025-12-30",
+        "entry_price": 86.92,
+        "exit_date": "2026-01-02",
+        "exit_price": 86.5,
+        "pnl_pct": -0.68,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 67.1
+      },
+      {
+        "ticker": "EMR",
+        "entry_date": "2025-12-24",
+        "entry_price": 134.94,
+        "exit_date": "2026-01-05",
+        "exit_price": 142.3,
+        "pnl_pct": 5.26,
+        "days_held": 12,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 37.9
+      },
+      {
+        "ticker": "CMCSA",
+        "entry_date": "2025-12-30",
+        "entry_price": 27.61,
+        "exit_date": "2026-01-05",
+        "exit_price": 27.8,
+        "pnl_pct": 0.5,
+        "days_held": 6,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 68.1
+      },
+      {
+        "ticker": "CME",
+        "entry_date": "2026-01-05",
+        "entry_price": 261.52,
+        "exit_date": "2026-01-05",
+        "exit_price": 268.64,
+        "pnl_pct": 2.52,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 42.0
+      },
+      {
+        "ticker": "SHW",
+        "entry_date": "2025-12-24",
+        "entry_price": 321.79,
+        "exit_date": "2026-01-06",
+        "exit_price": 339.34,
+        "pnl_pct": 5.25,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 58.7
+      },
+      {
+        "ticker": "CRM",
+        "entry_date": "2025-12-24",
+        "entry_price": 263.23,
+        "exit_date": "2026-01-06",
+        "exit_price": 262.9,
+        "pnl_pct": -0.33,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 63.3
+      },
+      {
+        "ticker": "ETN",
+        "entry_date": "2025-12-24",
+        "entry_price": 322.41,
+        "exit_date": "2026-01-06",
+        "exit_price": 331.93,
+        "pnl_pct": 2.75,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 63.0
+      },
+      {
+        "ticker": "NFLX",
+        "entry_date": "2025-12-24",
+        "entry_price": 93.11,
+        "exit_date": "2026-01-06",
+        "exit_price": 90.65,
+        "pnl_pct": -2.84,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.4
+      },
+      {
+        "ticker": "PG",
+        "entry_date": "2026-01-05",
+        "entry_price": 140.11,
+        "exit_date": "2026-01-08",
+        "exit_price": 140.53,
+        "pnl_pct": 0.1,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 42.5
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-01-08",
+        "entry_price": 209.56,
+        "exit_date": "2026-01-09",
+        "exit_price": 207.19,
+        "pnl_pct": -1.33,
+        "days_held": 1,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 54.1
+      },
+      {
+        "ticker": "DE",
+        "entry_date": "2026-01-09",
+        "entry_price": 500.7,
+        "exit_date": "2026-01-09",
+        "exit_price": 488.08,
+        "pnl_pct": -2.72,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 70.5
+      },
+      {
+        "ticker": "CDNS",
+        "entry_date": "2025-12-30",
+        "entry_price": 316.83,
+        "exit_date": "2026-01-12",
+        "exit_price": 325.51,
+        "pnl_pct": 2.54,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 45.3
+      },
+      {
+        "ticker": "ADP",
+        "entry_date": "2026-01-12",
+        "entry_price": 262.63,
+        "exit_date": "2026-01-12",
+        "exit_price": 260.65,
+        "pnl_pct": -0.96,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 62.7
+      },
+      {
+        "ticker": "BAC",
+        "entry_date": "2025-12-26",
+        "entry_price": 55.96,
+        "exit_date": "2026-01-13",
+        "exit_price": 54.23,
+        "pnl_pct": -3.29,
+        "days_held": 18,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 62.2
+      },
+      {
+        "ticker": "GS",
+        "entry_date": "2026-01-07",
+        "entry_price": 951.87,
+        "exit_date": "2026-01-13",
+        "exit_price": 933.24,
+        "pnl_pct": -2.16,
+        "days_held": 6,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 61.0
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-01-08",
+        "entry_price": 190.38,
+        "exit_date": "2026-01-13",
+        "exit_price": 202.29,
+        "pnl_pct": 6.06,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 62.9
+      },
+      {
+        "ticker": "SYK",
+        "entry_date": "2026-01-09",
+        "entry_price": 367.97,
+        "exit_date": "2026-01-13",
+        "exit_price": 355.82,
+        "pnl_pct": -3.5,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 57.0
+      },
+      {
+        "ticker": "XLRE",
+        "entry_date": "2025-12-24",
+        "entry_price": 40.2,
+        "exit_date": "2026-01-16",
+        "exit_price": 42.21,
+        "pnl_pct": 4.8,
+        "days_held": 23,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.7
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-01-14",
+        "entry_price": 137.39,
+        "exit_date": "2026-01-16",
+        "exit_price": 127.31,
+        "pnl_pct": -7.54,
+        "days_held": 2,
+        "exit_reason": "stop_loss",
+        "conviction": 56.0
+      },
+      {
+        "ticker": "LRCX",
+        "entry_date": "2026-01-07",
+        "entry_price": 202.34,
+        "exit_date": "2026-01-20",
+        "exit_price": 222.14,
+        "pnl_pct": 9.59,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 64.0
+      },
+      {
+        "ticker": "MSFT",
+        "entry_date": "2025-12-29",
+        "entry_price": 483.76,
+        "exit_date": "2026-01-21",
+        "exit_price": 443.1,
+        "pnl_pct": -8.61,
+        "days_held": 23,
+        "exit_reason": "stop_loss",
+        "conviction": 48.1
+      },
+      {
+        "ticker": "WM",
+        "entry_date": "2025-12-31",
+        "entry_price": 221.2,
+        "exit_date": "2026-01-21",
+        "exit_price": 225.59,
+        "pnl_pct": 1.79,
+        "days_held": 21,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 52.9
+      },
+      {
+        "ticker": "BLK",
+        "entry_date": "2026-01-14",
+        "entry_price": 1064.6,
+        "exit_date": "2026-01-21",
+        "exit_price": 1121.61,
+        "pnl_pct": 5.15,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 45.3
+      },
+      {
+        "ticker": "XLU",
+        "entry_date": "2026-01-16",
+        "entry_price": 42.87,
+        "exit_date": "2026-01-21",
+        "exit_price": 42.72,
+        "pnl_pct": -0.55,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 53.0
+      },
+      {
+        "ticker": "CVX",
+        "entry_date": "2026-01-05",
+        "entry_price": 164.14,
+        "exit_date": "2026-01-22",
+        "exit_price": 165.05,
+        "pnl_pct": 0.35,
+        "days_held": 17,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 59.9
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-01-16",
+        "entry_price": 193.0,
+        "exit_date": "2026-01-22",
+        "exit_price": 188.18,
+        "pnl_pct": -2.7,
+        "days_held": 6,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 58.1
+      },
+      {
+        "ticker": "ABT",
+        "entry_date": "2026-01-16",
+        "entry_price": 123.23,
+        "exit_date": "2026-01-22",
+        "exit_price": 108.61,
+        "pnl_pct": -12.06,
+        "days_held": 6,
+        "exit_reason": "stop_loss",
+        "conviction": 55.8
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-01-21",
+        "entry_price": 128.0,
+        "exit_date": "2026-01-22",
+        "exit_price": 128.56,
+        "pnl_pct": 0.24,
+        "days_held": 1,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.8
+      },
+      {
+        "ticker": "NVDA",
+        "entry_date": "2025-12-24",
+        "entry_price": 187.93,
+        "exit_date": "2026-01-23",
+        "exit_price": 187.66,
+        "pnl_pct": -0.34,
+        "days_held": 30,
+        "exit_reason": "time_exit",
+        "conviction": 50.5
+      },
+      {
+        "ticker": "COST",
+        "entry_date": "2026-01-12",
+        "entry_price": 919.14,
+        "exit_date": "2026-01-23",
+        "exit_price": 981.91,
+        "pnl_pct": 6.63,
+        "days_held": 11,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.0
+      },
+      {
+        "ticker": "KLAC",
+        "entry_date": "2026-01-20",
+        "entry_price": 1523.42,
+        "exit_date": "2026-01-23",
+        "exit_price": 1510.82,
+        "pnl_pct": -1.03,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.8
+      },
+      {
+        "ticker": "HD",
+        "entry_date": "2026-01-12",
+        "entry_price": 372.15,
+        "exit_date": "2026-01-26",
+        "exit_price": 383.96,
+        "pnl_pct": 2.97,
+        "days_held": 14,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 68.5
+      },
+      {
+        "ticker": "AMAT",
+        "entry_date": "2026-01-16",
+        "entry_price": 325.31,
+        "exit_date": "2026-01-26",
+        "exit_price": 319.06,
+        "pnl_pct": -2.12,
+        "days_held": 10,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.0
+      },
+      {
+        "ticker": "MO",
+        "entry_date": "2026-01-14",
+        "entry_price": 59.16,
+        "exit_date": "2026-01-27",
+        "exit_price": 62.57,
+        "pnl_pct": 5.57,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 77.7
+      },
+      {
+        "ticker": "ROP",
+        "entry_date": "2026-01-16",
+        "entry_price": 412.41,
+        "exit_date": "2026-01-27",
+        "exit_price": 369.27,
+        "pnl_pct": -10.66,
+        "days_held": 11,
+        "exit_reason": "stop_loss",
+        "conviction": 60.3
+      },
+      {
+        "ticker": "XLC",
+        "entry_date": "2026-01-22",
+        "entry_price": 115.36,
+        "exit_date": "2026-01-27",
+        "exit_price": 116.53,
+        "pnl_pct": 0.81,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 42.9
+      },
+      {
+        "ticker": "SNPS",
+        "entry_date": "2026-01-06",
+        "entry_price": 495.6,
+        "exit_date": "2026-01-28",
+        "exit_price": 511.35,
+        "pnl_pct": 2.98,
+        "days_held": 22,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 59.3
+      },
+      {
+        "ticker": "CDNS",
+        "entry_date": "2026-01-14",
+        "entry_price": 319.5,
+        "exit_date": "2026-01-28",
+        "exit_price": 320.49,
+        "pnl_pct": 0.11,
+        "days_held": 14,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 69.6
+      },
+      {
+        "ticker": "AON",
+        "entry_date": "2026-01-15",
+        "entry_price": 346.0,
+        "exit_date": "2026-01-28",
+        "exit_price": 333.0,
+        "pnl_pct": -3.96,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 54.0
+      },
+      {
+        "ticker": "SO",
+        "entry_date": "2026-01-15",
+        "entry_price": 87.71,
+        "exit_date": "2026-01-28",
+        "exit_price": 87.64,
+        "pnl_pct": -0.28,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 87.9
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-01-27",
+        "entry_price": 190.72,
+        "exit_date": "2026-01-29",
+        "exit_price": 174.66,
+        "pnl_pct": -8.62,
+        "days_held": 2,
+        "exit_reason": "stop_loss",
+        "conviction": 73.7
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-01-27",
+        "entry_price": 135.83,
+        "exit_date": "2026-01-29",
+        "exit_price": 116.73,
+        "pnl_pct": -14.26,
+        "days_held": 2,
+        "exit_reason": "stop_loss",
+        "conviction": 74.6
+      },
+      {
+        "ticker": "BRK-B",
+        "entry_date": "2025-12-31",
+        "entry_price": 503.92,
+        "exit_date": "2026-01-30",
+        "exit_price": 480.53,
+        "pnl_pct": -4.84,
+        "days_held": 30,
+        "exit_reason": "time_exit",
+        "conviction": 53.9
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-01-22",
+        "entry_price": 179.37,
+        "exit_date": "2026-01-30",
+        "exit_price": 164.58,
+        "pnl_pct": -8.45,
+        "days_held": 8,
+        "exit_reason": "stop_loss",
+        "conviction": 55.7
+      },
+      {
+        "ticker": "CI",
+        "entry_date": "2026-01-30",
+        "entry_price": 270.02,
+        "exit_date": "2026-02-02",
+        "exit_price": 270.05,
+        "pnl_pct": -0.19,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 40.6
+      },
+      {
+        "ticker": "MSFT",
+        "entry_date": "2026-01-30",
+        "entry_price": 438.17,
+        "exit_date": "2026-02-02",
+        "exit_price": 422.41,
+        "pnl_pct": -3.8,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 62.3
+      },
+      {
+        "ticker": "XLRE",
+        "entry_date": "2026-01-30",
+        "entry_price": 41.31,
+        "exit_date": "2026-02-02",
+        "exit_price": 40.96,
+        "pnl_pct": -1.05,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 44.2
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-02-02",
+        "entry_price": 170.92,
+        "exit_date": "2026-02-03",
+        "exit_price": 154.67,
+        "pnl_pct": -9.71,
+        "days_held": 1,
+        "exit_reason": "stop_loss",
+        "conviction": 70.8
+      },
+      {
+        "ticker": "AVGO",
+        "entry_date": "2026-01-07",
+        "entry_price": 341.7,
+        "exit_date": "2026-02-04",
+        "exit_price": 308.05,
+        "pnl_pct": -10.05,
+        "days_held": 28,
+        "exit_reason": "stop_loss",
+        "conviction": 55.3
+      },
+      {
+        "ticker": "NVDA",
+        "entry_date": "2026-01-27",
+        "entry_price": 187.23,
+        "exit_date": "2026-02-04",
+        "exit_price": 174.18,
+        "pnl_pct": -7.17,
+        "days_held": 8,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 48.3
+      },
+      {
+        "ticker": "META",
+        "entry_date": "2026-01-30",
+        "entry_price": 726.88,
+        "exit_date": "2026-02-04",
+        "exit_price": 668.42,
+        "pnl_pct": -8.24,
+        "days_held": 5,
+        "exit_reason": "stop_loss",
+        "conviction": 75.2
+      },
+      {
+        "ticker": "KO",
+        "entry_date": "2026-01-27",
+        "entry_price": 71.95,
+        "exit_date": "2026-02-05",
+        "exit_price": 77.97,
+        "pnl_pct": 8.17,
+        "days_held": 9,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 61.6
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-02-04",
+        "entry_price": 153.89,
+        "exit_date": "2026-02-05",
+        "exit_price": 136.48,
+        "pnl_pct": -11.51,
+        "days_held": 1,
+        "exit_reason": "stop_loss",
+        "conviction": 72.1
+      },
+      {
+        "ticker": "AON",
+        "entry_date": "2026-02-05",
+        "entry_price": 350.32,
+        "exit_date": "2026-02-05",
+        "exit_price": 343.36,
+        "pnl_pct": -2.19,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 39.7
+      },
+      {
+        "ticker": "CVX",
+        "entry_date": "2026-02-02",
+        "entry_price": 171.76,
+        "exit_date": "2026-02-06",
+        "exit_price": 179.11,
+        "pnl_pct": 4.08,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 60.3
+      },
+      {
+        "ticker": "TXN",
+        "entry_date": "2026-01-29",
+        "entry_price": 215.0,
+        "exit_date": "2026-02-09",
+        "exit_price": 218.77,
+        "pnl_pct": 1.55,
+        "days_held": 11,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 72.9
+      },
+      {
+        "ticker": "SYK",
+        "entry_date": "2026-02-02",
+        "entry_price": 367.93,
+        "exit_date": "2026-02-09",
+        "exit_price": 356.08,
+        "pnl_pct": -3.42,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.9
+      },
+      {
+        "ticker": "APD",
+        "entry_date": "2026-02-05",
+        "entry_price": 287.23,
+        "exit_date": "2026-02-09",
+        "exit_price": 286.37,
+        "pnl_pct": -0.5,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 72.4
+      },
+      {
+        "ticker": "V",
+        "entry_date": "2026-02-09",
+        "entry_price": 330.08,
+        "exit_date": "2026-02-09",
+        "exit_price": 324.91,
+        "pnl_pct": -1.77,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.2
+      },
+      {
+        "ticker": "PEP",
+        "entry_date": "2026-02-03",
+        "entry_price": 155.21,
+        "exit_date": "2026-02-10",
+        "exit_price": 165.49,
+        "pnl_pct": 6.42,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 75.3
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-02-06",
+        "entry_price": 101.68,
+        "exit_date": "2026-02-10",
+        "exit_price": 106.48,
+        "pnl_pct": 4.52,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.8
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-02-09",
+        "entry_price": 148.49,
+        "exit_date": "2026-02-10",
+        "exit_price": 159.89,
+        "pnl_pct": 7.48,
+        "days_held": 1,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.7
+      },
+      {
+        "ticker": "UNP",
+        "entry_date": "2026-02-09",
+        "entry_price": 250.4,
+        "exit_date": "2026-02-11",
+        "exit_price": 261.44,
+        "pnl_pct": 4.21,
+        "days_held": 2,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.3
+      },
+      {
+        "ticker": "ROP",
+        "entry_date": "2026-02-11",
+        "entry_price": 347.2,
+        "exit_date": "2026-02-11",
+        "exit_price": 333.8,
+        "pnl_pct": -4.06,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 70.8
+      },
+      {
+        "ticker": "MCD",
+        "entry_date": "2026-01-27",
+        "entry_price": 310.59,
+        "exit_date": "2026-02-12",
+        "exit_price": 330.24,
+        "pnl_pct": 6.13,
+        "days_held": 16,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 47.5
+      },
+      {
+        "ticker": "MA",
+        "entry_date": "2026-02-03",
+        "entry_price": 554.33,
+        "exit_date": "2026-02-12",
+        "exit_price": 527.46,
+        "pnl_pct": -5.05,
+        "days_held": 9,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.5
+      },
+      {
+        "ticker": "AVGO",
+        "entry_date": "2026-02-05",
+        "entry_price": 314.34,
+        "exit_date": "2026-02-12",
+        "exit_price": 331.17,
+        "pnl_pct": 5.15,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.5
+      },
+      {
+        "ticker": "EMR",
+        "entry_date": "2026-02-05",
+        "entry_price": 154.02,
+        "exit_date": "2026-02-12",
+        "exit_price": 144.43,
+        "pnl_pct": -6.43,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 62.2
+      },
+      {
+        "ticker": "NFLX",
+        "entry_date": "2026-02-11",
+        "entry_price": 81.96,
+        "exit_date": "2026-02-12",
+        "exit_price": 75.86,
+        "pnl_pct": -7.64,
+        "days_held": 1,
+        "exit_reason": "stop_loss",
+        "conviction": 71.2
+      },
+      {
+        "ticker": "MDT",
+        "entry_date": "2026-01-27",
+        "entry_price": 100.23,
+        "exit_date": "2026-02-13",
+        "exit_price": 99.49,
+        "pnl_pct": -0.94,
+        "days_held": 17,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 59.0
+      },
+      {
+        "ticker": "VZ",
+        "entry_date": "2026-02-02",
+        "entry_price": 44.58,
+        "exit_date": "2026-02-13",
+        "exit_price": 49.01,
+        "pnl_pct": 9.74,
+        "days_held": 11,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 90.0
+      },
+      {
+        "ticker": "DE",
+        "entry_date": "2026-02-05",
+        "entry_price": 563.83,
+        "exit_date": "2026-02-13",
+        "exit_price": 602.92,
+        "pnl_pct": 6.73,
+        "days_held": 8,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 64.9
+      },
+      {
+        "ticker": "MO",
+        "entry_date": "2026-02-06",
+        "entry_price": 64.3,
+        "exit_date": "2026-02-13",
+        "exit_price": 66.14,
+        "pnl_pct": 2.66,
+        "days_held": 7,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 66.1
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-02-11",
+        "entry_price": 153.02,
+        "exit_date": "2026-02-13",
+        "exit_price": 144.42,
+        "pnl_pct": -5.82,
+        "days_held": 2,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 58.4
+      },
+      {
+        "ticker": "NEE",
+        "entry_date": "2026-01-21",
+        "entry_price": 83.47,
+        "exit_date": "2026-02-18",
+        "exit_price": 90.6,
+        "pnl_pct": 8.34,
+        "days_held": 28,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 64.1
+      },
+      {
+        "ticker": "DUK",
+        "entry_date": "2026-01-21",
+        "entry_price": 119.17,
+        "exit_date": "2026-02-18",
+        "exit_price": 125.24,
+        "pnl_pct": 4.89,
+        "days_held": 28,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 50.9
+      },
+      {
+        "ticker": "ECL",
+        "entry_date": "2026-01-26",
+        "entry_price": 282.08,
+        "exit_date": "2026-02-18",
+        "exit_price": 301.78,
+        "pnl_pct": 6.78,
+        "days_held": 23,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.0
+      },
+      {
+        "ticker": "MMM",
+        "entry_date": "2026-02-09",
+        "entry_price": 170.87,
+        "exit_date": "2026-02-18",
+        "exit_price": 164.17,
+        "pnl_pct": -4.12,
+        "days_held": 9,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 87.9
+      },
+      {
+        "ticker": "XLU",
+        "entry_date": "2026-02-13",
+        "entry_price": 44.89,
+        "exit_date": "2026-02-18",
+        "exit_price": 45.29,
+        "pnl_pct": 0.7,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.6
+      },
+      {
+        "ticker": "ORCL",
+        "entry_date": "2026-02-13",
+        "entry_price": 159.25,
+        "exit_date": "2026-02-18",
+        "exit_price": 156.17,
+        "pnl_pct": -2.13,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 75.8
+      },
+      {
+        "ticker": "PANW",
+        "entry_date": "2026-02-13",
+        "entry_price": 165.03,
+        "exit_date": "2026-02-18",
+        "exit_price": 152.35,
+        "pnl_pct": -7.88,
+        "days_held": 5,
+        "exit_reason": "stop_loss",
+        "conviction": 80.0
+      },
+      {
+        "ticker": "AON",
+        "entry_date": "2026-02-18",
+        "entry_price": 322.93,
+        "exit_date": "2026-02-18",
+        "exit_price": 322.98,
+        "pnl_pct": -0.18,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 77.9
+      },
+      {
+        "ticker": "DIS",
+        "entry_date": "2026-02-17",
+        "entry_price": 106.57,
+        "exit_date": "2026-02-20",
+        "exit_price": 105.58,
+        "pnl_pct": -1.13,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.9
+      },
+      {
+        "ticker": "SO",
+        "entry_date": "2026-02-17",
+        "entry_price": 94.85,
+        "exit_date": "2026-02-20",
+        "exit_price": 94.3,
+        "pnl_pct": -0.78,
+        "days_held": 3,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 74.3
+      },
+      {
+        "ticker": "MSFT",
+        "entry_date": "2026-02-18",
+        "entry_price": 397.22,
+        "exit_date": "2026-02-20",
+        "exit_price": 397.23,
+        "pnl_pct": -0.2,
+        "days_held": 2,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.4
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-02-17",
+        "entry_price": 109.56,
+        "exit_date": "2026-02-23",
+        "exit_price": 100.8,
+        "pnl_pct": -8.2,
+        "days_held": 6,
+        "exit_reason": "stop_loss",
+        "conviction": 72.6
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-02-19",
+        "entry_price": 142.49,
+        "exit_date": "2026-02-23",
+        "exit_price": 129.21,
+        "pnl_pct": -9.52,
+        "days_held": 4,
+        "exit_reason": "stop_loss",
+        "conviction": 67.7
+      },
+      {
+        "ticker": "ADP",
+        "entry_date": "2026-02-23",
+        "entry_price": 211.5,
+        "exit_date": "2026-02-23",
+        "exit_price": 204.04,
+        "pnl_pct": -3.73,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 71.9
+      },
+      {
+        "ticker": "NFLX",
+        "entry_date": "2026-02-23",
+        "entry_price": 77.79,
+        "exit_date": "2026-02-23",
+        "exit_price": 76.02,
+        "pnl_pct": -2.48,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 78.1
+      },
+      {
+        "ticker": "PG",
+        "entry_date": "2026-02-06",
+        "entry_price": 158.24,
+        "exit_date": "2026-02-24",
+        "exit_price": 165.28,
+        "pnl_pct": 4.25,
+        "days_held": 18,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 64.5
+      },
+      {
+        "ticker": "ABT",
+        "entry_date": "2026-01-30",
+        "entry_price": 106.06,
+        "exit_date": "2026-03-02",
+        "exit_price": 114.12,
+        "pnl_pct": 7.4,
+        "days_held": 31,
+        "exit_reason": "time_exit",
+        "conviction": 60.2
+      },
+      {
+        "ticker": "SO",
+        "entry_date": "2026-02-25",
+        "entry_price": 95.65,
+        "exit_date": "2026-03-02",
+        "exit_price": 97.23,
+        "pnl_pct": 1.45,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 72.3
+      },
+      {
+        "ticker": "CRM",
+        "entry_date": "2026-02-27",
+        "entry_price": 191.91,
+        "exit_date": "2026-03-04",
+        "exit_price": 193.08,
+        "pnl_pct": 0.41,
+        "days_held": 5,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 73.4
+      },
+      {
+        "ticker": "ICE",
+        "entry_date": "2026-02-27",
+        "entry_price": 161.31,
+        "exit_date": "2026-03-05",
+        "exit_price": 163.47,
+        "pnl_pct": 1.14,
+        "days_held": 6,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 75.0
+      },
+      {
+        "ticker": "FIS",
+        "entry_date": "2026-03-03",
+        "entry_price": 48.65,
+        "exit_date": "2026-03-05",
+        "exit_price": 50.15,
+        "pnl_pct": 2.88,
+        "days_held": 2,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 68.4
+      },
+      {
+        "ticker": "V",
+        "entry_date": "2026-03-03",
+        "entry_price": 315.81,
+        "exit_date": "2026-03-05",
+        "exit_price": 319.8,
+        "pnl_pct": 1.06,
+        "days_held": 2,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 59.0
+      },
+      {
+        "ticker": "ACN",
+        "entry_date": "2026-03-05",
+        "entry_price": 209.8,
+        "exit_date": "2026-03-05",
+        "exit_price": 214.0,
+        "pnl_pct": 1.8,
+        "days_held": 0,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 79.1
+      },
+      {
+        "ticker": "SCHW",
+        "entry_date": "2026-02-27",
+        "entry_price": 96.49,
+        "exit_date": "2026-03-09",
+        "exit_price": 94.38,
+        "pnl_pct": -2.39,
+        "days_held": 10,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 70.3
+      },
+      {
+        "ticker": "AON",
+        "entry_date": "2026-02-20",
+        "entry_price": 325.94,
+        "exit_date": "2026-03-10",
+        "exit_price": 320.96,
+        "pnl_pct": -1.73,
+        "days_held": 18,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 68.9
+      },
+      {
+        "ticker": "CI",
+        "entry_date": "2026-03-02",
+        "entry_price": 287.33,
+        "exit_date": "2026-03-10",
+        "exit_price": 262.44,
+        "pnl_pct": -8.86,
+        "days_held": 8,
+        "exit_reason": "stop_loss",
+        "conviction": 73.0
+      },
+      {
+        "ticker": "ADP",
+        "entry_date": "2026-03-02",
+        "entry_price": 210.85,
+        "exit_date": "2026-03-11",
+        "exit_price": 211.25,
+        "pnl_pct": -0.01,
+        "days_held": 9,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 57.9
+      },
+      {
+        "ticker": "MA",
+        "entry_date": "2026-03-03",
+        "entry_price": 513.61,
+        "exit_date": "2026-03-11",
+        "exit_price": 504.0,
+        "pnl_pct": -2.07,
+        "days_held": 8,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 68.1
+      },
+      {
+        "ticker": "CRM",
+        "entry_date": "2026-03-10",
+        "entry_price": 197.26,
+        "exit_date": "2026-03-11",
+        "exit_price": 194.13,
+        "pnl_pct": -1.79,
+        "days_held": 1,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 65.6
+      },
+      {
+        "ticker": "AAPL",
+        "entry_date": "2026-02-10",
+        "entry_price": 274.89,
+        "exit_date": "2026-03-12",
+        "exit_price": 255.76,
+        "pnl_pct": -7.16,
+        "days_held": 30,
+        "exit_reason": "time_exit",
+        "conviction": 76.3
+      },
+      {
+        "ticker": "ROP",
+        "entry_date": "2026-02-23",
+        "entry_price": 334.93,
+        "exit_date": "2026-03-12",
+        "exit_price": 346.78,
+        "pnl_pct": 3.34,
+        "days_held": 17,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 93.0
+      },
+      {
+        "ticker": "BKNG",
+        "entry_date": "2026-02-27",
+        "entry_price": 4184.16,
+        "exit_date": "2026-03-12",
+        "exit_price": 4217.71,
+        "pnl_pct": 0.6,
+        "days_held": 13,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 83.1
+      },
+      {
+        "ticker": "MMM",
+        "entry_date": "2026-03-09",
+        "entry_price": 151.49,
+        "exit_date": "2026-03-13",
+        "exit_price": 150.96,
+        "pnl_pct": -0.55,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 52.8
+      },
+      {
+        "ticker": "ABBV",
+        "entry_date": "2026-02-12",
+        "entry_price": 221.57,
+        "exit_date": "2026-03-16",
+        "exit_price": 221.45,
+        "pnl_pct": -0.25,
+        "days_held": 32,
+        "exit_reason": "time_exit",
+        "conviction": 57.6
+      },
+      {
+        "ticker": "V",
+        "entry_date": "2026-03-13",
+        "entry_price": 307.59,
+        "exit_date": "2026-03-17",
+        "exit_price": 308.46,
+        "pnl_pct": 0.08,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 55.0
+      },
+      {
+        "ticker": "NOW",
+        "entry_date": "2026-02-27",
+        "entry_price": 105.0,
+        "exit_date": "2026-03-18",
+        "exit_price": 113.71,
+        "pnl_pct": 8.1,
+        "days_held": 19,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 69.4
+      },
+      {
+        "ticker": "TSLA",
+        "entry_date": "2026-02-26",
+        "entry_price": 414.42,
+        "exit_date": "2026-03-19",
+        "exit_price": 380.3,
+        "pnl_pct": -8.43,
+        "days_held": 21,
+        "exit_reason": "stop_loss",
+        "conviction": 54.7
+      },
+      {
+        "ticker": "XLY",
+        "entry_date": "2026-03-04",
+        "entry_price": 115.09,
+        "exit_date": "2026-03-19",
+        "exit_price": 109.7,
+        "pnl_pct": -4.88,
+        "days_held": 15,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 50.4
+      },
+      {
+        "ticker": "ABBV",
+        "entry_date": "2026-03-17",
+        "entry_price": 222.04,
+        "exit_date": "2026-03-19",
+        "exit_price": 206.23,
+        "pnl_pct": -7.32,
+        "days_held": 2,
+        "exit_reason": "stop_loss",
+        "conviction": 43.9
+      },
+      {
+        "ticker": "MMM",
+        "entry_date": "2026-03-19",
+        "entry_price": 143.43,
+        "exit_date": "2026-03-23",
+        "exit_price": 146.56,
+        "pnl_pct": 1.98,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 56.6
+      },
+      {
+        "ticker": "ADBE",
+        "entry_date": "2026-03-03",
+        "entry_price": 260.05,
+        "exit_date": "2026-03-24",
+        "exit_price": 238.87,
+        "pnl_pct": -8.34,
+        "days_held": 21,
+        "exit_reason": "stop_loss",
+        "conviction": 77.4
+      },
+      {
+        "ticker": "BLK",
+        "entry_date": "2026-03-20",
+        "entry_price": 970.26,
+        "exit_date": "2026-03-24",
+        "exit_price": 976.06,
+        "pnl_pct": 0.4,
+        "days_held": 4,
+        "exit_reason": "mtmdi_resolved",
+        "conviction": 59.2
+      },
+      {
+        "ticker": "WDAY",
+        "entry_date": "2026-02-26",
+        "entry_price": 137.0,
+        "exit_date": "2026-03-25",
+        "exit_price": 127.07,
+        "pnl_pct": -7.45,
+        "days_held": 27,
+        "exit_reason": "stop_loss",
+        "conviction": 61.1
+      }
+    ],
     "equity_curve": [
       {
-        "date": "2026-03-24",
+        "date": "2025-12-23",
         "value": 10000.0,
-        "n_open": 3,
-        "avg_unrealized": 0.0
+        "n_open": 0,
+        "avg_unrealized": 0
+      },
+      {
+        "date": "2025-12-24",
+        "value": 10049.31,
+        "n_open": 8,
+        "avg_unrealized": 0.49
+      },
+      {
+        "date": "2025-12-26",
+        "value": 10056.68,
+        "n_open": 9,
+        "avg_unrealized": 0.59
+      },
+      {
+        "date": "2025-12-29",
+        "value": 10025.57,
+        "n_open": 10,
+        "avg_unrealized": 0.28
+      },
+      {
+        "date": "2025-12-30",
+        "value": 10019.25,
+        "n_open": 13,
+        "avg_unrealized": 0.22
+      },
+      {
+        "date": "2025-12-31",
+        "value": 9945.13,
+        "n_open": 14,
+        "avg_unrealized": -0.53
+      },
+      {
+        "date": "2026-01-02",
+        "value": 9909.72,
+        "n_open": 13,
+        "avg_unrealized": -0.84
+      },
+      {
+        "date": "2026-01-05",
+        "value": 9957.79,
+        "n_open": 13,
+        "avg_unrealized": -0.87
+      },
+      {
+        "date": "2026-01-06",
+        "value": 10024.4,
+        "n_open": 10,
+        "avg_unrealized": -0.55
+      },
+      {
+        "date": "2026-01-07",
+        "value": 10012.99,
+        "n_open": 13,
+        "avg_unrealized": -0.66
+      },
+      {
+        "date": "2026-01-08",
+        "value": 10000.64,
+        "n_open": 14,
+        "avg_unrealized": -0.79
+      },
+      {
+        "date": "2026-01-09",
+        "value": 10153.13,
+        "n_open": 14,
+        "avg_unrealized": 0.99
+      },
+      {
+        "date": "2026-01-12",
+        "value": 10185.62,
+        "n_open": 15,
+        "avg_unrealized": 1.22
+      },
+      {
+        "date": "2026-01-13",
+        "value": 10123.37,
+        "n_open": 11,
+        "avg_unrealized": 0.8
+      },
+      {
+        "date": "2026-01-14",
+        "value": 10047.69,
+        "n_open": 15,
+        "avg_unrealized": 0.05
+      },
+      {
+        "date": "2026-01-15",
+        "value": 10138.5,
+        "n_open": 17,
+        "avg_unrealized": 0.95
+      },
+      {
+        "date": "2026-01-16",
+        "value": 10146.98,
+        "n_open": 20,
+        "avg_unrealized": 1.16
+      },
+      {
+        "date": "2026-01-20",
+        "value": 9949.92,
+        "n_open": 20,
+        "avg_unrealized": -1.24
+      },
+      {
+        "date": "2026-01-21",
+        "value": 10008.99,
+        "n_open": 19,
+        "avg_unrealized": -0.55
+      },
+      {
+        "date": "2026-01-22",
+        "value": 9944.0,
+        "n_open": 17,
+        "avg_unrealized": -0.52
+      },
+      {
+        "date": "2026-01-23",
+        "value": 9941.65,
+        "n_open": 14,
+        "avg_unrealized": -0.85
+      },
+      {
+        "date": "2026-01-26",
+        "value": 10024.63,
+        "n_open": 13,
+        "avg_unrealized": -0.07
+      },
+      {
+        "date": "2026-01-27",
+        "value": 9944.25,
+        "n_open": 16,
+        "avg_unrealized": -0.65
+      },
+      {
+        "date": "2026-01-28",
+        "value": 9919.02,
+        "n_open": 12,
+        "avg_unrealized": -0.83
+      },
+      {
+        "date": "2026-01-29",
+        "value": 9811.36,
+        "n_open": 11,
+        "avg_unrealized": -0.16
+      },
+      {
+        "date": "2026-01-30",
+        "value": 9830.84,
+        "n_open": 14,
+        "avg_unrealized": 0.87
+      },
+      {
+        "date": "2026-02-02",
+        "value": 9756.68,
+        "n_open": 15,
+        "avg_unrealized": 0.4
+      },
+      {
+        "date": "2026-02-03",
+        "value": 9775.56,
+        "n_open": 16,
+        "avg_unrealized": 1.16
+      },
+      {
+        "date": "2026-02-04",
+        "value": 9778.24,
+        "n_open": 14,
+        "avg_unrealized": 2.69
+      },
+      {
+        "date": "2026-02-05",
+        "value": 9689.43,
+        "n_open": 16,
+        "avg_unrealized": 2.07
+      },
+      {
+        "date": "2026-02-06",
+        "value": 9746.11,
+        "n_open": 18,
+        "avg_unrealized": 2.44
+      },
+      {
+        "date": "2026-02-09",
+        "value": 9765.84,
+        "n_open": 18,
+        "avg_unrealized": 2.83
+      },
+      {
+        "date": "2026-02-10",
+        "value": 9911.82,
+        "n_open": 16,
+        "avg_unrealized": 3.36
+      },
+      {
+        "date": "2026-02-11",
+        "value": 9875.0,
+        "n_open": 17,
+        "avg_unrealized": 2.98
+      },
+      {
+        "date": "2026-02-12",
+        "value": 9853.22,
+        "n_open": 13,
+        "avg_unrealized": 3.19
+      },
+      {
+        "date": "2026-02-13",
+        "value": 9928.96,
+        "n_open": 11,
+        "avg_unrealized": 3.19
+      },
+      {
+        "date": "2026-02-17",
+        "value": 9760.32,
+        "n_open": 14,
+        "avg_unrealized": 1.49
+      },
+      {
+        "date": "2026-02-18",
+        "value": 9661.14,
+        "n_open": 8,
+        "avg_unrealized": 0.07
+      },
+      {
+        "date": "2026-02-19",
+        "value": 9635.99,
+        "n_open": 9,
+        "avg_unrealized": -0.19
+      },
+      {
+        "date": "2026-02-20",
+        "value": 9589.03,
+        "n_open": 7,
+        "avg_unrealized": -0.47
+      },
+      {
+        "date": "2026-02-23",
+        "value": 9571.67,
+        "n_open": 6,
+        "avg_unrealized": 1.74
+      },
+      {
+        "date": "2026-02-24",
+        "value": 9643.92,
+        "n_open": 5,
+        "avg_unrealized": 1.79
+      },
+      {
+        "date": "2026-02-25",
+        "value": 9681.0,
+        "n_open": 6,
+        "avg_unrealized": 2.17
+      },
+      {
+        "date": "2026-02-26",
+        "value": 9678.77,
+        "n_open": 9,
+        "avg_unrealized": 2.15
+      },
+      {
+        "date": "2026-02-27",
+        "value": 9717.31,
+        "n_open": 14,
+        "avg_unrealized": 2.55
+      },
+      {
+        "date": "2026-03-02",
+        "value": 9730.75,
+        "n_open": 15,
+        "avg_unrealized": 2.17
+      },
+      {
+        "date": "2026-03-03",
+        "value": 9780.88,
+        "n_open": 20,
+        "avg_unrealized": 2.69
+      },
+      {
+        "date": "2026-03-04",
+        "value": 9850.43,
+        "n_open": 20,
+        "avg_unrealized": 3.38
+      },
+      {
+        "date": "2026-03-05",
+        "value": 10041.47,
+        "n_open": 17,
+        "avg_unrealized": 4.99
+      },
+      {
+        "date": "2026-03-06",
+        "value": 10035.9,
+        "n_open": 17,
+        "avg_unrealized": 4.93
+      },
+      {
+        "date": "2026-03-09",
+        "value": 9945.69,
+        "n_open": 17,
+        "avg_unrealized": 4.16
+      },
+      {
+        "date": "2026-03-10",
+        "value": 9810.34,
+        "n_open": 16,
+        "avg_unrealized": 3.39
+      },
+      {
+        "date": "2026-03-11",
+        "value": 9805.41,
+        "n_open": 13,
+        "avg_unrealized": 3.58
+      },
+      {
+        "date": "2026-03-12",
+        "value": 9671.5,
+        "n_open": 10,
+        "avg_unrealized": 2.46
+      },
+      {
+        "date": "2026-03-13",
+        "value": 9585.44,
+        "n_open": 10,
+        "avg_unrealized": 1.62
+      },
+      {
+        "date": "2026-03-16",
+        "value": 9685.0,
+        "n_open": 9,
+        "avg_unrealized": 2.68
+      },
+      {
+        "date": "2026-03-17",
+        "value": 9735.22,
+        "n_open": 9,
+        "avg_unrealized": 3.19
+      },
+      {
+        "date": "2026-03-18",
+        "value": 9541.59,
+        "n_open": 8,
+        "avg_unrealized": 0.3
+      },
+      {
+        "date": "2026-03-19",
+        "value": 9511.42,
+        "n_open": 6,
+        "avg_unrealized": 2.28
+      },
+      {
+        "date": "2026-03-20",
+        "value": 9401.76,
+        "n_open": 7,
+        "avg_unrealized": 1.13
+      },
+      {
+        "date": "2026-03-23",
+        "value": 9490.62,
+        "n_open": 7,
+        "avg_unrealized": 1.83
+      },
+      {
+        "date": "2026-03-24",
+        "value": 9260.91,
+        "n_open": 6,
+        "avg_unrealized": 0.4
       },
       {
         "date": "2026-03-25",
-        "value": 9737.0,
-        "n_open": 3,
-        "avg_unrealized": -2.63
+        "value": 9235.39,
+        "n_open": 5,
+        "avg_unrealized": 1.37
+      },
+      {
+        "date": "2026-03-26",
+        "value": 9122.53,
+        "n_open": 10,
+        "avg_unrealized": 0.15
       }
     ]
   },
   "top_10": [
     {
       "ticker": "USO",
-      "price": 114.54,
+      "price": 113.39,
       "conviction": 80.0,
       "is_signal": false,
-      "mtmdi_zscore": 3.518,
-      "cascade_score": -0.2524,
-      "momentum_persistence": -0.161,
+      "mtmdi_zscore": 3.809,
+      "cascade_score": -0.2297,
+      "momentum_persistence": -0.241,
       "vol_regime": "high",
-      "drawdown": -5.9,
+      "drawdown": -6.8,
       "returns": {
-        "5d": -3.69,
-        "10d": 7.88,
-        "21d": 34.77,
-        "63d": 52.1,
-        "126d": 44.43,
-        "252d": 43.97
+        "5d": -7.05,
+        "10d": 4.82,
+        "21d": 33.94,
+        "63d": 48.62,
+        "126d": 41.27,
+        "252d": 41.49
+      }
+    },
+    {
+      "ticker": "MA",
+      "price": 502.76,
+      "conviction": 65.9,
+      "is_signal": true,
+      "mtmdi_zscore": 1.927,
+      "cascade_score": -0.0377,
+      "momentum_persistence": 1.122,
+      "vol_regime": "normal",
+      "drawdown": -15.8,
+      "returns": {
+        "5d": 2.88,
+        "10d": -0.25,
+        "21d": 0.95,
+        "63d": -13.4,
+        "126d": -12.27,
+        "252d": -7.25
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "price": 211.71,
+      "conviction": 62.8,
+      "is_signal": false,
+      "mtmdi_zscore": -1.229,
+      "cascade_score": -0.0821,
+      "momentum_persistence": 1.229,
+      "vol_regime": "normal",
+      "drawdown": -16.6,
+      "returns": {
+        "5d": 0.87,
+        "10d": -0.44,
+        "21d": 1.5,
+        "63d": -7.6,
+        "126d": -4.16,
+        "252d": 4.07
       }
     },
     {
       "ticker": "CL",
-      "price": 84.53,
-      "conviction": 80.0,
+      "price": 85.49,
+      "conviction": 62.1,
       "is_signal": false,
-      "mtmdi_zscore": 3.127,
-      "cascade_score": 0.1117,
-      "momentum_persistence": -0.93,
+      "mtmdi_zscore": 1.925,
+      "cascade_score": 0.1104,
+      "momentum_persistence": -0.277,
       "vol_regime": "normal",
-      "drawdown": -14.7,
+      "drawdown": -13.8,
       "returns": {
-        "5d": -6.2,
-        "10d": -9.0,
-        "21d": -13.86,
-        "63d": 8.19,
-        "126d": 7.59,
-        "252d": -4.17
+        "5d": -2.35,
+        "10d": -4.71,
+        "21d": -13.77,
+        "63d": 8.46,
+        "126d": 7.73,
+        "252d": -3.7
       }
     },
     {
-      "ticker": "KO",
-      "price": 74.67,
-      "conviction": 74.8,
+      "ticker": "SHW",
+      "price": 321.95,
+      "conviction": 61.6,
       "is_signal": false,
-      "mtmdi_zscore": 2.685,
-      "cascade_score": 0.0526,
-      "momentum_persistence": -0.867,
+      "mtmdi_zscore": 1.196,
+      "cascade_score": 0.064,
+      "momentum_persistence": 1.166,
       "vol_regime": "normal",
-      "drawdown": -7.8,
+      "drawdown": -13.8,
       "returns": {
-        "5d": -3.82,
-        "10d": -3.52,
-        "21d": -6.91,
-        "63d": 7.06,
-        "126d": 13.41,
-        "252d": 11.23
+        "5d": 3.1,
+        "10d": -0.25,
+        "21d": -12.26,
+        "63d": -0.36,
+        "126d": -6.3,
+        "252d": -5.36
+      }
+    },
+    {
+      "ticker": "MMM",
+      "price": 148.05,
+      "conviction": 59.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.93,
+      "cascade_score": 0.0594,
+      "momentum_persistence": 1.394,
+      "vol_regime": "normal",
+      "drawdown": -14.8,
+      "returns": {
+        "5d": 2.03,
+        "10d": -4.7,
+        "21d": -11.72,
+        "63d": -7.31,
+        "126d": -4.54,
+        "252d": -1.56
+      }
+    },
+    {
+      "ticker": "ADBE",
+      "price": 237.25,
+      "conviction": 59.4,
+      "is_signal": true,
+      "mtmdi_zscore": 1.766,
+      "cascade_score": 0.0556,
+      "momentum_persistence": -0.885,
+      "vol_regime": "high",
+      "drawdown": -43.6,
+      "returns": {
+        "5d": -3.62,
+        "10d": -14.3,
+        "21d": -7.28,
+        "63d": -41.01,
+        "126d": -42.19,
+        "252d": -50.84
       }
     },
     {
       "ticker": "XLP",
-      "price": 81.11,
-      "conviction": 67.9,
+      "price": 81.51,
+      "conviction": 58.7,
       "is_signal": false,
-      "mtmdi_zscore": 2.275,
-      "cascade_score": 0.0693,
-      "momentum_persistence": -1.216,
+      "mtmdi_zscore": 1.719,
+      "cascade_score": 0.0806,
+      "momentum_persistence": -0.449,
       "vol_regime": "normal",
       "drawdown": -9.4,
       "returns": {
-        "5d": -3.77,
-        "10d": -4.97,
-        "21d": -8.69,
-        "63d": 4.28,
-        "126d": 5.32,
-        "252d": 5.48
+        "5d": -1.38,
+        "10d": -3.71,
+        "21d": -9.62,
+        "63d": 4.56,
+        "126d": 4.75,
+        "252d": 4.79
       }
     },
     {
-      "ticker": "ABBV",
-      "price": 205.2,
-      "conviction": 64.6,
+      "ticker": "MCHP",
+      "price": 65.16,
+      "conviction": 57.5,
       "is_signal": false,
-      "mtmdi_zscore": -2.074,
-      "cascade_score": 0.0779,
-      "momentum_persistence": -1.367,
-      "vol_regime": "normal",
-      "drawdown": -14.7,
-      "returns": {
-        "5d": -6.86,
-        "10d": -10.1,
-        "21d": -11.18,
-        "63d": -9.22,
-        "126d": -6.61,
-        "252d": 0.98
-      }
-    },
-    {
-      "ticker": "GLD",
-      "price": 404.13,
-      "conviction": 63.9,
-      "is_signal": false,
-      "mtmdi_zscore": 2.035,
-      "cascade_score": 0.1369,
-      "momentum_persistence": -2.683,
-      "vol_regime": "normal",
-      "drawdown": -18.5,
-      "returns": {
-        "5d": -12.79,
-        "10d": -16.76,
-        "21d": -17.47,
-        "63d": 1.27,
-        "126d": 15.8,
-        "252d": 37.24
-      }
-    },
-    {
-      "ticker": "CSCO",
-      "price": 80.86,
-      "conviction": 59.2,
-      "is_signal": false,
-      "mtmdi_zscore": -1.196,
-      "cascade_score": -0.069,
-      "momentum_persistence": 0.93,
-      "vol_regime": "normal",
-      "drawdown": -6.8,
-      "returns": {
-        "5d": 1.99,
-        "10d": 3.99,
-        "21d": 3.93,
-        "63d": 3.6,
-        "126d": 18.83,
-        "252d": 31.74
-      }
-    },
-    {
-      "ticker": "CI",
-      "price": 265.87,
-      "conviction": 58.7,
-      "is_signal": false,
-      "mtmdi_zscore": -1.01,
-      "cascade_score": 0.0518,
-      "momentum_persistence": 1.184,
-      "vol_regime": "normal",
-      "drawdown": -20.2,
-      "returns": {
-        "5d": 0.91,
-        "10d": 1.3,
-        "21d": -5.76,
-        "63d": -1.69,
-        "126d": -7.1,
-        "252d": -15.39
-      }
-    },
-    {
-      "ticker": "SNPS",
-      "price": 415.62,
-      "conviction": 57.9,
-      "is_signal": false,
-      "mtmdi_zscore": -1.676,
-      "cascade_score": -0.0648,
-      "momentum_persistence": -1.241,
+      "mtmdi_zscore": -0.864,
+      "cascade_score": 0.0809,
+      "momentum_persistence": 1.313,
       "vol_regime": "high",
-      "drawdown": -35.6,
+      "drawdown": -18.8,
       "returns": {
-        "5d": -3.24,
-        "10d": -4.02,
-        "21d": -1.24,
-        "63d": -10.95,
-        "126d": -21.4,
-        "252d": -7.64
+        "5d": 0.69,
+        "10d": -0.96,
+        "21d": -15.3,
+        "63d": -1.06,
+        "126d": 2.18,
+        "252d": 21.94
       }
     },
     {
-      "ticker": "XLRE",
-      "price": 40.29,
-      "conviction": 57.2,
+      "ticker": "ECL",
+      "price": 268.54,
+      "conviction": 56.3,
       "is_signal": false,
-      "mtmdi_zscore": 1.963,
-      "cascade_score": 0.0408,
-      "momentum_persistence": -1.254,
-      "vol_regime": "high",
-      "drawdown": -7.7,
+      "mtmdi_zscore": 0.876,
+      "cascade_score": 0.0908,
+      "momentum_persistence": 1.166,
+      "vol_regime": "normal",
+      "drawdown": -12.7,
       "returns": {
-        "5d": -5.19,
-        "10d": -5.65,
-        "21d": -7.25,
-        "63d": 1.66,
-        "126d": -1.61,
-        "252d": 1.07
+        "5d": 2.53,
+        "10d": -2.83,
+        "21d": -13.49,
+        "63d": 0.7,
+        "126d": 1.57,
+        "252d": 7.14
       }
     }
   ],
   "all_stocks": [
     {
       "ticker": "USO",
-      "price": 114.54,
+      "price": 113.39,
       "conviction": 80.0,
       "is_signal": false,
-      "mtmdi_zscore": 3.518,
-      "cascade_score": -0.2524,
-      "momentum_persistence": -0.161,
+      "mtmdi_zscore": 3.809,
+      "cascade_score": -0.2297,
+      "momentum_persistence": -0.241,
       "vol_regime": "high",
-      "drawdown": -5.9,
+      "drawdown": -6.8,
       "returns": {
-        "5d": -3.69,
-        "10d": 7.88,
-        "21d": 34.77,
-        "63d": 52.1,
-        "126d": 44.43,
-        "252d": 43.97
+        "5d": -7.05,
+        "10d": 4.82,
+        "21d": 33.94,
+        "63d": 48.62,
+        "126d": 41.27,
+        "252d": 41.49
       },
       "signals": {
         "mtmdi": true,
@@ -337,22 +2093,72 @@
       }
     },
     {
-      "ticker": "CL",
-      "price": 84.53,
-      "conviction": 80.0,
-      "is_signal": false,
-      "mtmdi_zscore": 3.127,
-      "cascade_score": 0.1117,
-      "momentum_persistence": -0.93,
+      "ticker": "MA",
+      "price": 502.76,
+      "conviction": 65.9,
+      "is_signal": true,
+      "mtmdi_zscore": 1.927,
+      "cascade_score": -0.0377,
+      "momentum_persistence": 1.122,
       "vol_regime": "normal",
-      "drawdown": -14.7,
+      "drawdown": -15.8,
       "returns": {
-        "5d": -6.2,
-        "10d": -9.0,
-        "21d": -13.86,
-        "63d": 8.19,
-        "126d": 7.59,
-        "252d": -4.17
+        "5d": 2.88,
+        "10d": -0.25,
+        "21d": 0.95,
+        "63d": -13.4,
+        "126d": -12.27,
+        "252d": -7.25
+      },
+      "signals": {
+        "mtmdi": true,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "price": 211.71,
+      "conviction": 62.8,
+      "is_signal": false,
+      "mtmdi_zscore": -1.229,
+      "cascade_score": -0.0821,
+      "momentum_persistence": 1.229,
+      "vol_regime": "normal",
+      "drawdown": -16.6,
+      "returns": {
+        "5d": 0.87,
+        "10d": -0.44,
+        "21d": 1.5,
+        "63d": -7.6,
+        "126d": -4.16,
+        "252d": 4.07
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "CL",
+      "price": 85.49,
+      "conviction": 62.1,
+      "is_signal": false,
+      "mtmdi_zscore": 1.925,
+      "cascade_score": 0.1104,
+      "momentum_persistence": -0.277,
+      "vol_regime": "normal",
+      "drawdown": -13.8,
+      "returns": {
+        "5d": -2.35,
+        "10d": -4.71,
+        "21d": -13.77,
+        "63d": 8.46,
+        "126d": 7.73,
+        "252d": -3.7
       },
       "signals": {
         "mtmdi": true,
@@ -362,250 +2168,100 @@
       }
     },
     {
-      "ticker": "KO",
-      "price": 74.67,
-      "conviction": 74.8,
+      "ticker": "SHW",
+      "price": 321.95,
+      "conviction": 61.6,
       "is_signal": false,
-      "mtmdi_zscore": 2.685,
-      "cascade_score": 0.0526,
-      "momentum_persistence": -0.867,
+      "mtmdi_zscore": 1.196,
+      "cascade_score": 0.064,
+      "momentum_persistence": 1.166,
       "vol_regime": "normal",
-      "drawdown": -7.8,
+      "drawdown": -13.8,
       "returns": {
-        "5d": -3.82,
-        "10d": -3.52,
-        "21d": -6.91,
-        "63d": 7.06,
-        "126d": 13.41,
-        "252d": 11.23
+        "5d": 3.1,
+        "10d": -0.25,
+        "21d": -12.26,
+        "63d": -0.36,
+        "126d": -6.3,
+        "252d": -5.36
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "MMM",
+      "price": 148.05,
+      "conviction": 59.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.93,
+      "cascade_score": 0.0594,
+      "momentum_persistence": 1.394,
+      "vol_regime": "normal",
+      "drawdown": -14.8,
+      "returns": {
+        "5d": 2.03,
+        "10d": -4.7,
+        "21d": -11.72,
+        "63d": -7.31,
+        "126d": -4.54,
+        "252d": -1.56
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "ADBE",
+      "price": 237.25,
+      "conviction": 59.4,
+      "is_signal": true,
+      "mtmdi_zscore": 1.766,
+      "cascade_score": 0.0556,
+      "momentum_persistence": -0.885,
+      "vol_regime": "high",
+      "drawdown": -43.6,
+      "returns": {
+        "5d": -3.62,
+        "10d": -14.3,
+        "21d": -7.28,
+        "63d": -41.01,
+        "126d": -42.19,
+        "252d": -50.84
       },
       "signals": {
         "mtmdi": true,
-        "direction": false,
+        "direction": true,
         "cascade": true,
         "momentum": false
       }
     },
     {
       "ticker": "XLP",
-      "price": 81.11,
-      "conviction": 67.9,
+      "price": 81.51,
+      "conviction": 58.7,
       "is_signal": false,
-      "mtmdi_zscore": 2.275,
-      "cascade_score": 0.0693,
-      "momentum_persistence": -1.216,
+      "mtmdi_zscore": 1.719,
+      "cascade_score": 0.0806,
+      "momentum_persistence": -0.449,
       "vol_regime": "normal",
       "drawdown": -9.4,
       "returns": {
-        "5d": -3.77,
-        "10d": -4.97,
-        "21d": -8.69,
-        "63d": 4.28,
-        "126d": 5.32,
-        "252d": 5.48
+        "5d": -1.38,
+        "10d": -3.71,
+        "21d": -9.62,
+        "63d": 4.56,
+        "126d": 4.75,
+        "252d": 4.79
       },
       "signals": {
         "mtmdi": true,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ABBV",
-      "price": 205.2,
-      "conviction": 64.6,
-      "is_signal": false,
-      "mtmdi_zscore": -2.074,
-      "cascade_score": 0.0779,
-      "momentum_persistence": -1.367,
-      "vol_regime": "normal",
-      "drawdown": -14.7,
-      "returns": {
-        "5d": -6.86,
-        "10d": -10.1,
-        "21d": -11.18,
-        "63d": -9.22,
-        "126d": -6.61,
-        "252d": 0.98
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "GLD",
-      "price": 404.13,
-      "conviction": 63.9,
-      "is_signal": false,
-      "mtmdi_zscore": 2.035,
-      "cascade_score": 0.1369,
-      "momentum_persistence": -2.683,
-      "vol_regime": "normal",
-      "drawdown": -18.5,
-      "returns": {
-        "5d": -12.79,
-        "10d": -16.76,
-        "21d": -17.47,
-        "63d": 1.27,
-        "126d": 15.8,
-        "252d": 37.24
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CSCO",
-      "price": 80.86,
-      "conviction": 59.2,
-      "is_signal": false,
-      "mtmdi_zscore": -1.196,
-      "cascade_score": -0.069,
-      "momentum_persistence": 0.93,
-      "vol_regime": "normal",
-      "drawdown": -6.8,
-      "returns": {
-        "5d": 1.99,
-        "10d": 3.99,
-        "21d": 3.93,
-        "63d": 3.6,
-        "126d": 18.83,
-        "252d": 31.74
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "CI",
-      "price": 265.87,
-      "conviction": 58.7,
-      "is_signal": false,
-      "mtmdi_zscore": -1.01,
-      "cascade_score": 0.0518,
-      "momentum_persistence": 1.184,
-      "vol_regime": "normal",
-      "drawdown": -20.2,
-      "returns": {
-        "5d": 0.91,
-        "10d": 1.3,
-        "21d": -5.76,
-        "63d": -1.69,
-        "126d": -7.1,
-        "252d": -15.39
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "SNPS",
-      "price": 415.62,
-      "conviction": 57.9,
-      "is_signal": false,
-      "mtmdi_zscore": -1.676,
-      "cascade_score": -0.0648,
-      "momentum_persistence": -1.241,
-      "vol_regime": "high",
-      "drawdown": -35.6,
-      "returns": {
-        "5d": -3.24,
-        "10d": -4.02,
-        "21d": -1.24,
-        "63d": -10.95,
-        "126d": -21.4,
-        "252d": -7.64
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLRE",
-      "price": 40.29,
-      "conviction": 57.2,
-      "is_signal": false,
-      "mtmdi_zscore": 1.963,
-      "cascade_score": 0.0408,
-      "momentum_persistence": -1.254,
-      "vol_regime": "high",
-      "drawdown": -7.7,
-      "returns": {
-        "5d": -5.19,
-        "10d": -5.65,
-        "21d": -7.25,
-        "63d": 1.66,
-        "126d": -1.61,
-        "252d": 1.07
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "KLAC",
-      "price": 1566.19,
-      "conviction": 56.3,
-      "is_signal": false,
-      "mtmdi_zscore": -1.313,
-      "cascade_score": -0.1518,
-      "momentum_persistence": 0.438,
-      "vol_regime": "high",
-      "drawdown": -6.9,
-      "returns": {
-        "5d": 5.57,
-        "10d": 7.51,
-        "21d": 5.14,
-        "63d": 23.03,
-        "126d": 38.28,
-        "252d": 80.36
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "PEP",
-      "price": 150.59,
-      "conviction": 54.9,
-      "is_signal": false,
-      "mtmdi_zscore": 1.494,
-      "cascade_score": 0.0788,
-      "momentum_persistence": -1.227,
-      "vol_regime": "normal",
-      "drawdown": -10.9,
-      "returns": {
-        "5d": -3.85,
-        "10d": -6.55,
-        "21d": -10.24,
-        "63d": 2.52,
-        "126d": 8.42,
-        "252d": 7.4
-      },
-      "signals": {
-        "mtmdi": false,
         "direction": false,
         "cascade": true,
         "momentum": false
@@ -613,21 +2269,21 @@
     },
     {
       "ticker": "MCHP",
-      "price": 65.63,
-      "conviction": 54.9,
+      "price": 65.16,
+      "conviction": 57.5,
       "is_signal": false,
-      "mtmdi_zscore": -0.701,
-      "cascade_score": 0.0863,
-      "momentum_persistence": 1.323,
+      "mtmdi_zscore": -0.864,
+      "cascade_score": 0.0809,
+      "momentum_persistence": 1.313,
       "vol_regime": "high",
-      "drawdown": -18.2,
+      "drawdown": -18.8,
       "returns": {
-        "5d": 1.6,
-        "10d": 0.46,
-        "21d": -15.46,
-        "63d": 1.69,
-        "126d": 1.84,
-        "252d": 26.77
+        "5d": 0.69,
+        "10d": -0.96,
+        "21d": -15.3,
+        "63d": -1.06,
+        "126d": 2.18,
+        "252d": 21.94
       },
       "signals": {
         "mtmdi": false,
@@ -637,22 +2293,47 @@
       }
     },
     {
-      "ticker": "SCHW",
-      "price": 95.68,
-      "conviction": 54.3,
+      "ticker": "ECL",
+      "price": 268.54,
+      "conviction": 56.3,
       "is_signal": false,
-      "mtmdi_zscore": 0.657,
-      "cascade_score": -0.0487,
-      "momentum_persistence": 1.413,
+      "mtmdi_zscore": 0.876,
+      "cascade_score": 0.0908,
+      "momentum_persistence": 1.166,
       "vol_regime": "normal",
-      "drawdown": -10.5,
+      "drawdown": -12.7,
       "returns": {
-        "5d": 1.85,
-        "10d": 2.66,
-        "21d": 3.11,
-        "63d": -2.89,
-        "126d": 1.94,
-        "252d": 21.15
+        "5d": 2.53,
+        "10d": -2.83,
+        "21d": -13.49,
+        "63d": 0.7,
+        "126d": 1.57,
+        "252d": 7.14
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "AVGO",
+      "price": 318.81,
+      "conviction": 56.0,
+      "is_signal": false,
+      "mtmdi_zscore": -0.69,
+      "cascade_score": -0.0532,
+      "momentum_persistence": 1.452,
+      "vol_regime": "high",
+      "drawdown": -22.7,
+      "returns": {
+        "5d": 0.91,
+        "10d": -6.9,
+        "21d": -2.07,
+        "63d": -6.86,
+        "126d": -5.93,
+        "252d": 51.7
       },
       "signals": {
         "mtmdi": false,
@@ -662,47 +2343,122 @@
       }
     },
     {
-      "ticker": "MCD",
-      "price": 307.84,
-      "conviction": 53.9,
+      "ticker": "UNP",
+      "price": 241.33,
+      "conviction": 55.8,
       "is_signal": false,
-      "mtmdi_zscore": 1.433,
-      "cascade_score": 0.0635,
-      "momentum_persistence": -1.311,
+      "mtmdi_zscore": 0.95,
+      "cascade_score": 0.0558,
+      "momentum_persistence": 1.0,
       "vol_regime": "normal",
-      "drawdown": -9.2,
+      "drawdown": -9.6,
       "returns": {
-        "5d": -5.82,
-        "10d": -6.33,
-        "21d": -7.77,
-        "63d": -2.01,
-        "126d": 2.74,
-        "252d": 3.07
+        "5d": 1.99,
+        "10d": -3.97,
+        "21d": -9.46,
+        "63d": 3.35,
+        "126d": 6.8,
+        "252d": 4.9
       },
       "signals": {
         "mtmdi": false,
         "direction": false,
         "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "MDT",
+      "price": 87.89,
+      "conviction": 55.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.671,
+      "cascade_score": 0.0524,
+      "momentum_persistence": 1.456,
+      "vol_regime": "normal",
+      "drawdown": -16.0,
+      "returns": {
+        "5d": 0.78,
+        "10d": -1.22,
+        "21d": -9.6,
+        "63d": -9.86,
+        "126d": -6.25,
+        "252d": 0.59
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "CSCO",
+      "price": 81.83,
+      "conviction": 55.3,
+      "is_signal": false,
+      "mtmdi_zscore": -0.68,
+      "cascade_score": -0.0793,
+      "momentum_persistence": 1.397,
+      "vol_regime": "normal",
+      "drawdown": -5.7,
+      "returns": {
+        "5d": 5.31,
+        "10d": 4.67,
+        "21d": 4.61,
+        "63d": 5.19,
+        "126d": 20.33,
+        "252d": 31.83
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "WDAY",
+      "price": 127.07,
+      "conviction": 54.0,
+      "is_signal": true,
+      "mtmdi_zscore": 1.899,
+      "cascade_score": 0.0373,
+      "momentum_persistence": -0.895,
+      "vol_regime": "high",
+      "drawdown": -53.7,
+      "returns": {
+        "5d": -4.03,
+        "10d": -8.14,
+        "21d": -2.46,
+        "63d": -53.97,
+        "126d": -63.72,
+        "252d": -67.64
+      },
+      "signals": {
+        "mtmdi": true,
+        "direction": true,
+        "cascade": true,
         "momentum": false
       }
     },
     {
-      "ticker": "HON",
-      "price": 221.57,
+      "ticker": "KO",
+      "price": 75.25,
       "conviction": 53.8,
       "is_signal": false,
-      "mtmdi_zscore": 1.62,
-      "cascade_score": 0.0447,
-      "momentum_persistence": -0.622,
+      "mtmdi_zscore": 1.6,
+      "cascade_score": 0.0453,
+      "momentum_persistence": -0.183,
       "vol_regime": "normal",
-      "drawdown": -10.7,
+      "drawdown": -7.1,
       "returns": {
-        "5d": -4.35,
-        "10d": -8.24,
-        "21d": -8.76,
-        "63d": 11.18,
-        "126d": 12.85,
-        "252d": 13.35
+        "5d": -0.95,
+        "10d": -2.43,
+        "21d": -6.33,
+        "63d": 7.62,
+        "126d": 13.43,
+        "252d": 11.6
       },
       "signals": {
         "mtmdi": true,
@@ -713,21 +2469,21 @@
     },
     {
       "ticker": "DE",
-      "price": 583.02,
-      "conviction": 53.5,
+      "price": 577.99,
+      "conviction": 53.7,
       "is_signal": false,
-      "mtmdi_zscore": 1.358,
-      "cascade_score": 0.0829,
-      "momentum_persistence": 0.084,
+      "mtmdi_zscore": 1.384,
+      "cascade_score": 0.0877,
+      "momentum_persistence": 0.064,
       "vol_regime": "normal",
-      "drawdown": -12.0,
+      "drawdown": -12.8,
       "returns": {
-        "5d": 1.51,
-        "10d": -1.65,
-        "21d": -10.39,
-        "63d": 21.77,
-        "126d": 22.45,
-        "252d": 22.39
+        "5d": 1.21,
+        "10d": -2.74,
+        "21d": -10.9,
+        "63d": 21.29,
+        "126d": 21.02,
+        "252d": 19.94
       },
       "signals": {
         "mtmdi": false,
@@ -737,47 +2493,47 @@
       }
     },
     {
-      "ticker": "ABT",
-      "price": 104.06,
-      "conviction": 53.0,
+      "ticker": "KLAC",
+      "price": 1543.82,
+      "conviction": 53.2,
       "is_signal": false,
-      "mtmdi_zscore": -1.381,
-      "cascade_score": 0.0618,
-      "momentum_persistence": -1.086,
-      "vol_regime": "normal",
-      "drawdown": -23.6,
+      "mtmdi_zscore": -1.178,
+      "cascade_score": -0.1231,
+      "momentum_persistence": 0.354,
+      "vol_regime": "high",
+      "drawdown": -8.2,
       "returns": {
-        "5d": -6.19,
-        "10d": -6.05,
-        "21d": -10.25,
-        "63d": -18.19,
-        "126d": -26.27,
-        "252d": -17.54
+        "5d": 4.06,
+        "10d": 5.24,
+        "21d": 2.44,
+        "63d": 20.0,
+        "126d": 36.85,
+        "252d": 75.96
       },
       "signals": {
         "mtmdi": false,
-        "direction": true,
-        "cascade": true,
+        "direction": false,
+        "cascade": false,
         "momentum": false
       }
     },
     {
       "ticker": "DIS",
-      "price": 96.39,
-      "conviction": 52.3,
+      "price": 95.95,
+      "conviction": 52.9,
       "is_signal": false,
-      "mtmdi_zscore": -1.337,
-      "cascade_score": 0.07,
-      "momentum_persistence": -1.137,
+      "mtmdi_zscore": -1.374,
+      "cascade_score": 0.0936,
+      "momentum_persistence": -1.128,
       "vol_regime": "normal",
-      "drawdown": -21.7,
+      "drawdown": -22.1,
       "returns": {
-        "5d": -3.98,
-        "10d": -4.99,
-        "21d": -7.99,
-        "63d": -14.33,
-        "126d": -14.83,
-        "252d": -2.04
+        "5d": -3.55,
+        "10d": -5.02,
+        "21d": -10.01,
+        "63d": -15.81,
+        "126d": -15.02,
+        "252d": -3.21
       },
       "signals": {
         "mtmdi": false,
@@ -787,22 +2543,147 @@
       }
     },
     {
-      "ticker": "UPS",
-      "price": 98.44,
-      "conviction": 51.5,
+      "ticker": "SCHW",
+      "price": 94.99,
+      "conviction": 52.9,
       "is_signal": false,
-      "mtmdi_zscore": 0.525,
-      "cascade_score": 0.1252,
-      "momentum_persistence": 1.28,
+      "mtmdi_zscore": 1.052,
+      "cascade_score": -0.0356,
+      "momentum_persistence": 1.405,
       "vol_regime": "normal",
-      "drawdown": -16.8,
+      "drawdown": -11.1,
       "returns": {
-        "5d": 0.68,
-        "10d": -2.49,
-        "21d": -15.57,
-        "63d": -2.09,
-        "126d": 18.7,
-        "252d": -9.02
+        "5d": 1.82,
+        "10d": 2.47,
+        "21d": 1.99,
+        "63d": -6.2,
+        "126d": 1.76,
+        "252d": 18.45
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "PANW",
+      "price": 153.22,
+      "conviction": 51.1,
+      "is_signal": false,
+      "mtmdi_zscore": 1.268,
+      "cascade_score": -0.0846,
+      "momentum_persistence": -1.2,
+      "vol_regime": "high",
+      "drawdown": -30.8,
+      "returns": {
+        "5d": -9.75,
+        "10d": -7.36,
+        "21d": 7.84,
+        "63d": -21.25,
+        "126d": -28.26,
+        "252d": -18.73
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "UPS",
+      "price": 98.37,
+      "conviction": 51.0,
+      "is_signal": false,
+      "mtmdi_zscore": 0.498,
+      "cascade_score": 0.1286,
+      "momentum_persistence": 1.269,
+      "vol_regime": "normal",
+      "drawdown": -16.9,
+      "returns": {
+        "5d": 1.57,
+        "10d": -2.44,
+        "21d": -15.94,
+        "63d": -0.99,
+        "126d": 18.41,
+        "252d": -9.7
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "LOW",
+      "price": 236.18,
+      "conviction": 50.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.467,
+      "cascade_score": 0.1116,
+      "momentum_persistence": 1.248,
+      "vol_regime": "high",
+      "drawdown": -17.8,
+      "returns": {
+        "5d": 2.18,
+        "10d": -4.43,
+        "21d": -16.51,
+        "63d": -2.02,
+        "126d": -8.6,
+        "252d": 3.4
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "INTC",
+      "price": 47.18,
+      "conviction": 49.7,
+      "is_signal": false,
+      "mtmdi_zscore": -1.026,
+      "cascade_score": -0.136,
+      "momentum_persistence": 0.255,
+      "vol_regime": "high",
+      "drawdown": -13.1,
+      "returns": {
+        "5d": 4.66,
+        "10d": -1.68,
+        "21d": 2.27,
+        "63d": 26.02,
+        "126d": 47.5,
+        "252d": 66.68
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "HD",
+      "price": 332.51,
+      "conviction": 48.8,
+      "is_signal": false,
+      "mtmdi_zscore": 0.388,
+      "cascade_score": 0.0876,
+      "momentum_persistence": 1.231,
+      "vol_regime": "normal",
+      "drawdown": -20.4,
+      "returns": {
+        "5d": 0.48,
+        "10d": -4.7,
+        "21d": -13.86,
+        "63d": -3.42,
+        "126d": -19.86,
+        "252d": -6.49
       },
       "signals": {
         "mtmdi": false,
@@ -813,21 +2694,21 @@
     },
     {
       "ticker": "PG",
-      "price": 143.16,
-      "conviction": 51.3,
+      "price": 143.92,
+      "conviction": 48.6,
       "is_signal": false,
-      "mtmdi_zscore": 1.28,
-      "cascade_score": 0.1097,
+      "mtmdi_zscore": 1.115,
+      "cascade_score": 0.1036,
       "momentum_persistence": -1.011,
       "vol_regime": "normal",
-      "drawdown": -14.7,
+      "drawdown": -14.2,
       "returns": {
-        "5d": -5.65,
-        "10d": -8.6,
-        "21d": -14.3,
-        "63d": -0.2,
-        "126d": -5.29,
-        "252d": -12.51
+        "5d": -1.92,
+        "10d": -6.33,
+        "21d": -13.84,
+        "63d": 1.57,
+        "126d": -4.39,
+        "252d": -11.35
       },
       "signals": {
         "mtmdi": false,
@@ -837,122 +2718,47 @@
       }
     },
     {
-      "ticker": "PANW",
-      "price": 157.21,
-      "conviction": 50.6,
-      "is_signal": false,
-      "mtmdi_zscore": 1.236,
-      "cascade_score": -0.0943,
-      "momentum_persistence": -1.2,
-      "vol_regime": "high",
-      "drawdown": -29.0,
-      "returns": {
-        "5d": -7.34,
-        "10d": -5.19,
-        "21d": 8.68,
-        "63d": -17.29,
-        "126d": -28.08,
-        "252d": -14.82
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "price": 207.24,
-      "conviction": 48.7,
-      "is_signal": false,
-      "mtmdi_zscore": -1.124,
-      "cascade_score": -0.0723,
-      "momentum_persistence": -1.267,
+      "ticker": "V",
+      "price": 304.91,
+      "conviction": 48.5,
+      "is_signal": true,
+      "mtmdi_zscore": 1.616,
+      "cascade_score": -0.0156,
+      "momentum_persistence": 1.223,
       "vol_regime": "normal",
-      "drawdown": -18.4,
+      "drawdown": -17.8,
       "returns": {
-        "5d": -3.77,
-        "10d": -3.36,
-        "21d": 0.96,
-        "63d": -9.26,
-        "126d": -9.38,
-        "252d": 5.47
+        "5d": 1.95,
+        "10d": -1.32,
+        "21d": -0.75,
+        "63d": -14.18,
+        "126d": -10.11,
+        "252d": -11.28
       },
       "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MS",
-      "price": 165.87,
-      "conviction": 48.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.562,
-      "cascade_score": -0.0365,
-      "momentum_persistence": 1.679,
-      "vol_regime": "high",
-      "drawdown": -12.8,
-      "returns": {
-        "5d": 4.97,
-        "10d": 3.14,
-        "21d": -0.56,
-        "63d": -5.93,
-        "126d": 4.32,
-        "252d": 34.9
-      },
-      "signals": {
-        "mtmdi": false,
+        "mtmdi": true,
         "direction": true,
         "cascade": false,
         "momentum": true
       }
     },
     {
-      "ticker": "CMCSA",
-      "price": 29.22,
-      "conviction": 47.8,
-      "is_signal": false,
-      "mtmdi_zscore": 1.07,
-      "cascade_score": 0.0652,
-      "momentum_persistence": -0.516,
-      "vol_regime": "normal",
-      "drawdown": -13.1,
-      "returns": {
-        "5d": -2.9,
-        "10d": -6.14,
-        "21d": -7.93,
-        "63d": 6.46,
-        "126d": 1.22,
-        "252d": -12.41
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
       "ticker": "ETN",
-      "price": 374.1,
-      "conviction": 47.5,
+      "price": 375.0,
+      "conviction": 48.3,
       "is_signal": false,
-      "mtmdi_zscore": -0.946,
-      "cascade_score": -0.0864,
-      "momentum_persistence": 0.174,
+      "mtmdi_zscore": -0.978,
+      "cascade_score": -0.0482,
+      "momentum_persistence": 0.308,
       "vol_regime": "high",
-      "drawdown": -5.3,
+      "drawdown": -5.0,
       "returns": {
-        "5d": 2.75,
-        "10d": 3.55,
-        "21d": 3.59,
-        "63d": 16.62,
-        "126d": -0.81,
-        "252d": 24.56
+        "5d": 3.93,
+        "10d": 5.26,
+        "21d": 0.43,
+        "63d": 16.05,
+        "126d": 2.05,
+        "252d": 22.32
       },
       "signals": {
         "mtmdi": false,
@@ -962,47 +2768,72 @@
       }
     },
     {
-      "ticker": "BKNG",
-      "price": 4290.65,
-      "conviction": 47.0,
+      "ticker": "UNH",
+      "price": 270.55,
+      "conviction": 47.4,
       "is_signal": false,
-      "mtmdi_zscore": 1.02,
-      "cascade_score": -0.1494,
-      "momentum_persistence": -1.177,
-      "vol_regime": "high",
-      "drawdown": -25.8,
+      "mtmdi_zscore": -1.707,
+      "cascade_score": -0.0316,
+      "momentum_persistence": -1.126,
+      "vol_regime": "normal",
+      "drawdown": -53.6,
       "returns": {
-        "5d": -3.47,
-        "10d": -1.87,
-        "21d": 10.52,
-        "63d": -22.65,
-        "126d": -23.63,
-        "252d": -6.57
+        "5d": -4.97,
+        "10d": -5.29,
+        "21d": -0.47,
+        "63d": -17.61,
+        "126d": -23.64,
+        "252d": -61.88
       },
       "signals": {
-        "mtmdi": false,
+        "mtmdi": true,
         "direction": true,
         "cascade": false,
         "momentum": false
       }
     },
     {
-      "ticker": "AMGN",
-      "price": 348.43,
-      "conviction": 46.9,
+      "ticker": "AAPL",
+      "price": 252.62,
+      "conviction": 47.3,
       "is_signal": false,
-      "mtmdi_zscore": 1.251,
-      "cascade_score": 0.0435,
-      "momentum_persistence": -0.829,
+      "mtmdi_zscore": -0.91,
+      "cascade_score": 0.0301,
+      "momentum_persistence": 1.404,
       "vol_regime": "normal",
-      "drawdown": -10.2,
+      "drawdown": -11.6,
       "returns": {
-        "5d": -3.58,
-        "10d": -7.46,
-        "21d": -8.52,
-        "63d": 6.92,
-        "126d": 21.15,
-        "252d": 12.85
+        "5d": 1.07,
+        "10d": -3.19,
+        "21d": -7.44,
+        "63d": -6.92,
+        "126d": -0.52,
+        "252d": 13.93
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "GLD",
+      "price": 416.29,
+      "conviction": 47.2,
+      "is_signal": false,
+      "mtmdi_zscore": 1.035,
+      "cascade_score": 0.0877,
+      "momentum_persistence": -2.636,
+      "vol_regime": "high",
+      "drawdown": -16.1,
+      "returns": {
+        "5d": -6.61,
+        "10d": -13.45,
+        "21d": -13.11,
+        "63d": 1.96,
+        "126d": 18.36,
+        "252d": 40.65
       },
       "signals": {
         "mtmdi": false,
@@ -1012,22 +2843,97 @@
       }
     },
     {
-      "ticker": "SLV",
-      "price": 62.95,
-      "conviction": 46.8,
+      "ticker": "ITW",
+      "price": 266.45,
+      "conviction": 47.1,
       "is_signal": false,
-      "mtmdi_zscore": 1.007,
-      "cascade_score": 0.1516,
-      "momentum_persistence": -2.48,
-      "vol_regime": "high",
-      "drawdown": -40.4,
+      "mtmdi_zscore": 0.752,
+      "cascade_score": 0.057,
+      "momentum_persistence": 0.462,
+      "vol_regime": "normal",
+      "drawdown": -11.1,
       "returns": {
-        "5d": -12.96,
-        "10d": -24.08,
-        "21d": -24.68,
-        "63d": 3.26,
-        "126d": 45.25,
-        "252d": 74.05
+        "5d": 2.17,
+        "10d": -1.88,
+        "21d": -10.03,
+        "63d": 6.39,
+        "126d": 3.24,
+        "252d": 6.62
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "PEP",
+      "price": 151.73,
+      "conviction": 46.1,
+      "is_signal": false,
+      "mtmdi_zscore": 0.969,
+      "cascade_score": 0.0779,
+      "momentum_persistence": -0.425,
+      "vol_regime": "normal",
+      "drawdown": -10.2,
+      "returns": {
+        "5d": -1.19,
+        "10d": -5.4,
+        "21d": -10.21,
+        "63d": 4.02,
+        "126d": 8.56,
+        "252d": 7.47
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLRE",
+      "price": 40.27,
+      "conviction": 46.0,
+      "is_signal": false,
+      "mtmdi_zscore": 0.96,
+      "cascade_score": 0.0518,
+      "momentum_persistence": -1.245,
+      "vol_regime": "high",
+      "drawdown": -8.4,
+      "returns": {
+        "5d": -4.25,
+        "10d": -5.18,
+        "21d": -8.24,
+        "63d": 0.2,
+        "126d": -3.12,
+        "252d": -1.03
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CMCSA",
+      "price": 28.73,
+      "conviction": 45.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.806,
+      "cascade_score": 0.0833,
+      "momentum_persistence": 0.224,
+      "vol_regime": "normal",
+      "drawdown": -14.6,
+      "returns": {
+        "5d": 0.56,
+        "10d": -6.21,
+        "21d": -9.55,
+        "63d": 5.82,
+        "126d": -0.88,
+        "252d": -13.69
       },
       "signals": {
         "mtmdi": false,
@@ -1038,1246 +2944,21 @@
     },
     {
       "ticker": "NSC",
-      "price": 283.64,
-      "conviction": 46.3,
+      "price": 282.61,
+      "conviction": 45.4,
       "is_signal": false,
-      "mtmdi_zscore": 0.978,
-      "cascade_score": 0.072,
-      "momentum_persistence": -1.55,
+      "mtmdi_zscore": 0.923,
+      "cascade_score": 0.0786,
+      "momentum_persistence": -1.538,
       "vol_regime": "normal",
-      "drawdown": -10.8,
+      "drawdown": -11.1,
       "returns": {
-        "5d": -2.67,
-        "10d": -5.1,
-        "21d": -10.5,
-        "63d": -2.26,
-        "126d": -1.49,
-        "252d": 22.22
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "TMO",
-      "price": 490.29,
-      "conviction": 46.0,
-      "is_signal": false,
-      "mtmdi_zscore": -1.418,
-      "cascade_score": 0.0116,
-      "momentum_persistence": 1.545,
-      "vol_regime": "normal",
-      "drawdown": -23.3,
-      "returns": {
-        "5d": 3.65,
-        "10d": -1.88,
-        "21d": -5.1,
-        "63d": -14.58,
-        "126d": 3.34,
-        "252d": -5.08
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "XLB",
-      "price": 48.45,
-      "conviction": 44.7,
-      "is_signal": false,
-      "mtmdi_zscore": 1.041,
-      "cascade_score": 0.0456,
-      "momentum_persistence": -0.483,
-      "vol_regime": "high",
-      "drawdown": -9.2,
-      "returns": {
-        "5d": -1.74,
-        "10d": -2.47,
-        "21d": -8.46,
-        "63d": 7.53,
-        "126d": 7.94,
-        "252d": 14.59
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "INTC",
-      "price": 44.06,
-      "conviction": 44.6,
-      "is_signal": false,
-      "mtmdi_zscore": -0.875,
-      "cascade_score": -0.116,
-      "momentum_persistence": -0.062,
-      "vol_regime": "high",
-      "drawdown": -18.9,
-      "returns": {
-        "5d": 0.0,
-        "10d": -5.99,
-        "21d": 0.98,
-        "63d": 17.95,
-        "126d": 42.66,
-        "252d": 59.67
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "UNP",
-      "price": 239.67,
-      "conviction": 43.8,
-      "is_signal": false,
-      "mtmdi_zscore": 0.828,
-      "cascade_score": 0.0525,
-      "momentum_persistence": -0.474,
-      "vol_regime": "normal",
-      "drawdown": -10.2,
-      "returns": {
-        "5d": -1.1,
-        "10d": -4.3,
-        "21d": -9.06,
-        "63d": 2.82,
-        "126d": 7.04,
-        "252d": 4.78
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "LRCX",
-      "price": 238.84,
-      "conviction": 43.3,
-      "is_signal": false,
-      "mtmdi_zscore": -0.671,
-      "cascade_score": -0.1123,
-      "momentum_persistence": 0.208,
-      "vol_regime": "high",
-      "drawdown": -4.2,
-      "returns": {
-        "5d": 5.32,
-        "10d": 10.41,
-        "21d": -1.31,
-        "63d": 32.79,
-        "126d": 59.63,
-        "252d": 115.45
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "NFLX",
-      "price": 90.92,
-      "conviction": 42.6,
-      "is_signal": false,
-      "mtmdi_zscore": 0.755,
-      "cascade_score": -0.2117,
-      "momentum_persistence": -1.021,
-      "vol_regime": "high",
-      "drawdown": -32.1,
-      "returns": {
-        "5d": -3.71,
-        "10d": -6.41,
-        "21d": 17.9,
-        "63d": -3.75,
-        "126d": -30.01,
-        "252d": -5.47
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ITW",
-      "price": 265.04,
-      "conviction": 42.6,
-      "is_signal": false,
-      "mtmdi_zscore": 0.758,
-      "cascade_score": 0.0596,
-      "momentum_persistence": -0.306,
-      "vol_regime": "normal",
-      "drawdown": -11.5,
-      "returns": {
-        "5d": -1.01,
-        "10d": -3.07,
-        "21d": -10.1,
-        "63d": 6.43,
-        "126d": 2.84,
-        "252d": 7.79
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AON",
-      "price": 327.03,
-      "conviction": 42.5,
-      "is_signal": false,
-      "mtmdi_zscore": 0.731,
-      "cascade_score": -0.0322,
-      "momentum_persistence": 1.096,
-      "vol_regime": "normal",
-      "drawdown": -17.8,
-      "returns": {
-        "5d": 1.81,
-        "10d": 1.87,
-        "21d": 3.65,
-        "63d": -6.8,
-        "126d": -7.77,
-        "252d": -17.28
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "GE",
-      "price": 290.63,
-      "conviction": 42.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.733,
-      "cascade_score": 0.0781,
-      "momentum_persistence": -1.897,
-      "vol_regime": "high",
-      "drawdown": -15.8,
-      "returns": {
-        "5d": -3.87,
-        "10d": -11.64,
-        "21d": -15.25,
-        "63d": -5.29,
-        "126d": -3.13,
-        "252d": 35.86
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "PM",
-      "price": 163.87,
-      "conviction": 42.0,
-      "is_signal": false,
-      "mtmdi_zscore": -0.72,
-      "cascade_score": 0.0949,
-      "momentum_persistence": -1.225,
-      "vol_regime": "high",
-      "drawdown": -12.9,
-      "returns": {
-        "5d": -4.43,
-        "10d": -4.46,
-        "21d": -12.43,
-        "63d": 6.18,
-        "126d": 3.89,
-        "252d": 11.34
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ACN",
-      "price": 193.54,
-      "conviction": 41.3,
-      "is_signal": false,
-      "mtmdi_zscore": -0.68,
-      "cascade_score": 0.05,
-      "momentum_persistence": -0.981,
-      "vol_regime": "high",
-      "drawdown": -39.8,
-      "returns": {
-        "5d": -2.61,
-        "10d": -4.1,
-        "21d": -3.87,
-        "63d": -34.12,
-        "126d": -21.51,
-        "252d": -44.59
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "price": 383.03,
-      "conviction": 41.0,
-      "is_signal": false,
-      "mtmdi_zscore": -0.873,
-      "cascade_score": -0.0441,
-      "momentum_persistence": -1.316,
-      "vol_regime": "high",
-      "drawdown": -21.8,
-      "returns": {
-        "5d": -4.15,
-        "10d": -4.14,
-        "21d": -4.29,
-        "63d": -22.82,
-        "126d": -12.54,
-        "252d": 43.18
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "PNC",
-      "price": 206.35,
-      "conviction": 40.7,
-      "is_signal": false,
-      "mtmdi_zscore": -0.54,
-      "cascade_score": 0.032,
-      "momentum_persistence": 1.243,
-      "vol_regime": "normal",
-      "drawdown": -14.9,
-      "returns": {
-        "5d": 1.18,
-        "10d": -0.02,
-        "21d": -6.75,
-        "63d": -1.08,
-        "126d": 3.26,
-        "252d": 20.85
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "USB",
-      "price": 52.14,
-      "conviction": 40.2,
-      "is_signal": false,
-      "mtmdi_zscore": 0.257,
-      "cascade_score": 0.038,
-      "momentum_persistence": 1.313,
-      "vol_regime": "normal",
-      "drawdown": -14.1,
-      "returns": {
-        "5d": 1.08,
-        "10d": 0.37,
-        "21d": -6.8,
-        "63d": -2.84,
-        "126d": 7.25,
-        "252d": 23.96
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "XLV",
-      "price": 144.79,
-      "conviction": 39.4,
-      "is_signal": false,
-      "mtmdi_zscore": 0.564,
-      "cascade_score": 0.0583,
-      "momentum_persistence": -1.396,
-      "vol_regime": "normal",
-      "drawdown": -9.2,
-      "returns": {
-        "5d": -2.88,
-        "10d": -5.2,
-        "21d": -8.66,
-        "63d": -5.94,
-        "126d": 6.64,
-        "252d": 0.91
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "FTNT",
-      "price": 79.34,
-      "conviction": 38.4,
-      "is_signal": false,
-      "mtmdi_zscore": -0.507,
-      "cascade_score": -0.0695,
-      "momentum_persistence": -1.036,
-      "vol_regime": "normal",
-      "drawdown": -27.0,
-      "returns": {
-        "5d": -4.7,
-        "10d": -5.95,
-        "21d": 4.83,
-        "63d": -1.13,
-        "126d": -6.9,
-        "252d": -21.78
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "SYK",
-      "price": 328.51,
-      "conviction": 38.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.492,
-      "cascade_score": 0.1119,
-      "momentum_persistence": -1.083,
-      "vol_regime": "normal",
-      "drawdown": -18.2,
-      "returns": {
-        "5d": -6.08,
-        "10d": -8.78,
-        "21d": -15.8,
-        "63d": -7.56,
-        "126d": -13.61,
-        "252d": -11.27
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ADBE",
-      "price": 238.87,
-      "conviction": 38.1,
-      "is_signal": false,
-      "mtmdi_zscore": 2.02,
-      "cascade_score": 0.0073,
-      "momentum_persistence": -0.885,
-      "vol_regime": "high",
-      "drawdown": -43.2,
-      "returns": {
-        "5d": -6.22,
-        "10d": -14.13,
-        "21d": -3.22,
-        "63d": -39.86,
-        "126d": -42.15,
-        "252d": -48.32
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CVX",
-      "price": 206.79,
-      "conviction": 38.0,
-      "is_signal": false,
-      "mtmdi_zscore": -0.423,
-      "cascade_score": -0.1062,
-      "momentum_persistence": 0.098,
-      "vol_regime": "normal",
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 4.36,
-        "10d": 10.44,
-        "21d": 11.18,
-        "63d": 34.59,
-        "126d": 30.24,
-        "252d": 27.13
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AMAT",
-      "price": 373.99,
-      "conviction": 37.9,
-      "is_signal": false,
-      "mtmdi_zscore": -0.39,
-      "cascade_score": -0.1025,
-      "momentum_persistence": 0.142,
-      "vol_regime": "high",
-      "drawdown": -5.3,
-      "returns": {
-        "5d": 5.93,
-        "10d": 7.81,
-        "21d": 0.12,
-        "63d": 37.87,
-        "126d": 62.65,
-        "252d": 90.85
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "RTX",
-      "price": 194.0,
-      "conviction": 37.8,
-      "is_signal": false,
-      "mtmdi_zscore": 0.712,
-      "cascade_score": 0.0432,
-      "momentum_persistence": -2.025,
-      "vol_regime": "normal",
-      "drawdown": -8.6,
-      "returns": {
-        "5d": -4.7,
-        "10d": -6.49,
-        "21d": -4.0,
-        "63d": 6.71,
-        "126d": 20.35,
-        "252d": 39.9
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "GILD",
-      "price": 138.11,
-      "conviction": 37.1,
-      "is_signal": false,
-      "mtmdi_zscore": 0.589,
-      "cascade_score": 0.0454,
-      "momentum_persistence": -0.824,
-      "vol_regime": "normal",
-      "drawdown": -10.9,
-      "returns": {
-        "5d": -4.45,
-        "10d": -6.73,
-        "21d": -7.58,
-        "63d": 11.11,
-        "126d": 21.74,
-        "252d": 28.07
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "WDAY",
-      "price": 129.29,
-      "conviction": 36.9,
-      "is_signal": false,
-      "mtmdi_zscore": 2.004,
-      "cascade_score": 0.0059,
-      "momentum_persistence": -0.895,
-      "vol_regime": "high",
-      "drawdown": -52.9,
-      "returns": {
-        "5d": -4.45,
-        "10d": -9.72,
-        "21d": 0.06,
-        "63d": -52.53,
-        "126d": -62.96,
-        "252d": -65.74
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "TXN",
-      "price": 194.63,
-      "conviction": 36.5,
-      "is_signal": false,
-      "mtmdi_zscore": -0.376,
-      "cascade_score": 0.0683,
-      "momentum_persistence": 0.02,
-      "vol_regime": "normal",
-      "drawdown": -14.1,
-      "returns": {
-        "5d": 0.09,
-        "10d": -1.44,
-        "21d": -12.19,
-        "63d": 10.55,
-        "126d": 9.56,
-        "252d": 11.48
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "JNJ",
-      "price": 235.27,
-      "conviction": 36.2,
-      "is_signal": false,
-      "mtmdi_zscore": 1.152,
-      "cascade_score": 0.0283,
-      "momentum_persistence": -0.394,
-      "vol_regime": "normal",
-      "drawdown": -5.3,
-      "returns": {
-        "5d": -1.2,
-        "10d": -3.52,
-        "21d": -3.86,
-        "63d": 13.64,
-        "126d": 31.21,
-        "252d": 39.06
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "HD",
-      "price": 330.91,
-      "conviction": 35.7,
-      "is_signal": false,
-      "mtmdi_zscore": -0.34,
-      "cascade_score": 0.0725,
-      "momentum_persistence": -1.168,
-      "vol_regime": "normal",
-      "drawdown": -20.8,
-      "returns": {
-        "5d": -3.13,
-        "10d": -6.96,
-        "21d": -12.37,
-        "63d": -3.5,
-        "126d": -20.61,
-        "252d": -3.44
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "EMR",
-      "price": 130.15,
-      "conviction": 35.7,
-      "is_signal": false,
-      "mtmdi_zscore": -0.597,
-      "cascade_score": 0.043,
-      "momentum_persistence": -1.394,
-      "vol_regime": "high",
-      "drawdown": -19.2,
-      "returns": {
-        "5d": -1.78,
-        "10d": -7.37,
-        "21d": -11.16,
-        "63d": -1.77,
-        "126d": -1.23,
-        "252d": 15.68
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ECL",
-      "price": 264.49,
-      "conviction": 35.3,
-      "is_signal": false,
-      "mtmdi_zscore": -0.319,
-      "cascade_score": 0.0999,
-      "momentum_persistence": -1.386,
-      "vol_regime": "high",
-      "drawdown": -14.0,
-      "returns": {
-        "5d": -3.02,
-        "10d": -5.93,
-        "21d": -14.2,
-        "63d": 0.61,
-        "126d": -0.43,
-        "252d": 6.27
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "NOW",
-      "price": 104.65,
-      "conviction": 35.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.297,
-      "cascade_score": -0.0523,
-      "momentum_persistence": -1.021,
-      "vol_regime": "high",
-      "drawdown": -49.9,
-      "returns": {
-        "5d": -10.92,
-        "10d": -10.82,
-        "21d": 3.75,
-        "63d": -39.48,
-        "126d": -59.41,
-        "252d": -45.87
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XOM",
-      "price": 165.38,
-      "conviction": 34.9,
-      "is_signal": false,
-      "mtmdi_zscore": -0.261,
-      "cascade_score": -0.0882,
-      "momentum_persistence": 0.051,
-      "vol_regime": "normal",
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 4.05,
-        "10d": 11.02,
-        "21d": 9.26,
-        "63d": 35.54,
-        "126d": 40.49,
-        "252d": 39.28
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MMM",
-      "price": 146.67,
-      "conviction": 34.6,
-      "is_signal": false,
-      "mtmdi_zscore": -0.274,
-      "cascade_score": 0.0715,
-      "momentum_persistence": -1.216,
-      "vol_regime": "normal",
-      "drawdown": -15.6,
-      "returns": {
-        "5d": -1.62,
-        "10d": -5.69,
-        "21d": -12.58,
-        "63d": -9.47,
-        "126d": -3.91,
-        "252d": -0.66
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CDNS",
-      "price": 284.32,
-      "conviction": 34.5,
-      "is_signal": false,
-      "mtmdi_zscore": -0.273,
-      "cascade_score": -0.0848,
-      "momentum_persistence": -1.225,
-      "vol_regime": "normal",
-      "drawdown": -23.9,
-      "returns": {
-        "5d": -3.26,
-        "10d": -3.11,
-        "21d": 1.6,
-        "63d": -10.22,
-        "126d": -27.25,
-        "252d": 8.02
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MA",
-      "price": 498.93,
-      "conviction": 34.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.919,
-      "cascade_score": -0.0317,
-      "momentum_persistence": -1.157,
-      "vol_regime": "normal",
-      "drawdown": -16.5,
-      "returns": {
-        "5d": -1.52,
-        "10d": -3.12,
-        "21d": 0.58,
-        "63d": -13.56,
-        "126d": -15.55,
-        "252d": -6.53
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ROP",
-      "price": 345.93,
-      "conviction": 34.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.584,
-      "cascade_score": -0.0409,
-      "momentum_persistence": -0.897,
-      "vol_regime": "normal",
-      "drawdown": -41.2,
-      "returns": {
-        "5d": -1.99,
-        "10d": -2.27,
-        "21d": 3.0,
-        "63d": -24.98,
-        "126d": -38.37,
-        "252d": -49.66
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "DHR",
-      "price": 190.1,
-      "conviction": 34.0,
-      "is_signal": false,
-      "mtmdi_zscore": -0.336,
-      "cascade_score": 0.0473,
-      "momentum_persistence": -1.134,
-      "vol_regime": "normal",
-      "drawdown": -21.5,
-      "returns": {
-        "5d": -2.65,
-        "10d": -2.66,
-        "21d": -10.39,
-        "63d": -16.65,
-        "126d": 0.13,
-        "252d": -9.98
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MDT",
-      "price": 86.58,
-      "conviction": 33.8,
-      "is_signal": false,
-      "mtmdi_zscore": -0.227,
-      "cascade_score": 0.093,
-      "momentum_persistence": -1.361,
-      "vol_regime": "normal",
-      "drawdown": -17.2,
-      "returns": {
-        "5d": -2.13,
-        "10d": -3.75,
-        "21d": -13.01,
-        "63d": -12.3,
-        "126d": -7.39,
-        "252d": -1.13
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AVGO",
-      "price": 318.29,
-      "conviction": 33.6,
-      "is_signal": false,
-      "mtmdi_zscore": -0.879,
-      "cascade_score": -0.0316,
-      "momentum_persistence": -1.503,
-      "vol_regime": "high",
-      "drawdown": -22.6,
-      "returns": {
-        "5d": -0.73,
-        "10d": -7.14,
-        "21d": -3.51,
-        "63d": -6.3,
-        "126d": -5.84,
-        "252d": 51.53
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "LOW",
-      "price": 234.43,
-      "conviction": 33.1,
-      "is_signal": false,
-      "mtmdi_zscore": 0.185,
-      "cascade_score": 0.1045,
-      "momentum_persistence": -1.213,
-      "vol_regime": "high",
-      "drawdown": -18.4,
-      "returns": {
-        "5d": -2.23,
-        "10d": -6.87,
-        "21d": -15.73,
-        "63d": -2.08,
-        "126d": -9.56,
-        "252d": 5.19
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ORCL",
-      "price": 147.09,
-      "conviction": 33.1,
-      "is_signal": false,
-      "mtmdi_zscore": -0.186,
-      "cascade_score": -0.1058,
-      "momentum_persistence": -1.177,
-      "vol_regime": "high",
-      "drawdown": -55.0,
-      "returns": {
-        "5d": -5.04,
-        "10d": -1.56,
-        "21d": 4.01,
-        "63d": -26.37,
-        "126d": -79.81,
-        "252d": -2.43
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLE",
-      "price": 60.84,
-      "conviction": 32.6,
-      "is_signal": false,
-      "mtmdi_zscore": -0.128,
-      "cascade_score": -0.1096,
-      "momentum_persistence": 0.05,
-      "vol_regime": "normal",
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 4.56,
-        "10d": 9.66,
-        "21d": 10.47,
-        "63d": 33.61,
-        "126d": 34.28,
-        "252d": 31.33
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "VZ",
-      "price": 50.91,
-      "conviction": 32.5,
-      "is_signal": false,
-      "mtmdi_zscore": 1.321,
-      "cascade_score": -0.0167,
-      "momentum_persistence": 0.049,
-      "vol_regime": "normal",
-      "drawdown": -0.9,
-      "returns": {
-        "5d": 0.77,
-        "10d": 0.39,
-        "21d": 2.45,
-        "63d": 26.29,
-        "126d": 19.94,
-        "252d": 21.23
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MO",
-      "price": 64.32,
-      "conviction": 31.4,
-      "is_signal": false,
-      "mtmdi_zscore": -0.086,
-      "cascade_score": 0.0601,
-      "momentum_persistence": -0.78,
-      "vol_regime": "normal",
-      "drawdown": -7.7,
-      "returns": {
-        "5d": -4.04,
-        "10d": -4.29,
-        "21d": -6.99,
-        "63d": 12.04,
-        "126d": 2.64,
-        "252d": 17.96
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "FIS",
-      "price": 49.14,
-      "conviction": 31.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.08,
-      "cascade_score": -0.054,
-      "momentum_persistence": -1.046,
-      "vol_regime": "normal",
-      "drawdown": -39.1,
-      "returns": {
-        "5d": -2.19,
-        "10d": -2.79,
-        "21d": 4.33,
-        "63d": -28.72,
-        "126d": -25.97,
-        "252d": -37.52
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLK",
-      "price": 136.15,
-      "conviction": 31.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.23,
-      "cascade_score": -0.0457,
-      "momentum_persistence": -1.507,
-      "vol_regime": "normal",
-      "drawdown": -10.2,
-      "returns": {
-        "5d": -2.34,
-        "10d": -2.49,
-        "21d": -1.6,
-        "63d": -5.75,
-        "126d": -3.46,
-        "252d": 24.86
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "LLY",
-      "price": 903.02,
-      "conviction": 31.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.074,
-      "cascade_score": 0.1406,
-      "momentum_persistence": -1.218,
-      "vol_regime": "normal",
-      "drawdown": -18.5,
-      "returns": {
-        "5d": -2.98,
-        "10d": -10.34,
-        "21d": -15.89,
-        "63d": -16.93,
-        "126d": 18.22,
-        "252d": 8.26
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "DUK",
-      "price": 127.38,
-      "conviction": 30.7,
-      "is_signal": false,
-      "mtmdi_zscore": 1.712,
-      "cascade_score": -0.0036,
-      "momentum_persistence": -0.777,
-      "vol_regime": "normal",
-      "drawdown": -4.6,
-      "returns": {
-        "5d": -4.28,
-        "10d": -1.8,
-        "21d": -0.32,
-        "63d": 10.59,
-        "126d": 6.37,
-        "252d": 10.2
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "BAC",
-      "price": 48.14,
-      "conviction": 30.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.14,
-      "cascade_score": 0.023,
-      "momentum_persistence": 1.41,
-      "vol_regime": "normal",
-      "drawdown": -15.4,
-      "returns": {
-        "5d": 1.8,
-        "10d": -0.87,
-        "21d": -5.34,
-        "63d": -13.25,
-        "126d": -6.48,
-        "252d": 14.76
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "SHW",
-      "price": 313.7,
-      "conviction": 30.1,
-      "is_signal": false,
-      "mtmdi_zscore": 0.008,
-      "cascade_score": 0.0936,
-      "momentum_persistence": -1.085,
-      "vol_regime": "normal",
-      "drawdown": -16.0,
-      "returns": {
-        "5d": -2.21,
-        "10d": -5.17,
-        "21d": -14.72,
-        "63d": -2.04,
-        "126d": -9.46,
-        "252d": -5.5
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "BMY",
-      "price": 57.39,
-      "conviction": 29.8,
-      "is_signal": false,
-      "mtmdi_zscore": 0.461,
-      "cascade_score": 0.0368,
-      "momentum_persistence": -0.775,
-      "vol_regime": "normal",
-      "drawdown": -8.0,
-      "returns": {
-        "5d": -3.96,
-        "10d": -4.66,
-        "21d": -6.51,
-        "63d": 6.91,
-        "126d": 26.91,
-        "252d": -1.29
+        "5d": -0.62,
+        "10d": -5.15,
+        "21d": -11.2,
+        "63d": -2.69,
+        "126d": -2.38,
+        "252d": 20.23
       },
       "signals": {
         "mtmdi": false,
@@ -2288,496 +2969,71 @@
     },
     {
       "ticker": "JPM",
-      "price": 292.4,
-      "conviction": 29.6,
+      "price": 295.42,
+      "conviction": 45.3,
       "is_signal": false,
-      "mtmdi_zscore": 0.753,
-      "cascade_score": -0.0061,
-      "momentum_persistence": 1.337,
-      "vol_regime": "normal",
-      "drawdown": -12.6,
-      "returns": {
-        "5d": 1.9,
-        "10d": 1.26,
-        "21d": -1.79,
-        "63d": -7.69,
-        "126d": -5.69,
-        "252d": 21.1
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "UNH",
-      "price": 272.28,
-      "conviction": 29.3,
-      "is_signal": false,
-      "mtmdi_zscore": -1.748,
-      "cascade_score": 0.0003,
-      "momentum_persistence": -1.135,
-      "vol_regime": "normal",
-      "drawdown": -53.3,
-      "returns": {
-        "5d": -5.46,
-        "10d": -3.63,
-        "21d": -2.85,
-        "63d": -17.67,
-        "126d": -21.15,
-        "252d": -61.31
-      },
-      "signals": {
-        "mtmdi": true,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CRM",
-      "price": 183.02,
-      "conviction": 28.8,
-      "is_signal": false,
-      "mtmdi_zscore": 0.59,
-      "cascade_score": -0.0316,
-      "momentum_persistence": -1.046,
-      "vol_regime": "high",
-      "drawdown": -36.8,
-      "returns": {
-        "5d": -6.5,
-        "10d": -6.29,
-        "21d": 2.69,
-        "63d": -35.07,
-        "126d": -30.9,
-        "252d": -42.09
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "COST",
-      "price": 973.82,
-      "conviction": 27.8,
-      "is_signal": false,
-      "mtmdi_zscore": 1.033,
-      "cascade_score": 0.0176,
-      "momentum_persistence": -0.22,
-      "vol_regime": "normal",
-      "drawdown": -7.5,
-      "returns": {
-        "5d": -2.27,
-        "10d": -2.39,
-        "21d": -1.25,
-        "63d": 13.08,
-        "126d": 3.47,
-        "252d": 7.41
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "BRK-B",
-      "price": 479.33,
-      "conviction": 27.5,
-      "is_signal": false,
-      "mtmdi_zscore": -0.676,
-      "cascade_score": 0.0271,
-      "momentum_persistence": -1.008,
-      "vol_regime": "normal",
-      "drawdown": -11.2,
-      "returns": {
-        "5d": -2.73,
-        "10d": -3.04,
-        "21d": -3.03,
-        "63d": -3.12,
-        "126d": -2.96,
-        "252d": -8.51
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "QCOM",
-      "price": 128.67,
-      "conviction": 26.7,
-      "is_signal": false,
-      "mtmdi_zscore": -0.252,
-      "cascade_score": 0.0375,
-      "momentum_persistence": -1.195,
-      "vol_regime": "normal",
-      "drawdown": -30.6,
-      "returns": {
-        "5d": -2.24,
-        "10d": -4.95,
-        "21d": -8.09,
-        "63d": -30.26,
-        "126d": -26.54,
-        "252d": -17.47
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "SO",
-      "price": 93.98,
-      "conviction": 26.5,
-      "is_signal": false,
-      "mtmdi_zscore": 1.444,
-      "cascade_score": -0.004,
-      "momentum_persistence": -0.752,
-      "vol_regime": "normal",
-      "drawdown": -5.2,
-      "returns": {
-        "5d": -4.46,
-        "10d": -2.41,
-        "21d": -1.27,
-        "63d": 10.5,
-        "126d": 3.37,
-        "252d": 8.27
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "AAPL",
-      "price": 251.64,
-      "conviction": 25.2,
-      "is_signal": false,
-      "mtmdi_zscore": -1.145,
-      "cascade_score": 0.0102,
-      "momentum_persistence": -1.304,
-      "vol_regime": "normal",
-      "drawdown": -12.0,
-      "returns": {
-        "5d": -1.02,
-        "10d": -3.59,
-        "21d": -5.62,
-        "63d": -8.3,
-        "126d": -1.56,
-        "252d": 14.66
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ICE",
-      "price": 155.82,
-      "conviction": 25.0,
-      "is_signal": false,
-      "mtmdi_zscore": -0.489,
-      "cascade_score": -0.0281,
-      "momentum_persistence": -1.313,
-      "vol_regime": "normal",
-      "drawdown": -16.6,
-      "returns": {
-        "5d": -3.16,
-        "10d": -2.43,
-        "21d": 1.43,
-        "63d": -2.51,
-        "126d": -8.16,
-        "252d": -10.09
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "WM",
-      "price": 224.94,
-      "conviction": 24.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.256,
-      "cascade_score": 0.0328,
-      "momentum_persistence": -1.228,
-      "vol_regime": "normal",
-      "drawdown": -8.4,
-      "returns": {
-        "5d": -4.82,
-        "10d": -4.21,
-        "21d": -2.07,
-        "63d": 4.3,
-        "126d": 4.38,
-        "252d": 1.52
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLI",
-      "price": 164.0,
-      "conviction": 23.5,
-      "is_signal": false,
-      "mtmdi_zscore": 0.648,
-      "cascade_score": 0.0212,
-      "momentum_persistence": -0.612,
-      "vol_regime": "normal",
-      "drawdown": -8.1,
-      "returns": {
-        "5d": -1.23,
-        "10d": -3.32,
-        "21d": -6.11,
-        "63d": 5.71,
-        "126d": 7.57,
-        "252d": 23.16
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "BLK",
-      "price": 976.06,
-      "conviction": 23.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.119,
-      "cascade_score": 0.0149,
-      "momentum_persistence": 1.234,
-      "vol_regime": "high",
-      "drawdown": -18.0,
-      "returns": {
-        "5d": 0.52,
-        "10d": 0.9,
-        "21d": -8.73,
-        "63d": -7.71,
-        "126d": -14.15,
-        "252d": 4.56
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": true
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "price": 290.44,
-      "conviction": 23.1,
-      "is_signal": false,
-      "mtmdi_zscore": 0.422,
-      "cascade_score": 0.0268,
-      "momentum_persistence": -1.782,
-      "vol_regime": "normal",
-      "drawdown": -15.4,
-      "returns": {
-        "5d": -6.81,
-        "10d": -5.56,
-        "21d": -6.93,
-        "63d": -5.53,
-        "126d": 14.12,
-        "252d": 57.51
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "LIN",
-      "price": 479.84,
-      "conviction": 22.7,
-      "is_signal": false,
-      "mtmdi_zscore": 0.294,
-      "cascade_score": 0.0297,
-      "momentum_persistence": -0.404,
-      "vol_regime": "normal",
-      "drawdown": -5.5,
-      "returns": {
-        "5d": -2.92,
-        "10d": 0.73,
-        "21d": -3.42,
-        "63d": 13.32,
-        "126d": 1.14,
-        "252d": 5.93
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "XLY",
-      "price": 109.68,
-      "conviction": 22.6,
-      "is_signal": false,
-      "mtmdi_zscore": -1.007,
-      "cascade_score": -0.0098,
-      "momentum_persistence": -1.393,
+      "mtmdi_zscore": 1.141,
+      "cascade_score": -0.0216,
+      "momentum_persistence": 1.336,
       "vol_regime": "normal",
       "drawdown": -11.7,
       "returns": {
-        "5d": -2.94,
-        "10d": -4.05,
-        "21d": -4.53,
-        "63d": -10.12,
-        "126d": -8.67,
-        "252d": 11.59
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "META",
-      "price": 592.92,
-      "conviction": 22.5,
-      "is_signal": false,
-      "mtmdi_zscore": -1.121,
-      "cascade_score": 0.0064,
-      "momentum_persistence": -1.218,
-      "vol_regime": "normal",
-      "drawdown": -24.8,
-      "returns": {
-        "5d": -4.89,
-        "10d": -9.73,
-        "21d": -7.12,
-        "63d": -10.45,
-        "126d": -25.34,
-        "252d": -0.25
+        "5d": 2.63,
+        "10d": 2.71,
+        "21d": -0.63,
+        "63d": -8.5,
+        "126d": -4.76,
+        "252d": 19.5
       },
       "signals": {
         "mtmdi": false,
         "direction": true,
         "cascade": false,
-        "momentum": false
+        "momentum": true
       }
     },
     {
-      "ticker": "MRK",
-      "price": 116.37,
-      "conviction": 22.4,
+      "ticker": "EMR",
+      "price": 130.86,
+      "conviction": 45.2,
       "is_signal": false,
-      "mtmdi_zscore": -0.029,
-      "cascade_score": 0.0347,
-      "momentum_persistence": 0.105,
-      "vol_regime": "normal",
-      "drawdown": -5.4,
+      "mtmdi_zscore": -0.139,
+      "cascade_score": 0.0756,
+      "momentum_persistence": 1.284,
+      "vol_regime": "high",
+      "drawdown": -18.8,
       "returns": {
-        "5d": 0.43,
-        "10d": 0.12,
-        "21d": -5.47,
-        "63d": 14.81,
-        "126d": 38.57,
-        "252d": 25.87
+        "5d": 0.75,
+        "10d": -6.44,
+        "21d": -14.24,
+        "63d": -2.72,
+        "126d": 0.36,
+        "252d": 14.25
       },
       "signals": {
         "mtmdi": false,
         "direction": false,
         "cascade": true,
-        "momentum": false
+        "momentum": true
       }
     },
     {
-      "ticker": "TLT",
-      "price": 86.01,
-      "conviction": 21.2,
+      "ticker": "ORCL",
+      "price": 146.02,
+      "conviction": 43.2,
       "is_signal": false,
-      "mtmdi_zscore": -0.525,
-      "cascade_score": 0.0207,
-      "momentum_persistence": -1.148,
-      "vol_regime": "normal",
-      "drawdown": -5.0,
+      "mtmdi_zscore": -0.795,
+      "cascade_score": -0.057,
+      "momentum_persistence": -1.168,
+      "vol_regime": "high",
+      "drawdown": -55.3,
       "returns": {
-        "5d": -1.66,
-        "10d": -2.6,
-        "21d": -3.91,
-        "63d": -1.06,
-        "126d": -0.91,
-        "252d": -0.91
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CME",
-      "price": 302.68,
-      "conviction": 20.4,
-      "is_signal": false,
-      "mtmdi_zscore": 0.432,
-      "cascade_score": 0.0219,
-      "momentum_persistence": -0.432,
-      "vol_regime": "normal",
-      "drawdown": -5.1,
-      "returns": {
-        "5d": -3.46,
-        "10d": -1.2,
-        "21d": -1.31,
-        "63d": 14.13,
-        "126d": 17.61,
-        "252d": 17.68
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": true,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "price": 372.74,
-      "conviction": 20.0,
-      "is_signal": false,
-      "mtmdi_zscore": -1.0,
-      "cascade_score": -0.0056,
-      "momentum_persistence": -1.28,
-      "vol_regime": "normal",
-      "drawdown": -31.0,
-      "returns": {
-        "5d": -6.91,
-        "10d": -8.49,
-        "21d": -3.1,
-        "63d": -26.29,
-        "126d": -31.81,
-        "252d": -4.09
+        "5d": -4.6,
+        "10d": -11.07,
+        "21d": -0.08,
+        "63d": -30.38,
+        "126d": -76.07,
+        "252d": -4.88
       },
       "signals": {
         "mtmdi": false,
@@ -2788,21 +3044,71 @@
     },
     {
       "ticker": "XLF",
-      "price": 49.28,
-      "conviction": 19.3,
-      "is_signal": false,
-      "mtmdi_zscore": 1.015,
-      "cascade_score": -0.0041,
-      "momentum_persistence": -1.385,
+      "price": 49.34,
+      "conviction": 42.1,
+      "is_signal": true,
+      "mtmdi_zscore": 1.547,
+      "cascade_score": 0.0059,
+      "momentum_persistence": 1.28,
       "vol_regime": "normal",
-      "drawdown": -12.2,
+      "drawdown": -12.5,
       "returns": {
-        "5d": -0.05,
-        "10d": -1.06,
-        "21d": -2.39,
-        "63d": -9.83,
-        "126d": -8.28,
-        "252d": 1.53
+        "5d": 0.75,
+        "10d": -0.61,
+        "21d": -3.27,
+        "63d": -11.44,
+        "126d": -8.23,
+        "252d": -0.61
+      },
+      "signals": {
+        "mtmdi": true,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "ABT",
+      "price": 104.83,
+      "conviction": 40.6,
+      "is_signal": false,
+      "mtmdi_zscore": -0.852,
+      "cascade_score": 0.0441,
+      "momentum_persistence": -1.079,
+      "vol_regime": "normal",
+      "drawdown": -23.0,
+      "returns": {
+        "5d": -3.43,
+        "10d": -5.04,
+        "21d": -8.89,
+        "63d": -17.25,
+        "126d": -25.0,
+        "252d": -17.49
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "price": 385.95,
+      "conviction": 40.4,
+      "is_signal": false,
+      "mtmdi_zscore": -1.372,
+      "cascade_score": -0.0292,
+      "momentum_persistence": -1.306,
+      "vol_regime": "high",
+      "drawdown": -21.2,
+      "returns": {
+        "5d": -1.75,
+        "10d": -5.51,
+        "21d": -5.89,
+        "63d": -23.61,
+        "126d": -9.84,
+        "252d": 32.67
       },
       "signals": {
         "mtmdi": false,
@@ -2812,22 +3118,1297 @@
       }
     },
     {
-      "ticker": "WMT",
-      "price": 122.05,
-      "conviction": 19.3,
+      "ticker": "LRCX",
+      "price": 233.45,
+      "conviction": 40.3,
       "is_signal": false,
-      "mtmdi_zscore": -0.499,
-      "cascade_score": 0.0184,
-      "momentum_persistence": -0.762,
+      "mtmdi_zscore": -0.533,
+      "cascade_score": -0.0825,
+      "momentum_persistence": 0.14,
+      "vol_regime": "high",
+      "drawdown": -6.3,
+      "returns": {
+        "5d": 3.82,
+        "10d": 6.45,
+        "21d": -4.4,
+        "63d": 28.79,
+        "126d": 57.55,
+        "252d": 110.37
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "SLV",
+      "price": 65.21,
+      "conviction": 39.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.581,
+      "cascade_score": 0.0913,
+      "momentum_persistence": -2.447,
+      "vol_regime": "high",
+      "drawdown": -38.2,
+      "returns": {
+        "5d": -5.21,
+        "10d": -17.79,
+        "21d": -19.28,
+        "63d": 4.29,
+        "126d": 48.97,
+        "252d": 77.77
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CME",
+      "price": 293.93,
+      "conviction": 39.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.559,
+      "cascade_score": 0.0772,
+      "momentum_persistence": -0.899,
+      "vol_regime": "normal",
+      "drawdown": -7.8,
+      "returns": {
+        "5d": -4.97,
+        "10d": -3.15,
+        "21d": -5.83,
+        "63d": 9.68,
+        "126d": 14.34,
+        "252d": 14.9
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "FTNT",
+      "price": 78.89,
+      "conviction": 39.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.552,
+      "cascade_score": -0.0701,
+      "momentum_persistence": -1.028,
+      "vol_regime": "normal",
+      "drawdown": -27.4,
+      "returns": {
+        "5d": -5.55,
+        "10d": -5.66,
+        "21d": 4.75,
+        "63d": -3.55,
+        "126d": -7.78,
+        "252d": -23.5
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "AMGN",
+      "price": 353.93,
+      "conviction": 39.1,
+      "is_signal": false,
+      "mtmdi_zscore": 0.997,
+      "cascade_score": 0.0342,
+      "momentum_persistence": 0.197,
+      "vol_regime": "normal",
+      "drawdown": -8.8,
+      "returns": {
+        "5d": 0.69,
+        "10d": -6.48,
+        "21d": -7.86,
+        "63d": 7.27,
+        "126d": 22.43,
+        "252d": 14.94
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "BKNG",
+      "price": 4237.75,
+      "conviction": 38.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.521,
+      "cascade_score": -0.0679,
+      "momentum_persistence": -1.168,
+      "vol_regime": "high",
+      "drawdown": -26.7,
+      "returns": {
+        "5d": -3.33,
+        "10d": -1.98,
+        "21d": 4.3,
+        "63d": -24.14,
+        "126d": -25.82,
+        "252d": -9.8
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "NFLX",
+      "price": 92.28,
+      "conviction": 38.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.522,
+      "cascade_score": -0.1956,
+      "momentum_persistence": -1.013,
+      "vol_regime": "high",
+      "drawdown": -31.1,
+      "returns": {
+        "5d": -2.59,
+        "10d": -2.79,
+        "21d": 16.76,
+        "63d": -1.02,
+        "126d": -27.79,
+        "252d": -5.19
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "GE",
+      "price": 296.56,
+      "conviction": 38.0,
+      "is_signal": false,
+      "mtmdi_zscore": -0.481,
+      "cascade_score": 0.0747,
+      "momentum_persistence": -1.875,
+      "vol_regime": "high",
+      "drawdown": -14.1,
+      "returns": {
+        "5d": -1.47,
+        "10d": -9.2,
+        "21d": -15.17,
+        "63d": -5.69,
+        "126d": -2.63,
+        "252d": 34.93
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "SYK",
+      "price": 327.65,
+      "conviction": 38.0,
+      "is_signal": false,
+      "mtmdi_zscore": -0.482,
+      "cascade_score": 0.103,
+      "momentum_persistence": -1.076,
+      "vol_regime": "normal",
+      "drawdown": -18.4,
+      "returns": {
+        "5d": -5.39,
+        "10d": -5.39,
+        "21d": -15.17,
+        "63d": -8.2,
+        "126d": -12.63,
+        "252d": -12.38
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "MS",
+      "price": 165.65,
+      "conviction": 37.5,
+      "is_signal": false,
+      "mtmdi_zscore": 0.438,
+      "cascade_score": -0.0224,
+      "momentum_persistence": 1.679,
+      "vol_regime": "high",
+      "drawdown": -12.9,
+      "returns": {
+        "5d": 4.14,
+        "10d": 2.92,
+        "21d": -1.88,
+        "63d": -7.62,
+        "126d": 4.15,
+        "252d": 31.39
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "ABBV",
+      "price": 207.18,
+      "conviction": 37.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.446,
+      "cascade_score": 0.0602,
+      "momentum_persistence": -1.357,
+      "vol_regime": "normal",
+      "drawdown": -13.9,
+      "returns": {
+        "5d": -0.56,
+        "10d": -9.44,
+        "21d": -9.77,
+        "63d": -8.73,
+        "126d": -5.66,
+        "252d": 2.34
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XOM",
+      "price": 163.26,
+      "conviction": 37.1,
+      "is_signal": false,
+      "mtmdi_zscore": -0.399,
+      "cascade_score": -0.0846,
+      "momentum_persistence": 0.043,
+      "vol_regime": "normal",
+      "drawdown": -1.3,
+      "returns": {
+        "5d": 3.53,
+        "10d": 7.42,
+        "21d": 8.97,
+        "63d": 33.0,
+        "126d": 37.49,
+        "252d": 37.73
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CI",
+      "price": 270.36,
+      "conviction": 36.7,
+      "is_signal": false,
+      "mtmdi_zscore": -0.694,
+      "cascade_score": 0.0223,
+      "momentum_persistence": 1.177,
+      "vol_regime": "normal",
+      "drawdown": -18.8,
+      "returns": {
+        "5d": 2.15,
+        "10d": 3.57,
+        "21d": -3.31,
+        "63d": -1.37,
+        "126d": -5.93,
+        "252d": -14.89
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "SNPS",
+      "price": 410.13,
+      "conviction": 36.5,
+      "is_signal": false,
+      "mtmdi_zscore": -2.053,
+      "cascade_score": 0.0038,
+      "momentum_persistence": -1.232,
+      "vol_regime": "high",
+      "drawdown": -36.4,
+      "returns": {
+        "5d": -4.42,
+        "10d": -5.42,
+        "21d": -7.19,
+        "63d": -15.99,
+        "126d": -17.86,
+        "252d": -10.99
+      },
+      "signals": {
+        "mtmdi": true,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "LLY",
+      "price": 916.31,
+      "conviction": 35.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.322,
+      "cascade_score": 0.1068,
+      "momentum_persistence": -1.208,
+      "vol_regime": "high",
+      "drawdown": -17.3,
+      "returns": {
+        "5d": -0.19,
+        "10d": -8.72,
+        "21d": -12.87,
+        "63d": -15.94,
+        "126d": 20.75,
+        "252d": 6.51
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "PM",
+      "price": 165.5,
+      "conviction": 35.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.232,
+      "cascade_score": 0.0814,
+      "momentum_persistence": 0.129,
+      "vol_regime": "high",
+      "drawdown": -12.0,
+      "returns": {
+        "5d": 0.5,
+        "10d": 0.08,
+        "21d": -11.33,
+        "63d": 5.36,
+        "126d": 3.78,
+        "252d": 12.29
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "TMO",
+      "price": 490.77,
+      "conviction": 35.1,
+      "is_signal": false,
+      "mtmdi_zscore": -0.964,
+      "cascade_score": 0.0062,
+      "momentum_persistence": 1.533,
+      "vol_regime": "normal",
+      "drawdown": -23.2,
+      "returns": {
+        "5d": 5.46,
+        "10d": -0.9,
+        "21d": -4.84,
+        "63d": -15.86,
+        "126d": 4.55,
+        "252d": -5.4
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "BLK",
+      "price": 981.35,
+      "conviction": 34.8,
+      "is_signal": false,
+      "mtmdi_zscore": 0.776,
+      "cascade_score": 0.0158,
+      "momentum_persistence": 1.234,
+      "vol_regime": "high",
+      "drawdown": -17.5,
+      "returns": {
+        "5d": 1.34,
+        "10d": 3.12,
+        "21d": -9.12,
+        "63d": -9.78,
+        "126d": -13.22,
+        "252d": 3.88
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "XLB",
+      "price": 49.41,
+      "conviction": 34.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.752,
+      "cascade_score": 0.03,
+      "momentum_persistence": 0.373,
+      "vol_regime": "normal",
+      "drawdown": -7.4,
+      "returns": {
+        "5d": 2.34,
+        "10d": -0.42,
+        "21d": -7.25,
+        "63d": 8.31,
+        "126d": 10.22,
+        "252d": 15.21
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "AMAT",
+      "price": 369.34,
+      "conviction": 34.1,
+      "is_signal": false,
+      "mtmdi_zscore": -0.163,
+      "cascade_score": -0.0787,
+      "momentum_persistence": 0.136,
+      "vol_regime": "high",
+      "drawdown": -6.5,
+      "returns": {
+        "5d": 5.53,
+        "10d": 5.07,
+        "21d": -2.3,
+        "63d": 35.61,
+        "126d": 61.23,
+        "252d": 87.75
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "DHR",
+      "price": 187.15,
+      "conviction": 34.1,
+      "is_signal": false,
+      "mtmdi_zscore": -0.248,
+      "cascade_score": 0.0523,
+      "momentum_persistence": -1.125,
+      "vol_regime": "normal",
+      "drawdown": -22.7,
+      "returns": {
+        "5d": -2.3,
+        "10d": -4.14,
+        "21d": -11.13,
+        "63d": -19.61,
+        "126d": -1.05,
+        "252d": -12.22
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "PNC",
+      "price": 205.95,
+      "conviction": 34.0,
+      "is_signal": false,
+      "mtmdi_zscore": -0.696,
+      "cascade_score": 0.0165,
+      "momentum_persistence": 1.243,
+      "vol_regime": "normal",
+      "drawdown": -15.1,
+      "returns": {
+        "5d": 2.35,
+        "10d": 0.15,
+        "21d": -5.64,
+        "63d": -2.55,
+        "126d": 2.67,
+        "252d": 18.99
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "APD",
+      "price": 290.09,
+      "conviction": 33.7,
+      "is_signal": false,
+      "mtmdi_zscore": -0.362,
+      "cascade_score": -0.0431,
+      "momentum_persistence": 0.186,
+      "vol_regime": "normal",
+      "drawdown": -1.7,
+      "returns": {
+        "5d": 3.03,
+        "10d": 4.37,
+        "21d": 3.73,
+        "63d": 17.71,
+        "126d": 6.15,
+        "252d": 1.48
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "MO",
+      "price": 63.78,
+      "conviction": 33.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.209,
+      "cascade_score": 0.055,
+      "momentum_persistence": -0.199,
+      "vol_regime": "normal",
+      "drawdown": -7.0,
+      "returns": {
+        "5d": -0.43,
+        "10d": -2.27,
+        "21d": -6.57,
+        "63d": 11.93,
+        "126d": 1.78,
+        "252d": 18.69
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "HON",
+      "price": 225.79,
+      "conviction": 33.5,
+      "is_signal": false,
+      "mtmdi_zscore": 1.162,
+      "cascade_score": 0.0235,
+      "momentum_persistence": -0.218,
+      "vol_regime": "normal",
+      "drawdown": -9.0,
+      "returns": {
+        "5d": -1.81,
+        "10d": -5.87,
+        "21d": -7.1,
+        "63d": 14.66,
+        "126d": 14.59,
+        "252d": 14.42
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CVX",
+      "price": 205.15,
+      "conviction": 33.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.171,
+      "cascade_score": -0.0919,
+      "momentum_persistence": 0.061,
+      "vol_regime": "normal",
+      "drawdown": -0.8,
+      "returns": {
+        "5d": 3.24,
+        "10d": 6.73,
+        "21d": 10.15,
+        "63d": 32.42,
+        "126d": 28.57,
+        "252d": 26.17
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "IWM",
+      "price": 251.82,
+      "conviction": 33.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.431,
+      "cascade_score": -0.0184,
+      "momentum_persistence": 1.507,
+      "vol_regime": "normal",
+      "drawdown": -6.5,
+      "returns": {
+        "5d": 2.33,
+        "10d": -0.23,
+        "21d": -4.29,
+        "63d": -0.52,
+        "126d": 3.73,
+        "252d": 19.78
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "COST",
+      "price": 974.86,
+      "conviction": 33.0,
+      "is_signal": false,
+      "mtmdi_zscore": 0.81,
+      "cascade_score": 0.0325,
+      "momentum_persistence": -0.032,
+      "vol_regime": "normal",
+      "drawdown": -7.4,
+      "returns": {
+        "5d": -0.52,
+        "10d": -1.77,
+        "21d": -2.39,
+        "63d": 13.84,
+        "126d": 3.54,
+        "252d": 5.68
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "ROP",
+      "price": 346.72,
+      "conviction": 32.7,
+      "is_signal": false,
+      "mtmdi_zscore": 0.636,
+      "cascade_score": -0.0368,
+      "momentum_persistence": -0.891,
+      "vol_regime": "normal",
+      "drawdown": -41.1,
+      "returns": {
+        "5d": -1.17,
+        "10d": -1.58,
+        "21d": 2.64,
+        "63d": -25.7,
+        "126d": -37.03,
+        "252d": -50.21
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "BRK-B",
+      "price": 476.19,
+      "conviction": 31.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.598,
+      "cascade_score": 0.0359,
+      "momentum_persistence": -1.001,
+      "vol_regime": "normal",
+      "drawdown": -11.8,
+      "returns": {
+        "5d": -1.72,
+        "10d": -3.58,
+        "21d": -3.78,
+        "63d": -4.87,
+        "126d": -3.69,
+        "252d": -9.92
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLE",
+      "price": 60.57,
+      "conviction": 30.9,
+      "is_signal": false,
+      "mtmdi_zscore": 0.04,
+      "cascade_score": -0.0954,
+      "momentum_persistence": 0.019,
+      "vol_regime": "normal",
+      "drawdown": -0.4,
+      "returns": {
+        "5d": 3.6,
+        "10d": 6.11,
+        "21d": 9.47,
+        "63d": 31.48,
+        "126d": 31.48,
+        "252d": 29.1
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CDNS",
+      "price": 281.39,
+      "conviction": 30.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.803,
+      "cascade_score": -0.028,
+      "momentum_persistence": -1.216,
+      "vol_regime": "normal",
+      "drawdown": -24.6,
+      "returns": {
+        "5d": -2.89,
+        "10d": -4.44,
+        "21d": -3.23,
+        "63d": -12.1,
+        "126d": -26.37,
+        "252d": 5.19
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "QCOM",
+      "price": 130.35,
+      "conviction": 30.0,
+      "is_signal": false,
+      "mtmdi_zscore": -0.003,
+      "cascade_score": 0.0571,
+      "momentum_persistence": -1.186,
+      "vol_regime": "normal",
+      "drawdown": -29.7,
+      "returns": {
+        "5d": -0.09,
+        "10d": -2.85,
+        "21d": -9.86,
+        "63d": -28.37,
+        "126d": -25.13,
+        "252d": -18.23
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLK",
+      "price": 136.76,
+      "conviction": 29.9,
+      "is_signal": false,
+      "mtmdi_zscore": -0.468,
+      "cascade_score": -0.0369,
+      "momentum_persistence": -1.495,
+      "vol_regime": "normal",
+      "drawdown": -9.9,
+      "returns": {
+        "5d": -0.87,
+        "10d": -2.65,
+        "21d": -2.57,
+        "63d": -5.96,
+        "126d": -2.27,
+        "252d": 23.3
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLV",
+      "price": 146.24,
+      "conviction": 29.6,
+      "is_signal": false,
+      "mtmdi_zscore": 0.127,
+      "cascade_score": 0.0458,
+      "momentum_persistence": -1.385,
       "vol_regime": "normal",
       "drawdown": -8.7,
       "returns": {
-        "5d": -2.25,
-        "10d": -2.28,
-        "21d": -2.83,
-        "63d": 6.71,
-        "126d": 17.55,
-        "252d": 35.92
+        "5d": -0.61,
+        "10d": -4.42,
+        "21d": -7.65,
+        "63d": -6.01,
+        "126d": 7.0,
+        "252d": 0.74
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "TXN",
+      "price": 196.77,
+      "conviction": 29.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.845,
+      "cascade_score": 0.0178,
+      "momentum_persistence": 0.469,
+      "vol_regime": "normal",
+      "drawdown": -13.1,
+      "returns": {
+        "5d": 3.09,
+        "10d": -0.96,
+        "21d": -8.09,
+        "63d": 10.22,
+        "126d": 9.32,
+        "252d": 9.0
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "price": 371.04,
+      "conviction": 29.5,
+      "is_signal": false,
+      "mtmdi_zscore": -1.328,
+      "cascade_score": 0.0122,
+      "momentum_persistence": -1.27,
+      "vol_regime": "normal",
+      "drawdown": -31.3,
+      "returns": {
+        "5d": -5.44,
+        "10d": -8.73,
+        "21d": -4.73,
+        "63d": -26.54,
+        "126d": -31.24,
+        "252d": -5.01
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "USB",
+      "price": 51.89,
+      "conviction": 29.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.066,
+      "cascade_score": 0.0249,
+      "momentum_persistence": 1.313,
+      "vol_regime": "normal",
+      "drawdown": -14.5,
+      "returns": {
+        "5d": 1.1,
+        "10d": -0.65,
+        "21d": -5.88,
+        "63d": -4.62,
+        "126d": 7.05,
+        "252d": 21.36
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "CB",
+      "price": 323.21,
+      "conviction": 28.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.262,
+      "cascade_score": 0.0401,
+      "momentum_persistence": -0.673,
+      "vol_regime": "normal",
+      "drawdown": -5.4,
+      "returns": {
+        "5d": -1.47,
+        "10d": 0.43,
+        "21d": -3.84,
+        "63d": 4.16,
+        "126d": 16.12,
+        "252d": 10.98
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "WMT",
+      "price": 123.06,
+      "conviction": 27.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.966,
+      "cascade_score": 0.0173,
+      "momentum_persistence": 0.091,
+      "vol_regime": "normal",
+      "drawdown": -7.9,
+      "returns": {
+        "5d": 1.09,
+        "10d": -0.14,
+        "21d": -2.75,
+        "63d": 9.09,
+        "126d": 18.67,
+        "252d": 35.0
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "XLY",
+      "price": 110.73,
+      "conviction": 27.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.664,
+      "cascade_score": -0.0029,
+      "momentum_persistence": 1.438,
+      "vol_regime": "normal",
+      "drawdown": -11.1,
+      "returns": {
+        "5d": 0.14,
+        "10d": -3.03,
+        "21d": -5.29,
+        "63d": -9.97,
+        "126d": -6.97,
+        "252d": 8.66
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "DIA",
+      "price": 464.14,
+      "conviction": 26.7,
+      "is_signal": false,
+      "mtmdi_zscore": -0.072,
+      "cascade_score": 0.0163,
+      "momentum_persistence": 1.571,
+      "vol_regime": "normal",
+      "drawdown": -7.2,
+      "returns": {
+        "5d": 0.46,
+        "10d": -2.06,
+        "21d": -5.57,
+        "63d": -3.7,
+        "126d": 1.03,
+        "252d": 10.24
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "XLI",
+      "price": 165.1,
+      "conviction": 26.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.506,
+      "cascade_score": 0.0298,
+      "momentum_persistence": -0.171,
+      "vol_regime": "normal",
+      "drawdown": -7.7,
+      "returns": {
+        "5d": -0.05,
+        "10d": -2.62,
+        "21d": -6.95,
+        "63d": 5.0,
+        "126d": 7.93,
+        "252d": 21.71
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "MCD",
+      "price": 311.7,
+      "conviction": 25.9,
+      "is_signal": false,
+      "mtmdi_zscore": -0.005,
+      "cascade_score": 0.043,
+      "momentum_persistence": -1.301,
+      "vol_regime": "normal",
+      "drawdown": -8.1,
+      "returns": {
+        "5d": -1.28,
+        "10d": -4.24,
+        "21d": -6.07,
+        "63d": -0.88,
+        "126d": 3.92,
+        "252d": 4.24
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "ACN",
+      "price": 192.29,
+      "conviction": 25.7,
+      "is_signal": false,
+      "mtmdi_zscore": -0.435,
+      "cascade_score": 0.0307,
+      "momentum_persistence": -0.981,
+      "vol_regime": "high",
+      "drawdown": -40.2,
+      "returns": {
+        "5d": -1.48,
+        "10d": -4.67,
+        "21d": -2.28,
+        "63d": -34.19,
+        "126d": -20.27,
+        "252d": -45.85
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "HYG",
+      "price": 79.42,
+      "conviction": 25.3,
+      "is_signal": false,
+      "mtmdi_zscore": 0.135,
+      "cascade_score": -0.0067,
+      "momentum_persistence": 1.905,
+      "vol_regime": "normal",
+      "drawdown": -1.5,
+      "returns": {
+        "5d": 0.03,
+        "10d": -0.55,
+        "21d": -1.25,
+        "63d": -0.28,
+        "126d": 0.61,
+        "252d": 5.78
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "NEE",
+      "price": 91.16,
+      "conviction": 24.9,
+      "is_signal": false,
+      "mtmdi_zscore": 0.801,
+      "cascade_score": 0.0192,
+      "momentum_persistence": -0.084,
+      "vol_regime": "normal",
+      "drawdown": -4.1,
+      "returns": {
+        "5d": 0.22,
+        "10d": -0.55,
+        "21d": -4.16,
+        "63d": 13.69,
+        "126d": 24.51,
+        "252d": 29.24
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "BAC",
+      "price": 48.75,
+      "conviction": 24.8,
+      "is_signal": false,
+      "mtmdi_zscore": 0.288,
+      "cascade_score": -0.0098,
+      "momentum_persistence": 1.41,
+      "vol_regime": "normal",
+      "drawdown": -14.4,
+      "returns": {
+        "5d": 4.02,
+        "10d": 0.47,
+        "21d": -2.78,
+        "63d": -13.09,
+        "126d": -4.79,
+        "252d": 14.61
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "AON",
+      "price": 321.45,
+      "conviction": 24.1,
+      "is_signal": false,
+      "mtmdi_zscore": 0.579,
+      "cascade_score": 0.006,
+      "momentum_persistence": 1.09,
+      "vol_regime": "normal",
+      "drawdown": -19.2,
+      "returns": {
+        "5d": 1.12,
+        "10d": 1.43,
+        "21d": 0.66,
+        "63d": -10.06,
+        "126d": -9.38,
+        "252d": -19.72
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "VZ",
+      "price": 50.37,
+      "conviction": 21.9,
+      "is_signal": false,
+      "mtmdi_zscore": 1.193,
+      "cascade_score": 0.0018,
+      "momentum_persistence": 0.098,
+      "vol_regime": "normal",
+      "drawdown": -2.0,
+      "returns": {
+        "5d": 1.56,
+        "10d": -0.61,
+        "21d": 1.02,
+        "63d": 24.82,
+        "126d": 18.43,
+        "252d": 21.15
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "ICE",
+      "price": 156.83,
+      "conviction": 21.8,
+      "is_signal": false,
+      "mtmdi_zscore": -0.354,
+      "cascade_score": -0.0265,
+      "momentum_persistence": -1.302,
+      "vol_regime": "normal",
+      "drawdown": -16.0,
+      "returns": {
+        "5d": -0.21,
+        "10d": 0.2,
+        "21d": 1.26,
+        "63d": -2.58,
+        "126d": -6.31,
+        "252d": -9.94
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "QQQ",
+      "price": 587.82,
+      "conviction": 20.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.479,
+      "cascade_score": -0.0209,
+      "momentum_persistence": -1.514,
+      "vol_regime": "normal",
+      "drawdown": -7.3,
+      "returns": {
+        "5d": -1.07,
+        "10d": -3.2,
+        "21d": -3.23,
+        "63d": -5.08,
+        "126d": -1.5,
+        "252d": 18.55
       },
       "signals": {
         "mtmdi": false,
@@ -2838,21 +4419,21 @@
     },
     {
       "ticker": "GS",
-      "price": 835.72,
-      "conviction": 18.6,
+      "price": 841.84,
+      "conviction": 20.2,
       "is_signal": false,
-      "mtmdi_zscore": 0.086,
-      "cascade_score": -0.0017,
+      "mtmdi_zscore": 0.236,
+      "cascade_score": -0.0002,
       "momentum_persistence": 1.611,
       "vol_regime": "high",
-      "drawdown": -13.9,
+      "drawdown": -13.3,
       "returns": {
-        "5d": 3.49,
-        "10d": 0.23,
-        "21d": -6.03,
-        "63d": -6.16,
-        "126d": 4.7,
-        "252d": 41.17
+        "5d": 4.42,
+        "10d": 2.17,
+        "21d": -6.41,
+        "63d": -6.04,
+        "126d": 5.33,
+        "252d": 39.29
       },
       "signals": {
         "mtmdi": false,
@@ -2862,372 +4443,372 @@
       }
     },
     {
-      "ticker": "CAT",
-      "price": 716.63,
-      "conviction": 18.4,
+      "ticker": "META",
+      "price": 594.89,
+      "conviction": 19.6,
       "is_signal": false,
-      "mtmdi_zscore": 0.467,
-      "cascade_score": -0.0176,
-      "momentum_persistence": -0.018,
-      "vol_regime": "high",
-      "drawdown": -7.5,
+      "mtmdi_zscore": -1.076,
+      "cascade_score": 0.0027,
+      "momentum_persistence": -1.208,
+      "vol_regime": "normal",
+      "drawdown": -24.5,
       "returns": {
-        "5d": 2.06,
-        "10d": -0.01,
-        "21d": -5.41,
-        "63d": 22.04,
-        "126d": 42.26,
-        "252d": 77.18
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "HYG",
-      "price": 79.17,
-      "conviction": 18.3,
-      "is_signal": false,
-      "mtmdi_zscore": -1.064,
-      "cascade_score": -0.0009,
-      "momentum_persistence": -2.142,
-      "vol_regime": "high",
-      "drawdown": -1.8,
-      "returns": {
-        "5d": -0.81,
-        "10d": -1.09,
-        "21d": -1.64,
-        "63d": -0.51,
-        "126d": 0.22,
-        "252d": 5.76
+        "5d": -3.44,
+        "10d": -9.52,
+        "21d": -7.11,
+        "63d": -10.53,
+        "126d": -23.72,
+        "252d": -3.64
       },
       "signals": {
         "mtmdi": false,
         "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ADP",
-      "price": 204.89,
-      "conviction": 17.4,
-      "is_signal": false,
-      "mtmdi_zscore": 0.279,
-      "cascade_score": -0.0212,
-      "momentum_persistence": -0.917,
-      "vol_regime": "normal",
-      "drawdown": -35.7,
-      "returns": {
-        "5d": -2.33,
-        "10d": -5.09,
-        "21d": 0.41,
-        "63d": -22.2,
-        "126d": -34.53,
-        "252d": -34.07
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "IWM",
-      "price": 248.78,
-      "conviction": 17.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.533,
-      "cascade_score": -0.014,
-      "momentum_persistence": -1.681,
-      "vol_regime": "normal",
-      "drawdown": -7.6,
-      "returns": {
-        "5d": -0.51,
-        "10d": -1.65,
-        "21d": -4.42,
-        "63d": -0.63,
-        "126d": 2.29,
-        "252d": 21.02
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
         "cascade": false,
         "momentum": false
       }
     },
     {
       "ticker": "XLC",
-      "price": 111.13,
-      "conviction": 17.3,
+      "price": 111.44,
+      "conviction": 19.4,
       "is_signal": false,
-      "mtmdi_zscore": -0.782,
-      "cascade_score": 0.0072,
-      "momentum_persistence": -1.536,
+      "mtmdi_zscore": -0.772,
+      "cascade_score": 0.0109,
+      "momentum_persistence": -1.523,
       "vol_regime": "normal",
-      "drawdown": -7.2,
+      "drawdown": -6.9,
       "returns": {
-        "5d": -3.43,
-        "10d": -5.15,
-        "21d": -3.42,
-        "63d": -4.09,
-        "126d": -5.85,
-        "252d": 14.51
+        "5d": -1.65,
+        "10d": -4.55,
+        "21d": -3.83,
+        "63d": -4.26,
+        "126d": -5.42,
+        "252d": 13.38
       },
       "signals": {
         "mtmdi": false,
         "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "WM",
+      "price": 224.85,
+      "conviction": 19.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.118,
+      "cascade_score": 0.0287,
+      "momentum_persistence": -1.22,
+      "vol_regime": "normal",
+      "drawdown": -8.4,
+      "returns": {
+        "5d": -3.9,
+        "10d": -4.65,
+        "21d": -1.68,
+        "63d": 2.73,
+        "126d": 3.77,
+        "252d": 0.89
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CRM",
+      "price": 181.96,
+      "conviction": 19.0,
+      "is_signal": false,
+      "mtmdi_zscore": 0.179,
+      "cascade_score": 0.0267,
+      "momentum_persistence": -1.038,
+      "vol_regime": "high",
+      "drawdown": -37.2,
+      "returns": {
+        "5d": -6.58,
+        "10d": -6.47,
+        "21d": -1.88,
+        "63d": -37.45,
+        "126d": -29.41,
+        "252d": -44.56
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "ISRG",
+      "price": 469.98,
+      "conviction": 18.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.885,
+      "cascade_score": 0.0062,
+      "momentum_persistence": -1.088,
+      "vol_regime": "normal",
+      "drawdown": -20.7,
+      "returns": {
+        "5d": -1.64,
+        "10d": -4.76,
+        "21d": -4.99,
+        "63d": -21.0,
+        "126d": 4.85,
+        "252d": -7.89
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "MRK",
+      "price": 119.37,
+      "conviction": 17.4,
+      "is_signal": false,
+      "mtmdi_zscore": -0.54,
+      "cascade_score": 0.0046,
+      "momentum_persistence": 0.562,
+      "vol_regime": "normal",
+      "drawdown": -3.0,
+      "returns": {
+        "5d": 4.17,
+        "10d": 3.42,
+        "21d": -3.01,
+        "63d": 13.83,
+        "126d": 41.66,
+        "252d": 29.28
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": true
+      }
+    },
+    {
+      "ticker": "TLT",
+      "price": 86.84,
+      "conviction": 16.3,
+      "is_signal": false,
+      "mtmdi_zscore": -0.604,
+      "cascade_score": 0.0105,
+      "momentum_persistence": -1.146,
+      "vol_regime": "high",
+      "drawdown": -4.1,
+      "returns": {
+        "5d": -0.14,
+        "10d": -0.34,
+        "21d": -3.13,
+        "63d": 0.12,
+        "126d": -0.65,
+        "252d": 1.08
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "JNJ",
+      "price": 239.93,
+      "conviction": 16.2,
+      "is_signal": false,
+      "mtmdi_zscore": 0.499,
+      "cascade_score": 0.0131,
+      "momentum_persistence": -0.005,
+      "vol_regime": "normal",
+      "drawdown": -3.5,
+      "returns": {
+        "5d": 1.11,
+        "10d": -1.27,
+        "21d": -2.61,
+        "63d": 15.14,
+        "126d": 31.82,
+        "252d": 41.23
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "GILD",
+      "price": 138.26,
+      "conviction": 15.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.038,
+      "cascade_score": 0.0248,
+      "momentum_persistence": -0.429,
+      "vol_regime": "normal",
+      "drawdown": -10.8,
+      "returns": {
+        "5d": -2.17,
+        "10d": -4.88,
+        "21d": -6.0,
+        "63d": 11.32,
+        "126d": 20.17,
+        "252d": 28.5
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "GOOGL",
+      "price": 290.93,
+      "conviction": 14.6,
+      "is_signal": false,
+      "mtmdi_zscore": 0.146,
+      "cascade_score": 0.0202,
+      "momentum_persistence": -1.766,
+      "vol_regime": "normal",
+      "drawdown": -15.3,
+      "returns": {
+        "5d": -5.6,
+        "10d": -5.93,
+        "21d": -6.57,
+        "63d": -6.21,
+        "126d": 14.64,
+        "252d": 55.45
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": true,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "NVDA",
+      "price": 178.68,
+      "conviction": 13.7,
+      "is_signal": false,
+      "mtmdi_zscore": -0.518,
+      "cascade_score": -0.0085,
+      "momentum_persistence": -1.366,
+      "vol_regime": "high",
+      "drawdown": -13.7,
+      "returns": {
+        "5d": -0.96,
+        "10d": -4.03,
+        "21d": -7.63,
+        "63d": -2.76,
+        "126d": 0.15,
+        "252d": 38.67
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "RTX",
+      "price": 195.0,
+      "conviction": 13.5,
+      "is_signal": false,
+      "mtmdi_zscore": 0.242,
+      "cascade_score": 0.0157,
+      "momentum_persistence": -2.363,
+      "vol_regime": "normal",
+      "drawdown": -8.1,
+      "returns": {
+        "5d": -4.79,
+        "10d": -6.1,
+        "21d": -1.76,
+        "63d": 5.23,
+        "126d": 20.17,
+        "252d": 38.68
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "CAT",
+      "price": 719.04,
+      "conviction": 13.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.457,
+      "cascade_score": -0.0069,
+      "momentum_persistence": 0.162,
+      "vol_regime": "high",
+      "drawdown": -7.2,
+      "returns": {
+        "5d": 3.6,
+        "10d": 1.61,
+        "21d": -6.62,
+        "63d": 21.31,
+        "126d": 42.77,
+        "252d": 75.77
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "LIN",
+      "price": 492.34,
+      "conviction": 12.9,
+      "is_signal": false,
+      "mtmdi_zscore": -0.303,
+      "cascade_score": 0.0131,
+      "momentum_persistence": 0.003,
+      "vol_regime": "normal",
+      "drawdown": -3.0,
+      "returns": {
+        "5d": 0.77,
+        "10d": 2.22,
+        "21d": -2.01,
+        "63d": 15.39,
+        "126d": 3.25,
+        "252d": 8.33
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
         "cascade": false,
         "momentum": false
       }
     },
     {
       "ticker": "XLU",
-      "price": 45.09,
-      "conviction": 17.2,
+      "price": 45.25,
+      "conviction": 12.6,
       "is_signal": false,
-      "mtmdi_zscore": 0.992,
-      "cascade_score": 0.0011,
-      "momentum_persistence": -1.093,
+      "mtmdi_zscore": 0.422,
+      "cascade_score": 0.0092,
+      "momentum_persistence": -0.765,
       "vol_regime": "high",
-      "drawdown": -4.9,
+      "drawdown": -4.5,
       "returns": {
-        "5d": -3.73,
-        "10d": -2.51,
-        "21d": -2.77,
-        "63d": 7.05,
-        "126d": 7.12,
-        "252d": 17.07
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "ISRG",
-      "price": 471.91,
-      "conviction": 16.4,
-      "is_signal": false,
-      "mtmdi_zscore": -0.95,
-      "cascade_score": -0.001,
-      "momentum_persistence": -1.097,
-      "vol_regime": "normal",
-      "drawdown": -20.4,
-      "returns": {
-        "5d": -2.27,
-        "10d": -2.91,
-        "21d": -4.19,
-        "63d": -19.32,
-        "126d": 5.97,
-        "252d": -4.27
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "CB",
-      "price": 325.61,
-      "conviction": 16.3,
-      "is_signal": false,
-      "mtmdi_zscore": 0.319,
-      "cascade_score": 0.0184,
-      "momentum_persistence": -0.613,
-      "vol_regime": "normal",
-      "drawdown": -4.7,
-      "returns": {
-        "5d": -1.6,
-        "10d": 0.41,
-        "21d": -2.07,
-        "63d": 5.01,
-        "126d": 17.92,
-        "252d": 11.72
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "QQQ",
-      "price": 583.98,
-      "conviction": 15.2,
-      "is_signal": false,
-      "mtmdi_zscore": -0.073,
-      "cascade_score": -0.0233,
-      "momentum_persistence": -1.526,
-      "vol_regime": "normal",
-      "drawdown": -7.9,
-      "returns": {
-        "5d": -3.13,
-        "10d": -3.87,
-        "21d": -2.82,
-        "63d": -5.25,
-        "126d": -2.82,
-        "252d": 20.07
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "NEE",
-      "price": 91.62,
-      "conviction": 14.9,
-      "is_signal": false,
-      "mtmdi_zscore": 0.656,
-      "cascade_score": -0.0067,
-      "momentum_persistence": -0.215,
-      "vol_regime": "normal",
-      "drawdown": -3.6,
-      "returns": {
-        "5d": -0.99,
-        "10d": 0.09,
-        "21d": -1.95,
-        "63d": 14.82,
-        "126d": 24.97,
-        "252d": 28.6
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "DIA",
-      "price": 461.17,
-      "conviction": 14.4,
-      "is_signal": false,
-      "mtmdi_zscore": -0.271,
-      "cascade_score": 0.0165,
-      "momentum_persistence": -1.695,
-      "vol_regime": "normal",
-      "drawdown": -7.8,
-      "returns": {
-        "5d": -1.87,
-        "10d": -3.31,
-        "21d": -5.44,
-        "63d": -3.87,
-        "126d": 0.21,
-        "252d": 10.99
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "V",
-      "price": 303.76,
-      "conviction": 13.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.326,
-      "cascade_score": -0.0126,
-      "momentum_persistence": -1.018,
-      "vol_regime": "high",
-      "drawdown": -18.2,
-      "returns": {
-        "5d": -1.54,
-        "10d": -3.45,
-        "21d": -0.9,
-        "63d": -13.75,
-        "126d": -12.14,
-        "252d": -9.24
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": true,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "IEF",
-      "price": 94.86,
-      "conviction": 11.0,
-      "is_signal": false,
-      "mtmdi_zscore": 0.123,
-      "cascade_score": 0.0148,
-      "momentum_persistence": -1.664,
-      "vol_regime": "normal",
-      "drawdown": -2.9,
-      "returns": {
-        "5d": -1.39,
-        "10d": -1.65,
-        "21d": -2.39,
-        "63d": -0.83,
-        "126d": 0.17,
-        "252d": 3.63
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "APD",
-      "price": 286.25,
-      "conviction": 10.5,
-      "is_signal": false,
-      "mtmdi_zscore": -0.31,
-      "cascade_score": -0.0089,
-      "momentum_persistence": -0.054,
-      "vol_regime": "normal",
-      "drawdown": -3.0,
-      "returns": {
-        "5d": 0.03,
-        "10d": 3.97,
-        "21d": 1.05,
-        "63d": 18.37,
-        "126d": 0.95,
-        "252d": 0.76
-      },
-      "signals": {
-        "mtmdi": false,
-        "direction": false,
-        "cascade": false,
-        "momentum": false
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "price": 175.2,
-      "conviction": 9.1,
-      "is_signal": false,
-      "mtmdi_zscore": -0.169,
-      "cascade_score": 0.0104,
-      "momentum_persistence": -1.377,
-      "vol_regime": "high",
-      "drawdown": -15.4,
-      "returns": {
-        "5d": -3.77,
-        "10d": -5.31,
-        "21d": -8.92,
-        "63d": -3.25,
-        "126d": -4.68,
-        "252d": 39.8
+        "5d": -2.52,
+        "10d": -1.32,
+        "21d": -3.52,
+        "63d": 7.04,
+        "126d": 6.96,
+        "252d": 17.45
       },
       "signals": {
         "mtmdi": false,
@@ -3238,21 +4819,171 @@
     },
     {
       "ticker": "PFE",
-      "price": 26.96,
-      "conviction": 8.0,
+      "price": 27.28,
+      "conviction": 11.9,
       "is_signal": false,
-      "mtmdi_zscore": 0.214,
-      "cascade_score": -0.0074,
-      "momentum_persistence": -0.402,
+      "mtmdi_zscore": -0.039,
+      "cascade_score": -0.0188,
+      "momentum_persistence": -0.081,
       "vol_regime": "normal",
-      "drawdown": -2.8,
+      "drawdown": -1.6,
       "returns": {
-        "5d": -1.8,
-        "10d": -0.74,
-        "21d": -0.37,
-        "63d": 8.45,
-        "126d": 14.87,
-        "252d": 9.56
+        "5d": -0.15,
+        "10d": -0.07,
+        "21d": 0.51,
+        "63d": 9.55,
+        "126d": 15.68,
+        "252d": 11.28
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "BMY",
+      "price": 58.94,
+      "conviction": 10.5,
+      "is_signal": false,
+      "mtmdi_zscore": -0.236,
+      "cascade_score": 0.0109,
+      "momentum_persistence": -0.059,
+      "vol_regime": "normal",
+      "drawdown": -5.5,
+      "returns": {
+        "5d": -0.73,
+        "10d": -1.75,
+        "21d": -4.41,
+        "63d": 8.71,
+        "126d": 29.73,
+        "252d": 1.41
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "IEF",
+      "price": 95.36,
+      "conviction": 10.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.346,
+      "cascade_score": 0.0077,
+      "momentum_persistence": -1.648,
+      "vol_regime": "normal",
+      "drawdown": -2.4,
+      "returns": {
+        "5d": -0.41,
+        "10d": -0.67,
+        "21d": -1.85,
+        "63d": -0.2,
+        "126d": 0.42,
+        "252d": 4.74
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "DUK",
+      "price": 128.16,
+      "conviction": 9.1,
+      "is_signal": false,
+      "mtmdi_zscore": 0.375,
+      "cascade_score": -0.0048,
+      "momentum_persistence": -0.436,
+      "vol_regime": "normal",
+      "drawdown": -4.0,
+      "returns": {
+        "5d": -2.0,
+        "10d": -1.45,
+        "21d": -0.23,
+        "63d": 10.56,
+        "126d": 5.74,
+        "252d": 11.61
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "NOW",
+      "price": 103.06,
+      "conviction": 8.2,
+      "is_signal": false,
+      "mtmdi_zscore": -0.043,
+      "cascade_score": -0.0125,
+      "momentum_persistence": -1.013,
+      "vol_regime": "high",
+      "drawdown": -50.7,
+      "returns": {
+        "5d": -9.83,
+        "10d": -11.51,
+        "21d": 0.55,
+        "63d": -41.89,
+        "126d": -58.79,
+        "252d": -50.02
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "ADP",
+      "price": 202.11,
+      "conviction": 6.6,
+      "is_signal": false,
+      "mtmdi_zscore": 0.187,
+      "cascade_score": -0.0059,
+      "momentum_persistence": -0.911,
+      "vol_regime": "normal",
+      "drawdown": -36.6,
+      "returns": {
+        "5d": -3.01,
+        "10d": -4.43,
+        "21d": -0.93,
+        "63d": -24.26,
+        "126d": -34.37,
+        "252d": -36.64
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "SO",
+      "price": 94.61,
+      "conviction": 6.4,
+      "is_signal": false,
+      "mtmdi_zscore": 0.215,
+      "cascade_score": -0.0047,
+      "momentum_persistence": -0.379,
+      "vol_regime": "normal",
+      "drawdown": -4.5,
+      "returns": {
+        "5d": -2.02,
+        "10d": -1.73,
+        "21d": -1.26,
+        "63d": 10.65,
+        "126d": 2.55,
+        "252d": 9.48
       },
       "signals": {
         "mtmdi": false,
@@ -3263,25 +4994,50 @@
     },
     {
       "ticker": "SPY",
-      "price": 653.18,
-      "conviction": 1.5,
+      "price": 656.82,
+      "conviction": 5.9,
       "is_signal": false,
-      "mtmdi_zscore": -0.09,
-      "cascade_score": 0.0,
-      "momentum_persistence": -1.659,
+      "mtmdi_zscore": -0.356,
+      "cascade_score": -0.0,
+      "momentum_persistence": -1.646,
       "vol_regime": "normal",
-      "drawdown": -5.8,
+      "drawdown": -5.3,
       "returns": {
-        "5d": -2.39,
-        "10d": -3.34,
-        "21d": -4.1,
-        "63d": -3.84,
-        "126d": -1.5,
-        "252d": 15.82
+        "5d": -0.43,
+        "10d": -2.65,
+        "21d": -4.27,
+        "63d": -3.9,
+        "126d": -0.4,
+        "252d": 14.6
       },
       "signals": {
         "mtmdi": false,
         "direction": false,
+        "cascade": false,
+        "momentum": false
+      }
+    },
+    {
+      "ticker": "FIS",
+      "price": 47.6,
+      "conviction": 5.3,
+      "is_signal": false,
+      "mtmdi_zscore": -0.221,
+      "cascade_score": 0.0026,
+      "momentum_persistence": -1.038,
+      "vol_regime": "normal",
+      "drawdown": -41.0,
+      "returns": {
+        "5d": -3.33,
+        "10d": -5.24,
+        "21d": -0.21,
+        "63d": -33.17,
+        "126d": -27.15,
+        "252d": -41.97
+      },
+      "signals": {
+        "mtmdi": false,
+        "direction": true,
         "cascade": false,
         "momentum": false
       }

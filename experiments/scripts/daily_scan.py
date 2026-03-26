@@ -56,14 +56,16 @@ DOCS_DIR = os.path.join(EXPERIMENTS_DIR, "docs")
 DATA_OUT_DIR = os.path.join(DOCS_DIR, "data")
 TICKERS_DIR = os.path.join(DATA_OUT_DIR, "tickers")
 
-# Strategy config (best from experiment loop)
+# Strategy config (best from experiment loop — must match train.py Config)
 MTMDI_ZSCORE_ENTRY = 1.5
 CACS_ENTRY_THRESHOLD = 0.02
 MPR_THRESHOLD = 0.5
+MTMDI_ZSCORE_EXIT = 0.5    # Exit when dispersion resolves (matches backtest)
 STOP_LOSS = -0.07
 TAKE_PROFIT = 0.39
 MAX_HOLD_DAYS = 21
 VOL_TARGET = 0.15
+TRANSACTION_COST_BPS = 10  # 10bps per trade each way (matches backtest)
 
 
 def detect_regime(vol_ratio_5_21, vol_21d):
@@ -219,32 +221,79 @@ def save_trades_state(state):
         json.dump(state, f, indent=2, cls=SafeJSONEncoder)
 
 
-def update_trades(all_scores, data):
+def update_trades(all_scores, data, features_cache=None):
     """
-    Update trade tracking: close expired/stopped positions, open new ones from signals.
+    Update trade tracking with realistic execution matching the backtest:
+    - Execute pending signals from previous day at today's open (next-day execution)
+    - Check exits at close (stop loss, take profit, time, MTMDI resolution)
+    - Apply transaction costs (10bps each way)
+    - Store new signals as pending for next-day open execution
     Returns updated trades state dict.
     """
     state = load_trades_state()
     today = datetime.date.today().isoformat()
+    tc = TRANSACTION_COST_BPS / 10000
 
-    # Build price lookup from scores
-    price_map = {s["ticker"]: s["price"] for s in all_scores}
+    # Build price lookups
+    close_price_map = {s["ticker"]: s["price"] for s in all_scores}
+    open_price_map = {}
+    for ticker, df in data.items():
+        if "Open" in df.columns:
+            clean = df["Open"].dropna()
+            if len(clean) > 0:
+                open_price_map[ticker] = round(float(clean.iloc[-1]), 2)
 
-    # --- Close positions that hit exit conditions ---
-    still_open = []
-    for pos in state["open_positions"]:
+    # Build MTMDI z-score lookup for resolution exits
+    mtmdi_map = {}
+    for s in all_scores:
+        if s.get("mtmdi_zscore") is not None:
+            mtmdi_map[s["ticker"]] = abs(s["mtmdi_zscore"])
+
+    # --- Execute pending signals from previous day at today's open ---
+    pending = state.get("pending_signals", [])
+    still_open = list(state["open_positions"])
+    open_tickers = {p["ticker"] for p in still_open}
+
+    for sig in pending:
+        ticker = sig["ticker"]
+        if ticker in open_tickers:
+            continue
+        open_price = open_price_map.get(ticker)
+        signal_close = sig.get("signal_close_price", 0)
+        if open_price is None:
+            continue
+        # Gap-down protection: skip if open gaps past stop loss level
+        if signal_close > 0:
+            gap_pct = (open_price / signal_close) - 1
+            if gap_pct <= STOP_LOSS:
+                continue
+        still_open.append({
+            "ticker": ticker,
+            "entry_date": today,
+            "entry_price": open_price,  # Enter at today's open
+            "current_price": open_price,
+            "unrealized_pnl_pct": 0.0,
+            "days_held": 0,
+            "conviction": sig.get("conviction", 0),
+            "stop_loss_price": round(open_price * (1 + STOP_LOSS), 2),
+            "take_profit_price": round(open_price * (1 + TAKE_PROFIT), 2),
+        })
+        open_tickers.add(ticker)
+
+    # --- Check exits for all open positions at close ---
+    remaining_open = []
+    for pos in still_open:
         ticker = pos["ticker"]
         entry_price = pos["entry_price"]
         entry_date = pos["entry_date"]
 
-        current_price = price_map.get(ticker)
+        current_price = close_price_map.get(ticker)
         if current_price is None:
-            # Ticker no longer in scan; try to get price from data
             if ticker in data and "Close" in data[ticker].columns:
                 clean = data[ticker]["Close"].dropna()
                 current_price = round(float(clean.iloc[-1]), 2) if len(clean) > 0 else None
             if current_price is None:
-                still_open.append(pos)
+                remaining_open.append(pos)
                 continue
 
         pnl_pct = (current_price / entry_price - 1)
@@ -259,62 +308,58 @@ def update_trades(all_scores, data):
             exit_reason = "take_profit"
         elif trading_days_approx >= MAX_HOLD_DAYS:
             exit_reason = "time_exit"
+        elif ticker in mtmdi_map and mtmdi_map[ticker] < MTMDI_ZSCORE_EXIT:
+            exit_reason = "mtmdi_resolved"
 
         if exit_reason:
+            # Apply transaction costs (10bps entry + 10bps exit)
+            net_pnl_pct = pnl_pct - 2 * tc
             state["closed_trades"].append({
                 "ticker": ticker,
                 "entry_date": entry_date,
                 "entry_price": entry_price,
                 "exit_date": today,
                 "exit_price": current_price,
-                "pnl_pct": round(pnl_pct * 100, 2),
+                "pnl_pct": round(net_pnl_pct * 100, 2),
                 "days_held": days_held,
                 "exit_reason": exit_reason,
                 "conviction": pos.get("conviction", 0),
             })
         else:
-            # Update current price and unrealized P&L
             pos["current_price"] = current_price
             pos["unrealized_pnl_pct"] = round(pnl_pct * 100, 2)
             pos["days_held"] = days_held
-            still_open.append(pos)
+            remaining_open.append(pos)
 
-    # --- Open new positions from active signals ---
-    open_tickers = {p["ticker"] for p in still_open}
+    state["open_positions"] = remaining_open
+
+    # --- Store new active signals as pending for next-day open ---
+    active_signals = [s for s in all_scores if s["is_signal"]]
     closed_recently = {
         t["ticker"] for t in state["closed_trades"]
         if t.get("exit_date", "") >= (datetime.date.today() - datetime.timedelta(days=5)).isoformat()
     }
+    current_open_tickers = {p["ticker"] for p in remaining_open}
 
-    active_signals = [s for s in all_scores if s["is_signal"]]
+    new_pending = []
     for s in active_signals:
-        if s["ticker"] not in open_tickers and s["ticker"] not in closed_recently:
-            still_open.append({
+        if s["ticker"] not in current_open_tickers and s["ticker"] not in closed_recently:
+            new_pending.append({
                 "ticker": s["ticker"],
-                "entry_date": today,
-                "entry_price": s["price"],
-                "current_price": s["price"],
-                "unrealized_pnl_pct": 0.0,
-                "days_held": 0,
                 "conviction": round(s["conviction"], 1),
-                "stop_loss_price": round(s["price"] * (1 + STOP_LOSS), 2),
-                "take_profit_price": round(s["price"] * (1 + TAKE_PROFIT), 2),
+                "signal_close_price": s["price"],  # Today's close for gap-down check
             })
-
-    state["open_positions"] = still_open
+    state["pending_signals"] = new_pending
 
     # --- Update equity curve ---
-    # Compute portfolio value: start at 10000, equal weight per position
     if not state["equity_curve"]:
         prev_value = 10000.0
     else:
         prev_value = state["equity_curve"][-1]["value"]
 
-    # Daily return from open positions (equal-weighted)
-    n_open = len(still_open)
+    n_open = len(remaining_open)
     if n_open > 0:
-        avg_unrealized = sum(p.get("unrealized_pnl_pct", 0) for p in still_open) / n_open
-        # If this is not the first data point, compute incremental change
+        avg_unrealized = sum(p.get("unrealized_pnl_pct", 0) for p in remaining_open) / n_open
         if state["equity_curve"]:
             prev_avg = state["equity_curve"][-1].get("avg_unrealized", 0)
             daily_change_pct = (avg_unrealized - prev_avg) / 100
@@ -324,15 +369,13 @@ def update_trades(all_scores, data):
         avg_unrealized = 0
         daily_change_pct = 0
 
-    # Also account for closed trades today
+    # Account for closed trades today (realized P&L)
     closed_today = [t for t in state["closed_trades"] if t.get("exit_date") == today]
     for ct in closed_today:
-        # Add realized P&L to equity
         daily_change_pct += (ct["pnl_pct"] / 100) / max(n_open + len(closed_today), 1)
 
     new_value = round(prev_value * (1 + daily_change_pct), 2)
 
-    # Don't add duplicate entry for same date
     if state["equity_curve"] and state["equity_curve"][-1]["date"] == today:
         state["equity_curve"][-1] = {
             "date": today,
@@ -389,6 +432,220 @@ def compute_trades_summary(state):
     }
 
 
+def backfill_trades(data, market_close, lookback_days=63):
+    """
+    Run the strategy over recent history to seed trade tracking with past trades.
+    Uses the same execution model as the backtest: next-day open entry, gap-down
+    protection, MTMDI resolution exit, and transaction costs.
+    Returns a trades state dict.
+    """
+    print("  Backfilling historical trades...")
+    tc = TRANSACTION_COST_BPS / 10000
+
+    # Pre-compute features
+    features_cache = {}
+    for ticker, df in data.items():
+        if "Close" not in df.columns:
+            continue
+        try:
+            volume = df.get("Volume")
+            features_cache[ticker] = compute_features(df["Close"], volume, market_close)
+        except Exception:
+            pass
+
+    # Get trading dates from SPY
+    spy_df = data.get("SPY")
+    if spy_df is None or len(spy_df) < lookback_days:
+        return {"open_positions": [], "closed_trades": [], "equity_curve": [], "pending_signals": []}
+
+    all_dates = spy_df.index[-lookback_days:]
+    positions = {}  # ticker -> dict
+    closed_trades = []
+    pending_signals = []  # (ticker, strength, conviction, signal_close)
+    equity_value = 10000.0
+    equity_curve = []
+
+    for date in all_dates:
+        date_str = str(date.date())
+
+        # Get prices
+        open_prices = {}
+        close_prices = {}
+        for ticker, df in data.items():
+            if date in df.index:
+                if "Open" in df.columns:
+                    val = df.loc[date, "Open"]
+                    if not np.isnan(val):
+                        open_prices[ticker] = float(val)
+                if "Close" in df.columns:
+                    val = df.loc[date, "Close"]
+                    if not np.isnan(val):
+                        close_prices[ticker] = float(val)
+
+        # Execute pending from yesterday at today's open
+        for sig_ticker, sig_strength, sig_conv, sig_close in pending_signals:
+            if sig_ticker in positions:
+                continue
+            op = open_prices.get(sig_ticker)
+            if op is None:
+                continue
+            if sig_close > 0:
+                gap = (op / sig_close) - 1
+                if gap <= STOP_LOSS:
+                    continue
+            positions[sig_ticker] = {
+                "entry_date": date_str,
+                "entry_price": round(op, 2),
+                "conviction": sig_conv,
+                "days_held": 0,
+            }
+        pending_signals = []
+
+        # Check exits at close
+        prev_equity_pnl = 0.0
+        for ticker in list(positions.keys()):
+            pos = positions[ticker]
+            pos["days_held"] += 1
+            cp = close_prices.get(ticker)
+            if cp is None:
+                continue
+
+            pnl = (cp / pos["entry_price"]) - 1
+            cal_days = (date.date() - datetime.date.fromisoformat(pos["entry_date"])).days
+            trading_days_approx = int(cal_days * 5 / 7)
+
+            # Get MTMDI for resolution check
+            mtmdi_z = None
+            feat = features_cache.get(ticker)
+            if feat is not None and date in feat.index:
+                mz = feat.loc[date].get("mtmdi_zscore", np.nan)
+                if not np.isnan(mz):
+                    mtmdi_z = abs(mz)
+
+            exit_reason = None
+            if pnl <= STOP_LOSS:
+                exit_reason = "stop_loss"
+            elif pnl >= TAKE_PROFIT:
+                exit_reason = "take_profit"
+            elif trading_days_approx >= MAX_HOLD_DAYS:
+                exit_reason = "time_exit"
+            elif mtmdi_z is not None and mtmdi_z < MTMDI_ZSCORE_EXIT:
+                exit_reason = "mtmdi_resolved"
+
+            if exit_reason:
+                net_pnl = pnl - 2 * tc
+                closed_trades.append({
+                    "ticker": ticker,
+                    "entry_date": pos["entry_date"],
+                    "entry_price": pos["entry_price"],
+                    "exit_date": date_str,
+                    "exit_price": round(cp, 2),
+                    "pnl_pct": round(net_pnl * 100, 2),
+                    "days_held": cal_days,
+                    "exit_reason": exit_reason,
+                    "conviction": pos.get("conviction", 0),
+                })
+                del positions[ticker]
+
+        # Generate new signals
+        features_dict = {}
+        for ticker, feats in features_cache.items():
+            if date in feats.index:
+                features_dict[ticker] = feats.loc[date]
+
+        for ticker, feat_row in features_dict.items():
+            if ticker in positions:
+                continue
+            mtmdi_z = feat_row.get("mtmdi_zscore", 0)
+            mtmdi_dir = feat_row.get("mtmdi_direction", 0)
+            cacs = feat_row.get("cacs", 0)
+            mpr = feat_row.get("mpr_zscore", 0)
+
+            if any(np.isnan(v) for v in [mtmdi_z, mtmdi_dir]):
+                continue
+            if abs(mtmdi_z) < MTMDI_ZSCORE_ENTRY:
+                continue
+            if mtmdi_dir <= 0:
+                continue
+
+            cacs_val = cacs if not np.isnan(cacs) else 0
+            mpr_val = mpr if not np.isnan(mpr) else 0
+            if not (cacs_val > CACS_ENTRY_THRESHOLD or mpr_val > MPR_THRESHOLD):
+                continue
+
+            strength = (
+                min(abs(mtmdi_z) / 3.0, 1.0) * 0.5 +
+                min(abs(cacs_val) / 0.05, 1.0) * 0.3 +
+                min(max(mpr_val, 0) / 2.0, 1.0) * 0.2
+            )
+            conviction = round(strength * 100, 1)
+            close_p = close_prices.get(ticker, 0)
+            pending_signals.append((ticker, strength, conviction, close_p))
+
+        # Update equity curve (equal-weighted open position return)
+        n_pos = len(positions)
+        if n_pos > 0:
+            total_unrealized = sum(
+                ((close_prices.get(t, positions[t]["entry_price"]) / positions[t]["entry_price"]) - 1)
+                for t in positions if positions[t]["entry_price"] > 0
+            )
+            avg_unrealized_pct = (total_unrealized / n_pos) * 100
+            if equity_curve:
+                prev_avg = equity_curve[-1].get("avg_unrealized", 0)
+                daily_change = (avg_unrealized_pct - prev_avg) / 100
+            else:
+                daily_change = 0
+        else:
+            avg_unrealized_pct = 0
+            daily_change = 0
+
+        # Account for trades closed today
+        closed_today = [t for t in closed_trades if t["exit_date"] == date_str]
+        for ct in closed_today:
+            daily_change += (ct["pnl_pct"] / 100) / max(n_pos + len(closed_today), 1)
+
+        equity_value = round(equity_value * (1 + daily_change), 2)
+        equity_curve.append({
+            "date": date_str,
+            "value": equity_value,
+            "n_open": n_pos,
+            "avg_unrealized": round(avg_unrealized_pct, 2),
+        })
+
+    # Convert remaining positions to open_positions format
+    open_positions = []
+    for ticker, pos in positions.items():
+        cp = close_prices.get(ticker, pos["entry_price"])
+        pnl = (cp / pos["entry_price"] - 1) if pos["entry_price"] > 0 else 0
+        cal_days = (datetime.date.today() - datetime.date.fromisoformat(pos["entry_date"])).days
+        open_positions.append({
+            "ticker": ticker,
+            "entry_date": pos["entry_date"],
+            "entry_price": pos["entry_price"],
+            "current_price": round(cp, 2),
+            "unrealized_pnl_pct": round(pnl * 100, 2),
+            "days_held": cal_days,
+            "conviction": pos.get("conviction", 0),
+            "stop_loss_price": round(pos["entry_price"] * (1 + STOP_LOSS), 2),
+            "take_profit_price": round(pos["entry_price"] * (1 + TAKE_PROFIT), 2),
+        })
+
+    pending_out = [
+        {"ticker": t, "conviction": c, "signal_close_price": sc}
+        for t, s, c, sc in pending_signals
+    ]
+
+    print(f"  Backfill complete: {len(closed_trades)} closed trades, "
+          f"{len(open_positions)} open positions")
+
+    return {
+        "open_positions": open_positions,
+        "closed_trades": closed_trades,
+        "equity_curve": equity_curve,
+        "pending_signals": pending_out,
+    }
+
+
 def run_scan():
     """Run the full daily scan."""
     print(f"TMD-ARC Daily Scan — {datetime.datetime.now().isoformat()}")
@@ -441,6 +698,18 @@ def run_scan():
     # Create output directories
     os.makedirs(TICKERS_DIR, exist_ok=True)
 
+    # --- Backfill historical trades on first run ---
+    trades_path = os.path.join(DATA_OUT_DIR, "trades.json")
+    existing_state = load_trades_state()
+    needs_backfill = (
+        not os.path.exists(trades_path) or
+        (not existing_state.get("closed_trades") and not existing_state.get("open_positions"))
+    )
+    if needs_backfill:
+        print("No trade history found — running historical backfill (last 63 trading days)...")
+        backfill_state = backfill_trades(data, market_close, lookback_days=63)
+        save_trades_state(backfill_state)
+
     # --- Update trade tracking ---
     print("Updating trade tracking...")
     trades_state = update_trades(all_scores, data)
@@ -472,24 +741,28 @@ def run_scan():
         "n_active_signals": len(active_signals),
         "config": {
             "mtmdi_zscore_entry": MTMDI_ZSCORE_ENTRY,
+            "mtmdi_zscore_exit": MTMDI_ZSCORE_EXIT,
             "cacs_entry_threshold": CACS_ENTRY_THRESHOLD,
             "mpr_threshold": MPR_THRESHOLD,
             "stop_loss": STOP_LOSS,
             "take_profit": TAKE_PROFIT,
             "max_hold_days": MAX_HOLD_DAYS,
+            "transaction_cost_bps": TRANSACTION_COST_BPS,
+            "execution": "next_day_open",
         },
+        # Performance metrics from backtest with next-day-open execution model
         "performance": {
-            "train": {"period": "2010-2019", "sharpe": 2.839, "cagr": "32.68%", "max_dd": "-7.52%"},
-            "validation": {"period": "2020-2022", "sharpe": 2.242, "cagr": "34.03%", "max_dd": "-7.69%"},
-            "test": {"period": "2023-2026", "sharpe": 3.825, "cagr": "43.15%", "max_dd": "-3.77%"},
+            "train": {"period": "2010-2019", "sharpe": 1.624, "cagr": "15.15%", "max_dd": "-6.90%"},
+            "validation": {"period": "2020-2022", "sharpe": 1.562, "cagr": "18.53%", "max_dd": "-7.64%"},
+            "test": {"period": "2023-2026", "sharpe": 2.354, "cagr": "21.00%", "max_dd": "-3.91%"},
             "walk_forward": {
-                "avg_sharpe": 2.825,
-                "folds_positive": "5/5",
-                "fold_sharpes": [2.565, 4.007, 3.013, 2.633, 1.908],
+                "avg_sharpe": 0,
+                "folds_positive": "0/0",
+                "fold_sharpes": [],
             },
-            "bootstrap_ci": {"sharpe_low": 1.458, "sharpe_high": 3.549},
-            "vs_spy": {"strategy_cagr": "43.15%", "spy_cagr": "19.11%"},
-            "vs_random": {"percentile": "100%"},
+            "bootstrap_ci": {"sharpe_low": 0, "sharpe_high": 0},
+            "vs_spy": {"strategy_cagr": "21.00%", "spy_cagr": "19.11%"},
+            "vs_random": {"percentile": "N/A"},
         },
         "trades": {
             "summary": trades_summary,

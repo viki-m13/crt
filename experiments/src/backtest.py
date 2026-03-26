@@ -94,7 +94,13 @@ class BacktestEngine:
         daily_returns = []
 
         for i, date in enumerate(all_dates):
-            # Gather today's prices
+            # Gather today's open prices (for executing pending signals)
+            open_prices = {}
+            for ticker, df in self.data_dict.items():
+                if date in df.index and "Open" in df.columns:
+                    open_prices[ticker] = df.loc[date, "Open"]
+
+            # Gather today's close prices
             prices = {}
             for ticker, df in self.data_dict.items():
                 if date in df.index and "Close" in df.columns:
@@ -107,17 +113,21 @@ class BacktestEngine:
                 if date in feats.index:
                     features_dict[ticker] = feats.loc[date].to_dict()
 
-            # Strategy step
-            stats = self.strategy.step(date, prices, features_dict)
+            # Strategy step (with open prices for next-day execution)
+            stats = self.strategy.step(date, prices, features_dict,
+                                       open_prices=open_prices)
 
             # Compute portfolio return
-            # Weighted sum of position PnLs
             daily_ret = 0.0
             for ticker, pos in self.strategy.positions.items():
                 if ticker in prices and not np.isnan(prices[ticker]):
-                    prev_price = pos.entry_price if pos.days_held <= 1 else None
-                    # Use daily return of the stock
-                    if ticker in self.data_dict:
+                    if pos.entry_date == date:
+                        # Entry day: return from open (entry price) to close
+                        curr = prices[ticker]
+                        if pos.entry_price > 0:
+                            stock_ret = (curr / pos.entry_price - 1) * pos.direction
+                            daily_ret += stock_ret * pos.size
+                    elif ticker in self.data_dict:
                         df = self.data_dict[ticker]
                         if date in df.index:
                             idx = df.index.get_loc(date)

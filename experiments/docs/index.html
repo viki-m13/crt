@@ -432,9 +432,9 @@ function renderActiveSignals() {
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px">
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Entry Price</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Signal Price</div>
             <div style="font-size:18px;font-weight:700;margin-top:2px">$${entry.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--muted)">${scanStr}</div>
+            <div style="font-size:10px;color:var(--muted)">Enter next day open</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Level (&minus;7%)</div>
@@ -763,8 +763,8 @@ function renderClosedTrades(trades) {
   body.innerHTML = sorted.map(t => {
     const pnlCls = t.pnl_pct >= 0 ? 'pnl-pos' : 'pnl-neg';
     const pnlStr = t.pnl_pct >= 0 ? '+' + t.pnl_pct.toFixed(2) + '%' : t.pnl_pct.toFixed(2) + '%';
-    const reasonMap = { stop_loss: 'exit-stop', take_profit: 'exit-profit', time_exit: 'exit-time' };
-    const reasonLabel = { stop_loss: 'Stop Loss', take_profit: 'Take Profit', time_exit: 'Time Exit' };
+    const reasonMap = { stop_loss: 'exit-stop', take_profit: 'exit-profit', time_exit: 'exit-time', mtmdi_resolved: 'exit-time' };
+    const reasonLabel = { stop_loss: 'Stop Loss', take_profit: 'Take Profit', time_exit: 'Time Exit', mtmdi_resolved: 'MTMDI Resolved' };
     const cls = reasonMap[t.exit_reason] || 'exit-time';
     const label = reasonLabel[t.exit_reason] || t.exit_reason;
     return `<tr>
