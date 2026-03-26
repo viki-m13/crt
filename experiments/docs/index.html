@@ -120,6 +120,43 @@
     <p>Autonomous strategy discovery using Karpathy's AgentHub/Autoresearch paradigm. Identifies regime transitions via multi-timeframe momentum dispersion.</p>
   </div>
 
+  <!-- Daily Execution Playbook -->
+  <div class="section" id="playbook" style="padding-top:8px">
+    <div class="section-title" style="border-top:none;padding-top:0">Daily Execution Playbook</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.8">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+        <div>
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px;font-size:14px">BEFORE MARKET OPEN</div>
+          <div><strong>1.</strong> Check the <strong>Active BUY Signals</strong> section below for new entries</div>
+          <div><strong>2.</strong> For each signal: place a <strong>market order at open</strong> for the position size shown</div>
+          <div><strong>3.</strong> Skip any signal where the open price gaps down &gt;8% from yesterday's close</div>
+          <div><strong>4.</strong> Don't exceed 80% total portfolio exposure across all positions</div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px;font-size:14px">AT MARKET CLOSE (DAILY)</div>
+          <div><strong>1.</strong> Check each <strong>Open Position</strong> against its exit rules:</div>
+          <div style="padding-left:16px">
+            <div>&bull; <strong style="color:var(--red)">Stop Loss:</strong> Close at market if P&L &le; <strong>&minus;8%</strong> from entry</div>
+            <div>&bull; <strong style="color:var(--green)">Take Profit:</strong> Close at market if P&L &ge; <strong>+20%</strong> from entry</div>
+            <div>&bull; <strong style="color:var(--blue)">MTMDI Resolved:</strong> Close if MTMDI z-score drops below 0.5 (shown in screener)</div>
+            <div>&bull; <strong>Time Exit:</strong> Close if held for <strong>63 trading days</strong> (~3 months)</div>
+          </div>
+          <div><strong>2.</strong> Whichever condition hits first &mdash; exit at close price</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-weight:700;color:var(--gold);margin-bottom:8px;font-size:14px">POSITION SIZING</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">
+          <div><strong>Formula:</strong> Size = (15% vol target / stock's 21d vol) &times; signal strength</div>
+          <div><strong>Max per position:</strong> 5% of portfolio</div>
+          <div><strong>Max total exposure:</strong> 80% of portfolio</div>
+          <div><strong>High vol regime:</strong> Reduce size by 50%</div>
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px">Each signal card shows the exact dollar amount based on a $10,000 portfolio. Scale proportionally.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Stats Row -->
   <div class="stats-row">
     <div class="stat"><span class="stat-num green" id="statSharpe">—</span><span class="stat-label">Test Sharpe (2023-2026)</span></div>
@@ -147,7 +184,7 @@
   <!-- Active Signals -->
   <div class="section" id="signals">
     <div class="section-title">Active BUY Signals</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Buy on signal day at market close. Hold up to 21 trading days. Exits checked at daily close &mdash; whichever hits first: +39% target, &minus;7% stop, or time expiry. Actual exit price is the close, not the level (gaps through are possible).</p>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Enter next day at market open. Hold up to 63 trading days (~3 months). Exits checked at daily close &mdash; whichever hits first: +20% target, &minus;8% stop, MTMDI resolution, or time expiry. Position size is volatility-targeted (max 5% per position, 80% total exposure).</p>
     <div id="activeSignals"></div>
 
     <div class="section-title" style="margin-top:32px">Top Conviction (All Stocks)</div>
@@ -170,7 +207,7 @@
   <!-- Trades & Equity Curve -->
   <div class="section" id="trades">
     <div class="section-title">Live Trade Tracker</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Positions opened from BUY signals at close. Exits checked daily at close &mdash; actual exit price may differ from stop/target level due to gaps. Updates daily.</p>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Positions entered next day at open. Exits checked daily at close &mdash; stop at &minus;8%, target at +20%, max hold 63 trading days, or MTMDI resolution. Position sizes are volatility-targeted matching the backtest.</p>
     <div class="perf-grid" id="tradesSummaryGrid"></div>
 
     <div class="section-title" style="margin-top:24px">Equity Curve</div>
@@ -188,16 +225,16 @@
           <th>Current Price</th>
           <th>P&L</th>
           <th>Days Held</th>
+          <th>Size</th>
           <th>Stop Level</th>
           <th>Target Level</th>
-          <th>Conviction</th>
         </tr>
       </thead>
       <tbody id="openPositionsBody"></tbody>
     </table>
 
     <div class="section-title" style="margin-top:24px">Closed Trades</div>
-    <div id="closedTradesEmpty" style="display:none;color:var(--muted);font-size:13px;padding:12px 0">No closed trades yet. Trades close when daily close breaches stop (&minus;7%), target (+39%), or after 21 trading days.</div>
+    <div id="closedTradesEmpty" style="display:none;color:var(--muted);font-size:13px;padding:12px 0">No closed trades yet. Trades close when daily close breaches stop (&minus;8%), target (+20%), MTMDI resolves, or after 63 trading days.</div>
     <div class="controls" id="tradesControls" style="display:none">
       <button class="sort-btn active" data-tsort="date" onclick="setTradeSort('date')">Recent</button>
       <button class="sort-btn" data-tsort="pnl" onclick="setTradeSort('pnl')">P&L</button>
@@ -394,18 +431,18 @@ function renderActiveSignals() {
   }
   signals.sort((a, b) => (b.conviction || 0) - (a.conviction || 0));
 
-  // Compute exit date (21 trading days ≈ 30 calendar days from scan date)
+  // Compute exit date (63 trading days ≈ 90 calendar days from scan date)
   const scanDate = DATA.generated ? new Date(DATA.generated) : new Date();
   const exitDate = new Date(scanDate);
-  exitDate.setDate(exitDate.getDate() + 30); // ~21 trading days
+  exitDate.setDate(exitDate.getDate() + 90); // ~63 trading days
   const exitStr = exitDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const scanStr = scanDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   el.innerHTML = '';
   for (const s of signals) {
     const entry = parseFloat(s.price);
-    const stopPrice = (entry * 0.93).toFixed(2);
-    const targetPrice = (entry * 1.39).toFixed(2);
+    const stopPrice = (entry * 0.92).toFixed(2);
+    const targetPrice = (entry * 1.20).toFixed(2);
     const rets = s.returns || {};
 
     // Which conditions are met — use signals sub-object if available, else infer
@@ -432,22 +469,27 @@ function renderActiveSignals() {
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px">
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Signal Price</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Entry Price</div>
             <div style="font-size:18px;font-weight:700;margin-top:2px">$${entry.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--muted)">Enter next day open</div>
+            <div style="font-size:10px;color:var(--muted)">Buy next day at open</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Level (&minus;7%)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Position Size</div>
+            <div style="font-size:18px;font-weight:700;color:var(--blue);margin-top:2px">${s.position_size ? (s.position_size * 100).toFixed(1) + '%' : '5.0%'}</div>
+            <div style="font-size:10px;color:var(--muted)">$${s.position_size ? (s.position_size * 10000).toFixed(0) : '500'} of $10k</div>
+          </div>
+          <div style="background:var(--bg);border-radius:6px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Stop Level (&minus;8%)</div>
             <div style="font-size:18px;font-weight:700;color:var(--red);margin-top:2px">$${stopPrice}</div>
             <div style="font-size:10px;color:var(--muted)">Exit at close if below</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Target Level (+39%)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Target Level (+20%)</div>
             <div style="font-size:18px;font-weight:700;color:var(--green);margin-top:2px">$${targetPrice}</div>
             <div style="font-size:10px;color:var(--muted)">Exit at close if above</div>
           </div>
           <div style="background:var(--bg);border-radius:6px;padding:10px">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Time Exit (21 days)</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase">Max Hold (63 trading days)</div>
             <div style="font-size:18px;font-weight:700;margin-top:2px">${exitStr}</div>
             <div style="font-size:10px;color:var(--muted)">Sell if still holding</div>
           </div>
@@ -726,6 +768,7 @@ function renderTrades() {
       const pnl = p.unrealized_pnl_pct || 0;
       const pnlCls = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
       const pnlStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + '%';
+      const sizePct = p.position_size ? (p.position_size * 100).toFixed(1) + '%' : '5.0%';
       return `<tr>
         <td><span class="ticker-sym">${p.ticker}</span></td>
         <td>${p.entry_date}</td>
@@ -733,9 +776,9 @@ function renderTrades() {
         <td>$${p.current_price.toFixed(2)}</td>
         <td class="${pnlCls}"><strong>${pnlStr}</strong></td>
         <td>${p.days_held}d</td>
+        <td>${sizePct}</td>
         <td style="color:var(--red)">$${p.stop_loss_price.toFixed(2)}</td>
         <td style="color:var(--green)">$${p.take_profit_price.toFixed(2)}</td>
-        <td>${p.conviction || '—'}</td>
       </tr>`;
     }).join('');
   }
