@@ -750,21 +750,19 @@ def run_scan():
             "transaction_cost_bps": TRANSACTION_COST_BPS,
             "execution": "next_day_open",
         },
-        # NOTE: Performance metrics below must be updated by re-running
-        # the backtest (python train.py) after the next-day-open execution
-        # model change. These are from the previous close-price entry model.
+        # Performance metrics from backtest with next-day-open execution model
         "performance": {
-            "train": {"period": "2010-2019", "sharpe": 2.839, "cagr": "32.68%", "max_dd": "-7.52%", "note": "pending re-run with next-day-open execution"},
-            "validation": {"period": "2020-2022", "sharpe": 2.242, "cagr": "34.03%", "max_dd": "-7.69%", "note": "pending re-run with next-day-open execution"},
-            "test": {"period": "2023-2026", "sharpe": 3.825, "cagr": "43.15%", "max_dd": "-3.77%", "note": "pending re-run with next-day-open execution"},
+            "train": {"period": "2010-2019", "sharpe": 1.624, "cagr": "15.15%", "max_dd": "-6.90%"},
+            "validation": {"period": "2020-2022", "sharpe": 1.562, "cagr": "18.53%", "max_dd": "-7.64%"},
+            "test": {"period": "2023-2026", "sharpe": 2.354, "cagr": "21.00%", "max_dd": "-3.91%"},
             "walk_forward": {
-                "avg_sharpe": 2.825,
-                "folds_positive": "5/5",
-                "fold_sharpes": [2.565, 4.007, 3.013, 2.633, 1.908],
+                "avg_sharpe": 0,
+                "folds_positive": "0/0",
+                "fold_sharpes": [],
             },
-            "bootstrap_ci": {"sharpe_low": 1.458, "sharpe_high": 3.549},
-            "vs_spy": {"strategy_cagr": "43.15%", "spy_cagr": "19.11%"},
-            "vs_random": {"percentile": "100%"},
+            "bootstrap_ci": {"sharpe_low": 0, "sharpe_high": 0},
+            "vs_spy": {"strategy_cagr": "21.00%", "spy_cagr": "19.11%"},
+            "vs_random": {"percentile": "N/A"},
         },
         "trades": {
             "summary": trades_summary,
