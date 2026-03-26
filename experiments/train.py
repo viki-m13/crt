@@ -155,15 +155,51 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
     closed_trades = []
     daily_returns = []
     tc = TRANSACTION_COST_BPS / 10000
+    pending_signals = []  # Signals awaiting next-day open execution
 
     for date in dates:
-        # Get prices
+        # Get today's open and close prices
+        open_prices = {}
         prices = {}
         for ticker, df in data_dict.items():
-            if date in df.index and "Close" in df.columns:
-                prices[ticker] = df.loc[date, "Close"]
+            if date in df.index:
+                if "Open" in df.columns:
+                    open_prices[ticker] = df.loc[date, "Open"]
+                if "Close" in df.columns:
+                    prices[ticker] = df.loc[date, "Close"]
 
-        # Update positions
+        # === Execute pending signals from yesterday at today's open ===
+        total_exposure = sum(p["size"] for p in positions.values())
+        for ticker, strength, vol_21d, regime, signal_close in pending_signals:
+            if total_exposure >= cfg.max_total_exposure:
+                break
+            if ticker in positions:
+                continue
+            open_price = open_prices.get(ticker)
+            if open_price is None or np.isnan(open_price):
+                continue
+            # Gap-down protection: skip if open gaps past stop loss level
+            if signal_close > 0:
+                gap_pct = (open_price / signal_close) - 1
+                if gap_pct <= cfg.stop_loss:
+                    continue
+            size = compute_position_size(strength, vol_21d, regime, cfg)
+            remaining = cfg.max_total_exposure - total_exposure
+            size = min(size, remaining)
+            if size < 0.005:
+                continue
+            positions[ticker] = {
+                "entry_date": date,
+                "entry_price": open_price,  # Enter at next-day open
+                "direction": 1,
+                "size": size,
+                "strength": strength,
+                "days_held": 0,
+            }
+            total_exposure += size
+        pending_signals = []
+
+        # Update positions (check exits at close)
         for ticker in list(positions.keys()):
             pos = positions[ticker]
             pos["days_held"] += 1
@@ -211,36 +247,23 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
             if date in feats.index:
                 features_dict[ticker] = feats.loc[date].to_dict()
 
-        # Generate signals
+        # Generate signals (pending for next-day open execution)
         signals = generate_signals(date, features_dict, positions, cfg)
-
-        # Execute signals
-        total_exposure = sum(p["size"] for p in positions.values())
-        for ticker, strength, vol_21d, regime in signals:
-            if total_exposure >= cfg.max_total_exposure:
-                break
-            price = prices.get(ticker)
-            if price is None or np.isnan(price):
-                continue
-            size = compute_position_size(strength, vol_21d, regime, cfg)
-            remaining = cfg.max_total_exposure - total_exposure
-            size = min(size, remaining)
-            if size < 0.005:
-                continue
-            positions[ticker] = {
-                "entry_date": date,
-                "entry_price": price,
-                "direction": 1,
-                "size": size,
-                "strength": strength,
-                "days_held": 0,
-            }
-            total_exposure += size
+        pending_signals = [
+            (ticker, strength, vol_21d, regime, prices.get(ticker, 0))
+            for ticker, strength, vol_21d, regime in signals
+        ]
 
         # Compute daily portfolio return
         daily_ret = 0.0
         for ticker, pos in positions.items():
-            if ticker in data_dict:
+            if pos["entry_date"] == date:
+                # Entry day: return from open (entry price) to close
+                close_price = prices.get(ticker)
+                if close_price and pos["entry_price"] > 0:
+                    stock_ret = (close_price / pos["entry_price"] - 1) * pos["direction"]
+                    daily_ret += stock_ret * pos["size"]
+            elif ticker in data_dict:
                 df = data_dict[ticker]
                 if date in df.index:
                     idx = df.index.get_loc(date)
