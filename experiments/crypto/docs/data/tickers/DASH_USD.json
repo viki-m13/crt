@@ -1,43 +1,39 @@
 {
   "ticker": "DASH-USD",
   "display_name": "DASH",
-  "price": 34.35,
-  "conviction": 24.6,
+  "price": 34.05,
+  "conviction": 30.9,
   "is_signal": false,
-  "mtmdi_zscore": -0.913,
-  "mtmdi_raw": 0.388,
-  "mtmdi_direction": -0.264,
-  "mtmdi_velocity": -0.022,
-  "cascade_score": -0.0485,
-  "momentum_persistence": -1.135,
+  "mtmdi_zscore": -1.05,
+  "mtmdi_raw": 0.333,
+  "mtmdi_direction": -0.108,
+  "mtmdi_velocity": -0.188,
+  "cascade_score": -0.0235,
+  "momentum_persistence": 1.294,
   "range_compression": 0.578,
-  "vol_30d": 75.0,
+  "vol_30d": 73.9,
   "vol_regime": "high",
-  "drawdown": -71.8,
-  "position_in_range": 15.5,
+  "drawdown": -72.0,
+  "position_in_range": 15.2,
   "returns": {
-    "7d": -2.54,
-    "14d": 6.01,
-    "30d": 3.84,
+    "7d": 4.35,
+    "14d": 4.66,
+    "30d": 6.52,
     "90d": -10.78,
-    "180d": 53.73,
-    "365d": 36.23
+    "180d": 49.84,
+    "365d": 34.59
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": false,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 24.01
-    },
     {
       "date": "2025-03-27",
       "price": 23.92
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 34.35
+    },
+    {
+      "date": "2026-03-25",
+      "price": 34.05
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 0.07
-    },
     {
       "date": "2025-03-26",
       "value": -0.197
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.913
+    },
+    {
+      "date": "2026-03-25",
+      "value": -1.05
     }
   ]
 }

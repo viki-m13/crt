@@ -1,43 +1,39 @@
 {
   "ticker": "AXS-USD",
   "display_name": "AXS",
-  "price": 1.12,
-  "conviction": 16.0,
+  "price": 1.13,
+  "conviction": 16.8,
   "is_signal": false,
-  "mtmdi_zscore": -0.444,
-  "mtmdi_raw": 0.669,
-  "mtmdi_direction": -0.733,
-  "mtmdi_velocity": 0.059,
-  "cascade_score": 0.0085,
-  "momentum_persistence": -0.099,
+  "mtmdi_zscore": -0.511,
+  "mtmdi_raw": 0.64,
+  "mtmdi_direction": -0.553,
+  "mtmdi_velocity": -0.18,
+  "cascade_score": 0.0149,
+  "momentum_persistence": 0.045,
   "range_compression": 0.43,
-  "vol_30d": 69.4,
+  "vol_30d": 66.5,
   "vol_regime": "high",
-  "drawdown": -68.7,
-  "position_in_range": 11.4,
+  "drawdown": -67.4,
+  "position_in_range": 12.2,
   "returns": {
-    "7d": -9.34,
-    "14d": -0.0,
-    "30d": -15.18,
-    "90d": 28.86,
-    "180d": -60.44,
-    "365d": -114.14
+    "7d": -6.29,
+    "14d": 0.06,
+    "30d": -8.76,
+    "90d": 31.11,
+    "180d": -65.02,
+    "365d": -115.9
   },
   "signals": {
     "mtmdi": false,
     "direction": false,
     "velocity": false,
-    "cascade": false,
-    "momentum": false,
+    "cascade": true,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 3.45
-    },
     {
       "date": "2025-03-27",
       "price": 3.39
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 1.12
+    },
+    {
+      "date": "2026-03-25",
+      "price": 1.13
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.75
-    },
     {
       "date": "2025-03-26",
       "value": 1.451
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.444
+    },
+    {
+      "date": "2026-03-25",
+      "value": -0.511
     }
   ]
 }

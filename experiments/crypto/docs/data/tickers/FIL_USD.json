@@ -1,43 +1,39 @@
 {
   "ticker": "FIL-USD",
   "display_name": "FIL",
-  "price": 0.92,
-  "conviction": 22.5,
+  "price": 0.93,
+  "conviction": 44.6,
   "is_signal": false,
-  "mtmdi_zscore": -0.105,
-  "mtmdi_raw": 0.672,
-  "mtmdi_direction": 0.941,
-  "mtmdi_velocity": 0.082,
-  "cascade_score": -0.052,
-  "momentum_persistence": -0.799,
-  "range_compression": 0.355,
-  "vol_30d": 98.0,
+  "mtmdi_zscore": 0.194,
+  "mtmdi_raw": 0.754,
+  "mtmdi_direction": 1.098,
+  "mtmdi_velocity": 0.734,
+  "cascade_score": -0.0286,
+  "momentum_persistence": 1.269,
+  "range_compression": 0.372,
+  "vol_30d": 96.8,
   "vol_regime": "high",
-  "drawdown": -72.5,
-  "position_in_range": 3.0,
+  "drawdown": -72.4,
+  "position_in_range": 3.2,
   "returns": {
-    "7d": -4.85,
-    "14d": 6.52,
-    "30d": -0.52,
-    "90d": -31.95,
-    "180d": -82.94,
-    "365d": -121.91
+    "7d": 0.39,
+    "14d": 5.51,
+    "30d": 4.16,
+    "90d": -26.84,
+    "180d": -86.2,
+    "365d": -121.7
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 3.03
-    },
     {
       "date": "2025-03-27",
       "price": 3.02
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 0.92
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.93
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.37
-    },
     {
       "date": "2025-03-26",
       "value": 1.074
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.105
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.194
     }
   ]
 }

@@ -1,43 +1,39 @@
 {
   "ticker": "LDO-USD",
   "display_name": "LDO",
-  "price": 0.29,
-  "conviction": 11.3,
+  "price": 0.3,
+  "conviction": 24.4,
   "is_signal": false,
-  "mtmdi_zscore": -0.201,
-  "mtmdi_raw": 0.719,
-  "mtmdi_direction": 1.084,
-  "mtmdi_velocity": -0.203,
-  "cascade_score": 0.0052,
-  "momentum_persistence": -0.899,
-  "range_compression": 0.445,
-  "vol_30d": 64.4,
+  "mtmdi_zscore": 0.221,
+  "mtmdi_raw": 0.8,
+  "mtmdi_direction": 1.307,
+  "mtmdi_velocity": 0.438,
+  "cascade_score": 0.0101,
+  "momentum_persistence": -0.894,
+  "range_compression": 0.377,
+  "vol_30d": 63.9,
   "vol_regime": "high",
-  "drawdown": -80.8,
-  "position_in_range": 1.2,
+  "drawdown": -80.5,
+  "position_in_range": 1.6,
   "returns": {
-    "7d": -8.29,
-    "14d": 0.55,
-    "30d": -4.22,
-    "90d": -60.22,
-    "180d": -127.51,
-    "365d": -128.9
+    "7d": -1.07,
+    "14d": 1.0,
+    "30d": 0.63,
+    "90d": -59.0,
+    "180d": -129.51,
+    "365d": -126.13
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": false,
+    "velocity": true,
+    "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 1.02
-    },
     {
       "date": "2025-03-27",
       "price": 1.02
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 0.29
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.3
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.522
-    },
     {
       "date": "2025-03-26",
       "value": 0.536
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.201
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.221
     }
   ]
 }

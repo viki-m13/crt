@@ -1,43 +1,39 @@
 {
   "ticker": "ILV-USD",
   "display_name": "ILV",
-  "price": 3.67,
-  "conviction": 24.6,
+  "price": 3.74,
+  "conviction": 35.9,
   "is_signal": false,
-  "mtmdi_zscore": -1.157,
-  "mtmdi_raw": 0.51,
-  "mtmdi_direction": 0.204,
-  "mtmdi_velocity": -0.598,
-  "cascade_score": 0.03,
-  "momentum_persistence": -0.854,
-  "range_compression": 0.504,
-  "vol_30d": 72.6,
+  "mtmdi_zscore": -0.948,
+  "mtmdi_raw": 0.56,
+  "mtmdi_direction": 0.309,
+  "mtmdi_velocity": 0.083,
+  "cascade_score": 0.0872,
+  "momentum_persistence": -0.849,
+  "range_compression": 0.374,
+  "vol_30d": 70.4,
   "vol_regime": "high",
-  "drawdown": -83.0,
-  "position_in_range": 1.2,
+  "drawdown": -82.7,
+  "position_in_range": 1.5,
   "returns": {
-    "7d": -10.11,
-    "14d": -2.23,
-    "30d": -0.28,
-    "90d": -43.74,
-    "180d": -120.26,
-    "365d": -147.61
+    "7d": -4.74,
+    "14d": -7.54,
+    "30d": 6.8,
+    "90d": -41.13,
+    "180d": -123.61,
+    "365d": -143.48
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 15.1
-    },
     {
       "date": "2025-03-27",
       "price": 15.0
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 3.67
+    },
+    {
+      "date": "2026-03-25",
+      "price": 3.74
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.44
-    },
     {
       "date": "2025-03-26",
       "value": 1.112
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -1.157
+    },
+    {
+      "date": "2026-03-25",
+      "value": -0.948
     }
   ]
 }

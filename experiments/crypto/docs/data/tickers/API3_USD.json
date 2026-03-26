@@ -1,43 +1,39 @@
 {
   "ticker": "API3-USD",
   "display_name": "API3",
-  "price": 0.28,
-  "conviction": 24.2,
+  "price": 0.29,
+  "conviction": 24.3,
   "is_signal": false,
-  "mtmdi_zscore": -0.183,
-  "mtmdi_raw": 0.658,
-  "mtmdi_direction": 1.03,
-  "mtmdi_velocity": 0.583,
-  "cascade_score": 0.0098,
-  "momentum_persistence": -0.811,
-  "range_compression": 0.604,
-  "vol_30d": 43.1,
+  "mtmdi_zscore": -0.129,
+  "mtmdi_raw": 0.672,
+  "mtmdi_direction": 1.086,
+  "mtmdi_velocity": 0.105,
+  "cascade_score": 0.0214,
+  "momentum_persistence": 1.436,
+  "range_compression": 0.624,
+  "vol_30d": 43.4,
   "vol_regime": "normal",
-  "drawdown": -82.1,
-  "position_in_range": 0.9,
+  "drawdown": -81.5,
+  "position_in_range": 1.6,
   "returns": {
-    "7d": -4.87,
-    "14d": -0.23,
-    "30d": -5.05,
-    "90d": -46.62,
-    "180d": -97.61,
-    "365d": -155.02
+    "7d": 0.23,
+    "14d": -0.72,
+    "30d": 1.29,
+    "90d": -39.09,
+    "180d": -98.2,
+    "365d": -146.59
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": true,
-    "cascade": false,
-    "momentum": false,
+    "velocity": false,
+    "cascade": true,
+    "momentum": true,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 1.22
-    },
     {
       "date": "2025-03-27",
       "price": 1.17
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 0.28
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.29
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 3.676
-    },
     {
       "date": "2025-03-26",
       "value": 3.341
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.183
+    },
+    {
+      "date": "2026-03-25",
+      "value": -0.129
     }
   ]
 }

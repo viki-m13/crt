@@ -2,42 +2,38 @@
   "ticker": "MANA-USD",
   "display_name": "MANA",
   "price": 0.09,
-  "conviction": 17.0,
+  "conviction": 35.3,
   "is_signal": false,
-  "mtmdi_zscore": -0.019,
-  "mtmdi_raw": 0.69,
-  "mtmdi_direction": 0.755,
-  "mtmdi_velocity": 0.116,
-  "cascade_score": 0.036,
-  "momentum_persistence": -0.878,
-  "range_compression": 0.521,
-  "vol_30d": 62.5,
+  "mtmdi_zscore": 0.273,
+  "mtmdi_raw": 0.766,
+  "mtmdi_direction": 0.951,
+  "mtmdi_velocity": 0.512,
+  "cascade_score": 0.0554,
+  "momentum_persistence": -0.873,
+  "range_compression": 0.376,
+  "vol_30d": 61.2,
   "vol_regime": "high",
-  "drawdown": -77.0,
-  "position_in_range": 1.7,
+  "drawdown": -76.8,
+  "position_in_range": 1.8,
   "returns": {
-    "7d": -8.48,
-    "14d": -2.56,
-    "30d": -6.7,
-    "90d": -29.95,
-    "180d": -113.67,
-    "365d": -114.66
+    "7d": -3.35,
+    "14d": -3.63,
+    "30d": -2.4,
+    "90d": -26.86,
+    "180d": -117.38,
+    "365d": -115.55
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 0.28
-    },
     {
       "date": "2025-03-27",
       "price": 0.28
@@ -1489,13 +1485,13 @@
     {
       "date": "2026-03-24",
       "price": 0.09
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.09
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.043
-    },
     {
       "date": "2025-03-26",
       "value": 0.975
@@ -2951,6 +2947,10 @@
     {
       "date": "2026-03-24",
       "value": -0.019
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.273
     }
   ]
 }
