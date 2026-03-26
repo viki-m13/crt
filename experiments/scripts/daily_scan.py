@@ -61,11 +61,26 @@ MTMDI_ZSCORE_ENTRY = 1.5
 CACS_ENTRY_THRESHOLD = 0.02
 MPR_THRESHOLD = 0.5
 MTMDI_ZSCORE_EXIT = 0.5    # Exit when dispersion resolves (matches backtest)
-STOP_LOSS = -0.07
-TAKE_PROFIT = 0.39
-MAX_HOLD_DAYS = 21
+STOP_LOSS = -0.08
+TAKE_PROFIT = 0.20
+MAX_HOLD_DAYS = 63
 VOL_TARGET = 0.15
+MAX_POSITION_PCT = 0.05    # 5% per position (matches backtest)
+MAX_TOTAL_EXPOSURE = 0.80  # 80% total exposure (matches backtest)
 TRANSACTION_COST_BPS = 10  # 10bps per trade each way (matches backtest)
+
+
+def compute_position_size(strength, vol_21d, vol_regime):
+    """Volatility-targeted position sizing matching backtest strategy.py logic."""
+    if vol_21d < 0.01:
+        vol_21d = 0.01
+    base_size = VOL_TARGET / vol_21d
+    size = base_size * strength
+    if vol_regime == "high":
+        size *= 0.5
+    elif vol_regime == "low":
+        size *= 1.0
+    return min(size, MAX_POSITION_PCT)
 
 
 def detect_regime(vol_ratio_5_21, vol_21d):
@@ -144,11 +159,17 @@ def score_stock(ticker, features, close_series):
     # Is this an actionable signal?
     is_signal = bool(has_mtmdi and has_direction and (has_cascade or has_momentum))
 
+    # Signal strength (0-1) for position sizing — matches backtest
+    strength = conviction / 100.0
+
     # Regime
     regime = detect_regime(
         vol_ratio if not np.isnan(vol_ratio) else 1.0,
         vol_21d
     )
+
+    # Compute position size matching backtest
+    pos_size = compute_position_size(strength, vol_21d, regime) if is_signal else 0.0
 
     # Historical returns for context
     rets = {}
@@ -189,8 +210,11 @@ def score_stock(ticker, features, close_series):
         "mtmdi_direction": round(float(mtmdi_dir), 3) if not np.isnan(mtmdi_dir) else None,
         "cascade_score": round(float(cacs_val), 4),
         "momentum_persistence": round(float(mpr_val), 3),
-        "vol_21d": round(float(vol_21d) * 100, 1),  # as percentage
+        "strength": round(float(strength), 4),
+        "vol_21d_raw": float(vol_21d),  # raw decimal for position sizing
+        "vol_21d": round(float(vol_21d) * 100, 1),  # as percentage for display
         "vol_regime": regime,
+        "position_size": round(float(pos_size), 4),
         "drawdown": round(float(dd) * 100, 1) if not np.isnan(dd) else None,
         "position_in_range": round(float(pos_range) * 100, 1) if not np.isnan(pos_range) else None,
         "returns": rets,
@@ -267,6 +291,7 @@ def update_trades(all_scores, data, features_cache=None):
             gap_pct = (open_price / signal_close) - 1
             if gap_pct <= STOP_LOSS:
                 continue
+        sig_size = sig.get("position_size", MAX_POSITION_PCT)
         still_open.append({
             "ticker": ticker,
             "entry_date": today,
@@ -275,6 +300,7 @@ def update_trades(all_scores, data, features_cache=None):
             "unrealized_pnl_pct": 0.0,
             "days_held": 0,
             "conviction": sig.get("conviction", 0),
+            "position_size": round(sig_size, 4),
             "stop_loss_price": round(open_price * (1 + STOP_LOSS), 2),
             "take_profit_price": round(open_price * (1 + TAKE_PROFIT), 2),
         })
@@ -324,6 +350,7 @@ def update_trades(all_scores, data, features_cache=None):
                 "days_held": days_held,
                 "exit_reason": exit_reason,
                 "conviction": pos.get("conviction", 0),
+                "position_size": pos.get("position_size", MAX_POSITION_PCT),
             })
         else:
             pos["current_price"] = current_price
@@ -342,54 +369,86 @@ def update_trades(all_scores, data, features_cache=None):
     current_open_tickers = {p["ticker"] for p in remaining_open}
 
     new_pending = []
-    for s in active_signals:
+    # Respect max total exposure when queuing new signals
+    current_exposure = sum(p.get("position_size", MAX_POSITION_PCT) for p in remaining_open)
+    for s in sorted(active_signals, key=lambda x: x["conviction"], reverse=True):
         if s["ticker"] not in current_open_tickers and s["ticker"] not in closed_recently:
+            sig_size = s.get("position_size", MAX_POSITION_PCT)
+            if current_exposure + sig_size > MAX_TOTAL_EXPOSURE:
+                continue
             new_pending.append({
                 "ticker": s["ticker"],
                 "conviction": round(s["conviction"], 1),
                 "signal_close_price": s["price"],  # Today's close for gap-down check
+                "position_size": round(sig_size, 4),
+                "vol_21d_raw": s.get("vol_21d_raw", 0.15),
+                "vol_regime": s.get("vol_regime", "normal"),
             })
+            current_exposure += sig_size
     state["pending_signals"] = new_pending
 
-    # --- Update equity curve ---
+    # --- Update equity curve (size-weighted returns matching backtest) ---
     if not state["equity_curve"]:
         prev_value = 10000.0
     else:
         prev_value = state["equity_curve"][-1]["value"]
 
     n_open = len(remaining_open)
-    if n_open > 0:
-        avg_unrealized = sum(p.get("unrealized_pnl_pct", 0) for p in remaining_open) / n_open
-        if state["equity_curve"]:
-            prev_avg = state["equity_curve"][-1].get("avg_unrealized", 0)
-            daily_change_pct = (avg_unrealized - prev_avg) / 100
-        else:
-            daily_change_pct = 0
-    else:
-        avg_unrealized = 0
-        daily_change_pct = 0
 
-    # Account for closed trades today (realized P&L)
+    # Compute size-weighted daily return like backtest:
+    # daily_ret = sum(stock_return * position_size) for all open positions
+    daily_ret = 0.0
+    prev_prices = state.get("_prev_prices", {})
+
+    for pos in remaining_open:
+        ticker = pos["ticker"]
+        current_price = pos.get("current_price", pos["entry_price"])
+        size = pos.get("position_size", MAX_POSITION_PCT)
+
+        if pos["entry_date"] == today:
+            # Entry day: return from open (entry price) to close
+            if pos["entry_price"] > 0:
+                stock_ret = (current_price / pos["entry_price"]) - 1
+                daily_ret += stock_ret * size
+        else:
+            # Subsequent days: return from previous close to current close
+            prev_price = prev_prices.get(ticker, pos["entry_price"])
+            if prev_price > 0:
+                stock_ret = (current_price / prev_price) - 1
+                daily_ret += stock_ret * size
+
+    # Account for closed trades today (realized P&L weighted by position size)
     closed_today = [t for t in state["closed_trades"] if t.get("exit_date") == today]
     for ct in closed_today:
-        daily_change_pct += (ct["pnl_pct"] / 100) / max(n_open + len(closed_today), 1)
+        ct_ticker = ct["ticker"]
+        ct_size = ct.get("position_size", MAX_POSITION_PCT)
+        prev_price = prev_prices.get(ct_ticker, ct["entry_price"])
+        if prev_price > 0:
+            stock_ret = (ct["exit_price"] / prev_price) - 1
+            daily_ret += stock_ret * ct_size
 
-    new_value = round(prev_value * (1 + daily_change_pct), 2)
+    new_value = round(prev_value * (1 + daily_ret), 2)
 
+    # Store current prices for next day's return calculation
+    new_prev_prices = {}
+    for pos in remaining_open:
+        new_prev_prices[pos["ticker"]] = pos.get("current_price", pos["entry_price"])
+    state["_prev_prices"] = new_prev_prices
+
+    avg_unrealized = 0
+    if n_open > 0:
+        avg_unrealized = sum(p.get("unrealized_pnl_pct", 0) for p in remaining_open) / n_open
+
+    eq_entry = {
+        "date": today,
+        "value": new_value,
+        "n_open": n_open,
+        "avg_unrealized": round(avg_unrealized, 2),
+    }
     if state["equity_curve"] and state["equity_curve"][-1]["date"] == today:
-        state["equity_curve"][-1] = {
-            "date": today,
-            "value": new_value,
-            "n_open": n_open,
-            "avg_unrealized": round(avg_unrealized, 2),
-        }
+        state["equity_curve"][-1] = eq_entry
     else:
-        state["equity_curve"].append({
-            "date": today,
-            "value": new_value,
-            "n_open": n_open,
-            "avg_unrealized": round(avg_unrealized, 2),
-        })
+        state["equity_curve"].append(eq_entry)
 
     save_trades_state(state)
     return state
@@ -461,9 +520,10 @@ def backfill_trades(data, market_close, lookback_days=63):
     all_dates = spy_df.index[-lookback_days:]
     positions = {}  # ticker -> dict
     closed_trades = []
-    pending_signals = []  # (ticker, strength, conviction, signal_close)
+    pending_signals = []  # (ticker, strength, conviction, signal_close, vol_21d, vol_regime)
     equity_value = 10000.0
     equity_curve = []
+    prev_close_prices = {}  # for daily return calculation
 
     for date in all_dates:
         date_str = str(date.date())
@@ -483,7 +543,10 @@ def backfill_trades(data, market_close, lookback_days=63):
                         close_prices[ticker] = float(val)
 
         # Execute pending from yesterday at today's open
-        for sig_ticker, sig_strength, sig_conv, sig_close in pending_signals:
+        current_exposure = sum(
+            pos.get("position_size", MAX_POSITION_PCT) for pos in positions.values()
+        )
+        for sig_ticker, sig_strength, sig_conv, sig_close, sig_vol, sig_regime in pending_signals:
             if sig_ticker in positions:
                 continue
             op = open_prices.get(sig_ticker)
@@ -493,16 +556,21 @@ def backfill_trades(data, market_close, lookback_days=63):
                 gap = (op / sig_close) - 1
                 if gap <= STOP_LOSS:
                     continue
+            pos_size = compute_position_size(sig_strength, sig_vol, sig_regime)
+            if current_exposure + pos_size > MAX_TOTAL_EXPOSURE:
+                continue
             positions[sig_ticker] = {
                 "entry_date": date_str,
                 "entry_price": round(op, 2),
                 "conviction": sig_conv,
+                "position_size": round(pos_size, 4),
                 "days_held": 0,
             }
+            current_exposure += pos_size
         pending_signals = []
 
         # Check exits at close
-        prev_equity_pnl = 0.0
+        exited_today = []
         for ticker in list(positions.keys()):
             pos = positions[ticker]
             pos["days_held"] += 1
@@ -544,8 +612,12 @@ def backfill_trades(data, market_close, lookback_days=63):
                     "days_held": cal_days,
                     "exit_reason": exit_reason,
                     "conviction": pos.get("conviction", 0),
+                    "position_size": pos.get("position_size", MAX_POSITION_PCT),
                 })
-                del positions[ticker]
+                exited_today.append(ticker)
+
+        for ticker in exited_today:
+            del positions[ticker]
 
         # Generate new signals
         features_dict = {}
@@ -560,6 +632,8 @@ def backfill_trades(data, market_close, lookback_days=63):
             mtmdi_dir = feat_row.get("mtmdi_direction", 0)
             cacs = feat_row.get("cacs", 0)
             mpr = feat_row.get("mpr_zscore", 0)
+            vol_21d = feat_row.get("vol_21d", 0.15)
+            vol_ratio = feat_row.get("vol_ratio_5_21", 1.0)
 
             if any(np.isnan(v) for v in [mtmdi_z, mtmdi_dir]):
                 continue
@@ -580,37 +654,61 @@ def backfill_trades(data, market_close, lookback_days=63):
             )
             conviction = round(strength * 100, 1)
             close_p = close_prices.get(ticker, 0)
-            pending_signals.append((ticker, strength, conviction, close_p))
+            if np.isnan(vol_21d):
+                vol_21d = 0.15
+            if np.isnan(vol_ratio):
+                vol_ratio = 1.0
+            vol_regime = detect_regime(vol_ratio, vol_21d)
+            pending_signals.append((ticker, strength, conviction, close_p, vol_21d, vol_regime))
 
-        # Update equity curve (equal-weighted open position return)
+        # Update equity curve (size-weighted returns matching backtest)
+        daily_ret = 0.0
+        for ticker, pos in positions.items():
+            cp = close_prices.get(ticker)
+            if cp is None:
+                continue
+            size = pos.get("position_size", MAX_POSITION_PCT)
+            if pos["entry_date"] == date_str:
+                # Entry day: return from open (entry price) to close
+                if pos["entry_price"] > 0:
+                    stock_ret = (cp / pos["entry_price"]) - 1
+                    daily_ret += stock_ret * size
+            else:
+                # Subsequent days: return from previous close to current close
+                prev_price = prev_close_prices.get(ticker, pos["entry_price"])
+                if prev_price > 0:
+                    stock_ret = (cp / prev_price) - 1
+                    daily_ret += stock_ret * size
+
+        # Account for exited positions' returns today
+        closed_today = [t for t in closed_trades if t["exit_date"] == date_str]
+        for ct in closed_today:
+            ct_size = ct.get("position_size", MAX_POSITION_PCT)
+            prev_price = prev_close_prices.get(ct["ticker"], ct["entry_price"])
+            if prev_price > 0:
+                stock_ret = (ct["exit_price"] / prev_price) - 1
+                daily_ret += stock_ret * ct_size
+
+        equity_value = round(equity_value * (1 + daily_ret), 2)
+
         n_pos = len(positions)
+        avg_unrealized_pct = 0
         if n_pos > 0:
             total_unrealized = sum(
                 ((close_prices.get(t, positions[t]["entry_price"]) / positions[t]["entry_price"]) - 1)
                 for t in positions if positions[t]["entry_price"] > 0
             )
             avg_unrealized_pct = (total_unrealized / n_pos) * 100
-            if equity_curve:
-                prev_avg = equity_curve[-1].get("avg_unrealized", 0)
-                daily_change = (avg_unrealized_pct - prev_avg) / 100
-            else:
-                daily_change = 0
-        else:
-            avg_unrealized_pct = 0
-            daily_change = 0
 
-        # Account for trades closed today
-        closed_today = [t for t in closed_trades if t["exit_date"] == date_str]
-        for ct in closed_today:
-            daily_change += (ct["pnl_pct"] / 100) / max(n_pos + len(closed_today), 1)
-
-        equity_value = round(equity_value * (1 + daily_change), 2)
         equity_curve.append({
             "date": date_str,
             "value": equity_value,
             "n_open": n_pos,
             "avg_unrealized": round(avg_unrealized_pct, 2),
         })
+
+        # Store close prices for next day's return calculation
+        prev_close_prices = dict(close_prices)
 
     # Convert remaining positions to open_positions format
     open_positions = []
@@ -626,13 +724,15 @@ def backfill_trades(data, market_close, lookback_days=63):
             "unrealized_pnl_pct": round(pnl * 100, 2),
             "days_held": cal_days,
             "conviction": pos.get("conviction", 0),
+            "position_size": pos.get("position_size", MAX_POSITION_PCT),
             "stop_loss_price": round(pos["entry_price"] * (1 + STOP_LOSS), 2),
             "take_profit_price": round(pos["entry_price"] * (1 + TAKE_PROFIT), 2),
         })
 
     pending_out = [
-        {"ticker": t, "conviction": c, "signal_close_price": sc}
-        for t, s, c, sc in pending_signals
+        {"ticker": t, "conviction": c, "signal_close_price": sc,
+         "position_size": round(compute_position_size(s, v, vr), 4)}
+        for t, s, c, sc, v, vr in pending_signals
     ]
 
     print(f"  Backfill complete: {len(closed_trades)} closed trades, "
