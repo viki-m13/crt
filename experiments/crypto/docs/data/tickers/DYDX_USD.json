@@ -2,37 +2,37 @@
   "ticker": "DYDX-USD",
   "display_name": "DYDX",
   "price": 0.09,
-  "conviction": 34.5,
-  "is_signal": true,
-  "mtmdi_zscore": 1.072,
-  "mtmdi_raw": 0.994,
-  "mtmdi_direction": 1.572,
-  "mtmdi_velocity": 0.531,
-  "cascade_score": 0.0059,
-  "momentum_persistence": -0.808,
-  "range_compression": 0.377,
-  "vol_30d": 80.2,
+  "conviction": 60.6,
+  "is_signal": false,
+  "mtmdi_zscore": 1.42,
+  "mtmdi_raw": 1.077,
+  "mtmdi_direction": 1.757,
+  "mtmdi_velocity": 0.802,
+  "cascade_score": -0.0476,
+  "momentum_persistence": 1.365,
+  "range_compression": 0.519,
+  "vol_30d": 80.0,
   "vol_regime": "high",
-  "drawdown": -88.3,
-  "position_in_range": 1.2,
+  "drawdown": -87.9,
+  "position_in_range": 1.7,
   "returns": {
-    "7d": -1.43,
-    "14d": 1.45,
-    "30d": -0.79,
-    "90d": -63.45,
-    "180d": -189.11,
-    "365d": -212.47
+    "7d": 5.75,
+    "14d": 2.49,
+    "30d": -1.12,
+    "90d": -63.19,
+    "180d": -190.29,
+    "365d": -209.38
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
     "velocity": true,
     "cascade": false,
-    "momentum": false,
-    "range_compress": true,
-    "vol_surge": true
+    "momentum": true,
+    "range_compress": false,
+    "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
     {
       "date": "2025-03-27",
@@ -1489,13 +1489,13 @@
     {
       "date": "2026-03-25",
       "price": 0.09
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.09
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-26",
-      "value": 1.459
-    },
     {
       "date": "2025-03-27",
       "value": 1.285
@@ -2951,6 +2951,10 @@
     {
       "date": "2026-03-25",
       "value": 1.072
+    },
+    {
+      "date": "2026-03-26",
+      "value": 1.42
     }
   ]
 }

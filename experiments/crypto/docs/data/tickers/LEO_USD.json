@@ -1,38 +1,38 @@
 {
   "ticker": "LEO-USD",
   "display_name": "LEO",
-  "price": 9.49,
-  "conviction": 48.1,
-  "is_signal": true,
-  "mtmdi_zscore": 1.311,
-  "mtmdi_raw": 1.357,
-  "mtmdi_direction": 1.252,
-  "mtmdi_velocity": 0.513,
-  "cascade_score": -0.0405,
-  "momentum_persistence": 0.605,
-  "range_compression": 0.329,
-  "vol_30d": 27.0,
-  "vol_regime": "normal",
-  "drawdown": -3.7,
-  "position_in_range": 88.2,
+  "price": 9.52,
+  "conviction": 31.0,
+  "is_signal": false,
+  "mtmdi_zscore": 0.848,
+  "mtmdi_raw": 1.142,
+  "mtmdi_direction": 0.97,
+  "mtmdi_velocity": -0.6,
+  "cascade_score": -0.0519,
+  "momentum_persistence": 0.503,
+  "range_compression": 0.402,
+  "vol_30d": 17.3,
+  "vol_regime": "low",
+  "drawdown": -3.3,
+  "position_in_range": 89.3,
   "returns": {
-    "7d": 4.58,
-    "14d": 3.98,
-    "30d": 16.52,
-    "90d": 11.89,
-    "180d": 0.3,
-    "365d": -2.81
+    "7d": 3.62,
+    "14d": 5.03,
+    "30d": 10.59,
+    "90d": 11.47,
+    "180d": 0.16,
+    "365d": -2.76
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": false,
     "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
     {
       "date": "2025-03-27",
@@ -1489,13 +1489,13 @@
     {
       "date": "2026-03-25",
       "price": 9.49
+    },
+    {
+      "date": "2026-03-26",
+      "price": 9.52
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-26",
-      "value": -0.954
-    },
     {
       "date": "2025-03-27",
       "value": -1.087
@@ -2951,6 +2951,10 @@
     {
       "date": "2026-03-25",
       "value": 1.311
+    },
+    {
+      "date": "2026-03-26",
+      "value": 0.848
     }
   ]
 }

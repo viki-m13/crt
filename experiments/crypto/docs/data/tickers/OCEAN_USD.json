@@ -1,38 +1,38 @@
 {
   "ticker": "OCEAN-USD",
   "display_name": "OCEAN",
-  "price": 0.13,
-  "conviction": 16.2,
+  "price": 0.12,
+  "conviction": 32.2,
   "is_signal": false,
-  "mtmdi_zscore": -0.261,
-  "mtmdi_raw": 0.625,
-  "mtmdi_direction": 0.477,
-  "mtmdi_velocity": -0.129,
-  "cascade_score": -0.0107,
-  "momentum_persistence": -0.88,
-  "range_compression": 0.225,
+  "mtmdi_zscore": -0.338,
+  "mtmdi_raw": 0.6,
+  "mtmdi_direction": 0.525,
+  "mtmdi_velocity": -0.355,
+  "cascade_score": -0.0398,
+  "momentum_persistence": 1.332,
+  "range_compression": 0.243,
   "vol_30d": 59.7,
   "vol_regime": "normal",
-  "drawdown": -68.0,
-  "position_in_range": 8.8,
+  "drawdown": -68.7,
+  "position_in_range": 8.0,
   "returns": {
-    "7d": -0.97,
-    "14d": 2.81,
-    "30d": 21.06,
-    "90d": -27.58,
-    "180d": -71.47,
-    "365d": -67.39
+    "7d": 1.02,
+    "14d": 1.42,
+    "30d": 21.07,
+    "90d": -26.83,
+    "180d": -71.2,
+    "365d": -69.93
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
     {
       "date": "2025-03-27",
@@ -1489,13 +1489,13 @@
     {
       "date": "2026-03-25",
       "price": 0.13
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.12
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-26",
-      "value": 1.622
-    },
     {
       "date": "2025-03-27",
       "value": 1.805
@@ -2951,6 +2951,10 @@
     {
       "date": "2026-03-25",
       "value": -0.261
+    },
+    {
+      "date": "2026-03-26",
+      "value": -0.338
     }
   ]
 }

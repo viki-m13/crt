@@ -1,27 +1,27 @@
 {
   "ticker": "SNX-USD",
   "display_name": "SNX",
-  "price": 0.3,
-  "conviction": 45.1,
+  "price": 0.29,
+  "conviction": 33.6,
   "is_signal": false,
-  "mtmdi_zscore": -0.663,
-  "mtmdi_raw": 0.505,
-  "mtmdi_direction": 0.307,
-  "mtmdi_velocity": 0.721,
-  "cascade_score": 0.076,
-  "momentum_persistence": -0.837,
-  "range_compression": 0.585,
-  "vol_30d": 65.3,
+  "mtmdi_zscore": -0.517,
+  "mtmdi_raw": 0.546,
+  "mtmdi_direction": 0.153,
+  "mtmdi_velocity": 0.302,
+  "cascade_score": 0.0661,
+  "momentum_persistence": -0.832,
+  "range_compression": 0.434,
+  "vol_30d": 66.4,
   "vol_regime": "high",
-  "drawdown": -86.9,
-  "position_in_range": 1.0,
+  "drawdown": -87.6,
+  "position_in_range": 0.3,
   "returns": {
-    "7d": -4.12,
-    "14d": -6.12,
-    "30d": -21.82,
-    "90d": -33.93,
-    "180d": -124.41,
-    "365d": -113.07
+    "7d": -15.08,
+    "14d": -9.7,
+    "30d": -23.45,
+    "90d": -41.73,
+    "180d": -136.92,
+    "365d": -115.42
   },
   "signals": {
     "mtmdi": false,
@@ -29,10 +29,10 @@
     "velocity": true,
     "cascade": true,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
     {
       "date": "2025-03-27",
@@ -1489,13 +1489,13 @@
     {
       "date": "2026-03-25",
       "price": 0.3
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.29
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-26",
-      "value": 0.927
-    },
     {
       "date": "2025-03-27",
       "value": 0.984
@@ -2951,6 +2951,10 @@
     {
       "date": "2026-03-25",
       "value": -0.663
+    },
+    {
+      "date": "2026-03-26",
+      "value": -0.517
     }
   ]
 }
