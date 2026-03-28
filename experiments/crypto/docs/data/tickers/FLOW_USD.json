@@ -2,42 +2,38 @@
   "ticker": "FLOW-USD",
   "display_name": "FLOW",
   "price": 0.03,
-  "conviction": 67.4,
-  "is_signal": true,
-  "mtmdi_zscore": 1.206,
-  "mtmdi_raw": 1.231,
-  "mtmdi_direction": 1.541,
-  "mtmdi_velocity": 0.686,
-  "cascade_score": 0.3819,
-  "momentum_persistence": 1.395,
+  "conviction": 36.5,
+  "is_signal": false,
+  "mtmdi_zscore": 0.884,
+  "mtmdi_raw": 1.108,
+  "mtmdi_direction": 1.276,
+  "mtmdi_velocity": -0.449,
+  "cascade_score": 0.3446,
+  "momentum_persistence": -0.771,
   "range_compression": 0.153,
-  "vol_30d": 204.8,
+  "vol_30d": 203.7,
   "vol_regime": "high",
-  "drawdown": -93.2,
-  "position_in_range": 0.6,
+  "drawdown": -93.5,
+  "position_in_range": 0.3,
   "returns": {
-    "7d": 0.11,
-    "14d": -51.15,
-    "30d": -8.5,
-    "90d": -168.97,
-    "180d": -239.31,
-    "365d": -258.98
+    "7d": -0.02,
+    "14d": -49.84,
+    "30d": -19.26,
+    "90d": -133.16,
+    "180d": -245.39,
+    "365d": -262.29
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": true,
-    "momentum": true,
+    "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 4,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-27",
-      "price": 0.42
-    },
     {
       "date": "2025-03-28",
       "price": 0.39
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-26",
       "price": 0.03
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.03
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-27",
-      "value": 1.166
-    },
     {
       "date": "2025-03-28",
       "value": 0.841
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-26",
       "value": 1.206
+    },
+    {
+      "date": "2026-03-27",
+      "value": 0.884
     }
   ]
 }

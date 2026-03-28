@@ -1,43 +1,39 @@
 {
   "ticker": "MINA-USD",
   "display_name": "MINA",
-  "price": 0.06,
-  "conviction": 14.8,
+  "price": 0.05,
+  "conviction": 23.4,
   "is_signal": false,
-  "mtmdi_zscore": -0.72,
-  "mtmdi_raw": 0.483,
-  "mtmdi_direction": 0.424,
-  "mtmdi_velocity": -0.238,
-  "cascade_score": -0.0036,
-  "momentum_persistence": -0.746,
-  "range_compression": 0.536,
-  "vol_30d": 50.0,
+  "mtmdi_zscore": -1.12,
+  "mtmdi_raw": 0.367,
+  "mtmdi_direction": 0.19,
+  "mtmdi_velocity": -0.408,
+  "cascade_score": 0.0352,
+  "momentum_persistence": -0.742,
+  "range_compression": 0.626,
+  "vol_30d": 46.7,
   "vol_regime": "normal",
-  "drawdown": -81.2,
-  "position_in_range": 1.0,
+  "drawdown": -82.1,
+  "position_in_range": 0.0,
   "returns": {
-    "7d": -7.43,
-    "14d": -1.56,
-    "30d": -1.67,
-    "90d": -34.58,
-    "180d": -104.2,
-    "365d": -160.41
+    "7d": -12.05,
+    "14d": -9.3,
+    "30d": -12.7,
+    "90d": -43.49,
+    "180d": -109.89,
+    "365d": -164.75
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": true,
     "velocity": false,
-    "cascade": false,
+    "cascade": true,
     "momentum": false,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-03-27",
-      "price": 0.28
-    },
     {
       "date": "2025-03-28",
       "price": 0.26
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-26",
       "price": 0.06
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.05
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-27",
-      "value": 1.032
-    },
     {
       "date": "2025-03-28",
       "value": 0.438
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-26",
       "value": -0.72
+    },
+    {
+      "date": "2026-03-27",
+      "value": -1.12
     }
   ]
 }

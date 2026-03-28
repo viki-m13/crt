@@ -2,42 +2,38 @@
   "ticker": "JUP-USD",
   "display_name": "JUP",
   "price": 0.0,
-  "conviction": 59.4,
-  "is_signal": true,
-  "mtmdi_zscore": 1.023,
-  "mtmdi_raw": 1.181,
-  "mtmdi_direction": 0.075,
-  "mtmdi_velocity": 1.047,
-  "cascade_score": -0.1906,
-  "momentum_persistence": 0.152,
+  "conviction": 24.5,
+  "is_signal": false,
+  "mtmdi_zscore": -0.153,
+  "mtmdi_raw": 0.479,
+  "mtmdi_direction": 0.86,
+  "mtmdi_velocity": -0.294,
+  "cascade_score": -0.2026,
+  "momentum_persistence": -1.016,
   "range_compression": 0.468,
-  "vol_30d": 118.0,
+  "vol_30d": 103.6,
   "vol_regime": "high",
   "drawdown": -100.0,
   "position_in_range": 0.0,
   "returns": {
-    "7d": 9.02,
-    "14d": 12.96,
-    "30d": 25.3,
-    "90d": 214.01,
-    "180d": -120.98,
-    "365d": -117.41
+    "7d": -2.83,
+    "14d": 6.34,
+    "30d": 3.76,
+    "90d": -99.66,
+    "180d": -127.13,
+    "365d": -86.76
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": false,
-    "momentum": true,
+    "momentum": false,
     "range_compress": true,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-27",
-      "price": 0.0
-    },
     {
       "date": "2025-03-28",
       "price": 0.0
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-26",
       "price": 0.0
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.0
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-27",
-      "value": 0.998
-    },
     {
       "date": "2025-03-28",
       "value": -1.271
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-26",
       "value": 1.023
+    },
+    {
+      "date": "2026-03-27",
+      "value": -0.153
     }
   ]
 }
