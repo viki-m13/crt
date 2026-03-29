@@ -415,7 +415,7 @@ if __name__ == "__main__":
              "sector": h.get("sector"), "sector_name": h.get("sector_name", "")}
             for h in all_logs.get("TEST", [])[-15:]
         ],
-        # Complete trade history — all holding periods with returns
+        # Trade history — last 100 trades for web (full history is too large)
         "trade_history": [
             {
                 "entry": str(t["entry_date"].date()),
@@ -430,7 +430,7 @@ if __name__ == "__main__":
                 "days": t["days_held"],
             }
             for name in ["FULL"]
-            for t in all_results.get(name, {}).get("trades", [])
+            for t in all_results.get(name, {}).get("trades", [])[-10:]
         ],
     }
 
