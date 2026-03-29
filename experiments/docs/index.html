@@ -152,19 +152,30 @@
     <div id="candidatesList"></div>
   </div>
 
-  <!-- PICK HISTORY -->
+  <!-- PICK HISTORY — by stock with performance since purchase -->
   <div class="section" id="history">
-    <div class="section-title">Recent Pick History (Test Period)</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Actual forward returns for recent picks. Green = positive after 3/6 months.</p>
+    <div class="section-title">Recent Picks &mdash; Performance Since Purchase</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Shows actual performance from purchase date to latest close. Click any stock to see chart with entry points.</p>
+    <div id="picksByTicker"></div>
+
+    <div class="section-title" style="margin-top:24px">Full Pick Log</div>
     <table id="historyTable">
-      <thead><tr><th>Date</th><th>Pick</th><th>Score</th><th>Entry $</th><th>3-Month Return</th><th>6-Month Return</th></tr></thead>
+      <thead><tr><th>Date</th><th>Pick</th><th>Score</th><th>Entry $</th><th>Current $</th><th>Since Purchase</th><th>Days</th><th>3M Return</th></tr></thead>
       <tbody id="historyBody"></tbody>
     </table>
   </div>
 
-  <!-- SCREENER (inside stocks tab) -->
+  <!-- SCREENER — with clear guidance -->
   <div class="section" id="screener">
-    <div class="section-title">Full Screener</div>
+    <div class="section-title">Stock Screener</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;margin-bottom:16px">
+      <div style="font-weight:700;color:var(--green);margin-bottom:6px">How to read the score</div>
+      <div>The <strong>Score</strong> (0&ndash;1) combines multi-timeframe momentum (1Y, 6M, 3M returns), proximity to 52-week high, and low drawdown/volatility.</div>
+      <div style="margin-top:6px">&bull; <strong style="color:var(--green)">Score &gt; 0.8</strong>: Top-tier quality momentum. Strong buy candidate when market is BULLISH.</div>
+      <div>&bull; <strong>Score 0.5&ndash;0.8</strong>: Decent momentum but may not pass all quality filters.</div>
+      <div>&bull; <strong style="color:var(--muted)">Score &lt; 0.5</strong>: Weak momentum, in drawdown, or too volatile. Avoid.</div>
+      <div style="margin-top:6px;color:var(--muted)">The model picks the #1 stock by score. If no stocks have Score &gt; 0.8 AND pass all quality filters AND the market is healthy, it says WAIT.</div>
+    </div>
     <div class="controls">
       <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
       <button class="sort-btn active" data-sort="score" onclick="setSort('score')">Score</button>
@@ -344,15 +355,18 @@ function renderPick(){
 function renderAccuracy(){
   const el=document.getElementById('accuracyGrid');
   const perf=DATA.performance||{};
-  const periods=[
-    {name:'Training (2010-2019)',key:'train'},
-    {name:'Validation (2020-2022)',key:'validation'},
-    {name:'Out-of-Sample Test (2023-2026)',key:'test'}
-  ];
+  const periodOrder=['1999-2003','2004-2007','2008-2009','train','valid','test','full'];
+  const periodLabels={'1999-2003':'Dot-Com Bust (1999-2003)','2004-2007':'Bull (2004-2007)',
+    '2008-2009':'GFC (2008-2009)','train':'Train (2010-2019)',
+    'valid':'Validation (2020-2022)','test':'Out-of-Sample Test (2023-2026)',
+    'full':'FULL (1999-2026)'};
   let html='';
-  for(const p of periods){
-    const d=perf[p.key]||{};
-    html+=`<div style="margin-bottom:24px"><h3 style="font-size:14px;margin-bottom:12px">${p.name} &mdash; Picks: ${d.pick_rate||'—'}</h3><div class="grid">`;
+  for(const key of periodOrder){
+    const d=perf[key];
+    if(!d)continue;
+    const isFull=key==='full';
+    const border=isFull?'border:2px solid var(--green);padding:16px;border-radius:8px;':'';
+    html+=`<div style="margin-bottom:24px;${border}"><h3 style="font-size:14px;margin-bottom:12px">${periodLabels[key]||key} &mdash; Picks: ${d.pick_rate||'—'}</h3><div class="grid">`;
     for(const h of ['3m','6m','1y']){
       const hs=d[h]||{};
       if(!hs.n)continue;
@@ -404,21 +418,51 @@ function renderCandidates(){
 }
 
 function renderHistory(){
+  // By-ticker consolidated view
+  const byTicker=DATA.picks_by_ticker||[];
+  const container=document.getElementById('picksByTicker');
+  container.innerHTML='';
+  for(const group of byTicker.slice(0,12)){
+    const entries=group.entries||[];
+    const lastEntry=entries[entries.length-1];
+    const avgPerf=entries.reduce((s,e)=>s+e.perf,0)/entries.length;
+    const cls=avgPerf>=0?'pnl-pos':'pnl-neg';
+    container.innerHTML+=`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;cursor:pointer" onclick="showDetail('${group.ticker}')">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="ticker-sym" style="font-size:16px">${group.ticker}</span>
+          <span style="color:var(--muted)">${group.count} picks</span>
+          <span class="${cls}" style="margin-left:auto;font-size:16px;font-weight:700">${avgPerf>=0?'+':''}${avgPerf.toFixed(1)}% avg</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;font-size:11px">
+          ${entries.slice(-8).map(e=>{
+            const c=e.perf>=0?'var(--green)':'var(--red)';
+            return `<span style="background:var(--bg);padding:3px 8px;border-radius:4px">
+              ${e.date.slice(5)} <strong style="color:${c}">${e.perf>=0?'+':''}${e.perf.toFixed(1)}%</strong>
+            </span>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Full pick log with performance-to-date
   const body=document.getElementById('historyBody');
   const picks=(DATA.recent_picks||[]).slice().reverse();
   body.innerHTML='';
   for(const p of picks){
-    const cls3=p.return_3m==null?'':(p.return_3m>0?'pnl-pos':'pnl-neg');
-    const cls6=p.return_6m==null?'':(p.return_6m>0?'pnl-pos':'pnl-neg');
-    const r3=p.return_3m!=null?(p.return_3m>0?'+':'')+p.return_3m.toFixed(1)+'%':'pending...';
-    const r6=p.return_6m!=null?(p.return_6m>0?'+':'')+p.return_6m.toFixed(1)+'%':'pending...';
-    body.innerHTML+=`<tr>
+    const perfCls=p.perf_to_date>=0?'pnl-pos':'pnl-neg';
+    const perfStr=(p.perf_to_date>=0?'+':'')+p.perf_to_date.toFixed(1)+'%';
+    const r3=p.return_3m!=null?((p.return_3m>=0?'+':'')+p.return_3m.toFixed(1)+'%'):'<span style="color:var(--muted)">pending</span>';
+    const cls3=p.return_3m!=null?(p.return_3m>=0?'pnl-pos':'pnl-neg'):'';
+    body.innerHTML+=`<tr onclick="showDetail('${p.ticker}')" style="cursor:pointer">
       <td>${p.date}</td>
       <td><span class="ticker-sym">${p.ticker}</span></td>
       <td>${p.score}</td>
       <td>$${p.entry_price}</td>
-      <td class="${cls3}"><strong>${r3}</strong></td>
-      <td class="${cls6}"><strong>${r6}</strong></td>
+      <td>$${p.current_price}</td>
+      <td class="${perfCls}"><strong>${perfStr}</strong></td>
+      <td>${p.days_held}d</td>
+      <td class="${cls3}">${r3}</td>
     </tr>`;
   }
 }
