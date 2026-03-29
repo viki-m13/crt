@@ -204,36 +204,66 @@
       Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID. No survivorship bias (ETFs are permanent sectors).
     </p>
 
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.8;margin-bottom:24px">
-      <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--ink)">Exact Execution Instructions</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
-        <div>
-          <div style="font-weight:700;color:var(--green);margin-bottom:8px">STEP 1 &mdash; DAILY at market close (every trading day)</div>
-          <div style="padding-left:12px">
-            <div><strong>Check:</strong> Did SPY close above or below its <strong>30-day simple moving average</strong>?</div>
-            <div style="margin-top:8px">&bull; If SPY <strong style="color:var(--green)">ABOVE</strong> SMA30 &rarr; <strong>Stay invested</strong> (or enter if currently in cash)</div>
-            <div>&bull; If SPY <strong style="color:var(--red)">BELOW</strong> SMA30 &rarr; <strong>Sell everything at next day's open. Go 100% cash.</strong></div>
-            <div style="margin-top:8px;color:var(--muted)">This daily check is the safety switch. It has protected against every major crash since 1999 (dot-com, GFC, COVID, 2022 bear). When SPY crosses back above, you re-enter at the next open.</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.9;margin-bottom:24px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:16px;color:var(--ink)">Exact Execution Instructions</div>
+
+      <!-- STEP 1 -->
+      <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-weight:700;color:var(--green);font-size:14px;margin-bottom:10px">STEP 1 &mdash; CHECK EVERY DAY at market close</div>
+        <div style="padding-left:4px">
+          <div>At 4:00 PM ET, look up SPY's closing price and its <strong>30-day simple moving average</strong> (SMA30).</div>
+          <div style="margin-top:10px;padding:12px;background:rgba(63,185,80,.08);border-radius:6px;border-left:3px solid var(--green)">
+            <strong style="color:var(--green)">If SPY CLOSED ABOVE SMA30:</strong><br>
+            You should be invested. If you are already invested, do nothing. If you are in cash (from a previous exit), proceed to Step 2 to re-enter.
           </div>
-        </div>
-        <div>
-          <div style="font-weight:700;color:var(--blue);margin-bottom:8px">STEP 2 &mdash; MONTHLY on the 1st trading day of each month ONLY</div>
-          <div style="padding-left:12px">
-            <div><strong>Only if SPY is above SMA30</strong> (Step 1 says "invested"):</div>
-            <div style="margin-top:6px">Look up the 3-month (63 trading day) total return for each of the 9 sector ETFs: XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB.</div>
-            <div style="margin-top:6px">Whichever sector has the <strong>highest 3-month return</strong> gets <strong>40%</strong> of your portfolio. The other <strong>60%</strong> stays in <strong>SPY</strong>.</div>
-            <div style="margin-top:8px;color:var(--muted)"><strong>Important:</strong> The sector does NOT change mid-month. Even if a different sector becomes #1 on the 15th, you keep the one you picked on the 1st. Sector selection happens ONLY on the 1st trading day of the month.</div>
-            <div style="margin-top:6px;color:var(--muted)">If SPY drops below SMA30 mid-month (Step 1 triggers), you sell everything including the sector ETF. When SPY crosses back above, you re-enter with whatever sector is #1 at THAT moment (this counts as a re-entry, not a monthly rebalance).</div>
+          <div style="margin-top:8px;padding:12px;background:rgba(248,81,73,.08);border-radius:6px;border-left:3px solid var(--red)">
+            <strong style="color:var(--red)">If SPY CLOSED BELOW SMA30:</strong><br>
+            <strong>Sell everything at the next day's open.</strong> Sell both your SPY position AND your sector ETF position. Go to 100% cash. Do not re-enter until SPY closes back above SMA30 (which will trigger Step 2).
           </div>
         </div>
       </div>
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-        <div style="font-weight:700;color:var(--gold);margin-bottom:8px">POSITION SIZING</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px">
-          <div><strong>60%</strong> in SPY (market exposure)</div>
-          <div><strong>40%</strong> in the top sector ETF (momentum tilt)</div>
-          <div><strong>~26 trades/year</strong> total (monthly rotations + SMA entries/exits)</div>
-          <div>Transaction costs: ~3 bps per trade (sector ETFs are very liquid)</div>
+
+      <!-- STEP 2 -->
+      <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-weight:700;color:var(--blue);font-size:14px;margin-bottom:10px">STEP 2 &mdash; PICK THE SECTOR (two scenarios)</div>
+        <div style="padding-left:4px">
+          <div style="font-weight:700;margin-bottom:6px">Scenario A: It's the 1st trading day of a new month</div>
+          <div style="padding-left:12px;margin-bottom:12px">
+            If SPY is above SMA30 (Step 1 says invested), look up the <strong>3-month (63 trading day) total return</strong> for each of these 9 sector ETFs: <strong>XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</strong>. Whichever has the highest return becomes your sector pick for the month.<br>
+            <strong>Allocate:</strong> Put <strong>60% of your portfolio in SPY</strong> and <strong>40% in the winning sector ETF</strong>.<br>
+            <span style="color:var(--muted)">If you were already invested in a different sector, sell that sector ETF and buy the new one. Keep SPY.</span>
+          </div>
+
+          <div style="font-weight:700;margin-bottom:6px">Scenario B: SPY just crossed BACK above SMA30 (re-entry after being in cash)</div>
+          <div style="padding-left:12px;margin-bottom:12px">
+            This can happen on <strong>any day of the month</strong>, not just the 1st. When SPY closes above SMA30 after being below it:<br>
+            <strong>At the next day's open, buy:</strong><br>
+            &bull; <strong>60% of your portfolio in SPY</strong><br>
+            &bull; <strong>40% in whichever sector ETF currently has the highest 3-month return</strong> (check at that moment, same as Scenario A)<br>
+            <span style="color:var(--muted)">This is the same 60/40 split. You are fully re-entering the market with the best sector available right now.</span>
+          </div>
+
+          <div style="font-weight:700;margin-bottom:6px">What does NOT trigger a sector change</div>
+          <div style="padding-left:12px">
+            If it's the middle of the month (say the 15th) and a different sector has become #1, you do <strong>nothing</strong>. You keep the sector you picked on the 1st (Scenario A) or at re-entry (Scenario B). The sector only changes on the next 1st-of-month or at the next re-entry after a cash period.
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div style="background:var(--bg);border-radius:8px;padding:16px">
+        <div style="font-weight:700;color:var(--gold);font-size:14px;margin-bottom:10px">ALLOCATION &amp; COSTS</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+          <div>
+            <strong>When invested:</strong> 60% SPY + 40% top sector ETF<br>
+            <strong>When in cash:</strong> 100% cash (money market, T-bills, etc.)<br>
+            <strong>Trades per year:</strong> ~26 (monthly sector swaps + SMA entries/exits)
+          </div>
+          <div>
+            <strong>Sector ETFs used:</strong> XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB<br>
+            <strong>NOT used:</strong> XLRE, XLC (shorter history)<br>
+            <strong>Costs:</strong> ~3 bps per trade (ETFs are extremely liquid)
+          </div>
         </div>
       </div>
     </div>
