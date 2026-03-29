@@ -160,7 +160,7 @@
 
     <div class="section-title" style="margin-top:24px">Full Pick Log</div>
     <table id="historyTable">
-      <thead><tr><th>Date</th><th>Pick</th><th>Score</th><th>Entry $</th><th>Current $</th><th>Since Purchase</th><th>Days</th><th>3M Return</th></tr></thead>
+      <thead><tr><th>Date</th><th>Pick</th><th>Score</th><th>Entry $</th><th>Current $</th><th>Since Purchase</th><th>Days</th><th>3M Return</th><th>6M Return</th></tr></thead>
       <tbody id="historyBody"></tbody>
     </table>
   </div>
@@ -454,6 +454,8 @@ function renderHistory(){
     const perfStr=(p.perf_to_date>=0?'+':'')+p.perf_to_date.toFixed(1)+'%';
     const r3=p.return_3m!=null?((p.return_3m>=0?'+':'')+p.return_3m.toFixed(1)+'%'):'<span style="color:var(--muted)">pending</span>';
     const cls3=p.return_3m!=null?(p.return_3m>=0?'pnl-pos':'pnl-neg'):'';
+    const r6=p.return_6m!=null?((p.return_6m>=0?'+':'')+p.return_6m.toFixed(1)+'%'):'<span style="color:var(--muted)">pending</span>';
+    const cls6=p.return_6m!=null?(p.return_6m>=0?'pnl-pos':'pnl-neg'):'';
     body.innerHTML+=`<tr onclick="showDetail('${p.ticker}')" style="cursor:pointer">
       <td>${p.date}</td>
       <td><span class="ticker-sym">${p.ticker}</span></td>
@@ -463,6 +465,7 @@ function renderHistory(){
       <td class="${perfCls}"><strong>${perfStr}</strong></td>
       <td>${p.days_held}d</td>
       <td class="${cls3}">${r3}</td>
+      <td class="${cls6}">${r6}</td>
     </tr>`;
   }
 }
@@ -505,7 +508,7 @@ function showDetail(ticker){
     ].map(([l,v,s])=>`<div class="card"><h3>${l}</h3><div class="big">${v}</div>${s?`<div class="sub">${s}</div>`:''}</div>`).join('');
     const conds=d.conditions||{};
     document.getElementById('detailConditions').innerHTML=Object.entries(conds).map(([k,v])=>`<span class="cond ${v?'on':'off'}">${v?'\u2713':'\u2717'} ${k.replace(/_/g,' ')}</span>`).join('');
-    if(d.chart&&d.chart.length){const c=document.getElementById('detailChart');drawChart(c,d.chart)}
+    if(d.chart&&d.chart.length){const c=document.getElementById('detailChart');drawChart(c,d.chart,d.pick_entries||[])}
   }).catch(()=>{});
 }
 
@@ -654,27 +657,59 @@ function drawDualChart(canvas,data1,data2){
   ctx.fillStyle='#8b949e';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+10,padT+30);
 }
 
-function drawChart(canvas,chartData){
+function drawChart(canvas,chartData,pickEntries){
   const ctx=canvas.getContext('2d');const dpr=window.devicePixelRatio||1;
   const rect=canvas.parentElement.getBoundingClientRect();
   canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);
   const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
+  const dates=chartData.map(d=>d.date);
   const prices=chartData.map(d=>d.price),n=prices.length;if(n<2)return;
   const pad=10;let min=Infinity,max=-Infinity;
   for(const p of prices){if(p<min)min=p;if(p>max)max=p}
   if(max<=min)return;
   const x=i=>pad+(W-2*pad)*i/(n-1),y=p=>pad+(H-2*pad)*(1-(p-min)/(max-min));
   const isUp=prices[n-1]>=prices[0];
+
+  // Price area fill
   ctx.beginPath();ctx.moveTo(x(0),y(prices[0]));
   for(let i=1;i<n;i++)ctx.lineTo(x(i),y(prices[i]));
   ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
   const grad=ctx.createLinearGradient(0,pad,0,H-pad);
-  grad.addColorStop(0,isUp?'rgba(63,185,80,0.2)':'rgba(248,81,73,0.2)');
+  grad.addColorStop(0,isUp?'rgba(63,185,80,0.15)':'rgba(248,81,73,0.15)');
   grad.addColorStop(1,'rgba(13,17,23,0)');ctx.fillStyle=grad;ctx.fill();
+
+  // Price line
   ctx.strokeStyle=isUp?'#3fb950':'#f85149';ctx.lineWidth=1.5;ctx.beginPath();
   for(let i=0;i<n;i++){const px=x(i),py=y(prices[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
-  ctx.stroke();ctx.fillStyle=isUp?'#3fb950':'#f85149';ctx.beginPath();
+  ctx.stroke();
+
+  // Current price dot
+  ctx.fillStyle=isUp?'#3fb950':'#f85149';ctx.beginPath();
   ctx.arc(x(n-1),y(prices[n-1]),4,0,Math.PI*2);ctx.fill();
+
+  // Purchase entry dots (green diamonds with vertical lines)
+  if(pickEntries&&pickEntries.length>0){
+    const dateMap={};
+    dates.forEach((d,i)=>{dateMap[d]=i});
+    for(const entry of pickEntries){
+      const idx=dateMap[entry.date];
+      if(idx==null)continue;
+      const px=x(idx),py=y(entry.price);
+
+      // Vertical dashed line
+      ctx.strokeStyle='rgba(88,166,255,0.3)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(px,pad);ctx.lineTo(px,H-pad);ctx.stroke();ctx.setLineDash([]);
+
+      // Diamond marker
+      const s=6;
+      ctx.fillStyle='#58a6ff';ctx.beginPath();
+      ctx.moveTo(px,py-s);ctx.lineTo(px+s,py);ctx.lineTo(px,py+s);ctx.lineTo(px-s,py);ctx.closePath();ctx.fill();
+
+      // Price label
+      ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='#58a6ff';ctx.textAlign='center';
+      ctx.fillText('$'+entry.price.toFixed(0),px,py-s-4);
+    }
+  }
 }
 </script>
 </body></html>
