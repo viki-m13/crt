@@ -1,47 +1,39 @@
 {
   "ticker": "KAVA-USD",
   "display_name": "KAVA",
-  "price": 0.05,
-  "conviction": 28.6,
+  "price": 0.06,
+  "conviction": 31.1,
   "is_signal": false,
-  "mtmdi_zscore": 0.104,
-  "mtmdi_raw": 0.969,
-  "mtmdi_direction": 0.809,
-  "mtmdi_velocity": -0.047,
-  "cascade_score": 0.2062,
-  "momentum_persistence": -0.723,
-  "range_compression": 0.165,
-  "vol_30d": 109.4,
+  "mtmdi_zscore": 0.256,
+  "mtmdi_raw": 1.023,
+  "mtmdi_direction": 1.401,
+  "mtmdi_velocity": 0.152,
+  "cascade_score": 0.0112,
+  "momentum_persistence": 1.395,
+  "range_compression": 0.185,
+  "vol_30d": 107.8,
   "vol_regime": "high",
-  "drawdown": -89.1,
-  "position_in_range": 1.7,
+  "drawdown": -89.0,
+  "position_in_range": 1.8,
   "returns": {
-    "7d": -9.63,
-    "14d": -22.19,
-    "30d": 6.88,
-    "90d": -34.38,
-    "180d": -176.88,
-    "365d": -220.13
+    "7d": 1.7,
+    "14d": -5.04,
+    "30d": 9.17,
+    "90d": -35.42,
+    "180d": -176.07,
+    "365d": -213.79
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 2,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 0.47
-    },
-    {
-      "date": "2025-03-27",
-      "price": 0.47
-    },
     {
       "date": "2025-03-28",
       "price": 0.44
@@ -1489,21 +1481,21 @@
     {
       "date": "2026-03-24",
       "price": 0.05
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.05
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.05
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.06
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": -0.925
-    },
-    {
-      "date": "2025-03-26",
-      "value": -0.404
-    },
-    {
-      "date": "2025-03-27",
-      "value": -0.122
-    },
     {
       "date": "2025-03-28",
       "value": 0.164
@@ -2951,6 +2943,18 @@
     {
       "date": "2026-03-24",
       "value": 0.104
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.337
+    },
+    {
+      "date": "2026-03-26",
+      "value": 0.183
+    },
+    {
+      "date": "2026-03-27",
+      "value": 0.256
     }
   ]
 }

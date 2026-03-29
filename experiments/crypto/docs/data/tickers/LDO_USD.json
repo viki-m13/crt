@@ -1,47 +1,39 @@
 {
   "ticker": "LDO-USD",
   "display_name": "LDO",
-  "price": 0.29,
-  "conviction": 11.3,
+  "price": 0.3,
+  "conviction": 36.2,
   "is_signal": false,
-  "mtmdi_zscore": -0.201,
-  "mtmdi_raw": 0.719,
-  "mtmdi_direction": 1.084,
-  "mtmdi_velocity": -0.203,
-  "cascade_score": 0.0052,
-  "momentum_persistence": -0.899,
-  "range_compression": 0.445,
-  "vol_30d": 64.4,
-  "vol_regime": "high",
-  "drawdown": -80.8,
-  "position_in_range": 1.2,
+  "mtmdi_zscore": -0.028,
+  "mtmdi_raw": 0.75,
+  "mtmdi_direction": 1.23,
+  "mtmdi_velocity": 0.172,
+  "cascade_score": -0.0642,
+  "momentum_persistence": 1.366,
+  "range_compression": 0.377,
+  "vol_30d": 59.6,
+  "vol_regime": "normal",
+  "drawdown": -80.6,
+  "position_in_range": 1.5,
   "returns": {
-    "7d": -8.29,
-    "14d": 0.55,
-    "30d": -4.22,
-    "90d": -60.22,
-    "180d": -127.51,
-    "365d": -128.9
+    "7d": 0.04,
+    "14d": 0.11,
+    "30d": -9.03,
+    "90d": -65.72,
+    "180d": -131.96,
+    "365d": -122.34
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 1.02
-    },
-    {
-      "date": "2025-03-27",
-      "price": 1.02
-    },
     {
       "date": "2025-03-28",
       "price": 0.93
@@ -1489,21 +1481,21 @@
     {
       "date": "2026-03-24",
       "price": 0.29
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.3
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.29
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.3
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 1.522
-    },
-    {
-      "date": "2025-03-26",
-      "value": 0.536
-    },
-    {
-      "date": "2025-03-27",
-      "value": 0.489
-    },
     {
       "date": "2025-03-28",
       "value": -0.044
@@ -2951,6 +2943,18 @@
     {
       "date": "2026-03-24",
       "value": -0.201
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.221
+    },
+    {
+      "date": "2026-03-26",
+      "value": -0.144
+    },
+    {
+      "date": "2026-03-27",
+      "value": -0.028
     }
   ]
 }

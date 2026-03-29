@@ -1,47 +1,39 @@
 {
   "ticker": "SAND-USD",
   "display_name": "SAND",
-  "price": 0.08,
-  "conviction": 11.1,
+  "price": 0.07,
+  "conviction": 20.3,
   "is_signal": false,
-  "mtmdi_zscore": 0.226,
-  "mtmdi_raw": 0.755,
-  "mtmdi_direction": 0.89,
-  "mtmdi_velocity": 0.036,
-  "cascade_score": 0.0058,
-  "momentum_persistence": -0.831,
-  "range_compression": 0.547,
-  "vol_30d": 69.5,
-  "vol_regime": "high",
-  "drawdown": -77.8,
-  "position_in_range": 1.7,
+  "mtmdi_zscore": -0.558,
+  "mtmdi_raw": 0.522,
+  "mtmdi_direction": 0.486,
+  "mtmdi_velocity": -0.784,
+  "cascade_score": 0.039,
+  "momentum_persistence": -0.817,
+  "range_compression": 0.505,
+  "vol_30d": 59.0,
+  "vol_regime": "normal",
+  "drawdown": -80.1,
+  "position_in_range": 0.0,
   "returns": {
-    "7d": -7.75,
-    "14d": 0.62,
-    "30d": 0.35,
-    "90d": -32.86,
-    "180d": -114.83,
-    "365d": -130.11
+    "7d": -10.97,
+    "14d": -13.79,
+    "30d": -18.17,
+    "90d": -45.58,
+    "180d": -130.47,
+    "365d": -144.58
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
-    "cascade": false,
+    "cascade": true,
     "momentum": false,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-03-26",
-      "price": 0.31
-    },
-    {
-      "date": "2025-03-27",
-      "price": 0.31
-    },
     {
       "date": "2025-03-28",
       "price": 0.28
@@ -1489,21 +1481,21 @@
     {
       "date": "2026-03-24",
       "price": 0.08
+    },
+    {
+      "date": "2026-03-25",
+      "price": 0.08
+    },
+    {
+      "date": "2026-03-26",
+      "price": 0.08
+    },
+    {
+      "date": "2026-03-27",
+      "price": 0.07
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-25",
-      "value": 0.566
-    },
-    {
-      "date": "2025-03-26",
-      "value": 0.574
-    },
-    {
-      "date": "2025-03-27",
-      "value": 0.53
-    },
     {
       "date": "2025-03-28",
       "value": 0.415
@@ -2951,6 +2943,18 @@
     {
       "date": "2026-03-24",
       "value": 0.226
+    },
+    {
+      "date": "2026-03-25",
+      "value": 0.41
+    },
+    {
+      "date": "2026-03-26",
+      "value": 0.121
+    },
+    {
+      "date": "2026-03-27",
+      "value": -0.558
     }
   ]
 }
