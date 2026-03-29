@@ -239,13 +239,16 @@ if __name__ == "__main__":
     all_results = {}
     all_logs = {}
 
-    for name, s, e in [("DOT-COM", "1999-06-01", "2003-12-31"),
-                        ("BULL", "2004-01-01", "2007-12-31"),
-                        ("GFC", "2008-01-01", "2009-12-31"),
-                        ("TRAIN", TRAIN_START, TRAIN_END),
-                        ("VALID", VALID_START, VALID_END),
-                        ("TEST", TEST_START, TEST_END),
-                        ("FULL", "1999-06-01", TEST_END)]:
+    PERIODS = [
+        ("DOT-COM", "1999-06-01", "2003-12-31"),
+        ("BULL", "2004-01-01", "2007-12-31"),
+        ("GFC", "2008-01-01", "2009-12-31"),
+        ("TRAIN", TRAIN_START, TRAIN_END),
+        ("VALID", VALID_START, VALID_END),
+        ("TEST", TEST_START, TEST_END),
+        ("FULL", "1999-06-01", TEST_END),
+    ]
+    for name, s, e in PERIODS:
         print(f"\n{'='*60}")
         print(f"{name}: {s} to {e}")
         print(f"{'='*60}")

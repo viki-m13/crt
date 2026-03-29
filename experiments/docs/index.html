@@ -162,6 +162,22 @@
     </table>
   </div>
 
+  <!-- SCREENER (inside stocks tab) -->
+  <div class="section" id="screener">
+    <div class="section-title">Full Screener</div>
+    <div class="controls">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
+      <button class="sort-btn active" data-sort="score" onclick="setSort('score')">Score</button>
+      <button class="sort-btn" data-sort="ret252" onclick="setSort('ret252')">1Y Return</button>
+      <button class="sort-btn" data-sort="range" onclick="setSort('range')">52w Range</button>
+      <button class="sort-btn" data-sort="vol" onclick="setSort('vol')">Volatility</button>
+    </div>
+    <table>
+      <thead><tr><th>Ticker</th><th>Price</th><th>Score</th><th>Status</th><th>52w Range</th><th>Vol 21d</th><th>DD</th><th>5d</th><th>21d</th><th>3m</th><th>6m</th><th>1y</th></tr></thead>
+      <tbody id="screenerBody"></tbody>
+    </table>
+  </div>
+
   </div><!-- end tab-stocks -->
 
   <!-- ============================================================ -->
@@ -178,20 +194,35 @@
     </p>
 
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.8;margin-bottom:24px">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--ink)">Exact Execution Instructions</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
         <div>
-          <div style="font-weight:700;color:var(--green);margin-bottom:8px">DAILY CHECK (at market close)</div>
-          <div>Is SPY above its <strong>30-day moving average</strong>?</div>
-          <div style="margin-top:6px">&bull; <strong style="color:var(--green)">YES</strong>: Hold <strong>60% SPY + 40% top sector ETF</strong></div>
-          <div>&bull; <strong style="color:var(--gold)">NO</strong>: Sell everything. <strong>100% cash</strong>. Wait.</div>
-          <div style="margin-top:6px;color:var(--muted)">This is the safety switch. It protected against every major crash.</div>
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px">STEP 1 &mdash; DAILY at market close (every trading day)</div>
+          <div style="padding-left:12px">
+            <div><strong>Check:</strong> Did SPY close above or below its <strong>30-day simple moving average</strong>?</div>
+            <div style="margin-top:8px">&bull; If SPY <strong style="color:var(--green)">ABOVE</strong> SMA30 &rarr; <strong>Stay invested</strong> (or enter if currently in cash)</div>
+            <div>&bull; If SPY <strong style="color:var(--red)">BELOW</strong> SMA30 &rarr; <strong>Sell everything at next day's open. Go 100% cash.</strong></div>
+            <div style="margin-top:8px;color:var(--muted)">This daily check is the safety switch. It has protected against every major crash since 1999 (dot-com, GFC, COVID, 2022 bear). When SPY crosses back above, you re-enter at the next open.</div>
+          </div>
         </div>
         <div>
-          <div style="font-weight:700;color:var(--blue);margin-bottom:8px">MONTHLY (1st trading day)</div>
-          <div>Which sector ETF has the best <strong>3-month return</strong>?</div>
-          <div style="margin-top:6px">Put 40% of your portfolio in that sector. Keep 60% in SPY.</div>
-          <div style="margin-top:6px;color:var(--muted)">Sector only changes once per month &mdash; no daily flip-flopping.</div>
-          <div style="margin-top:8px"><strong>~26 trades/year total.</strong> Trivially executable.</div>
+          <div style="font-weight:700;color:var(--blue);margin-bottom:8px">STEP 2 &mdash; MONTHLY on the 1st trading day of each month ONLY</div>
+          <div style="padding-left:12px">
+            <div><strong>Only if SPY is above SMA30</strong> (Step 1 says "invested"):</div>
+            <div style="margin-top:6px">Look up the 3-month (63 trading day) total return for each of the 9 sector ETFs: XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB.</div>
+            <div style="margin-top:6px">Whichever sector has the <strong>highest 3-month return</strong> gets <strong>40%</strong> of your portfolio. The other <strong>60%</strong> stays in <strong>SPY</strong>.</div>
+            <div style="margin-top:8px;color:var(--muted)"><strong>Important:</strong> The sector does NOT change mid-month. Even if a different sector becomes #1 on the 15th, you keep the one you picked on the 1st. Sector selection happens ONLY on the 1st trading day of the month.</div>
+            <div style="margin-top:6px;color:var(--muted)">If SPY drops below SMA30 mid-month (Step 1 triggers), you sell everything including the sector ETF. When SPY crosses back above, you re-enter with whatever sector is #1 at THAT moment (this counts as a re-entry, not a monthly rebalance).</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-weight:700;color:var(--gold);margin-bottom:8px">POSITION SIZING</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px">
+          <div><strong>60%</strong> in SPY (market exposure)</div>
+          <div><strong>40%</strong> in the top sector ETF (momentum tilt)</div>
+          <div><strong>~26 trades/year</strong> total (monthly rotations + SMA entries/exits)</div>
+          <div>Transaction costs: ~3 bps per trade (sector ETFs are very liquid)</div>
         </div>
       </div>
     </div>
@@ -237,22 +268,6 @@
     <div class="grid" id="detailGrid"></div>
     <div class="chart-container"><canvas id="detailChart"></canvas></div>
     <div id="detailConditions"></div>
-  </div>
-
-  <!-- SCREENER -->
-  <div class="section" id="screener">
-    <div class="section-title">Full Screener</div>
-    <div class="controls">
-      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
-      <button class="sort-btn active" data-sort="score" onclick="setSort('score')">Score</button>
-      <button class="sort-btn" data-sort="ret252" onclick="setSort('ret252')">1Y Return</button>
-      <button class="sort-btn" data-sort="range" onclick="setSort('range')">52w Range</button>
-      <button class="sort-btn" data-sort="vol" onclick="setSort('vol')">Volatility</button>
-    </div>
-    <table>
-      <thead><tr><th>Ticker</th><th>Price</th><th>Score</th><th>Status</th><th>52w Range</th><th>Vol 21d</th><th>DD</th><th>5d</th><th>21d</th><th>3m</th><th>6m</th><th>1y</th></tr></thead>
-      <tbody id="screenerBody"></tbody>
-    </table>
   </div>
 
   <div class="disclaimer">
@@ -502,19 +517,25 @@ function renderSectors(){
     </div>`;
   }
 
-  // Performance grid
+  // Performance grid — show ALL periods from data
   const perfEl=document.getElementById('sectorPerf');
-  const periods=[{name:'Train (2010-2019)',key:'train'},{name:'Valid (2020-2022)',key:'validation'},{name:'Test (2023-2026)',key:'test'}];
+  const perfData=s.performance||{};
+  const periodOrder=['dot-com','bull','gfc','train','valid','test','full'];
+  const periodLabels={'dot-com':'Dot-Com Bust (1999-2003)','bull':'Bull (2004-2007)','gfc':'GFC (2008-2009)',
+    'train':'Train (2010-2019)','valid':'Valid (2020-2022)','test':'Test OOS (2023-2026)','full':'FULL (1999-2026)'};
   let ph='<div class="grid">';
-  for(const p of periods){
-    const d=(s.performance||{})[p.key]||{};
+  for(const key of periodOrder){
+    const d=perfData[key];
+    if(!d)continue;
     const st=d.strategy||{};
     const sp=d.spy||{};
-    ph+=`<div class="card">
-      <h3>${p.name}</h3>
+    const isFullRow=key==='full';
+    const border=isFullRow?'border:2px solid var(--green);':'';
+    ph+=`<div class="card" style="${border}">
+      <h3>${periodLabels[key]||key}</h3>
       <div class="big green">${st.sharpe||'—'} Sharpe</div>
       <div class="sub">CAGR: ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} | DD: ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'} | Sortino: ${st.sortino||'—'}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">SPY: ${sp.sharpe||'—'} Sharpe, ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'} CAGR</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">SPY: ${sp.sharpe||'—'} Sharpe, ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'} CAGR, DD ${sp.max_dd?(sp.max_dd*100).toFixed(0)+'%':'—'}</div>
     </div>`;
   }
   ph+='</div>';
