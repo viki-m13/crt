@@ -7,6 +7,16 @@
       "config": { "maxLambdaSize": "250mb" }
     },
     {
+      "src": "api/cron/main.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "250mb", "maxDuration": 300 }
+    },
+    {
+      "src": "api/cron/experiments.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "250mb", "maxDuration": 300 }
+    },
+    {
       "src": "docs/**",
       "use": "@vercel/static"
     },
@@ -16,8 +26,14 @@
     }
   ],
   "routes": [
+    { "src": "/api/cron/main", "dest": "/api/cron/main.py" },
+    { "src": "/api/cron/experiments", "dest": "/api/cron/experiments.py" },
     { "src": "/api/(.*)", "dest": "/api/analyze.py" },
     { "src": "/experiments/(.*)", "dest": "/experiments/docs/$1" },
     { "src": "/(.*)", "dest": "/docs/$1" }
+  ],
+  "crons": [
+    { "path": "/api/cron/main", "schedule": "0 22 * * 1-5" },
+    { "path": "/api/cron/experiments", "schedule": "30 22 * * 1-5" }
   ]
 }

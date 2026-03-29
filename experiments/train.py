@@ -85,17 +85,17 @@ def check_market(features_dict, cfg):
 
 
 def score_stock(feat):
-    r252 = feat.get("ret_252d", 0)
-    r126 = feat.get("ret_126d", 0)
-    r63 = feat.get("ret_63d", 0)
-    pr = feat.get("position_in_52w_range", 0)
+    r252 = max(feat.get("ret_252d", 0), 0)
+    r126 = max(feat.get("ret_126d", 0), 0)
+    r63 = max(feat.get("ret_63d", 0), 0)
+    pr = max(feat.get("position_in_52w_range", 0), 0)
     dd = feat.get("drawdown_252d", -1)
     vol = feat.get("vol_21d", 0.5)
     mom = (min(r252 / 0.30, 1.0) * 0.35 + min(r126 / 0.20, 1.0) * 0.30
            + min(r63 / 0.10, 1.0) * 0.20 + min(pr, 1.0) * 0.15)
-    vp = max(0, (vol - 0.20) / 0.20)
-    dp = max(0, abs(dd) / 0.10)
-    return max(0, mom * (1 - 0.2 * vp) * (1 - 0.3 * dp))
+    vp = min(max(0, (vol - 0.20) / 0.20), 1.0)
+    dp = min(max(0, abs(dd) / 0.10), 1.0)
+    return max(0, mom * (1 - 0.3 * vp) * (1 - 0.3 * dp))
 
 
 def get_daily_pick(features_dict, cfg):
@@ -327,8 +327,18 @@ if __name__ == "__main__":
         "qualifying": [s for s in all_stocks if s["qualifies"]],
     }
 
+    # Custom JSON serializer to handle NaN (not valid JSON)
+    def clean_nan(obj):
+        if isinstance(obj, float) and (np.isnan(obj) or np.isinf(obj)):
+            return None
+        if isinstance(obj, dict):
+            return {k: clean_nan(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [clean_nan(v) for v in obj]
+        return obj
+
     with open(os.path.join(docs_dir, "full.json"), "w") as f:
-        json.dump(full_data, f, indent=2)
+        json.dump(clean_nan(full_data), f, indent=2)
 
     for stock in all_stocks[:30]:
         ticker = stock["ticker"]
