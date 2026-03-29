@@ -87,6 +87,7 @@
       <a href="#pick">Today's Pick</a>
       <a href="#accuracy">Accuracy</a>
       <a href="#history">History</a>
+      <a href="#sectors">Sectors</a>
       <a href="#screener">Screener</a>
       <a href="/" style="color:var(--blue)">&larr; Main</a>
     </div>
@@ -148,6 +149,34 @@
     </table>
   </div>
 
+  <!-- SECTOR ROTATION STRATEGY -->
+  <div class="section" id="sectors">
+    <div class="section-title" style="font-size:20px;border-top:3px solid var(--blue);padding-top:32px;margin-top:32px">
+      Sector ETF Rotation &mdash; SMA-Gated Sector Tilt
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+      When SPY &gt; 50-day SMA: hold 60% SPY + 40% top sector ETF. Below SMA: cash. No survivorship bias (ETFs are permanent sectors). Rebalance when top sector changes.
+    </p>
+
+    <div id="sectorSignal"></div>
+    <div id="sectorPerf"></div>
+
+    <div class="section-title">Sector Rankings</div>
+    <table>
+      <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M Return</th><th>1M Return</th><th>1W Return</th><th>Status</th></tr></thead>
+      <tbody id="sectorTable"></tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:24px">Equity Curve (Test Period vs SPY)</div>
+    <div class="chart-container" id="sectorChartWrap" style="height:280px"><canvas id="sectorChart"></canvas></div>
+
+    <div class="section-title" style="margin-top:24px">Recent Regime Changes</div>
+    <table>
+      <thead><tr><th>Date</th><th>Signal</th><th>Sector Tilt</th></tr></thead>
+      <tbody id="sectorChanges"></tbody>
+    </table>
+  </div>
+
   <!-- DETAIL PANEL -->
   <div class="detail-panel" id="detailPanel">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
@@ -192,11 +221,12 @@ let DATA=null,SORT='score';
 
 function loadData(){fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{DATA=d;render()}).catch(e=>console.error(e))}
 
+let SECTOR_DATA=null;
+
 function render(){
   if(!DATA)return;
   document.getElementById('lastScan').textContent=DATA.generated?DATA.generated.split('T')[0]:'—';
 
-  // Market regime
   const bullish=DATA.market_regime==='BULLISH';
   const dot=document.getElementById('navDot');
   const tag=document.getElementById('regimeTag');
@@ -210,6 +240,9 @@ function render(){
   renderCandidates();
   renderHistory();
   renderScreener();
+
+  // Load sector data
+  fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{SECTOR_DATA=d;renderSectors()}).catch(()=>{});
 }
 
 function renderPick(){
@@ -359,6 +392,121 @@ function showDetail(ticker){
     document.getElementById('detailConditions').innerHTML=Object.entries(conds).map(([k,v])=>`<span class="cond ${v?'on':'off'}">${v?'\u2713':'\u2717'} ${k.replace(/_/g,' ')}</span>`).join('');
     if(d.chart&&d.chart.length){const c=document.getElementById('detailChart');drawChart(c,d.chart)}
   }).catch(()=>{});
+}
+
+function renderSectors(){
+  if(!SECTOR_DATA)return;
+  const s=SECTOR_DATA;
+  const cs=s.current_status||{};
+  const invested=cs.signal==='INVESTED';
+
+  // Signal card
+  const sigEl=document.getElementById('sectorSignal');
+  if(invested){
+    sigEl.innerHTML=`<div class="pick-card" style="margin-bottom:24px">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px">Sector Rotation Signal</div>
+      <div style="font-size:24px;font-weight:700;color:var(--green);margin:8px 0">INVESTED</div>
+      <div style="font-size:16px">60% <strong>SPY</strong> + 40% <strong>${cs.top_sector}</strong> (${cs.top_sector_name})</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">SPY $${cs.spy_price} &gt; SMA50 $${cs.sma50} | ${cs.top_sector} 3m: +${cs.top_sector_ret_3m}%</div>
+    </div>`;
+  } else {
+    sigEl.innerHTML=`<div class="pick-card wait" style="margin-bottom:24px">
+      <div style="font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Sector Rotation Signal</div>
+      <div style="font-size:24px;font-weight:700;color:var(--gold);margin:8px 0">CASH</div>
+      <div style="font-size:14px;color:var(--gold)">SPY $${cs.spy_price} &lt; SMA50 $${cs.sma50} &mdash; stay in cash</div>
+    </div>`;
+  }
+
+  // Performance grid
+  const perfEl=document.getElementById('sectorPerf');
+  const periods=[{name:'Train (2010-2019)',key:'train'},{name:'Valid (2020-2022)',key:'validation'},{name:'Test (2023-2026)',key:'test'}];
+  let ph='<div class="grid">';
+  for(const p of periods){
+    const d=(s.performance||{})[p.key]||{};
+    const st=d.strategy||{};
+    const sp=d.spy||{};
+    ph+=`<div class="card">
+      <h3>${p.name}</h3>
+      <div class="big green">${st.sharpe||'—'} Sharpe</div>
+      <div class="sub">CAGR: ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} | DD: ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'} | Sortino: ${st.sortino||'—'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">SPY: ${sp.sharpe||'—'} Sharpe, ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'} CAGR</div>
+    </div>`;
+  }
+  ph+='</div>';
+  perfEl.innerHTML=ph;
+
+  // Sector table
+  const tbody=document.getElementById('sectorTable');
+  const secs=s.sectors||{};
+  const sorted=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m);
+  tbody.innerHTML='';
+  for(const [etf,d] of sorted){
+    const badge=d.is_top?'<span class="badge badge-buy">TOP PICK</span>':'<span class="badge badge-no">&mdash;</span>';
+    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v}%</span>`;
+    tbody.innerHTML+=`<tr>
+      <td><span class="ticker-sym">${etf}</span></td><td>${d.name}</td><td>$${d.price}</td>
+      <td>${fmt(d.ret_3m)}</td><td>${fmt(d.ret_1m)}</td><td>${fmt(d.ret_1w)}</td><td>${badge}</td>
+    </tr>`;
+  }
+
+  // Equity curve
+  const eq=s.equity_curve_strategy||[];
+  const spyEq=s.equity_curve_spy||[];
+  if(eq.length>2){
+    const canvas=document.getElementById('sectorChart');
+    drawDualChart(canvas,eq,spyEq);
+  }
+
+  // Recent changes
+  const changes=s.recent_changes||[];
+  const chBody=document.getElementById('sectorChanges');
+  chBody.innerHTML='';
+  for(const c of changes.slice().reverse()){
+    const cls=c.regime==='CASH'?'color:var(--gold)':'color:var(--green)';
+    chBody.innerHTML+=`<tr><td>${c.date}</td><td style="${cls};font-weight:600">${c.regime}</td><td>${c.sector?c.sector+' ('+c.sector_name+')':'—'}</td></tr>`;
+  }
+}
+
+function drawDualChart(canvas,data1,data2){
+  const ctx=canvas.getContext('2d');const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
+  const v1=data1.map(d=>d.value),v2=data2.map(d=>d.value);
+  const n=Math.max(v1.length,v2.length);if(n<2)return;
+  const padL=60,padR=20,padT=20,padB=30;
+  let min=Infinity,max=-Infinity;
+  for(const v of [...v1,...v2]){if(v<min)min=v;if(v>max)max=v}
+  const range=max-min||1;min-=range*0.05;max+=range*0.05;
+  const x=i=>padL+(W-padL-padR)*i/(n-1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min));
+
+  ctx.strokeStyle='rgba(48,54,61,0.6)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#8b949e';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const val=min+(max-min)*i/4;const yy=y(val);
+    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
+    ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);}
+
+  // SPY line (gray)
+  ctx.strokeStyle='rgba(139,148,158,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
+  for(let i=0;i<v2.length;i++){const px=x(i*(n-1)/(v2.length-1)),py=y(v2[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
+  ctx.stroke();ctx.setLineDash([]);
+
+  // Strategy line (green)
+  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
+  for(let i=1;i<v1.length;i++)ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
+  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(63,185,80,0.2)');grad.addColorStop(1,'rgba(13,17,23,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='#3fb950';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<v1.length;i++){const px=x(i*(n-1)/(v1.length-1)),py=y(v1[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
+  ctx.stroke();
+
+  // Labels
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#3fb950';ctx.fillText('SGST $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+10,padT+15);
+  ctx.fillStyle='#8b949e';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+10,padT+30);
 }
 
 function drawChart(canvas,chartData){
