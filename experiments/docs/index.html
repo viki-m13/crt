@@ -309,18 +309,16 @@ let SECTOR_PERIOD='1y';
 function loadData(){
   fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
     SECTOR_DATA=d;
+    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
+    // Set regime tag from sector rotation signal, not stock picker
+    const cs=d.current_status||{};
+    const invested=cs.signal==='INVESTED';
+    const tag=document.getElementById('regimeTag');
+    tag.textContent=invested?'INVESTED':'CASH';
+    tag.style.background=invested?'var(--green-bg)':'var(--gold-bg)';
+    tag.style.color=invested?'var(--green)':'var(--gold)';
     renderAll();
   }).catch(e=>console.error(e));
-
-  // Also load full.json for generated date and market regime
-  fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
-    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
-    const bullish=d.market_regime==='BULLISH';
-    const tag=document.getElementById('regimeTag');
-    tag.textContent=d.market_regime;
-    tag.style.background=bullish?'var(--green-bg)':'var(--gold-bg)';
-    tag.style.color=bullish?'var(--green)':'var(--gold)';
-  }).catch(()=>{});
 }
 
 function renderAll(){
