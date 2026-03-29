@@ -290,6 +290,15 @@
     </div>
     <div class="chart-container" id="sectorChartWrap" style="height:320px"><canvas id="sectorChart"></canvas></div>
 
+    <div class="section-title" style="margin-top:24px">Complete Trade History</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Every holding period since 1999. Each row = one period where you held 60% SPY + 40% sector. Shows blended portfolio return (60/40 weighted), why you entered, and why you exited.</p>
+    <div style="max-height:600px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+    <table>
+      <thead style="position:sticky;top:0"><tr><th>Entry</th><th>Exit</th><th>Sector</th><th>Why In</th><th>Why Out</th><th>Days</th><th>SPY</th><th>Sector</th><th>Portfolio (60/40)</th></tr></thead>
+      <tbody id="tradeHistory"></tbody>
+    </table>
+    </div>
+
     <div class="section-title" style="margin-top:24px">Recent Regime Changes</div>
     <table>
       <thead><tr><th>Date</th><th>Signal</th><th>Sector Tilt</th></tr></thead>
@@ -634,6 +643,26 @@ function renderSectors(){
 
   // Equity curve (with period selector)
   drawSectorChart();
+
+  // Trade history table
+  const trades=s.trade_history||[];
+  const thBody=document.getElementById('tradeHistory');
+  thBody.innerHTML='';
+  for(const t of trades.slice().reverse()){
+    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+    const exitCls=t.exit_reason.includes('SMA')?'color:var(--red)':t.exit_reason.includes('rotation')?'color:var(--blue)':'color:var(--muted)';
+    const entryCls=t.entry_reason.includes('Re-entry')?'color:var(--green)':'color:var(--blue)';
+    thBody.innerHTML+=`<tr>
+      <td>${t.entry}</td><td>${t.exit}</td>
+      <td><span class="ticker-sym">${t.sector}</span> <span style="color:var(--muted);font-size:11px">${t.sector_name}</span></td>
+      <td style="${entryCls};font-size:12px">${t.entry_reason}</td>
+      <td style="${exitCls};font-size:12px">${t.exit_reason}</td>
+      <td>${t.days}d</td>
+      <td>${fmt(t.spy_ret)}</td>
+      <td>${fmt(t.sector_ret)}</td>
+      <td><strong>${fmt(t.blend_ret)}</strong></td>
+    </tr>`;
+  }
 
   // Recent changes
   const changes=s.recent_changes||[];
