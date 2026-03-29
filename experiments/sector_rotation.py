@@ -430,7 +430,7 @@ if __name__ == "__main__":
                 "days": t["days_held"],
             }
             for name in ["FULL"]
-            for t in all_results.get(name, {}).get("trades", [])[-100:]
+            for t in all_results.get(name, {}).get("trades", [])[-10:]
         ],
     }
 
