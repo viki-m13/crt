@@ -108,9 +108,50 @@ def run_backtest(data, start, end):
 
     daily_rets = []
     holdings_log = []
+    trade_log = []       # Complete trade history
     current_sector = None
     in_market = False
     prev_month = None
+    # Track current holding period for trade log
+    holding_entry_date = None
+    holding_entry_spy = None
+    holding_entry_sector_price = None
+    holding_reason = None
+
+    def close_trade(exit_date, exit_reason):
+        """Record a completed trade in the trade log."""
+        nonlocal holding_entry_date, holding_entry_spy, holding_entry_sector_price
+        if holding_entry_date is None or current_sector is None:
+            return
+        spy_exit = spy_close.loc[exit_date] if exit_date in spy_close.index else spy_close.iloc[-1]
+        sector_df = data.get(current_sector)
+        sector_exit = sector_df.loc[exit_date, "Close"] if sector_df is not None and exit_date in sector_df.index else 0
+        spy_ret = (spy_exit / holding_entry_spy - 1) if holding_entry_spy else 0
+        sector_ret = (sector_exit / holding_entry_sector_price - 1) if holding_entry_sector_price else 0
+        blended_ret = spy_ret * SPY_WEIGHT + sector_ret * SECTOR_WEIGHT
+        days_held = (exit_date - holding_entry_date).days
+        trade_log.append({
+            "entry_date": holding_entry_date,
+            "exit_date": exit_date,
+            "sector": current_sector,
+            "sector_name": SECTOR_NAMES.get(current_sector, ""),
+            "entry_reason": holding_reason or "",
+            "exit_reason": exit_reason,
+            "spy_return": round(float(spy_ret) * 100, 2),
+            "sector_return": round(float(sector_ret) * 100, 2),
+            "blended_return": round(float(blended_ret) * 100, 2),
+            "days_held": days_held,
+        })
+        holding_entry_date = None
+
+    def open_trade(date, sector, reason):
+        """Start tracking a new holding period."""
+        nonlocal holding_entry_date, holding_entry_spy, holding_entry_sector_price, holding_reason
+        holding_entry_date = date
+        holding_entry_spy = spy_close.loc[date] if date in spy_close.index else 0
+        sector_df = data.get(sector)
+        holding_entry_sector_price = sector_df.loc[date, "Close"] if sector_df is not None and date in sector_df.index else 0
+        holding_reason = reason
 
     for date in dates:
         idx = spy.index.get_loc(date)
@@ -123,6 +164,7 @@ def run_backtest(data, start, end):
 
         # EXIT: immediate when SPY drops below SMA (daily check)
         if not above_sma and in_market:
+            close_trade(date, "SPY < SMA30")
             holdings_log.append({
                 "date": date, "regime": "CASH", "sector": None,
                 "sector_name": "", "sector_3m_ret": 0,
@@ -145,7 +187,10 @@ def run_backtest(data, start, end):
         if entering or (in_market and new_month):
             top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK)
             if top_etf and (top_etf != current_sector or entering):
-                action = "ENTER" if entering else "ROTATE"
+                reason = "Re-entry (SPY > SMA30)" if entering else "Monthly rebalance"
+                # Close previous holding if rotating
+                if in_market and current_sector:
+                    close_trade(date, "Sector rotation")
                 holdings_log.append({
                     "date": date, "regime": "INVESTED",
                     "sector": top_etf,
@@ -153,6 +198,7 @@ def run_backtest(data, start, end):
                     "sector_3m_ret": round(top_ret * 100, 1),
                 })
                 current_sector = top_etf
+                open_trade(date, top_etf, reason)
             in_market = True
 
         # Daily return
@@ -169,7 +215,11 @@ def run_backtest(data, start, end):
         daily_rets.append(dr)
         prev_month = date.month
 
-    return pd.DataFrame({"date": dates, "return": daily_rets}), holdings_log
+    # Close any open trade at end of period
+    if in_market and current_sector and holding_entry_date:
+        close_trade(dates[-1], "End of period")
+
+    return pd.DataFrame({"date": dates, "return": daily_rets}), holdings_log, trade_log
 
 
 def compute_metrics(ret_df):
@@ -253,11 +303,21 @@ if __name__ == "__main__":
         print(f"{name}: {s} to {e}")
         print(f"{'='*60}")
 
-        ret_df, hlog = run_backtest(data, s, e)
+        ret_df, hlog, tlog = run_backtest(data, s, e)
         metrics = compute_metrics(ret_df)
         spy = spy_bh_metrics(data, s, e)
         all_results[name] = {"strategy": metrics, "spy": spy, "returns": ret_df}
         all_logs[name] = hlog
+        all_results[name]["trades"] = tlog
+
+        # Print trade summary
+        if tlog:
+            wins = [t for t in tlog if t["blended_return"] > 0]
+            losses = [t for t in tlog if t["blended_return"] <= 0]
+            print(f"  Trades: {len(tlog)} total, {len(wins)} wins, {len(losses)} losses")
+            if tlog:
+                avg_ret = sum(t["blended_return"] for t in tlog) / len(tlog)
+                print(f"  Avg blended return per trade: {avg_ret:.1f}%")
 
         print(f"  {'':20} {'SGST':>10} {'SPY B&H':>10}")
         print(f"  {'-'*40}")
@@ -354,6 +414,23 @@ if __name__ == "__main__":
             {"date": str(h["date"].date()), "regime": h["regime"],
              "sector": h.get("sector"), "sector_name": h.get("sector_name", "")}
             for h in all_logs.get("TEST", [])[-15:]
+        ],
+        # Complete trade history — all holding periods with returns
+        "trade_history": [
+            {
+                "entry": str(t["entry_date"].date()),
+                "exit": str(t["exit_date"].date()),
+                "sector": t["sector"],
+                "sector_name": t["sector_name"],
+                "entry_reason": t["entry_reason"],
+                "exit_reason": t["exit_reason"],
+                "spy_ret": t["spy_return"],
+                "sector_ret": t["sector_return"],
+                "blend_ret": t["blended_return"],
+                "days": t["days_held"],
+            }
+            for name in ["FULL"]
+            for t in all_results.get(name, {}).get("trades", [])
         ],
     }
 
