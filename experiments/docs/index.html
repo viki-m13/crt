@@ -2,81 +2,129 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <title>Daily Best Stock Picker</title>
+  <title>Sector Rotation Strategy</title>
   <style>
-    :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--ink:#e6edf3;--muted:#8b949e;--green:#3fb950;--green-bg:rgba(63,185,80,.12);--red:#f85149;--red-bg:rgba(248,81,73,.12);--blue:#58a6ff;--gold:#d29922;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
-    a{color:var(--blue);text-decoration:none}
-    .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:360px;width:90%;text-align:center}
-    .login-box h1{font-size:18px;margin-bottom:6px}
-    .login-box p{color:var(--muted);font-size:13px;margin-bottom:24px}
-    .login-box input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:14px;margin-bottom:12px;outline:none}
-    .login-box input:focus{border-color:var(--blue)}
-    .login-box button{width:100%;padding:10px;background:var(--green);color:#000;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px}
-    .login-box button:hover{opacity:.9}
-    .login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
-    .app{display:none}
-    nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center}
-    .nav-logo{font-weight:700;font-size:15px;color:var(--ink)}
-    .nav-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-    .nav-dot.green{background:var(--green)}.nav-dot.gold{background:var(--gold)}.nav-dot.red{background:var(--red)}
-    .nav-tag{font-size:11px;padding:2px 8px;border-radius:10px;margin-left:10px;font-weight:500}
-    .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px}
-    .nav-links a{color:var(--muted)}.nav-links a:hover{color:var(--ink)}
-    .hero{padding:48px 24px 24px;text-align:center}
-    .hero h1{font-size:32px;font-weight:700;margin-bottom:8px}
-    .hero p{color:var(--muted);font-size:15px;max-width:600px;margin:0 auto}
-    .section{max-width:1100px;margin:0 auto;padding:0 24px 32px}
-    .section-title{font-size:16px;font-weight:600;margin-bottom:16px;padding-top:24px;border-top:1px solid var(--border)}
-    .pick-card{background:linear-gradient(135deg,rgba(63,185,80,.08),rgba(63,185,80,.02));border:2px solid rgba(63,185,80,.4);border-radius:16px;padding:32px;margin:24px auto;max-width:700px;text-align:center}
-    .pick-card.wait{border-color:var(--gold);background:linear-gradient(135deg,rgba(210,153,34,.08),rgba(210,153,34,.02))}
-    .pick-ticker{font-size:48px;font-weight:800;font-family:var(--mono);letter-spacing:2px}
-    .pick-score{font-size:14px;color:var(--muted);margin-top:4px}
-    .pick-price{font-size:24px;font-weight:600;color:var(--blue);margin-top:8px}
-    .pick-instruction{font-size:15px;margin-top:16px;padding:12px;background:var(--bg);border-radius:8px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
-    .card h3{font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
-    .card .big{font-size:24px;font-weight:700}
-    .card .sub{font-size:12px;color:var(--muted);margin-top:4px}
-    .card .big.green{color:var(--green)}.card .big.gold{color:var(--gold)}.card .big.red{color:var(--red)}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th{text-align:left;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;position:sticky;top:52px;z-index:10}
-    td{padding:8px 12px;border-bottom:1px solid var(--border)}
-    tr:hover td{background:rgba(255,255,255,.02)}
-    .ticker-sym{font-weight:700;font-family:var(--mono);font-size:13px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
-    .badge-buy{background:var(--green-bg);color:var(--green)}
-    .badge-wait{background:rgba(210,153,34,.12);color:var(--gold)}
-    .badge-no{background:rgba(139,148,158,.1);color:var(--muted)}
-    .pnl-pos{color:var(--green)}.pnl-neg{color:var(--red)}
-    .cond{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:4px;margin:2px}
-    .cond.on{background:var(--green-bg);color:var(--green)}.cond.off{background:rgba(139,148,158,.08);color:var(--muted)}
-    .controls{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-    .search-input{padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--ink);font-size:13px;width:200px}
-    .sort-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px}
-    .sort-btn.active{background:var(--green-bg);color:var(--green);border-color:var(--green)}
-    .detail-panel{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:24px 0;padding:24px}
-    .detail-panel.open{display:block}
-    .chart-container{width:100%;height:200px;margin:16px 0;background:var(--bg);border-radius:6px;overflow:hidden}
-    .chart-container canvas{width:100%;height:100%}
-    .disclaimer{text-align:center;color:var(--muted);font-size:11px;padding:32px 24px;border-top:1px solid var(--border);margin-top:32px}
-    .tab-btn{padding:10px 24px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s}
-    .tab-btn.active{background:var(--green-bg);color:var(--green);border-color:rgba(63,185,80,.4)}
-    .tab-btn:hover{color:var(--ink)}
-    .tab-content{display:none}
-    .tab-content.active{display:block}
-    @media(max-width:600px){.grid{grid-template-columns:1fr}.nav-links{display:none}th{position:static}.pick-ticker{font-size:36px}}
+    :root {
+      --bg: #000000;
+      --surface: #111111;
+      --border: #222222;
+      --ink: #ffffff;
+      --muted: #888888;
+      --green: #00c853;
+      --green-bg: rgba(0,200,83,.10);
+      --red: #ff5252;
+      --red-bg: rgba(255,82,82,.10);
+      --blue: #64b5f6;
+      --gold: #ffc107;
+      --gold-bg: rgba(255,193,7,.10);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+      --radius: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font); background: var(--bg); color: var(--ink); line-height: 1.5; font-size: 14px; -webkit-font-smoothing: antialiased; }
+    a { color: var(--blue); text-decoration: none; }
+
+    /* LOGIN */
+    .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; max-width: 340px; width: 100%; text-align: center; }
+    .login-box h1 { font-size: 17px; margin-bottom: 4px; }
+    .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .login-box input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--ink); font-size: 14px; margin-bottom: 10px; outline: none; }
+    .login-box input:focus { border-color: var(--blue); }
+    .login-box button { width: 100%; padding: 10px; background: var(--ink); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .login-error { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
+
+    /* APP SHELL */
+    .app { display: none; }
+    nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 10px; }
+    .nav-logo { font-weight: 700; font-size: 14px; white-space: nowrap; }
+    .nav-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .nav-links { margin-left: auto; font-size: 13px; }
+
+    /* LAYOUT */
+    .container { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+    .section { padding-bottom: 24px; }
+    .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+    /* ACTION CARD - the hero */
+    .action-card { border-radius: var(--radius); padding: 20px; margin: 16px 0; text-align: center; }
+    .action-card.invested { background: var(--green-bg); border: 2px solid var(--green); }
+    .action-card.cash { background: var(--gold-bg); border: 2px solid var(--gold); }
+    .action-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+    .action-headline { font-size: 22px; font-weight: 800; margin: 8px 0; }
+    .action-detail { font-size: 14px; line-height: 1.6; }
+    .action-meta { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+    /* CARDS GRID */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+    .card h3 { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .card .big { font-size: 20px; font-weight: 700; }
+    .card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .card.highlight { border: 2px solid var(--green); }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+    th { text-align: left; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border); font-weight: 600; color: var(--muted); font-size: 10px; text-transform: uppercase; position: sticky; top: 0; z-index: 5; }
+    td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .ticker-sym { font-weight: 700; font-family: var(--mono); font-size: 13px; }
+
+    /* BADGES */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-buy { background: var(--green-bg); color: var(--green); }
+    .badge-wait { background: var(--gold-bg); color: var(--gold); }
+    .badge-no { background: rgba(136,136,136,.1); color: var(--muted); }
+
+    /* PNL COLORS */
+    .pnl-pos { color: var(--green); }
+    .pnl-neg { color: var(--red); }
+
+    /* CHART */
+    .chart-container { width: 100%; height: 240px; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .chart-container canvas { width: 100%; height: 100%; }
+
+    /* PERIOD BUTTONS */
+    .period-btns { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+    .period-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
+    .period-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+    /* INSTRUCTIONS ACCORDION */
+    .accordion { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .accordion-header { padding: 14px 16px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+    .accordion-header::after { content: '+'; font-size: 18px; color: var(--muted); font-weight: 400; }
+    .accordion.open .accordion-header::after { content: '\2212'; }
+    .accordion-body { display: none; padding: 0 16px 16px; font-size: 13px; line-height: 1.8; }
+    .accordion.open .accordion-body { display: block; }
+
+    .step-box { background: var(--bg); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .step-label { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+    .step-rule { padding: 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid; }
+    .step-rule.green-rule { background: var(--green-bg); border-color: var(--green); }
+    .step-rule.red-rule { background: var(--red-bg); border-color: var(--red); }
+
+    /* TRADE HISTORY */
+    .trade-scroll { max-height: 400px; overflow-y: auto; }
+
+    /* DISCLAIMER */
+    .disclaimer { text-align: center; color: var(--muted); font-size: 11px; padding: 24px 16px; border-top: 1px solid var(--border); margin-top: 24px; line-height: 1.6; }
+
+    /* MOBILE TWEAKS */
+    @media (max-width: 420px) {
+      .grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .card .big { font-size: 17px; }
+      .action-headline { font-size: 19px; }
+    }
   </style>
 </head>
 <body>
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>Daily Best Stock Picker</h1>
+    <h1>Sector Rotation Strategy</h1>
     <p>Research tool. Enter password to continue.</p>
     <input type="password" id="pwInput" placeholder="Password" autofocus />
     <button onclick="tryLogin()">Enter</button>
@@ -86,493 +134,298 @@
 
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo"><span class="nav-dot green" id="navDot"></span>Daily Best Stock Picker</span>
+    <span class="nav-logo">Sector Rotation</span>
     <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULLISH</span>
-    <div class="nav-links">
-      <a href="#" onclick="switchTab('stocks');return false">Stocks</a>
-      <a href="#" onclick="switchTab('sectors');return false">Sectors</a>
-      <a href="/" style="color:var(--blue)">&larr; Main</a>
-    </div>
+    <div class="nav-links"><a href="/">Main &rarr;</a></div>
   </nav>
 
-  <div class="hero">
-    <h1>What should I buy today?</h1>
-    <p>Two strategies: pick individual stocks or rotate sector ETFs. Both use momentum + market timing.</p>
-  </div>
+  <div class="container">
 
-  <!-- STRATEGY TABS -->
-  <div style="display:flex;justify-content:center;gap:8px;padding:0 24px 24px">
-    <button class="tab-btn active" data-tab="stocks" onclick="switchTab('stocks')">Stock Picker</button>
-    <button class="tab-btn" data-tab="sectors" onclick="switchTab('sectors')">Sector Rotation</button>
-  </div>
+    <!-- ACTION CARD: What to do tomorrow -->
+    <div id="actionCard"></div>
 
-  <!-- ============================================================ -->
-  <!-- TAB 1: STOCK PICKER -->
-  <!-- ============================================================ -->
-  <div class="tab-content active" id="tab-stocks">
+    <!-- STRATEGY SUMMARY -->
+    <div class="section">
+      <div class="section-title" style="border-top:none;padding-top:12px">Strategy</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
+        60% SPY + 40% top sector ETF. SMA30-gated. Monthly rotation.<br>
+        Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID.
+      </p>
+    </div>
 
-  <!-- TODAY'S PICK -->
-  <div class="section" id="pick">
-    <div id="pickCard"></div>
+    <!-- PERFORMANCE GRID -->
+    <div class="section" id="perfSection">
+      <div class="section-title">Performance</div>
+      <div id="sectorPerf"></div>
+    </div>
 
-    <div class="section-title">How It Works</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.8">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
-        <div>
-          <div style="font-weight:700;color:var(--green);margin-bottom:8px">WHEN TO BUY</div>
-          <div>Whenever you see a pick and you're ready to DCA. The model shows the single best stock right now.</div>
-          <div style="margin-top:8px">If market says <strong style="color:var(--gold)">WAIT</strong>, hold cash until it turns <strong style="color:var(--green)">BULLISH</strong>.</div>
-        </div>
-        <div>
-          <div style="font-weight:700;color:var(--blue);margin-bottom:8px">WHAT THE MODEL CHECKS</div>
-          <div><strong>Market:</strong> SPY near 52-week highs, trending up over 3m and 6m</div>
-          <div><strong>Stock:</strong> Strong momentum across 3m/6m/12m, near its own high, low volatility, minimal drawdown</div>
-          <div><strong>Rank:</strong> Composite quality-momentum score &mdash; best stock gets picked</div>
-        </div>
-        <div>
-          <div style="font-weight:700;color:var(--muted);margin-bottom:8px">HOW TO HOLD</div>
-          <div>Hold for <strong>at least 3&ndash;6 months</strong>. Historically, holding 6+ months has the highest hit rate.</div>
-          <div style="margin-top:8px">No stop loss needed for DCA &mdash; you&rsquo;re buying the strongest stocks in the strongest market conditions.</div>
-        </div>
+    <!-- SECTOR RANKINGS -->
+    <div class="section">
+      <div class="section-title">Sector Rankings</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M</th><th>1M</th><th>1W</th><th></th></tr></thead>
+          <tbody id="sectorTable"></tbody>
+        </table>
       </div>
     </div>
-  </div>
 
-  <!-- ACCURACY -->
-  <div class="section" id="accuracy">
-    <div class="section-title">Historical Accuracy</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Same filters applied across all periods. No per-period tuning. 63-day buffers between splits prevent leakage.</p>
-    <div id="accuracyGrid"></div>
-  </div>
-
-  <!-- TOP 5 CANDIDATES -->
-  <div class="section" id="candidates">
-    <div class="section-title">Top Qualifying Stocks</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Stocks passing all quality filters, ranked by score. #1 is today's pick.</p>
-    <div id="candidatesList"></div>
-  </div>
-
-  <!-- PICK HISTORY — by stock with performance since purchase -->
-  <div class="section" id="history">
-    <div class="section-title">Recent Picks &mdash; Performance Since Purchase</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Shows actual performance from purchase date to latest close. Click any stock to see chart with entry points.</p>
-    <div id="picksByTicker"></div>
-
-    <div class="section-title" style="margin-top:24px">Full Pick Log</div>
-    <table id="historyTable">
-      <thead><tr><th>Date</th><th>Pick</th><th>Score</th><th>Entry $</th><th>Current $</th><th>Since Purchase</th><th>Days</th><th>3M Return</th><th>6M Return</th></tr></thead>
-      <tbody id="historyBody"></tbody>
-    </table>
-  </div>
-
-  <!-- SCREENER — with clear guidance -->
-  <div class="section" id="screener">
-    <div class="section-title">Stock Screener</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;margin-bottom:16px">
-      <div style="font-weight:700;color:var(--green);margin-bottom:6px">How to read the score</div>
-      <div>The <strong>Score</strong> (0&ndash;1) combines multi-timeframe momentum (1Y, 6M, 3M returns), proximity to 52-week high, and low drawdown/volatility.</div>
-      <div style="margin-top:6px">&bull; <strong style="color:var(--green)">Score &gt; 0.8</strong>: Top-tier quality momentum. Strong buy candidate when market is BULLISH.</div>
-      <div>&bull; <strong>Score 0.5&ndash;0.8</strong>: Decent momentum but may not pass all quality filters.</div>
-      <div>&bull; <strong style="color:var(--muted)">Score &lt; 0.5</strong>: Weak momentum, in drawdown, or too volatile. Avoid.</div>
-      <div style="margin-top:6px;color:var(--muted)">The model picks the #1 stock by score. If no stocks have Score &gt; 0.8 AND pass all quality filters AND the market is healthy, it says WAIT.</div>
-    </div>
-    <div class="controls">
-      <input type="text" class="search-input" id="searchInput" placeholder="Search ticker..." />
-      <button class="sort-btn active" data-sort="score" onclick="setSort('score')">Score</button>
-      <button class="sort-btn" data-sort="ret252" onclick="setSort('ret252')">1Y Return</button>
-      <button class="sort-btn" data-sort="range" onclick="setSort('range')">52w Range</button>
-      <button class="sort-btn" data-sort="vol" onclick="setSort('vol')">Volatility</button>
-    </div>
-    <table>
-      <thead><tr><th>Ticker</th><th>Price</th><th>Score</th><th>Status</th><th>52w Range</th><th>Vol 21d</th><th>DD</th><th>5d</th><th>21d</th><th>3m</th><th>6m</th><th>1y</th></tr></thead>
-      <tbody id="screenerBody"></tbody>
-    </table>
-  </div>
-
-  </div><!-- end tab-stocks -->
-
-  <!-- ============================================================ -->
-  <!-- TAB 2: SECTOR ROTATION -->
-  <!-- ============================================================ -->
-  <div class="tab-content" id="tab-sectors">
-
-  <div class="section" id="sectors">
-    <div class="section-title" style="font-size:20px;border-top:none;padding-top:0">
-      Sector ETF Rotation &mdash; SMA-Gated Sector Tilt
-    </div>
-    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
-      Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID. No survivorship bias (ETFs are permanent sectors).
-    </p>
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.9;margin-bottom:24px">
-      <div style="font-weight:700;font-size:15px;margin-bottom:16px;color:var(--ink)">Exact Execution Instructions</div>
-
-      <!-- STEP 1 -->
-      <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px">
-        <div style="font-weight:700;color:var(--green);font-size:14px;margin-bottom:10px">STEP 1 &mdash; CHECK EVERY DAY at market close</div>
-        <div style="padding-left:4px">
-          <div>At 4:00 PM ET, look up SPY's closing price and its <strong>30-day simple moving average</strong> (SMA30).</div>
-          <div style="margin-top:10px;padding:12px;background:rgba(63,185,80,.08);border-radius:6px;border-left:3px solid var(--green)">
-            <strong style="color:var(--green)">If SPY CLOSED ABOVE SMA30:</strong><br>
-            You should be invested. If you are already invested, do nothing. If you are in cash (from a previous exit), proceed to Step 2 to re-enter.
-          </div>
-          <div style="margin-top:8px;padding:12px;background:rgba(248,81,73,.08);border-radius:6px;border-left:3px solid var(--red)">
-            <strong style="color:var(--red)">If SPY CLOSED BELOW SMA30:</strong><br>
-            <strong>Sell everything at the next day's open.</strong> Sell both your SPY position AND your sector ETF position. Go to 100% cash. Do not re-enter until SPY closes back above SMA30 (which will trigger Step 2).
-          </div>
-        </div>
+    <!-- EQUITY CURVE -->
+    <div class="section">
+      <div class="section-title">Equity Curve vs SPY ($10k)</div>
+      <div class="period-btns">
+        <button class="period-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
+        <button class="period-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
+        <button class="period-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
+        <button class="period-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
+        <button class="period-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
+        <button class="period-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
+        <button class="period-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
+        <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
       </div>
+      <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
+    </div>
 
-      <!-- STEP 2 -->
-      <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px">
-        <div style="font-weight:700;color:var(--blue);font-size:14px;margin-bottom:10px">STEP 2 &mdash; PICK THE SECTOR (two scenarios)</div>
-        <div style="padding-left:4px">
-          <div style="font-weight:700;margin-bottom:6px">Scenario A: It's the 1st trading day of a new month</div>
-          <div style="padding-left:12px;margin-bottom:12px">
-            If SPY is above SMA30 (Step 1 says invested), look up the <strong>3-month (63 trading day) total return</strong> for each of these 9 sector ETFs: <strong>XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</strong>. Whichever has the highest return becomes your sector pick for the month.<br>
-            <strong>Allocate:</strong> Put <strong>60% of your portfolio in SPY</strong> and <strong>40% in the winning sector ETF</strong>.<br>
-            <span style="color:var(--muted)">If you were already invested in a different sector, sell that sector ETF and buy the new one. Keep SPY.</span>
+    <!-- EXECUTION INSTRUCTIONS (collapsed) -->
+    <div class="section">
+      <div class="section-title">How to Execute</div>
+      <div class="accordion" id="instrAccordion">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Exact Execution Instructions</div>
+        <div class="accordion-body">
+
+          <div class="step-box">
+            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; CHECK EVERY DAY at market close</div>
+            <div>At 4:00 PM ET, look up SPY's closing price and its <strong>30-day simple moving average</strong> (SMA30).</div>
+            <div class="step-rule green-rule">
+              <strong style="color:var(--green)">If SPY CLOSED ABOVE SMA30:</strong><br>
+              You should be invested. If you are already invested, do nothing. If you are in cash (from a previous exit), proceed to Step 2 to re-enter.
+            </div>
+            <div class="step-rule red-rule">
+              <strong style="color:var(--red)">If SPY CLOSED BELOW SMA30:</strong><br>
+              <strong>Sell everything at the next day's open.</strong> Sell both your SPY position AND your sector ETF position. Go to 100% cash.
+            </div>
           </div>
 
-          <div style="font-weight:700;margin-bottom:6px">Scenario B: SPY just crossed BACK above SMA30 (re-entry after being in cash)</div>
-          <div style="padding-left:12px;margin-bottom:12px">
-            This can happen on <strong>any day of the month</strong>, not just the 1st. When SPY closes above SMA30 after being below it:<br>
-            <strong>At the next day's open, buy:</strong><br>
-            &bull; <strong>60% of your portfolio in SPY</strong><br>
-            &bull; <strong>40% in whichever sector ETF currently has the highest 3-month return</strong> (check at that moment, same as Scenario A)<br>
-            <span style="color:var(--muted)">This is the same 60/40 split. You are fully re-entering the market with the best sector available right now.</span>
+          <div class="step-box">
+            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; PICK THE SECTOR (two scenarios)</div>
+
+            <div style="margin-bottom:10px">
+              <div style="font-weight:700;margin-bottom:4px">Scenario A: 1st trading day of a new month</div>
+              <div style="padding-left:8px">
+                If SPY is above SMA30, look up the <strong>3-month (63 trading day) total return</strong> for each of these 9 sector ETFs: <strong>XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</strong>. Highest return = your sector pick for the month.<br>
+                <strong>Allocate:</strong> 60% SPY + 40% winning sector ETF.<br>
+                <span style="color:var(--muted)">If you held a different sector, swap it. Keep SPY.</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:10px">
+              <div style="font-weight:700;margin-bottom:4px">Scenario B: SPY just crossed BACK above SMA30</div>
+              <div style="padding-left:8px">
+                Can happen any day. At next day's open, buy:<br>
+                &bull; 60% SPY<br>
+                &bull; 40% whichever sector ETF has the highest 3-month return<br>
+                <span style="color:var(--muted)">Same 60/40 split. Full re-entry with best sector.</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;margin-bottom:4px">What does NOT trigger a sector change</div>
+              <div style="padding-left:8px">
+                Mid-month sector leadership changes &mdash; you do <strong>nothing</strong>. Sector only changes on the 1st of month or at re-entry after cash.
+              </div>
+            </div>
           </div>
 
-          <div style="font-weight:700;margin-bottom:6px">What does NOT trigger a sector change</div>
-          <div style="padding-left:12px">
-            If it's the middle of the month (say the 15th) and a different sector has become #1, you do <strong>nothing</strong>. You keep the sector you picked on the 1st (Scenario A) or at re-entry (Scenario B). The sector only changes on the next 1st-of-month or at the next re-entry after a cash period.
+          <div class="step-box">
+            <div class="step-label" style="color:var(--gold)">ALLOCATION &amp; COSTS</div>
+            <div><strong>When invested:</strong> 60% SPY + 40% top sector ETF</div>
+            <div><strong>When in cash:</strong> 100% cash (money market, T-bills, etc.)</div>
+            <div><strong>Trades per year:</strong> ~26</div>
+            <div style="margin-top:6px"><strong>Sector ETFs:</strong> XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</div>
+            <div><strong>NOT used:</strong> XLRE, XLC (shorter history)</div>
+            <div><strong>Costs:</strong> ~3 bps per trade</div>
           </div>
-        </div>
-      </div>
 
-      <!-- SUMMARY -->
-      <div style="background:var(--bg);border-radius:8px;padding:16px">
-        <div style="font-weight:700;color:var(--gold);font-size:14px;margin-bottom:10px">ALLOCATION &amp; COSTS</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
-          <div>
-            <strong>When invested:</strong> 60% SPY + 40% top sector ETF<br>
-            <strong>When in cash:</strong> 100% cash (money market, T-bills, etc.)<br>
-            <strong>Trades per year:</strong> ~26 (monthly sector swaps + SMA entries/exits)
-          </div>
-          <div>
-            <strong>Sector ETFs used:</strong> XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB<br>
-            <strong>NOT used:</strong> XLRE, XLC (shorter history)<br>
-            <strong>Costs:</strong> ~3 bps per trade (ETFs are extremely liquid)
-          </div>
         </div>
       </div>
     </div>
 
-    <div id="sectorSignal"></div>
-    <div id="sectorPerf"></div>
-
-    <div class="section-title">Sector Rankings</div>
-    <table>
-      <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M Return</th><th>1M Return</th><th>1W Return</th><th>Status</th></tr></thead>
-      <tbody id="sectorTable"></tbody>
-    </table>
-
-    <div class="section-title" style="margin-top:24px">Equity Curve vs SPY ($10,000 invested)</div>
-    <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
-      <button class="sort-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
-      <button class="sort-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
-      <button class="sort-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
-      <button class="sort-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
-      <button class="sort-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
-      <button class="sort-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
-      <button class="sort-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
-      <button class="sort-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
-    </div>
-    <div class="chart-container" id="sectorChartWrap" style="height:320px"><canvas id="sectorChart"></canvas></div>
-
-    <div class="section-title" style="margin-top:24px">Complete Trade History</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Every holding period since 1999. Each row = one period where you held 60% SPY + 40% sector. Shows blended portfolio return (60/40 weighted), why you entered, and why you exited.</p>
-    <div style="max-height:600px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-    <table>
-      <thead style="position:sticky;top:0"><tr><th>Entry</th><th>Exit</th><th>Sector</th><th>Why In</th><th>Why Out</th><th>Days</th><th>SPY</th><th>Sector</th><th>Portfolio (60/40)</th></tr></thead>
-      <tbody id="tradeHistory"></tbody>
-    </table>
+    <!-- RECENT REGIME CHANGES -->
+    <div class="section">
+      <div class="section-title">Recent Regime Changes</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Signal</th><th>Sector Tilt</th></tr></thead>
+          <tbody id="sectorChanges"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="section-title" style="margin-top:24px">Recent Regime Changes</div>
-    <table>
-      <thead><tr><th>Date</th><th>Signal</th><th>Sector Tilt</th></tr></thead>
-      <tbody id="sectorChanges"></tbody>
-    </table>
-  </div>
-
-  </div><!-- end tab-sectors -->
-
-  <!-- DETAIL PANEL -->
-  <div class="detail-panel" id="detailPanel">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-      <h2 id="detailTicker" style="font-size:20px">—</h2>
-      <span id="detailPrice" style="color:var(--muted)"></span>
-      <button onclick="document.getElementById('detailPanel').classList.remove('open')" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">&times;</button>
+    <!-- TRADE HISTORY -->
+    <div class="section">
+      <div class="section-title">Trade History</div>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Every holding period since 1999. Each row = 60% SPY + 40% sector. Shows blended 60/40 return.</p>
+      <div class="table-wrap trade-scroll">
+        <table>
+          <thead><tr><th>Entry</th><th>Exit</th><th>Sector</th><th>Why In</th><th>Why Out</th><th>Days</th><th>SPY</th><th>Sector</th><th>Portfolio</th></tr></thead>
+          <tbody id="tradeHistory"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="grid" id="detailGrid"></div>
-    <div class="chart-container"><canvas id="detailChart"></canvas></div>
-    <div id="detailConditions"></div>
-  </div>
 
-  <div class="disclaimer">
-    Past performance does not guarantee future results. This is a research tool, not financial advice.
-    <br>No leakage, no overfitting: same parameters across all periods, 63-day buffers between splits.
-    <br>Last scan: <span id="lastScan">—</span>
-  </div>
-</div>
+    <div class="disclaimer">
+      Past performance does not guarantee future results. This is a research tool, not financial advice.
+      <br>No leakage, no overfitting: same parameters across all periods, 63-day buffers between splits.
+      <br>Last scan: <span id="lastScan">&mdash;</span>
+    </div>
+
+  </div><!-- end container -->
+</div><!-- end app -->
 
 <script>
-function tryLogin(){const pw=document.getElementById('pwInput').value;if(pw==='marti'){document.getElementById('loginWrap').style.display='none';document.getElementById('app').style.display='block';sessionStorage.setItem('picker_auth','1');loadData()}else{document.getElementById('loginError').style.display='block'}}
-document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
-if(sessionStorage.getItem('picker_auth')==='1'){document.getElementById('loginWrap').style.display='none';document.getElementById('app').style.display='block';loadData()}
-
-let DATA=null,SORT='score';
-
-function loadData(){fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{DATA=d;render()}).catch(e=>console.error(e))}
-
-let SECTOR_DATA=null;
-
-function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('active',c.id==='tab-'+tab));
-  if(tab==='sectors'&&SECTOR_DATA)renderSectors();
-}
-
-function render(){
-  if(!DATA)return;
-  document.getElementById('lastScan').textContent=DATA.generated?DATA.generated.split('T')[0]:'—';
-
-  const bullish=DATA.market_regime==='BULLISH';
-  const dot=document.getElementById('navDot');
-  const tag=document.getElementById('regimeTag');
-  dot.className='nav-dot '+(bullish?'green':'gold');
-  tag.textContent=DATA.market_regime;
-  tag.style.background=bullish?'var(--green-bg)':'rgba(210,153,34,.12)';
-  tag.style.color=bullish?'var(--green)':'var(--gold)';
-
-  renderPick();
-  renderAccuracy();
-  renderCandidates();
-  renderHistory();
-  renderScreener();
-
-  // Load sector data
-  fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{SECTOR_DATA=d;renderSectors()}).catch(()=>{});
-}
-
-function renderPick(){
-  const el=document.getElementById('pickCard');
-  const pick=DATA.todays_pick||{};
-  if(pick.ticker){
-    el.innerHTML=`<div class="pick-card">
-      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px">Today's Best Buy</div>
-      <div class="pick-ticker" style="color:var(--green)">${pick.ticker}</div>
-      <div class="pick-price">$${pick.price}</div>
-      <div class="pick-score">Quality-Momentum Score: ${pick.score}</div>
-      <div class="pick-instruction">
-        <strong>Action:</strong> Buy <strong>${pick.ticker}</strong> at market price. Hold for at least 3&ndash;6 months.
-      </div>
-    </div>`;
+/* ---- LOGIN ---- */
+function tryLogin(){
+  const pw=document.getElementById('pwInput').value;
+  if(pw==='marti'){
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('app').style.display='block';
+    sessionStorage.setItem('picker_auth','1');
+    loadData();
   } else {
-    el.innerHTML=`<div class="pick-card wait">
-      <div style="font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Market Status</div>
-      <div class="pick-ticker" style="color:var(--gold)">WAIT</div>
-      <div class="pick-score">No qualifying stocks right now</div>
-      <div class="pick-instruction" style="color:var(--gold)">
-        <strong>Action:</strong> Hold cash. Market conditions don't meet quality thresholds. Check back later.
-      </div>
-    </div>`;
+    document.getElementById('loginError').style.display='block';
   }
 }
-
-function renderAccuracy(){
-  const el=document.getElementById('accuracyGrid');
-  const perf=DATA.performance||{};
-  const periodOrder=['1999-2003','2004-2007','2008-2009','train','valid','test','full'];
-  const periodLabels={'1999-2003':'Dot-Com Bust (1999-2003)','2004-2007':'Bull (2004-2007)',
-    '2008-2009':'GFC (2008-2009)','train':'Train (2010-2019)',
-    'valid':'Validation (2020-2022)','test':'Out-of-Sample Test (2023-2026)',
-    'full':'FULL (1999-2026)'};
-  let html='';
-  for(const key of periodOrder){
-    const d=perf[key];
-    if(!d)continue;
-    const isFull=key==='full';
-    const border=isFull?'border:2px solid var(--green);padding:16px;border-radius:8px;':'';
-    html+=`<div style="margin-bottom:24px;${border}"><h3 style="font-size:14px;margin-bottom:12px">${periodLabels[key]||key} &mdash; Picks: ${d.pick_rate||'—'}</h3><div class="grid">`;
-    for(const h of ['3m','6m','1y']){
-      const hs=d[h]||{};
-      if(!hs.n)continue;
-      const label={_3m:'3 Months',_6m:'6 Months',_1y:'1 Year'}['_'+h];
-      html+=`<div class="card"><h3>${label} Forward</h3>
-        <div class="big green">${hs.hit_rate||'—'}</div>
-        <div class="sub">positive</div>
-        <div style="margin-top:8px;font-size:12px">
-          Avg: <strong>${hs.avg}</strong> | Med: <strong>${hs.median}</strong><br>
-          Range: [${hs.min}, ${hs.max}]
-        </div></div>`;
-    }
-    html+='</div></div>';
-  }
-  el.innerHTML=html;
+document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+if(sessionStorage.getItem('picker_auth')==='1'){
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadData();
 }
 
-function renderCandidates(){
-  const el=document.getElementById('candidatesList');
-  const quals=DATA.qualifying||[];
-  if(quals.length===0){el.innerHTML='<p style="color:var(--gold);font-size:14px;padding:16px 0">No stocks currently meet all quality filters. Market may be uncertain &mdash; hold cash.</p>';return}
-  el.innerHTML='';
-  for(const s of quals.slice(0,8)){
-    const isPick=s.is_pick;
-    const border=isPick?'border:2px solid var(--green)':'border:1px solid var(--border)';
-    const bg=isPick?'background:var(--green-bg)':'background:var(--surface)';
-    const badge=isPick?'<span class="badge badge-buy">#1 PICK</span>':'<span class="badge badge-no">Qualifies</span>';
-    const rets=s.returns||{};
-    const conds=s.conditions||{};
-    el.innerHTML+=`<div style="${bg};${border};border-radius:8px;padding:16px;margin-bottom:8px;cursor:pointer" onclick="showDetail('${s.ticker}')">
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="ticker-sym" style="font-size:18px">${s.ticker}</span>
-        <span style="color:var(--muted)">$${s.price}</span>
-        ${badge}
-        <span style="margin-left:auto;font-size:22px;font-weight:700;color:var(--green)">${s.score.toFixed(2)}</span>
-        <span style="font-size:11px;color:var(--muted)">score</span>
-      </div>
-      <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap">
-        <span>52w: <strong style="color:var(--ink)">${s.position_in_range}%</strong></span>
-        <span>Vol: <strong style="color:var(--ink)">${s.vol_21d}%</strong></span>
-        <span>DD: <strong style="color:var(--ink)">${s.drawdown}%</strong></span>
-        ${rets['63d']!=null?`<span>3m: <strong class="${rets['63d']>=0?'pnl-pos':'pnl-neg'}">${rets['63d']}%</strong></span>`:''}
-        ${rets['126d']!=null?`<span>6m: <strong class="${rets['126d']>=0?'pnl-pos':'pnl-neg'}">${rets['126d']}%</strong></span>`:''}
-        ${rets['252d']!=null?`<span>1y: <strong class="${rets['252d']>=0?'pnl-pos':'pnl-neg'}">${rets['252d']}%</strong></span>`:''}
-      </div>
-      <div style="margin-top:8px">${Object.entries(conds).map(([k,v])=>`<span class="cond ${v?'on':'off'}">${v?'\u2713':'\u2717'} ${k.replace(/_/g,' ')}</span>`).join('')}</div>
-    </div>`;
-  }
-}
+/* ---- DATA ---- */
+let SECTOR_DATA=null;
+let SECTOR_PERIOD='1y';
 
-function renderHistory(){
-  // By-ticker consolidated view
-  const byTicker=DATA.picks_by_ticker||[];
-  const container=document.getElementById('picksByTicker');
-  container.innerHTML='';
-  for(const group of byTicker.slice(0,12)){
-    const entries=group.entries||[];
-    const lastEntry=entries[entries.length-1];
-    const avgPerf=entries.reduce((s,e)=>s+e.perf,0)/entries.length;
-    const cls=avgPerf>=0?'pnl-pos':'pnl-neg';
-    container.innerHTML+=`
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;cursor:pointer" onclick="showDetail('${group.ticker}')">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <span class="ticker-sym" style="font-size:16px">${group.ticker}</span>
-          <span style="color:var(--muted)">${group.count} picks</span>
-          <span class="${cls}" style="margin-left:auto;font-size:16px;font-weight:700">${avgPerf>=0?'+':''}${avgPerf.toFixed(1)}% avg</span>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;font-size:11px">
-          ${entries.slice(-8).map(e=>{
-            const c=e.perf>=0?'var(--green)':'var(--red)';
-            return `<span style="background:var(--bg);padding:3px 8px;border-radius:4px">
-              ${e.date.slice(5)} <strong style="color:${c}">${e.perf>=0?'+':''}${e.perf.toFixed(1)}%</strong>
-            </span>`;
-          }).join('')}
-        </div>
-      </div>`;
-  }
+function loadData(){
+  fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    SECTOR_DATA=d;
+    renderAll();
+  }).catch(e=>console.error(e));
 
-  // Full pick log with performance-to-date
-  const body=document.getElementById('historyBody');
-  const picks=(DATA.recent_picks||[]).slice().reverse();
-  body.innerHTML='';
-  for(const p of picks){
-    const perfCls=p.perf_to_date>=0?'pnl-pos':'pnl-neg';
-    const perfStr=(p.perf_to_date>=0?'+':'')+p.perf_to_date.toFixed(1)+'%';
-    const r3=p.return_3m!=null?((p.return_3m>=0?'+':'')+p.return_3m.toFixed(1)+'%'):'<span style="color:var(--muted)">pending</span>';
-    const cls3=p.return_3m!=null?(p.return_3m>=0?'pnl-pos':'pnl-neg'):'';
-    const r6=p.return_6m!=null?((p.return_6m>=0?'+':'')+p.return_6m.toFixed(1)+'%'):'<span style="color:var(--muted)">pending</span>';
-    const cls6=p.return_6m!=null?(p.return_6m>=0?'pnl-pos':'pnl-neg'):'';
-    body.innerHTML+=`<tr onclick="showDetail('${p.ticker}')" style="cursor:pointer">
-      <td>${p.date}</td>
-      <td><span class="ticker-sym">${p.ticker}</span></td>
-      <td>${p.score}</td>
-      <td>$${p.entry_price}</td>
-      <td>$${p.current_price}</td>
-      <td class="${perfCls}"><strong>${perfStr}</strong></td>
-      <td>${p.days_held}d</td>
-      <td class="${cls3}">${r3}</td>
-      <td class="${cls6}">${r6}</td>
-    </tr>`;
-  }
-}
-
-function renderScreener(){
-  const body=document.getElementById('screenerBody');
-  let stocks=[...(DATA.all_stocks||[])];
-  const q=(document.getElementById('searchInput').value||'').toUpperCase().trim();
-  if(q)stocks=stocks.filter(s=>s.ticker.includes(q));
-  const sortMap={score:(a,b)=>b.score-a.score,ret252:(a,b)=>(b.returns?.['252d']||0)-(a.returns?.['252d']||0),range:(a,b)=>b.position_in_range-a.position_in_range,vol:(a,b)=>a.vol_21d-b.vol_21d};
-  stocks.sort(sortMap[SORT]||sortMap.score);
-  body.innerHTML='';
-  for(const s of stocks){
-    const badge=s.is_pick?'<span class="badge badge-buy">#1</span>':(s.qualifies?'<span class="badge badge-buy">OK</span>':'<span class="badge badge-no">&mdash;</span>');
-    const r=s.returns||{};
-    const fmt=v=>v!=null?`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v.toFixed(1)}%</span>`:'—';
-    body.innerHTML+=`<tr onclick="showDetail('${s.ticker}')" style="cursor:pointer">
-      <td><span class="ticker-sym">${s.ticker}</span></td><td>$${s.price}</td>
-      <td><strong>${s.score.toFixed(2)}</strong></td><td>${badge}</td>
-      <td>${s.position_in_range}%</td><td>${s.vol_21d}%</td><td>${s.drawdown}%</td>
-      <td>${fmt(r['5d'])}</td><td>${fmt(r['21d'])}</td><td>${fmt(r['63d'])}</td><td>${fmt(r['126d'])}</td><td>${fmt(r['252d'])}</td>
-    </tr>`;
-  }
-}
-
-function setSort(k){SORT=k;document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===k));renderScreener()}
-document.getElementById('searchInput').addEventListener('input',renderScreener);
-
-function showDetail(ticker){
-  fetch(`./data/tickers/${ticker}.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
-    const panel=document.getElementById('detailPanel');
-    panel.classList.add('open');panel.scrollIntoView({behavior:'smooth'});
-    document.getElementById('detailTicker').textContent=d.ticker;
-    document.getElementById('detailPrice').textContent='$'+d.price;
-    const r=d.returns||{};
-    document.getElementById('detailGrid').innerHTML=[
-      ['Score',d.score,'Quality-momentum'],['52w Range',d.position_in_range+'%','Position'],
-      ['Vol 21d',d.vol_21d+'%','Annualized'],['Drawdown',d.drawdown+'%','From high'],
-      ['3m Return',(r['63d']||0)+'%',''],['6m Return',(r['126d']||0)+'%',''],['1y Return',(r['252d']||0)+'%',''],
-    ].map(([l,v,s])=>`<div class="card"><h3>${l}</h3><div class="big">${v}</div>${s?`<div class="sub">${s}</div>`:''}</div>`).join('');
-    const conds=d.conditions||{};
-    document.getElementById('detailConditions').innerHTML=Object.entries(conds).map(([k,v])=>`<span class="cond ${v?'on':'off'}">${v?'\u2713':'\u2717'} ${k.replace(/_/g,' ')}</span>`).join('');
-    if(d.chart&&d.chart.length){const c=document.getElementById('detailChart');drawChart(c,d.chart,d.pick_entries||[])}
+  // Also load full.json for generated date and market regime
+  fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
+    const bullish=d.market_regime==='BULLISH';
+    const tag=document.getElementById('regimeTag');
+    tag.textContent=d.market_regime;
+    tag.style.background=bullish?'var(--green-bg)':'var(--gold-bg)';
+    tag.style.color=bullish?'var(--green)':'var(--gold)';
   }).catch(()=>{});
 }
 
-let SECTOR_PERIOD='1y';
+function renderAll(){
+  if(!SECTOR_DATA) return;
+  renderActionCard();
+  renderPerformance();
+  renderSectorTable();
+  drawSectorChart();
+  renderTradeHistory();
+  renderRegimeChanges();
+}
 
+/* ---- ACTION CARD ---- */
+function renderActionCard(){
+  const s=SECTOR_DATA;
+  const cs=s.current_status||{};
+  const invested=cs.signal==='INVESTED';
+  const el=document.getElementById('actionCard');
+
+  if(invested){
+    el.innerHTML=`<div class="action-card invested">
+      <div class="action-label" style="color:var(--green)">Tomorrow at Open</div>
+      <div class="action-headline" style="color:var(--green)">HOLD POSITION</div>
+      <div class="action-detail">
+        <strong>60% SPY</strong> + <strong>40% ${cs.top_sector}</strong><br>
+        <span style="color:var(--muted)">${cs.top_sector_name}</span>
+      </div>
+      <div class="action-meta">SPY $${cs.spy_price} &gt; SMA30 $${cs.sma50} &nbsp;|&nbsp; ${cs.top_sector} 3m: +${cs.top_sector_ret_3m}%</div>
+    </div>`;
+  } else {
+    el.innerHTML=`<div class="action-card cash">
+      <div class="action-label" style="color:var(--gold)">Tomorrow at Open</div>
+      <div class="action-headline" style="color:var(--gold)">STAY IN CASH</div>
+      <div class="action-detail" style="color:var(--gold)">
+        SPY closed below SMA30 &mdash; do not enter
+      </div>
+      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA30 $${cs.sma50}</div>
+    </div>`;
+  }
+}
+
+/* ---- PERFORMANCE GRID ---- */
+function renderPerformance(){
+  const perfData=SECTOR_DATA.performance||{};
+  const periodOrder=['dot-com','bull','gfc','train','valid','test','full'];
+  const periodLabels={'dot-com':'Dot-Com (99-03)','bull':'Bull (04-07)','gfc':'GFC (08-09)',
+    'train':'Train (10-19)','valid':'Valid (20-22)','test':'Test OOS (23-26)','full':'FULL (99-26)'};
+  let html='<div class="grid">';
+  for(const key of periodOrder){
+    const d=perfData[key];
+    if(!d) continue;
+    const st=d.strategy||{};
+    const sp=d.spy||{};
+    const isFull=key==='full';
+    html+=`<div class="card${isFull?' highlight':''}">
+      <h3>${periodLabels[key]||key}</h3>
+      <div class="big" style="color:var(--green)">${st.sharpe||'—'}</div>
+      <div class="sub">Sharpe</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        CAGR ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} &middot; DD ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">
+        SPY: ${sp.sharpe||'—'} / ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'}
+      </div>
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('sectorPerf').innerHTML=html;
+}
+
+/* ---- SECTOR TABLE ---- */
+function renderSectorTable(){
+  const secs=SECTOR_DATA.sectors||{};
+  const sorted=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m);
+  const tbody=document.getElementById('sectorTable');
+  tbody.innerHTML='';
+  for(const [etf,d] of sorted){
+    const badge=d.is_top?'<span class="badge badge-buy">TOP</span>':'';
+    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v}%</span>`;
+    tbody.innerHTML+=`<tr>
+      <td><span class="ticker-sym">${etf}</span></td><td>${d.name}</td><td>$${d.price}</td>
+      <td>${fmt(d.ret_3m)}</td><td>${fmt(d.ret_1m)}</td><td>${fmt(d.ret_1w)}</td><td>${badge}</td>
+    </tr>`;
+  }
+}
+
+/* ---- CHART ---- */
 function setSectorPeriod(p){
   SECTOR_PERIOD=p;
-  document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
-  if(SECTOR_DATA)drawSectorChart();
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
+  if(SECTOR_DATA) drawSectorChart();
 }
 
 function drawSectorChart(){
   const eq=SECTOR_DATA.equity_curve_strategy||[];
   const spyEq=SECTOR_DATA.equity_curve_spy||[];
-  if(eq.length<2)return;
+  if(eq.length<2) return;
 
-  // Filter by period
   const periodDays={max:99999,'10y':2520,'5y':1260,'2y':504,'1y':252,'6m':126,'3m':63,'1m':21};
   const days=periodDays[SECTOR_PERIOD]||252;
   const eqSlice=eq.slice(-days);
   const spySlice=spyEq.slice(-days);
 
-  // Rebase to start at $10,000
   const rebase=(arr)=>{
-    if(!arr.length)return arr;
+    if(!arr.length) return arr;
     const base=arr[0].value;
     return arr.map(d=>({date:d.date,value:Math.round(d.value/base*10000)}));
   };
@@ -580,195 +433,104 @@ function drawSectorChart(){
   drawDualChart(canvas,rebase(eqSlice),rebase(spySlice));
 }
 
-function renderSectors(){
-  if(!SECTOR_DATA)return;
-  const s=SECTOR_DATA;
-  const cs=s.current_status||{};
-  const invested=cs.signal==='INVESTED';
+function drawDualChart(canvas,data1,data2){
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;
+  canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width, H=rect.height;
+  ctx.clearRect(0,0,W,H);
 
-  // Signal card
-  const sigEl=document.getElementById('sectorSignal');
-  if(invested){
-    sigEl.innerHTML=`<div class="pick-card" style="margin-bottom:24px">
-      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px">Sector Rotation Signal</div>
-      <div style="font-size:24px;font-weight:700;color:var(--green);margin:8px 0">INVESTED</div>
-      <div style="font-size:16px">60% <strong>SPY</strong> + 40% <strong>${cs.top_sector}</strong> (${cs.top_sector_name})</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:8px">SPY $${cs.spy_price} &gt; SMA50 $${cs.sma50} | ${cs.top_sector} 3m: +${cs.top_sector_ret_3m}%</div>
-    </div>`;
-  } else {
-    sigEl.innerHTML=`<div class="pick-card wait" style="margin-bottom:24px">
-      <div style="font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Sector Rotation Signal</div>
-      <div style="font-size:24px;font-weight:700;color:var(--gold);margin:8px 0">CASH</div>
-      <div style="font-size:14px;color:var(--gold)">SPY $${cs.spy_price} &lt; SMA50 $${cs.sma50} &mdash; stay in cash</div>
-    </div>`;
+  const v1=data1.map(d=>d.value), v2=data2.map(d=>d.value);
+  const n=Math.max(v1.length,v2.length);
+  if(n<2) return;
+
+  const padL=55, padR=15, padT=16, padB=24;
+  let min=Infinity, max=-Infinity;
+  for(const v of [...v1,...v2]){ if(v<min)min=v; if(v>max)max=v; }
+  const range=max-min||1;
+  min-=range*0.05; max+=range*0.05;
+
+  const x=i=>padL+(W-padL-padR)*i/(n-1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min));
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const val=min+(max-min)*i/4;
+    const yy=y(val);
+    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
+    ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);
   }
 
-  // Performance grid — show ALL periods from data
-  const perfEl=document.getElementById('sectorPerf');
-  const perfData=s.performance||{};
-  const periodOrder=['dot-com','bull','gfc','train','valid','test','full'];
-  const periodLabels={'dot-com':'Dot-Com Bust (1999-2003)','bull':'Bull (2004-2007)','gfc':'GFC (2008-2009)',
-    'train':'Train (2010-2019)','valid':'Valid (2020-2022)','test':'Test OOS (2023-2026)','full':'FULL (1999-2026)'};
-  let ph='<div class="grid">';
-  for(const key of periodOrder){
-    const d=perfData[key];
-    if(!d)continue;
-    const st=d.strategy||{};
-    const sp=d.spy||{};
-    const isFullRow=key==='full';
-    const border=isFullRow?'border:2px solid var(--green);':'';
-    ph+=`<div class="card" style="${border}">
-      <h3>${periodLabels[key]||key}</h3>
-      <div class="big green">${st.sharpe||'—'} Sharpe</div>
-      <div class="sub">CAGR: ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} | DD: ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'} | Sortino: ${st.sortino||'—'}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">SPY: ${sp.sharpe||'—'} Sharpe, ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'} CAGR, DD ${sp.max_dd?(sp.max_dd*100).toFixed(0)+'%':'—'}</div>
-    </div>`;
+  // SPY line (gray dashed)
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
+  for(let i=0;i<v2.length;i++){
+    const px=x(i*(n-1)/(v2.length-1)), py=y(v2[i]);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
   }
-  ph+='</div>';
-  perfEl.innerHTML=ph;
+  ctx.stroke();ctx.setLineDash([]);
 
-  // Sector table
-  const tbody=document.getElementById('sectorTable');
-  const secs=s.sectors||{};
-  const sorted=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m);
+  // Strategy line (green) with fill
+  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
+  for(let i=1;i<v1.length;i++) ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
+  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad;ctx.fill();
+
+  ctx.strokeStyle='var(--green)';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<v1.length;i++){
+    const px=x(i*(n-1)/(v1.length-1)), py=y(v1[i]);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // Labels
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#00c853';ctx.fillText('Strategy $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+8,padT+12);
+  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+8,padT+26);
+}
+
+/* ---- TRADE HISTORY ---- */
+function renderTradeHistory(){
+  const trades=SECTOR_DATA.trade_history||[];
+  const tbody=document.getElementById('tradeHistory');
   tbody.innerHTML='';
-  for(const [etf,d] of sorted){
-    const badge=d.is_top?'<span class="badge badge-buy">TOP PICK</span>':'<span class="badge badge-no">&mdash;</span>';
-    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v}%</span>`;
-    tbody.innerHTML+=`<tr>
-      <td><span class="ticker-sym">${etf}</span></td><td>${d.name}</td><td>$${d.price}</td>
-      <td>${fmt(d.ret_3m)}</td><td>${fmt(d.ret_1m)}</td><td>${fmt(d.ret_1w)}</td><td>${badge}</td>
-    </tr>`;
-  }
-
-  // Equity curve (with period selector)
-  drawSectorChart();
-
-  // Trade history table
-  const trades=s.trade_history||[];
-  const thBody=document.getElementById('tradeHistory');
-  thBody.innerHTML='';
   for(const t of trades.slice().reverse()){
     const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
     const exitCls=t.exit_reason.includes('SMA')?'color:var(--red)':t.exit_reason.includes('rotation')?'color:var(--blue)':'color:var(--muted)';
     const entryCls=t.entry_reason.includes('Re-entry')?'color:var(--green)':'color:var(--blue)';
-    thBody.innerHTML+=`<tr>
+    tbody.innerHTML+=`<tr>
       <td>${t.entry}</td><td>${t.exit}</td>
-      <td><span class="ticker-sym">${t.sector}</span> <span style="color:var(--muted);font-size:11px">${t.sector_name}</span></td>
-      <td style="${entryCls};font-size:12px">${t.entry_reason}</td>
-      <td style="${exitCls};font-size:12px">${t.exit_reason}</td>
+      <td><span class="ticker-sym">${t.sector}</span></td>
+      <td style="${entryCls};font-size:11px">${t.entry_reason}</td>
+      <td style="${exitCls};font-size:11px">${t.exit_reason}</td>
       <td>${t.days}d</td>
       <td>${fmt(t.spy_ret)}</td>
       <td>${fmt(t.sector_ret)}</td>
       <td><strong>${fmt(t.blend_ret)}</strong></td>
     </tr>`;
   }
+}
 
-  // Recent changes
-  const changes=s.recent_changes||[];
-  const chBody=document.getElementById('sectorChanges');
-  chBody.innerHTML='';
+/* ---- REGIME CHANGES ---- */
+function renderRegimeChanges(){
+  const changes=SECTOR_DATA.recent_changes||[];
+  const tbody=document.getElementById('sectorChanges');
+  tbody.innerHTML='';
   for(const c of changes.slice().reverse()){
     const cls=c.regime==='CASH'?'color:var(--gold)':'color:var(--green)';
-    chBody.innerHTML+=`<tr><td>${c.date}</td><td style="${cls};font-weight:600">${c.regime}</td><td>${c.sector?c.sector+' ('+c.sector_name+')':'—'}</td></tr>`;
-  }
-}
-
-function drawDualChart(canvas,data1,data2){
-  const ctx=canvas.getContext('2d');const dpr=window.devicePixelRatio||1;
-  const rect=canvas.parentElement.getBoundingClientRect();
-  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);
-  const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
-  const v1=data1.map(d=>d.value),v2=data2.map(d=>d.value);
-  const n=Math.max(v1.length,v2.length);if(n<2)return;
-  const padL=60,padR=20,padT=20,padB=30;
-  let min=Infinity,max=-Infinity;
-  for(const v of [...v1,...v2]){if(v<min)min=v;if(v>max)max=v}
-  const range=max-min||1;min-=range*0.05;max+=range*0.05;
-  const x=i=>padL+(W-padL-padR)*i/(n-1);
-  const y=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min));
-
-  ctx.strokeStyle='rgba(48,54,61,0.6)';ctx.lineWidth=0.5;
-  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#8b949e';ctx.textAlign='right';
-  for(let i=0;i<=4;i++){const val=min+(max-min)*i/4;const yy=y(val);
-    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
-    ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);}
-
-  // SPY line (gray)
-  ctx.strokeStyle='rgba(139,148,158,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
-  for(let i=0;i<v2.length;i++){const px=x(i*(n-1)/(v2.length-1)),py=y(v2[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
-  ctx.stroke();ctx.setLineDash([]);
-
-  // Strategy line (green)
-  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
-  for(let i=1;i<v1.length;i++)ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
-  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
-  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
-  grad.addColorStop(0,'rgba(63,185,80,0.2)');grad.addColorStop(1,'rgba(13,17,23,0)');
-  ctx.fillStyle=grad;ctx.fill();
-  ctx.strokeStyle='#3fb950';ctx.lineWidth=2;ctx.beginPath();
-  for(let i=0;i<v1.length;i++){const px=x(i*(n-1)/(v1.length-1)),py=y(v1[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
-  ctx.stroke();
-
-  // Labels
-  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
-  ctx.fillStyle='#3fb950';ctx.fillText('SGST $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+10,padT+15);
-  ctx.fillStyle='#8b949e';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+10,padT+30);
-}
-
-function drawChart(canvas,chartData,pickEntries){
-  const ctx=canvas.getContext('2d');const dpr=window.devicePixelRatio||1;
-  const rect=canvas.parentElement.getBoundingClientRect();
-  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);
-  const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
-  const dates=chartData.map(d=>d.date);
-  const prices=chartData.map(d=>d.price),n=prices.length;if(n<2)return;
-  const pad=10;let min=Infinity,max=-Infinity;
-  for(const p of prices){if(p<min)min=p;if(p>max)max=p}
-  if(max<=min)return;
-  const x=i=>pad+(W-2*pad)*i/(n-1),y=p=>pad+(H-2*pad)*(1-(p-min)/(max-min));
-  const isUp=prices[n-1]>=prices[0];
-
-  // Price area fill
-  ctx.beginPath();ctx.moveTo(x(0),y(prices[0]));
-  for(let i=1;i<n;i++)ctx.lineTo(x(i),y(prices[i]));
-  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
-  const grad=ctx.createLinearGradient(0,pad,0,H-pad);
-  grad.addColorStop(0,isUp?'rgba(63,185,80,0.15)':'rgba(248,81,73,0.15)');
-  grad.addColorStop(1,'rgba(13,17,23,0)');ctx.fillStyle=grad;ctx.fill();
-
-  // Price line
-  ctx.strokeStyle=isUp?'#3fb950':'#f85149';ctx.lineWidth=1.5;ctx.beginPath();
-  for(let i=0;i<n;i++){const px=x(i),py=y(prices[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)}
-  ctx.stroke();
-
-  // Current price dot
-  ctx.fillStyle=isUp?'#3fb950':'#f85149';ctx.beginPath();
-  ctx.arc(x(n-1),y(prices[n-1]),4,0,Math.PI*2);ctx.fill();
-
-  // Purchase entry dots (green diamonds with vertical lines)
-  if(pickEntries&&pickEntries.length>0){
-    const dateMap={};
-    dates.forEach((d,i)=>{dateMap[d]=i});
-    for(const entry of pickEntries){
-      const idx=dateMap[entry.date];
-      if(idx==null)continue;
-      const px=x(idx),py=y(entry.price);
-
-      // Vertical dashed line
-      ctx.strokeStyle='rgba(88,166,255,0.3)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
-      ctx.beginPath();ctx.moveTo(px,pad);ctx.lineTo(px,H-pad);ctx.stroke();ctx.setLineDash([]);
-
-      // Diamond marker
-      const s=6;
-      ctx.fillStyle='#58a6ff';ctx.beginPath();
-      ctx.moveTo(px,py-s);ctx.lineTo(px+s,py);ctx.lineTo(px,py+s);ctx.lineTo(px-s,py);ctx.closePath();ctx.fill();
-
-      // Price label
-      ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='#58a6ff';ctx.textAlign='center';
-      ctx.fillText('$'+entry.price.toFixed(0),px,py-s-4);
-    }
+    tbody.innerHTML+=`<tr>
+      <td>${c.date}</td>
+      <td style="${cls};font-weight:600">${c.regime}</td>
+      <td>${c.sector?c.sector+' ('+c.sector_name+')':'—'}</td>
+    </tr>`;
   }
 }
 </script>
-</body></html>
+</body>
+</html>
