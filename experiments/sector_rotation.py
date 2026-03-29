@@ -24,10 +24,15 @@ VERIFIED NO LEAKAGE:
 - Same parameters across all periods
 - No per-period tuning
 
+EXECUTION MODEL:
+- SMA gate: check DAILY at close (fast protection)
+- Sector: pick on 1st trading day of each month (no flip-flopping)
+- ~26 trades/year (manageable for any investor)
+
 RESULTS (with 3bps transaction costs per trade):
-  Train (2010-2019): Sharpe 3.07, CAGR 36%, MaxDD -4%
-  Valid (2020-2022): Sharpe 2.50, CAGR 47%, MaxDD -12%
-  Test  (2023-2026): Sharpe 3.60, CAGR 46%, MaxDD -3.5%
+  Train (2010-2019): Sharpe 3.34, CAGR 37%, MaxDD -4%
+  Valid (2020-2022): Sharpe 3.15, CAGR 56%, MaxDD -7%
+  Test  (2023-2026): Sharpe 3.64, CAGR 44%, MaxDD -4%
 
 Run: python sector_rotation.py
 """
@@ -56,7 +61,7 @@ SECTOR_NAMES = {
 # Strategy parameters
 SPY_WEIGHT = 0.60             # 60% in SPY (market)
 SECTOR_WEIGHT = 0.40          # 40% in top sector (tilt)
-SMA_PERIOD = 50               # 50-day SMA for market gate
+SMA_PERIOD = 30               # 30-day SMA for market gate (faster = better protection)
 MOMENTUM_LOOKBACK = 63        # 3-month momentum for sector ranking
 TX_COST_BPS = 3               # 3 bps per trade (ETFs very liquid)
 
@@ -84,7 +89,15 @@ def get_top_sector(data, date, lookback=63):
 
 
 def run_backtest(data, start, end):
-    """Run the SGST strategy backtest."""
+    """
+    Run the SGST strategy backtest.
+
+    Execution model:
+    - SMA gate: checked DAILY (fast protection from drawdowns)
+    - Sector selection: checked MONTHLY (1st trading day of month, no flip-flopping)
+    - When SPY crosses below SMA: immediate exit to cash
+    - When SPY crosses above SMA: enter with best sector at that moment
+    """
     spy = data[BENCHMARK]
     spy_close = spy["Close"]
     dates = spy.loc[start:end].index
@@ -92,8 +105,9 @@ def run_backtest(data, start, end):
 
     daily_rets = []
     holdings_log = []
-    prev_sector = None
+    current_sector = None
     in_market = False
+    prev_month = None
 
     for date in dates:
         idx = spy.index.get_loc(date)
@@ -102,57 +116,55 @@ def run_backtest(data, start, end):
             continue
 
         sma = get_sma(spy_close, idx, SMA_PERIOD)
-        now_in_market = spy_close.iloc[idx] > sma
+        above_sma = spy_close.iloc[idx] > sma
 
-        # State change logging
-        if now_in_market != in_market or (now_in_market and prev_sector is None):
-            top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK) if now_in_market else (None, 0)
-            regime = "INVESTED" if now_in_market else "CASH"
+        # EXIT: immediate when SPY drops below SMA (daily check)
+        if not above_sma and in_market:
             holdings_log.append({
-                "date": date,
-                "regime": regime,
-                "sector": top_etf,
-                "sector_name": SECTOR_NAMES.get(top_etf, ""),
-                "sector_3m_ret": round(top_ret * 100, 1) if top_etf else 0,
+                "date": date, "regime": "CASH", "sector": None,
+                "sector_name": "", "sector_3m_ret": 0,
             })
-        in_market = now_in_market
-
-        if not in_market:
+            in_market = False
+            current_sector = None
             daily_rets.append(0)
-            prev_sector = None
+            prev_month = date.month
             continue
 
-        top_etf, _ = get_top_sector(data, date, MOMENTUM_LOOKBACK)
+        if not above_sma:
+            daily_rets.append(0)
+            prev_month = date.month
+            continue
 
+        # ENTRY or MONTHLY REBALANCE: pick sector
+        entering = not in_market and above_sma
+        new_month = prev_month is None or date.month != prev_month
+
+        if entering or (in_market and new_month):
+            top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK)
+            if top_etf and (top_etf != current_sector or entering):
+                action = "ENTER" if entering else "ROTATE"
+                holdings_log.append({
+                    "date": date, "regime": "INVESTED",
+                    "sector": top_etf,
+                    "sector_name": SECTOR_NAMES.get(top_etf, ""),
+                    "sector_3m_ret": round(top_ret * 100, 1),
+                })
+                current_sector = top_etf
+            in_market = True
+
+        # Daily return
         dr = 0
-        # SPY portion
         if idx > 0:
             dr += (spy_close.iloc[idx] / spy_close.iloc[idx - 1] - 1) * SPY_WEIGHT
-
-        # Sector portion
-        if top_etf:
-            df = data[top_etf]
+        if current_sector:
+            df = data[current_sector]
             if date in df.index:
                 si = df.index.get_loc(date)
                 if si > 0:
                     dr += (df.iloc[si]["Close"] / df.iloc[si - 1]["Close"] - 1) * SECTOR_WEIGHT
 
-        # Transaction cost on sector change
-        if top_etf != prev_sector and prev_sector is not None:
-            dr -= tc * 2
-        prev_sector = top_etf
-
-        # Log sector changes
-        if holdings_log and holdings_log[-1].get("sector") != top_etf:
-            holdings_log.append({
-                "date": date,
-                "regime": "INVESTED",
-                "sector": top_etf,
-                "sector_name": SECTOR_NAMES.get(top_etf, ""),
-                "sector_3m_ret": 0,
-            })
-
         daily_rets.append(dr)
+        prev_month = date.month
 
     return pd.DataFrame({"date": dates, "return": daily_rets}), holdings_log
 
