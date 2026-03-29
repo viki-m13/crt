@@ -175,6 +175,9 @@ def period_stats(picks_df):
     result = {"pick_rate": f"{len(has_pick)}/{total_days} ({len(has_pick)/total_days:.0%})"}
     for horizon in ["3m", "6m", "1y"]:
         col = f"fwd_{horizon}"
+        if col not in has_pick.columns:
+            result[horizon] = {"n": 0}
+            continue
         valid = has_pick[has_pick[col].notna()]
         if len(valid) == 0:
             result[horizon] = {"n": 0}
@@ -202,9 +205,16 @@ if __name__ == "__main__":
     print(f"  Stock:  ret_252d>{cfg.min_ret_252d}, ret_126d>{cfg.min_ret_126d}, "
           f"range>{cfg.min_pos_range}, vol<{cfg.max_vol_21d}")
 
-    for pname, s, e in [("TRAIN", TRAIN_START, TRAIN_END),
-                         ("VALID", VALID_START, VALID_END),
-                         ("TEST", TEST_START, TEST_END)]:
+    STOCK_PERIODS = [
+        ("1999-2003", "1999-06-01", "2003-12-31"),
+        ("2004-2007", "2004-01-01", "2007-12-31"),
+        ("2008-2009", "2008-01-01", "2009-12-31"),
+        ("TRAIN", TRAIN_START, TRAIN_END),
+        ("VALID", VALID_START, VALID_END),
+        ("TEST", TEST_START, TEST_END),
+        ("FULL", "1999-06-01", TEST_END),
+    ]
+    for pname, s, e in STOCK_PERIODS:
         print(f"\n{'='*60}")
         print(f"{pname}: {s} to {e}")
         print(f"{'='*60}")
@@ -283,21 +293,57 @@ if __name__ == "__main__":
         })
     all_stocks.sort(key=lambda s: s["score"], reverse=True)
 
-    # Historical picks for test period
+    # Historical picks — show performance-to-date, not just "pending"
     test_picks = run_picker_backtest(data, TEST_START, TEST_END, cfg)
     test_valid = test_picks[test_picks["ticker"].notna()]
+
     recent_picks = []
-    for _, row in test_valid.tail(60).iterrows():
+    for _, row in test_valid.tail(90).iterrows():
+        ticker = row["ticker"]
+        entry_price = row["entry_price"]
+        # Get current/latest price for this stock
+        current_price = float(data[ticker]["Close"].iloc[-1]) if ticker in data else entry_price
+        perf_to_date = round((current_price / entry_price - 1) * 100, 2)
+        days_since = (data["SPY"].index[-1] - row["date"]).days
+
         recent_picks.append({
-            "date": str(row["date"].date()), "ticker": row["ticker"],
-            "score": row["score"], "entry_price": row["entry_price"],
+            "date": str(row["date"].date()), "ticker": ticker,
+            "score": row["score"], "entry_price": entry_price,
+            "current_price": round(current_price, 2),
+            "perf_to_date": perf_to_date,
+            "days_held": days_since,
             "return_3m": round(float(row["fwd_3m"]) * 100, 2) if row["fwd_3m"] is not None else None,
             "return_6m": round(float(row["fwd_6m"]) * 100, 2) if row["fwd_6m"] is not None else None,
         })
 
-    # Performance across periods
-    train_picks = run_picker_backtest(data, TRAIN_START, TRAIN_END, cfg)
-    valid_picks = run_picker_backtest(data, VALID_START, VALID_END, cfg)
+    # Consolidate picks by ticker — group entries for chart view
+    picks_by_ticker = {}
+    for p in recent_picks:
+        t = p["ticker"]
+        if t not in picks_by_ticker:
+            picks_by_ticker[t] = {"ticker": t, "entries": [], "count": 0}
+        picks_by_ticker[t]["entries"].append({
+            "date": p["date"], "price": p["entry_price"], "score": p["score"],
+            "perf": p["perf_to_date"], "return_3m": p["return_3m"],
+        })
+        picks_by_ticker[t]["count"] += 1
+    # Sort by most frequently picked
+    picks_consolidated = sorted(picks_by_ticker.values(), key=lambda x: -x["count"])
+
+    # Performance across ALL periods
+    all_period_stats = {}
+    for pname, s, e in [("1999-2003", "1999-06-01", "2003-12-31"),
+                         ("2004-2007", "2004-01-01", "2007-12-31"),
+                         ("2008-2009", "2008-01-01", "2009-12-31"),
+                         ("train", TRAIN_START, TRAIN_END),
+                         ("valid", VALID_START, VALID_END),
+                         ("test", TEST_START, TEST_END),
+                         ("full", "1999-06-01", TEST_END)]:
+        try:
+            pp = run_picker_backtest(data, s, e, cfg)
+            all_period_stats[pname] = period_stats(pp)
+        except Exception as ex:
+            print(f"  Warning: {pname} failed: {ex}")
 
     docs_dir = os.path.join(os.path.dirname(__file__), "docs", "data")
     os.makedirs(docs_dir, exist_ok=True)
@@ -317,12 +363,9 @@ if __name__ == "__main__":
         "top5": [{"ticker": t, "score": round(s, 3),
                   "price": round(float(data[t]["Close"].iloc[-1]), 2) if t in data else 0}
                  for t, s, _ in (today_top5 if today_result else [])],
-        "performance": {
-            "train": period_stats(train_picks),
-            "validation": period_stats(valid_picks),
-            "test": period_stats(test_picks),
-        },
+        "performance": all_period_stats,
         "recent_picks": recent_picks,
+        "picks_by_ticker": picks_consolidated[:20],
         "all_stocks": all_stocks,
         "qualifying": [s for s in all_stocks if s["qualifies"]],
     }
