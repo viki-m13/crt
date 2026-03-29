@@ -325,6 +325,7 @@ if __name__ == "__main__":
         picks_by_ticker[t]["entries"].append({
             "date": p["date"], "price": p["entry_price"], "score": p["score"],
             "perf": p["perf_to_date"], "return_3m": p["return_3m"],
+            "return_6m": p["return_6m"],
         })
         picks_by_ticker[t]["count"] += 1
     # Sort by most frequently picked
@@ -388,9 +389,12 @@ if __name__ == "__main__":
         if ticker not in data:
             continue
         chart = [{"date": str(dt.date()), "price": round(float(row["Close"]), 2)}
-                 for dt, row in data[ticker].tail(252).iterrows()]
+                 for dt, row in data[ticker].tail(504).iterrows()]
+        # Embed pick entry points for this ticker (for chart dots)
+        ticker_picks = picks_by_ticker.get(ticker, {}).get("entries", [])
+        ticker_data = {**stock, "chart": chart, "pick_entries": ticker_picks}
         with open(os.path.join(docs_dir, "tickers", f"{ticker}.json"), "w") as f:
-            json.dump({**stock, "chart": chart}, f, indent=2)
+            json.dump(clean_nan(ticker_data), f, indent=2)
 
     print(f"  Today's pick: {today_result[0] if today_result else 'NONE (wait)'}")
     print(f"  {len([s for s in all_stocks if s['qualifies']])} qualifying, {len(all_stocks)} scanned")
