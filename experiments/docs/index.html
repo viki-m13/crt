@@ -144,51 +144,9 @@
     <!-- ACTION CARD: What to do tomorrow -->
     <div id="actionCard"></div>
 
-    <!-- STRATEGY SUMMARY -->
+    <!-- EXECUTION INSTRUCTIONS (right after action card) -->
     <div class="section">
-      <div class="section-title" style="border-top:none;padding-top:12px">Strategy</div>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
-        60% SPY + 40% top sector ETF. SMA30-gated. Monthly rotation.<br>
-        Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID.
-      </p>
-    </div>
-
-    <!-- PERFORMANCE GRID -->
-    <div class="section" id="perfSection">
-      <div class="section-title">Performance</div>
-      <div id="sectorPerf"></div>
-    </div>
-
-    <!-- SECTOR RANKINGS -->
-    <div class="section">
-      <div class="section-title">Sector Rankings</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M</th><th>1M</th><th>1W</th><th></th></tr></thead>
-          <tbody id="sectorTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- EQUITY CURVE -->
-    <div class="section">
-      <div class="section-title">Equity Curve vs SPY ($10k)</div>
-      <div class="period-btns">
-        <button class="period-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
-        <button class="period-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
-        <button class="period-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
-        <button class="period-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
-        <button class="period-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
-        <button class="period-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
-        <button class="period-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
-        <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
-      </div>
-      <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
-    </div>
-
-    <!-- EXECUTION INSTRUCTIONS (collapsed) -->
-    <div class="section">
-      <div class="section-title">How to Execute</div>
+      <div class="section-title" style="border-top:none;padding-top:0">How to Execute</div>
       <div class="accordion" id="instrAccordion">
         <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Exact Execution Instructions</div>
         <div class="accordion-body">
@@ -248,6 +206,48 @@
 
         </div>
       </div>
+    </div>
+
+    <!-- STRATEGY SUMMARY -->
+    <div class="section">
+      <div class="section-title">Strategy</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
+        60% SPY + 40% top sector ETF. SMA30-gated. Monthly rotation.<br>
+        Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID.
+      </p>
+    </div>
+
+    <!-- PERFORMANCE GRID -->
+    <div class="section" id="perfSection">
+      <div class="section-title">Performance</div>
+      <div id="sectorPerf"></div>
+    </div>
+
+    <!-- SECTOR RANKINGS -->
+    <div class="section">
+      <div class="section-title">Sector Rankings</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M</th><th>1M</th><th>1W</th><th></th></tr></thead>
+          <tbody id="sectorTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EQUITY CURVE -->
+    <div class="section">
+      <div class="section-title">Equity Curve vs SPY ($10k)</div>
+      <div class="period-btns">
+        <button class="period-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
+        <button class="period-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
+        <button class="period-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
+        <button class="period-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
+        <button class="period-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
+        <button class="period-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
+        <button class="period-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
+        <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
+      </div>
+      <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
     </div>
 
     <!-- RECENT REGIME CHANGES -->
@@ -340,24 +340,64 @@ function renderActionCard(){
   const invested=cs.signal==='INVESTED';
   const el=document.getElementById('actionCard');
 
+  // Figure out previous state from recent_changes to determine transition
+  const changes=s.recent_changes||[];
+  const lastChange=changes.length?changes[changes.length-1]:null;
+  const prevChange=changes.length>1?changes[changes.length-2]:null;
+
+  // Find top sector from rankings (for CASH→INVESTED re-entry scenario)
+  const secs=s.sectors||{};
+  const topSector=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m)[0];
+  const topETF=topSector?topSector[0]:'—';
+  const topName=topSector?topSector[1].name:'—';
+  const topRet=topSector?topSector[1].ret_3m:0;
+
   if(invested){
     el.innerHTML=`<div class="action-card invested">
-      <div class="action-label" style="color:var(--green)">Tomorrow at Open</div>
-      <div class="action-headline" style="color:var(--green)">HOLD POSITION</div>
-      <div class="action-detail">
-        <strong>60% SPY</strong> + <strong>40% ${cs.top_sector}</strong><br>
-        <span style="color:var(--muted)">${cs.top_sector_name}</span>
+      <div class="action-label" style="color:var(--green)">Tomorrow at Market Open</div>
+      <div class="action-headline" style="color:var(--green)">HOLD</div>
+      <div class="action-detail" style="text-align:left;margin-top:12px">
+        <div style="margin-bottom:8px"><strong style="color:var(--green)">DO NOT SELL.</strong> Keep your current positions:</div>
+        <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-family:var(--mono);font-size:15px">
+          <div>60% &rarr; <strong>SPY</strong></div>
+          <div>40% &rarr; <strong>${cs.top_sector}</strong> <span style="color:var(--muted);font-size:12px">${cs.top_sector_name}</span></div>
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px">No trades needed. SPY is above SMA30. Next check: today at 4 PM ET.</div>
       </div>
       <div class="action-meta">SPY $${cs.spy_price} &gt; SMA30 $${cs.sma50} &nbsp;|&nbsp; ${cs.top_sector} 3m: +${cs.top_sector_ret_3m}%</div>
     </div>`;
   } else {
+    // CASH: check if we were previously invested (need to sell) or already in cash
+    const wasInvested=prevChange&&prevChange.regime==='INVESTED';
+    const prevSector=prevChange?prevChange.sector:'';
+    const justWentCash=lastChange&&lastChange.regime==='CASH';
+
+    let sellNote='';
+    if(wasInvested&&justWentCash&&prevSector){
+      sellNote=`<div style="background:var(--red-bg);padding:10px 12px;border-radius:6px;margin-bottom:10px;border-left:3px solid var(--red)">
+        <strong style="color:var(--red)">SELL at open:</strong>
+        <div style="font-family:var(--mono);font-size:15px;margin-top:4px">
+          <div>Sell <strong>SPY</strong> (entire position)</div>
+          <div>Sell <strong>${prevSector}</strong> (entire position)</div>
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px">Go to 100% cash.</div>
+      </div>`;
+    }
+
     el.innerHTML=`<div class="action-card cash">
-      <div class="action-label" style="color:var(--gold)">Tomorrow at Open</div>
-      <div class="action-headline" style="color:var(--gold)">STAY IN CASH</div>
-      <div class="action-detail" style="color:var(--gold)">
-        SPY closed below SMA30 &mdash; do not enter
+      <div class="action-label" style="color:var(--gold)">Tomorrow at Market Open</div>
+      <div class="action-headline" style="color:var(--gold)">CASH</div>
+      <div class="action-detail" style="text-align:left;margin-top:12px">
+        ${sellNote}
+        <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-size:13px">
+          <strong style="color:var(--gold)">DO NOT BUY.</strong> SPY closed below its 30-day moving average.<br>
+          Stay in cash (money market, T-bills). Wait for SPY to close back above SMA30.
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px">
+          When SPY crosses back above SMA30, buy: 60% SPY + 40% <strong>${topETF}</strong> (${topName}, currently #1 with +${topRet}% 3m return).
+        </div>
       </div>
-      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA30 $${cs.sma50}</div>
+      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA30 $${cs.sma50} &nbsp;|&nbsp; Gap: ${((1-cs.spy_price/cs.sma50)*100).toFixed(1)}% below</div>
     </div>`;
   }
 }
