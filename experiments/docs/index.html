@@ -65,6 +65,11 @@
     .chart-container{width:100%;height:200px;margin:16px 0;background:var(--bg);border-radius:6px;overflow:hidden}
     .chart-container canvas{width:100%;height:100%}
     .disclaimer{text-align:center;color:var(--muted);font-size:11px;padding:32px 24px;border-top:1px solid var(--border);margin-top:32px}
+    .tab-btn{padding:10px 24px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s}
+    .tab-btn.active{background:var(--green-bg);color:var(--green);border-color:rgba(63,185,80,.4)}
+    .tab-btn:hover{color:var(--ink)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
     @media(max-width:600px){.grid{grid-template-columns:1fr}.nav-links{display:none}th{position:static}.pick-ticker{font-size:36px}}
   </style>
 </head>
@@ -84,19 +89,27 @@
     <span class="nav-logo"><span class="nav-dot green" id="navDot"></span>Daily Best Stock Picker</span>
     <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULLISH</span>
     <div class="nav-links">
-      <a href="#pick">Today's Pick</a>
-      <a href="#accuracy">Accuracy</a>
-      <a href="#history">History</a>
-      <a href="#sectors">Sectors</a>
-      <a href="#screener">Screener</a>
+      <a href="#" onclick="switchTab('stocks');return false">Stocks</a>
+      <a href="#" onclick="switchTab('sectors');return false">Sectors</a>
       <a href="/" style="color:var(--blue)">&larr; Main</a>
     </div>
   </nav>
 
   <div class="hero">
     <h1>What should I buy today?</h1>
-    <p>Scans ~100 large-cap stocks daily. Picks the single highest quality-momentum stock. For monthly DCA investors. Hold at least 3-6 months.</p>
+    <p>Two strategies: pick individual stocks or rotate sector ETFs. Both use momentum + market timing.</p>
   </div>
+
+  <!-- STRATEGY TABS -->
+  <div style="display:flex;justify-content:center;gap:8px;padding:0 24px 24px">
+    <button class="tab-btn active" data-tab="stocks" onclick="switchTab('stocks')">Stock Picker</button>
+    <button class="tab-btn" data-tab="sectors" onclick="switchTab('sectors')">Sector Rotation</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1: STOCK PICKER -->
+  <!-- ============================================================ -->
+  <div class="tab-content active" id="tab-stocks">
 
   <!-- TODAY'S PICK -->
   <div class="section" id="pick">
@@ -149,14 +162,39 @@
     </table>
   </div>
 
-  <!-- SECTOR ROTATION STRATEGY -->
+  </div><!-- end tab-stocks -->
+
+  <!-- ============================================================ -->
+  <!-- TAB 2: SECTOR ROTATION -->
+  <!-- ============================================================ -->
+  <div class="tab-content" id="tab-sectors">
+
   <div class="section" id="sectors">
-    <div class="section-title" style="font-size:20px;border-top:3px solid var(--blue);padding-top:32px;margin-top:32px">
+    <div class="section-title" style="font-size:20px;border-top:none;padding-top:0">
       Sector ETF Rotation &mdash; SMA-Gated Sector Tilt
     </div>
     <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
-      When SPY &gt; 50-day SMA: hold 60% SPY + 40% top sector ETF. Below SMA: cash. No survivorship bias (ETFs are permanent sectors). Rebalance when top sector changes.
+      Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID. No survivorship bias (ETFs are permanent sectors).
     </p>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;font-size:13px;line-height:1.8;margin-bottom:24px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+        <div>
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px">DAILY CHECK (at market close)</div>
+          <div>Is SPY above its <strong>30-day moving average</strong>?</div>
+          <div style="margin-top:6px">&bull; <strong style="color:var(--green)">YES</strong>: Hold <strong>60% SPY + 40% top sector ETF</strong></div>
+          <div>&bull; <strong style="color:var(--gold)">NO</strong>: Sell everything. <strong>100% cash</strong>. Wait.</div>
+          <div style="margin-top:6px;color:var(--muted)">This is the safety switch. It protected against every major crash.</div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--blue);margin-bottom:8px">MONTHLY (1st trading day)</div>
+          <div>Which sector ETF has the best <strong>3-month return</strong>?</div>
+          <div style="margin-top:6px">Put 40% of your portfolio in that sector. Keep 60% in SPY.</div>
+          <div style="margin-top:6px;color:var(--muted)">Sector only changes once per month &mdash; no daily flip-flopping.</div>
+          <div style="margin-top:8px"><strong>~26 trades/year total.</strong> Trivially executable.</div>
+        </div>
+      </div>
+    </div>
 
     <div id="sectorSignal"></div>
     <div id="sectorPerf"></div>
@@ -167,8 +205,18 @@
       <tbody id="sectorTable"></tbody>
     </table>
 
-    <div class="section-title" style="margin-top:24px">Equity Curve (Test Period vs SPY)</div>
-    <div class="chart-container" id="sectorChartWrap" style="height:280px"><canvas id="sectorChart"></canvas></div>
+    <div class="section-title" style="margin-top:24px">Equity Curve vs SPY ($10,000 invested)</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="sort-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
+      <button class="sort-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
+      <button class="sort-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
+      <button class="sort-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
+      <button class="sort-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
+      <button class="sort-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
+      <button class="sort-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
+      <button class="sort-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
+    </div>
+    <div class="chart-container" id="sectorChartWrap" style="height:320px"><canvas id="sectorChart"></canvas></div>
 
     <div class="section-title" style="margin-top:24px">Recent Regime Changes</div>
     <table>
@@ -176,6 +224,8 @@
       <tbody id="sectorChanges"></tbody>
     </table>
   </div>
+
+  </div><!-- end tab-sectors -->
 
   <!-- DETAIL PANEL -->
   <div class="detail-panel" id="detailPanel">
@@ -222,6 +272,12 @@ let DATA=null,SORT='score';
 function loadData(){fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{DATA=d;render()}).catch(e=>console.error(e))}
 
 let SECTOR_DATA=null;
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('active',c.id==='tab-'+tab));
+  if(tab==='sectors'&&SECTOR_DATA)renderSectors();
+}
 
 function render(){
   if(!DATA)return;
@@ -394,6 +450,35 @@ function showDetail(ticker){
   }).catch(()=>{});
 }
 
+let SECTOR_PERIOD='1y';
+
+function setSectorPeriod(p){
+  SECTOR_PERIOD=p;
+  document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
+  if(SECTOR_DATA)drawSectorChart();
+}
+
+function drawSectorChart(){
+  const eq=SECTOR_DATA.equity_curve_strategy||[];
+  const spyEq=SECTOR_DATA.equity_curve_spy||[];
+  if(eq.length<2)return;
+
+  // Filter by period
+  const periodDays={max:99999,'10y':2520,'5y':1260,'2y':504,'1y':252,'6m':126,'3m':63,'1m':21};
+  const days=periodDays[SECTOR_PERIOD]||252;
+  const eqSlice=eq.slice(-days);
+  const spySlice=spyEq.slice(-days);
+
+  // Rebase to start at $10,000
+  const rebase=(arr)=>{
+    if(!arr.length)return arr;
+    const base=arr[0].value;
+    return arr.map(d=>({date:d.date,value:Math.round(d.value/base*10000)}));
+  };
+  const canvas=document.getElementById('sectorChart');
+  drawDualChart(canvas,rebase(eqSlice),rebase(spySlice));
+}
+
 function renderSectors(){
   if(!SECTOR_DATA)return;
   const s=SECTOR_DATA;
@@ -449,13 +534,8 @@ function renderSectors(){
     </tr>`;
   }
 
-  // Equity curve
-  const eq=s.equity_curve_strategy||[];
-  const spyEq=s.equity_curve_spy||[];
-  if(eq.length>2){
-    const canvas=document.getElementById('sectorChart');
-    drawDualChart(canvas,eq,spyEq);
-  }
+  // Equity curve (with period selector)
+  drawSectorChart();
 
   // Recent changes
   const changes=s.recent_changes||[];

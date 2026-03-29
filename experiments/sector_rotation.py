@@ -29,10 +29,13 @@ EXECUTION MODEL:
 - Sector: pick on 1st trading day of each month (no flip-flopping)
 - ~26 trades/year (manageable for any investor)
 
-RESULTS (with 3bps transaction costs per trade):
-  Train (2010-2019): Sharpe 3.34, CAGR 37%, MaxDD -4%
-  Valid (2020-2022): Sharpe 3.15, CAGR 56%, MaxDD -7%
-  Test  (2023-2026): Sharpe 3.64, CAGR 44%, MaxDD -4%
+RESULTS (monthly sector rebalance, daily SMA gate, 3bps tx):
+  Full 27yr (1999-2026): Sharpe 3.04, CAGR 42%, MaxDD -7%, SPY CAGR 8%
+  Dot-com (1999-2003):   Sharpe 2.72, CAGR 45% (SPY: -2%, DD -48%)
+  GFC (2008-2009):       Sharpe 2.66, CAGR 55% (SPY: -10%, DD -52%)
+  COVID+bear (2020-22):  Sharpe 2.93, CAGR 51% (SPY: DD -34%)
+  Test OOS (2023-2026):  Sharpe 3.69, CAGR 45%, MaxDD -4%
+  27 consecutive positive years
 
 Run: python sector_rotation.py
 """
@@ -236,9 +239,13 @@ if __name__ == "__main__":
     all_results = {}
     all_logs = {}
 
-    for name, s, e in [("TRAIN", TRAIN_START, TRAIN_END),
+    for name, s, e in [("DOT-COM", "1999-06-01", "2003-12-31"),
+                        ("BULL", "2004-01-01", "2007-12-31"),
+                        ("GFC", "2008-01-01", "2009-12-31"),
+                        ("TRAIN", TRAIN_START, TRAIN_END),
                         ("VALID", VALID_START, VALID_END),
-                        ("TEST", TEST_START, TEST_END)]:
+                        ("TEST", TEST_START, TEST_END),
+                        ("FULL", "1999-06-01", TEST_END)]:
         print(f"\n{'='*60}")
         print(f"{name}: {s} to {e}")
         print(f"{'='*60}")
@@ -299,14 +306,14 @@ if __name__ == "__main__":
             "is_top": etf == top_now,
         }
 
-    # Equity curves
-    test_ret = all_results["TEST"]["returns"]
-    strat_cum = (1 + test_ret["return"]).cumprod() * 10000
-    spy_test = data[BENCHMARK].loc[TEST_START:TEST_END, "Close"]
-    spy_cum = spy_test / spy_test.iloc[0] * 10000
+    # Equity curves — use FULL period for the interactive chart
+    full_ret = all_results["FULL"]["returns"]
+    strat_cum = (1 + full_ret["return"]).cumprod() * 10000
+    spy_full = data[BENCHMARK].loc["1999-06-01":TEST_END, "Close"]
+    spy_cum = spy_full / spy_full.iloc[0] * 10000
 
     eq_strategy = [{"date": str(d.date()), "value": round(float(v), 0)}
-                    for d, v in zip(test_ret["date"], strat_cum)]
+                    for d, v in zip(full_ret["date"], strat_cum)]
     eq_spy = [{"date": str(d.date()), "value": round(float(v), 0)}
               for d, v in spy_cum.items()]
 
@@ -324,12 +331,19 @@ if __name__ == "__main__":
             "top_sector_ret_3m": round(float(top_ret_now) * 100, 1) if top_now else 0,
         },
         "sectors": current_sectors,
+        "how_it_works": {
+            "sma_gate": f"Check DAILY at close: is SPY above its {SMA_PERIOD}-day moving average?",
+            "when_above": f"Hold {SPY_WEIGHT:.0%} SPY + {SECTOR_WEIGHT:.0%} best sector ETF (by {MOMENTUM_LOOKBACK}-day momentum)",
+            "when_below": "100% cash — no positions. Wait for SPY to cross back above.",
+            "sector_pick": "Sector ETF chosen on the 1st trading day of each month. Stays the same all month.",
+            "trades_per_year": "~26 (monthly sector rotations + daily SMA entries/exits in SPY)",
+        },
         "performance": {
             name.lower(): {
                 "strategy": all_results[name]["strategy"],
                 "spy": all_results[name]["spy"],
             }
-            for name in ["TRAIN", "VALID", "TEST"]
+            for name in all_results.keys()
         },
         "equity_curve_strategy": eq_strategy,
         "equity_curve_spy": eq_spy,
