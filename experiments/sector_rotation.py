@@ -24,18 +24,21 @@ VERIFIED NO LEAKAGE:
 - Same parameters across all periods
 - No per-period tuning
 
-EXECUTION MODEL:
-- SMA gate: check DAILY at close (fast protection)
-- Sector: pick on 1st trading day of each month (no flip-flopping)
-- ~26 trades/year (manageable for any investor)
+EXECUTION MODEL (matches live exactly):
+- Signal at day T close → execute at day T+1 OPEN (with slippage)
+- Entry day: return from OPEN to CLOSE (partial day, you missed the gap)
+- Exit day: return from prev CLOSE to OPEN (overnight only, you sold at open)
+- This 1-day delay is critical — without it, backtests capture the entry
+  day's up-move and avoid the exit day's down-move (look-ahead bias).
 
-RESULTS (monthly sector rebalance, daily SMA gate, 3bps tx):
-  Full 27yr (1999-2026): Sharpe 3.04, CAGR 42%, MaxDD -7%, SPY CAGR 8%
-  Dot-com (1999-2003):   Sharpe 2.72, CAGR 45% (SPY: -2%, DD -48%)
-  GFC (2008-2009):       Sharpe 2.66, CAGR 55% (SPY: -10%, DD -52%)
-  COVID+bear (2020-22):  Sharpe 2.93, CAGR 51% (SPY: DD -34%)
-  Test OOS (2023-2026):  Sharpe 3.69, CAGR 45%, MaxDD -4%
-  27 consecutive positive years
+RESULTS (corrected next-day-open execution, 5bps slippage):
+  Full 27yr (1999-2026): Sharpe 0.06, CAGR 2%, MaxDD -42%
+  Train (2010-2019):     Sharpe 0.03, CAGR 2%, MaxDD -28%
+  Test (2023-2026):      Sharpe 0.90, CAGR 11%, MaxDD -11%
+
+  DOES NOT BEAT SPY BUY-AND-HOLD with realistic execution.
+  Previous Sharpe 3+ was inflated by same-day execution bias.
+  Presented honestly for transparency.
 
 Run: python sector_rotation.py
 """
@@ -95,39 +98,50 @@ def run_backtest(data, start, end):
     """
     Run the SGST strategy backtest.
 
-    Execution model:
-    - SMA gate: checked DAILY (fast protection from drawdowns)
-    - Sector selection: checked MONTHLY (1st trading day of month, no flip-flopping)
-    - When SPY crosses below SMA: immediate exit to cash
-    - When SPY crosses above SMA: enter with best sector at that moment
+    EXECUTION MODEL (matches live exactly):
+    - Day T close: check SPY vs SMA30, decide to enter/exit/rotate
+    - Day T+1 open: execute the trade (with slippage)
+    - Daily return: close-to-close for held positions
+    - Entry day (T+1): return from OPEN to CLOSE (partial day)
+    - Exit day (T+1): return from prev CLOSE to OPEN (overnight only)
+
+    This 1-day delay is critical. Without it, the strategy
+    retroactively earns the entry day's up-move and avoids
+    the exit day's down-move — both are look-ahead biases.
     """
     spy = data[BENCHMARK]
     spy_close = spy["Close"]
+    spy_open = spy["Open"]
     dates = spy.loc[start:end].index
-    tc = TX_COST_BPS / 10000
+    entry_slip = 5 / 10000   # 5 bps entry slippage
+    exit_slip = 5 / 10000    # 5 bps exit slippage
 
     daily_rets = []
     holdings_log = []
-    trade_log = []       # Complete trade history
+    trade_log = []
     current_sector = None
     in_market = False
     prev_month = None
-    # Track current holding period for trade log
+
+    # Pending actions (decided at T close, executed at T+1 open)
+    pending_exit = False
+    pending_enter_sector = None
+    pending_enter_reason = None
+    pending_rotate_sector = None
+    pending_rotate_reason = None
+
+    # Trade tracking
     holding_entry_date = None
     holding_entry_spy = None
     holding_entry_sector_price = None
     holding_reason = None
 
-    def close_trade(exit_date, exit_reason):
-        """Record a completed trade in the trade log."""
+    def close_trade(exit_date, exit_reason, spy_exit_price, sector_exit_price):
         nonlocal holding_entry_date, holding_entry_spy, holding_entry_sector_price
         if holding_entry_date is None or current_sector is None:
             return
-        spy_exit = spy_close.loc[exit_date] if exit_date in spy_close.index else spy_close.iloc[-1]
-        sector_df = data.get(current_sector)
-        sector_exit = sector_df.loc[exit_date, "Close"] if sector_df is not None and exit_date in sector_df.index else 0
-        spy_ret = (spy_exit / holding_entry_spy - 1) if holding_entry_spy else 0
-        sector_ret = (sector_exit / holding_entry_sector_price - 1) if holding_entry_sector_price else 0
+        spy_ret = (spy_exit_price / holding_entry_spy - 1) if holding_entry_spy else 0
+        sector_ret = (sector_exit_price / holding_entry_sector_price - 1) if holding_entry_sector_price else 0
         blended_ret = spy_ret * SPY_WEIGHT + sector_ret * SECTOR_WEIGHT
         days_held = (exit_date - holding_entry_date).days
         trade_log.append({
@@ -144,80 +158,183 @@ def run_backtest(data, start, end):
         })
         holding_entry_date = None
 
-    def open_trade(date, sector, reason):
-        """Start tracking a new holding period."""
-        nonlocal holding_entry_date, holding_entry_spy, holding_entry_sector_price, holding_reason
-        holding_entry_date = date
-        holding_entry_spy = spy_close.loc[date] if date in spy_close.index else 0
-        sector_df = data.get(sector)
-        holding_entry_sector_price = sector_df.loc[date, "Close"] if sector_df is not None and date in sector_df.index else 0
-        holding_reason = reason
-
-    for date in dates:
+    for i, date in enumerate(dates):
         idx = spy.index.get_loc(date)
         if idx < max(SMA_PERIOD, MOMENTUM_LOOKBACK):
             daily_rets.append(0)
             continue
 
-        sma = get_sma(spy_close, idx, SMA_PERIOD)
-        above_sma = spy_close.iloc[idx] > sma
+        # Get today's prices
+        today_open_spy = spy_open.iloc[idx] if "Open" in spy.columns else spy_close.iloc[idx]
+        today_close_spy = spy_close.iloc[idx]
+        prev_close_spy = spy_close.iloc[idx - 1] if idx > 0 else today_close_spy
 
-        # EXIT: immediate when SPY drops below SMA (daily check)
-        if not above_sma and in_market:
-            close_trade(date, "SPY < SMA30")
+        # === EXECUTE PENDING ACTIONS AT TODAY'S OPEN ===
+
+        if pending_exit and in_market:
+            # Sell at today's open — overnight return from prev close to open
+            sell_spy = today_open_spy * (1 - exit_slip)
+            sector_df = data.get(current_sector)
+            sell_sector = 0
+            if sector_df is not None and date in sector_df.index:
+                sell_sector = sector_df.loc[date, "Open"] * (1 - exit_slip) if "Open" in sector_df.columns else sector_df.loc[date, "Close"]
+
+            # Record the overnight P&L (prev close to open)
+            dr = 0
+            if prev_close_spy > 0:
+                dr += (sell_spy / prev_close_spy - 1) * SPY_WEIGHT
+            if current_sector and holding_entry_sector_price:
+                prev_sector_close = 0
+                si = sector_df.index.get_loc(date) if sector_df is not None and date in sector_df.index else -1
+                if si > 0:
+                    prev_sector_close = sector_df.iloc[si - 1]["Close"]
+                if prev_sector_close > 0:
+                    dr += (sell_sector / prev_sector_close - 1) * SECTOR_WEIGHT
+            daily_rets.append(dr)
+
+            close_trade(date, "SPY < SMA30", sell_spy, sell_sector)
             holdings_log.append({
                 "date": date, "regime": "CASH", "sector": None,
                 "sector_name": "", "sector_3m_ret": 0,
             })
             in_market = False
             current_sector = None
-            daily_rets.append(0)
+            pending_exit = False
             prev_month = date.month
             continue
 
-        if not above_sma:
-            daily_rets.append(0)
-            prev_month = date.month
-            continue
+        if pending_enter_sector and not in_market:
+            # Buy at today's open
+            buy_spy = today_open_spy * (1 + entry_slip)
+            sector_df = data.get(pending_enter_sector)
+            buy_sector = 0
+            if sector_df is not None and date in sector_df.index:
+                buy_sector = sector_df.loc[date, "Open"] * (1 + entry_slip) if "Open" in sector_df.columns else sector_df.loc[date, "Close"]
 
-        # ENTRY or MONTHLY REBALANCE: pick sector
-        entering = not in_market and above_sma
-        new_month = prev_month is None or date.month != prev_month
-
-        if entering or (in_market and new_month):
-            top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK)
-            if top_etf and (top_etf != current_sector or entering):
-                reason = "Re-entry (SPY > SMA30)" if entering else "Monthly rebalance"
-                # Close previous holding if rotating
-                if in_market and current_sector:
-                    close_trade(date, "Sector rotation")
-                holdings_log.append({
-                    "date": date, "regime": "INVESTED",
-                    "sector": top_etf,
-                    "sector_name": SECTOR_NAMES.get(top_etf, ""),
-                    "sector_3m_ret": round(top_ret * 100, 1),
-                })
-                current_sector = top_etf
-                open_trade(date, top_etf, reason)
+            current_sector = pending_enter_sector
             in_market = True
+            holding_entry_date = date
+            holding_entry_spy = buy_spy
+            holding_entry_sector_price = buy_sector
+            holding_reason = pending_enter_reason
+            holdings_log.append({
+                "date": date, "regime": "INVESTED",
+                "sector": current_sector,
+                "sector_name": SECTOR_NAMES.get(current_sector, ""),
+                "sector_3m_ret": 0,
+            })
 
-        # Daily return
-        dr = 0
-        if idx > 0:
-            dr += (spy_close.iloc[idx] / spy_close.iloc[idx - 1] - 1) * SPY_WEIGHT
-        if current_sector:
-            df = data[current_sector]
-            if date in df.index:
-                si = df.index.get_loc(date)
-                if si > 0:
-                    dr += (df.iloc[si]["Close"] / df.iloc[si - 1]["Close"] - 1) * SECTOR_WEIGHT
+            # Entry day return: open to close
+            dr = 0
+            if buy_spy > 0:
+                dr += (today_close_spy / buy_spy - 1) * SPY_WEIGHT
+            if sector_df is not None and date in sector_df.index and buy_sector > 0:
+                dr += (sector_df.loc[date, "Close"] / buy_sector - 1) * SECTOR_WEIGHT
+            daily_rets.append(dr)
 
-        daily_rets.append(dr)
+            pending_enter_sector = None
+            pending_enter_reason = None
+            prev_month = date.month
+            continue
+
+        if pending_rotate_sector and in_market:
+            # Swap sector at open
+            old_sector = current_sector
+            new_sector = pending_rotate_sector
+            sector_df_old = data.get(old_sector)
+            sector_df_new = data.get(new_sector)
+
+            sell_sector = 0
+            if sector_df_old is not None and date in sector_df_old.index:
+                sell_sector = sector_df_old.loc[date, "Open"] if "Open" in sector_df_old.columns else sector_df_old.loc[date, "Close"]
+            buy_sector = 0
+            if sector_df_new is not None and date in sector_df_new.index:
+                buy_sector = sector_df_new.loc[date, "Open"] * (1 + entry_slip) if "Open" in sector_df_new.columns else sector_df_new.loc[date, "Close"]
+
+            close_trade(date, "Sector rotation", today_open_spy, sell_sector)
+            current_sector = new_sector
+            holding_entry_date = date
+            holding_entry_spy = today_open_spy
+            holding_entry_sector_price = buy_sector
+            holding_reason = pending_rotate_reason
+            holdings_log.append({
+                "date": date, "regime": "INVESTED",
+                "sector": current_sector,
+                "sector_name": SECTOR_NAMES.get(current_sector, ""),
+                "sector_3m_ret": 0,
+            })
+
+            # Rotation day: SPY earns close-to-close, new sector earns open-to-close
+            dr = 0
+            if idx > 0:
+                dr += (today_close_spy / prev_close_spy - 1) * SPY_WEIGHT
+            if sector_df_new is not None and date in sector_df_new.index and buy_sector > 0:
+                dr += (sector_df_new.loc[date, "Close"] / buy_sector - 1) * SECTOR_WEIGHT
+            daily_rets.append(dr)
+
+            pending_rotate_sector = None
+            pending_rotate_reason = None
+            prev_month = date.month
+            continue
+
+        # Clear any stale pending signals
+        pending_exit = False
+        pending_enter_sector = None
+        pending_rotate_sector = None
+
+        # === COMPUTE DAILY RETURN FOR HELD POSITIONS ===
+        if in_market:
+            dr = 0
+            if idx > 0:
+                dr += (today_close_spy / prev_close_spy - 1) * SPY_WEIGHT
+            if current_sector:
+                sector_df = data[current_sector]
+                if date in sector_df.index:
+                    si = sector_df.index.get_loc(date)
+                    if si > 0:
+                        dr += (sector_df.iloc[si]["Close"] / sector_df.iloc[si - 1]["Close"] - 1) * SECTOR_WEIGHT
+            daily_rets.append(dr)
+        else:
+            daily_rets.append(0)
+
+        # === GENERATE SIGNALS AT TODAY'S CLOSE (for tomorrow's execution) ===
+        sma = get_sma(spy_close, idx, SMA_PERIOD)
+        above_sma = today_close_spy > sma
+
+        if not above_sma and in_market:
+            # Signal: exit tomorrow at open
+            pending_exit = True
+
+        elif above_sma and not in_market:
+            # Signal: enter tomorrow at open with best sector
+            top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK)
+            if top_etf:
+                pending_enter_sector = top_etf
+                pending_enter_reason = "Re-entry (SPY > SMA30)"
+
+        elif above_sma and in_market:
+            # Check monthly rebalance
+            new_month = prev_month is None or date.month != prev_month
+            if new_month:
+                # Actually this fires on the 1st trading day. But we need to check
+                # if we should rotate. The signal is at close, execute tomorrow.
+                # However, since we're already in market, treat the monthly check
+                # as: compute signal at close of last trading day of prev month,
+                # execute at open of 1st trading day of new month.
+                # Simplification: check at close of 1st trading day, execute next day.
+                top_etf, top_ret = get_top_sector(data, date, MOMENTUM_LOOKBACK)
+                if top_etf and top_etf != current_sector:
+                    pending_rotate_sector = top_etf
+                    pending_rotate_reason = "Monthly rebalance"
+
         prev_month = date.month
 
     # Close any open trade at end of period
     if in_market and current_sector and holding_entry_date:
-        close_trade(dates[-1], "End of period")
+        spy_exit = spy_close.iloc[-1]
+        sector_df = data.get(current_sector)
+        sector_exit = sector_df.iloc[-1]["Close"] if sector_df is not None else 0
+        close_trade(dates[-1], "End of period", spy_exit, sector_exit)
 
     return pd.DataFrame({"date": dates, "return": daily_rets}), holdings_log, trade_log
 
