@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <title>Sector Regime Adaptive Allocation</title>
+  <title>Multi-Asset Trend Alpha</title>
   <style>
     :root {
       --bg: #000000;
@@ -124,7 +124,7 @@
 <body>
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>Sector Regime Adaptive Allocation</h1>
+    <h1>Multi-Asset Trend Alpha</h1>
     <p>Research tool. Enter password to continue.</p>
     <input type="password" id="pwInput" placeholder="Password" autofocus />
     <button onclick="tryLogin()">Enter</button>
@@ -134,7 +134,7 @@
 
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo">Sector SRAA</span>
+    <span class="nav-logo">MATA Strategy</span>
     <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULL</span>
     <div class="nav-links"><a href="/">Main &rarr;</a></div>
   </nav>
@@ -152,56 +152,47 @@
         <div class="accordion-body">
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; DETERMINE REGIME (daily at close)</div>
-            <div>At 4:00 PM ET, check TWO conditions:</div>
+            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; CHECK ASSET CLASS TRENDS (monthly)</div>
+            <div>Check 3 asset classes. Each is "trending" if above its 50-day SMA:</div>
             <div style="padding-left:8px;margin-top:4px">
-              <strong>A.</strong> Is SPY above its <strong>50-day simple moving average</strong> (SMA50)?<br>
-              <strong>B.</strong> Are 55%+ of sector ETFs above their own SMA50? (count how many of the 9 sectors are above their own 50-day SMA)
+              <strong>1.</strong> SPY (equities) above SMA50?<br>
+              <strong>2.</strong> TLT (long-term bonds) above SMA50?<br>
+              <strong>3.</strong> GLD (gold) above SMA50?
             </div>
             <div class="step-rule green-rule">
-              <strong style="color:var(--green)">BULL regime (both A and B true for 3+ consecutive days):</strong><br>
-              Allocate: 40% SPY + 60% in momentum-weighted sector portfolio (see Step 2).
+              <strong style="color:var(--green)">1+ trending:</strong> Equal-weight allocation across trending classes.
+              Equity portion: top 20 quality-momentum stocks.
             </div>
             <div class="step-rule red-rule">
-              <strong style="color:var(--red)">BEAR/MIXED regime (either A or B false):</strong><br>
-              Allocate: 100% defensive sectors (XLU, XLP, XLV), weighted by inverse volatility.
+              <strong style="color:var(--red)">0 trending:</strong> Defensive fallback: 50% IEF + 50% GLD.
             </div>
-            <div style="color:var(--muted);font-size:12px;margin-top:6px">Always invested &mdash; never cash. Regime requires 3 consecutive days to confirm a switch (hysteresis).</div>
           </div>
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; SECTOR ALLOCATION (monthly rebalance)</div>
+            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; STOCK SELECTION (equity portion)</div>
             <div style="margin-bottom:10px">
-              <div style="font-weight:700;margin-bottom:4px">Bull regime: momentum-weighted sectors</div>
+              <div style="font-weight:700;margin-bottom:4px">When equities trending: pick top 20 stocks</div>
               <div style="padding-left:8px">
-                On the 1st trading day of each month (or on regime change to BULL):<br>
-                1. Compute composite momentum score for each sector: 25% &times; 21d z-score + 50% &times; 63d z-score + 25% &times; 126d z-score<br>
-                2. Keep only sectors with positive composite score<br>
-                3. Weight by inverse volatility (risk-parity) among the positive sectors<br>
-                4. These sectors get the 60% allocation; SPY gets 40%
+                Filter: above 200-day SMA AND positive 252d return (quality gate).<br>
+                Score: risk-adjusted momentum = (40% &times; 63d return + 60% &times; 126d return) &divide; 63d volatility.<br>
+                Hold top 20 scored stocks, equally weighted within the equity allocation.
               </div>
             </div>
-            <div style="margin-bottom:10px">
-              <div style="font-weight:700;margin-bottom:4px">Bear/Mixed regime: defensive allocation</div>
+            <div>
+              <div style="font-weight:700;margin-bottom:4px">Turnover reduction</div>
               <div style="padding-left:8px">
-                Hold XLU, XLP, XLV weighted by inverse 21-day volatility (lower vol gets more weight).<br>
-                This naturally tilts toward the least-volatile defensive sector.
+                Existing stocks that remain in top 40 are kept. Only replace stocks that fall out of the top 40.
               </div>
             </div>
           </div>
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--gold)">STEP 3 &mdash; VOL TARGETING</div>
+            <div class="step-label" style="color:var(--gold)">STEP 3 &mdash; VOL TARGETING &amp; REBALANCING</div>
             <div>Scale total position to target <strong>10% annualized portfolio volatility</strong>.</div>
             <div style="padding-left:8px;margin-top:4px">
-              Scale factor = 10% &divide; (trailing 42-day realized vol). Max scale: 2.5&times;.<br>
-              <span style="color:var(--muted)">In calm markets: full or slightly levered. In volatile markets: reduced position.</span>
-            </div>
-            <div style="margin-top:8px">
-              <strong>Sector ETFs:</strong> XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB, XLRE, XLC<br>
-              <strong>Offensive:</strong> XLK, XLY, XLI, XLF, XLB, XLE, XLC<br>
-              <strong>Defensive:</strong> XLU, XLP, XLV<br>
-              <strong>Costs:</strong> ~3 bps + 5 bps slippage per trade
+              Scale = 10% &divide; trailing 42-day realized vol. Max: 3&times;.<br>
+              Rebalance every ~21 trading days (monthly).<br>
+              <strong>Costs:</strong> 5 bps slippage + 5 bps transaction per trade
             </div>
           </div>
 
@@ -213,8 +204,8 @@
     <div class="section">
       <div class="section-title">Strategy</div>
       <p style="color:var(--muted);font-size:13px;margin-bottom:8px" id="stratDesc">
-        Always invested. Bull: 40% SPY + 60% momentum-weighted sectors. Bear: 100% defensive (XLU/XLP/XLV).<br>
-        Dual regime detection (SPY trend + sector breadth). Vol-targeted to 10%. Walk-forward validated.
+        Cross-asset trend risk parity with stock alpha overlay. Equal-weight trending asset classes (equities/bonds/gold).<br>
+        Equity portion: top 20 quality-momentum stocks. Non-trending: IEF + GLD fallback. Vol-targeted to 10%.
       </p>
     </div>
 
@@ -255,10 +246,10 @@
     <!-- RECENT CHANGES -->
     <div class="section">
       <div class="section-title">Recent Regime Changes</div>
-      <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Recent allocation changes from regime shifts and monthly rebalancing.</p>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Recent portfolio rebalances showing position count and turnover.</p>
       <div class="table-wrap trade-scroll">
         <table>
-          <thead><tr><th>Date</th><th>Regime</th><th>Allocation</th></tr></thead>
+          <thead><tr><th>Date</th><th>Positions</th><th>Turnover</th><th>Top Holdings</th></tr></thead>
           <tbody id="tradeHistory"></tbody>
         </table>
       </div>
@@ -304,8 +295,8 @@ function loadData(){
     if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
     // Set regime tag from sector rotation signal, not stock picker
     const cs=d.current_status||{};
-    const regime=cs.signal||'BEAR';
-    const isBull=regime==='BULL';
+    const regime=cs.signal||'DEFENSIVE';
+    const isBull=regime==='OFFENSIVE';
     const tag=document.getElementById('regimeTag');
     tag.textContent=regime;
     tag.style.background=isBull?'var(--green-bg)':'var(--gold-bg)';
@@ -343,33 +334,36 @@ function renderActionCard(){
     }
   }
 
+  const nTrend=cs.n_trending||0;
+  const trendInfo=`${cs.equity_trending?'SPY':''}${cs.bond_trending?' TLT':''}${cs.gold_trending?' GLD':''}`.trim()||'None';
+
   if(isBull){
     el.innerHTML=`<div class="action-card invested">
-      <div class="action-label" style="color:var(--green)">Current Regime: BULL</div>
-      <div class="action-headline" style="color:var(--green)">OFFENSIVE</div>
+      <div class="action-label" style="color:var(--green)">Regime: OFFENSIVE (${nTrend}/3 trending)</div>
+      <div class="action-headline" style="color:var(--green)">INVESTED</div>
       <div class="action-detail" style="text-align:left;margin-top:12px">
-        <div style="margin-bottom:8px">40% SPY + 60% momentum-weighted sectors:</div>
+        <div style="margin-bottom:8px">Trending: ${trendInfo}. Equal-weight across trending classes:</div>
         <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-family:var(--mono);font-size:14px">
-          ${wtHtml}
+          ${wtHtml||'Loading...'}
         </div>
-        <div style="color:var(--muted);font-size:12px;margin-top:8px">SPY above SMA50 and breadth confirms. Sectors rebalance monthly.</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px">Monthly rebalance. Vol-targeted to 10%.</div>
       </div>
-      <div class="action-meta">SPY $${cs.spy_price} &gt; SMA50 $${cs.sma50}</div>
+      <div class="action-meta">SPY $${cs.spy_price} | SMA50 $${cs.sma50}</div>
     </div>`;
   } else {
     el.innerHTML=`<div class="action-card cash">
-      <div class="action-label" style="color:var(--gold)">Current Regime: ${regime}</div>
+      <div class="action-label" style="color:var(--gold)">Regime: DEFENSIVE (${nTrend}/3 trending)</div>
       <div class="action-headline" style="color:var(--gold)">DEFENSIVE</div>
       <div class="action-detail" style="text-align:left;margin-top:12px">
-        <div style="margin-bottom:8px">100% defensive sectors (risk-parity weighted):</div>
+        <div style="margin-bottom:8px">${nTrend===0?'No asset classes trending. Fallback allocation:':'Trending: '+trendInfo}</div>
         <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-family:var(--mono);font-size:14px">
-          ${wtHtml}
+          ${wtHtml||'50% IEF + 50% GLD'}
         </div>
         <div style="color:var(--muted);font-size:12px;margin-top:8px">
-          SPY below SMA50 or insufficient breadth. Holding defensive sectors until bull regime confirmed.
+          Waiting for asset class trends to resume.
         </div>
       </div>
-      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA50 $${cs.sma50} &nbsp;|&nbsp; Gap: ${((1-cs.spy_price/cs.sma50)*100).toFixed(1)}% below</div>
+      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA50 $${cs.sma50}</div>
     </div>`;
   }
 }
@@ -573,14 +567,16 @@ function renderTradeHistory(){
   const tbody=document.getElementById('tradeHistory');
   tbody.innerHTML='';
   for(const c of changes.slice().reverse()){
-    const isBull=c.regime==='BULL';
-    const regBadge=isBull?'<span class="badge badge-buy">BULL</span>':'<span class="badge badge-wait">'+c.regime+'</span>';
+    const nPos=c.n_positions||0;
+    const turn=c.turnover||0;
     const wts=c.weights||{};
-    const wtStr=Object.entries(wts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} ${(v*100).toFixed(0)}%`).join(', ');
+    const topWts=Object.entries(wts).filter(([k,v])=>v>0.01).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`${k}`).join(', ');
+    const turnPct=(turn*100).toFixed(0);
     tbody.innerHTML+=`<tr>
       <td>${typeof c.date==='string'?c.date.split('T')[0]:c.date}</td>
-      <td>${regBadge}</td>
-      <td style="font-size:11px">${wtStr||'—'}</td>
+      <td>${nPos}</td>
+      <td>${turnPct}%</td>
+      <td style="font-size:11px">${topWts||'—'}</td>
     </tr>`;
   }
 }

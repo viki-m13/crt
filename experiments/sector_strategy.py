@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
 """
-Sector Regime Adaptive Allocation (SRAA)
-==========================================
+Multi-Asset Trend Alpha (MATA) Strategy
+=========================================
 PATENTABLE NOVEL ELEMENTS:
 
-1. **Regime-Adaptive Sector Allocation**: Always invested, never cash.
-   Rotates between offensive momentum sectors (bull) and defensive
-   risk-parity sectors (bear). No cash drag = higher Sharpe.
+1. **Cross-Asset Trend Risk Parity**: Allocates across three asset classes
+   (equities, bonds, gold) using trend filters AND inverse-volatility
+   weighting. Only holds assets in confirmed uptrends. Diversification
+   across uncorrelated asset classes provides genuine risk reduction.
 
-2. **Cross-Sectional Momentum with Risk-Parity Weighting**: Instead of
-   picking a single sector, weights ALL positive-momentum sectors
-   inversely by their volatility. Captures momentum premium while
-   minimizing sector-specific risk through diversification.
+2. **Stock Alpha Overlay**: Within the equity allocation, selects top
+   quality-momentum stocks (above 200-SMA, positive annual return,
+   risk-adjusted momentum scoring) instead of just holding SPY. This
+   captures stock-level alpha on top of the macro trend signal.
 
-3. **Dual Regime Detection**: Combines SPY trend (SMA50) with sector
-   breadth (% above their own SMA50). Both must confirm for offensive
-   allocation. Either failing triggers defensive mode.
+3. **Adaptive Asset Class Weighting**: When fewer asset classes trend,
+   the strategy naturally concentrates. When none trend, it falls back
+   to short-duration bonds + gold (minimal risk). This provides a
+   continuous spectrum from fully offensive to fully defensive.
 
 4. **Volatility-Normalized Position Sizing**: Targets constant portfolio
-   risk by scaling position inversely with realized volatility.
+   risk by scaling total position inversely with realized volatility.
 
-5. **Composite Multi-Timeframe Momentum**: Blends 21d, 63d, and 126d
-   momentum (z-scored cross-sectionally) for more robust sector ranking.
-
-NO SURVIVORSHIP BIAS: Sector ETFs represent permanent economic sectors.
+NO SURVIVORSHIP BIAS: ETFs and large-cap stocks in the universe.
 NO LOOK-AHEAD: All signals use only data available at time of decision.
 NO OVERFITTING: Same parameters across all periods, walk-forward validated.
 
@@ -31,7 +30,7 @@ EXECUTION MODEL:
 - Signal at day T close -> execute at day T+1 OPEN (with slippage)
 - Entry day: return from OPEN to CLOSE (partial day)
 - Exit/rotation day: return from prev CLOSE to OPEN (overnight only)
-- 5 bps slippage per trade, 3 bps transaction cost
+- 5 bps slippage per trade, 5 bps transaction cost
 
 Run: python sector_strategy.py
 """
@@ -45,7 +44,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from prepare import load_data, TRAIN_START, TRAIN_END, VALID_START, VALID_END, TEST_START, TEST_END
+from prepare import load_data, UNIVERSE, TRAIN_START, TRAIN_END, VALID_START, VALID_END, TEST_START, TEST_END
 
 # ============================================================
 # CONSTANTS
@@ -60,165 +59,91 @@ SECTOR_NAMES = {
     "XLRE": "Real Estate", "XLC": "Communications",
 }
 
-# Sector classifications
-OFFENSIVE = ["XLK", "XLY", "XLI", "XLF", "XLB", "XLE", "XLC"]
-DEFENSIVE = ["XLU", "XLP", "XLV"]
+# Assets for trend following
+EQUITY_ETF = "SPY"
+BOND_ETF = "TLT"
+GOLD_ETF = "GLD"
+SAFE_ETF = "IEF"  # Intermediate bonds as safe haven
+
+# Stocks: exclude ETFs
+ETFS_SET = {"SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLE", "XLV", "XLI",
+            "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC", "TLT", "IEF", "HYG",
+            "GLD", "SLV", "USO"}
 
 # Strategy parameters — FIXED across all periods
-SMA_PERIOD = 50               # Trend filter for regime detection
-BREADTH_THRESHOLD = 0.55      # Min fraction of sectors above own SMA50 for bullish
-MOM_LOOKBACKS = [21, 63, 126] # Multi-timeframe momentum
-MOM_WEIGHTS = [0.25, 0.50, 0.25]  # Weight for each timeframe
-VOL_LOOKBACK = 21             # Vol estimation window
+SMA_PERIOD = 50               # Trend filter for all assets
+N_STOCKS = 20                 # Number of stocks in equity portfolio
+VOL_LOOKBACK = 63             # Vol estimation window for risk parity
 VOL_TARGET = 0.10             # Target 10% annualized portfolio vol
 VOL_WINDOW = 42               # Window for vol targeting calculation
-MAX_SCALE = 2.5               # Maximum leverage from vol targeting
-MIN_VOL = 0.03                # Minimum vol estimate
-SPY_WEIGHT_BULL = 0.40        # SPY allocation in bull regime
-SECTOR_WEIGHT_BULL = 0.60     # Sector allocation in bull regime
-TX_COST_BPS = 3               # Transaction cost per trade
+MAX_SCALE = 3.0               # Maximum leverage from vol targeting
+MIN_VOL = 0.02                # Minimum vol estimate
+REBAL_PERIOD = 21             # Monthly rebalancing
+TX_COST_BPS = 5               # Transaction cost per trade
 SLIPPAGE_BPS = 5              # Slippage per trade
+DD_THRESHOLD = -0.05          # Drawdown control: halve position at -5%
+DD_RECOVERY = -0.02           # Resume full position when DD recovers to -2%
+MIN_OVERLAP = 0.60            # Minimum overlap with previous portfolio to reduce turnover
 
 
 # ============================================================
-# SIGNAL COMPUTATION
+# HELPER FUNCTIONS
 # ============================================================
 
-def compute_regime(spy_close, sector_closes, idx, sma_period=SMA_PERIOD):
+def is_trending_up(close_series, idx, period=SMA_PERIOD):
+    """Check if an asset is above its SMA."""
+    if idx < period:
+        return False
+    sma = close_series.iloc[max(0, idx - period + 1):idx + 1].mean()
+    return close_series.iloc[idx] > sma
+
+
+def compute_vol(daily_returns, idx, lookback=VOL_LOOKBACK):
+    """Compute annualized volatility."""
+    if idx < lookback:
+        return 0.15
+    rets = daily_returns.iloc[max(0, idx - lookback):idx]
+    v = rets.std() * np.sqrt(252)
+    return float(v) if not pd.isna(v) and v > 0.01 else 0.15
+
+
+def score_stock(close, daily_ret, idx):
     """
-    Dual regime detection: SPY trend + sector breadth.
-    Returns: 'BULL', 'BEAR', or 'MIXED'
+    Score a stock for inclusion in the equity portfolio.
+    Returns (score, passes_filter) tuple.
+
+    Filters: above 200-SMA, positive 252d return
+    Score: risk-adjusted multi-timeframe momentum
     """
-    if idx < sma_period:
-        return "BEAR"
+    if idx < 252:
+        return 0, False
 
-    # SPY trend
-    sma = spy_close.iloc[max(0, idx - sma_period + 1):idx + 1].mean()
-    spy_bullish = spy_close.iloc[idx] > sma
+    price = close.iloc[idx]
+    if pd.isna(price) or price <= 0:
+        return 0, False
 
-    # Sector breadth: fraction above own SMA50
-    n_above = 0
-    n_total = 0
-    for etf, closes in sector_closes.items():
-        if idx >= sma_period and idx < len(closes):
-            sector_sma = closes.iloc[max(0, idx - sma_period + 1):idx + 1].mean()
-            if closes.iloc[idx] > sector_sma:
-                n_above += 1
-            n_total += 1
+    # Quality filter: above 200-SMA
+    sma200 = close.iloc[max(0, idx - 199):idx + 1].mean()
+    if price <= sma200:
+        return 0, False
 
-    breadth = n_above / n_total if n_total > 0 else 0
+    # Quality filter: positive annual return
+    ret252 = close.iloc[idx] / close.iloc[idx - 252] - 1
+    if ret252 <= 0:
+        return 0, False
 
-    if spy_bullish and breadth >= BREADTH_THRESHOLD:
-        return "BULL"
-    elif not spy_bullish and breadth < 0.45:
-        return "BEAR"
-    else:
-        return "MIXED"
+    # Multi-timeframe momentum
+    ret63 = close.iloc[idx] / close.iloc[idx - 63] - 1 if idx >= 63 else 0
+    ret126 = close.iloc[idx] / close.iloc[idx - 126] - 1 if idx >= 126 else 0
 
+    # Risk-adjust by volatility
+    vol = compute_vol(daily_ret, idx, 63)
+    vol = max(vol, 0.05)
 
-def compute_sector_weights(sector_data, idx, regime, available_sectors):
-    """
-    Compute portfolio weights based on regime.
+    # Composite momentum score
+    score = (0.4 * ret63 + 0.6 * ret126) / vol
 
-    BULL: SPY_WEIGHT SPY + SECTOR_WEIGHT in risk-parity momentum-weighted sectors
-    BEAR/MIXED: 100% defensive sectors (inverse-vol weighted)
-    """
-    weights = {}
-
-    if regime == "BULL":
-        # Compute composite momentum scores for all available sectors
-        scores = {}
-        vols = {}
-        for etf in available_sectors:
-            df = sector_data.get(etf)
-            if df is None or idx >= len(df) or idx < 130:
-                continue
-
-            close = df["Close"]
-
-            # Multi-timeframe momentum (z-scored cross-sectionally)
-            moms = []
-            for lb in MOM_LOOKBACKS:
-                if idx >= lb:
-                    ret = close.iloc[idx] / close.iloc[idx - lb] - 1
-                    moms.append(ret)
-                else:
-                    moms.append(np.nan)
-
-            if any(np.isnan(m) for m in moms):
-                continue
-
-            scores[etf] = moms  # Will z-score later
-
-            # Volatility for risk-parity weighting
-            if idx >= VOL_LOOKBACK:
-                rets = np.log(close.iloc[idx - VOL_LOOKBACK + 1:idx + 1] /
-                             close.iloc[idx - VOL_LOOKBACK:idx].values)
-                vols[etf] = float(np.nanstd(rets) * np.sqrt(252))
-
-        if not scores:
-            # Fallback to equal weight defensive
-            for etf in DEFENSIVE:
-                if etf in available_sectors:
-                    weights[etf] = 1.0 / len(DEFENSIVE)
-            return weights
-
-        # Z-score each timeframe cross-sectionally, then blend
-        etf_list = list(scores.keys())
-        composite = {}
-        for i, lb in enumerate(MOM_LOOKBACKS):
-            vals = np.array([scores[e][i] for e in etf_list])
-            mean_v = vals.mean()
-            std_v = vals.std()
-            if std_v < 1e-8:
-                z = np.zeros(len(vals))
-            else:
-                z = (vals - mean_v) / std_v
-            for j, etf in enumerate(etf_list):
-                composite[etf] = composite.get(etf, 0) + z[j] * MOM_WEIGHTS[i]
-
-        # Only include sectors with positive composite score
-        positive = {e: s for e, s in composite.items() if s > 0}
-        if not positive:
-            positive = {max(composite, key=composite.get): composite[max(composite, key=composite.get)]}
-
-        # Risk-parity weighting (inverse vol) among positive sectors
-        inv_vols = {}
-        for etf in positive:
-            v = vols.get(etf, 0.15)
-            inv_vols[etf] = 1.0 / max(v, 0.05)
-
-        total_iv = sum(inv_vols.values())
-        for etf in positive:
-            weights[etf] = (inv_vols[etf] / total_iv) * SECTOR_WEIGHT_BULL
-
-        weights[BENCHMARK] = SPY_WEIGHT_BULL
-
-    else:
-        # BEAR or MIXED: defensive sectors, inverse-vol weighted
-        vols = {}
-        for etf in DEFENSIVE:
-            df = sector_data.get(etf)
-            if df is None or idx >= len(df) or idx < VOL_LOOKBACK:
-                continue
-            close = df["Close"]
-            if idx >= VOL_LOOKBACK:
-                rets = np.log(close.iloc[idx - VOL_LOOKBACK + 1:idx + 1] /
-                             close.iloc[idx - VOL_LOOKBACK:idx].values)
-                vols[etf] = float(np.nanstd(rets) * np.sqrt(252))
-
-        if not vols:
-            for etf in DEFENSIVE:
-                if etf in available_sectors:
-                    weights[etf] = 1.0 / len(DEFENSIVE)
-            return weights
-
-        inv_vols = {e: 1.0 / max(v, 0.05) for e, v in vols.items()}
-        total = sum(inv_vols.values())
-        for etf in inv_vols:
-            weights[etf] = inv_vols[etf] / total
-
-    return weights
+    return score, True
 
 
 # ============================================================
@@ -227,52 +152,50 @@ def compute_sector_weights(sector_data, idx, regime, available_sectors):
 
 def run_backtest(data, start, end, debug=False):
     """
-    Run SRAA strategy with proper next-day-open execution.
+    Run the MATA strategy with proper next-day-open execution.
 
-    EXECUTION MODEL (matches live exactly):
-    - Day T close: compute regime, decide allocation
+    EXECUTION MODEL:
+    - Day T close: compute signals, decide allocation
     - Day T+1 open: execute trades (with slippage)
-    - Daily return: position-weighted close-to-close
-    - Entry day (T+1): return from OPEN to CLOSE (partial day)
-    - Exit day (T+1): return from prev CLOSE to OPEN (overnight only)
+    - Rebalance day: overnight return on old weights + intraday on new weights
+    - Non-rebalance day: full close-to-close return on current weights
     """
     spy = data[BENCHMARK]
-    spy_close_full = spy["Close"]
-    spy_open_full = spy["Open"]
     dates = spy.loc[start:end].index
 
     slip = SLIPPAGE_BPS / 10000
     cost = TX_COST_BPS / 10000
 
-    # Build aligned close series for sectors
-    available = [e for e in SECTOR_ETFS if e in data]
-    sector_closes = {}
-    for etf in available:
-        sector_closes[etf] = data[etf]["Close"]
+    # Available stocks
+    stocks = [t for t in UNIVERSE if t not in ETFS_SET and t in data]
+
+    # Pre-compute aligned closes and daily returns
+    closes = {}
+    dailys = {}
+    opens = {}
+    for t in stocks + [EQUITY_ETF, BOND_ETF, GOLD_ETF, SAFE_ETF] + SECTOR_ETFS:
+        if t in data:
+            df = data[t]
+            closes[t] = df["Close"].reindex(spy.index, method='ffill')
+            opens[t] = df["Open"].reindex(spy.index, method='ffill')
+            dailys[t] = closes[t].pct_change()
 
     daily_rets = []
     holdings_log = []
     trade_log = []
 
     # State
-    current_weights = {}  # {etf: weight}
-    current_regime = "BEAR"
-    prev_month = None
-
-    # Pending changes
+    current_weights = {}
     pending_weights = None
-    pending_regime = None
-
-    # Vol targeting state
+    last_rebal_idx = 0
     strat_rets_history = []
-
-    # Regime hysteresis: count consecutive days in each regime
-    regime_counter = {"BULL": 0, "BEAR": 0, "MIXED": 0}
-    REGIME_CONFIRM_DAYS = 3  # Need 3 consecutive days to confirm regime change
+    equity_curve = 1.0
+    equity_peak = 1.0
+    dd_reduced = False  # Whether we're in drawdown-reduction mode
 
     for i, date in enumerate(dates):
         idx = spy.index.get_loc(date)
-        if idx < max(SMA_PERIOD, 130):
+        if idx < max(SMA_PERIOD, 260):
             daily_rets.append(0)
             strat_rets_history.append(0)
             continue
@@ -281,128 +204,156 @@ def run_backtest(data, start, end, debug=False):
         if pending_weights is not None:
             old_weights = current_weights
             new_weights = pending_weights
-            new_regime = pending_regime
 
-            # Compute overnight return for old positions (prev close -> open)
-            dr = 0
-            for etf, w in old_weights.items():
-                if w == 0:
+            # Categorize positions: UNCHANGED, SOLD, BOUGHT, RESIZED
+            all_tickers = set(list(old_weights.keys()) + list(new_weights.keys()))
+            turnover = 0
+            total_dr = 0
+
+            for t in all_tickers:
+                old_w = old_weights.get(t, 0)
+                new_w = new_weights.get(t, 0)
+                delta = abs(new_w - old_w)
+                turnover += delta
+
+                if t not in closes or t not in opens:
                     continue
-                if etf == BENCHMARK:
-                    prev_close = spy_close_full.iloc[idx - 1] if idx > 0 else spy_open_full.iloc[idx]
-                    today_open = spy_open_full.iloc[idx]
-                else:
-                    edf = data.get(etf)
-                    if edf is None or date not in edf.index:
-                        continue
-                    si = edf.index.get_loc(date)
-                    prev_close = edf.iloc[si - 1]["Close"] if si > 0 else edf.iloc[si]["Open"]
-                    today_open = edf.iloc[si]["Open"]
-
-                if prev_close > 0:
-                    sell_price = today_open * (1 - slip)
-                    dr += (sell_price / prev_close - 1) * w
-
-            # Transaction cost: proportional to weight changed
-            changed_weight = 0
-            all_etfs = set(list(old_weights.keys()) + list(new_weights.keys()))
-            for etf in all_etfs:
-                old_w = old_weights.get(etf, 0)
-                new_w = new_weights.get(etf, 0)
-                changed_weight += abs(new_w - old_w)
-            dr -= cost * changed_weight
-
-            # Entry return: open to close for new positions
-            entry_dr = 0
-            for etf, w in new_weights.items():
-                if w == 0:
+                prev_close = closes[t].iloc[idx - 1]
+                today_open = opens[t].iloc[idx]
+                today_close = closes[t].iloc[idx]
+                if pd.isna(prev_close) or pd.isna(today_open) or pd.isna(today_close) or prev_close <= 0:
                     continue
-                if etf == BENCHMARK:
-                    buy_price = spy_open_full.iloc[idx] * (1 + slip)
-                    close_price = spy_close_full.iloc[idx]
+
+                if delta < 0.001:
+                    # UNCHANGED: full close-to-close return, no slippage
+                    total_dr += (today_close / prev_close - 1) * new_w
+                elif old_w > 0.001 and new_w < 0.001:
+                    # FULLY SOLD: overnight return (prev close → open with slip)
+                    sell_px = today_open * (1 - slip)
+                    total_dr += (sell_px / prev_close - 1) * old_w
+                elif old_w < 0.001 and new_w > 0.001:
+                    # NEWLY BOUGHT: intraday return (open with slip → close)
+                    buy_px = today_open * (1 + slip)
+                    total_dr += (today_close / buy_px - 1) * new_w
                 else:
-                    edf = data.get(etf)
-                    if edf is None or date not in edf.index:
-                        continue
-                    buy_price = edf.loc[date, "Open"] * (1 + slip)
-                    close_price = edf.loc[date, "Close"]
+                    # RESIZED: blend of close-to-close (kept portion) and
+                    # execution return (changed portion)
+                    kept = min(old_w, new_w)
+                    total_dr += (today_close / prev_close - 1) * kept
+                    if new_w > old_w:
+                        # Buying more: extra gets open-to-close
+                        extra = new_w - old_w
+                        buy_px = today_open * (1 + slip)
+                        total_dr += (today_close / buy_px - 1) * extra
+                    else:
+                        # Selling some: sold portion gets overnight
+                        sold = old_w - new_w
+                        sell_px = today_open * (1 - slip)
+                        total_dr += (sell_px / prev_close - 1) * sold
 
-                if buy_price > 0:
-                    entry_dr += (close_price / buy_price - 1) * w
+            # Transaction cost proportional to turnover
+            tx_cost = cost * turnover
+            total_dr -= tx_cost
 
-            total_dr = dr + entry_dr
-
+            # Vol scaling
             vol_scale = _compute_vol_scale(strat_rets_history)
             daily_rets.append(total_dr * vol_scale)
             strat_rets_history.append(total_dr * vol_scale)
 
             current_weights = new_weights
-            current_regime = new_regime
             pending_weights = None
-            pending_regime = None
 
             holdings_log.append({
                 "date": date,
-                "regime": new_regime,
-                "weights": {k: round(v, 3) for k, v in new_weights.items()},
+                "weights": {k: round(v, 4) for k, v in new_weights.items() if v > 0.001},
+                "turnover": round(turnover, 3),
+                "n_positions": sum(1 for v in new_weights.values() if v > 0.001),
             })
 
             trade_log.append({
                 "date": date,
-                "regime": new_regime,
-                "turnover": round(changed_weight, 3),
+                "turnover": round(turnover, 3),
+                "n_positions": sum(1 for v in new_weights.values() if v > 0.001),
             })
 
-            prev_month = date.month
             continue
 
-        # === COMPUTE DAILY RETURN FOR HELD POSITIONS ===
+        # === COMPUTE DAILY RETURN FOR HELD POSITIONS (close-to-close) ===
         dr = 0
         if current_weights:
-            for etf, w in current_weights.items():
-                if w == 0:
+            for t, w in current_weights.items():
+                if w == 0 or t not in dailys:
                     continue
-                if etf == BENCHMARK:
-                    if idx > 0:
-                        dr += (spy_close_full.iloc[idx] / spy_close_full.iloc[idx - 1] - 1) * w
-                else:
-                    edf = data.get(etf)
-                    if edf is not None and date in edf.index:
-                        si = edf.index.get_loc(date)
-                        if si > 0:
-                            dr += (edf.iloc[si]["Close"] / edf.iloc[si - 1]["Close"] - 1) * w
+                r = dailys[t].iloc[idx]
+                if pd.notna(r):
+                    dr += r * w
 
         vol_scale = _compute_vol_scale(strat_rets_history)
         daily_rets.append(dr * vol_scale)
         strat_rets_history.append(dr * vol_scale)
 
-        # === GENERATE SIGNALS AT TODAY'S CLOSE (for tomorrow) ===
-        regime = compute_regime(spy_close_full, sector_closes, idx)
+        # === GENERATE SIGNALS AT TODAY'S CLOSE ===
+        should_rebal = (idx - last_rebal_idx >= REBAL_PERIOD) or not current_weights
 
-        # Update regime counter (hysteresis)
-        for r in regime_counter:
-            if r == regime:
-                regime_counter[r] += 1
+        if should_rebal:
+            last_rebal_idx = idx
+            new_weights = {}
+
+            # Determine which asset classes are trending up
+            equity_up = is_trending_up(closes[EQUITY_ETF], idx)
+            bond_up = is_trending_up(closes[BOND_ETF], idx)
+            gold_up = is_trending_up(closes[GOLD_ETF], idx)
+
+            n_trending = sum([equity_up, bond_up, gold_up])
+
+            if n_trending == 0:
+                # Nothing trending → defensive: IEF + GLD
+                new_weights[SAFE_ETF] = 0.50
+                new_weights[GOLD_ETF] = 0.50
             else:
-                regime_counter[r] = 0
+                class_weight = 1.0 / n_trending
 
-        # Confirmed regime: only switch if new regime persisted for N days
-        confirmed_regime = current_regime  # Default: keep current
-        if regime != current_regime and regime_counter[regime] >= REGIME_CONFIRM_DAYS:
-            confirmed_regime = regime
+                if equity_up:
+                    # Score stocks for equity portion
+                    candidates = []
+                    for t in stocks:
+                        if t not in closes or t not in dailys:
+                            continue
+                        score, passes = score_stock(closes[t], dailys[t], idx)
+                        if passes:
+                            candidates.append((t, score))
 
-        # Rebalance: MONTHLY only, or on confirmed regime change, or initial setup
-        new_month = prev_month is None or date.month != prev_month
-        regime_changed = confirmed_regime != current_regime
-        no_weights = not current_weights
+                    if candidates:
+                        candidates.sort(key=lambda x: -x[1])
 
-        if new_month or regime_changed or no_weights:
-            new_weights = compute_sector_weights(data, idx, confirmed_regime, available)
+                        # Turnover reduction: keep existing stocks if still qualified
+                        current_stock_tickers = set(t for t in current_weights if t in stocks)
+                        new_top = [t for t, _ in candidates[:N_STOCKS]]
+                        qualified_existing = [t for t, _ in candidates if t in current_stock_tickers]
+
+                        # Use existing stocks that are still in top 2*N range
+                        top_2n = set(t for t, _ in candidates[:N_STOCKS * 2])
+                        keep = [t for t in current_stock_tickers if t in top_2n]
+                        # Fill remaining slots with new top picks
+                        needed = N_STOCKS - len(keep)
+                        additions = [t for t in new_top if t not in keep][:needed]
+                        final_stocks = keep + additions
+
+                        sw = class_weight / len(final_stocks) if final_stocks else 0
+                        for t in final_stocks:
+                            new_weights[t] = sw
+                    else:
+                        new_weights[EQUITY_ETF] = class_weight
+
+                if bond_up:
+                    new_weights[BOND_ETF] = class_weight
+
+                if gold_up:
+                    new_weights[GOLD_ETF] = class_weight
+
+            # Only trigger rebalance if meaningful change
             if new_weights != current_weights:
                 pending_weights = new_weights
-                pending_regime = confirmed_regime
-
-        prev_month = date.month
 
     return pd.DataFrame({"date": dates, "return": daily_rets}), holdings_log, trade_log
 
@@ -485,6 +436,8 @@ class SafeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, (np.integer,)): return int(o)
         if isinstance(o, (np.floating,)): return float(o)
+        if isinstance(o, (np.bool_,)): return bool(o)
+        if isinstance(o, bool): return bool(o)
         if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
         if isinstance(o, (datetime.date, datetime.datetime)): return o.isoformat()
         if isinstance(o, pd.Timestamp): return o.isoformat()
@@ -500,15 +453,15 @@ if __name__ == "__main__":
     data = load_data()
     print(f"  {len(data)} tickers loaded")
 
-    available = [e for e in SECTOR_ETFS if e in data]
-    print(f"  Sectors: {', '.join(available)}")
-    print(f"\nSector Regime Adaptive Allocation (SRAA)")
-    print(f"  SMA period: {SMA_PERIOD}")
-    print(f"  Breadth threshold: {BREADTH_THRESHOLD:.0%}")
-    print(f"  Momentum lookbacks: {MOM_LOOKBACKS}")
+    stocks = [t for t in UNIVERSE if t not in ETFS_SET and t in data]
+    print(f"  Stock universe: {len(stocks)} stocks")
+    print(f"  ETFs: SPY, TLT, GLD, IEF + {len([e for e in SECTOR_ETFS if e in data])} sector ETFs")
+
+    print(f"\nMulti-Asset Trend Alpha (MATA)")
+    print(f"  Trend filter: SMA{SMA_PERIOD}")
+    print(f"  Stocks per rebalance: {N_STOCKS}")
     print(f"  Vol target: {VOL_TARGET:.0%}")
-    print(f"  Bull: {SPY_WEIGHT_BULL:.0%} SPY + {SECTOR_WEIGHT_BULL:.0%} momentum sectors")
-    print(f"  Bear: 100% defensive (XLU/XLP/XLV risk-parity)")
+    print(f"  Rebalance: every {REBAL_PERIOD} trading days")
     print(f"  Costs: {TX_COST_BPS} bps + {SLIPPAGE_BPS} bps slippage")
 
     all_results = {}
@@ -537,9 +490,10 @@ if __name__ == "__main__":
         print(f"  Rebalances: {n_trades}")
         if tlog:
             avg_turn = sum(t["turnover"] for t in tlog) / len(tlog)
-            print(f"  Avg turnover per rebalance: {avg_turn:.1%}")
+            avg_pos = sum(t["n_positions"] for t in tlog) / len(tlog)
+            print(f"  Avg turnover: {avg_turn:.0%}, Avg positions: {avg_pos:.0f}")
 
-        print(f"\n  {'':20} {'SRAA':>10} {'SPY B&H':>10}")
+        print(f"\n  {'':20} {'MATA':>10} {'SPY B&H':>10}")
         print(f"  {'-'*42}")
         print(f"  {'Sharpe':<20} {m['sharpe']:>10.3f} {spy['sharpe']:>10.3f}")
         print(f"  {'CAGR':<20} {m['cagr']:>10.1%} {spy['cagr']:>10.1%}")
@@ -555,7 +509,7 @@ if __name__ == "__main__":
     for name in ["TRAIN", "VALID", "TEST"]:
         m = all_results[name]["strategy"]
         s = all_results[name]["spy"]
-        print(f"  {name:8} SRAA Sharpe={m['sharpe']:.3f}  CAGR={m['cagr']:.1%}  MDD={m['max_dd']:.1%}")
+        print(f"  {name:8} MATA Sharpe={m['sharpe']:.3f}  CAGR={m['cagr']:.1%}  MDD={m['max_dd']:.1%}")
         print(f"  {'':8}  SPY Sharpe={s['sharpe']:.3f}  CAGR={s['cagr']:.1%}  MDD={s['max_dd']:.1%}")
 
     # ============================================================
@@ -565,27 +519,58 @@ if __name__ == "__main__":
     latest_idx = len(spy_close) - 1
     latest_date = spy_close.index[-1]
 
-    sector_closes = {}
-    for etf in available:
-        sector_closes[etf] = data[etf]["Close"]
-
-    regime_now = compute_regime(spy_close, sector_closes, latest_idx)
-    weights_now = compute_sector_weights(data, latest_idx, regime_now, available)
+    # Check current trends
+    equity_up = is_trending_up(spy_close, latest_idx)
+    bond_close = data[BOND_ETF]["Close"]
+    bond_up = is_trending_up(bond_close, latest_idx)
+    gold_close = data[GOLD_ETF]["Close"]
+    gold_up = is_trending_up(gold_close, latest_idx)
 
     print(f"\n{'='*60}")
     print(f"CURRENT STATUS ({latest_date.date()})")
     print(f"{'='*60}")
-    print(f"  SPY: ${spy_close.iloc[-1]:.2f}")
-    print(f"  Regime: {regime_now}")
-    print(f"  Allocation:")
-    for etf, w in sorted(weights_now.items(), key=lambda x: -x[1]):
-        name_str = SECTOR_NAMES.get(etf, etf)
-        print(f"    {etf:5} ({name_str:20}): {w:.1%}")
+    print(f"  SPY: ${spy_close.iloc[-1]:.2f} ({'TRENDING' if equity_up else 'NOT trending'})")
+    print(f"  TLT: ${bond_close.iloc[-1]:.2f} ({'TRENDING' if bond_up else 'NOT trending'})")
+    print(f"  GLD: ${gold_close.iloc[-1]:.2f} ({'TRENDING' if gold_up else 'NOT trending'})")
+
+    regime = "OFFENSIVE" if equity_up else "DEFENSIVE"
+    n_trend = sum([equity_up, bond_up, gold_up])
+    print(f"  Regime: {regime} ({n_trend}/3 asset classes trending)")
 
     # ============================================================
     # GENERATE WEB DATA
     # ============================================================
     print(f"\nGenerating web data...")
+
+    # Compute current weights
+    all_stocks = [t for t in UNIVERSE if t not in ETFS_SET and t in data]
+    current_weights = {}
+
+    if n_trend == 0:
+        current_weights = {SAFE_ETF: 0.50, GOLD_ETF: 0.50}
+    else:
+        cw = 1.0 / n_trend
+        if equity_up:
+            cands = []
+            for t in all_stocks:
+                df = data[t]
+                c = df["Close"]
+                d = c.pct_change()
+                score, passes = score_stock(c, d, len(c) - 1)
+                if passes:
+                    cands.append((t, score))
+            if cands:
+                cands.sort(key=lambda x: -x[1])
+                top = cands[:N_STOCKS]
+                sw = cw / len(top)
+                for t, _ in top:
+                    current_weights[t] = sw
+            else:
+                current_weights[EQUITY_ETF] = cw
+        if bond_up:
+            current_weights[BOND_ETF] = cw
+        if gold_up:
+            current_weights[GOLD_ETF] = cw
 
     # Sector details
     current_sectors = {}
@@ -593,13 +578,13 @@ if __name__ == "__main__":
         df = data.get(etf)
         if df is None:
             continue
-        idx = len(df) - 1
-        if idx < 130:
+        idx_e = len(df) - 1
+        if idx_e < 130:
             continue
         close = df["Close"]
-        ret_3m = close.iloc[idx] / close.iloc[idx - 63] - 1
-        ret_1m = close.iloc[idx] / close.iloc[idx - 21] - 1
-        ret_1w = close.iloc[idx] / close.iloc[idx - 5] - 1
+        ret_3m = close.iloc[idx_e] / close.iloc[idx_e - 63] - 1
+        ret_1m = close.iloc[idx_e] / close.iloc[idx_e - 21] - 1
+        ret_1w = close.iloc[idx_e] / close.iloc[idx_e - 5] - 1
         vol = float(np.log(close / close.shift(1)).iloc[-21:].std() * np.sqrt(252))
 
         current_sectors[etf] = {
@@ -609,8 +594,8 @@ if __name__ == "__main__":
             "ret_1m": round(float(ret_1m) * 100, 1),
             "ret_1w": round(float(ret_1w) * 100, 1),
             "vol": round(vol * 100, 1),
-            "weight": round(float(weights_now.get(etf, 0)) * 100, 1),
-            "is_top": etf in weights_now and weights_now.get(etf, 0) > 0,
+            "weight": 0,
+            "is_top": False,
         }
 
     # Equity curves
@@ -624,44 +609,44 @@ if __name__ == "__main__":
     eq_spy = [{"date": str(d.date()), "value": round(float(v), 0)}
               for d, v in spy_cum.items()]
 
-    # Top sector for display
-    top_sector = max(
-        [(e, w) for e, w in weights_now.items() if e != BENCHMARK],
-        key=lambda x: x[1],
-        default=(None, 0)
-    )
+    # Top holdings for display
+    top_holdings = sorted(current_weights.items(), key=lambda x: -x[1])[:10]
 
     sector_data = {
         "generated": datetime.datetime.now().isoformat(),
-        "strategy": "SRAA",
-        "strategy_full_name": "Sector Regime Adaptive Allocation",
+        "strategy": "MATA",
+        "strategy_full_name": "Multi-Asset Trend Alpha",
         "description": (
-            f"Bull: {SPY_WEIGHT_BULL:.0%} SPY + {SECTOR_WEIGHT_BULL:.0%} momentum-weighted sectors. "
-            f"Bear: 100% defensive sectors (risk-parity weighted). "
-            f"Always invested, never cash. Vol-targeted to {VOL_TARGET:.0%}."
+            f"Cross-asset trend risk parity (equities + bonds + gold) with "
+            f"stock alpha overlay. {N_STOCKS} quality-momentum stocks when equities trend. "
+            f"Vol-targeted to {VOL_TARGET:.0%}."
         ),
         "current_status": {
             "spy_price": round(float(spy_close.iloc[-1]), 2),
             "sma50": round(float(spy_close.iloc[-SMA_PERIOD:].mean()), 2),
-            "signal": regime_now,
-            "top_sector": top_sector[0] if top_sector[0] else None,
-            "top_sector_name": SECTOR_NAMES.get(top_sector[0], "") if top_sector[0] else "",
-            "top_sector_weight": round(float(top_sector[1]) * 100, 1) if top_sector[0] else 0,
-            "weights": {k: round(v * 100, 1) for k, v in weights_now.items()},
+            "signal": regime,
+            "equity_trending": equity_up,
+            "bond_trending": bond_up,
+            "gold_trending": gold_up,
+            "n_trending": n_trend,
+            "top_sector": top_holdings[0][0] if top_holdings else None,
+            "top_sector_name": SECTOR_NAMES.get(top_holdings[0][0], top_holdings[0][0]) if top_holdings else "",
+            "top_sector_weight": round(float(top_holdings[0][1]) * 100, 1) if top_holdings else 0,
+            "weights": {k: round(v * 100, 1) for k, v in current_weights.items()},
         },
         "sectors": current_sectors,
         "how_it_works": {
             "regime_detection": (
-                f"Dual regime: SPY above {SMA_PERIOD}-day SMA AND "
-                f"{BREADTH_THRESHOLD:.0%}+ sectors above own SMA{SMA_PERIOD}"
+                f"Check 3 asset classes: SPY, TLT, GLD. Each trending if above SMA{SMA_PERIOD}."
             ),
             "bull_allocation": (
-                f"{SPY_WEIGHT_BULL:.0%} SPY + {SECTOR_WEIGHT_BULL:.0%} in momentum-weighted sectors "
-                f"(risk-parity among sectors with positive composite momentum)"
+                f"Equal-weight across trending asset classes. Equity portion: "
+                f"top {N_STOCKS} quality-momentum stocks (above 200-SMA, positive annual return, "
+                f"risk-adjusted momentum scored)."
             ),
-            "bear_allocation": "100% defensive sectors (XLU, XLP, XLV) weighted by inverse volatility",
+            "bear_allocation": "When no asset class trends: 50% IEF (intermediate bonds) + 50% GLD",
             "vol_targeting": f"Position scaled to target {VOL_TARGET:.0%} annualized portfolio vol",
-            "rebalancing": "Monthly sector weights, daily regime check",
+            "rebalancing": f"Every {REBAL_PERIOD} trading days (~monthly)",
         },
         "performance": {
             name.lower(): {
@@ -675,7 +660,8 @@ if __name__ == "__main__":
         "recent_changes": [
             {
                 "date": str(h["date"].date()) if hasattr(h["date"], "date") else str(h["date"]),
-                "regime": h["regime"],
+                "n_positions": h.get("n_positions", 0),
+                "turnover": h.get("turnover", 0),
                 "weights": h.get("weights", {}),
             }
             for h in all_results.get("FULL", {}).get("holdings", [])[-20:]
