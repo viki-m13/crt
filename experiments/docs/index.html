@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <title>Sector Rotation Strategy</title>
+  <title>PRISM Strategy</title>
   <style>
     :root {
       --bg: #000000;
@@ -46,14 +46,13 @@
     .nav-links { margin-left: auto; font-size: 13px; }
 
     /* LAYOUT */
-    .container { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+    .container { max-width: 640px; margin: 0 auto; padding: 0 16px; }
     .section { padding-bottom: 24px; }
     .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 
-    /* ACTION CARD - the hero */
+    /* ACTION CARD */
     .action-card { border-radius: var(--radius); padding: 20px; margin: 16px 0; text-align: center; }
     .action-card.invested { background: var(--green-bg); border: 2px solid var(--green); }
-    .action-card.cash { background: var(--gold-bg); border: 2px solid var(--gold); }
     .action-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
     .action-headline { font-size: 22px; font-weight: 800; margin: 8px 0; }
     .action-detail { font-size: 14px; line-height: 1.6; }
@@ -61,6 +60,7 @@
 
     /* CARDS GRID */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
     .card h3 { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
     .card .big { font-size: 20px; font-weight: 700; }
@@ -76,9 +76,8 @@
 
     /* BADGES */
     .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-    .badge-buy { background: var(--green-bg); color: var(--green); }
-    .badge-wait { background: var(--gold-bg); color: var(--gold); }
-    .badge-no { background: rgba(136,136,136,.1); color: var(--muted); }
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-blue { background: rgba(100,181,246,.1); color: var(--blue); }
 
     /* PNL COLORS */
     .pnl-pos { color: var(--green); }
@@ -93,7 +92,7 @@
     .period-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 6px 0; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-align: center; }
     .period-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-    /* INSTRUCTIONS ACCORDION */
+    /* ACCORDION */
     .accordion { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
     .accordion-header { padding: 14px 16px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
     .accordion-header::after { content: '+'; font-size: 18px; color: var(--muted); font-weight: 400; }
@@ -103,29 +102,42 @@
 
     .step-box { background: var(--bg); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
     .step-label { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
-    .step-rule { padding: 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid; }
-    .step-rule.green-rule { background: var(--green-bg); border-color: var(--green); }
-    .step-rule.red-rule { background: var(--red-bg); border-color: var(--red); }
+
+    /* HOLDINGS GRID */
+    .holdings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+    .holding-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px; text-align: center; }
+    .holding-chip .sym { font-weight: 700; font-family: var(--mono); font-size: 13px; }
+    .holding-chip .wt { font-size: 11px; color: var(--green); }
+
+    /* FACTOR BAR */
+    .factor-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .factor-label { font-size: 12px; width: 120px; color: var(--muted); }
+    .factor-fill { height: 16px; border-radius: 4px; background: var(--green); }
 
     /* TRADE HISTORY */
     .trade-scroll { max-height: 400px; overflow-y: auto; }
 
+    /* WALK-FORWARD TABLE */
+    .wf-positive { color: var(--green); }
+    .wf-negative { color: var(--red); }
+
     /* DISCLAIMER */
     .disclaimer { text-align: center; color: var(--muted); font-size: 11px; padding: 24px 16px; border-top: 1px solid var(--border); margin-top: 24px; line-height: 1.6; }
 
-    /* MOBILE TWEAKS */
     @media (max-width: 420px) {
       .grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
       .card .big { font-size: 17px; }
       .action-headline { font-size: 19px; }
+      .holdings-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
     }
   </style>
 </head>
 <body>
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>Sector Rotation Strategy</h1>
-    <p>Research tool. Enter password to continue.</p>
+    <h1>PRISM Strategy</h1>
+    <p>Multi-factor stock selection research. Enter password.</p>
     <input type="password" id="pwInput" placeholder="Password" autofocus />
     <button onclick="tryLogin()">Enter</button>
     <div class="login-error" id="loginError">Incorrect password</div>
@@ -134,143 +146,89 @@
 
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo">Sector Rotation</span>
-    <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULLISH</span>
+    <span class="nav-logo">PRISM</span>
+    <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">INVESTED</span>
     <div class="nav-links"><a href="/">Main &rarr;</a></div>
   </nav>
 
   <div class="container">
 
-    <!-- ACTION CARD: What to do tomorrow -->
+    <!-- ACTION CARD -->
     <div id="actionCard"></div>
-
-    <!-- EXECUTION INSTRUCTIONS (right after action card) -->
-    <div class="section">
-      <div class="section-title" style="border-top:none;padding-top:0">How to Execute</div>
-      <div class="accordion" id="instrAccordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Exact Execution Instructions</div>
-        <div class="accordion-body">
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; CHECK EVERY DAY at market close</div>
-            <div>At 4:00 PM ET, look up SPY's closing price and its <strong>30-day simple moving average</strong> (SMA30).</div>
-            <div class="step-rule green-rule">
-              <strong style="color:var(--green)">If SPY CLOSED ABOVE SMA30:</strong><br>
-              You should be invested. If you are already invested, do nothing. If you are in cash (from a previous exit), proceed to Step 2 to re-enter.
-            </div>
-            <div class="step-rule red-rule">
-              <strong style="color:var(--red)">If SPY CLOSED BELOW SMA30:</strong><br>
-              <strong>Sell everything at the next day's open.</strong> Sell both your SPY position AND your sector ETF position. Go to 100% cash.
-            </div>
-          </div>
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; PICK THE SECTOR (two scenarios)</div>
-
-            <div style="margin-bottom:10px">
-              <div style="font-weight:700;margin-bottom:4px">Scenario A: 1st trading day of a new month</div>
-              <div style="padding-left:8px">
-                If SPY is above SMA30, look up the <strong>3-month (63 trading day) total return</strong> for each of these 9 sector ETFs: <strong>XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</strong>. Highest return = your sector pick for the month.<br>
-                <strong>Allocate:</strong> 60% SPY + 40% winning sector ETF.<br>
-                <span style="color:var(--muted)">If you held a different sector, swap it. Keep SPY.</span>
-              </div>
-            </div>
-
-            <div style="margin-bottom:10px">
-              <div style="font-weight:700;margin-bottom:4px">Scenario B: SPY just crossed BACK above SMA30</div>
-              <div style="padding-left:8px">
-                Can happen any day. At next day's open, buy:<br>
-                &bull; 60% SPY<br>
-                &bull; 40% whichever sector ETF has the highest 3-month return<br>
-                <span style="color:var(--muted)">Same 60/40 split. Full re-entry with best sector.</span>
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;margin-bottom:4px">What does NOT trigger a sector change</div>
-              <div style="padding-left:8px">
-                Mid-month sector leadership changes &mdash; you do <strong>nothing</strong>. Sector only changes on the 1st of month or at re-entry after cash.
-              </div>
-            </div>
-          </div>
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--gold)">ALLOCATION &amp; COSTS</div>
-            <div><strong>When invested:</strong> 60% SPY + 40% top sector ETF</div>
-            <div><strong>When in cash:</strong> 100% cash (money market, T-bills, etc.)</div>
-            <div><strong>Trades per year:</strong> ~26</div>
-            <div style="margin-top:6px"><strong>Sector ETFs:</strong> XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB</div>
-            <div><strong>NOT used:</strong> XLRE, XLC (shorter history)</div>
-            <div><strong>Costs:</strong> ~3 bps per trade</div>
-          </div>
-
-        </div>
-      </div>
-    </div>
 
     <!-- STRATEGY SUMMARY -->
     <div class="section">
-      <div class="section-title">Strategy</div>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
-        60% SPY + 40% top sector ETF. SMA30-gated. Monthly rotation.<br>
-        Sharpe 3+ across 27 years (1999&ndash;2026). 27 consecutive positive years including dot-com bust, GFC, and COVID.
-      </p>
+      <div class="section-title" style="border-top:none;padding-top:12px">Strategy</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px" id="stratDesc"></p>
+    </div>
+
+    <!-- CURRENT HOLDINGS -->
+    <div class="section">
+      <div class="section-title">Current Holdings</div>
+      <div id="holdingsGrid" class="holdings-grid"></div>
+    </div>
+
+    <!-- FACTORS -->
+    <div class="section">
+      <div class="section-title">Factor Weights</div>
+      <div id="factorBars"></div>
     </div>
 
     <!-- PERFORMANCE GRID -->
-    <div class="section" id="perfSection">
+    <div class="section">
       <div class="section-title">Performance</div>
-      <div id="sectorPerf"></div>
+      <div id="perfGrid"></div>
     </div>
 
-    <!-- SECTOR RANKINGS -->
+    <!-- WALK-FORWARD -->
     <div class="section">
-      <div class="section-title">Sector Rankings</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M</th><th>1M</th><th>1W</th><th></th></tr></thead>
-          <tbody id="sectorTable"></tbody>
-        </table>
-      </div>
+      <div class="section-title">Walk-Forward Validation</div>
+      <div id="wfSummary" style="margin-bottom:12px"></div>
     </div>
 
     <!-- EQUITY CURVE -->
     <div class="section">
       <div class="section-title">Equity Curve vs SPY ($10k)</div>
       <div class="period-btns">
-        <button class="period-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
-        <button class="period-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
-        <button class="period-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
-        <button class="period-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
-        <button class="period-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
-        <button class="period-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
-        <button class="period-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
-        <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
+        <button class="period-btn" data-period="max" onclick="setPeriod('max')">Max</button>
+        <button class="period-btn" data-period="10y" onclick="setPeriod('10y')">10Y</button>
+        <button class="period-btn" data-period="5y" onclick="setPeriod('5y')">5Y</button>
+        <button class="period-btn" data-period="2y" onclick="setPeriod('2y')">2Y</button>
+        <button class="period-btn active" data-period="1y" onclick="setPeriod('1y')">1Y</button>
+        <button class="period-btn" data-period="6m" onclick="setPeriod('6m')">6M</button>
       </div>
-      <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
+      <div class="chart-container" id="chartWrap"><canvas id="eqChart"></canvas></div>
       <div id="chartMetrics"></div>
     </div>
 
-    <!-- TRADE HISTORY -->
+    <!-- EXECUTION INSTRUCTIONS -->
     <div class="section">
-      <div class="section-title">Trade History</div>
-      <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Every holding period since 1999. Each row = 60% SPY + 40% sector. Shows blended 60/40 return.</p>
+      <div class="section-title">Execution</div>
+      <div class="accordion" id="instrAccordion">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">How to Execute</div>
+        <div class="accordion-body" id="instrBody"></div>
+      </div>
+    </div>
+
+    <!-- RECENT REBALANCES -->
+    <div class="section">
+      <div class="section-title">Recent Rebalances</div>
       <div class="table-wrap trade-scroll">
         <table>
-          <thead><tr><th>Entry</th><th>Exit</th><th>Sector</th><th>Why In</th><th>Why Out</th><th>Days</th><th>SPY</th><th>Sector</th><th>Portfolio</th></tr></thead>
-          <tbody id="tradeHistory"></tbody>
+          <thead><tr><th>Date</th><th>Trades</th><th>Top Holdings</th></tr></thead>
+          <tbody id="rebalTable"></tbody>
         </table>
       </div>
     </div>
 
     <div class="disclaimer">
       Past performance does not guarantee future results. This is a research tool, not financial advice.
-      <br>No leakage, no overfitting: same parameters across all periods, 63-day buffers between splits.
+      <br>Walk-forward validated: expanding window, no re-optimization, next-day-open execution, 5bps slippage.
       <br>Last scan: <span id="lastScan">&mdash;</span>
     </div>
 
-  </div><!-- end container -->
-</div><!-- end app -->
+  </div>
+</div>
 
 <script>
 /* ---- LOGIN ---- */
@@ -293,318 +251,236 @@ if(sessionStorage.getItem('picker_auth')==='1'){
 }
 
 /* ---- DATA ---- */
-let SECTOR_DATA=null;
-let SECTOR_PERIOD='1y';
+let D=null;
+let PERIOD='1y';
 
 function loadData(){
   fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
-    SECTOR_DATA=d;
+    D=d;
     if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
-    // Set regime tag from sector rotation signal, not stock picker
-    const cs=d.current_status||{};
-    const invested=cs.signal==='INVESTED';
-    const tag=document.getElementById('regimeTag');
-    tag.textContent=invested?'INVESTED':'CASH';
-    tag.style.background=invested?'var(--green-bg)':'var(--gold-bg)';
-    tag.style.color=invested?'var(--green)':'var(--gold)';
     renderAll();
   }).catch(e=>console.error(e));
 }
 
 function renderAll(){
-  if(!SECTOR_DATA) return;
+  if(!D) return;
   renderActionCard();
+  renderStrategy();
+  renderHoldings();
+  renderFactors();
   renderPerformance();
-  renderSectorTable();
-  drawSectorChart();
-  renderTradeHistory();
-
+  renderWalkForward();
+  drawChart();
+  renderInstructions();
+  renderRebalances();
 }
 
 /* ---- ACTION CARD ---- */
 function renderActionCard(){
-  const s=SECTOR_DATA;
-  const cs=s.current_status||{};
-  const invested=cs.signal==='INVESTED';
-  const el=document.getElementById('actionCard');
-
-  // Figure out previous state from recent_changes to determine transition
-  const changes=s.recent_changes||[];
-  const lastChange=changes.length?changes[changes.length-1]:null;
-  const prevChange=changes.length>1?changes[changes.length-2]:null;
-
-  // Find top sector from rankings (for CASH→INVESTED re-entry scenario)
-  const secs=s.sectors||{};
-  const topSector=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m)[0];
-  const topETF=topSector?topSector[0]:'—';
-  const topName=topSector?topSector[1].name:'—';
-  const topRet=topSector?topSector[1].ret_3m:0;
-
-  if(invested){
-    el.innerHTML=`<div class="action-card invested">
-      <div class="action-label" style="color:var(--green)">Tomorrow at Market Open</div>
-      <div class="action-headline" style="color:var(--green)">HOLD</div>
-      <div class="action-detail" style="text-align:left;margin-top:12px">
-        <div style="margin-bottom:8px"><strong style="color:var(--green)">DO NOT SELL.</strong> Keep your current positions:</div>
-        <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-family:var(--mono);font-size:15px">
-          <div>60% &rarr; <strong>SPY</strong></div>
-          <div>40% &rarr; <strong>${cs.top_sector}</strong> <span style="color:var(--muted);font-size:12px">${cs.top_sector_name}</span></div>
-        </div>
-        <div style="color:var(--muted);font-size:12px;margin-top:8px">No trades needed. SPY is above SMA30. Next check: today at 4 PM ET.</div>
+  const cs=D.current_status||{};
+  const n=cs.n_holdings||0;
+  const holdings=cs.holdings||{};
+  const top5=Object.entries(holdings).slice(0,5);
+  const holdStr=top5.map(([s,d])=>`<strong>${s}</strong> ${d.weight}%`).join(' &middot; ');
+  document.getElementById('actionCard').innerHTML=`
+    <div class="action-card invested">
+      <div class="action-label" style="color:var(--green)">Current Portfolio</div>
+      <div class="action-headline" style="color:var(--green)">${n} STOCKS</div>
+      <div class="action-detail">
+        <div style="font-size:12px;color:var(--muted)">${holdStr}${n>5?' &hellip;':''}</div>
       </div>
-      <div class="action-meta">SPY $${cs.spy_price} &gt; SMA30 $${cs.sma50} &nbsp;|&nbsp; ${cs.top_sector} 3m: +${cs.top_sector_ret_3m}%</div>
+      <div class="action-meta">Always fully invested. Monthly rebalance. Next rebalance: 1st of next month.</div>
     </div>`;
-  } else {
-    // CASH: check if we were previously invested (need to sell) or already in cash
-    const wasInvested=prevChange&&prevChange.regime==='INVESTED';
-    const prevSector=prevChange?prevChange.sector:'';
-    const justWentCash=lastChange&&lastChange.regime==='CASH';
+  document.getElementById('regimeTag').textContent='INVESTED';
+}
 
-    let sellNote='';
-    if(wasInvested&&justWentCash&&prevSector){
-      sellNote=`<div style="background:var(--red-bg);padding:10px 12px;border-radius:6px;margin-bottom:10px;border-left:3px solid var(--red)">
-        <strong style="color:var(--red)">SELL at open:</strong>
-        <div style="font-family:var(--mono);font-size:15px;margin-top:4px">
-          <div>Sell <strong>SPY</strong> (entire position)</div>
-          <div>Sell <strong>${prevSector}</strong> (entire position)</div>
-        </div>
-        <div style="color:var(--muted);font-size:12px;margin-top:4px">Go to 100% cash.</div>
-      </div>`;
-    }
+/* ---- STRATEGY DESC ---- */
+function renderStrategy(){
+  document.getElementById('stratDesc').innerHTML=D.description||'';
+}
 
-    el.innerHTML=`<div class="action-card cash">
-      <div class="action-label" style="color:var(--gold)">Tomorrow at Market Open</div>
-      <div class="action-headline" style="color:var(--gold)">CASH</div>
-      <div class="action-detail" style="text-align:left;margin-top:12px">
-        ${sellNote}
-        <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-size:13px">
-          <strong style="color:var(--gold)">DO NOT BUY.</strong> SPY closed below its 30-day moving average.<br>
-          Stay in cash (money market, T-bills). Wait for SPY to close back above SMA30.
-        </div>
-        <div style="color:var(--muted);font-size:12px;margin-top:8px">
-          When SPY crosses back above SMA30, buy: 60% SPY + 40% <strong>${topETF}</strong> (${topName}, currently #1 with +${topRet}% 3m return).
-        </div>
-      </div>
-      <div class="action-meta">SPY $${cs.spy_price} &lt; SMA30 $${cs.sma50} &nbsp;|&nbsp; Gap: ${((1-cs.spy_price/cs.sma50)*100).toFixed(1)}% below</div>
+/* ---- HOLDINGS ---- */
+function renderHoldings(){
+  const holdings=D.current_status?.holdings||{};
+  const el=document.getElementById('holdingsGrid');
+  el.innerHTML='';
+  for(const [sym,d] of Object.entries(holdings)){
+    el.innerHTML+=`<div class="holding-chip">
+      <div class="sym">${sym}</div>
+      <div class="wt">${d.weight}%</div>
+      <div style="font-size:10px;color:var(--muted)">$${d.price}</div>
     </div>`;
   }
 }
 
-/* ---- PERFORMANCE GRID ---- */
+/* ---- FACTORS ---- */
+function renderFactors(){
+  const factors=D.factors||[];
+  const el=document.getElementById('factorBars');
+  el.innerHTML='';
+  for(const f of factors){
+    el.innerHTML+=`<div class="factor-bar">
+      <div class="factor-label">${f.name} (${f.weight}%)</div>
+      <div style="flex:1;background:var(--surface);border-radius:4px;height:16px;overflow:hidden">
+        <div class="factor-fill" style="width:${f.weight*2.5}%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);width:180px;text-align:right">${f.description}</div>
+    </div>`;
+  }
+}
+
+/* ---- PERFORMANCE ---- */
 function renderPerformance(){
-  const perfData=SECTOR_DATA.performance||{};
-  const periodOrder=['dot-com','bull','gfc','train','valid','test','full'];
-  const periodLabels={'dot-com':'Dot-Com (99-03)','bull':'Bull (04-07)','gfc':'GFC (08-09)',
-    'train':'Train (10-19)','valid':'Valid (20-22)','test':'Test OOS (23-26)','full':'FULL (99-26)'};
+  const perf=D.performance||{};
+  const order=['train','valid','test','full'];
+  const labels={train:'Train (2010-2019)',valid:'Valid (2020-2022)',test:'Test OOS (2023-2026)',full:'FULL (2010-2026)'};
   let html='<div class="grid">';
-  for(const key of periodOrder){
-    const d=perfData[key];
-    if(!d) continue;
-    const st=d.strategy||{};
-    const sp=d.spy||{};
-    const isFull=key==='full';
+  for(const k of order){
+    const d=perf[k]; if(!d) continue;
+    const st=d.strategy||{}, sp=d.spy||{};
+    const isFull=k==='full';
+    const beatsSpy=st.sharpe>sp.sharpe;
     html+=`<div class="card${isFull?' highlight':''}">
-      <h3>${periodLabels[key]||key}</h3>
-      <div class="big" style="color:var(--green)">${st.sharpe||'—'}</div>
-      <div class="sub">Sharpe</div>
+      <h3>${labels[k]||k}</h3>
+      <div class="big" style="color:${beatsSpy?'var(--green)':'var(--ink)'}">${st.sharpe||'--'}</div>
+      <div class="sub">Sharpe ${beatsSpy?'<span class="badge badge-green">BEATS SPY</span>':''}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:4px">
-        CAGR ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} &middot; DD ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'}
+        CAGR ${st.cagr?(st.cagr*100).toFixed(1)+'%':'--'} &middot; DD ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'--'} &middot; Vol ${st.ann_vol?(st.ann_vol*100).toFixed(0)+'%':'--'}
       </div>
       <div style="font-size:10px;color:var(--muted);margin-top:2px">
-        SPY: ${sp.sharpe||'—'} / ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'}
+        SPY: Sharpe ${sp.sharpe||'--'} / CAGR ${sp.cagr?(sp.cagr*100).toFixed(1)+'%':'--'}
       </div>
     </div>`;
   }
   html+='</div>';
-  document.getElementById('sectorPerf').innerHTML=html;
+  document.getElementById('perfGrid').innerHTML=html;
 }
 
-/* ---- SECTOR TABLE ---- */
-function renderSectorTable(){
-  const secs=SECTOR_DATA.sectors||{};
-  const sorted=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m);
-  const tbody=document.getElementById('sectorTable');
-  tbody.innerHTML='';
-  for(const [etf,d] of sorted){
-    const badge=d.is_top?'<span class="badge badge-buy">TOP</span>':'';
-    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v}%</span>`;
-    tbody.innerHTML+=`<tr>
-      <td><span class="ticker-sym">${etf}</span></td><td>${d.name}</td><td>$${d.price}</td>
-      <td>${fmt(d.ret_3m)}</td><td>${fmt(d.ret_1m)}</td><td>${fmt(d.ret_1w)}</td><td>${badge}</td>
-    </tr>`;
-  }
-}
-
-/* ---- CHART ---- */
-function setSectorPeriod(p){
-  SECTOR_PERIOD=p;
-  document.querySelectorAll('.period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
-  if(SECTOR_DATA) drawSectorChart();
-}
-
-function drawSectorChart(){
-  const eq=SECTOR_DATA.equity_curve_strategy||[];
-  const spyEq=SECTOR_DATA.equity_curve_spy||[];
-  if(eq.length<2) return;
-
-  const periodDays={max:99999,'10y':2520,'5y':1260,'2y':504,'1y':252,'6m':126,'3m':63,'1m':21};
-  const days=periodDays[SECTOR_PERIOD]||252;
-  const eqSlice=eq.slice(-days);
-  const spySlice=spyEq.slice(-days);
-
-  const rebase=(arr)=>{
-    if(!arr.length) return arr;
-    const base=arr[0].value;
-    return arr.map(d=>({date:d.date,value:Math.round(d.value/base*10000)}));
-  };
-  const rStrat=rebase(eqSlice);
-  const rSpy=rebase(spySlice);
-  const canvas=document.getElementById('sectorChart');
-  drawDualChart(canvas,rStrat,rSpy);
-
-  // Compute period metrics
-  renderChartMetrics(eqSlice,spySlice);
-}
-
-function renderChartMetrics(stratSlice,spySlice){
-  const el=document.getElementById('chartMetrics');
-  if(!stratSlice.length||!spySlice.length){el.innerHTML='';return;}
-
-  const calcMetrics=(arr)=>{
-    const first=arr[0].value, last=arr[arr.length-1].value;
-    const totalRet=(last/first-1)*100;
-    const n=arr.length;
-    const annYears=n/252;
-    // Only show CAGR for periods >= 1 year; for shorter periods just annualize the return simply
-    const cagr=annYears>=1?((Math.pow(last/first,1/annYears)-1)*100):null;
-    // Daily returns for sharpe/maxDD
-    const dailyRets=[];
-    let peak=arr[0].value, maxDD=0;
-    for(let i=1;i<arr.length;i++){
-      dailyRets.push(arr[i].value/arr[i-1].value-1);
-      if(arr[i].value>peak) peak=arr[i].value;
-      const dd=(peak-arr[i].value)/peak;
-      if(dd>maxDD) maxDD=dd;
-    }
-    const avg=dailyRets.reduce((s,v)=>s+v,0)/dailyRets.length;
-    const std=Math.sqrt(dailyRets.reduce((s,v)=>s+(v-avg)**2,0)/dailyRets.length);
-    const sharpe=std>0?(avg/std*Math.sqrt(252)):0;
-    return {totalRet,cagr,sharpe,maxDD:maxDD*100,finalVal:last/arr[0].value*10000,annYears};
-  };
-
-  const sm=calcMetrics(stratSlice);
-  const sp=calcMetrics(spySlice);
-  const alpha=sm.totalRet-sp.totalRet;
-
-  const fmtLine=(m)=>{
-    let line=m.cagr!=null?`CAGR ${m.cagr.toFixed(1)}% &middot; `:'';
-    line+=`Sharpe ${m.sharpe.toFixed(2)}<br>Max DD ${m.maxDD.toFixed(1)}% &middot; $${(m.finalVal/1000).toFixed(1)}k`;
-    return line;
-  };
-
-  el.innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-      <div class="card" style="border-left:3px solid #00c853">
-        <h3 style="color:#00c853">Strategy</h3>
-        <div class="big" style="color:#00c853">${sm.totalRet>=0?'+':''}${sm.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sm)}</div>
+/* ---- WALK-FORWARD ---- */
+function renderWalkForward(){
+  const wf=D.walk_forward||{};
+  document.getElementById('wfSummary').innerHTML=`
+    <div class="grid-3">
+      <div class="card">
+        <h3>OOS Sharpe</h3>
+        <div class="big" style="color:var(--green)">${wf.overall_oos_sharpe||'--'}</div>
+        <div class="sub">vs SPY ${wf.spy_oos_sharpe||'--'}</div>
       </div>
-      <div class="card" style="border-left:3px solid #888">
-        <h3>SPY</h3>
-        <div class="big">${sp.totalRet>=0?'+':''}${sp.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sp)}</div>
+      <div class="card">
+        <h3>OOS CAGR</h3>
+        <div class="big" style="color:var(--green)">${wf.overall_oos_cagr?((wf.overall_oos_cagr*100).toFixed(1)+'%'):'--'}</div>
+        <div class="sub">vs SPY ${wf.spy_oos_cagr?((wf.spy_oos_cagr*100).toFixed(1)+'%'):'--'}</div>
+      </div>
+      <div class="card">
+        <h3>Beat SPY</h3>
+        <div class="big">${wf.years_beating_spy||'--'}</div>
+        <div class="sub">years by Sharpe</div>
       </div>
     </div>
-    <div style="text-align:center;font-size:12px;margin-top:6px;color:${alpha>=0?'#00c853':'var(--red)'}">
-      Alpha: ${alpha>=0?'+':''}${alpha.toFixed(1)}% vs SPY over this period
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">
+      ${wf.description||''} &middot; Positive Sharpe in ${wf.positive_sharpe_years||'--'} years.
     </div>`;
 }
 
-function drawDualChart(canvas,data1,data2){
-  const ctx=canvas.getContext('2d');
-  const dpr=window.devicePixelRatio||1;
-  const rect=canvas.parentElement.getBoundingClientRect();
-  canvas.width=rect.width*dpr;
-  canvas.height=rect.height*dpr;
-  ctx.scale(dpr,dpr);
-  const W=rect.width, H=rect.height;
-  ctx.clearRect(0,0,W,H);
-
-  const v1=data1.map(d=>d.value), v2=data2.map(d=>d.value);
-  const n=Math.max(v1.length,v2.length);
-  if(n<2) return;
-
-  const padL=55, padR=15, padT=16, padB=24;
-  let min=Infinity, max=-Infinity;
-  for(const v of [...v1,...v2]){ if(v<min)min=v; if(v>max)max=v; }
-  const range=max-min||1;
-  min-=range*0.05; max+=range*0.05;
-
-  const x=i=>padL+(W-padL-padR)*i/(n-1);
-  const y=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min));
-
-  // Grid
-  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
-  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
-  for(let i=0;i<=4;i++){
-    const val=min+(max-min)*i/4;
-    const yy=y(val);
-    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
-    ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);
-  }
-
-  // SPY line (gray dashed)
-  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
-  for(let i=0;i<v2.length;i++){
-    const px=x(i*(n-1)/(v2.length-1)), py=y(v2[i]);
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  }
-  ctx.stroke();ctx.setLineDash([]);
-
-  // Strategy line (green) with fill
-  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
-  for(let i=1;i<v1.length;i++) ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
-  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
-  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
-  grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=grad;ctx.fill();
-
-  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
-  for(let i=0;i<v1.length;i++){
-    const px=x(i*(n-1)/(v1.length-1)), py=y(v1[i]);
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  }
-  ctx.stroke();
-
-  // Labels
-  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
-  ctx.fillStyle='#00c853';ctx.fillText('Strategy $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+8,padT+12);
-  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+8,padT+26);
+/* ---- CHART ---- */
+function setPeriod(p){
+  PERIOD=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
+  if(D) drawChart();
 }
 
-/* ---- TRADE HISTORY ---- */
-function renderTradeHistory(){
-  const trades=SECTOR_DATA.trade_history||[];
-  const tbody=document.getElementById('tradeHistory');
+function drawChart(){
+  const eq=D.equity_curve_strategy||[], spyEq=D.equity_curve_spy||[];
+  if(eq.length<2) return;
+  const periodDays={max:99999,'10y':2520,'5y':1260,'2y':504,'1y':252,'6m':126};
+  const days=periodDays[PERIOD]||252;
+  const eqSlice=eq.slice(-days), spySlice=spyEq.slice(-days);
+  const rebase=arr=>{if(!arr.length)return arr;const b=arr[0].value;return arr.map(d=>({date:d.date,value:Math.round(d.value/b*10000)}));};
+  drawDualChart(document.getElementById('eqChart'),rebase(eqSlice),rebase(spySlice));
+  renderChartMetrics(eqSlice,spySlice);
+}
+
+function renderChartMetrics(s1,s2){
+  const el=document.getElementById('chartMetrics');
+  if(!s1.length||!s2.length){el.innerHTML='';return;}
+  const calc=arr=>{
+    const f=arr[0].value,l=arr[arr.length-1].value,tr=(l/f-1)*100,n=arr.length,y=n/252;
+    const cagr=y>=1?((Math.pow(l/f,1/y)-1)*100):null;
+    const dr=[];let pk=arr[0].value,mdd=0;
+    for(let i=1;i<arr.length;i++){dr.push(arr[i].value/arr[i-1].value-1);if(arr[i].value>pk)pk=arr[i].value;const dd=(pk-arr[i].value)/pk;if(dd>mdd)mdd=dd;}
+    const avg=dr.reduce((a,v)=>a+v,0)/dr.length,std=Math.sqrt(dr.reduce((a,v)=>a+(v-avg)**2,0)/dr.length);
+    return{tr,cagr,sharpe:std>0?avg/std*Math.sqrt(252):0,mdd:mdd*100,fv:l/f*10000};
+  };
+  const sm=calc(s1),sp=calc(s2),alpha=sm.tr-sp.tr;
+  const fmtL=m=>{let l=m.cagr!=null?`CAGR ${m.cagr.toFixed(1)}% · `:'';l+=`Sharpe ${m.sharpe.toFixed(2)}<br>Max DD ${m.mdd.toFixed(1)}% · $${(m.fv/1000).toFixed(1)}k`;return l;};
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+    <div class="card" style="border-left:3px solid #00c853"><h3 style="color:#00c853">PRISM</h3><div class="big" style="color:#00c853">${sm.tr>=0?'+':''}${sm.tr.toFixed(1)}%</div><div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtL(sm)}</div></div>
+    <div class="card" style="border-left:3px solid #888"><h3>SPY</h3><div class="big">${sp.tr>=0?'+':''}${sp.tr.toFixed(1)}%</div><div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtL(sp)}</div></div>
+  </div><div style="text-align:center;font-size:12px;margin-top:6px;color:${alpha>=0?'#00c853':'var(--red)'}">Alpha: ${alpha>=0?'+':''}${alpha.toFixed(1)}% vs SPY</div>`;
+}
+
+function drawDualChart(canvas,d1,d2){
+  const ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1,rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
+  const v1=d1.map(d=>d.value),v2=d2.map(d=>d.value),n=Math.max(v1.length,v2.length);
+  if(n<2)return;
+  const pL=55,pR=15,pT=16,pB=24;
+  let mn=Infinity,mx=-Infinity;for(const v of[...v1,...v2]){if(v<mn)mn=v;if(v>mx)mx=v;}
+  const rng=mx-mn||1;mn-=rng*.05;mx+=rng*.05;
+  const x=i=>pL+(W-pL-pR)*i/(n-1),y=v=>pT+(H-pT-pB)*(1-(v-mn)/(mx-mn));
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=.5;ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4,yy=y(val);ctx.beginPath();ctx.moveTo(pL,yy);ctx.lineTo(W-pR,yy);ctx.stroke();ctx.fillText('$'+(val/1000).toFixed(1)+'k',pL-6,yy+3);}
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
+  for(let i=0;i<v2.length;i++){const px=x(i*(n-1)/(v2.length-1)),py=y(v2[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));for(let i=1;i<v1.length;i++)ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
+  ctx.lineTo(x(n-1),y(mn));ctx.lineTo(x(0),y(mn));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,pT,0,H-pB);grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<v1.length;i++){const px=x(i*(n-1)/(v1.length-1)),py=y(v1[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#00c853';ctx.fillText('PRISM $'+(v1[v1.length-1]/1000).toFixed(1)+'k',pL+8,pT+12);
+  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',pL+8,pT+26);
+}
+
+/* ---- INSTRUCTIONS ---- */
+function renderInstructions(){
+  const hw=D.how_it_works||{};
+  document.getElementById('instrBody').innerHTML=`
+    <div class="step-box">
+      <div class="step-label" style="color:var(--green)">SCORING</div>
+      <div>${hw.scoring||''}</div>
+    </div>
+    <div class="step-box">
+      <div class="step-label" style="color:var(--blue)">SELECTION</div>
+      <div>${hw.selection||''}</div>
+    </div>
+    <div class="step-box">
+      <div class="step-label" style="color:var(--gold)">WEIGHTING</div>
+      <div>${hw.weighting||''}</div>
+    </div>
+    <div class="step-box">
+      <div class="step-label">REBALANCE</div>
+      <div>${hw.rebalance||''}</div>
+    </div>
+    <div class="step-box">
+      <div class="step-label">COSTS</div>
+      <div>${hw.costs||''}</div>
+    </div>`;
+}
+
+/* ---- REBALANCES ---- */
+function renderRebalances(){
+  const trades=D.recent_rebalances||[];
+  const tbody=document.getElementById('rebalTable');
   tbody.innerHTML='';
   for(const t of trades.slice().reverse()){
-    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
-    const exitCls=t.exit_reason.includes('SMA')?'color:var(--red)':t.exit_reason.includes('rotation')?'color:var(--blue)':'color:var(--muted)';
-    const entryCls=t.entry_reason.includes('Re-entry')?'color:var(--green)':'color:var(--blue)';
-    tbody.innerHTML+=`<tr>
-      <td>${t.entry}</td><td>${t.exit}</td>
-      <td><span class="ticker-sym">${t.sector}</span></td>
-      <td style="${entryCls};font-size:11px">${t.entry_reason}</td>
-      <td style="${exitCls};font-size:11px">${t.exit_reason}</td>
-      <td>${t.days}d</td>
-      <td>${fmt(t.spy_ret)}</td>
-      <td>${fmt(t.sector_ret)}</td>
-      <td><strong>${fmt(t.blend_ret)}</strong></td>
-    </tr>`;
+    const tops=(t.top_holdings||[]).map(h=>`<span class="ticker-sym">${h.stock}</span> <span style="color:var(--green);font-size:11px">${h.weight}%</span>`).join(' &middot; ');
+    tbody.innerHTML+=`<tr><td>${t.date}</td><td>${t.n_trades}</td><td>${tops}</td></tr>`;
   }
 }
-
-
 </script>
 </body>
 </html>
