@@ -2,14 +2,14 @@
   "ticker": "ARB-USD",
   "display_name": "ARB",
   "price": 0.0,
-  "conviction": 18.3,
+  "conviction": 18.2,
   "is_signal": false,
-  "mtmdi_zscore": 0.327,
-  "mtmdi_raw": 0.628,
-  "mtmdi_direction": 0.837,
-  "mtmdi_velocity": -0.136,
+  "mtmdi_zscore": 0.317,
+  "mtmdi_raw": 0.626,
+  "mtmdi_direction": 0.819,
+  "mtmdi_velocity": -0.12,
   "cascade_score": -0.0,
-  "momentum_persistence": -0.014,
+  "momentum_persistence": 0.005,
   "range_compression": 0.0,
   "vol_30d": 0.0,
   "vol_regime": "high",
@@ -21,27 +21,19 @@
     "30d": 0.0,
     "90d": -26.77,
     "180d": -26.77,
-    "365d": 3.05
+    "365d": 4.67
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-28",
-      "price": 0.0
-    },
-    {
-      "date": "2025-03-29",
-      "price": 0.0
-    },
     {
       "date": "2025-03-30",
       "price": 0.0
@@ -1493,17 +1485,17 @@
     {
       "date": "2026-03-27",
       "price": 0.0
+    },
+    {
+      "date": "2026-03-28",
+      "price": 0.0
+    },
+    {
+      "date": "2026-03-29",
+      "price": 0.0
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-28",
-      "value": -0.882
-    },
-    {
-      "date": "2025-03-29",
-      "value": -0.877
-    },
     {
       "date": "2025-03-30",
       "value": -0.874
@@ -2955,6 +2947,14 @@
     {
       "date": "2026-03-27",
       "value": 0.327
+    },
+    {
+      "date": "2026-03-28",
+      "value": 0.329
+    },
+    {
+      "date": "2026-03-29",
+      "value": 0.317
     }
   ]
 }

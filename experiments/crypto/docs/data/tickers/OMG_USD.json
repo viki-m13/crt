@@ -1,47 +1,39 @@
 {
   "ticker": "OMG-USD",
   "display_name": "OMG",
-  "price": 0.05,
-  "conviction": 14.8,
+  "price": 0.06,
+  "conviction": 26.5,
   "is_signal": false,
-  "mtmdi_zscore": 0.008,
-  "mtmdi_raw": 0.647,
-  "mtmdi_direction": 0.884,
-  "mtmdi_velocity": -0.397,
-  "cascade_score": 0.0283,
-  "momentum_persistence": -0.738,
-  "range_compression": 0.37,
-  "vol_30d": 43.1,
+  "mtmdi_zscore": 0.444,
+  "mtmdi_raw": 0.74,
+  "mtmdi_direction": 1.123,
+  "mtmdi_velocity": -0.173,
+  "cascade_score": -0.0002,
+  "momentum_persistence": 1.343,
+  "range_compression": 0.206,
+  "vol_30d": 30.3,
   "vol_regime": "normal",
-  "drawdown": -76.5,
-  "position_in_range": 0.3,
+  "drawdown": -76.3,
+  "position_in_range": 0.5,
   "returns": {
-    "7d": -3.02,
-    "14d": -6.12,
-    "30d": -5.52,
-    "90d": -37.97,
-    "180d": -103.18,
-    "365d": -139.69
+    "7d": 1.6,
+    "14d": -4.77,
+    "30d": -3.71,
+    "90d": -37.11,
+    "180d": -100.0,
+    "365d": -133.37
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
-    "cascade": true,
-    "momentum": false,
+    "cascade": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
   "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-28",
-      "price": 0.21
-    },
-    {
-      "date": "2025-03-29",
-      "price": 0.21
-    },
     {
       "date": "2025-03-30",
       "price": 0.21
@@ -1493,17 +1485,17 @@
     {
       "date": "2026-03-27",
       "price": 0.05
+    },
+    {
+      "date": "2026-03-28",
+      "price": 0.06
+    },
+    {
+      "date": "2026-03-29",
+      "price": 0.06
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-28",
-      "value": 0.716
-    },
-    {
-      "date": "2025-03-29",
-      "value": 0.636
-    },
     {
       "date": "2025-03-30",
       "value": 0.529
@@ -2955,6 +2947,14 @@
     {
       "date": "2026-03-27",
       "value": 0.008
+    },
+    {
+      "date": "2026-03-28",
+      "value": -0.346
+    },
+    {
+      "date": "2026-03-29",
+      "value": 0.444
     }
   ]
 }

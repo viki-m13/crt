@@ -1,47 +1,39 @@
 {
   "ticker": "AXS-USD",
   "display_name": "AXS",
-  "price": 1.11,
-  "conviction": 18.2,
+  "price": 1.12,
+  "conviction": 25.9,
   "is_signal": false,
-  "mtmdi_zscore": -0.497,
-  "mtmdi_raw": 0.643,
-  "mtmdi_direction": -0.748,
-  "mtmdi_velocity": -0.053,
-  "cascade_score": -0.0099,
-  "momentum_persistence": -0.163,
-  "range_compression": 0.238,
-  "vol_30d": 55.5,
+  "mtmdi_zscore": -0.537,
+  "mtmdi_raw": 0.624,
+  "mtmdi_direction": -0.742,
+  "mtmdi_velocity": -0.019,
+  "cascade_score": 0.0273,
+  "momentum_persistence": 0.388,
+  "range_compression": 0.167,
+  "vol_30d": 55.8,
   "vol_regime": "normal",
-  "drawdown": -67.6,
-  "position_in_range": 11.7,
+  "drawdown": -67.3,
+  "position_in_range": 12.0,
   "returns": {
-    "7d": -8.93,
-    "14d": -3.99,
-    "30d": -21.92,
-    "90d": 24.26,
-    "180d": -67.03,
-    "365d": -111.51
+    "7d": 2.89,
+    "14d": -10.31,
+    "30d": -14.84,
+    "90d": 30.19,
+    "180d": -62.89,
+    "365d": -95.56
   },
   "signals": {
     "mtmdi": false,
     "direction": false,
     "velocity": false,
-    "cascade": false,
-    "momentum": false,
+    "cascade": true,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-28",
-      "price": 3.13
-    },
-    {
-      "date": "2025-03-29",
-      "price": 2.91
-    },
     {
       "date": "2025-03-30",
       "price": 2.91
@@ -1493,17 +1485,17 @@
     {
       "date": "2026-03-27",
       "price": 1.11
+    },
+    {
+      "date": "2026-03-28",
+      "price": 1.15
+    },
+    {
+      "date": "2026-03-29",
+      "price": 1.12
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-28",
-      "value": 0.974
-    },
-    {
-      "date": "2025-03-29",
-      "value": 0.363
-    },
     {
       "date": "2025-03-30",
       "value": 0.36
@@ -2955,6 +2947,14 @@
     {
       "date": "2026-03-27",
       "value": -0.497
+    },
+    {
+      "date": "2026-03-28",
+      "value": -0.562
+    },
+    {
+      "date": "2026-03-29",
+      "value": -0.537
     }
   ]
 }
