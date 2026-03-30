@@ -23,9 +23,10 @@ STOCK SELECTION (Multi-Factor):
 
 SAFE HAVEN ALLOCATION:
   In bear regime, safe havens are trend-filtered:
-  - Assets above their own SMA200 get boosted weight
-  - Assets below SMA200 get reduced weight
-  This avoids overweighting bonds during rate-hiking cycles (2022)
+  - Assets above their own SMA200 get full weight
+  - Assets below SMA200 get reduced to 25% weight, remainder to cash
+  This avoids overweighting crashing bonds during rate-hiking cycles (2022)
+  Correlation-adaptive: when SPY-TLT corr > 0.2, shift from TLT to GLD/IEF
 
 NO FITTED PARAMETERS:
   - SMA100 (regime), SMA200 (trend): standard values
@@ -78,6 +79,7 @@ EQ_PCT_BULL = 0.80     # Equity allocation in bull
 EQ_PCT_BEAR = 0.30     # Equity allocation in bear
 N_STOCKS_BEAR = 10     # Fewer stocks in bear (more concentrated)
 SLIPPAGE_BPS = 5       # 5 bps per trade
+
 
 
 class ASRPStrategy:
@@ -191,9 +193,11 @@ class ASRPStrategy:
 
     def safe_haven_weights(self, date, bear=False):
         """
-        Correlation-adaptive safe haven allocation.
-        When SPY-TLT correlation is positive (like 2022), bonds aren't a hedge.
-        Shift allocation to GLD and IEF instead.
+        Correlation-adaptive safe haven allocation with trend filtering.
+        1. Correlation-based: when SPY-TLT corr is positive (2022), shift to GLD/IEF.
+        2. Trend filter: havens below their SMA200 get reduced weight.
+           Unallocated weight stays in cash (no position = 0% return).
+           This prevents piling into crashing bonds during rate hikes.
         """
         corr_val = 0
         if self.spy_tlt_corr is not None and date in self.spy_tlt_corr.index:
@@ -208,13 +212,36 @@ class ASRPStrategy:
         else:
             hw = {"TLT": 0.33, "GLD": 0.34, "IEF": 0.33}
 
+        # Trend filter: reduce weight of havens below their SMA200
+        # Remainder goes to cash (not invested = 0% return, avoiding losses)
+        if bear:
+            filtered = {}
+            for h, w in hw.items():
+                if h in self.sma200 and date in self.sma200[h].index:
+                    sma = self.sma200[h].loc[date]
+                    price = self.closes[h].loc[date] if h in self.closes and date in self.closes[h].index else 0
+                    if not pd.isna(sma) and price > 0:
+                        if price >= sma:
+                            filtered[h] = w  # Above trend: full weight
+                        else:
+                            filtered[h] = w * 0.25  # Below trend: 25% weight, rest to cash
+                    else:
+                        filtered[h] = w
+                else:
+                    filtered[h] = w
+            hw = filtered
+
         if hw:
+            # Don't renormalize — remainder stays in cash
             total = sum(hw.values())
-            return {k: v / total for k, v in hw.items()}
+            if total > 1.0:
+                hw = {k: v / total for k, v in hw.items()}
+            return hw
         return {"IEF": 1.0}
 
     def get_weights(self, date):
-        """Compute full portfolio weights for a given date."""
+        """Compute full portfolio weights for a given date.
+"""
         bear = self.is_bear(date)
         eq_pct = EQ_PCT_BEAR if bear else EQ_PCT_BULL
         hedge_pct = 1.0 - eq_pct
@@ -268,6 +295,7 @@ def backtest(data, start, end, weight_fn, tx_bps=5):
         idx = spy.index.get_loc(date)
         if idx < 252:
             daily_rets.append(0.0)
+            raw_rets_buffer.append(0.0)
             continue
 
         month = date.month
@@ -308,7 +336,6 @@ def backtest(data, start, end, weight_fn, tx_bps=5):
                             dr += (today_c / buy - 1) * w
                     trades += 1
 
-            daily_rets.append(dr)
             current_w = new_w
 
             # Log trade
@@ -327,9 +354,10 @@ def backtest(data, start, end, weight_fn, tx_bps=5):
                         si = df.index.get_loc(date)
                         if si > 0:
                             dr += (df.iloc[si]["Close"] / df.iloc[si - 1]["Close"] - 1) * w
-                daily_rets.append(dr)
             else:
-                daily_rets.append(0.0)
+                dr = 0.0
+
+        daily_rets.append(dr)
 
     return pd.Series(daily_rets, index=dates), trades, trade_log
 
