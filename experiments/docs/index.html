@@ -248,6 +248,7 @@
         <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
       </div>
       <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
+      <div id="chartMetrics"></div>
     </div>
 
     <!-- RECENT REGIME CHANGES -->
@@ -467,8 +468,66 @@ function drawSectorChart(){
     const base=arr[0].value;
     return arr.map(d=>({date:d.date,value:Math.round(d.value/base*10000)}));
   };
+  const rStrat=rebase(eqSlice);
+  const rSpy=rebase(spySlice);
   const canvas=document.getElementById('sectorChart');
-  drawDualChart(canvas,rebase(eqSlice),rebase(spySlice));
+  drawDualChart(canvas,rStrat,rSpy);
+
+  // Compute period metrics
+  renderChartMetrics(eqSlice,spySlice);
+}
+
+function renderChartMetrics(stratSlice,spySlice){
+  const el=document.getElementById('chartMetrics');
+  if(!stratSlice.length||!spySlice.length){el.innerHTML='';return;}
+
+  const calcMetrics=(arr)=>{
+    const first=arr[0].value, last=arr[arr.length-1].value;
+    const totalRet=(last/first-1)*100;
+    const n=arr.length;
+    const annYears=n/252;
+    const cagr=annYears>0?((Math.pow(last/first,1/annYears)-1)*100):totalRet;
+    // Daily returns for sharpe/maxDD
+    const dailyRets=[];
+    let peak=arr[0].value, maxDD=0;
+    for(let i=1;i<arr.length;i++){
+      dailyRets.push(arr[i].value/arr[i-1].value-1);
+      if(arr[i].value>peak) peak=arr[i].value;
+      const dd=(peak-arr[i].value)/peak;
+      if(dd>maxDD) maxDD=dd;
+    }
+    const avg=dailyRets.reduce((s,v)=>s+v,0)/dailyRets.length;
+    const std=Math.sqrt(dailyRets.reduce((s,v)=>s+(v-avg)**2,0)/dailyRets.length);
+    const sharpe=std>0?(avg/std*Math.sqrt(252)):0;
+    return {totalRet,cagr,sharpe,maxDD:maxDD*100,finalVal:last/arr[0].value*10000};
+  };
+
+  const sm=calcMetrics(stratSlice);
+  const sp=calcMetrics(spySlice);
+  const alpha=sm.totalRet-sp.totalRet;
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <div class="card" style="border-left:3px solid #00c853">
+        <h3 style="color:#00c853">Strategy</h3>
+        <div class="big" style="color:#00c853">${sm.totalRet>=0?'+':''}${sm.totalRet.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          CAGR ${sm.cagr.toFixed(1)}% &middot; Sharpe ${sm.sharpe.toFixed(2)}<br>
+          Max DD ${sm.maxDD.toFixed(1)}% &middot; $${(sm.finalVal/1000).toFixed(1)}k
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #888">
+        <h3>SPY</h3>
+        <div class="big">${sp.totalRet>=0?'+':''}${sp.totalRet.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          CAGR ${sp.cagr.toFixed(1)}% &middot; Sharpe ${sp.sharpe.toFixed(2)}<br>
+          Max DD ${sp.maxDD.toFixed(1)}% &middot; $${(sp.finalVal/1000).toFixed(1)}k
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;margin-top:6px;color:${alpha>=0?'#00c853':'var(--red)'}">
+      Alpha: ${alpha>=0?'+':''}${alpha.toFixed(1)}% vs SPY over this period
+    </div>`;
 }
 
 function drawDualChart(canvas,data1,data2){
@@ -520,7 +579,7 @@ function drawDualChart(canvas,data1,data2){
   grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=grad;ctx.fill();
 
-  ctx.strokeStyle='var(--green)';ctx.lineWidth=2;ctx.beginPath();
+  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
   for(let i=0;i<v1.length;i++){
     const px=x(i*(n-1)/(v1.length-1)), py=y(v1[i]);
     i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
