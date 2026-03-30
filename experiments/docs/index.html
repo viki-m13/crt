@@ -89,8 +89,8 @@
     .chart-container canvas { width: 100%; height: 100%; }
 
     /* PERIOD BUTTONS */
-    .period-btns { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
-    .period-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
+    .period-btns { display: flex; gap: 3px; margin-bottom: 10px; }
+    .period-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 6px 0; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-align: center; }
     .period-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
     /* INSTRUCTIONS ACCORDION */
@@ -251,17 +251,6 @@
       <div id="chartMetrics"></div>
     </div>
 
-    <!-- RECENT REGIME CHANGES -->
-    <div class="section">
-      <div class="section-title">Recent Regime Changes</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Signal</th><th>Sector Tilt</th></tr></thead>
-          <tbody id="sectorChanges"></tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- TRADE HISTORY -->
     <div class="section">
       <div class="section-title">Trade History</div>
@@ -329,7 +318,7 @@ function renderAll(){
   renderSectorTable();
   drawSectorChart();
   renderTradeHistory();
-  renderRegimeChanges();
+
 }
 
 /* ---- ACTION CARD ---- */
@@ -615,20 +604,7 @@ function renderTradeHistory(){
   }
 }
 
-/* ---- REGIME CHANGES ---- */
-function renderRegimeChanges(){
-  const changes=SECTOR_DATA.recent_changes||[];
-  const tbody=document.getElementById('sectorChanges');
-  tbody.innerHTML='';
-  for(const c of changes.slice().reverse()){
-    const cls=c.regime==='CASH'?'color:var(--gold)':'color:var(--green)';
-    tbody.innerHTML+=`<tr>
-      <td>${c.date}</td>
-      <td style="${cls};font-weight:600">${c.regime}</td>
-      <td>${c.sector?c.sector+' ('+c.sector_name+')':'—'}</td>
-    </tr>`;
-  }
-}
+
 </script>
 </body>
 </html>
