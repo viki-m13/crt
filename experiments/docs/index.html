@@ -486,7 +486,8 @@ function renderChartMetrics(stratSlice,spySlice){
     const totalRet=(last/first-1)*100;
     const n=arr.length;
     const annYears=n/252;
-    const cagr=annYears>0?((Math.pow(last/first,1/annYears)-1)*100):totalRet;
+    // Only show CAGR for periods >= 1 year; for shorter periods just annualize the return simply
+    const cagr=annYears>=1?((Math.pow(last/first,1/annYears)-1)*100):null;
     // Daily returns for sharpe/maxDD
     const dailyRets=[];
     let peak=arr[0].value, maxDD=0;
@@ -499,30 +500,30 @@ function renderChartMetrics(stratSlice,spySlice){
     const avg=dailyRets.reduce((s,v)=>s+v,0)/dailyRets.length;
     const std=Math.sqrt(dailyRets.reduce((s,v)=>s+(v-avg)**2,0)/dailyRets.length);
     const sharpe=std>0?(avg/std*Math.sqrt(252)):0;
-    return {totalRet,cagr,sharpe,maxDD:maxDD*100,finalVal:last/arr[0].value*10000};
+    return {totalRet,cagr,sharpe,maxDD:maxDD*100,finalVal:last/arr[0].value*10000,annYears};
   };
 
   const sm=calcMetrics(stratSlice);
   const sp=calcMetrics(spySlice);
   const alpha=sm.totalRet-sp.totalRet;
 
+  const fmtLine=(m)=>{
+    let line=m.cagr!=null?`CAGR ${m.cagr.toFixed(1)}% &middot; `:'';
+    line+=`Sharpe ${m.sharpe.toFixed(2)}<br>Max DD ${m.maxDD.toFixed(1)}% &middot; $${(m.finalVal/1000).toFixed(1)}k`;
+    return line;
+  };
+
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
       <div class="card" style="border-left:3px solid #00c853">
         <h3 style="color:#00c853">Strategy</h3>
         <div class="big" style="color:#00c853">${sm.totalRet>=0?'+':''}${sm.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">
-          CAGR ${sm.cagr.toFixed(1)}% &middot; Sharpe ${sm.sharpe.toFixed(2)}<br>
-          Max DD ${sm.maxDD.toFixed(1)}% &middot; $${(sm.finalVal/1000).toFixed(1)}k
-        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sm)}</div>
       </div>
       <div class="card" style="border-left:3px solid #888">
         <h3>SPY</h3>
         <div class="big">${sp.totalRet>=0?'+':''}${sp.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">
-          CAGR ${sp.cagr.toFixed(1)}% &middot; Sharpe ${sp.sharpe.toFixed(2)}<br>
-          Max DD ${sp.maxDD.toFixed(1)}% &middot; $${(sp.finalVal/1000).toFixed(1)}k
-        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sp)}</div>
       </div>
     </div>
     <div style="text-align:center;font-size:12px;margin-top:6px;color:${alpha>=0?'#00c853':'var(--red)'}">
