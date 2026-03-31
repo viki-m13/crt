@@ -98,6 +98,8 @@ def run_strategy(data, leverage_etf, start, end):
     spy_close = spy["Close"]
     spy_ret = spy_close.pct_change()
     spy_sma200 = spy_close.rolling(200).mean()
+    spy_sma50 = spy_close.rolling(50).mean()
+    spy_mom63 = spy_close / spy_close.shift(63) - 1  # 3-month momentum
     spy_vol_fast = spy_ret.rolling(VOL_FAST_WINDOW, min_periods=3).std() * np.sqrt(252)
     spy_vol_slow = spy_ret.rolling(VOL_SLOW_WINDOW, min_periods=21).std() * np.sqrt(252)
 
@@ -123,16 +125,26 @@ def run_strategy(data, leverage_etf, start, end):
         dr = 0.0
 
         if rebalance:
-            sma = spy_sma200.loc[date] if date in spy_sma200.index else None
+            sma200 = spy_sma200.loc[date] if date in spy_sma200.index else None
+            sma50 = spy_sma50.loc[date] if date in spy_sma50.index else None
+            mom = spy_mom63.loc[date] if date in spy_mom63.index else 0
             vf = spy_vol_fast.loc[date] if date in spy_vol_fast.index else 0.20
             vs = spy_vol_slow.loc[date] if date in spy_vol_slow.index else 0.20
             if pd.isna(vf): vf = 0.20
             if pd.isna(vs): vs = 0.20
+            if pd.isna(mom): mom = 0
 
-            trend_ok = sma is not None and not pd.isna(sma) and spy_close.loc[date] > sma
+            # Entry requires ALL: above SMA200, above SMA50, positive 3m momentum, low vol
+            # Exit triggers on ANY: below SMA50 OR vol spike
+            # This is asymmetric: hard to enter, easy to exit
+            above_sma200 = sma200 is not None and not pd.isna(sma200) and spy_close.loc[date] > sma200
+            above_sma50 = sma50 is not None and not pd.isna(sma50) and spy_close.loc[date] > sma50
+            mom_positive = mom > 0
             vol_ok = vs < VOL_SLOW_THRESH and vf < VOL_FAST_THRESH
 
-            should_leverage = trend_ok and vol_ok
+            # Simple: need SMA200 + vol ok + momentum confirmation
+            # SMA50 used only as additional entry gate (not exit)
+            should_leverage = above_sma200 and vol_ok and (mom_positive or in_leverage)
 
             if should_leverage != in_leverage:
                 # Switching: exit old, enter new
@@ -260,16 +272,22 @@ if __name__ == "__main__":
 
     # Current state
     latest = data[BENCHMARK]["Close"].index[-1]
-    spy_ret = data[BENCHMARK]["Close"].pct_change()
+    spy_c = data[BENCHMARK]["Close"]
+    spy_ret = spy_c.pct_change()
     vf = spy_ret.rolling(VOL_FAST_WINDOW).std().iloc[-1] * np.sqrt(252)
     vs = spy_ret.rolling(VOL_SLOW_WINDOW).std().iloc[-1] * np.sqrt(252)
-    sma = data[BENCHMARK]["Close"].rolling(200).mean().iloc[-1]
-    spy_now = data[BENCHMARK]["Close"].iloc[-1]
+    sma200 = spy_c.rolling(200).mean().iloc[-1]
+    sma50 = spy_c.rolling(50).mean().iloc[-1]
+    mom = float(spy_c.iloc[-1] / spy_c.iloc[-63] - 1)
+    spy_now = spy_c.iloc[-1]
 
     print(f"\n{'='*60}")
     print(f"CURRENT STATE — {latest.date()}")
-    print(f"  SPY: {spy_now:.2f} vs SMA200: {sma:.2f} → {'ABOVE ✓' if spy_now > sma else 'BELOW ✗'}")
+    print(f"  SPY: {spy_now:.2f}")
+    print(f"  SMA200: {sma200:.2f} → {'ABOVE ✓' if spy_now > sma200 else 'BELOW ✗'}")
+    print(f"  SMA50:  {sma50:.2f} → {'ABOVE ✓' if spy_now > sma50 else 'BELOW ✗'}")
+    print(f"  3M mom: {mom:+.1%} → {'POS ✓' if mom > 0 else 'NEG ✗'}")
     print(f"  Fast vol (5d):  {vf:.1%} → {'OK ✓' if vf < VOL_FAST_THRESH else 'HIGH ✗'}")
     print(f"  Slow vol (42d): {vs:.1%} → {'OK ✓' if vs < VOL_SLOW_THRESH else 'HIGH ✗'}")
-    leverage_on = spy_now > sma and vf < VOL_FAST_THRESH and vs < VOL_SLOW_THRESH
-    print(f"  POSITION: {'TQQQ (3x leverage)' if leverage_on else 'SHY (cash)'}")
+    all_ok = spy_now > sma200 and spy_now > sma50 and mom > 0 and vf < VOL_FAST_THRESH and vs < VOL_SLOW_THRESH
+    print(f"  POSITION: {'TQQQ (3x leverage)' if all_ok else 'SHY (cash)'}")
