@@ -84,18 +84,24 @@ def run_scan():
     original_cwd = os.getcwd()
     os.chdir(repo_root)
 
+    # Vercel's deployed filesystem is read-only except /tmp.
+    # Redirect daily_scan output to /tmp so file writes succeed.
+    tmp_data_dir = "/tmp/docs_data"
+    tmp_ticker_dir = os.path.join(tmp_data_dir, "tickers")
+
     try:
         import daily_scan
+        daily_scan.OUT_DIR = tmp_data_dir
+        daily_scan.TICKER_DIR = tmp_ticker_dir
         daily_scan.main()
     finally:
         os.chdir(original_cwd)
 
-    # Push docs/data/ to GitHub
-    data_dir = os.path.join(repo_root, "docs", "data")
-    if not os.path.isdir(data_dir):
-        raise RuntimeError(f"Scan produced no output: {data_dir} not found")
+    # Push /tmp output to GitHub at docs/data/
+    if not os.path.isdir(tmp_data_dir):
+        raise RuntimeError(f"Scan produced no output: {tmp_data_dir} not found")
 
-    pushed = push_directory(data_dir, "docs/data", "chore: daily scan update")
+    pushed = push_directory(tmp_data_dir, "docs/data", "chore: daily scan update")
     return pushed
 
 
