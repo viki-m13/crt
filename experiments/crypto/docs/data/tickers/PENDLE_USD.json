@@ -1,43 +1,39 @@
 {
   "ticker": "PENDLE-USD",
   "display_name": "PENDLE",
-  "price": 1.11,
-  "conviction": 21.1,
+  "price": 1.12,
+  "conviction": 25.5,
   "is_signal": false,
-  "mtmdi_zscore": -1.311,
-  "mtmdi_raw": 0.54,
-  "mtmdi_direction": 0.719,
-  "mtmdi_velocity": -0.602,
-  "cascade_score": -0.0159,
+  "mtmdi_zscore": -1.481,
+  "mtmdi_raw": 0.496,
+  "mtmdi_direction": 0.451,
+  "mtmdi_velocity": -0.367,
+  "cascade_score": 0.0303,
   "momentum_persistence": -1.086,
   "range_compression": 0.668,
-  "vol_30d": 69.6,
+  "vol_30d": 68.7,
   "vol_regime": "high",
   "drawdown": -81.7,
-  "position_in_range": 0.3,
+  "position_in_range": 0.4,
   "returns": {
-    "7d": -4.57,
-    "14d": -14.75,
-    "30d": -11.99,
-    "90d": -51.53,
-    "180d": -139.17,
-    "365d": -81.12
+    "7d": -10.47,
+    "14d": -21.12,
+    "30d": -14.63,
+    "90d": -50.7,
+    "180d": -146.4,
+    "365d": -81.68
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
     "velocity": false,
-    "cascade": false,
+    "cascade": true,
     "momentum": false,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-03-30",
-      "price": 2.52
-    },
     {
       "date": "2025-03-31",
       "price": 2.72
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-29",
       "price": 1.11
+    },
+    {
+      "date": "2026-03-30",
+      "price": 1.12
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-30",
-      "value": 1.296
-    },
     {
       "date": "2025-03-31",
       "value": 1.289
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-29",
       "value": -1.311
+    },
+    {
+      "date": "2026-03-30",
+      "value": -1.481
     }
   ]
 }

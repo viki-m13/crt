@@ -1,43 +1,39 @@
 {
   "ticker": "UMA-USD",
   "display_name": "UMA",
-  "price": 0.39,
-  "conviction": 29.4,
+  "price": 0.4,
+  "conviction": 31.7,
   "is_signal": false,
-  "mtmdi_zscore": -1.203,
-  "mtmdi_raw": 0.417,
-  "mtmdi_direction": 0.488,
-  "mtmdi_velocity": -0.399,
-  "cascade_score": 0.0553,
+  "mtmdi_zscore": -0.958,
+  "mtmdi_raw": 0.471,
+  "mtmdi_direction": 0.496,
+  "mtmdi_velocity": 0.315,
+  "cascade_score": 0.0387,
   "momentum_persistence": -0.824,
   "range_compression": 0.534,
-  "vol_30d": 49.9,
+  "vol_30d": 50.6,
   "vol_regime": "normal",
-  "drawdown": -78.1,
-  "position_in_range": 0.0,
+  "drawdown": -77.6,
+  "position_in_range": 0.6,
   "returns": {
-    "7d": -6.26,
-    "14d": -14.66,
-    "30d": -12.4,
-    "90d": -58.9,
-    "180d": -112.38,
-    "365d": -112.26
+    "7d": -6.94,
+    "14d": -14.7,
+    "30d": -9.09,
+    "90d": -56.84,
+    "180d": -114.06,
+    "365d": -109.81
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
     "momentum": false,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-30",
-      "price": 1.19
-    },
     {
       "date": "2025-03-31",
       "price": 1.17
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-29",
       "price": 0.39
+    },
+    {
+      "date": "2026-03-30",
+      "price": 0.4
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-30",
-      "value": 0.408
-    },
     {
       "date": "2025-03-31",
       "value": -0.13
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-29",
       "value": -1.203
+    },
+    {
+      "date": "2026-03-30",
+      "value": -0.958
     }
   ]
 }
