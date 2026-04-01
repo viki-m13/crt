@@ -57,7 +57,7 @@ TRANSACTION_COST_BPS = 10     # 10 bps round-trip
 TOP_K_PICKS = 10              # top K stocks to select each period
 
 # Default Chronos model (can override via --model)
-DEFAULT_MODEL = "amazon/chronos-t5-small"
+DEFAULT_MODEL = "amazon/chronos-t5-tiny"
 
 BENCHMARK = "SPY"
 
@@ -279,6 +279,92 @@ class ChronosPredictor:
         else:
             return self._predict_statistical(context, current_price, horizon)
 
+    def predict_batch(self, price_series_list, horizon=PREDICTION_HORIZON):
+        """
+        Batch prediction for multiple stocks at once (much faster than one-by-one).
+
+        Args:
+            price_series_list: list of (ticker, pandas Series) tuples
+            horizon: forecast horizon
+
+        Returns:
+            dict of {ticker: forecast_features} or {ticker: None} if failed
+        """
+        results = {}
+        contexts = []
+        tickers = []
+        current_prices = []
+
+        for ticker, price_series in price_series_list:
+            if len(price_series) < 30:
+                results[ticker] = None
+                continue
+
+            context = price_series.values[-CONTEXT_LENGTH:].astype(np.float64)
+            if not np.all(np.isfinite(context)):
+                context = pd.Series(context).ffill().bfill().values
+                if not np.all(np.isfinite(context)):
+                    results[ticker] = None
+                    continue
+
+            cp = context[-1]
+            if cp <= 0:
+                results[ticker] = None
+                continue
+
+            contexts.append(context)
+            tickers.append(ticker)
+            current_prices.append(cp)
+
+        if not contexts:
+            return results
+
+        if self.pipeline is not None:
+            import torch
+            try:
+                # Pad contexts to same length for batching
+                max_len = max(len(c) for c in contexts)
+                padded = []
+                for c in contexts:
+                    if len(c) < max_len:
+                        pad = np.full(max_len - len(c), c[0])
+                        c = np.concatenate([pad, c])
+                    padded.append(c)
+
+                # Process in mini-batches of 16 for memory efficiency
+                batch_size = 16
+                all_samples = []
+                for b_start in range(0, len(padded), batch_size):
+                    b_end = min(b_start + batch_size, len(padded))
+                    batch = padded[b_start:b_end]
+                    batch_tensor = torch.tensor(np.array(batch), dtype=torch.float32)
+                    with torch.no_grad():
+                        forecast = self.pipeline.predict(
+                            batch_tensor, horizon, num_samples=self.num_samples,
+                        )
+                    # forecast shape: (batch, num_samples, horizon)
+                    all_samples.append(forecast.numpy())
+
+                all_samples = np.concatenate(all_samples, axis=0)
+
+                for i, ticker in enumerate(tickers):
+                    samples = all_samples[i]  # (num_samples, horizon)
+                    results[ticker] = self._extract_features(samples, current_prices[i])
+
+            except Exception as e:
+                # Fallback to statistical for all
+                for i, ticker in enumerate(tickers):
+                    results[ticker] = self._predict_statistical(
+                        contexts[i], current_prices[i], horizon
+                    )
+        else:
+            for i, ticker in enumerate(tickers):
+                results[ticker] = self._predict_statistical(
+                    contexts[i], current_prices[i], horizon
+                )
+
+        return results
+
     def _predict_chronos(self, context, current_price, horizon):
         """Generate forecast using Chronos model."""
         import torch
@@ -457,20 +543,26 @@ def run_walk_forward(data, predictor, start_date, end_date, quick=False):
         t0 = time.time()
         date_preds = []
 
+        # Prepare batch of price series for Chronos
+        batch_inputs = []
+        batch_meta = []  # (ticker, close, volume)
         for ticker in stocks:
             df = data[ticker]
             if eval_date not in df.index:
                 continue
-
             close = df["Close"]
-            volume = df.get("Volume")
-
-            # ── Chronos forecast (ONLY data up to eval_date) ──
             hist_close = close.loc[:eval_date]
             if len(hist_close) < 60:
                 continue
+            batch_inputs.append((ticker, hist_close))
+            batch_meta.append((ticker, close, df.get("Volume")))
 
-            forecast_feats = predictor.predict(hist_close, horizon=PREDICTION_HORIZON)
+        # ── Batch Chronos forecast (ONLY data up to eval_date) ──
+        forecast_results = predictor.predict_batch(batch_inputs, horizon=PREDICTION_HORIZON)
+
+        # Process results
+        for ticker, close, volume in batch_meta:
+            forecast_feats = forecast_results.get(ticker)
             if forecast_feats is None:
                 continue
 
@@ -492,10 +584,8 @@ def run_walk_forward(data, predictor, start_date, end_date, quick=False):
                 "actual_return": actual_return,
                 "hit_target": hit_target if actual_return is not None else None,
             }
-            # Add forecast features with "fc_" prefix
             for k, v in forecast_feats.items():
                 pred_row[f"fc_{k}"] = v
-            # Add technical features with "tech_" prefix
             for k, v in tech_feats.items():
                 pred_row[f"tech_{k}"] = v
 
