@@ -173,6 +173,25 @@
       </div>
     </div>
 
+    <!-- EQUITY CURVE -->
+    <div class="section">
+      <div class="section-title">Equity Curve &mdash; Strategy vs SPY ($10k)</div>
+      <div class="chart-container" style="height:260px"><canvas id="equityChart"></canvas></div>
+      <div id="equityMeta" style="display:flex;justify-content:space-around;margin-top:8px;font-size:12px"></div>
+    </div>
+
+    <!-- HISTORICAL PICKS -->
+    <div class="section">
+      <div class="section-title">Historical Picks (2023&ndash;2026)</div>
+      <div id="histStats" style="margin-bottom:10px"></div>
+      <div class="table-wrap" style="max-height:500px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Date</th><th>Ticker</th><th>Entry</th><th>Exit</th><th>Return</th><th>Days</th><th>Hit</th></tr></thead>
+          <tbody id="histTable"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ALL CANDIDATES TABLE -->
     <div class="section">
       <div class="section-title">All Scored Candidates</div>
@@ -187,7 +206,7 @@
     <!-- SELECTED PICK CHART -->
     <div class="section" id="chartSection" style="display:none">
       <div class="section-title">Price Chart &mdash; <span id="chartTicker"></span></div>
-      <div class="chart-container"><canvas id="pickChart"></canvas></div>
+      <div class="chart-container" style="height:260px"><canvas id="pickChart"></canvas></div>
     </div>
 
     <div class="disclaimer">
@@ -241,6 +260,8 @@ function renderAll(){
   if(!DATA) return;
   renderPicks();
   renderPerformance();
+  renderEquityCurve();
+  renderHistoricalPicks();
   renderCandidateTable();
 }
 
@@ -369,8 +390,101 @@ function renderCandidateTable(){
   }
 }
 
-/* ---- PRICE CHART ---- */
-function showChart(ticker){
+/* ---- EQUITY CURVE ---- */
+function renderEquityCurve(){
+  const strat=DATA.equity_curve_strategy||[];
+  const spy=DATA.equity_curve_spy||[];
+  if(strat.length<2) return;
+  const canvas=document.getElementById('equityChart');
+  drawDualChart(canvas,strat,spy);
+  // Meta
+  const stratFinal=strat[strat.length-1].value;
+  const spyFinal=spy.length?spy[spy.length-1].value:10000;
+  const stratRet=((stratFinal/10000-1)*100).toFixed(1);
+  const spyRet=((spyFinal/10000-1)*100).toFixed(1);
+  document.getElementById('equityMeta').innerHTML=`
+    <span style="color:var(--green)">Strategy: $${(stratFinal/1000).toFixed(1)}k (${stratRet>=0?'+':''}${stratRet}%)</span>
+    <span style="color:var(--muted)">SPY: $${(spyFinal/1000).toFixed(1)}k (${spyRet>=0?'+':''}${spyRet}%)</span>
+    <span style="color:${stratFinal>spyFinal?'var(--green)':'var(--red)'}">Alpha: ${(stratRet-spyRet)>=0?'+':''}${(stratRet-spyRet).toFixed(1)}%</span>`;
+}
+
+function drawDualChart(canvas,data1,data2){
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const v1=data1.map(d=>d.value),v2=data2.map(d=>d.value);
+  const n=Math.max(v1.length,v2.length);
+  if(n<2) return;
+  const padL=55,padR=15,padT=16,padB=24;
+  let mn=Infinity,mx=-Infinity;
+  for(const v of [...v1,...v2]){if(v<mn)mn=v;if(v>mx)mx=v;}
+  const rng=mx-mn||1;mn-=rng*0.05;mx+=rng*0.05;
+  const x=i=>padL+(W-padL-padR)*i/(n-1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4;const yy=y(val);ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);}
+  // SPY dashed
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
+  for(let i=0;i<v2.length;i++){const px=x(i*(n-1)/(v2.length-1)),py=y(v2[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();ctx.setLineDash([]);
+  // Strategy fill
+  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
+  for(let i=1;i<v1.length;i++) ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
+  ctx.lineTo(x(n-1),y(mn));ctx.lineTo(x(0),y(mn));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // Strategy line
+  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<v1.length;i++){const px=x(i*(n-1)/(v1.length-1)),py=y(v1[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();
+  // Labels
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#00c853';ctx.fillText('Strategy $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+8,padT+12);
+  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+8,padT+26);
+}
+
+/* ---- HISTORICAL PICKS ---- */
+function renderHistoricalPicks(){
+  const picks=DATA.historical_picks||[];
+  if(!picks.length) return;
+  // Stats
+  const nPicks=picks.length;
+  const nWin=picks.filter(p=>p.hit_target).length;
+  const avgRet=picks.reduce((s,p)=>s+p.net_return_pct,0)/nPicks;
+  const winRate=picks.filter(p=>p.net_return_pct>0).length/nPicks*100;
+  document.getElementById('histStats').innerHTML=`
+    <div class="grid">
+      <div class="card"><h3>Total Picks</h3><div class="big">${nPicks}</div><div class="sub">${nWin} hit 10%+ target</div></div>
+      <div class="card"><h3>Avg Net Return</h3><div class="big ${avgRet>=0?'pnl-pos':'pnl-neg'}">${avgRet>=0?'+':''}${avgRet.toFixed(1)}%</div><div class="sub">Win rate: ${winRate.toFixed(0)}%</div></div>
+    </div>`;
+  // Table (most recent first)
+  const tbody=document.getElementById('histTable');
+  tbody.innerHTML='';
+  const sorted=[...picks].reverse();
+  for(const p of sorted){
+    const retClass=p.net_return_pct>=0?'pnl-pos':'pnl-neg';
+    const hitBadge=p.hit_target?'<span class="badge badge-top">HIT</span>':'';
+    tbody.innerHTML+=`<tr style="cursor:pointer" onclick="showChart('${p.ticker}','${p.entry_date}',${p.entry_price})">
+      <td>${p.entry_date}</td>
+      <td><span class="ticker-sym">${p.ticker}</span></td>
+      <td>$${p.entry_price}</td>
+      <td>$${p.exit_price}</td>
+      <td><span class="${retClass}">${p.net_return_pct>=0?'+':''}${p.net_return_pct}%</span></td>
+      <td>${p.days_held}d</td>
+      <td>${hitBadge}</td>
+    </tr>`;
+  }
+}
+
+/* ---- PRICE CHART WITH BUY MARKER ---- */
+function showChart(ticker,buyDate,buyPrice){
   const section=document.getElementById('chartSection');
   document.getElementById('chartTicker').textContent=ticker;
   section.style.display='block';
@@ -379,37 +493,34 @@ function showChart(ticker){
   fetch(`./data/tickers/${ticker}.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
     const chart=d.chart||[];
     if(chart.length<2) return;
-    drawPriceChart(document.getElementById('pickChart'),chart,ticker);
+    // Find all historical buy dates for this ticker
+    const buys=(DATA.historical_picks||[]).filter(p=>p.ticker===ticker).map(p=>({date:p.entry_date,price:p.entry_price,ret:p.net_return_pct,hit:p.hit_target}));
+    drawPriceChart(document.getElementById('pickChart'),chart,ticker,buys);
   }).catch(()=>{});
 }
 
-function drawPriceChart(canvas,data,ticker){
+function drawPriceChart(canvas,data,ticker,buys){
   const ctx=canvas.getContext('2d');
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.parentElement.getBoundingClientRect();
-  canvas.width=rect.width*dpr;
-  canvas.height=rect.height*dpr;
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
   ctx.scale(dpr,dpr);
   const W=rect.width,H=rect.height;
   ctx.clearRect(0,0,W,H);
 
   const prices=data.map(d=>d.price);
+  const dates=data.map(d=>d.date);
   const n=prices.length;
   const padL=55,padR=15,padT=16,padB=24;
   let mn=Math.min(...prices),mx=Math.max(...prices);
   const rng=mx-mn||1;mn-=rng*0.05;mx+=rng*0.05;
-
   const x=i=>padL+(W-padL-padR)*i/(n-1);
   const y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
 
   // Grid
   ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
   ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
-  for(let i=0;i<=4;i++){
-    const val=mn+(mx-mn)*i/4;
-    ctx.beginPath();ctx.moveTo(padL,y(val));ctx.lineTo(W-padR,y(val));ctx.stroke();
-    ctx.fillText('$'+val.toFixed(0),padL-6,y(val)+3);
-  }
+  for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4;ctx.beginPath();ctx.moveTo(padL,y(val));ctx.lineTo(W-padR,y(val));ctx.stroke();ctx.fillText('$'+val.toFixed(0),padL-6,y(val)+3);}
 
   // Fill
   ctx.beginPath();ctx.moveTo(x(0),y(prices[0]));
@@ -426,11 +537,34 @@ function drawPriceChart(canvas,data,ticker){
   for(let i=0;i<n;i++){i===0?ctx.moveTo(x(i),y(prices[i])):ctx.lineTo(x(i),y(prices[i]));}
   ctx.stroke();
 
-  // Label
+  // Buy markers
+  if(buys&&buys.length){
+    for(const buy of buys){
+      const idx=dates.indexOf(buy.date);
+      if(idx<0) continue;
+      const bx=x(idx),by=y(prices[idx]);
+      // Vertical line
+      ctx.strokeStyle='rgba(100,181,246,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(bx,padT);ctx.lineTo(bx,H-padB);ctx.stroke();ctx.setLineDash([]);
+      // Triangle marker
+      ctx.fillStyle=buy.hit?'#00c853':'#ff5252';
+      ctx.beginPath();ctx.moveTo(bx,by-10);ctx.lineTo(bx-6,by-18);ctx.lineTo(bx+6,by-18);ctx.closePath();ctx.fill();
+      // Label
+      ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='center';
+      ctx.fillStyle=buy.hit?'#00c853':'#ff5252';
+      ctx.fillText((buy.ret>=0?'+':'')+buy.ret.toFixed(1)+'%',bx,by-21);
+    }
+  }
+
+  // Title label
   ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='left';
   ctx.fillStyle=isUp?'#00c853':'#ff5252';
   const ret=((prices[n-1]/prices[0]-1)*100).toFixed(1);
   ctx.fillText(`${ticker} $${prices[n-1].toFixed(2)} (${ret>=0?'+':''}${ret}% 1Y)`,padL+8,padT+14);
+  if(buys&&buys.length){
+    ctx.fillStyle='var(--blue)';ctx.font='10px -apple-system,sans-serif';
+    ctx.fillText(`${buys.length} historical pick${buys.length>1?'s':''}`,padL+8,padT+28);
+  }
 }
 
 </script>

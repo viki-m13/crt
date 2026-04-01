@@ -247,6 +247,118 @@ def main():
               f"conviction={pick['conviction']:.0f}%, "
               f"price=${pick['price']}, vol={pick['vol_21d']}%")
 
+    # ---- Historical picks simulation (test period 2023-2026) ----
+    # Use pre-computed features (already computed above) to score each monthly date
+    # This avoids recomputing features per-month — much faster
+    print("Running historical picks simulation (2023-2026)...")
+    test_start = pd.Timestamp("2023-04-01")
+    spy_close = data_dict["SPY"]["Close"]
+    test_dates = spy_close.loc[test_start:].index
+
+    # Pre-compute FULL features for all stocks once (already done above for today)
+    # We can reuse those features since they use only past data at each point
+    print("  Pre-computing features for all stocks...")
+    stock_features_cache = {}  # {ticker: DataFrame of features}
+    for ticker in stocks:
+        df = data_dict[ticker]
+        if "Close" not in df.columns:
+            continue
+        close = df["Close"]
+        volume = df.get("Volume")
+        peers = get_peer_group(ticker)
+        peer_closes = {}
+        for p in peers[:5]:
+            if p in data_dict and "Close" in data_dict[p].columns:
+                peer_closes[p] = data_dict[p]["Close"]
+        try:
+            stock_mrf = mrf_cache.get(ticker)
+            feats = compute_ccrl_features(
+                close, volume, market_close,
+                peer_closes=peer_closes, mrf_cache=stock_mrf,
+            )
+            stock_features_cache[ticker] = feats
+        except Exception:
+            continue
+
+    # Monthly rebalance dates
+    monthly_dates = []
+    seen_months = set()
+    for d in test_dates:
+        ym = (d.year, d.month)
+        if ym not in seen_months:
+            seen_months.add(ym)
+            monthly_dates.append(d)
+
+    historical_picks = []
+    for reb_date in monthly_dates:
+        day_scores = []
+        for ticker in stocks:
+            if ticker not in stock_features_cache:
+                continue
+            feats = stock_features_cache[ticker]
+            if reb_date not in feats.index:
+                continue
+            row = feats.loc[[reb_date]].reindex(columns=feature_names)
+            X_day = row.values
+            if X_day.shape[1] < n_features:
+                pad = np.full((1, n_features - X_day.shape[1]), np.nan)
+                X_day = np.hstack([X_day, pad])
+            try:
+                _, mean_p, std_p = ensemble.predict_proba(X_day)
+                day_scores.append((ticker, float(mean_p[0]), float(std_p[0])))
+            except Exception:
+                continue
+
+        day_scores.sort(key=lambda x: x[1], reverse=True)
+        for ticker, score, unc in day_scores[:TOP_K]:
+            close_ts = data_dict[ticker]["Close"]
+            entry_price = float(close_ts.loc[reb_date])
+            entry_idx = close_ts.index.get_loc(reb_date)
+            exit_idx = min(entry_idx + TARGET_HORIZON, len(close_ts) - 1)
+            exit_date = close_ts.index[exit_idx]
+            exit_price = float(close_ts.iloc[exit_idx])
+            ret = (exit_price / entry_price) - 1
+            net_ret = ret - 0.003
+            historical_picks.append({
+                "entry_date": str(reb_date.date()),
+                "exit_date": str(exit_date.date()),
+                "ticker": ticker,
+                "score": round(score, 3),
+                "entry_price": round(entry_price, 2),
+                "exit_price": round(exit_price, 2),
+                "return_pct": round(ret * 100, 2),
+                "net_return_pct": round(net_ret * 100, 2),
+                "hit_target": ret >= 0.10,
+                "days_held": int(exit_idx - entry_idx),
+            })
+
+    # Equity curves
+    monthly_returns = {}
+    for pick in historical_picks:
+        m = pick["entry_date"][:7]
+        if m not in monthly_returns:
+            monthly_returns[m] = []
+        monthly_returns[m].append(pick["net_return_pct"] / 100)
+
+    cum_val, spy_cum = 10000.0, 10000.0
+    eq_strat, eq_spy = [], []
+    for m in sorted(monthly_returns.keys()):
+        cum_val *= (1 + np.mean(monthly_returns[m]))
+        eq_strat.append({"date": m, "value": round(cum_val, 0)})
+        m_start = pd.Timestamp(m + "-01")
+        m_dates = spy_close.loc[m_start:].index
+        if len(m_dates) > TARGET_HORIZON:
+            spy_entry = float(spy_close.loc[m_dates[0]])
+            spy_exit_idx = min(spy_close.index.get_loc(m_dates[0]) + TARGET_HORIZON, len(spy_close) - 1)
+            spy_cum *= (1 + (float(spy_close.iloc[spy_exit_idx]) / spy_entry - 1))
+        eq_spy.append({"date": m, "value": round(spy_cum, 0)})
+
+    n_picks = len(historical_picks)
+    n_winners = sum(1 for p in historical_picks if p["hit_target"])
+    avg_ret = np.mean([p["net_return_pct"] for p in historical_picks]) if historical_picks else 0
+    print(f"  Historical picks: {n_picks} trades, {n_winners} hits ({n_winners/max(n_picks,1)*100:.0f}%), "
+          f"avg net return: {avg_ret:.2f}%")
+
     # ---- SPY regime ----
     spy_feat = {}
     if "SPY" in data_dict:
@@ -304,8 +416,11 @@ def main():
         },
         "spy": spy_feat,
         "top5": top5,
-        "all_candidates": today_candidates[:50],  # Top 50 for the table
+        "all_candidates": today_candidates[:50],
         "performance": performance,
+        "historical_picks": historical_picks,
+        "equity_curve_strategy": eq_strat,
+        "equity_curve_spy": eq_spy,
     }
 
     with open(os.path.join(docs_dir, "ccrl.json"), "w") as f:
