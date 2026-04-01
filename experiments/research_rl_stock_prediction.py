@@ -198,9 +198,17 @@ def prepare_dataset(data_dict, split="train", verbose=True):
         if len(features) < 50:
             continue
 
-        # Store feature names (same for all stocks)
+        # Store feature names from the FIRST stock with the most columns
         if feature_names is None:
             feature_names = features.columns.tolist()
+        else:
+            # Add any new columns we haven't seen
+            for col in features.columns:
+                if col not in feature_names:
+                    feature_names.append(col)
+
+        # Reindex to master feature set (fills missing cols with NaN)
+        features = features.reindex(columns=feature_names)
 
         # Append
         all_X.append(features.values)
@@ -214,6 +222,13 @@ def prepare_dataset(data_dict, split="train", verbose=True):
     if not all_X:
         print("  ERROR: No valid data produced")
         return None, None, None, None, None
+
+    # Ensure all arrays have the same number of columns
+    n_features = len(feature_names)
+    for i in range(len(all_X)):
+        if all_X[i].shape[1] < n_features:
+            pad = np.full((all_X[i].shape[0], n_features - all_X[i].shape[1]), np.nan)
+            all_X[i] = np.hstack([all_X[i], pad])
 
     X = np.vstack(all_X)
     y = np.concatenate(all_y)
