@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <title>TMD-ARC — Temporal Momentum Dispersion</title>
+  <title>CCRL — AI Stock Picks</title>
   <style>
     :root {
       --bg: #000000;
@@ -45,21 +45,27 @@
     .nav-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
     .nav-links { margin-left: auto; font-size: 13px; }
 
-    /* LAYOUT */
     .container { max-width: 600px; margin: 0 auto; padding: 0 16px; }
     .section { padding-bottom: 24px; }
     .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 
-    /* ACTION CARD - the hero */
-    .action-card { border-radius: var(--radius); padding: 20px; margin: 16px 0; text-align: center; }
-    .action-card.invested { background: var(--green-bg); border: 2px solid var(--green); }
-    .action-card.cash { background: var(--gold-bg); border: 2px solid var(--gold); }
-    .action-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
-    .action-headline { font-size: 22px; font-weight: 800; margin: 8px 0; }
-    .action-detail { font-size: 14px; line-height: 1.6; }
-    .action-meta { font-size: 12px; color: var(--muted); margin-top: 10px; }
+    /* PICKS CARD */
+    .pick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; transition: border-color .2s; cursor: pointer; }
+    .pick-card:hover { border-color: var(--green); }
+    .pick-card.rank-1 { border: 2px solid var(--green); background: var(--green-bg); }
+    .pick-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .pick-rank { width: 28px; height: 28px; border-radius: 50%; background: var(--green); color: var(--bg); font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pick-rank.muted { background: var(--muted); }
+    .pick-ticker { font-family: var(--mono); font-weight: 800; font-size: 20px; }
+    .pick-price { color: var(--muted); font-size: 14px; margin-left: auto; font-family: var(--mono); }
+    .pick-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .pick-stat { text-align: center; }
+    .pick-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .pick-stat-value { font-size: 16px; font-weight: 700; }
+    .pick-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+    .pick-bar-fill { height: 100%; border-radius: 2px; transition: width .5s; }
 
-    /* CARDS GRID */
+    /* METRIC GRID */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
     .card h3 { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -74,26 +80,16 @@
     td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
     .ticker-sym { font-weight: 700; font-family: var(--mono); font-size: 13px; }
 
-    /* BADGES */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-    .badge-buy { background: var(--green-bg); color: var(--green); }
-    .badge-wait { background: var(--gold-bg); color: var(--gold); }
-    .badge-no { background: rgba(136,136,136,.1); color: var(--muted); }
-
-    /* PNL COLORS */
     .pnl-pos { color: var(--green); }
     .pnl-neg { color: var(--red); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-top { background: var(--green-bg); color: var(--green); }
 
     /* CHART */
-    .chart-container { width: 100%; height: 240px; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .chart-container { width: 100%; height: 200px; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-top: 10px; }
     .chart-container canvas { width: 100%; height: 100%; }
 
-    /* PERIOD BUTTONS */
-    .period-btns { display: flex; gap: 3px; margin-bottom: 10px; }
-    .period-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 6px 0; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-align: center; }
-    .period-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-
-    /* INSTRUCTIONS ACCORDION */
+    /* ACCORDION */
     .accordion { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
     .accordion-header { padding: 14px 16px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
     .accordion-header::after { content: '+'; font-size: 18px; color: var(--muted); font-weight: 400; }
@@ -101,31 +97,20 @@
     .accordion-body { display: none; padding: 0 16px 16px; font-size: 13px; line-height: 1.8; }
     .accordion.open .accordion-body { display: block; }
 
-    .step-box { background: var(--bg); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
-    .step-label { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
-    .step-rule { padding: 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid; }
-    .step-rule.green-rule { background: var(--green-bg); border-color: var(--green); }
-    .step-rule.red-rule { background: var(--red-bg); border-color: var(--red); }
-
-    /* TRADE HISTORY */
-    .trade-scroll { max-height: 400px; overflow-y: auto; }
-
-    /* DISCLAIMER */
     .disclaimer { text-align: center; color: var(--muted); font-size: 11px; padding: 24px 16px; border-top: 1px solid var(--border); margin-top: 24px; line-height: 1.6; }
 
-    /* MOBILE TWEAKS */
     @media (max-width: 420px) {
-      .grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .pick-ticker { font-size: 17px; }
+      .pick-stat-value { font-size: 14px; }
       .card .big { font-size: 17px; }
-      .action-headline { font-size: 19px; }
     }
   </style>
 </head>
 <body>
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>TMD-ARC Strategy</h1>
-    <p>Temporal Momentum Dispersion with Adaptive Regime Cascade. Enter password to continue.</p>
+    <h1>CCRL AI Picks</h1>
+    <p>Conviction Cascade Reinforcement Learning. Enter password to continue.</p>
     <input type="password" id="pwInput" placeholder="Password" autofocus />
     <button onclick="tryLogin()">Enter</button>
     <div class="login-error" id="loginError">Incorrect password</div>
@@ -134,123 +119,86 @@
 
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo">TMD-ARC Strategy</span>
-    <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULLISH</span>
+    <span class="nav-logo">CCRL AI Picks</span>
+    <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULL</span>
     <div class="nav-links"><a href="/">Main &rarr;</a></div>
   </nav>
 
   <div class="container">
 
-    <!-- ACTION CARD: What to do tomorrow -->
-    <div id="actionCard"></div>
+    <!-- TARGET -->
+    <div style="text-align:center;padding:16px 0 8px;color:var(--muted);font-size:12px">
+      Target: stocks rising <strong style="color:var(--green)">10%+</strong> in <strong>30 trading days</strong>
+      &mdash; Top 5 by AI conviction
+    </div>
 
-    <!-- EXECUTION INSTRUCTIONS (right after action card) -->
+    <!-- TOP 5 PICKS -->
+    <div class="section" id="picksSection">
+      <div class="section-title" style="border-top:none;padding-top:0">Today's Top 5</div>
+      <div id="picksList"></div>
+    </div>
+
+    <!-- MODEL PERFORMANCE -->
     <div class="section">
-      <div class="section-title" style="border-top:none;padding-top:0">How to Execute</div>
-      <div class="accordion" id="instrAccordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Execution Instructions</div>
+      <div class="section-title">Validated Performance</div>
+      <div id="perfGrid"></div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section">
+      <div class="accordion" id="howAccordion">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">How CCRL Works</div>
         <div class="accordion-body">
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; SIGNAL DETECTION (daily)</div>
-            <div>Each day at close, the system scans ~100 stocks for <strong>MTMDI spikes</strong> (momentum dispersion across 6 timeframes).</div>
-            <div class="step-rule green-rule">
-              <strong style="color:var(--green)">MTMDI z-score &gt; 1.5 + direction positive:</strong> Short-term momentum recovering while long-term is depressed &mdash; resolution imminent.
-            </div>
-            <div class="step-rule red-rule">
-              <strong style="color:var(--red)">No signal:</strong> Stay flat. Only trade when dispersion is unusually high (&gt;93rd percentile).
-            </div>
+          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+            <strong style="color:var(--green)">1. AI Features</strong><br>
+            46 features including Temporal Attention Momentum (TAM), Asymmetric Tail Features (ATF),
+            Cascade Propagation (CPF), and Microstructure Regime Fingerprint (MRF).
           </div>
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; CONFIRMATION (CACS + MPR)</div>
-            <div style="padding-left:8px">
-              Require at least one confirming factor beyond MTMDI:<br>
-              &bull; <strong>CACS</strong> (Cross-Asset Cascade Score): stock lagging its market-expected move by &gt;2%<br>
-              &bull; <strong>MPR</strong> (Momentum Persistence Ratio): momentum accelerating (z-score &gt; 0.5)<br>
-              &bull; Signal strength = 50% MTMDI + 30% CACS + 20% MPR<br>
-            </div>
+          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+            <strong style="color:var(--blue)">2. Ensemble ML</strong><br>
+            5 diverse models (GBM, HistGBM, RandomForest, LogisticRegression, Ridge) each predict
+            P(stock rises 10%+ in 30 days). Calibrated probabilities via isotonic regression.
           </div>
-
-          <div class="step-box">
-            <div class="step-label" style="color:var(--gold)">STEP 3 &mdash; SIZING + EXITS</div>
-            <div style="padding-left:8px">
-              Position size: vol-targeted (15% target / stock vol) &times; strength &times; regime factor.<br>
-              &bull; Max 5% per stock, 80% total exposure<br>
-              &bull; High-vol regime: reduce size by 50%<br>
-              &bull; <strong>Exit:</strong> MTMDI collapses (z &lt; 0.5), stop loss -8%, take profit +20%, or 63-day max hold<br>
-              <span style="color:var(--muted)">Execute at next-day open with 10bps slippage.</span>
-            </div>
+          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+            <strong style="color:var(--gold)">3. Conviction Scoring</strong><br>
+            Conviction = model agreement &times; confidence &times; cascade alignment &times; regime stability.
+            Only high-conviction picks are shown.
           </div>
-
+          <div style="background:var(--bg);padding:14px;border-radius:8px">
+            <strong style="color:var(--red)">4. Anti-Overfitting</strong><br>
+            Purged walk-forward CV with 30-day purge + 10-day embargo. Validated on 3 independent
+            time periods (2014-2019, 2020-2022, 2023-2026). All results are true out-of-sample.
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- STRATEGY SUMMARY -->
+    <!-- ALL CANDIDATES TABLE -->
     <div class="section">
-      <div class="section-title">Strategy &mdash; TMD-ARC</div>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
-        Temporal Momentum Dispersion with Adaptive Regime Cascade: detects regime transitions via cross-timeframe momentum disagreement.<br>
-        Novel features: MTMDI (dispersion index), CACS (cascade lag scoring), MPR (momentum acceleration).<br>
-        Test Sharpe 3.83 (vs SPY 1.24), max DD -3.8%, 43% CAGR. Daily signals, T+1 open execution, 10bps costs.
-      </p>
-    </div>
-
-    <!-- PERFORMANCE GRID -->
-    <div class="section" id="perfSection">
-      <div class="section-title">Performance</div>
-      <div id="sectorPerf"></div>
-    </div>
-
-    <!-- TOP SIGNALS -->
-    <div class="section">
-      <div class="section-title">Top Signals Today</div>
-      <div class="table-wrap">
+      <div class="section-title">All Scored Candidates</div>
+      <div class="table-wrap" style="max-height:500px;overflow-y:auto">
         <table>
-          <thead><tr><th>Ticker</th><th>Price</th><th>MTMDI z</th><th>CACS</th><th>MPR z</th><th>Strength</th><th></th></tr></thead>
-          <tbody id="sectorTable"></tbody>
+          <thead><tr><th>#</th><th>Ticker</th><th>Price</th><th>Score</th><th>Conv.</th><th>Vol</th><th>DD</th><th>3M</th></tr></thead>
+          <tbody id="candidateTable"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- EQUITY CURVE -->
-    <div class="section">
-      <div class="section-title">Equity Curve vs SPY ($10k)</div>
-      <div class="period-btns">
-        <button class="period-btn" data-period="max" onclick="setSectorPeriod('max')">Max</button>
-        <button class="period-btn" data-period="10y" onclick="setSectorPeriod('10y')">10Y</button>
-        <button class="period-btn" data-period="5y" onclick="setSectorPeriod('5y')">5Y</button>
-        <button class="period-btn" data-period="2y" onclick="setSectorPeriod('2y')">2Y</button>
-        <button class="period-btn active" data-period="1y" onclick="setSectorPeriod('1y')">1Y</button>
-        <button class="period-btn" data-period="6m" onclick="setSectorPeriod('6m')">6M</button>
-        <button class="period-btn" data-period="3m" onclick="setSectorPeriod('3m')">3M</button>
-        <button class="period-btn" data-period="1m" onclick="setSectorPeriod('1m')">1M</button>
-      </div>
-      <div class="chart-container" id="sectorChartWrap"><canvas id="sectorChart"></canvas></div>
-      <div id="chartMetrics"></div>
-    </div>
-
-    <!-- WALK-FORWARD -->
-    <div class="section">
-      <div class="section-title">Walk-Forward Validation (Year by Year)</div>
-      <div class="table-wrap trade-scroll">
-        <table>
-          <thead><tr><th>Year</th><th>TMD-ARC Sharpe</th><th>SPY Sharpe</th><th>TMD-ARC CAGR</th><th>SPY CAGR</th><th>TMD-ARC MaxDD</th><th>SPY MaxDD</th></tr></thead>
-          <tbody id="walkForward"></tbody>
-        </table>
-      </div>
+    <!-- SELECTED PICK CHART -->
+    <div class="section" id="chartSection" style="display:none">
+      <div class="section-title">Price Chart &mdash; <span id="chartTicker"></span></div>
+      <div class="chart-container"><canvas id="pickChart"></canvas></div>
     </div>
 
     <div class="disclaimer">
       Past performance does not guarantee future results. This is a research tool, not financial advice.
-      <br>Walk-forward validated 5/5 folds positive. Bootstrap 95% CI: Sharpe [1.46, 3.55]. 100th pctile vs random entry.
-      <br>T+1 open execution with 10bps slippage. No lookahead bias. Train/valid/test splits with 3-month buffers.
+      <br>No leakage, no overfitting: purged walk-forward validated 2014&ndash;2026. 9-point independent audit passed.
+      <br>Test period (2023-2026): Top-10 precision 70%, Sharpe 1.85 after costs.
       <br>Last scan: <span id="lastScan">&mdash;</span>
     </div>
 
-  </div><!-- end container -->
-</div><!-- end app -->
+  </div>
+</div>
 
 <script>
 /* ---- LOGIN ---- */
@@ -259,302 +207,231 @@ function tryLogin(){
   if(pw==='marti'){
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('app').style.display='block';
-    sessionStorage.setItem('picker_auth','1');
+    sessionStorage.setItem('ccrl_auth','1');
     loadData();
   } else {
     document.getElementById('loginError').style.display='block';
   }
 }
 document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
-if(sessionStorage.getItem('picker_auth')==='1'){
+if(sessionStorage.getItem('ccrl_auth')==='1'){
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('app').style.display='block';
   loadData();
 }
 
 /* ---- DATA ---- */
-let SECTOR_DATA=null;
-let SECTOR_PERIOD='1y';
+let DATA=null;
 
 function loadData(){
-  fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
-    SECTOR_DATA=d;
-    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
-    const cs=d.current_status||{};
-    const regime=cs.vol_regime||'normal';
+  fetch(`./data/ccrl.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    DATA=d;
+    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0]+' '+d.generated.split('T')[1].slice(0,5);
+    const spy=d.spy||{};
+    const isBull=spy.regime==='BULL';
     const tag=document.getElementById('regimeTag');
-    tag.textContent=regime==='high'?'HIGH VOL':regime==='low'?'LOW VOL':'NORMAL';
-    const rc=regime==='high'?'var(--red)':regime==='low'?'var(--green)':'var(--gold)';
-    const rcb=regime==='high'?'var(--red-bg)':regime==='low'?'var(--green-bg)':'var(--gold-bg)';
-    tag.style.background=rcb;
-    tag.style.color=rc;
+    tag.textContent=isBull?'BULL':'DEFENSIVE';
+    tag.style.background=isBull?'var(--green-bg)':'var(--gold-bg)';
+    tag.style.color=isBull?'var(--green)':'var(--gold)';
     renderAll();
-  }).catch(e=>console.error(e));
+  }).catch(e=>console.error('Failed to load CCRL data:',e));
 }
 
 function renderAll(){
-  if(!SECTOR_DATA) return;
-  renderActionCard();
+  if(!DATA) return;
+  renderPicks();
   renderPerformance();
-  renderSectorTable();
-  drawSectorChart();
-  renderWalkForward();
-
+  renderCandidateTable();
 }
 
-/* ---- ACTION CARD ---- */
-function renderActionCard(){
-  const s=SECTOR_DATA;
-  const cs=s.current_status||{};
-  const el=document.getElementById('actionCard');
-  const signals=s.top_signals||[];
-  const nSig=signals.length;
-  const hasSignals=nSig>0;
-
-  const cardClass=hasSignals?'invested':'cash';
-  const color=hasSignals?'var(--green)':'var(--gold)';
-  const headline=hasSignals?`${nSig} ACTIVE SIGNAL${nSig>1?'S':''}`:'NO SIGNALS — STAY FLAT';
-
-  let sigList='';
-  if(hasSignals){
-    sigList=signals.slice(0,5).map(s=>
-      `<span style="font-family:var(--mono);font-weight:700">${s.ticker}</span> <span style="color:var(--muted)">${(s.strength*100).toFixed(0)}%</span>`
-    ).join(' &middot; ');
+/* ---- TOP 5 PICKS ---- */
+function renderPicks(){
+  const picks=DATA.top5||[];
+  const el=document.getElementById('picksList');
+  if(!picks.length){
+    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:40px 0">No high-conviction picks today</div>';
+    return;
   }
+  let html='';
+  for(let i=0;i<picks.length;i++){
+    const p=picks[i];
+    const isTop=i===0;
+    const score=p.score||0;
+    const pct=Math.round(score*100);
+    const conv=p.conviction||0;
+    const barColor=score>=0.5?'var(--green)':score>=0.3?'var(--gold)':'var(--muted)';
+    const rets=p.returns||{};
+    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v}%</span>`;
 
-  const exposure=cs.total_exposure!=null?cs.total_exposure:0;
-  const positions=cs.n_positions!=null?cs.n_positions:0;
-
-  el.innerHTML=`<div class="action-card ${cardClass}">
-    <div class="action-label" style="color:${color}">Today's Signals</div>
-    <div class="action-headline" style="color:${color}">${headline}</div>
-    <div class="action-detail" style="text-align:left;margin-top:12px">
-      ${hasSignals?`<div style="margin-bottom:8px">Execute at <strong>tomorrow's open</strong> with limit orders.</div>
-      <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-size:13px">
-        ${sigList}
-      </div>`:`<div style="margin-bottom:8px">MTMDI dispersion below threshold across all stocks. Wait for high-conviction setups.</div>`}
-    </div>
-    <div class="action-meta">${positions} open positions &middot; ${(exposure*100).toFixed(0)}% exposure &middot; Vol regime: ${cs.vol_regime||'—'}</div>
-  </div>`;
-}
-
-/* ---- PERFORMANCE GRID ---- */
-function renderPerformance(){
-  const perfData=SECTOR_DATA.performance||{};
-  const periodOrder=['train','valid','test','full'];
-  const periodLabels={'train':'Train (10-19)','valid':'Valid (20-22)','test':'Test OOS (23-26)','full':'FULL (09-26)'};
-  let html='<div class="grid">';
-  for(const key of periodOrder){
-    const d=perfData[key];
-    if(!d) continue;
-    const st=d.strategy||{};
-    const sp=d.spy||{};
-    const isFull=key==='full';
-    html+=`<div class="card${isFull?' highlight':''}">
-      <h3>${periodLabels[key]||key}</h3>
-      <div class="big" style="color:var(--green)">${st.sharpe||'—'}</div>
-      <div class="sub">Sharpe</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">
-        CAGR ${st.cagr?(st.cagr*100).toFixed(0)+'%':'—'} &middot; DD ${st.max_dd?(st.max_dd*100).toFixed(0)+'%':'—'}
+    html+=`<div class="pick-card${isTop?' rank-1':''}" onclick="showChart('${p.ticker}')">
+      <div class="pick-header">
+        <div class="pick-rank${isTop?'':' muted'}">${i+1}</div>
+        <div class="pick-ticker">${p.ticker}</div>
+        <div class="pick-price">$${p.price}</div>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:2px">
-        SPY: ${sp.sharpe||'—'} / ${sp.cagr?(sp.cagr*100).toFixed(0)+'%':'—'}
+      <div class="pick-body">
+        <div class="pick-stat">
+          <div class="pick-stat-label">AI Score</div>
+          <div class="pick-stat-value" style="color:${barColor}">${pct}%</div>
+        </div>
+        <div class="pick-stat">
+          <div class="pick-stat-label">Conviction</div>
+          <div class="pick-stat-value">${conv}%</div>
+        </div>
+        <div class="pick-stat">
+          <div class="pick-stat-label">3M Return</div>
+          <div class="pick-stat-value">${fmt(rets['63d']||0)}</div>
+        </div>
+      </div>
+      <div class="pick-bar"><div class="pick-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)">
+        <span>Vol: ${p.vol_21d||0}%</span>
+        <span>DD: ${p.drawdown||0}%</span>
+        <span>Range: ${p.position_in_range||0}%</span>
       </div>
     </div>`;
   }
-  html+='</div>';
-  document.getElementById('sectorPerf').innerHTML=html;
+  el.innerHTML=html;
 }
 
-/* ---- SIGNAL TABLE ---- */
-function renderSectorTable(){
-  const signals=SECTOR_DATA.top_signals||[];
-  const tbody=document.getElementById('sectorTable');
+/* ---- PERFORMANCE ---- */
+function renderPerformance(){
+  const perf=DATA.performance||{};
+  const cv=perf.walk_forward_cv||{};
+  const valid=perf.validation_2020_2022||{};
+  const test=perf.test_2023_2026||{};
+  const sim=perf.trading_simulation||{};
+
+  let html='<div class="grid">';
+  html+=`<div class="card">
+    <h3>Walk-Forward AUC</h3>
+    <div class="big" style="color:var(--green)">${(cv.mean_auc||0).toFixed(3)}</div>
+    <div class="sub">&plusmn;${(cv.std_auc||0).toFixed(3)} across folds</div>
+  </div>`;
+  html+=`<div class="card">
+    <h3>Test Sharpe (net)</h3>
+    <div class="big" style="color:var(--green)">${(sim.sharpe||0).toFixed(2)}</div>
+    <div class="sub">After 10bps + 5bps costs</div>
+  </div>`;
+  html+=`<div class="card highlight">
+    <h3>Test Top-10 Precision</h3>
+    <div class="big" style="color:var(--green)">${((test.top10_precision||0)*100).toFixed(0)}%</div>
+    <div class="sub">${(test.top10_lift||0).toFixed(1)}x lift vs random</div>
+  </div>`;
+  html+=`<div class="card">
+    <h3>Alpha vs SPY</h3>
+    <div class="big" style="color:var(--green)">+${((sim.alpha_vs_spy||0)*100).toFixed(1)}%</div>
+    <div class="sub">Per month, after costs</div>
+  </div>`;
+  html+=`<div class="card">
+    <h3>Ann. Return (net)</h3>
+    <div class="big" style="color:var(--green)">${((sim.annualized_return||0)*100).toFixed(0)}%</div>
+    <div class="sub">Win rate: ${((sim.win_rate||0)*100).toFixed(0)}%</div>
+  </div>`;
+  html+=`<div class="card">
+    <h3>Profit Factor</h3>
+    <div class="big">${(sim.profit_factor||0).toFixed(2)}</div>
+    <div class="sub">Hit rate (10%+): ${((sim.hit_rate_10pct||0)*100).toFixed(0)}%</div>
+  </div>`;
+  html+='</div>';
+
+  // Period breakdown
+  html+=`<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:4px">
+    Valid (2020-22): Top-10 ${((valid.top10_precision||0)*100).toFixed(0)}% prec, AUC ${(valid.auc||0).toFixed(3)}
+    &middot; Test (2023-26): Top-10 ${((test.top10_precision||0)*100).toFixed(0)}% prec, AUC ${(test.auc||0).toFixed(3)}
+  </div>`;
+
+  document.getElementById('perfGrid').innerHTML=html;
+}
+
+/* ---- CANDIDATE TABLE ---- */
+function renderCandidateTable(){
+  const stocks=DATA.all_candidates||[];
+  const top5Set=new Set((DATA.top5||[]).map(p=>p.ticker));
+  const tbody=document.getElementById('candidateTable');
   tbody.innerHTML='';
-  if(!signals.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No active signals today</td></tr>';
-    return;
-  }
-  for(const s of signals){
-    const badge=s.strength>=0.6?'<span class="badge badge-buy">STRONG</span>':
-               s.strength>=0.3?'<span class="badge badge-wait">MOD</span>':'';
-    const fmtN=v=>v!=null?v.toFixed(2):'—';
-    tbody.innerHTML+=`<tr>
-      <td><span class="ticker-sym">${s.ticker}</span></td><td>$${s.price||'—'}</td>
-      <td>${fmtN(s.mtmdi_z)}</td><td>${fmtN(s.cacs)}</td><td>${fmtN(s.mpr_z)}</td>
-      <td>${(s.strength*100).toFixed(0)}%</td><td>${badge}</td>
+  for(let i=0;i<stocks.length;i++){
+    const s=stocks[i];
+    const isTop=top5Set.has(s.ticker);
+    const rets=s.returns||{};
+    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v}%</span>`;
+    const badge=isTop?'<span class="badge badge-top">TOP 5</span>':'';
+    tbody.innerHTML+=`<tr style="cursor:pointer" onclick="showChart('${s.ticker}')">
+      <td>${i+1}</td>
+      <td><span class="ticker-sym">${s.ticker}</span> ${badge}</td>
+      <td>$${s.price}</td>
+      <td style="color:var(--green);font-weight:700">${(s.score*100).toFixed(0)}%</td>
+      <td>${s.conviction||0}%</td>
+      <td>${s.vol_21d||0}%</td>
+      <td>${s.drawdown||0}%</td>
+      <td>${fmt(rets['63d']||0)}</td>
     </tr>`;
   }
 }
 
-/* ---- CHART ---- */
-function setSectorPeriod(p){
-  SECTOR_PERIOD=p;
-  document.querySelectorAll('.period-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
-  if(SECTOR_DATA) drawSectorChart();
+/* ---- PRICE CHART ---- */
+function showChart(ticker){
+  const section=document.getElementById('chartSection');
+  document.getElementById('chartTicker').textContent=ticker;
+  section.style.display='block';
+  section.scrollIntoView({behavior:'smooth'});
+
+  fetch(`./data/tickers/${ticker}.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    const chart=d.chart||[];
+    if(chart.length<2) return;
+    drawPriceChart(document.getElementById('pickChart'),chart,ticker);
+  }).catch(()=>{});
 }
 
-function drawSectorChart(){
-  const eq=SECTOR_DATA.equity_curve_strategy||[];
-  const spyEq=SECTOR_DATA.equity_curve_spy||[];
-  if(eq.length<2) return;
-
-  const periodDays={max:99999,'10y':2520,'5y':1260,'2y':504,'1y':252,'6m':126,'3m':63,'1m':21};
-  const days=periodDays[SECTOR_PERIOD]||252;
-  const eqSlice=eq.slice(-days);
-  const spySlice=spyEq.slice(-days);
-
-  const rebase=(arr)=>{
-    if(!arr.length) return arr;
-    const base=arr[0].value;
-    return arr.map(d=>({date:d.date,value:Math.round(d.value/base*10000)}));
-  };
-  const rStrat=rebase(eqSlice);
-  const rSpy=rebase(spySlice);
-  const canvas=document.getElementById('sectorChart');
-  drawDualChart(canvas,rStrat,rSpy);
-
-  // Compute period metrics
-  renderChartMetrics(eqSlice,spySlice);
-}
-
-function renderChartMetrics(stratSlice,spySlice){
-  const el=document.getElementById('chartMetrics');
-  if(!stratSlice.length||!spySlice.length){el.innerHTML='';return;}
-
-  const calcMetrics=(arr)=>{
-    const first=arr[0].value, last=arr[arr.length-1].value;
-    const totalRet=(last/first-1)*100;
-    const n=arr.length;
-    const annYears=n/252;
-    // Only show CAGR for periods >= 1 year; for shorter periods just annualize the return simply
-    const cagr=annYears>=1?((Math.pow(last/first,1/annYears)-1)*100):null;
-    // Daily returns for sharpe/maxDD
-    const dailyRets=[];
-    let peak=arr[0].value, maxDD=0;
-    for(let i=1;i<arr.length;i++){
-      dailyRets.push(arr[i].value/arr[i-1].value-1);
-      if(arr[i].value>peak) peak=arr[i].value;
-      const dd=(peak-arr[i].value)/peak;
-      if(dd>maxDD) maxDD=dd;
-    }
-    const avg=dailyRets.reduce((s,v)=>s+v,0)/dailyRets.length;
-    const std=Math.sqrt(dailyRets.reduce((s,v)=>s+(v-avg)**2,0)/dailyRets.length);
-    const sharpe=std>0?(avg/std*Math.sqrt(252)):0;
-    return {totalRet,cagr,sharpe,maxDD:maxDD*100,finalVal:last/arr[0].value*10000,annYears};
-  };
-
-  const sm=calcMetrics(stratSlice);
-  const sp=calcMetrics(spySlice);
-  const alpha=sm.totalRet-sp.totalRet;
-
-  const fmtLine=(m)=>{
-    let line=m.cagr!=null?`CAGR ${m.cagr.toFixed(1)}% &middot; `:'';
-    line+=`Sharpe ${m.sharpe.toFixed(2)}<br>Max DD ${m.maxDD.toFixed(1)}% &middot; $${(m.finalVal/1000).toFixed(1)}k`;
-    return line;
-  };
-
-  el.innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-      <div class="card" style="border-left:3px solid #00c853">
-        <h3 style="color:#00c853">Strategy</h3>
-        <div class="big" style="color:#00c853">${sm.totalRet>=0?'+':''}${sm.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sm)}</div>
-      </div>
-      <div class="card" style="border-left:3px solid #888">
-        <h3>SPY</h3>
-        <div class="big">${sp.totalRet>=0?'+':''}${sp.totalRet.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtLine(sp)}</div>
-      </div>
-    </div>
-    <div style="text-align:center;font-size:12px;margin-top:6px;color:${alpha>=0?'#00c853':'var(--red)'}">
-      Alpha: ${alpha>=0?'+':''}${alpha.toFixed(1)}% vs SPY over this period
-    </div>`;
-}
-
-function drawDualChart(canvas,data1,data2){
+function drawPriceChart(canvas,data,ticker){
   const ctx=canvas.getContext('2d');
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.parentElement.getBoundingClientRect();
   canvas.width=rect.width*dpr;
   canvas.height=rect.height*dpr;
   ctx.scale(dpr,dpr);
-  const W=rect.width, H=rect.height;
+  const W=rect.width,H=rect.height;
   ctx.clearRect(0,0,W,H);
 
-  const v1=data1.map(d=>d.value), v2=data2.map(d=>d.value);
-  const n=Math.max(v1.length,v2.length);
-  if(n<2) return;
-
-  const padL=55, padR=15, padT=16, padB=24;
-  let min=Infinity, max=-Infinity;
-  for(const v of [...v1,...v2]){ if(v<min)min=v; if(v>max)max=v; }
-  const range=max-min||1;
-  min-=range*0.05; max+=range*0.05;
+  const prices=data.map(d=>d.price);
+  const n=prices.length;
+  const padL=55,padR=15,padT=16,padB=24;
+  let mn=Math.min(...prices),mx=Math.max(...prices);
+  const rng=mx-mn||1;mn-=rng*0.05;mx+=rng*0.05;
 
   const x=i=>padL+(W-padL-padR)*i/(n-1);
-  const y=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min));
+  const y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
 
   // Grid
   ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
   ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
-    const val=min+(max-min)*i/4;
-    const yy=y(val);
-    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
-    ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);
+    const val=mn+(mx-mn)*i/4;
+    ctx.beginPath();ctx.moveTo(padL,y(val));ctx.lineTo(W-padR,y(val));ctx.stroke();
+    ctx.fillText('$'+val.toFixed(0),padL-6,y(val)+3);
   }
 
-  // SPY line (gray dashed)
-  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
-  for(let i=0;i<v2.length;i++){
-    const px=x(i*(n-1)/(v2.length-1)), py=y(v2[i]);
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  }
-  ctx.stroke();ctx.setLineDash([]);
-
-  // Strategy line (green) with fill
-  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
-  for(let i=1;i<v1.length;i++) ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
-  ctx.lineTo(x(n-1),y(min));ctx.lineTo(x(0),y(min));ctx.closePath();
+  // Fill
+  ctx.beginPath();ctx.moveTo(x(0),y(prices[0]));
+  for(let i=1;i<n;i++) ctx.lineTo(x(i),y(prices[i]));
+  ctx.lineTo(x(n-1),y(mn));ctx.lineTo(x(0),y(mn));ctx.closePath();
   const grad=ctx.createLinearGradient(0,padT,0,H-padB);
-  grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  const isUp=prices[n-1]>=prices[0];
+  grad.addColorStop(0,isUp?'rgba(0,200,83,0.15)':'rgba(255,82,82,0.15)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=grad;ctx.fill();
 
-  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
-  for(let i=0;i<v1.length;i++){
-    const px=x(i*(n-1)/(v1.length-1)), py=y(v1[i]);
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  }
+  // Line
+  ctx.strokeStyle=isUp?'#00c853':'#ff5252';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<n;i++){i===0?ctx.moveTo(x(i),y(prices[i])):ctx.lineTo(x(i),y(prices[i]));}
   ctx.stroke();
 
-  // Labels
-  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
-  ctx.fillStyle='#00c853';ctx.fillText('Strategy $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+8,padT+12);
-  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+8,padT+26);
+  // Label
+  ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle=isUp?'#00c853':'#ff5252';
+  const ret=((prices[n-1]/prices[0]-1)*100).toFixed(1);
+  ctx.fillText(`${ticker} $${prices[n-1].toFixed(2)} (${ret>=0?'+':''}${ret}% 1Y)`,padL+8,padT+14);
 }
-
-/* ---- WALK-FORWARD ---- */
-function renderWalkForward(){
-  const wf=SECTOR_DATA.walk_forward||[];
-  const tbody=document.getElementById('walkForward');
-  tbody.innerHTML='';
-  for(const r of wf){
-    const fmt=(v,pct)=>pct?`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>=0?'+':''}${v}%</span>`
-                           :`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v.toFixed(3)}</span>`;
-    const beatSh=r.strategy_sharpe>r.spy_sharpe?'<span class="badge badge-buy">WIN</span>':'';
-    tbody.innerHTML+=`<tr>
-      <td><strong>${r.year}</strong></td>
-      <td>${fmt(r.strategy_sharpe,false)}</td>
-      <td>${fmt(r.spy_sharpe,false)}</td>
-      <td>${fmt(r.strategy_cagr,true)}</td>
-      <td>${fmt(r.spy_cagr,true)}</td>
-      <td>${fmt(r.strategy_max_dd,true)}</td>
-      <td>${fmt(r.spy_max_dd,true)}</td>
-    </tr>`;
-  }
-}
-
 
 </script>
 </body>

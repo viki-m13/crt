@@ -1,0 +1,1052 @@
+{
+  "generated": "2026-04-01T20:43:10.557454",
+  "strategy": "CCRL",
+  "strategy_full_name": "Conviction Cascade Reinforcement Learning",
+  "target": "Stocks rising 10%+ in 30 trading days",
+  "model": {
+    "ensemble_size": 5,
+    "models": [
+      "GBM",
+      "HistGBM",
+      "RandomForest",
+      "LogisticRegression",
+      "Ridge"
+    ],
+    "features": 46,
+    "training_samples": 348381,
+    "training_positive_rate": 0.1514
+  },
+  "spy": {
+    "price": 650.34,
+    "sma100": 676.98,
+    "regime": "BEAR",
+    "ret_21d": -5.0,
+    "ret_63d": -5.2
+  },
+  "top5": [
+    {
+      "ticker": "ORCL",
+      "score": 0.5996405745360265,
+      "uncertainty": 0.08728234312081458,
+      "price": 147.11,
+      "conviction": 54.7,
+      "returns": {
+        "5d": 0.0,
+        "21d": -1.4,
+        "63d": -24.5,
+        "126d": -47.7
+      },
+      "vol_21d": 50.0,
+      "drawdown": -55.0,
+      "position_in_range": 12.2,
+      "atf_coiled_spring": 73.6,
+      "tam": -12.86
+    },
+    {
+      "ticker": "NOW",
+      "score": 0.5419004356066707,
+      "uncertainty": 0.09544016140126708,
+      "price": 104.55,
+      "conviction": 49.0,
+      "returns": {
+        "5d": -0.1,
+        "21d": -4.5,
+        "63d": -32.4,
+        "126d": -44.4
+      },
+      "vol_21d": 48.2,
+      "drawdown": -50.0,
+      "position_in_range": 4.7,
+      "atf_coiled_spring": 52.4,
+      "tam": -18.84
+    },
+    {
+      "ticker": "LRCX",
+      "score": 0.5228397705244734,
+      "uncertainty": 0.10765482825566751,
+      "price": 213.66,
+      "conviction": 46.7,
+      "returns": {
+        "5d": -10.5,
+        "21d": -7.4,
+        "63d": 21.6,
+        "126d": 63.5
+      },
+      "vol_21d": 71.3,
+      "drawdown": -14.3,
+      "position_in_range": 81.4,
+      "atf_coiled_spring": 32.8,
+      "tam": 28.22
+    },
+    {
+      "ticker": "SNPS",
+      "score": 0.5184010454728557,
+      "uncertainty": 0.11553432472700381,
+      "price": 396.48,
+      "conviction": 45.9,
+      "returns": {
+        "5d": -4.6,
+        "21d": -6.6,
+        "63d": -17.2,
+        "126d": -17.7
+      },
+      "vol_21d": 37.0,
+      "drawdown": -38.6,
+      "position_in_range": 6.0,
+      "atf_coiled_spring": 88.1,
+      "tam": -11.46
+    },
+    {
+      "ticker": "UNH",
+      "score": 0.5160257986859628,
+      "uncertainty": 0.08609241090556044,
+      "price": 270.59,
+      "conviction": 47.2,
+      "returns": {
+        "5d": -0.6,
+        "21d": -7.5,
+        "63d": -17.1,
+        "126d": -20.5
+      },
+      "vol_21d": 26.7,
+      "drawdown": -53.6,
+      "position_in_range": 10.8,
+      "atf_coiled_spring": 90.7,
+      "tam": -14.96
+    }
+  ],
+  "all_candidates": [
+    {
+      "ticker": "ORCL",
+      "score": 0.5996405745360265,
+      "uncertainty": 0.08728234312081458,
+      "price": 147.11,
+      "conviction": 54.7,
+      "returns": {
+        "5d": 0.0,
+        "21d": -1.4,
+        "63d": -24.5,
+        "126d": -47.7
+      },
+      "vol_21d": 50.0,
+      "drawdown": -55.0,
+      "position_in_range": 12.2,
+      "atf_coiled_spring": 73.6,
+      "tam": -12.86
+    },
+    {
+      "ticker": "NOW",
+      "score": 0.5419004356066707,
+      "uncertainty": 0.09544016140126708,
+      "price": 104.55,
+      "conviction": 49.0,
+      "returns": {
+        "5d": -0.1,
+        "21d": -4.5,
+        "63d": -32.4,
+        "126d": -44.4
+      },
+      "vol_21d": 48.2,
+      "drawdown": -50.0,
+      "position_in_range": 4.7,
+      "atf_coiled_spring": 52.4,
+      "tam": -18.84
+    },
+    {
+      "ticker": "LRCX",
+      "score": 0.5228397705244734,
+      "uncertainty": 0.10765482825566751,
+      "price": 213.66,
+      "conviction": 46.7,
+      "returns": {
+        "5d": -10.5,
+        "21d": -7.4,
+        "63d": 21.6,
+        "126d": 63.5
+      },
+      "vol_21d": 71.3,
+      "drawdown": -14.3,
+      "position_in_range": 81.4,
+      "atf_coiled_spring": 32.8,
+      "tam": 28.22
+    },
+    {
+      "ticker": "SNPS",
+      "score": 0.5184010454728557,
+      "uncertainty": 0.11553432472700381,
+      "price": 396.48,
+      "conviction": 45.9,
+      "returns": {
+        "5d": -4.6,
+        "21d": -6.6,
+        "63d": -17.2,
+        "126d": -17.7
+      },
+      "vol_21d": 37.0,
+      "drawdown": -38.6,
+      "position_in_range": 6.0,
+      "atf_coiled_spring": 88.1,
+      "tam": -11.46
+    },
+    {
+      "ticker": "UNH",
+      "score": 0.5160257986859628,
+      "uncertainty": 0.08609241090556044,
+      "price": 270.59,
+      "conviction": 47.2,
+      "returns": {
+        "5d": -0.6,
+        "21d": -7.5,
+        "63d": -17.1,
+        "126d": -20.5
+      },
+      "vol_21d": 26.7,
+      "drawdown": -53.6,
+      "position_in_range": 10.8,
+      "atf_coiled_spring": 90.7,
+      "tam": -14.96
+    },
+    {
+      "ticker": "WDAY",
+      "score": 0.5132275876824273,
+      "uncertainty": 0.09477917524195853,
+      "price": 129.92,
+      "conviction": 46.5,
+      "returns": {
+        "5d": 0.5,
+        "21d": -3.1,
+        "63d": -40.7,
+        "126d": -47.5
+      },
+      "vol_21d": 46.6,
+      "drawdown": -52.7,
+      "position_in_range": 3.8,
+      "atf_coiled_spring": 37.7,
+      "tam": -23.13
+    },
+    {
+      "ticker": "AMAT",
+      "score": 0.4849875236732969,
+      "uncertainty": 0.10953948449086834,
+      "price": 341.79,
+      "conviction": 43.2,
+      "returns": {
+        "5d": -8.6,
+        "21d": -8.2,
+        "63d": 30.1,
+        "126d": 67.3
+      },
+      "vol_21d": 59.2,
+      "drawdown": -13.5,
+      "position_in_range": 80.2,
+      "atf_coiled_spring": 38.7,
+      "tam": 27.48
+    },
+    {
+      "ticker": "ADBE",
+      "score": 0.45670007901501225,
+      "uncertainty": 0.09021573526591477,
+      "price": 243.08,
+      "conviction": 41.5,
+      "returns": {
+        "5d": 1.8,
+        "21d": -6.8,
+        "63d": -31.2,
+        "126d": -32.4
+      },
+      "vol_21d": 41.7,
+      "drawdown": -42.2,
+      "position_in_range": 4.4,
+      "atf_coiled_spring": 51.7,
+      "tam": -17.61
+    },
+    {
+      "ticker": "INTC",
+      "score": 0.45096441872650067,
+      "uncertainty": 0.11779403958628135,
+      "price": 44.13,
+      "conviction": 39.8,
+      "returns": {
+        "5d": 0.2,
+        "21d": -3.0,
+        "63d": 20.3,
+        "126d": 28.0
+      },
+      "vol_21d": 69.5,
+      "drawdown": -18.8,
+      "position_in_range": 71.8,
+      "atf_coiled_spring": 52.1,
+      "tam": 17.48
+    },
+    {
+      "ticker": "KLAC",
+      "score": 0.43747314540988835,
+      "uncertainty": 0.10646289396240524,
+      "price": 1472.41,
+      "conviction": 39.1,
+      "returns": {
+        "5d": -6.0,
+        "21d": -4.1,
+        "63d": 17.0,
+        "126d": 38.8
+      },
+      "vol_21d": 58.9,
+      "drawdown": -12.5,
+      "position_in_range": 81.1,
+      "atf_coiled_spring": 41.8,
+      "tam": 19.58
+    },
+    {
+      "ticker": "TSLA",
+      "score": 0.43607383890842916,
+      "uncertainty": 0.09655809956301128,
+      "price": 371.75,
+      "conviction": 39.4,
+      "returns": {
+        "5d": -2.9,
+        "21d": -7.8,
+        "63d": -19.1,
+        "126d": -16.1
+      },
+      "vol_21d": 39.0,
+      "drawdown": -24.1,
+      "position_in_range": 55.9,
+      "atf_coiled_spring": 87.6,
+      "tam": -3.0
+    },
+    {
+      "ticker": "MCHP",
+      "score": 0.42868367403020124,
+      "uncertainty": 0.11797997805049014,
+      "price": 64.61,
+      "conviction": 37.8,
+      "returns": {
+        "5d": -1.6,
+        "21d": -13.1,
+        "63d": 0.5,
+        "126d": 2.4
+      },
+      "vol_21d": 46.2,
+      "drawdown": -19.5,
+      "position_in_range": 65.9,
+      "atf_coiled_spring": 78.8,
+      "tam": 0.06
+    },
+    {
+      "ticker": "CRM",
+      "score": 0.4203177510503896,
+      "uncertainty": 0.10011983953639185,
+      "price": 186.67,
+      "conviction": 37.8,
+      "returns": {
+        "5d": 2.0,
+        "21d": -3.3,
+        "63d": -29.9,
+        "126d": -23.7
+      },
+      "vol_21d": 39.8,
+      "drawdown": -35.6,
+      "position_in_range": 7.6,
+      "atf_coiled_spring": 41.3,
+      "tam": -13.8
+    },
+    {
+      "ticker": "META",
+      "score": 0.41955591809308873,
+      "uncertainty": 0.09230452922952018,
+      "price": 572.13,
+      "conviction": 38.1,
+      "returns": {
+        "5d": -3.5,
+        "21d": -12.4,
+        "63d": -13.1,
+        "126d": -22.9
+      },
+      "vol_21d": 47.2,
+      "drawdown": -27.4,
+      "position_in_range": 29.2,
+      "atf_coiled_spring": 49.6,
+      "tam": -12.16
+    },
+    {
+      "ticker": "TXN",
+      "score": 0.4162703442491935,
+      "uncertainty": 0.11929594504982496,
+      "price": 194.14,
+      "conviction": 36.7,
+      "returns": {
+        "5d": -0.3,
+        "21d": -7.5,
+        "63d": 11.2,
+        "126d": 7.6
+      },
+      "vol_21d": 33.6,
+      "drawdown": -14.3,
+      "position_in_range": 62.0,
+      "atf_coiled_spring": 74.2,
+      "tam": 1.17
+    },
+    {
+      "ticker": "AVGO",
+      "score": 0.41332252886704374,
+      "uncertainty": 0.1195961917700945,
+      "price": 309.51,
+      "conviction": 36.4,
+      "returns": {
+        "5d": -2.8,
+        "21d": -2.7,
+        "63d": -11.2,
+        "126d": -5.2
+      },
+      "vol_21d": 43.8,
+      "drawdown": -24.8,
+      "position_in_range": 61.8,
+      "atf_coiled_spring": 70.4,
+      "tam": 7.43
+    },
+    {
+      "ticker": "CAT",
+      "score": 0.4023614737566922,
+      "uncertainty": 0.12740544358917355,
+      "price": 708.46,
+      "conviction": 35.1,
+      "returns": {
+        "5d": -1.1,
+        "21d": -5.8,
+        "63d": 22.7,
+        "126d": 51.0
+      },
+      "vol_21d": 41.6,
+      "drawdown": -8.6,
+      "position_in_range": 86.8,
+      "atf_coiled_spring": 42.3,
+      "tam": 22.89
+    },
+    {
+      "ticker": "FIS",
+      "score": 0.39698420202060947,
+      "uncertainty": 0.11264091286973965,
+      "price": 46.91,
+      "conviction": 35.2,
+      "returns": {
+        "5d": -4.5,
+        "21d": -5.4,
+        "63d": -29.9,
+        "126d": -27.6
+      },
+      "vol_21d": 20.4,
+      "drawdown": -41.9,
+      "position_in_range": 1.5,
+      "atf_coiled_spring": 81.2,
+      "tam": -16.52
+    },
+    {
+      "ticker": "ACN",
+      "score": 0.3969805752230359,
+      "uncertainty": 0.09744781825167,
+      "price": 198.29,
+      "conviction": 35.8,
+      "returns": {
+        "5d": 2.5,
+        "21d": -3.7,
+        "63d": -26.9,
+        "126d": -19.7
+      },
+      "vol_21d": 33.2,
+      "drawdown": -38.3,
+      "position_in_range": 5.2,
+      "atf_coiled_spring": 60.3,
+      "tam": -14.96
+    },
+    {
+      "ticker": "PANW",
+      "score": 0.3863374876646083,
+      "uncertainty": 0.10712474444827123,
+      "price": 160.32,
+      "conviction": 34.5,
+      "returns": {
+        "5d": 2.0,
+        "21d": 6.8,
+        "63d": -14.2,
+        "126d": -21.4
+      },
+      "vol_21d": 43.9,
+      "drawdown": -27.6,
+      "position_in_range": 23.4,
+      "atf_coiled_spring": 43.6,
+      "tam": -6.7
+    },
+    {
+      "ticker": "BKNG",
+      "score": 0.3797616436393859,
+      "uncertainty": 0.098596741099824,
+      "price": 4210.32,
+      "conviction": 34.2,
+      "returns": {
+        "5d": -1.9,
+        "21d": 1.0,
+        "63d": -22.4,
+        "126d": -22.5
+      },
+      "vol_21d": 41.9,
+      "drawdown": -27.2,
+      "position_in_range": 18.1,
+      "atf_coiled_spring": 36.6,
+      "tam": -10.43
+    },
+    {
+      "ticker": "EMR",
+      "score": 0.3773824387187701,
+      "uncertainty": 0.11078703350587336,
+      "price": 131.02,
+      "conviction": 33.6,
+      "returns": {
+        "5d": 0.7,
+        "21d": -13.8,
+        "63d": -2.7,
+        "126d": 2.2
+      },
+      "vol_21d": 37.4,
+      "drawdown": -18.7,
+      "position_in_range": 56.1,
+      "atf_coiled_spring": 56.3,
+      "tam": -2.14
+    },
+    {
+      "ticker": "GOOGL",
+      "score": 0.37548559497138934,
+      "uncertainty": 0.11983793203934844,
+      "price": 287.56,
+      "conviction": 33.0,
+      "returns": {
+        "5d": -1.0,
+        "21d": -6.1,
+        "63d": -8.2,
+        "126d": 18.0
+      },
+      "vol_21d": 31.5,
+      "drawdown": -16.3,
+      "position_in_range": 72.0,
+      "atf_coiled_spring": 56.1,
+      "tam": 6.84
+    },
+    {
+      "ticker": "GE",
+      "score": 0.3741834527677511,
+      "uncertainty": 0.10656905935366162,
+      "price": 283.77,
+      "conviction": 33.4,
+      "returns": {
+        "5d": -2.4,
+        "21d": -17.8,
+        "63d": -8.8,
+        "126d": -3.1
+      },
+      "vol_21d": 38.6,
+      "drawdown": -17.8,
+      "position_in_range": 65.7,
+      "atf_coiled_spring": 55.0,
+      "tam": -0.37
+    },
+    {
+      "ticker": "MSFT",
+      "score": 0.3735808260243345,
+      "uncertainty": 0.10327113794823715,
+      "price": 370.17,
+      "conviction": 33.5,
+      "returns": {
+        "5d": -0.7,
+        "21d": -7.1,
+        "63d": -23.8,
+        "126d": -27.8
+      },
+      "vol_21d": 22.4,
+      "drawdown": -31.4,
+      "position_in_range": 9.7,
+      "atf_coiled_spring": 70.5,
+      "tam": -11.96
+    },
+    {
+      "ticker": "CDNS",
+      "score": 0.3706689520472002,
+      "uncertainty": 0.10728023830555801,
+      "price": 277.87,
+      "conviction": 33.1,
+      "returns": {
+        "5d": -2.3,
+        "21d": -8.4,
+        "63d": -12.5,
+        "126d": -20.3
+      },
+      "vol_21d": 25.8,
+      "drawdown": -25.6,
+      "position_in_range": 32.6,
+      "atf_coiled_spring": 80.9,
+      "tam": -7.03
+    },
+    {
+      "ticker": "NVDA",
+      "score": 0.35913861413688036,
+      "uncertainty": 0.11794687532742319,
+      "price": 174.4,
+      "conviction": 31.7,
+      "returns": {
+        "5d": -0.5,
+        "21d": -4.4,
+        "63d": -7.3,
+        "126d": -4.1
+      },
+      "vol_21d": 36.2,
+      "drawdown": -15.8,
+      "position_in_range": 71.1,
+      "atf_coiled_spring": 78.8,
+      "tam": 4.44
+    },
+    {
+      "ticker": "ISRG",
+      "score": 0.35859237897109386,
+      "uncertainty": 0.10681169957697494,
+      "price": 460.99,
+      "conviction": 32.0,
+      "returns": {
+        "5d": -2.3,
+        "21d": -7.1,
+        "63d": -19.9,
+        "126d": 5.0
+      },
+      "vol_21d": 22.4,
+      "drawdown": -22.2,
+      "position_in_range": 19.2,
+      "atf_coiled_spring": 87.3,
+      "tam": -6.59
+    },
+    {
+      "ticker": "NFLX",
+      "score": 0.3513143250507874,
+      "uncertainty": 0.13877828857758281,
+      "price": 96.15,
+      "conviction": 30.3,
+      "returns": {
+        "5d": 5.8,
+        "21d": -1.0,
+        "63d": 2.1,
+        "126d": -20.3
+      },
+      "vol_21d": 24.1,
+      "drawdown": -28.2,
+      "position_in_range": 35.0,
+      "atf_coiled_spring": 79.4,
+      "tam": 1.55
+    },
+    {
+      "ticker": "ETN",
+      "score": 0.3489130963412955,
+      "uncertainty": 0.10859643695938445,
+      "price": 357.67,
+      "conviction": 31.1,
+      "returns": {
+        "5d": -4.4,
+        "21d": -4.9,
+        "63d": 11.6,
+        "126d": -2.3
+      },
+      "vol_21d": 41.0,
+      "drawdown": -9.4,
+      "position_in_range": 75.3,
+      "atf_coiled_spring": 53.1,
+      "tam": 3.76
+    },
+    {
+      "ticker": "AMZN",
+      "score": 0.3459697800773977,
+      "uncertainty": 0.10620777343286603,
+      "price": 208.27,
+      "conviction": 30.9,
+      "returns": {
+        "5d": 0.5,
+        "21d": -0.1,
+        "63d": -10.3,
+        "126d": -6.3
+      },
+      "vol_21d": 33.2,
+      "drawdown": -18.0,
+      "position_in_range": 47.2,
+      "atf_coiled_spring": 66.4,
+      "tam": -3.51
+    },
+    {
+      "ticker": "QCOM",
+      "score": 0.34069858471723,
+      "uncertainty": 0.12471107304550572,
+      "price": 128.78,
+      "conviction": 29.8,
+      "returns": {
+        "5d": 0.1,
+        "21d": -8.1,
+        "63d": -25.3,
+        "126d": -21.2
+      },
+      "vol_21d": 21.2,
+      "drawdown": -30.6,
+      "position_in_range": 10.9,
+      "atf_coiled_spring": 93.7,
+      "tam": -12.07
+    },
+    {
+      "ticker": "TMO",
+      "score": 0.3303494287083723,
+      "uncertainty": 0.11900246754043495,
+      "price": 491.53,
+      "conviction": 29.1,
+      "returns": {
+        "5d": 0.3,
+        "21d": -3.3,
+        "63d": -15.9,
+        "126d": 6.6
+      },
+      "vol_21d": 30.5,
+      "drawdown": -23.1,
+      "position_in_range": 41.0,
+      "atf_coiled_spring": 57.8,
+      "tam": -3.6
+    },
+    {
+      "ticker": "LOW",
+      "score": 0.33015653134970996,
+      "uncertainty": 0.12109154197343713,
+      "price": 236.28,
+      "conviction": 29.0,
+      "returns": {
+        "5d": 0.8,
+        "21d": -8.1,
+        "63d": -2.7,
+        "126d": -5.8
+      },
+      "vol_21d": 28.5,
+      "drawdown": -17.8,
+      "position_in_range": 36.0,
+      "atf_coiled_spring": 37.0,
+      "tam": -3.56
+    },
+    {
+      "ticker": "DHR",
+      "score": 0.31379376619470795,
+      "uncertainty": 0.10807721451628892,
+      "price": 189.6,
+      "conviction": 28.0,
+      "returns": {
+        "5d": -0.1,
+        "21d": -7.8,
+        "63d": -17.6,
+        "126d": 2.3
+      },
+      "vol_21d": 30.9,
+      "drawdown": -21.5,
+      "position_in_range": 23.7,
+      "atf_coiled_spring": 64.7,
+      "tam": -6.85
+    },
+    {
+      "ticker": "LLY",
+      "score": 0.3137701096899348,
+      "uncertainty": 0.12230096853657896,
+      "price": 919.77,
+      "conviction": 27.5,
+      "returns": {
+        "5d": 1.9,
+        "21d": -9.6,
+        "63d": -14.6,
+        "126d": 27.0
+      },
+      "vol_21d": 31.3,
+      "drawdown": -17.0,
+      "position_in_range": 61.2,
+      "atf_coiled_spring": 80.7,
+      "tam": 0.81
+    },
+    {
+      "ticker": "ADP",
+      "score": 0.3122584270038856,
+      "uncertainty": 0.11636408143849179,
+      "price": 203.18,
+      "conviction": 27.6,
+      "returns": {
+        "5d": -0.8,
+        "21d": -4.7,
+        "63d": -21.1,
+        "126d": -29.5
+      },
+      "vol_21d": 25.0,
+      "drawdown": -36.3,
+      "position_in_range": 1.6,
+      "atf_coiled_spring": 49.1,
+      "tam": -14.74
+    },
+    {
+      "ticker": "DIS",
+      "score": 0.30665234270967057,
+      "uncertainty": 0.11669160422233733,
+      "price": 96.38,
+      "conviction": 27.1,
+      "returns": {
+        "5d": -0.0,
+        "21d": -7.6,
+        "63d": -15.6,
+        "126d": -15.5
+      },
+      "vol_21d": 18.6,
+      "drawdown": -21.8,
+      "position_in_range": 36.7,
+      "atf_coiled_spring": 87.9,
+      "tam": -8.3
+    },
+    {
+      "ticker": "UPS",
+      "score": 0.3016180937668819,
+      "uncertainty": 0.12893460412852417,
+      "price": 98.38,
+      "conviction": 26.3,
+      "returns": {
+        "5d": -0.1,
+        "21d": -14.0,
+        "63d": 0.1,
+        "126d": 20.1
+      },
+      "vol_21d": 31.3,
+      "drawdown": -16.9,
+      "position_in_range": 47.9,
+      "atf_coiled_spring": 57.0,
+      "tam": -0.89
+    },
+    {
+      "ticker": "DE",
+      "score": 0.30097195069893273,
+      "uncertainty": 0.12658527376683665,
+      "price": 563.3,
+      "conviction": 26.3,
+      "returns": {
+        "5d": -3.4,
+        "21d": -10.7,
+        "63d": 20.2,
+        "126d": 21.9
+      },
+      "vol_21d": 24.2,
+      "drawdown": -15.0,
+      "position_in_range": 60.9,
+      "atf_coiled_spring": 74.7,
+      "tam": 5.98
+    },
+    {
+      "ticker": "CMCSA",
+      "score": 0.2965312402760144,
+      "uncertainty": 0.11928771112453868,
+      "price": 28.71,
+      "conviction": 26.1,
+      "returns": {
+        "5d": -1.7,
+        "21d": -6.8,
+        "63d": 3.8,
+        "126d": -0.5
+      },
+      "vol_21d": 28.5,
+      "drawdown": -13.7,
+      "position_in_range": 48.0,
+      "atf_coiled_spring": 48.5,
+      "tam": -3.62
+    },
+    {
+      "ticker": "BLK",
+      "score": 0.29591884334606694,
+      "uncertainty": 0.11233358552734253,
+      "price": 961.71,
+      "conviction": 26.3,
+      "returns": {
+        "5d": -1.5,
+        "21d": -9.5,
+        "63d": -11.1,
+        "126d": -17.3
+      },
+      "vol_21d": 37.0,
+      "drawdown": -19.2,
+      "position_in_range": 41.6,
+      "atf_coiled_spring": 49.4,
+      "tam": -7.32
+    },
+    {
+      "ticker": "GS",
+      "score": 0.2908617772074037,
+      "uncertainty": 0.11706824911668832,
+      "price": 845.99,
+      "conviction": 25.7,
+      "returns": {
+        "5d": 1.2,
+        "21d": -1.8,
+        "63d": -4.7,
+        "126d": 6.3
+      },
+      "vol_21d": 32.7,
+      "drawdown": -12.9,
+      "position_in_range": 75.9,
+      "atf_coiled_spring": 69.3,
+      "tam": 8.65
+    },
+    {
+      "ticker": "PNC",
+      "score": 0.2908588214770373,
+      "uncertainty": 0.1287831812387366,
+      "price": 208.09,
+      "conviction": 25.3,
+      "returns": {
+        "5d": 0.8,
+        "21d": -2.9,
+        "63d": -1.1,
+        "126d": 4.8
+      },
+      "vol_21d": 20.1,
+      "drawdown": -14.2,
+      "position_in_range": 64.9,
+      "atf_coiled_spring": 82.2,
+      "tam": 2.11
+    },
+    {
+      "ticker": "BAC",
+      "score": 0.2824248407447898,
+      "uncertainty": 0.12647342113286605,
+      "price": 48.75,
+      "conviction": 24.7,
+      "returns": {
+        "5d": 1.3,
+        "21d": -1.6,
+        "63d": -11.4,
+        "126d": -6.0
+      },
+      "vol_21d": 23.1,
+      "drawdown": -14.4,
+      "position_in_range": 64.9,
+      "atf_coiled_spring": 79.2,
+      "tam": -0.25
+    },
+    {
+      "ticker": "FTNT",
+      "score": 0.2798413038056679,
+      "uncertainty": 0.12842718374638468,
+      "price": 81.72,
+      "conviction": 24.4,
+      "returns": {
+        "5d": 3.0,
+        "21d": 3.2,
+        "63d": 1.1,
+        "126d": -3.5
+      },
+      "vol_21d": 31.6,
+      "drawdown": -24.8,
+      "position_in_range": 21.4,
+      "atf_coiled_spring": 83.9,
+      "tam": -1.97
+    },
+    {
+      "ticker": "MMM",
+      "score": 0.2768717979919744,
+      "uncertainty": 0.11789340777055454,
+      "price": 145.23,
+      "conviction": 24.4,
+      "returns": {
+        "5d": -1.0,
+        "21d": -10.1,
+        "63d": -9.8,
+        "126d": -4.9
+      },
+      "vol_21d": 30.8,
+      "drawdown": -16.5,
+      "position_in_range": 42.8,
+      "atf_coiled_spring": 68.8,
+      "tam": -4.61
+    },
+    {
+      "ticker": "ABT",
+      "score": 0.27266750109707394,
+      "uncertainty": 0.11899755641571043,
+      "price": 102.67,
+      "conviction": 24.0,
+      "returns": {
+        "5d": -1.3,
+        "21d": -10.0,
+        "63d": -17.2,
+        "126d": -22.1
+      },
+      "vol_21d": 20.6,
+      "drawdown": -24.6,
+      "position_in_range": 2.3,
+      "atf_coiled_spring": 70.0,
+      "tam": -11.08
+    },
+    {
+      "ticker": "USB",
+      "score": 0.27232934199343706,
+      "uncertainty": 0.13164705122452608,
+      "price": 52.01,
+      "conviction": 23.6,
+      "returns": {
+        "5d": -0.2,
+        "21d": -4.8,
+        "63d": -3.6,
+        "126d": 8.3
+      },
+      "vol_21d": 17.2,
+      "drawdown": -14.3,
+      "position_in_range": 65.8,
+      "atf_coiled_spring": 94.4,
+      "tam": 1.98
+    },
+    {
+      "ticker": "HD",
+      "score": 0.2689347958540415,
+      "uncertainty": 0.11766178138791145,
+      "price": 328.89,
+      "conviction": 23.7,
+      "returns": {
+        "5d": -0.6,
+        "21d": -10.7,
+        "63d": -4.7,
+        "126d": -18.1
+      },
+      "vol_21d": 25.1,
+      "drawdown": -21.3,
+      "position_in_range": 8.4,
+      "atf_coiled_spring": 46.0,
+      "tam": -7.96
+    }
+  ],
+  "performance": {
+    "walk_forward_cv": {
+      "mean_auc": 0.729,
+      "std_auc": 0.017,
+      "mean_top10_precision": 0.6,
+      "mean_top10_lift": 5.66
+    },
+    "validation_2020_2022": {
+      "auc": 0.686,
+      "top10_precision": 1.0,
+      "top10_lift": 5.23,
+      "top20_precision": 1.0,
+      "top50_precision": 0.94
+    },
+    "test_2023_2026": {
+      "auc": 0.678,
+      "top10_precision": 0.7,
+      "top10_lift": 4.36,
+      "top20_precision": 0.65,
+      "top50_precision": 0.34
+    },
+    "trading_simulation": {
+      "total_trades": 360,
+      "mean_net_return": 0.0488,
+      "win_rate": 0.567,
+      "hit_rate_10pct": 0.311,
+      "profit_factor": 2.31,
+      "sharpe": 1.85,
+      "annualized_return": 0.586,
+      "alpha_vs_spy": 0.0258
+    }
+  }
+}
