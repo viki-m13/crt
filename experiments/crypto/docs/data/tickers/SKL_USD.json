@@ -2,42 +2,38 @@
   "ticker": "SKL-USD",
   "display_name": "SKL",
   "price": 0.01,
-  "conviction": 23.4,
+  "conviction": 55.9,
   "is_signal": false,
-  "mtmdi_zscore": -0.695,
-  "mtmdi_raw": 0.544,
-  "mtmdi_direction": 0.472,
-  "mtmdi_velocity": -0.304,
-  "cascade_score": 0.058,
-  "momentum_persistence": -0.786,
-  "range_compression": 0.627,
-  "vol_30d": 48.7,
-  "vol_regime": "normal",
-  "drawdown": -88.2,
-  "position_in_range": 0.2,
+  "mtmdi_zscore": 0.506,
+  "mtmdi_raw": 0.821,
+  "mtmdi_direction": 1.182,
+  "mtmdi_velocity": 1.139,
+  "cascade_score": -0.1891,
+  "momentum_persistence": 1.448,
+  "range_compression": 1.0,
+  "vol_30d": 92.9,
+  "vol_regime": "high",
+  "drawdown": -85.2,
+  "position_in_range": 3.6,
   "returns": {
-    "7d": -7.7,
-    "14d": -17.48,
-    "30d": -13.88,
-    "90d": -52.3,
-    "180d": -147.34,
-    "365d": -137.45
+    "7d": 12.09,
+    "14d": 4.63,
+    "30d": 11.16,
+    "90d": -28.81,
+    "180d": -125.89,
+    "365d": -112.69
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
-    "momentum": false,
+    "velocity": true,
+    "cascade": false,
+    "momentum": true,
     "range_compress": false,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 0.02
-    },
     {
       "date": "2025-04-01",
       "price": 0.02
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 0.01
+    },
+    {
+      "date": "2026-03-31",
+      "price": 0.01
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.536
-    },
     {
       "date": "2025-04-01",
       "value": -0.612
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -0.695
+    },
+    {
+      "date": "2026-03-31",
+      "value": 0.506
     }
   ]
 }

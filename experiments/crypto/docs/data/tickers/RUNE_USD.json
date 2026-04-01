@@ -1,43 +1,39 @@
 {
   "ticker": "RUNE-USD",
   "display_name": "RUNE",
-  "price": 0.4,
-  "conviction": 30.2,
+  "price": 0.41,
+  "conviction": 21.2,
   "is_signal": false,
-  "mtmdi_zscore": -0.483,
-  "mtmdi_raw": 0.608,
-  "mtmdi_direction": -0.309,
-  "mtmdi_velocity": 0.469,
-  "cascade_score": 0.0305,
+  "mtmdi_zscore": -0.696,
+  "mtmdi_raw": 0.556,
+  "mtmdi_direction": -0.033,
+  "mtmdi_velocity": 0.182,
+  "cascade_score": -0.0095,
   "momentum_persistence": -0.885,
-  "range_compression": 0.47,
-  "vol_30d": 50.7,
+  "range_compression": 0.471,
+  "vol_30d": 52.1,
   "vol_regime": "normal",
-  "drawdown": -81.3,
-  "position_in_range": 1.1,
+  "drawdown": -80.6,
+  "position_in_range": 2.0,
   "returns": {
-    "7d": -5.1,
-    "14d": -14.5,
-    "30d": -0.72,
-    "90d": -33.72,
-    "180d": -110.67,
-    "365d": -104.34
+    "7d": -2.05,
+    "14d": -7.14,
+    "30d": 5.09,
+    "90d": -29.98,
+    "180d": -108.08,
+    "365d": -101.49
   },
   "signals": {
     "mtmdi": false,
     "direction": false,
-    "velocity": true,
-    "cascade": true,
+    "velocity": false,
+    "cascade": false,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 1.14
-    },
     {
       "date": "2025-04-01",
       "price": 1.19
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 0.4
+    },
+    {
+      "date": "2026-03-31",
+      "price": 0.41
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": 0.485
-    },
     {
       "date": "2025-04-01",
       "value": 0.483
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -0.483
+    },
+    {
+      "date": "2026-03-31",
+      "value": -0.696
     }
   ]
 }

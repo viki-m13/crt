@@ -1,43 +1,39 @@
 {
   "ticker": "DOT-USD",
   "display_name": "DOT",
-  "price": 1.24,
-  "conviction": 32.2,
+  "price": 1.25,
+  "conviction": 35.5,
   "is_signal": false,
-  "mtmdi_zscore": -0.504,
-  "mtmdi_raw": 0.567,
-  "mtmdi_direction": -0.087,
-  "mtmdi_velocity": 0.122,
-  "cascade_score": 0.2062,
+  "mtmdi_zscore": -0.234,
+  "mtmdi_raw": 0.647,
+  "mtmdi_direction": 0.171,
+  "mtmdi_velocity": 0.304,
+  "cascade_score": 0.1964,
   "momentum_persistence": -0.81,
-  "range_compression": 0.396,
-  "vol_30d": 66.5,
+  "range_compression": 0.298,
+  "vol_30d": 61.2,
   "vol_regime": "high",
-  "drawdown": -76.6,
-  "position_in_range": 0.1,
+  "drawdown": -76.4,
+  "position_in_range": 0.3,
   "returns": {
-    "7d": -13.36,
-    "14d": -27.86,
-    "30d": -29.62,
-    "90d": -37.68,
-    "180d": -119.92,
-    "365d": -117.92
+    "7d": -11.23,
+    "14d": -25.86,
+    "30d": -20.55,
+    "90d": -35.73,
+    "180d": -123.62,
+    "365d": -116.75
   },
   "signals": {
     "mtmdi": false,
-    "direction": false,
-    "velocity": false,
+    "direction": true,
+    "velocity": true,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 4.02
-    },
     {
       "date": "2025-04-01",
       "price": 4.18
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 1.24
+    },
+    {
+      "date": "2026-03-31",
+      "price": 1.25
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": 0.278
-    },
     {
       "date": "2025-04-01",
       "value": -0.041
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -0.504
+    },
+    {
+      "date": "2026-03-31",
+      "value": -0.234
     }
   ]
 }

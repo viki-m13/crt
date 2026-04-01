@@ -1,43 +1,39 @@
 {
   "ticker": "ALGO-USD",
   "display_name": "ALGO",
-  "price": 0.08,
-  "conviction": 34.8,
+  "price": 0.09,
+  "conviction": 57.7,
   "is_signal": false,
-  "mtmdi_zscore": -0.585,
-  "mtmdi_raw": 0.512,
-  "mtmdi_direction": 0.381,
-  "mtmdi_velocity": 0.349,
-  "cascade_score": 0.0595,
-  "momentum_persistence": -0.865,
-  "range_compression": 0.397,
-  "vol_30d": 52.2,
-  "vol_regime": "normal",
-  "drawdown": -74.3,
-  "position_in_range": 0.5,
+  "mtmdi_zscore": 0.44,
+  "mtmdi_raw": 0.794,
+  "mtmdi_direction": 1.105,
+  "mtmdi_velocity": 1.22,
+  "cascade_score": -0.0969,
+  "momentum_persistence": 1.376,
+  "range_compression": 0.803,
+  "vol_30d": 70.2,
+  "vol_regime": "high",
+  "drawdown": -70.6,
+  "position_in_range": 5.4,
   "returns": {
-    "7d": -6.23,
-    "14d": -16.87,
-    "30d": -6.82,
-    "90d": -33.44,
-    "180d": -98.89,
-    "365d": -78.1
+    "7d": 7.52,
+    "14d": -0.76,
+    "30d": 9.34,
+    "90d": -15.91,
+    "180d": -87.27,
+    "365d": -64.96
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": true,
-    "cascade": true,
-    "momentum": false,
-    "range_compress": true,
-    "vol_surge": false
+    "cascade": false,
+    "momentum": true,
+    "range_compress": false,
+    "vol_surge": true
   },
   "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 0.18
-    },
     {
       "date": "2025-04-01",
       "price": 0.19
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 0.08
+    },
+    {
+      "date": "2026-03-31",
+      "price": 0.09
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.341
-    },
     {
       "date": "2025-04-01",
       "value": -0.363
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -0.585
+    },
+    {
+      "date": "2026-03-31",
+      "value": 0.44
     }
   ]
 }

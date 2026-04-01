@@ -1,43 +1,39 @@
 {
   "ticker": "RPL-USD",
   "display_name": "RPL",
-  "price": 1.65,
-  "conviction": 45.4,
+  "price": 1.79,
+  "conviction": 45.0,
   "is_signal": false,
-  "mtmdi_zscore": -1.001,
-  "mtmdi_raw": 0.611,
-  "mtmdi_direction": -0.498,
-  "mtmdi_velocity": 0.422,
-  "cascade_score": 0.1188,
-  "momentum_persistence": -0.897,
-  "range_compression": 0.342,
-  "vol_30d": 54.7,
-  "vol_regime": "normal",
-  "drawdown": -81.8,
-  "position_in_range": 2.3,
+  "mtmdi_zscore": -1.017,
+  "mtmdi_raw": 0.606,
+  "mtmdi_direction": -0.162,
+  "mtmdi_velocity": 0.308,
+  "cascade_score": 0.0437,
+  "momentum_persistence": 1.376,
+  "range_compression": 0.425,
+  "vol_30d": 62.6,
+  "vol_regime": "high",
+  "drawdown": -80.2,
+  "position_in_range": 4.2,
   "returns": {
-    "7d": -6.25,
-    "14d": -23.95,
-    "30d": -12.36,
-    "90d": -12.92,
-    "180d": -110.3,
-    "365d": -101.64
+    "7d": 2.47,
+    "14d": -14.25,
+    "30d": -3.15,
+    "90d": -6.01,
+    "180d": -109.43,
+    "365d": -89.27
   },
   "signals": {
     "mtmdi": true,
     "direction": false,
     "velocity": true,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 3,
+  "confirming_factors": 5,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 4.37
-    },
     {
       "date": "2025-04-01",
       "price": 4.46
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 1.65
+    },
+    {
+      "date": "2026-03-31",
+      "price": 1.79
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.246
-    },
     {
       "date": "2025-04-01",
       "value": 0.013
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -1.001
+    },
+    {
+      "date": "2026-03-31",
+      "value": -1.017
     }
   ]
 }

@@ -2,42 +2,38 @@
   "ticker": "OP-USD",
   "display_name": "OP",
   "price": 0.11,
-  "conviction": 26.5,
+  "conviction": 38.7,
   "is_signal": false,
-  "mtmdi_zscore": 0.007,
-  "mtmdi_raw": 0.783,
-  "mtmdi_direction": 1.118,
-  "mtmdi_velocity": 0.059,
-  "cascade_score": 0.1313,
+  "mtmdi_zscore": 0.354,
+  "mtmdi_raw": 0.868,
+  "mtmdi_direction": 1.284,
+  "mtmdi_velocity": 0.4,
+  "cascade_score": 0.1071,
   "momentum_persistence": -0.851,
-  "range_compression": 0.336,
-  "vol_30d": 59.6,
-  "vol_regime": "normal",
-  "drawdown": -88.4,
-  "position_in_range": 0.5,
+  "range_compression": 0.32,
+  "vol_30d": 61.9,
+  "vol_regime": "high",
+  "drawdown": -87.9,
+  "position_in_range": 1.1,
   "returns": {
-    "7d": -6.92,
-    "14d": -26.23,
-    "30d": -14.6,
-    "90d": -94.3,
-    "180d": -189.54,
-    "365d": -194.88
+    "7d": -3.0,
+    "14d": -20.82,
+    "30d": -9.6,
+    "90d": -88.48,
+    "180d": -191.62,
+    "365d": -189.21
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 0.73
-    },
     {
       "date": "2025-04-01",
       "price": 0.76
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 0.11
+    },
+    {
+      "date": "2026-03-31",
+      "price": 0.11
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.66
-    },
     {
       "date": "2025-04-01",
       "value": -0.641
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": 0.007
+    },
+    {
+      "date": "2026-03-31",
+      "value": 0.354
     }
   ]
 }

@@ -2,42 +2,38 @@
   "ticker": "OSMO-USD",
   "display_name": "OSMO",
   "price": 0.03,
-  "conviction": 29.6,
-  "is_signal": false,
-  "mtmdi_zscore": 0.455,
-  "mtmdi_raw": 0.776,
-  "mtmdi_direction": 0.801,
-  "mtmdi_velocity": 0.084,
-  "cascade_score": 0.0933,
+  "conviction": 51.9,
+  "is_signal": true,
+  "mtmdi_zscore": 1.031,
+  "mtmdi_raw": 0.953,
+  "mtmdi_direction": 1.038,
+  "mtmdi_velocity": 0.737,
+  "cascade_score": 0.0848,
   "momentum_persistence": -0.635,
-  "range_compression": 0.47,
-  "vol_30d": 43.4,
+  "range_compression": 0.454,
+  "vol_30d": 43.1,
   "vol_regime": "normal",
-  "drawdown": -89.1,
-  "position_in_range": 0.3,
+  "drawdown": -88.9,
+  "position_in_range": 0.5,
   "returns": {
-    "7d": -6.53,
-    "14d": -17.03,
-    "30d": -14.66,
-    "90d": -52.41,
-    "180d": -160.21,
-    "365d": -216.55
+    "7d": -5.52,
+    "14d": -14.25,
+    "30d": -10.04,
+    "90d": -49.3,
+    "180d": -172.4,
+    "365d": -214.71
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 0.26
-    },
     {
       "date": "2025-04-01",
       "price": 0.26
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 0.03
+    },
+    {
+      "date": "2026-03-31",
+      "price": 0.03
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.905
-    },
     {
       "date": "2025-04-01",
       "value": -1.202
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": 0.455
+    },
+    {
+      "date": "2026-03-31",
+      "value": 1.031
     }
   ]
 }

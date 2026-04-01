@@ -1,43 +1,39 @@
 {
   "ticker": "LINK-USD",
   "display_name": "LINK",
-  "price": 8.61,
-  "conviction": 16.4,
+  "price": 8.78,
+  "conviction": 21.5,
   "is_signal": false,
-  "mtmdi_zscore": -0.765,
-  "mtmdi_raw": 0.591,
-  "mtmdi_direction": 0.628,
-  "mtmdi_velocity": 0.108,
-  "cascade_score": -0.0029,
+  "mtmdi_zscore": -0.57,
+  "mtmdi_raw": 0.629,
+  "mtmdi_direction": 0.72,
+  "mtmdi_velocity": 0.331,
+  "cascade_score": 0.0109,
   "momentum_persistence": -0.977,
   "range_compression": 0.637,
   "vol_30d": 57.4,
   "vol_regime": "normal",
-  "drawdown": -67.8,
-  "position_in_range": 3.7,
+  "drawdown": -67.2,
+  "position_in_range": 4.6,
   "returns": {
-    "7d": -5.56,
-    "14d": -14.23,
-    "30d": -2.67,
-    "90d": -36.58,
-    "180d": -96.42,
-    "365d": -44.13
+    "7d": -5.21,
+    "14d": -10.97,
+    "30d": 1.21,
+    "90d": -32.83,
+    "180d": -95.34,
+    "365d": -43.14
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": false,
+    "velocity": true,
+    "cascade": true,
     "momentum": false,
     "range_compress": false,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-03-31",
-      "price": 13.51
-    },
     {
       "date": "2025-04-01",
       "price": 14.04
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-30",
       "price": 8.61
+    },
+    {
+      "date": "2026-03-31",
+      "price": 8.78
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-03-31",
-      "value": -0.462
-    },
     {
       "date": "2025-04-01",
       "value": -0.511
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-30",
       "value": -0.765
+    },
+    {
+      "date": "2026-03-31",
+      "value": -0.57
     }
   ]
 }
