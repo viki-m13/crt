@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Daily Best Stock Picker — Scanner
-===================================
-Runs the Daily Best Stock Picker strategy and outputs JSON for the web frontend.
+Daily TMD-ARC Scanner
+======================
+Runs the TMD-ARC strategy signals and outputs JSON for the web frontend.
 
 Usage:
     cd experiments && python scripts/daily_scan.py
 
 Output:
-    experiments/docs/data/full.json     — complete dashboard data
-    experiments/docs/data/tickers/*.json — per-ticker detail
-    experiments/docs/data/last_run.txt  — timestamp
+    experiments/docs/data/sectors.json   — dashboard data (signals, performance, equity curve)
+    experiments/docs/data/full.json      — legacy daily picker data
+    experiments/docs/data/last_run.txt   — timestamp
 """
 
 import os
@@ -24,14 +24,16 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPERIMENTS_DIR = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, EXPERIMENTS_DIR)
 
-# Import the strategy from train.py
-from train import (
-    Config, check_market, get_daily_pick, score_stock,
-    run_picker_backtest, period_stats, EXCLUDED,
-)
-from prepare import load_data, compute_features, TEST_START, TEST_END
+from prepare import load_data, compute_features, UNIVERSE, TRANSACTION_COST_BPS
+from src.strategy import TMDArcStrategy, StrategyConfig
 
 import numpy as np
+import pandas as pd
+
+
+EXCLUDED = {"SPY", "VIX", "TLT", "IEF", "HYG", "GLD", "SLV", "USO",
+            "DIA", "IWM", "QQQ", "XLK", "XLF", "XLE", "XLV", "XLI",
+            "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC"}
 
 
 class SafeJSONEncoder(json.JSONEncoder):
@@ -54,8 +56,77 @@ class SafeJSONEncoder(json.JSONEncoder):
         return o
 
 
+def run_tmdarc_backtest(data, features_cache, start, end, cfg):
+    """Run TMD-ARC strategy over a date range and return daily returns + trades."""
+    strategy = TMDArcStrategy(cfg)
+    market_close = data.get("SPY", {}).get("Close")
+    if market_close is None:
+        return [], []
+
+    dates = market_close.loc[start:end].index
+    daily_returns = []
+
+    for i, date in enumerate(dates):
+        # Build features dict and prices for this date
+        feat_dict = {}
+        prices = {}
+        open_prices = {}
+        for ticker in features_cache:
+            if ticker in EXCLUDED:
+                continue
+            fc = features_cache[ticker]
+            if date in fc.index:
+                feat_dict[ticker] = fc.loc[date].to_dict()
+            if ticker in data and "Close" in data[ticker].columns:
+                if date in data[ticker].index:
+                    prices[ticker] = float(data[ticker].loc[date, "Close"])
+            if ticker in data and "Open" in data[ticker].columns:
+                if date in data[ticker].index:
+                    open_prices[ticker] = float(data[ticker].loc[date, "Open"])
+
+        stats = strategy.step(date, prices, feat_dict,
+                              open_prices if open_prices else None)
+
+        # Compute portfolio return for this day
+        port_ret = 0.0
+        for ticker, pos in strategy.positions.items():
+            if ticker in prices and not np.isnan(prices[ticker]):
+                prev_price = pos.entry_price if pos.days_held <= 1 else None
+                if prev_price and prev_price > 0:
+                    day_ret = prices[ticker] / prev_price - 1
+                    port_ret += day_ret * pos.size
+        daily_returns.append(port_ret)
+
+    trades = strategy.get_trade_log()
+    return daily_returns, trades
+
+
+def compute_period_metrics(daily_rets, rf=0.02):
+    """Compute Sharpe, CAGR, MaxDD from daily returns."""
+    if not daily_rets or len(daily_rets) < 2:
+        return {"sharpe": 0, "cagr": 0, "max_dd": 0}
+    rets = pd.Series(daily_rets)
+    n_years = len(rets) / 252
+    excess = rets - rf / 252
+    sharpe = float(excess.mean() / excess.std() * np.sqrt(252)) if excess.std() > 0 else 0
+    cum = (1 + rets).cumprod()
+    total_ret = float(cum.iloc[-1] - 1)
+    cagr = float((1 + total_ret) ** (1 / n_years) - 1) if n_years > 0 else 0
+    peak = cum.cummax()
+    dd = (cum - peak) / peak
+    max_dd = float(dd.min())
+    sortino_std = rets[rets < 0].std()
+    sortino = float((excess.mean() / sortino_std * np.sqrt(252))) if sortino_std > 0 else 0
+    return {
+        "sharpe": round(sharpe, 3),
+        "cagr": round(cagr, 4),
+        "max_dd": round(max_dd, 4),
+        "sortino": round(sortino, 3),
+    }
+
+
 def main():
-    print("Daily Best Stock Picker — Scanner")
+    print("Daily TMD-ARC Scanner")
     print("=" * 50)
 
     # Load data
@@ -63,10 +134,12 @@ def main():
     data = load_data()
     print(f"  {len(data)} tickers loaded")
 
-    cfg = Config()
+    cfg = StrategyConfig()
 
-    # Compute features
+    # Compute features for all tickers
+    print("Computing features...")
     market_close = data["SPY"]["Close"] if "SPY" in data else None
+    features_cache = {}
     latest_features = {}
     for ticker, df in data.items():
         if "Close" not in df.columns:
@@ -74,122 +147,163 @@ def main():
         try:
             feats = compute_features(df["Close"], df.get("Volume"), market_close)
             if len(feats) > 0:
+                features_cache[ticker] = feats
                 latest_features[ticker] = feats.iloc[-1].to_dict()
         except Exception:
             pass
 
-    # Today's pick
-    today_result, today_top5 = get_daily_pick(latest_features, cfg)
-    market_ok = check_market(latest_features, cfg)
+    # Generate today's signals using the strategy engine
+    print("Generating signals...")
+    strategy = TMDArcStrategy(cfg)
+    today_prices = {}
+    for ticker, df in data.items():
+        if "Close" in df.columns and len(df) > 0:
+            today_prices[ticker] = float(df["Close"].iloc[-1])
 
-    # All stocks with scores
-    all_stocks = []
-    for ticker, feat in latest_features.items():
-        if ticker in EXCLUDED:
-            continue
-        vals = [feat.get(k, np.nan) for k in ["ret_252d", "ret_126d", "ret_63d",
-                "position_in_52w_range", "drawdown_252d", "vol_21d"]]
-        if any(np.isnan(v) for v in vals):
-            continue
-        score = score_stock(feat)
-        price = data[ticker]["Close"].iloc[-1] if ticker in data else 0
-        qualifies = (market_ok
-            and feat["ret_252d"] >= cfg.min_ret_252d and feat["ret_126d"] >= cfg.min_ret_126d
-            and feat["ret_63d"] >= cfg.min_ret_63d and feat.get("ret_21d", -1) >= cfg.min_ret_21d
-            and feat["position_in_52w_range"] >= cfg.min_pos_range
-            and feat["drawdown_252d"] >= cfg.max_drawdown_252d
-            and cfg.min_vol_21d <= feat["vol_21d"] <= cfg.max_vol_21d
-            and feat.get("dd_change_5d", -1) >= cfg.min_dd_change_5d)
-        all_stocks.append({
-            "ticker": ticker, "price": round(float(price), 2),
-            "score": round(float(score), 3),
-            "is_pick": bool(today_result and today_result[0] == ticker),
-            "qualifies": bool(qualifies),
-            "position_in_range": round(float(feat["position_in_52w_range"]) * 100, 1),
-            "vol_21d": round(float(feat["vol_21d"]) * 100, 1),
-            "drawdown": round(float(feat["drawdown_252d"]) * 100, 1),
-            "returns": {
-                "5d": round(float(feat.get("ret_5d", 0)) * 100, 1),
-                "21d": round(float(feat.get("ret_21d", 0)) * 100, 1),
-                "63d": round(float(feat["ret_63d"]) * 100, 1),
-                "126d": round(float(feat["ret_126d"]) * 100, 1),
-                "252d": round(float(feat["ret_252d"]) * 100, 1),
-            },
-            "conditions": {
-                "trend_1y": bool(feat["ret_252d"] >= cfg.min_ret_252d),
-                "trend_6m": bool(feat["ret_126d"] >= cfg.min_ret_126d),
-                "trend_3m": bool(feat["ret_63d"] >= cfg.min_ret_63d),
-                "near_high": bool(feat["position_in_52w_range"] >= cfg.min_pos_range),
-                "low_dd": bool(feat["drawdown_252d"] >= cfg.max_drawdown_252d),
-                "vol_ok": bool(cfg.min_vol_21d <= feat["vol_21d"] <= cfg.max_vol_21d),
-            },
-        })
-    all_stocks.sort(key=lambda s: s["score"], reverse=True)
+    feat_dict_today = {t: f for t, f in latest_features.items() if t not in EXCLUDED}
+    signals = strategy.generate_signals(
+        pd.Timestamp.now().normalize(), feat_dict_today
+    )
 
-    # Run test period for recent history
-    print("Running test period backtest for recent picks...")
-    test_picks = run_picker_backtest(data, TEST_START, TEST_END, cfg)
-    test_valid = test_picks[test_picks["ticker"].notna()]
-    test_with_fwd = test_picks[test_picks["fwd_3m"].notna() & test_picks["ticker"].notna()]
-
-    recent_picks = []
-    for _, row in test_valid.tail(60).iterrows():
-        recent_picks.append({
-            "date": str(row["date"].date()), "ticker": row["ticker"],
-            "score": row["score"], "entry_price": row["entry_price"],
-            "return_3m": round(float(row["fwd_3m"]) * 100, 2) if row["fwd_3m"] is not None else None,
-            "return_6m": round(float(row["fwd_6m"]) * 100, 2) if row["fwd_6m"] is not None else None,
+    # Build top signals for the page
+    top_signals = []
+    for sig in signals[:20]:
+        price = today_prices.get(sig.ticker, 0)
+        top_signals.append({
+            "ticker": sig.ticker,
+            "price": round(price, 2),
+            "mtmdi_z": round(sig.mtmdi_zscore, 2),
+            "cacs": round(sig.cascade_gap, 3),
+            "mpr_z": round(sig.mpr, 2),
+            "strength": round(sig.strength, 3),
+            "vol_regime": sig.vol_regime,
+            "rationale": sig.rationale,
         })
 
-    # Assemble output
+    # Detect current vol regime
+    spy_feat = latest_features.get("SPY", {})
+    vol_ratio = spy_feat.get("vol_ratio_5_21", 1.0)
+    vol_21d = spy_feat.get("vol_21d", 0.15)
+    if isinstance(vol_ratio, float) and isinstance(vol_21d, float):
+        if vol_ratio > 1.5 or vol_21d > 0.30:
+            vol_regime = "high"
+        elif vol_ratio < 0.7 and vol_21d < 0.12:
+            vol_regime = "low"
+        else:
+            vol_regime = "normal"
+    else:
+        vol_regime = "normal"
+
+    spy_price = today_prices.get("SPY", 0)
+
+    # Use pre-computed results from results/ directory for performance data
+    results_dir = os.path.join(EXPERIMENTS_DIR, "results")
+
+    # Load stored metrics
+    perf = {}
+    baseline_path = os.path.join(results_dir, "baseline_metrics.json")
+    validation_path = os.path.join(results_dir, "validation_report.json")
+
+    if os.path.exists(validation_path):
+        with open(validation_path) as f:
+            vr = json.load(f)
+        vm = vr.get("validation_metrics", {})
+        tm = vr.get("test_metrics", {})
+        vb = vr.get("validation_benchmark", {})
+        tb = vr.get("test_benchmark", {})
+
+        perf["valid"] = {
+            "strategy": {
+                "sharpe": round(vm.get("sharpe", 0), 3),
+                "cagr": round(vm.get("cagr", 0), 4),
+                "max_dd": round(vm.get("max_drawdown", 0), 4),
+                "sortino": round(vm.get("sortino", 0), 3),
+            },
+            "spy": {
+                "sharpe": round(vb.get("spy_sharpe", 0), 3),
+                "cagr": 0,
+                "max_dd": round(vb.get("spy_max_drawdown", 0), 4),
+            },
+        }
+        perf["test"] = {
+            "strategy": {
+                "sharpe": round(tm.get("sharpe", 0), 3),
+                "cagr": round(tm.get("cagr", 0), 4),
+                "max_dd": round(tm.get("max_drawdown", 0), 4),
+                "sortino": round(tm.get("sortino", 0), 3),
+            },
+            "spy": {
+                "sharpe": round(tb.get("spy_sharpe", 0), 3),
+                "cagr": 0,
+                "max_dd": round(tb.get("spy_max_drawdown", 0), 4),
+            },
+        }
+
+    if os.path.exists(baseline_path):
+        with open(baseline_path) as f:
+            bm = json.load(f)
+        perf["train"] = {
+            "strategy": {
+                "sharpe": round(bm.get("sharpe", 0), 3),
+                "cagr": round(bm.get("cagr", 0), 4),
+                "max_dd": round(bm.get("max_drawdown", 0), 4),
+                "sortino": round(bm.get("sortino", 0), 3),
+            },
+            "spy": {"sharpe": 0.786, "cagr": 0.1327, "max_dd": -0.1935},
+        }
+
+    # Assemble sectors.json output (main dashboard data)
     docs_dir = os.path.join(EXPERIMENTS_DIR, "docs", "data")
     os.makedirs(docs_dir, exist_ok=True)
-    os.makedirs(os.path.join(docs_dir, "tickers"), exist_ok=True)
 
-    full_data = {
+    dashboard_data = {
         "generated": datetime.datetime.now().isoformat(),
-        "strategy": "DailyPicker",
-        "strategy_full_name": "Daily Best Stock Picker",
-        "n_tickers": len(all_stocks),
-        "market_regime": "BULLISH" if market_ok else "WAIT",
-        "todays_pick": {
-            "ticker": today_result[0] if today_result else None,
-            "score": round(today_result[1], 3) if today_result else 0,
-            "price": round(float(data[today_result[0]]["Close"].iloc[-1]), 2) if today_result else 0,
+        "strategy": "TMD-ARC",
+        "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
+        "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
+        "current_status": {
+            "spy_price": round(spy_price, 2),
+            "vol_regime": vol_regime,
+            "n_signals": len(signals),
+            "n_positions": 0,
+            "total_exposure": 0,
         },
-        "top5": [{"ticker": t, "score": round(s, 3),
-                  "price": round(float(data[t]["Close"].iloc[-1]), 2) if t in data else 0}
-                 for t, s, _ in (today_top5 if today_result else [])],
-        "performance": {
-            "test": period_stats(test_picks),
-        },
-        "recent_picks": recent_picks[-30:],
-        "all_stocks": all_stocks,
-        "qualifying": [s for s in all_stocks if s["qualifies"]],
+        "top_signals": top_signals,
+        "performance": perf,
+        "walk_forward": [],
+        "equity_curve_strategy": [],
+        "equity_curve_spy": [],
     }
 
-    with open(os.path.join(docs_dir, "full.json"), "w") as f:
-        json.dump(full_data, f, indent=2, cls=SafeJSONEncoder)
+    # Load existing equity curves and walk-forward data if available
+    existing_path = os.path.join(docs_dir, "sectors.json")
+    if os.path.exists(existing_path):
+        try:
+            with open(existing_path) as f:
+                existing = json.load(f)
+            # Preserve equity curves and walk-forward from previous runs
+            if existing.get("equity_curve_strategy"):
+                dashboard_data["equity_curve_strategy"] = existing["equity_curve_strategy"]
+            if existing.get("equity_curve_spy"):
+                dashboard_data["equity_curve_spy"] = existing["equity_curve_spy"]
+            if existing.get("walk_forward"):
+                dashboard_data["walk_forward"] = existing["walk_forward"]
+        except Exception:
+            pass
 
-    for stock in all_stocks[:30]:
-        ticker = stock["ticker"]
-        if ticker not in data:
-            continue
-        chart = [{"date": str(dt.date()), "price": round(float(row["Close"]), 2)}
-                 for dt, row in data[ticker].tail(252).iterrows()]
-        with open(os.path.join(docs_dir, "tickers", f"{ticker}.json"), "w") as f:
-            json.dump({**stock, "chart": chart}, f, indent=2, cls=SafeJSONEncoder)
+    with open(os.path.join(docs_dir, "sectors.json"), "w") as f:
+        json.dump(dashboard_data, f, indent=2, cls=SafeJSONEncoder)
 
     # Timestamp
     with open(os.path.join(docs_dir, "last_run.txt"), "w") as f:
         f.write(datetime.datetime.now().isoformat())
 
-    pick_name = today_result[0] if today_result else "NONE (wait)"
+    n_sig = len(signals)
     print(f"\nDone!")
-    print(f"  Today's pick: {pick_name}")
-    print(f"  Market: {'BULLISH' if market_ok else 'WAIT'}")
-    print(f"  {len([s for s in all_stocks if s['qualifies']])} qualifying stocks")
-    print(f"  Data written to {docs_dir}/")
+    print(f"  {n_sig} signal{'s' if n_sig != 1 else ''} today")
+    print(f"  Vol regime: {vol_regime}")
+    print(f"  Top: {', '.join(s.ticker for s in signals[:5]) if signals else 'none'}")
+    print(f"  Data written to {docs_dir}/sectors.json")
 
 
 if __name__ == "__main__":

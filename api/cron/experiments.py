@@ -1,10 +1,11 @@
 """
-Vercel serverless cron — Experiments Daily Best Stock Picker.
+Vercel serverless cron — Experiments TMD-ARC + Daily Picker.
 
 Self-contained: inlines all logic from experiments/train.py + experiments/prepare.py
 to avoid import path issues in Vercel's serverless environment.
 
-Runs the Daily Best Stock Picker strategy, then pushes experiments/docs/data/ to GitHub.
+Generates TMD-ARC signals (sectors.json) and Daily Picker (full.json),
+then pushes experiments/docs/data/ to GitHub.
 Schedule: 22:30 UTC Mon-Fri (5:30pm ET)
 """
 
@@ -292,6 +293,122 @@ def clean_nan(obj):
 
 
 # ============================================================
+# TMD-ARC SIGNAL GENERATION
+# ============================================================
+
+# TMD-ARC strategy parameters (from experiments/src/strategy.py)
+TMDARC_MTMDI_ENTRY = 1.5
+TMDARC_CACS_ENTRY = 0.02
+TMDARC_MPR_THRESHOLD = 0.5
+
+
+def generate_tmdarc_signals(latest_features, data):
+    """Generate TMD-ARC signals and build sectors.json for the experiments page."""
+    signals = []
+    for ticker, feat in latest_features.items():
+        if ticker in EXCLUDED:
+            continue
+        mtmdi_z = feat.get("mtmdi_zscore", 0)
+        mtmdi_dir = feat.get("mtmdi_direction", 0)
+        cacs_val = feat.get("cacs", 0)
+        mpr_val = feat.get("mpr_zscore", 0)
+        vol_21d = feat.get("vol_21d", 0.15)
+
+        if any(isinstance(v, float) and np.isnan(v) for v in [mtmdi_z, mtmdi_dir, vol_21d]):
+            continue
+        if abs(mtmdi_z) < TMDARC_MTMDI_ENTRY:
+            continue
+        if mtmdi_dir <= 0:
+            continue
+
+        cacs_val = cacs_val if isinstance(cacs_val, (int, float)) and not np.isnan(cacs_val) else 0
+        mpr_val = mpr_val if isinstance(mpr_val, (int, float)) and not np.isnan(mpr_val) else 0
+
+        has_cascade = cacs_val > TMDARC_CACS_ENTRY
+        has_momentum = mpr_val > TMDARC_MPR_THRESHOLD
+        if not (has_cascade or has_momentum):
+            continue
+
+        strength = (
+            min(abs(mtmdi_z) / 3.0, 1.0) * 0.5 +
+            min(abs(cacs_val) / 0.05, 1.0) * 0.3 +
+            min(max(mpr_val, 0) / 2.0, 1.0) * 0.2
+        )
+
+        vol_ratio = feat.get("vol_ratio_5_21", 1.0)
+        vol_ratio = vol_ratio if isinstance(vol_ratio, (int, float)) and not np.isnan(vol_ratio) else 1.0
+        if vol_ratio > 1.5 or vol_21d > 0.30:
+            vol_regime = "high"
+        elif vol_ratio < 0.7 and vol_21d < 0.12:
+            vol_regime = "low"
+        else:
+            vol_regime = "normal"
+
+        price = float(data[ticker]["Close"].iloc[-1]) if ticker in data else 0
+        signals.append({
+            "ticker": ticker,
+            "price": round(price, 2),
+            "mtmdi_z": round(float(mtmdi_z), 2),
+            "cacs": round(float(cacs_val), 3),
+            "mpr_z": round(float(mpr_val), 2),
+            "strength": round(float(strength), 3),
+            "vol_regime": vol_regime,
+        })
+
+    signals.sort(key=lambda s: s["strength"], reverse=True)
+
+    # Vol regime from SPY
+    spy_feat = latest_features.get("SPY", {})
+    spy_vr = spy_feat.get("vol_ratio_5_21", 1.0)
+    spy_vol = spy_feat.get("vol_21d", 0.15)
+    spy_vr = spy_vr if isinstance(spy_vr, (int, float)) and not np.isnan(spy_vr) else 1.0
+    spy_vol = spy_vol if isinstance(spy_vol, (int, float)) and not np.isnan(spy_vol) else 0.15
+    if spy_vr > 1.5 or spy_vol > 0.30:
+        market_regime = "high"
+    elif spy_vr < 0.7 and spy_vol < 0.12:
+        market_regime = "low"
+    else:
+        market_regime = "normal"
+
+    spy_price = float(data["SPY"]["Close"].iloc[-1]) if "SPY" in data else 0
+
+    # Pre-computed performance from validation report
+    perf = {
+        "train": {
+            "strategy": {"sharpe": 2.839, "cagr": 0.3268, "max_dd": -0.0752, "sortino": 4.054},
+            "spy": {"sharpe": 0.786, "cagr": 0.1327, "max_dd": -0.1935},
+        },
+        "valid": {
+            "strategy": {"sharpe": 2.242, "cagr": 0.3403, "max_dd": -0.0769, "sortino": 3.425},
+            "spy": {"sharpe": 0.971, "cagr": 0, "max_dd": -0.2450},
+        },
+        "test": {
+            "strategy": {"sharpe": 3.825, "cagr": 0.4315, "max_dd": -0.0377, "sortino": 6.804},
+            "spy": {"sharpe": 1.239, "cagr": 0, "max_dd": -0.1876},
+        },
+    }
+
+    return {
+        "generated": datetime.datetime.now().isoformat(),
+        "strategy": "TMD-ARC",
+        "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
+        "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
+        "current_status": {
+            "spy_price": round(spy_price, 2),
+            "vol_regime": market_regime,
+            "n_signals": len(signals),
+            "n_positions": 0,
+            "total_exposure": 0,
+        },
+        "top_signals": signals[:20],
+        "performance": perf,
+        "walk_forward": [],
+        "equity_curve_strategy": [],
+        "equity_curve_spy": [],
+    }
+
+
+# ============================================================
 # MAIN SCAN LOGIC
 # ============================================================
 
@@ -415,6 +532,11 @@ def run_experiments_scan():
                  for dt, row in data[ticker].tail(252).iterrows()]
         with open(os.path.join(docs_dir, "tickers", f"{ticker}.json"), "w") as f:
             json.dump(clean_nan({**stock, "chart": chart}), f, indent=2)
+
+    # --- TMD-ARC signals for sectors.json (experiments page) ---
+    tmdarc_signals = generate_tmdarc_signals(latest_features, data)
+    with open(os.path.join(docs_dir, "sectors.json"), "w") as f:
+        json.dump(clean_nan(tmdarc_signals), f, indent=2)
 
     # Push to GitHub
     pushed = push_directory(docs_dir, "experiments/docs/data", "chore: experiments daily scan update")
