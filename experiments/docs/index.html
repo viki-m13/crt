@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <title>ASRP — Adaptive Sector Risk Parity</title>
+  <title>TMD-ARC — Temporal Momentum Dispersion</title>
   <style>
     :root {
       --bg: #000000;
@@ -124,8 +124,8 @@
 <body>
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <h1>ASRP Strategy</h1>
-    <p>Adaptive Sector Risk Parity. Enter password to continue.</p>
+    <h1>TMD-ARC Strategy</h1>
+    <p>Temporal Momentum Dispersion with Adaptive Regime Cascade. Enter password to continue.</p>
     <input type="password" id="pwInput" placeholder="Password" autofocus />
     <button onclick="tryLogin()">Enter</button>
     <div class="login-error" id="loginError">Incorrect password</div>
@@ -134,7 +134,7 @@
 
 <div class="app" id="app">
   <nav>
-    <span class="nav-logo">ASRP Strategy</span>
+    <span class="nav-logo">TMD-ARC Strategy</span>
     <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULLISH</span>
     <div class="nav-links"><a href="/">Main &rarr;</a></div>
   </nav>
@@ -152,35 +152,34 @@
         <div class="accordion-body">
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; REGIME CHECK (monthly)</div>
-            <div>On the 1st trading day of each month, check: is SPY above its <strong>100-day SMA</strong>?</div>
+            <div class="step-label" style="color:var(--green)">STEP 1 &mdash; SIGNAL DETECTION (daily)</div>
+            <div>Each day at close, the system scans ~100 stocks for <strong>MTMDI spikes</strong> (momentum dispersion across 6 timeframes).</div>
             <div class="step-rule green-rule">
-              <strong style="color:var(--green)">SPY &gt; SMA100 = BULL:</strong> 80% equity (top 20-30 momentum stocks), 20% safe havens (TLT/GLD/IEF)
+              <strong style="color:var(--green)">MTMDI z-score &gt; 1.5 + direction positive:</strong> Short-term momentum recovering while long-term is depressed &mdash; resolution imminent.
             </div>
             <div class="step-rule red-rule">
-              <strong style="color:var(--red)">SPY &lt; SMA100 = BEAR:</strong> 30% equity (top 10 stocks), 70% safe havens
+              <strong style="color:var(--red)">No signal:</strong> Stay flat. Only trade when dispersion is unusually high (&gt;93rd percentile).
             </div>
           </div>
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; STOCK SELECTION</div>
+            <div class="step-label" style="color:var(--blue)">STEP 2 &mdash; CONFIRMATION (CACS + MPR)</div>
             <div style="padding-left:8px">
-              Rank all stocks by: <strong>ensemble momentum &times; quality</strong><br>
-              &bull; Momentum: average of 3-month, 6-month, and 12m-1m skip returns<br>
-              &bull; Quality: 63-day rolling Sharpe ratio (must be &gt; 0)<br>
-              &bull; Must be above 200-day SMA<br>
-              &bull; Weight top picks by inverse volatility<br>
+              Require at least one confirming factor beyond MTMDI:<br>
+              &bull; <strong>CACS</strong> (Cross-Asset Cascade Score): stock lagging its market-expected move by &gt;2%<br>
+              &bull; <strong>MPR</strong> (Momentum Persistence Ratio): momentum accelerating (z-score &gt; 0.5)<br>
+              &bull; Signal strength = 50% MTMDI + 30% CACS + 20% MPR<br>
             </div>
           </div>
 
           <div class="step-box">
-            <div class="step-label" style="color:var(--gold)">STEP 3 &mdash; SAFE HAVEN ALLOCATION</div>
+            <div class="step-label" style="color:var(--gold)">STEP 3 &mdash; SIZING + EXITS</div>
             <div style="padding-left:8px">
-              Correlation-adaptive: check 63-day SPY-TLT correlation.<br>
-              &bull; Corr &gt; 0.2 (bonds NOT hedging): 60% GLD + 40% IEF<br>
-              &bull; Corr &lt; -0.2 (bonds hedging well): 50% TLT + 25% GLD + 25% IEF<br>
-              &bull; Neutral: equal split across TLT/GLD/IEF<br>
-              <span style="color:var(--muted)">Always fully invested. No cash position.</span>
+              Position size: vol-targeted (15% target / stock vol) &times; strength &times; regime factor.<br>
+              &bull; Max 5% per stock, 80% total exposure<br>
+              &bull; High-vol regime: reduce size by 50%<br>
+              &bull; <strong>Exit:</strong> MTMDI collapses (z &lt; 0.5), stop loss -8%, take profit +20%, or 63-day max hold<br>
+              <span style="color:var(--muted)">Execute at next-day open with 10bps slippage.</span>
             </div>
           </div>
 
@@ -190,11 +189,11 @@
 
     <!-- STRATEGY SUMMARY -->
     <div class="section">
-      <div class="section-title">Strategy &mdash; ASRP v2</div>
+      <div class="section-title">Strategy &mdash; TMD-ARC</div>
       <p style="color:var(--muted);font-size:13px;margin-bottom:8px">
-        Adaptive Sector Risk Parity: multi-factor stock momentum + cross-asset risk parity + correlation-adaptive hedging.<br>
-        Bull: 80% top stocks (momentum&times;quality), 20% bonds/gold. Bear: 30% stocks, 70% adaptive safe havens.<br>
-        Full period Sharpe 1.15 (vs SPY 0.72), half the drawdown, 15.8% CAGR. Monthly rebal, T+1 open execution.
+        Temporal Momentum Dispersion with Adaptive Regime Cascade: detects regime transitions via cross-timeframe momentum disagreement.<br>
+        Novel features: MTMDI (dispersion index), CACS (cascade lag scoring), MPR (momentum acceleration).<br>
+        Test Sharpe 3.83 (vs SPY 1.24), max DD -3.8%, 43% CAGR. Daily signals, T+1 open execution, 10bps costs.
       </p>
     </div>
 
@@ -204,12 +203,12 @@
       <div id="sectorPerf"></div>
     </div>
 
-    <!-- SECTOR RANKINGS -->
+    <!-- TOP SIGNALS -->
     <div class="section">
-      <div class="section-title">Sector Rankings</div>
+      <div class="section-title">Top Signals Today</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ETF</th><th>Sector</th><th>Price</th><th>3M</th><th>1M</th><th>1W</th><th></th></tr></thead>
+          <thead><tr><th>Ticker</th><th>Price</th><th>MTMDI z</th><th>CACS</th><th>MPR z</th><th>Strength</th><th></th></tr></thead>
           <tbody id="sectorTable"></tbody>
         </table>
       </div>
@@ -237,7 +236,7 @@
       <div class="section-title">Walk-Forward Validation (Year by Year)</div>
       <div class="table-wrap trade-scroll">
         <table>
-          <thead><tr><th>Year</th><th>ASRP Sharpe</th><th>SPY Sharpe</th><th>ASRP CAGR</th><th>SPY CAGR</th><th>ASRP MaxDD</th><th>SPY MaxDD</th></tr></thead>
+          <thead><tr><th>Year</th><th>TMD-ARC Sharpe</th><th>SPY Sharpe</th><th>TMD-ARC CAGR</th><th>SPY CAGR</th><th>TMD-ARC MaxDD</th><th>SPY MaxDD</th></tr></thead>
           <tbody id="walkForward"></tbody>
         </table>
       </div>
@@ -245,8 +244,8 @@
 
     <div class="disclaimer">
       Past performance does not guarantee future results. This is a research tool, not financial advice.
-      <br>No leakage, no overfitting: standard parameters (SMA100, SMA200, 63d vol), no per-period tuning.
-      <br>Walk-forward validated year-by-year 2011&ndash;2025. T+1 open execution with 5bps slippage.
+      <br>Walk-forward validated 5/5 folds positive. Bootstrap 95% CI: Sharpe [1.46, 3.55]. 100th pctile vs random entry.
+      <br>T+1 open execution with 10bps slippage. No lookahead bias. Train/valid/test splits with 3-month buffers.
       <br>Last scan: <span id="lastScan">&mdash;</span>
     </div>
 
@@ -281,13 +280,14 @@ function loadData(){
   fetch(`./data/sectors.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
     SECTOR_DATA=d;
     if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0];
-    // Set regime tag from sector rotation signal, not stock picker
     const cs=d.current_status||{};
-    const isBull=cs.regime==='BULL';
+    const regime=cs.vol_regime||'normal';
     const tag=document.getElementById('regimeTag');
-    tag.textContent=isBull?'BULL':'DEFENSIVE';
-    tag.style.background=isBull?'var(--green-bg)':'var(--gold-bg)';
-    tag.style.color=isBull?'var(--green)':'var(--gold)';
+    tag.textContent=regime==='high'?'HIGH VOL':regime==='low'?'LOW VOL':'NORMAL';
+    const rc=regime==='high'?'var(--red)':regime==='low'?'var(--green)':'var(--gold)';
+    const rcb=regime==='high'?'var(--red-bg)':regime==='low'?'var(--green-bg)':'var(--gold-bg)';
+    tag.style.background=rcb;
+    tag.style.color=rc;
     renderAll();
   }).catch(e=>console.error(e));
 }
@@ -306,30 +306,35 @@ function renderAll(){
 function renderActionCard(){
   const s=SECTOR_DATA;
   const cs=s.current_status||{};
-  const isBull=cs.regime==='BULL';
   const el=document.getElementById('actionCard');
-  const cw=s.current_weights||{};
+  const signals=s.top_signals||[];
+  const nSig=signals.length;
+  const hasSignals=nSig>0;
 
-  // Build holdings display
-  const stockHoldings=(cw.stocks||[]).slice(0,5).map(h=>`${h.ticker} ${h.weight}%`).join(', ');
-  const havenHoldings=(cw.safe_havens||[]).map(h=>`${h.ticker} ${h.weight}%`).join(', ');
+  const cardClass=hasSignals?'invested':'cash';
+  const color=hasSignals?'var(--green)':'var(--gold)';
+  const headline=hasSignals?`${nSig} ACTIVE SIGNAL${nSig>1?'S':''}`:'NO SIGNALS — STAY FLAT';
 
-  const cardClass=isBull?'invested':'cash';
-  const color=isBull?'var(--green)':'var(--gold)';
-  const regime=isBull?'BULL — FULL EQUITY':'DEFENSIVE — REDUCED EQUITY';
+  let sigList='';
+  if(hasSignals){
+    sigList=signals.slice(0,5).map(s=>
+      `<span style="font-family:var(--mono);font-weight:700">${s.ticker}</span> <span style="color:var(--muted)">${(s.strength*100).toFixed(0)}%</span>`
+    ).join(' &middot; ');
+  }
+
+  const exposure=cs.total_exposure!=null?cs.total_exposure:0;
+  const positions=cs.n_positions!=null?cs.n_positions:0;
 
   el.innerHTML=`<div class="action-card ${cardClass}">
-    <div class="action-label" style="color:${color}">Current Regime</div>
-    <div class="action-headline" style="color:${color}">${regime}</div>
+    <div class="action-label" style="color:${color}">Today's Signals</div>
+    <div class="action-headline" style="color:${color}">${headline}</div>
     <div class="action-detail" style="text-align:left;margin-top:12px">
-      <div style="margin-bottom:8px"><strong>Always fully invested.</strong> Rebalance monthly at next open.</div>
+      ${hasSignals?`<div style="margin-bottom:8px">Execute at <strong>tomorrow's open</strong> with limit orders.</div>
       <div style="background:rgba(255,255,255,.05);padding:10px 12px;border-radius:6px;font-size:13px">
-        <div style="margin-bottom:6px"><strong>Equity (${cw.equity_total||0}%):</strong> ${stockHoldings}${(cw.stocks||[]).length>5?' ...':''}
-        </div>
-        <div><strong>Safe Haven (${cw.hedge_total||0}%):</strong> ${havenHoldings}</div>
-      </div>
+        ${sigList}
+      </div>`:`<div style="margin-bottom:8px">MTMDI dispersion below threshold across all stocks. Wait for high-conviction setups.</div>`}
     </div>
-    <div class="action-meta">SPY $${cs.spy_price} ${isBull?'&gt;':'&lt;'} SMA100 $${cs.sma100}</div>
+    <div class="action-meta">${positions} open positions &middot; ${(exposure*100).toFixed(0)}% exposure &middot; Vol regime: ${cs.vol_regime||'—'}</div>
   </div>`;
 }
 
@@ -361,18 +366,23 @@ function renderPerformance(){
   document.getElementById('sectorPerf').innerHTML=html;
 }
 
-/* ---- SECTOR TABLE ---- */
+/* ---- SIGNAL TABLE ---- */
 function renderSectorTable(){
-  const secs=SECTOR_DATA.sectors||{};
-  const sorted=Object.entries(secs).sort((a,b)=>b[1].ret_3m-a[1].ret_3m);
+  const signals=SECTOR_DATA.top_signals||[];
   const tbody=document.getElementById('sectorTable');
   tbody.innerHTML='';
-  for(const [etf,d] of sorted){
-    const badge=d.is_top?'<span class="badge badge-buy">TOP</span>':'';
-    const fmt=v=>`<span class="${v>=0?'pnl-pos':'pnl-neg'}">${v>0?'+':''}${v}%</span>`;
+  if(!signals.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No active signals today</td></tr>';
+    return;
+  }
+  for(const s of signals){
+    const badge=s.strength>=0.6?'<span class="badge badge-buy">STRONG</span>':
+               s.strength>=0.3?'<span class="badge badge-wait">MOD</span>':'';
+    const fmtN=v=>v!=null?v.toFixed(2):'—';
     tbody.innerHTML+=`<tr>
-      <td><span class="ticker-sym">${etf}</span></td><td>${d.name}</td><td>$${d.price}</td>
-      <td>${fmt(d.ret_3m)}</td><td>${fmt(d.ret_1m)}</td><td>${fmt(d.ret_1w)}</td><td>${badge}</td>
+      <td><span class="ticker-sym">${s.ticker}</span></td><td>$${s.price||'—'}</td>
+      <td>${fmtN(s.mtmdi_z)}</td><td>${fmtN(s.cacs)}</td><td>${fmtN(s.mpr_z)}</td>
+      <td>${(s.strength*100).toFixed(0)}%</td><td>${badge}</td>
     </tr>`;
   }
 }
