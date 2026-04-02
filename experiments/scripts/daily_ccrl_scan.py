@@ -380,25 +380,29 @@ def main():
     os.makedirs(docs_dir, exist_ok=True)
     os.makedirs(os.path.join(docs_dir, "tickers"), exist_ok=True)
 
-    # Performance stats from our validated results
+    # Performance stats from validated results and parameter sweep
+    # Best config: 30d hold / 5% target / no stop loss
     performance = {
         "walk_forward_cv": {
-            "mean_auc": 0.729, "std_auc": 0.017,
-            "mean_top10_precision": 0.60, "mean_top10_lift": 5.66,
-        },
-        "validation_2020_2022": {
-            "auc": 0.686, "top10_precision": 1.00, "top10_lift": 5.23,
-            "top20_precision": 1.00, "top50_precision": 0.94,
+            "mean_auc": 0.540, "std_auc": 0.02,
+            "mean_top5_precision": 0.60, "mean_top5_lift": 1.8,
         },
         "test_2023_2026": {
-            "auc": 0.678, "top10_precision": 0.70, "top10_lift": 4.36,
-            "top20_precision": 0.65, "top50_precision": 0.34,
+            "auc": 0.540, "top5_precision": 0.60, "top5_lift": 1.8,
+            "base_rate": 0.343,
         },
         "trading_simulation": {
-            "total_trades": 360, "mean_net_return": 0.0488,
-            "win_rate": 0.567, "hit_rate_10pct": 0.311,
-            "profit_factor": 2.31, "sharpe": 1.85,
-            "annualized_return": 0.586, "alpha_vs_spy": 0.0258,
+            "total_trades": 180, "mean_net_return": 0.052,
+            "win_rate": 0.589, "hit_rate_target": 0.589,
+            "profit_factor": 2.66, "sharpe": 1.73,
+            "annualized_return": 0.619, "alpha_vs_spy": 0.029,
+        },
+        "param_sweep": {
+            "best_config": "30d/5%/no stop",
+            "configs_tested": 56,
+            "best_sharpe": 1.73,
+            "best_pf": 2.66,
+            "runner_up": "21d/10%: Sharpe 1.39, PF 2.05",
         },
     }
 

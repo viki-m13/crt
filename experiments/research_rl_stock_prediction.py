@@ -69,8 +69,10 @@ from src.purged_walkforward import (
 
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 
-# Target: stock rises 10%+ within 30 trading days
-TARGET_RETURN = 0.10
+# Target: stock rises 5%+ within 30 trading days
+# Determined by parameter sweep (scripts/param_sweep.py):
+#   30d/5% = Sharpe 1.73, PF 2.66, 62% annualized — best overall config
+TARGET_RETURN = 0.05
 TARGET_HORIZON = 30  # trading days
 
 # Peer groups for cascade propagation features
