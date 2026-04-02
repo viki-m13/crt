@@ -126,8 +126,14 @@
 
   <div class="container">
 
+    <!-- ASSET TAB SWITCHER -->
+    <div class="period-btns" style="margin-top:12px">
+      <button class="period-btn active" data-tab="stocks" onclick="switchTab('stocks')">Stocks</button>
+      <button class="period-btn" data-tab="crypto" onclick="switchTab('crypto')">Crypto</button>
+    </div>
+
     <!-- TARGET -->
-    <div style="text-align:center;padding:16px 0 8px;color:var(--muted);font-size:12px">
+    <div id="targetLabel" style="text-align:center;padding:8px 0;color:var(--muted);font-size:12px">
       Target: stocks rising <strong style="color:var(--green)">5%+</strong> in <strong>30 trading days</strong>
       &mdash; Top 5 by AI conviction &mdash; Sharpe 1.73 (56 configs tested)
     </div>
@@ -241,33 +247,66 @@ if(sessionStorage.getItem('ccrl_auth')==='1'){
 
 /* ---- DATA ---- */
 let DATA=null;
+let CRYPTO_DATA=null;
+let ACTIVE_TAB='stocks';
 
 function loadData(){
+  // Load both datasets
   fetch(`./data/ccrl.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
     DATA=d;
-    if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0]+' '+d.generated.split('T')[1].slice(0,5);
-    const spy=d.spy||{};
-    const isBull=spy.regime==='BULL';
-    const tag=document.getElementById('regimeTag');
-    tag.textContent=isBull?'BULL':'DEFENSIVE';
-    tag.style.background=isBull?'var(--green-bg)':'var(--gold-bg)';
-    tag.style.color=isBull?'var(--green)':'var(--gold)';
-    renderAll();
-  }).catch(e=>console.error('Failed to load CCRL data:',e));
+    if(ACTIVE_TAB==='stocks') activateData(d);
+  }).catch(e=>console.error('Failed to load stocks:',e));
+  fetch(`./data/ccrl_crypto.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    CRYPTO_DATA=d;
+    if(ACTIVE_TAB==='crypto') activateData(d);
+  }).catch(()=>{});
 }
 
+function activateData(d){
+  if(!d) return;
+  if(d.generated) document.getElementById('lastScan').textContent=d.generated.split('T')[0]+' '+d.generated.split('T')[1].slice(0,5);
+  const regime=d.spy||d.btc||{};
+  const isBull=regime.regime==='BULL';
+  const tag=document.getElementById('regimeTag');
+  tag.textContent=isBull?'BULL':'DEFENSIVE';
+  tag.style.background=isBull?'var(--green-bg)':'var(--gold-bg)';
+  tag.style.color=isBull?'var(--green)':'var(--gold)';
+  // Update target label
+  const el=document.getElementById('targetLabel');
+  if(ACTIVE_TAB==='crypto'){
+    const cfg=d.best_config||{};
+    const sw=d.performance?.param_sweep||{};
+    el.innerHTML=`Target: crypto rising <strong style="color:var(--green)">${cfg.target_pct||10}%+</strong> in <strong>${cfg.horizon||14} days</strong> &mdash; Top 5 &mdash; Sharpe ${sw.best_sharpe||'?'} (${sw.configs_tested||'?'} configs)`;
+  } else {
+    el.innerHTML='Target: stocks rising <strong style="color:var(--green)">5%+</strong> in <strong>30 trading days</strong> &mdash; Top 5 by AI conviction &mdash; Sharpe 1.73 (56 configs tested)';
+  }
+  renderAll();
+}
+
+function switchTab(tab){
+  ACTIVE_TAB=tab;
+  document.querySelectorAll('.period-btn[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.getElementById('chartSection').style.display='none';
+  if(tab==='stocks'&&DATA) activateData(DATA);
+  else if(tab==='crypto'&&CRYPTO_DATA) activateData(CRYPTO_DATA);
+}
+
+function getActiveData(){return ACTIVE_TAB==='crypto'?CRYPTO_DATA:DATA;}
+
 function renderAll(){
-  if(!DATA) return;
-  renderPicks();
-  renderPerformance();
-  renderEquityCurve();
-  renderHistoricalPicks();
-  renderCandidateTable();
+  const d=getActiveData();
+  if(!d) return;
+  renderPicks(d);
+  renderPerformance(d);
+  renderEquityCurve(d);
+  renderHistoricalPicks(d);
+  renderCandidateTable(d);
 }
 
 /* ---- TOP 5 PICKS ---- */
-function renderPicks(){
-  const picks=DATA.top5||[];
+function renderPicks(d){
+  d=d||getActiveData();
+  const picks=d.top5||[];
   const el=document.getElementById('picksList');
   if(!picks.length){
     el.innerHTML='<div style="text-align:center;color:var(--muted);padding:40px 0">No high-conviction picks today</div>';
@@ -300,8 +339,8 @@ function renderPicks(){
           <div class="pick-stat-value">${conv}%</div>
         </div>
         <div class="pick-stat">
-          <div class="pick-stat-label">3M Return</div>
-          <div class="pick-stat-value">${fmt(rets['63d']||0)}</div>
+          <div class="pick-stat-label">${ACTIVE_TAB==='crypto'?'30D':'3M'} Return</div>
+          <div class="pick-stat-value">${fmt(rets['63d']||rets['30d']||0)}</div>
         </div>
       </div>
       <div class="pick-bar"><div class="pick-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
@@ -316,18 +355,21 @@ function renderPicks(){
 }
 
 /* ---- PERFORMANCE ---- */
-function renderPerformance(){
-  const perf=DATA.performance||{};
-  const cv=perf.walk_forward_cv||{};
-  const valid=perf.validation_2020_2022||{};
-  const test=perf.test_2023_2026||{};
+function renderPerformance(d){
+  d=d||getActiveData();
+  const perf=d.performance||{};
+  const cv=perf.walk_forward_cv||perf.param_sweep||{};
+  const test=perf.test_2023_2026||perf.test_period||{};
   const sim=perf.trading_simulation||{};
 
   let html='<div class="grid">';
+  const aucVal=cv.mean_auc||test.auc||cv.best_sharpe||0;
+  const aucLabel=cv.mean_auc?'Walk-Forward AUC':cv.best_sharpe?'Best Sharpe':'AUC';
+  const aucSub=cv.std_auc?`&plusmn;${cv.std_auc.toFixed(3)} across folds`:(cv.configs_tested?`${cv.configs_tested} configs tested`:'');
   html+=`<div class="card">
-    <h3>Walk-Forward AUC</h3>
-    <div class="big" style="color:var(--green)">${(cv.mean_auc||0).toFixed(3)}</div>
-    <div class="sub">&plusmn;${(cv.std_auc||0).toFixed(3)} across folds</div>
+    <h3>${aucLabel}</h3>
+    <div class="big" style="color:var(--green)">${aucVal.toFixed(3)}</div>
+    <div class="sub">${aucSub}</div>
   </div>`;
   html+=`<div class="card">
     <h3>Test Sharpe (net)</h3>
@@ -357,18 +399,20 @@ function renderPerformance(){
   html+='</div>';
 
   // Period breakdown
+  const t5p=test.top5_precision||test.top10_precision||0;
+  const t5l=test.top5_lift||test.top10_lift||0;
   html+=`<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:4px">
-    Valid (2020-22): Top-10 ${((valid.top10_precision||0)*100).toFixed(0)}% prec, AUC ${(valid.auc||0).toFixed(3)}
-    &middot; Test (2023-26): Top-10 ${((test.top10_precision||0)*100).toFixed(0)}% prec, AUC ${(test.auc||0).toFixed(3)}
+    Test: Top-5 ${(t5p*100).toFixed(0)}% precision (${t5l.toFixed(1)}x lift), AUC ${(test.auc||0).toFixed(3)}
   </div>`;
 
   document.getElementById('perfGrid').innerHTML=html;
 }
 
 /* ---- CANDIDATE TABLE ---- */
-function renderCandidateTable(){
-  const stocks=DATA.all_candidates||[];
-  const top5Set=new Set((DATA.top5||[]).map(p=>p.ticker));
+function renderCandidateTable(d){
+  d=d||getActiveData();
+  const stocks=d.all_candidates||[];
+  const top5Set=new Set((d.top5||[]).map(p=>p.ticker));
   const tbody=document.getElementById('candidateTable');
   tbody.innerHTML='';
   for(let i=0;i<stocks.length;i++){
@@ -385,15 +429,16 @@ function renderCandidateTable(){
       <td>${s.conviction||0}%</td>
       <td>${s.vol_21d||0}%</td>
       <td>${s.drawdown||0}%</td>
-      <td>${fmt(rets['63d']||0)}</td>
+      <td>${fmt(rets['63d']||rets['30d']||0)}</td>
     </tr>`;
   }
 }
 
 /* ---- EQUITY CURVE ---- */
-function renderEquityCurve(){
-  const strat=DATA.equity_curve_strategy||[];
-  const spy=DATA.equity_curve_spy||[];
+function renderEquityCurve(d){
+  d=d||getActiveData();
+  const strat=d.equity_curve_strategy||[];
+  const spy=d.equity_curve_spy||d.equity_curve_btc||[];
   if(strat.length<2) return;
   const canvas=document.getElementById('equityChart');
   drawDualChart(canvas,strat,spy);
@@ -402,9 +447,10 @@ function renderEquityCurve(){
   const spyFinal=spy.length?spy[spy.length-1].value:10000;
   const stratRet=((stratFinal/10000-1)*100).toFixed(1);
   const spyRet=((spyFinal/10000-1)*100).toFixed(1);
+  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
   document.getElementById('equityMeta').innerHTML=`
     <span style="color:var(--green)">Strategy: $${(stratFinal/1000).toFixed(1)}k (${stratRet>=0?'+':''}${stratRet}%)</span>
-    <span style="color:var(--muted)">SPY: $${(spyFinal/1000).toFixed(1)}k (${spyRet>=0?'+':''}${spyRet}%)</span>
+    <span style="color:var(--muted)">${bench}: $${(spyFinal/1000).toFixed(1)}k (${spyRet>=0?'+':''}${spyRet}%)</span>
     <span style="color:${stratFinal>spyFinal?'var(--green)':'var(--red)'}">Alpha: ${(stratRet-spyRet)>=0?'+':''}${(stratRet-spyRet).toFixed(1)}%</span>`;
 }
 
@@ -451,8 +497,9 @@ function drawDualChart(canvas,data1,data2){
 }
 
 /* ---- HISTORICAL PICKS ---- */
-function renderHistoricalPicks(){
-  const picks=DATA.historical_picks||[];
+function renderHistoricalPicks(d){
+  d=d||getActiveData();
+  const picks=d.historical_picks||[];
   if(!picks.length) return;
   // Stats
   const nPicks=picks.length;
@@ -490,11 +537,13 @@ function showChart(ticker,buyDate,buyPrice){
   section.style.display='block';
   section.scrollIntoView({behavior:'smooth'});
 
-  fetch(`./data/tickers/${ticker}.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+  // Try both formats: TICKER.json and TICKER_USD.json (crypto)
+  const ad=getActiveData()||{};
+  const urls=[`./data/tickers/${ticker}.json`,`./data/tickers/${ticker}_USD.json`,`./data/tickers/${ticker.replace('-','_')}.json`];
+  Promise.any(urls.map(u=>fetch(`${u}?v=${Date.now()}`).then(r=>{if(!r.ok)throw 0;return r.json()}))).then(d=>{
     const chart=d.chart||[];
     if(chart.length<2) return;
-    // Find all historical buy dates for this ticker
-    const buys=(DATA.historical_picks||[]).filter(p=>p.ticker===ticker).map(p=>({date:p.entry_date,price:p.entry_price,ret:p.net_return_pct,hit:p.hit_target}));
+    const buys=(ad.historical_picks||[]).filter(p=>p.ticker===ticker||p.ticker_full===ticker).map(p=>({date:p.entry_date,price:p.entry_price,ret:p.net_return_pct,hit:p.hit_target}));
     drawPriceChart(document.getElementById('pickChart'),chart,ticker,buys);
   }).catch(()=>{});
 }
