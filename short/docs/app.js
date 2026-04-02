@@ -805,23 +805,24 @@ function buildMarquee(items){
       const strategies = [1, 5, 10];
       const holdPeriods = [10, 30, 60];
 
-      // Rank by 10D probability (best Sharpe + win rate across all hold periods).
-      // Uses today's prob as the ranking signal with historical score as tiebreaker.
+      // Rank by historical opportunity score each week (dynamic, changes over time).
+      // The score already incorporates probability, quality, and pullback depth,
+      // and varies day-to-day so the backtest picks different stocks each week
+      // based on which ones were most attractive at that point in time.
       function buildWeeklyRanks(holdDays){
         const ranks = [];
         for (const wIdx of weeklyIdx){
           const date = allDates[wIdx];
           const scored = [];
           for (const tk of availTickers){
-            const prob = probLookup[tk]?.prob_10d;
             const s = scoreLookup[tk]?.get(date);
             const p = priceLookup[tk]?.get(date);
-            if (prob != null && Number.isFinite(prob) && prob > 0 &&
+            if (s != null && Number.isFinite(s) && s > 0 &&
                 p != null && Number.isFinite(p) && p > 0){
-              scored.push({ ticker: tk, prob, score: (s != null && Number.isFinite(s)) ? s : 0 });
+              scored.push({ ticker: tk, score: s });
             }
           }
-          scored.sort((a, b) => b.prob - a.prob || b.score - a.score);
+          scored.sort((a, b) => b.score - a.score);
           ranks.push({ date, dateIdx: wIdx, ranked: scored.map(s => s.ticker) });
         }
         return ranks;
@@ -1053,7 +1054,7 @@ function buildMarquee(items){
         <summary class="details-summary">
           <div class="evidence-summary-left">
             <span class="section-title">${stratLabel} — DCA POSITIONS</span>
-            <span class="ev-sub">${agg.length} stocks, averaged across ${agg.reduce((s,p) => s + p.buys, 0)} monthly purchases</span>
+            <span class="ev-sub">${agg.length} stocks, averaged across ${agg.reduce((s,p) => s + p.buys, 0)} weekly purchases</span>
           </div>
           <span class="plus" aria-hidden="true">+</span>
         </summary>
@@ -1077,10 +1078,77 @@ function buildMarquee(items){
       body.appendChild(det);
     }
 
+    // --- Recent Trades (Top 5 strategy) ---
+    const top5Pos = data.strats[5]?.positions || [];
+    const closedTrades = top5Pos
+      .filter(p => p.sold && p.sellPrice > 0 && p.buyDayIdx < allDates.length && p.sellDayIdx < allDates.length)
+      .map(p => {
+        const ret = (p.sellPrice / p.buyPrice - 1);
+        const buyDate = allDates[Math.min(p.buyDayIdx, allDates.length - 1)];
+        const sellDate = allDates[Math.min(p.sellDayIdx, allDates.length - 1)] || allDates[allDates.length - 1];
+        const daysHeld = p.sellDayIdx - p.buyDayIdx;
+        return { ticker: p.ticker, buyPrice: p.buyPrice, sellPrice: p.sellPrice, ret, buyDate, sellDate, daysHeld };
+      })
+      .sort((a, b) => b.sellDate.localeCompare(a.sellDate));
+
+    if (closedTrades.length > 0){
+      const wins = closedTrades.filter(t => t.ret > 0).length;
+      const total = closedTrades.length;
+      const avgRet = closedTrades.reduce((s, t) => s + t.ret, 0) / total;
+      const medRet = [...closedTrades].sort((a,b) => a.ret - b.ret)[Math.floor(total/2)]?.ret || 0;
+
+      const tradesDet = document.createElement("details");
+      tradesDet.className = "details bt-positions-details";
+      tradesDet.open = true;
+
+      let tradeRows = "";
+      const showTrades = closedTrades.slice(0, 30);
+      for (const t of showTrades){
+        const retColor = t.ret >= 0 ? "#064e2b" : "#b35900";
+        const hitTag = t.ret >= 0 ? `<span style="color:#064e2b;font-size:9px;text-transform:uppercase;letter-spacing:.06em;background:rgba(6,78,43,.08);padding:2px 6px;font-weight:500;margin-left:4px">WIN</span>` : "";
+        tradeRows += `<tr>
+          <td style="text-align:left;font-weight:600">${t.ticker} ${hitTag}</td>
+          <td>${t.buyDate}</td>
+          <td>${t.sellDate}</td>
+          <td>$${t.buyPrice < 10 ? t.buyPrice.toFixed(2) : Math.round(t.buyPrice).toLocaleString()}</td>
+          <td>$${t.sellPrice < 10 ? t.sellPrice.toFixed(2) : Math.round(t.sellPrice).toLocaleString()}</td>
+          <td>${t.daysHeld}d</td>
+          <td style="color:${retColor};font-weight:600">${fmtPctSigned(t.ret)}</td>
+        </tr>`;
+      }
+
+      tradesDet.innerHTML = `
+        <summary class="details-summary">
+          <div class="evidence-summary-left">
+            <span class="section-title">TOP 5 — RECENT TRADES</span>
+            <span class="ev-sub">${total} closed trades | Win rate: ${Math.round(wins/total*100)}% | Avg return: ${fmtPctSigned(avgRet)} | Median: ${fmtPctSigned(medRet)}</span>
+          </div>
+          <span class="plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="details-body">
+          <div class="table-scroll">
+          <table class="outcomes-table bt-pos-table">
+            <thead><tr>
+              <th style="text-align:left">Ticker</th>
+              <th>Buy Date</th>
+              <th>Sell Date</th>
+              <th>Buy Price</th>
+              <th>Sell Price</th>
+              <th>Held</th>
+              <th>Return</th>
+            </tr></thead>
+            <tbody>${tradeRows}</tbody>
+          </table>
+          </div>
+        </div>
+      `;
+      body.appendChild(tradesDet);
+    }
+
     // Disclaimer
     const disc = document.createElement("div");
     disc.className = "footnote";
-    disc.textContent = "Short strategy backtest — ranks by 10D probability (highest historical win rate), weekly DCA ($1,000/week), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    disc.textContent = "Short strategy backtest — ranks by historical opportunity score (combines quality, recovery odds, and pullback depth), weekly DCA ($1,000/week), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
     body.appendChild(disc);
   }
 
