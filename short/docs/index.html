@@ -1,65 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WQQ9QE0FW6"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-WQQ9QE0FW6');
-  </script>
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — Stock Pullback Scanner & Recovery Odds</title>
-  <meta name="description" content="Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery. Scans 1,000+ stocks from the Russell 1000 with 20+ years of data. Find what stocks to buy, when to DCA, and which dips are worth buying." />
-  <meta name="keywords" content="stock screener, what stocks to buy, best stocks to buy now, stocks to DCA into, buy the dip stocks, pullback scanner, oversold stocks today, stock recovery odds, undervalued stocks, stock pullback analyzer, rebound scanner, Russell 1000 screener, historical stock analysis, best DCA stocks, stock buying opportunities, when to buy stocks, stock dip buying, beaten down stocks, stock market opportunities" />
-  <link rel="canonical" href="https://dailystockguide.com/" />
-
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
-  <meta property="og:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily with 20+ years of data." />
-  <meta property="og:url" content="https://dailystockguide.com/" />
-  <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@bondso" />
-  <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
-  <meta name="twitter:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily." />
-  <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
-
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Daily Stock Guide",
-    "url": "https://dailystockguide.com",
-    "description": "Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery across 1, 3, and 5 year timeframes. Find what stocks to buy during pullbacks.",
-    "applicationCategory": "FinanceApplication",
-    "operatingSystem": "Any",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "creator": {
-      "@type": "Person",
-      "url": "https://x.com/bondso"
-    }
-  }
-  </script>
+  <title>Short Strategy — 10/30/60 Day Stock Scanner</title>
+  <meta name="description" content="Short-term stock pullback scanner with 10, 30, and 60 day forward horizons. Finds stocks pulled back hard and shows historical odds of recovery over shorter timeframes." />
+  <meta name="keywords" content="stock screener, short-term pullback scanner, 10 day recovery, 30 day recovery, 60 day recovery, oversold stocks, stock pullback analyzer, rebound scanner, Russell 1000 screener" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -70,12 +20,12 @@
   <!-- ===== FIXED NAV ===== -->
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
+      <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Short Strategy</a>
       <div class="nav-links">
         <a href="#how-it-works">How It Works</a>
         <a href="#backtest-section">Backtest</a>
         <a href="#listing-section">Screener</a>
-        <a href="/short/" class="nav-experiments">Short</a>
+        <a href="/">Main Site</a>
         <a href="/experiments/" class="nav-experiments">Experiments</a>
       </div>
     </div>
@@ -84,8 +34,8 @@
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
-      <p class="hero-sub">Matches today's pullback to similar past setups and shows what happened next. Not financial advice.</p>
+      <h1 class="hero-headline">Short-term pullback scanner with 10, 30, and 60 day forward horizons.</h1>
+      <p class="hero-sub">Same methodology as Daily Stock Guide but focused on shorter recovery windows. Not financial advice.</p>
     </div>
   </section>
 
@@ -136,9 +86,9 @@
                 <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Multiplies three things: stock quality (is this a strong stock?), recovery odds (has it bounced back from pullbacks like this before?), and the pullback gate (is it actually in a dip right now?). Stocks near all-time highs score low regardless of quality. Stocks with quality below 50 are excluded entirely — backtesting showed this cuts extreme downside by 43% while keeping 83% hit rates. Higher = better opportunity.</li>
                 <li><strong>Pullback</strong> — How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit. The deeper the pullback, the more weight the score carries.</li>
                 <li><strong>Value Depth</strong> — Shown in the rationale for top stocks. Measures undervaluation across four dimensions: position in the 52-week range, distance below the 200-day moving average, RSI oversold level, and drawdown depth. 0 = near highs, 100 = deep value.</li>
-                <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
+                <li><strong>10D / 30D / 60D Prob</strong> — The chance this stock was higher after 10, 30, or 60 trading days when it was in a similar pullback. This is the short-term version, using trading day counts instead of yearly horizons. For example, "92%" means it was higher 92 out of 100 times.</li>
                 <li><strong>Quality</strong> — Is this a strong stock having a temporary dip, or a weak stock that might keep falling? Looks at: Does it usually trend up over time? Has it recovered from past drops? Is the selling slowing down?</li>
-                <li><strong>Typical 1Y</strong> — The most common 1-year return when this stock was in a similar situation before.</li>
+                <li><strong>Typical 10D</strong> — The most common 10-trading-day return when this stock was in a similar situation before.</li>
                 <li><strong>Downside</strong> — A bad-but-realistic scenario (worst 1 in 10 outcomes).</li>
                 <li><strong>Past Cases</strong> — How many similar historical situations the stats are based on. More = more reliable.</li>
               </ul>
@@ -149,9 +99,9 @@
                 <li><strong>Measure value depth</strong> — Score each stock on four dimensions: where it sits in its 52-week range, how far below its 200-day moving average, RSI oversold level, and drawdown from recent highs.</li>
                 <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness, not just a bad day for everything.</li>
                 <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position (similar drawdown, similar range position, similar technical setup).</li>
-                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. Stocks with quality below 50 are gated out of the Opportunity Score entirely. This prevents "value traps" — cheap stocks that stay cheap. Backtested across 34 stocks over 33 years, this gate reduced the worst 1-in-20 outcomes from -42% to -20%.</li>
+                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. Stocks with quality below 50 are gated out of the Opportunity Score entirely. This prevents "value traps" — cheap stocks that stay cheap.</li>
                 <li><strong>Apply the pullback gate</strong> — Only give high scores to stocks that are actually in a pullback. A stock near all-time highs gets almost no score, no matter how good its quality or history.</li>
-                <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those matched past cases.</li>
+                <li><strong>Show the odds</strong> — Report what happened next across 10, 30, and 60 trading days in those matched past cases. This is the short-term version, focused on near-term recovery windows rather than multi-year horizons.</li>
               </ol>
             </div>
             <div>
@@ -175,12 +125,12 @@
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">What if you invested $1,000 every month into the stocks this tool ranks highest, instead of just buying SPY?
-          This backtest uses the historical opportunity scores — which combine stock quality (with a minimum quality gate of 50), recovery odds, and the pullback gate — to pick the top stocks each month, buys them, holds for a fixed period, then sells. Only stocks with meaningful pullbacks AND quality above 50 get high scores, so the strategy naturally buys dips in strong stocks while avoiding value traps. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded, and including them would improve results even further.</p>
+          <p class="bt-intro">What if you invested $1,000 every week into the top-ranked short-term pullback opportunities, instead of just buying SPY?
+          This backtest uses the historical opportunity scores — which combine stock quality (with a minimum quality gate of 50), short-term recovery odds, and the pullback gate — to pick the top stocks each week, buys them, holds for a fixed number of trading days, then sells. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
           <div class="bt-hold-tabs">
-            <button class="btn-lite active" data-hold="12">1-Year Hold</button>
-            <button class="btn-lite" data-hold="36">3-Year Hold</button>
-            <button class="btn-lite" data-hold="60">5-Year Hold</button>
+            <button class="btn-lite active" data-hold="10">10-Day Hold</button>
+            <button class="btn-lite" data-hold="30">30-Day Hold</button>
+            <button class="btn-lite" data-hold="60">60-Day Hold</button>
           </div>
           <div id="backtest-body">
             <div class="footnote">Click to load backtest data&hellip;</div>
@@ -207,21 +157,21 @@
         <div class="sort">
           <span class="sort-label">Sort</span>
           <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
-          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
-          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
+          <button class="btn-lite" data-sort="prob_10d">10D Prob</button>
+          <button class="btn-lite" data-sort="prob_30d">30D Prob</button>
+          <button class="btn-lite" data-sort="prob_60d">60D Prob</button>
         </div>
       </div>
 
       <div class="listing-header">
         <span title="Stock or crypto symbol">Ticker</span>
-        <span title="How good this buying opportunity looks. Multiplies stock quality, 1-year recovery odds, and the pullback gate. Stocks with quality below 50 are excluded. Stocks near highs score low. Higher = better.">Opp. Score</span>
+        <span title="How good this buying opportunity looks. Multiplies stock quality, 10-day recovery odds, and the pullback gate. Stocks with quality below 50 are excluded. Stocks near highs score low. Higher = better.">Opp. Score</span>
         <span title="How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit.">Pullback</span>
-        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
-        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
-        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
-        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
-        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
+        <span title="Chance this stock was higher after 10 trading days in similar past pullbacks.">10D Prob</span>
+        <span title="Chance this stock was higher after 30 trading days in similar past pullbacks.">30D Prob</span>
+        <span title="Chance this stock was higher after 60 trading days in similar past pullbacks.">60D Prob</span>
+        <span title="The most common 10-trading-day return when this stock was in a similar pullback before.">Typical 10D</span>
+        <span title="Bad-but-realistic scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
         <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
         <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
       </div>
@@ -238,20 +188,20 @@
     <div class="footer-inner">
       <div class="footer-col">
         <span class="footer-heading">Legal</span>
-        <a href="terms.html" class="footer-link">Terms of Service</a>
-        <a href="privacy.html" class="footer-link">Privacy Policy</a>
-        <a href="disclaimer.html" class="footer-link">Disclaimer</a>
+        <a href="/terms.html" class="footer-link">Terms of Service</a>
+        <a href="/privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="/disclaimer.html" class="footer-link">Disclaimer</a>
       </div>
       <div class="footer-col">
         <span class="footer-heading">Navigate</span>
         <a href="#listing-section" class="footer-link">Screener</a>
         <a href="#how-it-works" class="footer-link">How It Works</a>
         <a href="#backtest-section" class="footer-link">Backtest</a>
-        <a href="/short/" class="footer-link">Short Strategy</a>
+        <a href="/" class="footer-link">Main Site</a>
         <a href="/experiments/" class="footer-link">Experiments</a>
       </div>
       <div class="footer-col footer-col-logo">
-        <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
+        <span class="footer-logo-text"><span class="footer-logo-dot"></span>Short Strategy</span>
         <span class="footer-text">Updated once daily after market close, New York time.</span>
         <span class="footer-text footnote-text">Past performance does not predict future results.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
