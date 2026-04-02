@@ -1,8 +1,8 @@
 {
-  "generated": "2026-04-02T22:31:11.208162",
+  "generated": "2026-04-02T22:44:39.182212",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
   "current_status": {
     "spy_price": 655.24,
     "vol_regime": "high",
@@ -18,7 +18,8 @@
       "cacs": 0.096,
       "mpr_z": 1.19,
       "strength": 0.756,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.03; cascade=0.096; MPR z=1.19; regime=high"
     },
     {
       "ticker": "WDAY",
@@ -27,7 +28,8 @@
       "cacs": 0.096,
       "mpr_z": 1.21,
       "strength": 0.71,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.74; cascade=0.096; MPR z=1.21; regime=high"
     },
     {
       "ticker": "UNH",
@@ -36,23 +38,11 @@
       "cacs": 0.013,
       "mpr_z": 1.21,
       "strength": 0.467,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=-1.61; MPR z=1.21; regime=high"
     }
   ],
   "performance": {
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
-      }
-    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -77,6 +67,19 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
+      }
+    },
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
       }
     }
   },
