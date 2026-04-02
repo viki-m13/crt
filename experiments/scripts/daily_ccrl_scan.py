@@ -168,6 +168,7 @@ def main():
     # ---- Train ensemble ----
     print("Training CCRL ensemble...")
     config = CCRLConfig()
+    config.calibrate_probabilities = False  # Much faster without 3-fold internal CV
     ensemble = EnsemblePredictionLayer(config)
     ensemble.fit(X_train, y_train, feature_names)
 
@@ -398,7 +399,7 @@ def main():
         top1_ticker, top1_score, top1_unc = scores[0]
 
         # Look up actual return
-        close_ts = close_cache[top1_ticker]
+        close_ts = data_dict[top1_ticker]["Close"]
         if day not in close_ts.index:
             continue
         entry_price = float(close_ts.loc[day])
