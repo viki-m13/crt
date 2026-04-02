@@ -1,10 +1,10 @@
 {
-  "generated": "2026-04-01T22:45:39.937828",
+  "generated": "2026-04-02T22:31:11.208162",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
   "current_status": {
-    "spy_price": 650.34,
+    "spy_price": 655.24,
     "vol_regime": "high",
     "n_signals": 3,
     "n_positions": 0,
@@ -13,36 +13,46 @@
   "top_signals": [
     {
       "ticker": "ADBE",
-      "price": 243.08,
-      "mtmdi_z": 2.05,
-      "cacs": 0.054,
-      "mpr_z": 1.2,
-      "strength": 0.761,
-      "vol_regime": "high",
-      "rationale": "MTMDI z=2.05; cascade=0.054; MPR z=1.20; regime=high"
+      "price": 241.37,
+      "mtmdi_z": 2.03,
+      "cacs": 0.096,
+      "mpr_z": 1.19,
+      "strength": 0.756,
+      "vol_regime": "high"
     },
     {
       "ticker": "WDAY",
-      "price": 129.92,
-      "mtmdi_z": 2.02,
-      "cacs": 0.032,
-      "mpr_z": 1.22,
-      "strength": 0.648,
-      "vol_regime": "high",
-      "rationale": "MTMDI z=2.02; cascade=0.032; MPR z=1.22; regime=high"
+      "price": 129.05,
+      "mtmdi_z": 1.74,
+      "cacs": 0.096,
+      "mpr_z": 1.21,
+      "strength": 0.71,
+      "vol_regime": "high"
     },
     {
       "ticker": "UNH",
-      "price": 270.59,
-      "mtmdi_z": -1.78,
-      "cacs": 0.028,
-      "mpr_z": -1.09,
-      "strength": 0.466,
-      "vol_regime": "normal",
-      "rationale": "MTMDI z=-1.78; cascade=0.028; regime=normal"
+      "price": 273.98,
+      "mtmdi_z": -1.61,
+      "cacs": 0.013,
+      "mpr_z": 1.21,
+      "strength": 0.467,
+      "vol_regime": "high"
     }
   ],
   "performance": {
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
+      }
+    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -67,19 +77,6 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
-      }
-    },
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
       }
     }
   },
