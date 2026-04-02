@@ -1,43 +1,39 @@
 {
   "ticker": "AAVE-USD",
   "display_name": "AAVE",
-  "price": 98.08,
-  "conviction": 32.7,
+  "price": 98.04,
+  "conviction": 36.3,
   "is_signal": false,
-  "mtmdi_zscore": -0.949,
-  "mtmdi_raw": 0.493,
-  "mtmdi_direction": 0.241,
-  "mtmdi_velocity": 0.112,
-  "cascade_score": 0.0944,
+  "mtmdi_zscore": -1.177,
+  "mtmdi_raw": 0.429,
+  "mtmdi_direction": 0.232,
+  "mtmdi_velocity": -0.087,
+  "cascade_score": 0.0973,
   "momentum_persistence": -1.094,
-  "range_compression": 0.638,
-  "vol_30d": 72.8,
+  "range_compression": 0.363,
+  "vol_30d": 67.1,
   "vol_regime": "high",
-  "drawdown": -72.5,
+  "drawdown": -72.6,
   "position_in_range": 1.0,
   "returns": {
-    "7d": -13.49,
-    "14d": -19.9,
-    "30d": -14.68,
-    "90d": -39.89,
-    "180d": -108.03,
-    "365d": -48.71
+    "7d": -13.8,
+    "14d": -16.22,
+    "30d": -22.09,
+    "90d": -41.65,
+    "180d": -108.72,
+    "365d": -52.8
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": true,
     "velocity": false,
     "cascade": true,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 166.24
-    },
     {
       "date": "2025-04-02",
       "price": 150.39
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 98.08
+    },
+    {
+      "date": "2026-04-01",
+      "price": 98.04
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": -0.731
-    },
     {
       "date": "2025-04-02",
       "value": -0.938
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": -0.949
+    },
+    {
+      "date": "2026-04-01",
+      "value": -1.177
     }
   ]
 }

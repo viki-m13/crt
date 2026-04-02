@@ -2,42 +2,38 @@
   "ticker": "REQ-USD",
   "display_name": "REQ",
   "price": 0.07,
-  "conviction": 19.5,
+  "conviction": 34.8,
   "is_signal": false,
-  "mtmdi_zscore": 1.079,
-  "mtmdi_raw": 1.004,
-  "mtmdi_direction": 1.616,
-  "mtmdi_velocity": -0.407,
-  "cascade_score": 0.0141,
-  "momentum_persistence": -0.993,
-  "range_compression": 0.596,
-  "vol_30d": 50.6,
+  "mtmdi_zscore": 1.288,
+  "mtmdi_raw": 1.047,
+  "mtmdi_direction": 1.798,
+  "mtmdi_velocity": 0.453,
+  "cascade_score": -0.0135,
+  "momentum_persistence": -0.987,
+  "range_compression": 0.46,
+  "vol_30d": 49.2,
   "vol_regime": "normal",
-  "drawdown": -58.6,
-  "position_in_range": 4.0,
+  "drawdown": -57.8,
+  "position_in_range": 5.3,
   "returns": {
-    "7d": -4.86,
-    "14d": -8.94,
-    "30d": 5.53,
-    "90d": -46.11,
-    "180d": -68.32,
-    "365d": -63.6
+    "7d": -3.82,
+    "14d": -2.65,
+    "30d": 3.58,
+    "90d": -45.55,
+    "180d": -67.33,
+    "365d": -64.41
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
+    "velocity": true,
+    "cascade": false,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 0.13
-    },
     {
       "date": "2025-04-02",
       "price": 0.1
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.07
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.07
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": 1.546
-    },
     {
       "date": "2025-04-02",
       "value": 0.491
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": 1.079
+    },
+    {
+      "date": "2026-04-01",
+      "value": 1.288
     }
   ]
 }

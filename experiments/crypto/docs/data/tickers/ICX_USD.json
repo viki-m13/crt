@@ -1,43 +1,39 @@
 {
   "ticker": "ICX-USD",
   "display_name": "ICX",
-  "price": 0.03,
-  "conviction": 22.7,
+  "price": 0.04,
+  "conviction": 28.3,
   "is_signal": false,
-  "mtmdi_zscore": -0.782,
-  "mtmdi_raw": 0.584,
-  "mtmdi_direction": 0.523,
-  "mtmdi_velocity": 0.055,
-  "cascade_score": 0.0445,
+  "mtmdi_zscore": -0.479,
+  "mtmdi_raw": 0.651,
+  "mtmdi_direction": 0.898,
+  "mtmdi_velocity": 0.535,
+  "cascade_score": 0.0096,
   "momentum_persistence": -0.951,
-  "range_compression": 0.657,
-  "vol_30d": 66.7,
+  "range_compression": 0.444,
+  "vol_30d": 68.4,
   "vol_regime": "high",
-  "drawdown": -80.7,
-  "position_in_range": 0.9,
+  "drawdown": -79.9,
+  "position_in_range": 1.9,
   "returns": {
-    "7d": -9.49,
-    "14d": -13.14,
-    "30d": -6.26,
-    "90d": -45.41,
-    "180d": -126.48,
-    "365d": -100.65
+    "7d": -3.55,
+    "14d": -5.93,
+    "30d": -2.7,
+    "90d": -44.45,
+    "180d": -123.18,
+    "365d": -97.73
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
+    "velocity": true,
+    "cascade": false,
     "momentum": false,
-    "range_compress": false,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 0.09
-    },
     {
       "date": "2025-04-02",
       "price": 0.09
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.03
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.04
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": 0.625
-    },
     {
       "date": "2025-04-02",
       "value": 0.178
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": -0.782
+    },
+    {
+      "date": "2026-04-01",
+      "value": -0.479
     }
   ]
 }

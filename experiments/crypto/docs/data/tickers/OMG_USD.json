@@ -1,43 +1,39 @@
 {
   "ticker": "OMG-USD",
   "display_name": "OMG",
-  "price": 0.05,
-  "conviction": 36.7,
+  "price": 0.06,
+  "conviction": 20.1,
   "is_signal": false,
-  "mtmdi_zscore": 0.236,
-  "mtmdi_raw": 0.692,
-  "mtmdi_direction": 0.893,
-  "mtmdi_velocity": 0.582,
-  "cascade_score": 0.0448,
+  "mtmdi_zscore": 0.418,
+  "mtmdi_raw": 0.73,
+  "mtmdi_direction": 1.117,
+  "mtmdi_velocity": -0.026,
+  "cascade_score": 0.0174,
   "momentum_persistence": -0.743,
-  "range_compression": 0.243,
-  "vol_30d": 30.3,
+  "range_compression": 0.156,
+  "vol_30d": 30.7,
   "vol_regime": "normal",
-  "drawdown": -76.5,
-  "position_in_range": 0.2,
+  "drawdown": -76.3,
+  "position_in_range": 0.5,
   "returns": {
-    "7d": -1.17,
-    "14d": -7.51,
-    "30d": -4.75,
-    "90d": -35.97,
-    "180d": -105.31,
-    "365d": -134.51
+    "7d": -0.92,
+    "14d": -3.03,
+    "30d": -3.5,
+    "90d": -37.97,
+    "180d": -104.07,
+    "365d": -132.98
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 0.21
-    },
     {
       "date": "2025-04-02",
       "price": 0.2
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.05
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.06
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": 0.249
-    },
     {
       "date": "2025-04-02",
       "value": 0.013
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": 0.236
+    },
+    {
+      "date": "2026-04-01",
+      "value": 0.418
     }
   ]
 }

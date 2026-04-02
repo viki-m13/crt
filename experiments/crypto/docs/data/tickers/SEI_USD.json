@@ -2,42 +2,38 @@
   "ticker": "SEI-USD",
   "display_name": "SEI",
   "price": 0.05,
-  "conviction": 45.5,
-  "is_signal": false,
-  "mtmdi_zscore": -1.325,
-  "mtmdi_raw": 0.435,
-  "mtmdi_direction": -0.018,
-  "mtmdi_velocity": 0.429,
-  "cascade_score": 0.2136,
+  "conviction": 43.3,
+  "is_signal": true,
+  "mtmdi_zscore": -1.392,
+  "mtmdi_raw": 0.423,
+  "mtmdi_direction": 0.422,
+  "mtmdi_velocity": 0.245,
+  "cascade_score": 0.1309,
   "momentum_persistence": -0.9,
-  "range_compression": 0.566,
-  "vol_30d": 52.1,
-  "vol_regime": "normal",
-  "drawdown": -86.6,
-  "position_in_range": 0.0,
+  "range_compression": 0.447,
+  "vol_30d": 61.2,
+  "vol_regime": "high",
+  "drawdown": -85.4,
+  "position_in_range": 1.3,
   "returns": {
-    "7d": -19.93,
-    "14d": -32.36,
-    "30d": -31.87,
-    "90d": -79.98,
-    "180d": -179.69,
-    "365d": -124.11
+    "7d": -12.43,
+    "14d": -18.08,
+    "30d": -24.46,
+    "90d": -76.29,
+    "180d": -170.71,
+    "365d": -118.14
   },
   "signals": {
     "mtmdi": true,
-    "direction": false,
-    "velocity": true,
+    "direction": true,
+    "velocity": false,
     "cascade": true,
     "momentum": false,
-    "range_compress": false,
-    "vol_surge": false
+    "range_compress": true,
+    "vol_surge": true
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 0.18
-    },
     {
       "date": "2025-04-02",
       "price": 0.16
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.05
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.05
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": -0.784
-    },
     {
       "date": "2025-04-02",
       "value": -1.089
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": -1.325
+    },
+    {
+      "date": "2026-04-01",
+      "value": -1.392
     }
   ]
 }

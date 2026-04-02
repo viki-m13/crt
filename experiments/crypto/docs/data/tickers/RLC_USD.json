@@ -1,43 +1,39 @@
 {
   "ticker": "RLC-USD",
   "display_name": "RLC",
-  "price": 0.42,
-  "conviction": 21.5,
+  "price": 0.43,
+  "conviction": 47.3,
   "is_signal": false,
-  "mtmdi_zscore": 0.675,
-  "mtmdi_raw": 0.823,
-  "mtmdi_direction": 1.09,
-  "mtmdi_velocity": -0.159,
-  "cascade_score": -0.0251,
-  "momentum_persistence": -0.863,
-  "range_compression": 0.332,
-  "vol_30d": 78.5,
+  "mtmdi_zscore": 0.876,
+  "mtmdi_raw": 0.869,
+  "mtmdi_direction": 1.381,
+  "mtmdi_velocity": 0.427,
+  "cascade_score": -0.0494,
+  "momentum_persistence": 1.241,
+  "range_compression": 0.383,
+  "vol_30d": 78.6,
   "vol_regime": "high",
-  "drawdown": -74.7,
-  "position_in_range": 4.6,
+  "drawdown": -74.2,
+  "position_in_range": 5.2,
   "returns": {
-    "7d": -1.83,
-    "14d": -9.99,
-    "30d": 9.71,
-    "90d": -41.54,
-    "180d": -97.43,
-    "365d": -105.04
+    "7d": 1.26,
+    "14d": -1.87,
+    "30d": 10.27,
+    "90d": -42.44,
+    "180d": -96.6,
+    "365d": -103.36
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 1.2
-    },
     {
       "date": "2025-04-02",
       "price": 1.09
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.42
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.43
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": -0.008
-    },
     {
       "date": "2025-04-02",
       "value": 0.138
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": 0.675
+    },
+    {
+      "date": "2026-04-01",
+      "value": 0.876
     }
   ]
 }

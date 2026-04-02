@@ -2,14 +2,14 @@
   "ticker": "BONK-USD",
   "display_name": "BONK",
   "price": 0.0,
-  "conviction": 50.9,
-  "is_signal": true,
-  "mtmdi_zscore": -1.053,
-  "mtmdi_raw": 0.541,
-  "mtmdi_direction": 0.304,
-  "mtmdi_velocity": 0.337,
-  "cascade_score": 0.0981,
-  "momentum_persistence": 0.258,
+  "conviction": 34.7,
+  "is_signal": false,
+  "mtmdi_zscore": -1.142,
+  "mtmdi_raw": 0.52,
+  "mtmdi_direction": 0.65,
+  "mtmdi_velocity": 0.253,
+  "cascade_score": -0.0,
+  "momentum_persistence": 0.254,
   "range_compression": 0.0,
   "vol_30d": 77.3,
   "vol_regime": "high",
@@ -17,27 +17,23 @@
   "position_in_range": 0.0,
   "returns": {
     "7d": 0.0,
-    "14d": -15.42,
+    "14d": 0.0,
     "30d": 0.0,
-    "90d": -15.42,
+    "90d": -28.77,
     "180d": -125.28,
-    "365d": -60.61
+    "365d": -69.31
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
-    "velocity": true,
-    "cascade": true,
+    "velocity": false,
+    "cascade": false,
     "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 4,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-01",
-      "price": 0.0
-    },
     {
       "date": "2025-04-02",
       "price": 0.0
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-03-31",
       "price": 0.0
+    },
+    {
+      "date": "2026-04-01",
+      "price": 0.0
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-01",
-      "value": 0.684
-    },
     {
       "date": "2025-04-02",
       "value": 0.584
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-03-31",
       "value": -1.053
+    },
+    {
+      "date": "2026-04-01",
+      "value": -1.142
     }
   ]
 }
