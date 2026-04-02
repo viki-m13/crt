@@ -322,9 +322,9 @@ function proofSection(detail){
 function buildRationale(item){
   const pullback = Number(item.washout_today);
   const vdepth = Number(item.value_depth);
-  const prob1y = Number(item.prob_10d);
+  const prob1y = Number(item.prob_60d);
   const cases = Number(item.n_analogs);
-  const typical = item.median_10d;
+  const typical = item.median_60d;
   const downside = item.downside_10d;
   const quality = Number(item.quality);
 
@@ -347,7 +347,7 @@ function buildRationale(item){
   }
 
   if (Number.isFinite(cases) && cases > 0 && Number.isFinite(prob1y))
-    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past pullbacks, it was higher 10 days later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
+    parts.push(`In <strong>${fmtNum0(cases)}</strong> similar past pullbacks, it was higher 60 days later <strong>${fmtPctWhole(prob1y)}</strong> of the time${typical != null && Number.isFinite(Number(typical)) ? `, gaining <strong>${fmtPct(typical)}</strong> typically` : ""}.`);
   if (downside != null && Number.isFinite(Number(downside)))
     parts.push(`Worst 1-in-10 scenario: <strong>${fmtPct(downside)}</strong>.`);
   if (Number.isFinite(quality))
@@ -459,19 +459,19 @@ function sortItems(items, mode){
   const list = [...items];
   switch (mode){
     case "prob_10d":
-      list.sort((a, b) => safeNum(b.prob_10d) - safeNum(a.prob_10d) || safeNum(b.conviction) - safeNum(a.conviction));
+      list.sort((a, b) => safeNum(b.prob_10d) - safeNum(a.prob_10d) || safeNum(b.prob_60d) - safeNum(a.prob_60d));
       break;
     case "prob_30d":
-      list.sort((a, b) => safeNum(b.prob_30d) - safeNum(a.prob_30d) || safeNum(b.prob_10d) - safeNum(a.prob_10d));
+      list.sort((a, b) => safeNum(b.prob_30d) - safeNum(a.prob_30d) || safeNum(b.prob_60d) - safeNum(a.prob_60d));
       break;
     case "prob_60d":
-      list.sort((a, b) => safeNum(b.prob_60d) - safeNum(a.prob_60d) || safeNum(b.prob_10d) - safeNum(a.prob_10d));
+      list.sort((a, b) => safeNum(b.prob_60d) - safeNum(a.prob_60d) || safeNum(b.conviction) - safeNum(a.conviction));
       break;
     case "conviction":
-      list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction) || safeNum(b.prob_10d) - safeNum(a.prob_10d));
+      list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction) || safeNum(b.prob_60d) - safeNum(a.prob_60d));
       break;
     default:
-      list.sort((a, b) => safeNum(b.conviction) - safeNum(a.conviction));
+      list.sort((a, b) => safeNum(b.prob_60d) - safeNum(a.prob_60d));
   }
   return list;
 }
@@ -486,10 +486,10 @@ function buildMarquee(items){
   const top = items.slice(0, 15);
   const parts = top.map(item => {
     const score = Math.round(Number(item.conviction));
-    const prob = Math.round(Number(item.prob_10d));
+    const prob = Math.round(Number(item.prob_60d));
     return `<span class="marquee-ticker">${item.ticker}</span>` +
            `<span class="marquee-score">${score}</span>` +
-           `<span class="marquee-prob">${prob}% 10D</span>`;
+           `<span class="marquee-prob">${prob}% 60D</span>`;
   });
   const html = parts.join('<span class="marquee-dot">\u00b7</span>');
 
@@ -524,9 +524,9 @@ function buildMarquee(items){
   if (depthEl) depthEl.textContent = "20+";
 
   // Build dynamic marquee with top tickers
-  buildMarquee(sortItems(items, "prob_10d"));
+  buildMarquee(sortItems(items, "prob_60d"));
 
-  let sortMode = "prob_10d";
+  let sortMode = "prob_60d";
 
   async function loadDetail(ticker){
     const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
@@ -722,7 +722,7 @@ function buildMarquee(items){
   const btSection = document.getElementById("backtest-section");
   let btLoaded = false;
   let btResults = null;   // cached results across tab switches
-  let btHoldDays = 10;  // default (trading days)
+  let btHoldDays = 60;  // default (trading days)
 
   btSection.addEventListener("toggle", function(){
     if (btSection.open && !btLoaded){
@@ -1148,7 +1148,7 @@ function buildMarquee(items){
     // Disclaimer
     const disc = document.createElement("div");
     disc.className = "footnote";
-    disc.textContent = "Short strategy backtest — ranks by historical opportunity score (combines quality, recovery odds, and pullback depth), weekly DCA ($1,000/week), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    disc.textContent = "Short strategy backtest — ranks by historical opportunity score (dynamic weekly picks), weekly DCA ($1,000/week), default 60-day hold. Stocks only — crypto excluded. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
     body.appendChild(disc);
   }
 

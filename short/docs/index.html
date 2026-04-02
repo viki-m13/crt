@@ -125,12 +125,12 @@
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">What if you invested $1,000 every week into the top-ranked short-term pullback opportunities, instead of just buying SPY?
-          Each week, the backtest picks the stocks with the highest opportunity score at that point in time — dynamically selecting whichever stocks were the best pullback setups that week. Buys them, holds for a fixed number of trading days, then sells. The picks change every week based on market conditions. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
+          <p class="bt-intro">What if you invested $1,000 every week into the top-ranked short-term pullback opportunities, held for 60 trading days, then sold?
+          Each week, the backtest dynamically picks stocks with the highest opportunity score at that point in time — whichever stocks had the best pullback setups that week. The picks change every week based on market conditions. 60-day hold produced the best trade-level results in testing: 60% win rate, +4.3% avg return per trade, and 75% win rate for Top 1. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
           <div class="bt-hold-tabs">
-            <button class="btn-lite active" data-hold="10">10-Day Hold</button>
+            <button class="btn-lite" data-hold="10">10-Day Hold</button>
             <button class="btn-lite" data-hold="30">30-Day Hold</button>
-            <button class="btn-lite" data-hold="60">60-Day Hold</button>
+            <button class="btn-lite active" data-hold="60">60-Day Hold</button>
           </div>
           <div id="backtest-body">
             <div class="footnote">Click to load backtest data&hellip;</div>
@@ -157,9 +157,9 @@
         <div class="sort">
           <span class="sort-label">Sort</span>
           <button class="btn-lite" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite active" data-sort="prob_10d">10D Prob</button>
+          <button class="btn-lite" data-sort="prob_10d">10D Prob</button>
           <button class="btn-lite" data-sort="prob_30d">30D Prob</button>
-          <button class="btn-lite" data-sort="prob_60d">60D Prob</button>
+          <button class="btn-lite active" data-sort="prob_60d">60D Prob</button>
         </div>
       </div>
 
