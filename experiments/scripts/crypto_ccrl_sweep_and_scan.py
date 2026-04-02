@@ -487,6 +487,86 @@ def main():
     avg_r = np.mean([p["net_return_pct"] for p in hist_picks]) if hist_picks else 0
     print(f"  Historical: {n_picks} trades, {n_hits} hits ({n_hits/max(n_picks,1)*100:.0f}%), avg net: {avg_r:.2f}%")
 
+    # ---- DAILY TOP-1 PICK (last 90 days) ----
+    print("Running daily top-1 simulation (last 90 days)...")
+    all_dates = btc_close_ts.index
+    d90_start = max(0, len(all_dates) - 90 - best_horizon)
+    daily_sim_dates = all_dates[d90_start: len(all_dates) - best_horizon]
+    tc = TRANSACTION_COST_BPS * 2 / 10000
+
+    daily_picks = []
+    cum_d, cum_d_btc = 10000.0, 10000.0
+    daily_eq, daily_btc_eq = [], []
+
+    for day in daily_sim_dates:
+        scores = []
+        for t in tickers:
+            if t in EXCLUDED or t not in features_cache:
+                continue
+            f = features_cache[t]
+            if day not in f.index:
+                continue
+            row = f.loc[[day]].reindex(columns=feature_names)
+            X = row.values
+            if X.shape[1] < len(feature_names):
+                X = np.hstack([X, np.full((1, len(feature_names) - X.shape[1]), np.nan)])
+            try:
+                _, mp, sp = final_ensemble.predict_proba(X)
+                scores.append((t, float(mp[0]), float(sp[0])))
+            except Exception:
+                continue
+        if not scores:
+            continue
+        scores.sort(key=lambda x: x[1], reverse=True)
+        t1, t1_sc, t1_unc = scores[0]
+        cl = close_cache.get(t1)
+        if cl is None or day not in cl.index:
+            continue
+        ep = float(cl.loc[day])
+        ei = cl.index.get_loc(day)
+        xi = min(ei + best_horizon, len(cl) - 1)
+        xp = float(cl.iloc[xi])
+        ret = xp / ep - 1
+        net_ret = ret - tc
+        # BTC return
+        if day in btc_close_ts.index:
+            bei = btc_close_ts.index.get_loc(day)
+            bxi = min(bei + best_horizon, len(btc_close_ts) - 1)
+            btc_ret = float(btc_close_ts.iloc[bxi]) / float(btc_close_ts.iloc[bei]) - 1
+        else:
+            btc_ret = 0
+        cum_d *= (1 + net_ret)
+        cum_d_btc *= (1 + btc_ret)
+        daily_picks.append({
+            "entry_date": str(day.date()),
+            "exit_date": str(cl.index[xi].date()),
+            "ticker": t1.replace("-USD", ""),
+            "ticker_full": t1,
+            "score": round(t1_sc, 3),
+            "conviction": round(t1_sc * (1 - t1_unc) * 100, 1),
+            "entry_price": round(ep, 4) if ep < 1 else round(ep, 2),
+            "exit_price": round(xp, 4) if xp < 1 else round(xp, 2),
+            "return_pct": round(ret * 100, 2),
+            "net_return_pct": round(net_ret * 100, 2),
+            "hit_target": ret >= best_target if best_target > 0 else ret > 0,
+            "days_held": int(xi - ei),
+            "benchmark_return_pct": round(btc_ret * 100, 2),
+        })
+        daily_eq.append({"date": str(day.date()), "value": round(cum_d, 0)})
+        daily_btc_eq.append({"date": str(day.date()), "value": round(cum_d_btc, 0)})
+
+    if daily_picks:
+        dp_avg = np.mean([p["net_return_pct"] for p in daily_picks])
+        dp_win = np.mean([p["net_return_pct"] > 0 for p in daily_picks])
+        dp_hit = np.mean([p["hit_target"] for p in daily_picks])
+        dp_btc = np.mean([p["benchmark_return_pct"] for p in daily_picks])
+        dp_w = [p["net_return_pct"] / 100 for p in daily_picks if p["net_return_pct"] > 0]
+        dp_l = [p["net_return_pct"] / 100 for p in daily_picks if p["net_return_pct"] < 0]
+        dp_pf = sum(dp_w) / abs(sum(dp_l)) if dp_l and sum(dp_l) != 0 else 999
+        print(f"  Daily top-1: {len(daily_picks)} trades, avg={dp_avg:.2f}%, win={dp_win*100:.0f}%, PF={dp_pf:.2f}")
+    else:
+        dp_avg = dp_win = dp_hit = dp_pf = dp_btc = 0
+
     # BTC regime
     btc_price = float(btc_close_ts.iloc[-1])
     btc_sma100 = float(btc_close_ts.rolling(100).mean().iloc[-1])
@@ -539,7 +619,24 @@ def main():
         "historical_picks": hist_picks,
         "equity_curve_strategy": eq_strat,
         "equity_curve_btc": eq_btc,
-        "sweep_results": sweep_results[:10],  # Top 10 configs
+        "sweep_results": sweep_results[:10],
+        "daily_top1": {
+            "description": f"Daily #1 pick, held {best_horizon}d, last 90 trading days",
+            "picks": daily_picks,
+            "equity_curve": daily_eq,
+            "equity_curve_benchmark": daily_btc_eq,
+            "stats": {
+                "n_trades": len(daily_picks),
+                "avg_net_return": round(dp_avg, 2),
+                "win_rate": round(dp_win * 100, 1) if daily_picks else 0,
+                "hit_rate": round(dp_hit * 100, 1) if daily_picks else 0,
+                "profit_factor": round(dp_pf, 2),
+                "avg_benchmark_return": round(dp_btc, 2) if daily_picks else 0,
+                "alpha": round(dp_avg - dp_btc, 2) if daily_picks else 0,
+                "final_value": round(cum_d, 0),
+                "benchmark_final_value": round(cum_d_btc, 0),
+            },
+        },
     }
 
     # Write output

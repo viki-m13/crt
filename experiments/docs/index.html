@@ -198,6 +198,20 @@
       </div>
     </div>
 
+    <!-- DAILY TOP-1 PICK -->
+    <div class="section">
+      <div class="section-title">Daily Top-1 Pick (Last 90 Days)</div>
+      <div id="dailyStats" style="margin-bottom:10px"></div>
+      <div class="chart-container" style="height:220px"><canvas id="dailyEqChart"></canvas></div>
+      <div id="dailyEqMeta" style="display:flex;justify-content:space-around;margin-top:8px;font-size:12px"></div>
+      <div class="table-wrap" style="max-height:400px;overflow-y:auto;margin-top:12px">
+        <table>
+          <thead><tr><th>Date</th><th>Ticker</th><th>Score</th><th>Entry</th><th>Exit</th><th>Return</th><th>vs Bench</th><th>Hit</th></tr></thead>
+          <tbody id="dailyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ALL CANDIDATES TABLE -->
     <div class="section">
       <div class="section-title">All Scored Candidates</div>
@@ -300,6 +314,7 @@ function renderAll(){
   renderPerformance(d);
   renderEquityCurve(d);
   renderHistoricalPicks(d);
+  renderDailyTop1(d);
   renderCandidateTable(d);
 }
 
@@ -430,6 +445,61 @@ function renderCandidateTable(d){
       <td>${s.vol_21d||0}%</td>
       <td>${s.drawdown||0}%</td>
       <td>${fmt(rets['63d']||rets['30d']||0)}</td>
+    </tr>`;
+  }
+}
+
+/* ---- DAILY TOP-1 ---- */
+function renderDailyTop1(d){
+  d=d||getActiveData();
+  const dt=d.daily_top1||{};
+  const picks=dt.picks||[];
+  const stats=dt.stats||{};
+  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
+  if(!picks.length){document.getElementById('dailyStats').innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No daily picks data yet</div>';return;}
+
+  // Stats cards
+  const alpha=stats.alpha||0;
+  document.getElementById('dailyStats').innerHTML=`
+    <div class="grid">
+      <div class="card"><h3>Trades (90d)</h3><div class="big">${stats.n_trades||0}</div><div class="sub">Win: ${stats.win_rate||0}% &middot; Hit: ${stats.hit_rate||0}%</div></div>
+      <div class="card"><h3>Avg Net Return</h3><div class="big ${(stats.avg_net_return||0)>=0?'pnl-pos':'pnl-neg'}">${(stats.avg_net_return||0)>=0?'+':''}${(stats.avg_net_return||0).toFixed(1)}%</div><div class="sub">PF: ${stats.profit_factor||0}</div></div>
+      <div class="card"><h3>Alpha vs ${bench}</h3><div class="big ${alpha>=0?'pnl-pos':'pnl-neg'}">${alpha>=0?'+':''}${alpha.toFixed(1)}%</div><div class="sub">per trade avg</div></div>
+      <div class="card"><h3>$10k &rarr;</h3><div class="big" style="color:var(--green)">$${((stats.final_value||10000)/1000).toFixed(1)}k</div><div class="sub">${bench}: $${((stats.benchmark_final_value||stats.spy_final_value||10000)/1000).toFixed(1)}k</div></div>
+    </div>`;
+
+  // Equity curve
+  const eq=dt.equity_curve||[];
+  const eqB=dt.equity_curve_benchmark||[];
+  if(eq.length>=2){
+    drawDualChart(document.getElementById('dailyEqChart'),eq,eqB);
+    const sf=eq[eq.length-1].value,bf=eqB.length?eqB[eqB.length-1].value:10000;
+    const sr=((sf/10000-1)*100).toFixed(1),br=((bf/10000-1)*100).toFixed(1);
+    document.getElementById('dailyEqMeta').innerHTML=`
+      <span style="color:var(--green)">Strategy: $${(sf/1000).toFixed(1)}k (${sr>=0?'+':''}${sr}%)</span>
+      <span style="color:var(--muted)">${bench}: $${(bf/1000).toFixed(1)}k (${br>=0?'+':''}${br}%)</span>
+      <span style="color:${sf>bf?'var(--green)':'var(--red)'}">Alpha: ${(sr-br)>=0?'+':''}${(sr-br).toFixed(1)}%</span>`;
+  }
+
+  // Table
+  const tbody=document.getElementById('dailyTable');
+  tbody.innerHTML='';
+  const sorted=[...picks].reverse();
+  for(const p of sorted){
+    const rc=p.net_return_pct>=0?'pnl-pos':'pnl-neg';
+    const benchRet=p.spy_return_pct||p.benchmark_return_pct||0;
+    const alphaT=p.net_return_pct-benchRet;
+    const ac=alphaT>=0?'pnl-pos':'pnl-neg';
+    const hit=p.hit_target?'<span class="badge badge-top">HIT</span>':'';
+    tbody.innerHTML+=`<tr style="cursor:pointer" onclick="showChart('${p.ticker}','${p.entry_date}',${p.entry_price})">
+      <td>${p.entry_date}</td>
+      <td><span class="ticker-sym">${p.ticker}</span></td>
+      <td>${(p.score*100).toFixed(0)}%</td>
+      <td>$${p.entry_price}</td>
+      <td>$${p.exit_price}</td>
+      <td><span class="${rc}">${p.net_return_pct>=0?'+':''}${p.net_return_pct}%</span></td>
+      <td><span class="${ac}">${alphaT>=0?'+':''}${alphaT.toFixed(1)}%</span></td>
+      <td>${hit}</td>
     </tr>`;
   }
 }

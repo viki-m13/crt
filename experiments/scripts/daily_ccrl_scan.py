@@ -359,6 +359,98 @@ def main():
     print(f"  Historical picks: {n_picks} trades, {n_winners} hits ({n_winners/max(n_picks,1)*100:.0f}%), "
           f"avg net return: {avg_ret:.2f}%")
 
+    # ---- DAILY TOP-1 PICK (last 90 trading days) ----
+    print("Running daily top-1 simulation (last 90 days)...")
+    spy_close = data_dict["SPY"]["Close"]
+    all_dates = spy_close.index
+    last_90_start_idx = max(0, len(all_dates) - 90 - TARGET_HORIZON)
+    daily_sim_dates = all_dates[last_90_start_idx: len(all_dates) - TARGET_HORIZON]
+
+    daily_picks = []
+    daily_eq = [{"date": str(daily_sim_dates[0].date()), "value": 10000}]
+    daily_spy_eq = [{"date": str(daily_sim_dates[0].date()), "value": 10000}]
+    cum_daily = 10000.0
+    cum_daily_spy = 10000.0
+
+    for day in daily_sim_dates:
+        # Score all stocks on this day
+        scores = []
+        for ticker in stocks:
+            if ticker not in stock_features_cache:
+                continue
+            feats = stock_features_cache[ticker]
+            if day not in feats.index:
+                continue
+            row = feats.loc[[day]].reindex(columns=feature_names)
+            X_day = row.values
+            if X_day.shape[1] < n_features:
+                X_day = np.hstack([X_day, np.full((1, n_features - X_day.shape[1]), np.nan)])
+            try:
+                _, mp, sp = ensemble.predict_proba(X_day)
+                scores.append((ticker, float(mp[0]), float(sp[0])))
+            except Exception:
+                continue
+
+        if not scores:
+            continue
+
+        scores.sort(key=lambda x: x[1], reverse=True)
+        top1_ticker, top1_score, top1_unc = scores[0]
+
+        # Look up actual return
+        close_ts = close_cache[top1_ticker]
+        if day not in close_ts.index:
+            continue
+        entry_price = float(close_ts.loc[day])
+        entry_idx = close_ts.index.get_loc(day)
+        exit_idx = min(entry_idx + TARGET_HORIZON, len(close_ts) - 1)
+        exit_date = close_ts.index[exit_idx]
+        exit_price = float(close_ts.iloc[exit_idx])
+        ret = exit_price / entry_price - 1
+        net_ret = ret - 0.003
+
+        # SPY return over same period
+        if day in spy_close.index:
+            spy_ei = spy_close.index.get_loc(day)
+            spy_xi = min(spy_ei + TARGET_HORIZON, len(spy_close) - 1)
+            spy_ret = float(spy_close.iloc[spy_xi]) / float(spy_close.iloc[spy_ei]) - 1
+        else:
+            spy_ret = 0
+
+        cum_daily *= (1 + net_ret)
+        cum_daily_spy *= (1 + spy_ret)
+
+        daily_picks.append({
+            "entry_date": str(day.date()),
+            "exit_date": str(exit_date.date()),
+            "ticker": top1_ticker,
+            "score": round(top1_score, 3),
+            "conviction": round(top1_score * (1 - top1_unc) * 100, 1),
+            "entry_price": round(entry_price, 2),
+            "exit_price": round(exit_price, 2),
+            "return_pct": round(ret * 100, 2),
+            "net_return_pct": round(net_ret * 100, 2),
+            "hit_target": ret >= TARGET_RETURN,
+            "days_held": int(exit_idx - entry_idx),
+            "spy_return_pct": round(spy_ret * 100, 2),
+        })
+
+        daily_eq.append({"date": str(day.date()), "value": round(cum_daily, 0)})
+        daily_spy_eq.append({"date": str(day.date()), "value": round(cum_daily_spy, 0)})
+
+    if daily_picks:
+        dp_avg = np.mean([p["net_return_pct"] for p in daily_picks])
+        dp_win = np.mean([p["net_return_pct"] > 0 for p in daily_picks])
+        dp_hit = np.mean([p["hit_target"] for p in daily_picks])
+        dp_spy_avg = np.mean([p["spy_return_pct"] for p in daily_picks])
+        dp_winners = [p["net_return_pct"] / 100 for p in daily_picks if p["net_return_pct"] > 0]
+        dp_losers = [p["net_return_pct"] / 100 for p in daily_picks if p["net_return_pct"] < 0]
+        dp_pf = sum(dp_winners) / abs(sum(dp_losers)) if dp_losers and sum(dp_losers) != 0 else 999
+        print(f"  Daily top-1: {len(daily_picks)} trades, avg={dp_avg:.2f}%, win={dp_win*100:.0f}%, "
+              f"hit={dp_hit*100:.0f}%, PF={dp_pf:.2f}, alpha vs SPY={dp_avg-dp_spy_avg:.2f}%")
+    else:
+        dp_avg = dp_win = dp_hit = dp_pf = dp_spy_avg = 0
+
     # ---- SPY regime ----
     spy_feat = {}
     if "SPY" in data_dict:
@@ -425,6 +517,23 @@ def main():
         "historical_picks": historical_picks,
         "equity_curve_strategy": eq_strat,
         "equity_curve_spy": eq_spy,
+        "daily_top1": {
+            "description": f"Daily #1 pick, held {TARGET_HORIZON}d, last 90 trading days",
+            "picks": daily_picks,
+            "equity_curve": daily_eq,
+            "equity_curve_benchmark": daily_spy_eq,
+            "stats": {
+                "n_trades": len(daily_picks),
+                "avg_net_return": round(dp_avg, 2),
+                "win_rate": round(dp_win * 100, 1) if daily_picks else 0,
+                "hit_rate": round(dp_hit * 100, 1) if daily_picks else 0,
+                "profit_factor": round(dp_pf, 2),
+                "avg_spy_return": round(dp_spy_avg, 2) if daily_picks else 0,
+                "alpha": round(dp_avg - dp_spy_avg, 2) if daily_picks else 0,
+                "final_value": round(cum_daily, 0),
+                "spy_final_value": round(cum_daily_spy, 0),
+            },
+        },
     }
 
     with open(os.path.join(docs_dir, "ccrl.json"), "w") as f:
