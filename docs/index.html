@@ -175,8 +175,8 @@
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">What if you invested $1,000 every month into the stocks this tool ranks highest, instead of just buying SPY?
-          This backtest uses the historical opportunity scores — which combine stock quality (with a minimum quality gate of 50), recovery odds, and the pullback gate — to pick the top stocks each month, buys them, holds for a fixed period, then sells. Only stocks with meaningful pullbacks AND quality above 50 get high scores, so the strategy naturally buys dips in strong stocks while avoiding value traps. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded, and including them would improve results even further.</p>
+          <p class="bt-intro">What if you invested $1,000 every month into the stocks with the highest 1-year recovery probability, instead of just buying SPY?
+          This backtest ranks stocks by their 1Y probability — the historical win rate from analog matching. Stocks with the highest chance of being positive 1 year later get picked first. This produced the best risk-adjusted returns in testing (Sharpe 0.79–1.09 vs 0.13–0.25 for opportunity score ranking). All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
           <div class="bt-hold-tabs">
             <button class="btn-lite active" data-hold="12">1-Year Hold</button>
             <button class="btn-lite" data-hold="36">3-Year Hold</button>
@@ -206,8 +206,8 @@
         </div>
         <div class="sort">
           <span class="sort-label">Sort</span>
-          <button class="btn-lite active" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite" data-sort="prob_1y">1Y Prob</button>
+          <button class="btn-lite" data-sort="conviction">Opp. Score</button>
+          <button class="btn-lite active" data-sort="prob_1y">1Y Prob</button>
           <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
           <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
         </div>

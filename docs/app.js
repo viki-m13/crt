@@ -523,10 +523,10 @@ function buildMarquee(items){
   const depthEl = byId("statDepth");
   if (depthEl) depthEl.textContent = "20+";
 
-  // Build dynamic marquee with top tickers
-  buildMarquee(items);
+  // Build dynamic marquee with top tickers (sorted by 1Y Prob)
+  buildMarquee(sortItems(items, "prob_1y"));
 
-  let sortMode = "conviction";
+  let sortMode = "prob_1y";
 
   async function loadDetail(ticker){
     const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
@@ -851,19 +851,28 @@ function buildMarquee(items){
       const strategies = [1, 5, 10];
       const holdPeriods = [12, 36, 60];
 
-      // For each month, rank tickers by score and record top N
-      const monthlyRanks = [];  // [{ date, dateIdx, ranked: [ticker, ...] }]
+      // Build 1Y probability lookup from items (best Sharpe + win rate in backtests)
+      const probLookup = {};
+      for (const item of items){
+        if (item.prob_1y != null && Number.isFinite(Number(item.prob_1y))){
+          probLookup[item.ticker] = Number(item.prob_1y);
+        }
+      }
+
+      // For each month, rank tickers by 1Y probability (with score as tiebreaker)
+      const monthlyRanks = [];
       for (const mIdx of monthFirstIdx){
         const date = allDates[mIdx];
         const scored = [];
         for (const tk of availTickers){
+          const prob = probLookup[tk];
           const s = scoreLookup[tk]?.get(date);
           const p = priceLookup[tk]?.get(date);
-          if (s != null && Number.isFinite(s) && p != null && Number.isFinite(p) && p > 0){
-            scored.push({ ticker: tk, score: s });
+          if (prob != null && prob > 0 && p != null && Number.isFinite(p) && p > 0){
+            scored.push({ ticker: tk, prob, score: (s != null && Number.isFinite(s)) ? s : 0 });
           }
         }
-        scored.sort((a, b) => b.score - a.score);
+        scored.sort((a, b) => b.prob - a.prob || b.score - a.score);
         monthlyRanks.push({ date, dateIdx: mIdx, ranked: scored.map(s => s.ticker) });
       }
 

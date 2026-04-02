@@ -1531,7 +1531,7 @@ def main():
         return
 
     res = pd.DataFrame(rows)
-    res = res.sort_values(["conviction", "prob_10d"], ascending=[False, False]).reset_index(drop=True)
+    res = res.sort_values(["prob_10d", "conviction"], ascending=[False, False]).reset_index(drop=True)
 
     # Embed top10 details in full.json (fewer network calls)
     top10 = res.head(TOP10_EMBED)["ticker"].tolist()

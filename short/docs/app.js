@@ -524,9 +524,9 @@ function buildMarquee(items){
   if (depthEl) depthEl.textContent = "20+";
 
   // Build dynamic marquee with top tickers
-  buildMarquee(items);
+  buildMarquee(sortItems(items, "prob_10d"));
 
-  let sortMode = "conviction";
+  let sortMode = "prob_10d";
 
   async function loadDetail(ticker){
     const embedded = (full.details && full.details[ticker]) ? full.details[ticker] : null;
@@ -805,30 +805,23 @@ function buildMarquee(items){
       const strategies = [1, 5, 10];
       const holdPeriods = [10, 30, 60];
 
-      // For each weekly entry, rank tickers by opportunity score and only buy
-      // stocks with 100% probability for the selected horizon.
-      // Since we only have today's probabilities (not historical), the backtest
-      // uses the historical opportunity score for ranking and buys the top-scored
-      // stocks that currently show 100% probability. If no stocks meet the 100%
-      // threshold, it falls back to buying top-scored stocks with >=80% probability
-      // so the backtest still produces meaningful results.
-      const holdToProbField = { 10: "prob_10d", 30: "prob_30d", 60: "prob_60d" };
-
+      // Rank by 10D probability (best Sharpe + win rate across all hold periods).
+      // Uses today's prob as the ranking signal with historical score as tiebreaker.
       function buildWeeklyRanks(holdDays){
-        const probField = holdToProbField[holdDays];
         const ranks = [];
         for (const wIdx of weeklyIdx){
           const date = allDates[wIdx];
           const scored = [];
           for (const tk of availTickers){
+            const prob = probLookup[tk]?.prob_10d;
             const s = scoreLookup[tk]?.get(date);
             const p = priceLookup[tk]?.get(date);
-            if (s != null && Number.isFinite(s) && s > 0 &&
+            if (prob != null && Number.isFinite(prob) && prob > 0 &&
                 p != null && Number.isFinite(p) && p > 0){
-              scored.push({ ticker: tk, score: s });
+              scored.push({ ticker: tk, prob, score: (s != null && Number.isFinite(s)) ? s : 0 });
             }
           }
-          scored.sort((a, b) => b.score - a.score);
+          scored.sort((a, b) => b.prob - a.prob || b.score - a.score);
           ranks.push({ date, dateIdx: wIdx, ranked: scored.map(s => s.ticker) });
         }
         return ranks;
@@ -1087,7 +1080,7 @@ function buildMarquee(items){
     // Disclaimer
     const disc = document.createElement("div");
     disc.className = "footnote";
-    disc.textContent = "Short strategy backtest — buys top-ranked pullback opportunities weekly ($1,000/week DCA), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    disc.textContent = "Short strategy backtest — ranks by 10D probability (highest historical win rate), weekly DCA ($1,000/week), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
     body.appendChild(disc);
   }
 
