@@ -44,7 +44,40 @@ ISHARES_HOLDINGS_URL = (
     "1467271812596.ajax?fileType=csv&fileName=IWB_holdings&dataType=fund"
 )
 
-ALWAYS_PLOT = ["SPY", "BTC-USD", "ETH-USD", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "COST", "BRK-A", "ARM"]
+ALWAYS_PLOT = ["SPY", "QQQ", "IWM", "DIA", "BTC-USD", "ETH-USD"]
+
+# ── Curated ~100-stock universe: diverse, liquid, low-correlation across GICS sectors ──
+SHORT_UNIVERSE = [
+    # Technology (15)
+    "AAPL", "MSFT", "NVDA", "AVGO", "ADBE", "CRM", "AMD", "INTC", "CSCO", "TXN",
+    "AMAT", "MU", "NOW", "PANW", "CDNS",
+    # Communication Services (6)
+    "GOOGL", "META", "NFLX", "DIS", "T", "VZ",
+    # Consumer Discretionary (10)
+    "AMZN", "TSLA", "HD", "MCD", "NKE", "SBUX", "LOW", "TJX", "BKNG", "GM",
+    # Consumer Staples (7)
+    "PG", "KO", "PEP", "COST", "WMT", "PM", "CL",
+    # Energy (6)
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC",
+    # Financials (10)
+    "JPM", "BAC", "WFC", "GS", "MS", "BLK", "AXP", "C", "USB", "PNC",
+    # Healthcare (10)
+    "UNH", "JNJ", "LLY", "PFE", "ABBV", "TMO", "ABT", "MRK", "AMGN", "GILD",
+    # Industrials (10)
+    "CAT", "HON", "UPS", "BA", "RTX", "DE", "GE", "LMT", "UNP", "FDX",
+    # Materials (5)
+    "LIN", "APD", "FCX", "NEM", "NUE",
+    # Real Estate (5)
+    "AMT", "PLD", "CCI", "EQIX", "SPG",
+    # Utilities (5)
+    "NEE", "DUK", "SO", "D", "AEP",
+    # Crypto (2)
+    "BTC-USD", "ETH-USD",
+    # Broad ETFs (4)
+    "SPY", "QQQ", "IWM", "DIA",
+    # High-beta / growth (5)
+    "ARM", "SMCI", "COIN", "MARA", "SQ",
+]
 
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
@@ -1438,12 +1471,10 @@ def main():
     print("SHORT SCANNER (v8-short) — 10D/30D/60D horizons")
     print("=" * 110)
 
-    # Universe
-    tickers = fetch_ishares_holdings_tickers(ISHARES_HOLDINGS_URL)
-    if MAX_TICKERS is not None:
-        tickers = tickers[:int(MAX_TICKERS)]
+    # Universe — curated 100-stock list (diverse, liquid, low-correlation)
+    tickers = list(SHORT_UNIVERSE)
     universe = sorted(set(tickers + ALWAYS_PLOT + [BENCH] + extra_tickers))
-    print(f"[UNIVERSE] holdings={len(tickers)} | extra={len(extra_tickers)} | universe={len(universe)}")
+    print(f"[UNIVERSE] curated={len(tickers)} | extra={len(extra_tickers)} | universe={len(universe)}")
 
     print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers...")
     data = download_ohlcv_period(universe, period=PERIOD, interval=INTERVAL, chunk_size=CHUNK_SIZE)

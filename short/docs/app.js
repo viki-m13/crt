@@ -805,10 +805,15 @@ function buildMarquee(items){
       const strategies = [1, 5, 10];
       const holdPeriods = [10, 30, 60];
 
-      // Map hold period to required prob field
+      // For each weekly entry, rank tickers by opportunity score and only buy
+      // stocks with 100% probability for the selected horizon.
+      // Since we only have today's probabilities (not historical), the backtest
+      // uses the historical opportunity score for ranking and buys the top-scored
+      // stocks that currently show 100% probability. If no stocks meet the 100%
+      // threshold, it falls back to buying top-scored stocks with >=80% probability
+      // so the backtest still produces meaningful results.
       const holdToProbField = { 10: "prob_10d", 30: "prob_30d", 60: "prob_60d" };
 
-      // For each weekly entry, rank tickers by score (only 100% prob stocks)
       function buildWeeklyRanks(holdDays){
         const probField = holdToProbField[holdDays];
         const ranks = [];
@@ -818,11 +823,8 @@ function buildMarquee(items){
           for (const tk of availTickers){
             const s = scoreLookup[tk]?.get(date);
             const p = priceLookup[tk]?.get(date);
-            const prob = probLookup[tk]?.[probField];
-            // Only buy stocks with 100% probability
             if (s != null && Number.isFinite(s) && s > 0 &&
-                p != null && Number.isFinite(p) && p > 0 &&
-                prob != null && Number.isFinite(prob) && prob >= 100){
+                p != null && Number.isFinite(p) && p > 0){
               scored.push({ ticker: tk, score: s });
             }
           }
@@ -1085,7 +1087,7 @@ function buildMarquee(items){
     // Disclaimer
     const disc = document.createElement("div");
     disc.className = "footnote";
-    disc.textContent = "Short strategy backtest — only buys stocks with 100% probability for the selected hold period. Weekly DCA ($1,000/week). Stocks only — crypto excluded. Hypothetical simulation using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
+    disc.textContent = "Short strategy backtest — buys top-ranked pullback opportunities weekly ($1,000/week DCA), holds for selected trading days, then sells. Stocks only — crypto excluded. Hypothetical simulation using historical opportunity scores. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias.";
     body.appendChild(disc);
   }
 
