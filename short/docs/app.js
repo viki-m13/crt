@@ -1,4 +1,4 @@
-
+/* Short Strategy v8-short — 10D/30D/60D horizons, 60D default hold */
 const DATA_URL = "./data/full.json";
 const API_URL = window.REBOUND_API_URL || "";
 
