@@ -746,15 +746,19 @@ function buildMarquee(items){
     body.innerHTML = `<div class="footnote">Loading all ticker data — this may take a moment&hellip;</div>`;
 
     try {
-      // 1. Load all ticker data
+      // 1. Load all ticker data (batched to avoid overwhelming the server)
       const tickers = items.map(i => i.ticker);
       const allData = {};
-      const promises = tickers.map(async tk => {
-        try {
-          allData[tk] = await loadDetail(tk);
-        } catch(e){ /* skip */ }
-      });
-      await Promise.all(promises);
+      const BATCH = 15;
+      for (let i = 0; i < tickers.length; i += BATCH){
+        const batch = tickers.slice(i, i + BATCH);
+        await Promise.all(batch.map(async tk => {
+          try {
+            allData[tk] = await loadDetail(tk);
+          } catch(e){ /* skip failed loads */ }
+        }));
+      }
+      console.log("[BT] Loaded", Object.keys(allData).length, "/", tickers.length, "ticker details");
 
       // Ensure SPY is loaded
       if (!allData["SPY"]){
@@ -818,6 +822,7 @@ function buildMarquee(items){
       const availTickers = Object.keys(priceLookup).filter(t => t !== "SPY" && !CRYPTO.has(t));
       const strategies = [1, 5, 10];
       const holdPeriods = [10, 30, 60];
+      console.log("[BT] availTickers:", availTickers.length, "allDates:", allDates.length, "weekly:", weeklyIdx.length);
 
       // Rank by historical opportunity score each week (dynamic, changes over time).
       // The score already incorporates probability, quality, and pullback depth,
@@ -839,6 +844,7 @@ function buildMarquee(items){
           scored.sort((a, b) => b.score - a.score);
           ranks.push({ date, dateIdx: wIdx, ranked: scored.map(s => s.ticker) });
         }
+        console.log("[BT] buildWeeklyRanks:", ranks.length, "weeks, first week scored:", ranks[0]?.ranked?.length, "top:", ranks[0]?.ranked?.slice(0,3));
         return ranks;
       }
 
@@ -905,11 +911,13 @@ function buildMarquee(items){
       }
 
       function simulate(topN, holdDays, weeklyRanks){
-        return simulateDCA(holdDays, weeklyRanks, (w, date) => {
+        const result = simulateDCA(holdDays, weeklyRanks, (w, date) => {
           const ranked = weeklyRanks[w]?.ranked || [];
           const picks = ranked.slice(0, Math.min(topN, ranked.length));
           return picks.map(tk => ({ ticker: tk, price: priceLookup[tk]?.get(date) }));
         });
+        console.log(`[BT] simulate top${topN} ${holdDays}D: invested=$${result.totalInvested} positions=${result.positions.length} finalEquity=${result.equity[result.equity.length-1].toFixed(0)}`);
+        return result;
       }
 
       function simulateSPY(holdDays, weeklyRanks){
