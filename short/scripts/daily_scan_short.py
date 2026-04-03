@@ -1542,6 +1542,23 @@ def main():
         except Exception:
             pass
 
+    # Embed lightweight backtest series for ALL tickers (dates, prices, scores)
+    # so the backtest never needs to load individual ticker files
+    bt_series = {}
+    for t in res["ticker"].tolist():
+        try:
+            with open(os.path.join(TICKER_DIR, f"{t}.json"), "r") as f:
+                det = json.load(f)
+            s = det.get("series", {})
+            if s.get("dates") and s.get("prices") and s.get("final"):
+                bt_series[t] = {
+                    "dates": s["dates"],
+                    "prices": s["prices"],
+                    "final": s["final"],
+                }
+        except Exception:
+            pass
+
     # Full payload
     as_of = str(datetime.now(ZoneInfo("America/New_York")))
     payload = {
@@ -1550,7 +1567,7 @@ def main():
             "version": "v8-short",
             "bench": BENCH,
             "interval": INTERVAL,
-            "universe": "iShares Top 20 U.S. Stocks ETF holdings + ALWAYS_PLOT",
+            "universe": "Curated 100-stock diversified universe",
             "min_washout_today": MIN_WASHOUT_TODAY,
             "final_score": {
                 "wash_floor": FINAL_WASH_FLOOR,
@@ -1559,6 +1576,7 @@ def main():
         },
         "items": res.to_dict(orient="records"),
         "details": details,
+        "bt_series": bt_series,
     }
 
     with open(os.path.join(OUT_DIR, "full.json"), "w") as f:

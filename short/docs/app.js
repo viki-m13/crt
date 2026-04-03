@@ -746,19 +746,21 @@ function buildMarquee(items){
     body.innerHTML = `<div class="footnote">Loading all ticker data — this may take a moment&hellip;</div>`;
 
     try {
-      // 1. Load all ticker data (batched to avoid overwhelming the server)
-      const tickers = items.map(i => i.ticker);
+      // 1. Use bt_series embedded in full.json (no extra network requests needed)
       const allData = {};
-      const BATCH = 15;
-      for (let i = 0; i < tickers.length; i += BATCH){
-        const batch = tickers.slice(i, i + BATCH);
-        await Promise.all(batch.map(async tk => {
-          try {
-            allData[tk] = await loadDetail(tk);
-          } catch(e){ /* skip failed loads */ }
-        }));
+      const btSeries = full.bt_series || {};
+
+      // Load from embedded bt_series (all tickers, lightweight: dates/prices/scores only)
+      for (const [tk, s] of Object.entries(btSeries)){
+        allData[tk] = { series: s };
       }
-      console.log("[BT] Loaded", Object.keys(allData).length, "/", tickers.length, "ticker details");
+      // Also merge full details for top 10 (has quality_parts, evidence, etc)
+      if (full.details){
+        for (const [tk, det] of Object.entries(full.details)){
+          allData[tk] = det;
+        }
+      }
+      console.log("[BT] Loaded", Object.keys(allData).length, "tickers from bt_series (no network requests)");
 
       // Ensure SPY is loaded
       if (!allData["SPY"]){
@@ -766,23 +768,24 @@ function buildMarquee(items){
         return;
       }
 
-      // 2. Build aligned date grid — use the ticker with the most recent end date
-      //    (SPY may have a shorter series due to feature computation cutoffs)
+      // 2. Build aligned date grid — find the most common date range
+      //    (SPY may have offset dates due to feature computation cutoffs)
+      //    Use the first non-ETF stock ticker's dates as the canonical grid,
+      //    since all stocks share the same range.
+      const ETFS = new Set(["SPY", "QQQ", "IWM", "DIA"]);
       let allDates = null;
-      let latestEnd = "";
       for (const [tk, data] of Object.entries(allData)){
+        if (ETFS.has(tk) || CRYPTO.has(tk)) continue;
         const s = data.series;
-        if (!s || !s.dates || s.dates.length === 0) continue;
-        const lastDate = s.dates[s.dates.length - 1];
-        if (lastDate > latestEnd){
-          latestEnd = lastDate;
-          allDates = s.dates;
-        }
+        if (!s || !s.dates || s.dates.length < 200) continue;
+        allDates = s.dates;
+        break;
       }
       if (!allDates || allDates.length === 0){
         body.innerHTML = `<div class="footnote" style="color:#b00">No date grid available for backtest.</div>`;
         return;
       }
+      console.log("[BT] allDates:", allDates[0], "to", allDates[allDates.length-1], "len:", allDates.length);
 
       // Build price & score lookups per ticker (date string → value)
       const priceLookup = {};  // tk → Map(date → price)
@@ -921,9 +924,15 @@ function buildMarquee(items){
       }
 
       function simulateSPY(holdDays, weeklyRanks){
+        // SPY buy-and-hold benchmark: invest $1000/week into SPY
+        // Use any available broad market ETF that has matching dates
+        const spyTicker = ["SPY", "DIA", "QQQ", "IWM"].find(t => {
+          const pm = priceLookup[t];
+          return pm && pm.get(allDates[Math.floor(allDates.length/2)]);
+        }) || "SPY";
         return simulateDCA(holdDays, weeklyRanks, (w, date) => {
-          const price = priceLookup["SPY"]?.get(date);
-          return price && price > 0 ? [{ ticker: "SPY", price }] : [];
+          const price = priceLookup[spyTicker]?.get(date);
+          return price && price > 0 ? [{ ticker: spyTicker, price }] : [];
         });
       }
 
