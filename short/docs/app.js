@@ -762,9 +762,23 @@ function buildMarquee(items){
         return;
       }
 
-      // 2. Build date→index maps and aligned date grid using SPY dates
-      const spySeries = allData["SPY"].series;
-      const allDates = spySeries.dates;
+      // 2. Build aligned date grid — use the ticker with the most recent end date
+      //    (SPY may have a shorter series due to feature computation cutoffs)
+      let allDates = null;
+      let latestEnd = "";
+      for (const [tk, data] of Object.entries(allData)){
+        const s = data.series;
+        if (!s || !s.dates || s.dates.length === 0) continue;
+        const lastDate = s.dates[s.dates.length - 1];
+        if (lastDate > latestEnd){
+          latestEnd = lastDate;
+          allDates = s.dates;
+        }
+      }
+      if (!allDates || allDates.length === 0){
+        body.innerHTML = `<div class="footnote" style="color:#b00">No date grid available for backtest.</div>`;
+        return;
+      }
 
       // Build price & score lookups per ticker (date string → value)
       const priceLookup = {};  // tk → Map(date → price)
