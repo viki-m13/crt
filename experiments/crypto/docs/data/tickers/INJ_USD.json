@@ -1,43 +1,39 @@
 {
   "ticker": "INJ-USD",
   "display_name": "INJ",
-  "price": 2.87,
-  "conviction": 31.8,
+  "price": 2.74,
+  "conviction": 34.0,
   "is_signal": false,
-  "mtmdi_zscore": -0.816,
-  "mtmdi_raw": 0.596,
-  "mtmdi_direction": 0.581,
-  "mtmdi_velocity": 0.319,
-  "cascade_score": 0.0269,
+  "mtmdi_zscore": -1.092,
+  "mtmdi_raw": 0.532,
+  "mtmdi_direction": 0.51,
+  "mtmdi_velocity": -0.057,
+  "cascade_score": 0.0615,
   "momentum_persistence": -0.907,
-  "range_compression": 0.289,
-  "vol_30d": 52.9,
+  "range_compression": 0.232,
+  "vol_30d": 54.7,
   "vol_regime": "normal",
-  "drawdown": -82.3,
-  "position_in_range": 0.5,
+  "drawdown": -83.1,
+  "position_in_range": 0.0,
   "returns": {
-    "7d": -7.03,
-    "14d": -6.87,
-    "30d": -7.36,
-    "90d": -45.59,
-    "180d": -154.1,
-    "365d": -113.82
+    "7d": -7.3,
+    "14d": -10.99,
+    "30d": -10.09,
+    "90d": -58.18,
+    "180d": -152.14,
+    "365d": -111.31
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-02",
-      "price": 8.35
-    },
     {
       "date": "2025-04-03",
       "price": 8.39
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-01",
       "price": 2.87
+    },
+    {
+      "date": "2026-04-02",
+      "price": 2.74
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-02",
-      "value": -1.408
-    },
     {
       "date": "2025-04-03",
       "value": -0.757
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-01",
       "value": -0.816
+    },
+    {
+      "date": "2026-04-02",
+      "value": -1.092
     }
   ]
 }

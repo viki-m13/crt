@@ -1,43 +1,39 @@
 {
   "ticker": "XTZ-USD",
   "display_name": "XTZ",
-  "price": 0.35,
-  "conviction": 43.5,
-  "is_signal": true,
-  "mtmdi_zscore": -1.46,
-  "mtmdi_raw": 0.343,
-  "mtmdi_direction": 0.229,
-  "mtmdi_velocity": 0.408,
-  "cascade_score": 0.0585,
+  "price": 0.34,
+  "conviction": 42.2,
+  "is_signal": false,
+  "mtmdi_zscore": -1.685,
+  "mtmdi_raw": 0.287,
+  "mtmdi_direction": 0.273,
+  "mtmdi_velocity": -0.138,
+  "cascade_score": 0.0708,
   "momentum_persistence": -0.955,
-  "range_compression": 0.484,
-  "vol_30d": 47.8,
+  "range_compression": 0.198,
+  "vol_30d": 48.5,
   "vol_regime": "normal",
-  "drawdown": -67.2,
-  "position_in_range": 1.7,
+  "drawdown": -68.1,
+  "position_in_range": 0.4,
   "returns": {
-    "7d": -10.04,
-    "14d": -11.24,
-    "30d": -6.64,
-    "90d": -36.43,
-    "180d": -71.54,
-    "365d": -63.39
+    "7d": -7.74,
+    "14d": -12.67,
+    "30d": -9.47,
+    "90d": -43.37,
+    "180d": -70.4,
+    "365d": -62.38
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": true,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-02",
-      "price": 0.64
-    },
     {
       "date": "2025-04-03",
       "price": 0.65
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-01",
       "price": 0.35
+    },
+    {
+      "date": "2026-04-02",
+      "price": 0.34
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-02",
-      "value": -0.365
-    },
     {
       "date": "2025-04-03",
       "value": -0.3
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-01",
       "value": -1.46
+    },
+    {
+      "date": "2026-04-02",
+      "value": -1.685
     }
   ]
 }

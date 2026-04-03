@@ -2,42 +2,38 @@
   "ticker": "AGIX-USD",
   "display_name": "AGIX",
   "price": 0.1,
-  "conviction": 29.7,
+  "conviction": 56.5,
   "is_signal": false,
-  "mtmdi_zscore": 0.025,
-  "mtmdi_raw": 0.939,
-  "mtmdi_direction": -0.951,
-  "mtmdi_velocity": -0.78,
-  "cascade_score": -0.1457,
-  "momentum_persistence": -0.713,
-  "range_compression": 0.035,
-  "vol_30d": 1123.3,
+  "mtmdi_zscore": 0.196,
+  "mtmdi_raw": 1.003,
+  "mtmdi_direction": 0.466,
+  "mtmdi_velocity": 1.047,
+  "cascade_score": -0.1593,
+  "momentum_persistence": -0.88,
+  "range_compression": 0.03,
+  "vol_30d": 1050.3,
   "vol_regime": "high",
-  "drawdown": -76.1,
-  "position_in_range": 10.7,
+  "drawdown": -77.0,
+  "position_in_range": 9.6,
   "returns": {
-    "7d": -7.7,
-    "14d": 6.85,
-    "30d": -67.51,
-    "90d": 10.61,
-    "180d": -91.49,
-    "365d": -67.84
+    "7d": -5.32,
+    "14d": 8.43,
+    "30d": 41.53,
+    "90d": -0.56,
+    "180d": -147.03,
+    "365d": -63.52
   },
   "signals": {
     "mtmdi": false,
-    "direction": false,
-    "velocity": false,
+    "direction": true,
+    "velocity": true,
     "cascade": false,
     "momentum": false,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-02",
-      "price": 0.19
-    },
     {
       "date": "2025-04-03",
       "price": 0.19
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-01",
       "price": 0.1
+    },
+    {
+      "date": "2026-04-02",
+      "price": 0.1
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-02",
-      "value": 0.088
-    },
     {
       "date": "2025-04-03",
       "value": 0.108
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-01",
       "value": 0.025
+    },
+    {
+      "date": "2026-04-02",
+      "value": 0.196
     }
   ]
 }
