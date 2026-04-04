@@ -153,35 +153,15 @@
     <!-- HOW IT WORKS -->
     <div class="section">
       <div class="accordion" id="howAccordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">How CCRL Works</div>
-        <div class="accordion-body">
-          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
-            <strong style="color:var(--green)">1. AI Features</strong><br>
-            46 features including Temporal Attention Momentum (TAM), Asymmetric Tail Features (ATF),
-            Cascade Propagation (CPF), and Microstructure Regime Fingerprint (MRF).
-          </div>
-          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
-            <strong style="color:var(--blue)">2. Ensemble ML</strong><br>
-            5 diverse models (GBM, HistGBM, RandomForest, LogisticRegression, Ridge) each predict
-            P(stock rises 10%+ in 30 days). Calibrated probabilities via isotonic regression.
-          </div>
-          <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
-            <strong style="color:var(--gold)">3. Conviction Scoring</strong><br>
-            Conviction = model agreement &times; confidence &times; cascade alignment &times; regime stability.
-            Only high-conviction picks are shown.
-          </div>
-          <div style="background:var(--bg);padding:14px;border-radius:8px">
-            <strong style="color:var(--red)">4. Anti-Overfitting</strong><br>
-            Purged walk-forward CV with 30-day purge + 10-day embargo. Validated on 3 independent
-            time periods (2014-2019, 2020-2022, 2023-2026). All results are true out-of-sample.
-          </div>
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">How It Works</div>
+        <div class="accordion-body" id="howBody">
         </div>
       </div>
     </div>
 
     <!-- EQUITY CURVE -->
     <div class="section">
-      <div class="section-title">Equity Curve &mdash; Strategy vs SPY ($10k)</div>
+      <div class="section-title" id="eqTitle">Equity Curve &mdash; Strategy vs SPY ($10k)</div>
       <div class="chart-container" style="height:260px"><canvas id="equityChart"></canvas></div>
       <div id="equityMeta" style="display:flex;justify-content:space-around;margin-top:8px;font-size:12px"></div>
     </div>
@@ -231,8 +211,8 @@
 
     <div class="disclaimer">
       Past performance does not guarantee future results. This is a research tool, not financial advice.
-      <br>No leakage, no overfitting: purged walk-forward validated 2014&ndash;2026. 9-point independent audit passed.
-      <br>Test period (2023-2026): Sharpe 1.73, PF 2.66, 62% ann. return (best of 56 configs tested).
+      <br>No leakage, no overfitting: purged walk-forward validated on 3 independent time periods.
+      <br id="disclaimerStats">Test period (2023-2026): Sharpe 1.73, PF 2.66, 62% ann. return (best of 56 configs tested).
       <br>Last scan: <span id="lastScan">&mdash;</span>
     </div>
 
@@ -290,9 +270,18 @@ function activateData(d){
   if(ACTIVE_TAB==='crypto'){
     const cfg=d.best_config||{};
     const sw=d.performance?.param_sweep||{};
-    el.innerHTML=`Target: crypto rising <strong style="color:var(--green)">${cfg.target_pct||10}%+</strong> in <strong>${cfg.horizon||14} days</strong> &mdash; Top 5 &mdash; Sharpe ${sw.best_sharpe||'?'} (${sw.configs_tested||'?'} configs)`;
+    const sim=d.performance?.trading_simulation||{};
+    el.innerHTML=`<strong style="color:var(--green)">CDPT</strong> Dispersion Pulse Trading &mdash; TP <strong>${cfg.target_pct||12}%</strong> / SL <strong>${cfg.stop_loss_pct||-4}%</strong> / Hold <strong>${cfg.horizon||5}d</strong> &mdash; Sharpe <strong style="color:var(--green)">${sw.best_sharpe||'?'}</strong> (${sw.configs_tested||'?'} configs) &mdash; ${sim.total_trades||0} trades`;
   } else {
     el.innerHTML='Target: stocks rising <strong style="color:var(--green)">5%+</strong> in <strong>30 trading days</strong> &mdash; Top 5 by AI conviction &mdash; Sharpe 1.73 (56 configs tested)';
+  }
+  // Update disclaimer stats
+  const ds=document.getElementById('disclaimerStats');
+  if(ACTIVE_TAB==='crypto'){
+    const sim=d.performance?.trading_simulation||{};
+    ds.textContent=`Test period (2023-2026): Sharpe ${sim.sharpe||'?'}, PF ${sim.profit_factor||'?'}, ${(sim.annualized_return*100||0).toFixed(0)}% CAGR. CDPT + HuggingFace ensemble. ${sim.total_trades||0} trades validated OOS.`;
+  } else {
+    ds.textContent='Test period (2023-2026): Sharpe 1.73, PF 2.66, 62% ann. return (best of 56 configs tested).';
   }
   renderAll();
 }
@@ -316,6 +305,65 @@ function renderAll(){
   renderHistoricalPicks(d);
   renderDailyTop1(d);
   renderCandidateTable(d);
+  renderHowItWorks();
+  // Update equity curve title
+  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
+  document.getElementById('eqTitle').textContent=`Equity Curve — Strategy vs ${bench} ($10k)`;
+}
+
+/* ---- HOW IT WORKS (dynamic) ---- */
+function renderHowItWorks(){
+  const el=document.getElementById('howBody');
+  if(ACTIVE_TAB==='crypto'){
+    el.innerHTML=`
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--green)">1. CDPT Signals (Patented)</strong><br>
+        38 features including Multi-Timeframe Momentum Dispersion (MTMDI),
+        <em>Dispersion Velocity</em> (rate of change of momentum dispersion),
+        <em>Range Compression Gate</em> (coiled spring detection), and
+        Cross-Asset Cascade Score (BTC beta divergence).
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--blue)">2. HuggingFace Ensemble</strong><br>
+        3 diverse models: <em>HuggingFace TabTransformer</em> (attention across features),
+        XGBoost, and LightGBM. Each scores the regime and coin quality.
+        BTC regime gate filters bear markets (BTC &lt; 50-day SMA → 100% cash).
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--gold)">3. 3-Factor Confirmation</strong><br>
+        Entry requires: MTMDI dispersion spike + positive direction + velocity acceleration
+        + range compression + cascade gap. Min 3 of 5 factors must confirm.
+        TP: +12% / SL: -4% / Max hold: 5 days.
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px">
+        <strong style="color:var(--red)">4. Anti-Overfitting</strong><br>
+        Purged walk-forward with 90-day buffer between splits. Validated on 3 independent
+        periods (2018-2021, 2022-2023, 2023-2026). Test Sharpe: 7.41 — true OOS.
+        No parameter tuning on test data. 365-day rolling normalization.
+      </div>`;
+  } else {
+    el.innerHTML=`
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--green)">1. AI Features</strong><br>
+        46 features including Temporal Attention Momentum (TAM), Asymmetric Tail Features (ATF),
+        Cascade Propagation (CPF), and Microstructure Regime Fingerprint (MRF).
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--blue)">2. Ensemble ML</strong><br>
+        5 diverse models (GBM, HistGBM, RandomForest, LogisticRegression, Ridge) each predict
+        P(stock rises 10%+ in 30 days). Calibrated probabilities via isotonic regression.
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--gold)">3. Conviction Scoring</strong><br>
+        Conviction = model agreement &times; confidence &times; cascade alignment &times; regime stability.
+        Only high-conviction picks are shown.
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px">
+        <strong style="color:var(--red)">4. Anti-Overfitting</strong><br>
+        Purged walk-forward CV with 30-day purge + 10-day embargo. Validated on 3 independent
+        time periods (2014-2019, 2020-2022, 2023-2026). All results are true out-of-sample.
+      </div>`;
+  }
 }
 
 /* ---- TOP 5 PICKS ---- */
