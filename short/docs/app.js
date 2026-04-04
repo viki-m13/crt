@@ -1386,7 +1386,7 @@ function buildMarquee(items){
      ============================================================ */
 
   // Crypto screener listing
-  const cryptoItems = items.filter(x => x.is_crypto === true);
+  const cryptoItems = items.filter(x => x.is_crypto === true || (x.ticker && x.ticker.endsWith("-USD") && x.ticker !== "SPY"));
   const cryptoListing = byId("crypto-listing");
 
   if (cryptoItems.length > 0 && cryptoListing){
@@ -1491,14 +1491,12 @@ function buildMarquee(items){
         }
       }
 
-      // Filter to crypto only
-      const cryptoTickers = Object.keys(allData).filter(tk => tk.endsWith("-USD") && tk !== "SPY");
-      // Also check items for is_crypto flag
-      const cryptoFromItems = new Set(items.filter(x => x.is_crypto).map(x => x.ticker));
-      const cryptoAvail = cryptoTickers.filter(tk => {
+      // Filter to crypto only: use is_crypto flag or -USD suffix
+      const cryptoSet = new Set(items.filter(x => x.is_crypto === true || (x.ticker && x.ticker.endsWith("-USD") && x.ticker !== "SPY")).map(x => x.ticker));
+      const cryptoAvail = Object.keys(allData).filter(tk => {
+        if (!cryptoSet.has(tk)) return false;
         const s = allData[tk]?.series;
-        return s && s.dates && s.prices && s.final && s.dates.length >= 100 &&
-               (cryptoFromItems.has(tk) || tk === "BTC-USD" || tk === "ETH-USD");
+        return s && s.dates && s.prices && s.final && s.dates.length >= 100;
       });
 
       if (cryptoAvail.length === 0){
