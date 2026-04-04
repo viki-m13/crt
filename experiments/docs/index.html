@@ -159,6 +159,36 @@
       </div>
     </div>
 
+    <!-- CRYPTO STRATEGY DEEP DIVE (crypto only) -->
+    <div class="section" id="strategyDeepDive" style="display:none">
+      <div class="section-title">Strategy Deep Dive</div>
+      <div id="strategyDetails"></div>
+    </div>
+
+    <!-- TODAY'S ACTION (crypto only) -->
+    <div class="section" id="todayAction" style="display:none">
+      <div class="section-title">Today's Action &mdash; What To Trade Now</div>
+      <div id="todayDetails"></div>
+    </div>
+
+    <!-- MONTHLY BREAKDOWN (crypto only) -->
+    <div class="section" id="monthlySection" style="display:none">
+      <div class="section-title">Monthly Performance Breakdown</div>
+      <div id="monthlyGrid"></div>
+    </div>
+
+    <!-- TOP TRADED COINS (crypto only) -->
+    <div class="section" id="topCoinsSection" style="display:none">
+      <div class="section-title">Most Traded Coins &amp; Win Rates</div>
+      <div id="topCoinsGrid"></div>
+    </div>
+
+    <!-- RISK METRICS (crypto only) -->
+    <div class="section" id="riskSection" style="display:none">
+      <div class="section-title">Risk &amp; Drawdown Analysis</div>
+      <div id="riskGrid"></div>
+    </div>
+
     <!-- EQUITY CURVE -->
     <div class="section">
       <div class="section-title" id="eqTitle">Equity Curve &mdash; Strategy vs SPY ($10k)</div>
@@ -306,9 +336,156 @@ function renderAll(){
   renderDailyTop1(d);
   renderCandidateTable(d);
   renderHowItWorks();
+  renderCryptoSections(d);
   // Update equity curve title
   const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
   document.getElementById('eqTitle').textContent=`Equity Curve — Strategy vs ${bench} ($10k)`;
+}
+
+/* ---- CRYPTO-ONLY SECTIONS ---- */
+function renderCryptoSections(d){
+  const show=ACTIVE_TAB==='crypto';
+  ['strategyDeepDive','todayAction','monthlySection','topCoinsSection','riskSection'].forEach(
+    id=>{const el=document.getElementById(id);if(el)el.style.display=show?'block':'none';});
+  if(!show) return;
+  renderStrategyDetails(d);
+  renderTodayAction(d);
+  renderMonthly(d);
+  renderTopCoins(d);
+  renderRisk(d);
+}
+
+function renderStrategyDetails(d){
+  const el=document.getElementById('strategyDetails');
+  const sd=d.strategy_deep_dive||{};
+  const cfg=d.best_config||{};
+  const r=sd.rules||{};
+  const per=sd.period_comparison||{};
+  el.innerHTML=`
+    <div class="accordion open" style="margin-bottom:12px">
+      <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Trading Rules (Exact)</div>
+      <div class="accordion-body" style="line-height:2">
+        <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+          <strong style="color:var(--green)">Entry Conditions (ALL must be true):</strong><br>
+          1. MTMDI z-score &ge; <strong>${r.mtmdi_entry||1.0}</strong> (momentum dispersion spike)<br>
+          2. MTMDI direction &gt; 0 (short-term momentum &gt; long-term)<br>
+          3. At least <strong>${r.min_confirming||3}</strong> of 5 confirming factors:<br>
+          &nbsp;&nbsp;&bull; Cascade gap &gt; ${r.cacs_threshold||0.01} (BTC beta divergence)<br>
+          &nbsp;&nbsp;&bull; MPR z-score &gt; ${r.mpr_threshold||0.0} (momentum persistence)<br>
+          &nbsp;&nbsp;&bull; Dispersion Velocity &gt; ${r.velocity_threshold||0.3} (accelerating)<br>
+          &nbsp;&nbsp;&bull; Range Compression &lt; ${r.range_compress||0.5} (coiled spring)<br>
+          &nbsp;&nbsp;&bull; Volume surge &gt; 2&times; 20-day avg
+        </div>
+        <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+          <strong style="color:var(--red)">Exit Conditions (ANY triggers exit):</strong><br>
+          1. Take Profit: +<strong>${cfg.target_pct||12}%</strong> gain<br>
+          2. Stop Loss: <strong>${cfg.stop_loss_pct||-4}%</strong> loss<br>
+          3. Max Hold: <strong>${cfg.horizon||5}</strong> calendar days<br>
+          4. MTMDI z-score drops below ${r.mtmdi_exit||0.4} (signal resolved)<br>
+          5. Dispersion Velocity reverses below ${r.velocity_exit||-0.3}
+        </div>
+        <div style="background:var(--bg);padding:14px;border-radius:8px">
+          <strong style="color:var(--blue)">Position Sizing:</strong><br>
+          &bull; Vol target: ${r.vol_target||40}% &mdash; Size = vol_target / coin_vol &times; signal_strength<br>
+          &bull; Max per position: ${r.max_position||12}%<br>
+          &bull; Max total exposure: ${r.max_exposure||90}%<br>
+          &bull; High-vol regime: reduce size by ${r.high_vol_reduction||60}%<br>
+          &bull; Universe: <strong>${r.universe_size||86}</strong> liquid cryptos (100+ screened)
+        </div>
+      </div>
+    </div>
+    ${per.train?`<div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+      <div class="card"><h3>Train (2018-2021)</h3><div class="big" style="color:var(--green)">${per.train.sharpe}</div><div class="sub">Sharpe &middot; ${per.train.trades} trades &middot; ${per.train.cagr} CAGR</div></div>
+      <div class="card"><h3>Valid (2022-2023)</h3><div class="big" style="color:var(--green)">${per.valid.sharpe}</div><div class="sub">Sharpe &middot; ${per.valid.trades} trades &middot; ${per.valid.cagr} CAGR</div></div>
+      <div class="card highlight"><h3>Test (2023-2026)</h3><div class="big" style="color:var(--green)">${per.test.sharpe}</div><div class="sub">Sharpe &middot; ${per.test.trades} trades &middot; ${per.test.cagr} CAGR</div></div>
+    </div>`:''}
+    <div style="font-size:12px;color:var(--muted);text-align:center">
+      ${sd.trade_frequency||''} &middot; ${sd.avg_positions||''} &middot; ${sd.holding_period||''}
+    </div>`;
+}
+
+function renderTodayAction(d){
+  const el=document.getElementById('todayDetails');
+  const ta=d.today_action||{};
+  const regime=d.btc||{};
+  const isBull=regime.regime==='BULL';
+  const signals=ta.active_signals||[];
+  const open=ta.open_positions||[];
+
+  let signalHtml='';
+  if(signals.length===0){
+    signalHtml=`<div style="text-align:center;padding:20px;color:var(--muted)">No CDPT entry signals firing today.${!isBull?' BTC below 50-day SMA — regime gate is CLOSED.':' Waiting for dispersion spike.'}</div>`;
+  } else {
+    signalHtml=`<div class="table-wrap"><table><thead><tr><th>Coin</th><th>Signal</th><th>Size</th><th>MTMDI z</th><th>Velocity</th><th>Factors</th></tr></thead><tbody>`;
+    for(const s of signals){
+      signalHtml+=`<tr><td><span class="ticker-sym">${s.ticker}</span></td><td style="color:var(--green)">BUY</td><td>${s.size}%</td><td>${s.mtmdi_z}</td><td>${s.velocity}</td><td>${s.confirming}/5</td></tr>`;
+    }
+    signalHtml+='</tbody></table></div>';
+  }
+
+  let openHtml='';
+  if(open.length){
+    openHtml=`<div style="margin-top:12px"><strong style="color:var(--blue)">Open Positions:</strong></div>
+    <div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>Coin</th><th>Entry</th><th>Current</th><th>P&L</th><th>Days</th><th>Status</th></tr></thead><tbody>`;
+    for(const p of open){
+      const pc=p.pnl_pct>=0?'pnl-pos':'pnl-neg';
+      openHtml+=`<tr><td><span class="ticker-sym">${p.ticker}</span></td><td>$${p.entry_price}</td><td>$${p.current_price}</td><td class="${pc}">${p.pnl_pct>=0?'+':''}${p.pnl_pct}%</td><td>${p.days_held}</td><td>${p.status}</td></tr>`;
+    }
+    openHtml+='</tbody></table></div>';
+  }
+
+  el.innerHTML=`
+    <div class="grid" style="margin-bottom:12px">
+      <div class="card"><h3>BTC Regime</h3><div class="big" style="color:${isBull?'var(--green)':'var(--gold)'}">${regime.regime||'?'}</div><div class="sub">$${(regime.price||0).toLocaleString()} &middot; SMA50: $${(regime.sma50||0).toLocaleString()}</div></div>
+      <div class="card"><h3>Active Signals</h3><div class="big" style="color:var(--green)">${signals.length}</div><div class="sub">${open.length} open positions</div></div>
+    </div>
+    ${signalHtml}${openHtml}`;
+}
+
+function renderMonthly(d){
+  const el=document.getElementById('monthlyGrid');
+  const months=d.monthly_breakdown||[];
+  if(!months.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No monthly data</div>';return;}
+  let html='<div class="table-wrap"><table><thead><tr><th>Month</th><th>Return</th><th>Trades</th><th>Win Rate</th><th>Best</th><th>Worst</th><th>Cumulative</th></tr></thead><tbody>';
+  for(const m of months){
+    const rc=m.return_pct>=0?'pnl-pos':'pnl-neg';
+    html+=`<tr><td>${m.month}</td><td class="${rc}">${m.return_pct>=0?'+':''}${m.return_pct}%</td><td>${m.trades}</td><td>${m.win_rate}%</td><td class="pnl-pos">+${m.best_week}%</td><td class="pnl-neg">${m.worst_week}%</td><td style="color:var(--green)">${m.cumulative}</td></tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderTopCoins(d){
+  const el=document.getElementById('topCoinsGrid');
+  const coins=d.top_traded_coins||[];
+  if(!coins.length){el.innerHTML='';return;}
+  let html='<div class="table-wrap"><table><thead><tr><th>Coin</th><th>Trades</th><th>Win Rate</th><th>Avg Return</th><th>Best</th><th>Worst</th><th>Total P&L</th></tr></thead><tbody>';
+  for(const c of coins){
+    const tc=c.total_pnl>=0?'pnl-pos':'pnl-neg';
+    html+=`<tr><td><span class="ticker-sym">${c.ticker}</span></td><td>${c.trades}</td><td>${c.win_rate}%</td><td class="${c.avg_return>=0?'pnl-pos':'pnl-neg'}">${c.avg_return>=0?'+':''}${c.avg_return}%</td><td class="pnl-pos">+${c.best}%</td><td class="pnl-neg">${c.worst}%</td><td class="${tc}">${c.total_pnl>=0?'+':''}${c.total_pnl}%</td></tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderRisk(d){
+  const el=document.getElementById('riskGrid');
+  const r=d.risk_metrics||{};
+  el.innerHTML=`
+    <div class="grid">
+      <div class="card"><h3>Max Drawdown</h3><div class="big pnl-neg">${r.max_drawdown||'?'}</div><div class="sub">${r.max_dd_date||''}</div></div>
+      <div class="card"><h3>Longest DD</h3><div class="big">${r.longest_dd_days||0}d</div><div class="sub">${r.longest_dd_period||''}</div></div>
+      <div class="card"><h3>Sortino Ratio</h3><div class="big" style="color:var(--green)">${r.sortino||'?'}</div><div class="sub">Downside risk adjusted</div></div>
+      <div class="card"><h3>Calmar Ratio</h3><div class="big" style="color:var(--green)">${r.calmar||'?'}</div><div class="sub">Return / max DD</div></div>
+      <div class="card"><h3>Daily VaR (5%)</h3><div class="big pnl-neg">${r.var_5||'?'}</div><div class="sub">Worst 5% of days</div></div>
+      <div class="card"><h3>Win/Loss Ratio</h3><div class="big">${r.avg_win_loss_ratio||'?'}</div><div class="sub">Avg win / avg loss</div></div>
+      <div class="card"><h3>Exposure</h3><div class="big">${r.avg_exposure||'?'}</div><div class="sub">Avg % invested</div></div>
+      <div class="card"><h3>Correlation to BTC</h3><div class="big">${r.btc_correlation||'?'}</div><div class="sub">Daily return corr</div></div>
+    </div>
+    ${r.drawdown_periods?`<div style="margin-top:12px"><strong style="color:var(--muted);font-size:12px">TOP DRAWDOWN PERIODS</strong></div>
+    <div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>Start</th><th>End</th><th>Depth</th><th>Duration</th><th>Recovery</th></tr></thead><tbody>
+    ${r.drawdown_periods.map(p=>`<tr><td>${p.start}</td><td>${p.end}</td><td class="pnl-neg">${p.depth}</td><td>${p.duration}</td><td>${p.recovery}</td></tr>`).join('')}
+    </tbody></table></div>`:''}`;
 }
 
 /* ---- HOW IT WORKS (dynamic) ---- */
