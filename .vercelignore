@@ -1,11 +1,16 @@
-# Exclude non-essential directories from Vercel build
-experiments/crypto/
-experiments/src/
-experiments/scripts/
-experiments/research_*.py
+# Exclude from Vercel deployment entirely
+experiments/crypto/data/
 experiments/data/
+experiments/results/
+experiments/src/
+experiments/research_*.py
 experiments/requirements.txt
 *.md
 __pycache__/
 *.pyc
 .git/
+*.ipynb
+*.csv
+*.tsv
+*.pkl
+*.parquet
