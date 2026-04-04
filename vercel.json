@@ -4,22 +4,22 @@
     {
       "src": "api/analyze.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb" }
+      "config": { "maxLambdaSize": "250mb", "excludeFiles": "{experiments/**,experiments/crypto/**}" }
     },
     {
       "src": "api/cron/main.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb", "maxDuration": 300 }
+      "config": { "maxLambdaSize": "250mb", "maxDuration": 300, "excludeFiles": "{experiments/**,experiments/crypto/**}" }
     },
     {
       "src": "api/cron/experiments.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb", "maxDuration": 300 }
+      "config": { "maxLambdaSize": "250mb", "maxDuration": 300, "excludeFiles": "{experiments/crypto/**}" }
     },
     {
       "src": "api/cron/short.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb", "maxDuration": 300 }
+      "config": { "maxLambdaSize": "250mb", "maxDuration": 300, "excludeFiles": "{experiments/**,experiments/crypto/**}" }
     },
     {
       "src": "docs/**",
