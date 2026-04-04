@@ -79,6 +79,48 @@ SHORT_UNIVERSE = [
     "ARM", "SMCI", "COIN", "MARA", "SQ",
 ]
 
+# ── Full crypto universe: top coins by market cap + DeFi + L1/L2 + gaming + more ──
+CRYPTO_UNIVERSE = [
+    # Top 20 by Market Cap
+    "BTC-USD", "ETH-USD", "BNB-USD", "XRP-USD", "ADA-USD",
+    "SOL-USD", "DOGE-USD", "DOT-USD", "AVAX-USD", "LINK-USD",
+    "MATIC-USD", "UNI-USD", "ATOM-USD", "LTC-USD", "ETC-USD",
+    "BCH-USD", "XLM-USD", "ALGO-USD", "FIL-USD", "NEAR-USD",
+    # DeFi
+    "AAVE-USD", "MKR-USD", "SNX-USD", "SUSHI-USD", "YFI-USD",
+    "CRV-USD", "BAL-USD", "UMA-USD", "1INCH-USD", "DYDX-USD",
+    "LDO-USD", "RPL-USD",
+    # Layer 1 / Layer 2
+    "ICP-USD", "FTM-USD", "HBAR-USD", "THETA-USD", "VET-USD",
+    "NEO-USD", "EOS-USD", "TRX-USD", "EGLD-USD", "FLOW-USD",
+    "MINA-USD", "KAVA-USD", "ONE-USD", "CELO-USD", "KSM-USD",
+    "ZIL-USD", "ICX-USD", "QTUM-USD", "WAVES-USD", "XTZ-USD",
+    "FET-USD", "ROSE-USD", "AR-USD", "STX-USD",
+    "SUI-USD", "APT-USD", "SEI-USD", "INJ-USD", "TIA-USD",
+    "OP-USD", "ARB-USD",
+    # Gaming / Metaverse
+    "SAND-USD", "MANA-USD", "AXS-USD", "ENJ-USD", "GALA-USD",
+    "ILV-USD", "RNDR-USD",
+    # Privacy
+    "ZEC-USD", "DASH-USD", "XMR-USD",
+    # Exchange Tokens
+    "CRO-USD", "OKB-USD", "LEO-USD",
+    # Infrastructure / Oracle
+    "CHZ-USD", "LRC-USD", "BAT-USD", "ZRX-USD",
+    "STORJ-USD", "ANKR-USD", "BAND-USD", "API3-USD",
+    # Meme / Community
+    "SHIB-USD", "PEPE24478-USD", "FLOKI-USD", "BONK-USD",
+    # Newer Large Caps
+    "WLD-USD", "JUP-USD", "PENDLE-USD",
+    # AI / Data
+    "OCEAN-USD", "AGIX-USD",
+    # Additional Liquid Alts
+    "SKL-USD", "COTI-USD", "RLC-USD", "NMR-USD",
+    "REQ-USD", "OMG-USD", "CELR-USD",
+    "DENT-USD", "HOT-USD", "WIN-USD", "SC-USD",
+    "AUDIO-USD", "PERP-USD", "RUNE-USD", "OSMO-USD",
+]
+
 CHUNK_SIZE = 80
 MAX_TICKERS = None          # e.g. 600 for speed, else None
 TOP10_EMBED = 10
@@ -1471,10 +1513,11 @@ def main():
     print("SHORT SCANNER (v8-short) — 10D/30D/60D horizons")
     print("=" * 110)
 
-    # Universe — curated 100-stock list (diverse, liquid, low-correlation)
+    # Universe — curated 100-stock list + full crypto universe
     tickers = list(SHORT_UNIVERSE)
-    universe = sorted(set(tickers + ALWAYS_PLOT + [BENCH] + extra_tickers))
-    print(f"[UNIVERSE] curated={len(tickers)} | extra={len(extra_tickers)} | universe={len(universe)}")
+    crypto_set = set(CRYPTO_UNIVERSE)
+    universe = sorted(set(tickers + CRYPTO_UNIVERSE + ALWAYS_PLOT + [BENCH] + extra_tickers))
+    print(f"[UNIVERSE] curated={len(tickers)} | crypto={len(CRYPTO_UNIVERSE)} | extra={len(extra_tickers)} | universe={len(universe)}")
 
     print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers...")
     data = download_ohlcv_period(universe, period=PERIOD, interval=INTERVAL, chunk_size=CHUNK_SIZE)
@@ -1517,6 +1560,7 @@ def main():
         if out is None:
             continue
         row, det = out
+        row["is_crypto"] = t in crypto_set
         rows.append(row)
 
         # Write per-ticker detail
@@ -1567,7 +1611,7 @@ def main():
             "version": "v8-short",
             "bench": BENCH,
             "interval": INTERVAL,
-            "universe": "Curated 100-stock diversified universe",
+            "universe": "Curated 100-stock diversified universe + 100+ crypto assets",
             "min_washout_today": MIN_WASHOUT_TODAY,
             "final_score": {
                 "wash_floor": FINAL_WASH_FLOOR,
