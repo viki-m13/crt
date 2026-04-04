@@ -1,43 +1,39 @@
 {
   "ticker": "KSM-USD",
   "display_name": "KSM",
-  "price": 4.24,
-  "conviction": 37.2,
+  "price": 4.19,
+  "conviction": 40.9,
   "is_signal": false,
-  "mtmdi_zscore": 0.291,
-  "mtmdi_raw": 0.724,
-  "mtmdi_direction": 1.192,
-  "mtmdi_velocity": 0.667,
-  "cascade_score": 0.0338,
-  "momentum_persistence": -0.802,
+  "mtmdi_zscore": 0.321,
+  "mtmdi_raw": 0.732,
+  "mtmdi_direction": 1.175,
+  "mtmdi_velocity": 0.357,
+  "cascade_score": 0.0406,
+  "momentum_persistence": 1.316,
   "range_compression": 0.248,
-  "vol_30d": 49.2,
+  "vol_30d": 47.2,
   "vol_regime": "normal",
-  "drawdown": -81.0,
-  "position_in_range": 1.0,
+  "drawdown": -81.2,
+  "position_in_range": 0.7,
   "returns": {
-    "7d": -0.7,
-    "14d": -6.55,
-    "30d": -8.89,
-    "90d": -61.55,
-    "180d": -125.86,
-    "365d": -125.42
+    "7d": 1.31,
+    "14d": -7.83,
+    "30d": -13.63,
+    "90d": -62.05,
+    "180d": -127.54,
+    "365d": -127.57
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": true,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 15.02
-    },
     {
       "date": "2025-04-04",
       "price": 14.98
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 4.24
+    },
+    {
+      "date": "2026-04-03",
+      "price": 4.19
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.301
-    },
     {
       "date": "2025-04-04",
       "value": -0.349
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": 0.291
+    },
+    {
+      "date": "2026-04-03",
+      "value": 0.321
     }
   ]
 }

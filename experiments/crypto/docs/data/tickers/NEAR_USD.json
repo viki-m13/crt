@@ -1,43 +1,39 @@
 {
   "ticker": "NEAR-USD",
   "display_name": "NEAR",
-  "price": 1.16,
-  "conviction": 37.9,
+  "price": 1.21,
+  "conviction": 37.3,
   "is_signal": false,
-  "mtmdi_zscore": -0.923,
-  "mtmdi_raw": 0.549,
-  "mtmdi_direction": -0.056,
-  "mtmdi_velocity": -0.631,
-  "cascade_score": 0.0952,
-  "momentum_persistence": -0.873,
-  "range_compression": 0.089,
-  "vol_30d": 61.0,
+  "mtmdi_zscore": -0.815,
+  "mtmdi_raw": 0.574,
+  "mtmdi_direction": 0.268,
+  "mtmdi_velocity": -0.545,
+  "cascade_score": 0.0363,
+  "momentum_persistence": 1.269,
+  "range_compression": 0.145,
+  "vol_30d": 62.0,
   "vol_regime": "high",
-  "drawdown": -65.4,
-  "position_in_range": 8.4,
+  "drawdown": -64.0,
+  "position_in_range": 10.3,
   "returns": {
-    "7d": -5.06,
-    "14d": -14.01,
-    "30d": -15.53,
-    "90d": -37.5,
-    "180d": -93.71,
-    "365d": -74.78
+    "7d": 2.45,
+    "14d": -8.48,
+    "30d": -8.2,
+    "90d": -34.74,
+    "180d": -89.55,
+    "365d": -72.9
   },
   "signals": {
     "mtmdi": false,
-    "direction": false,
+    "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 2.51
-    },
     {
       "date": "2025-04-04",
       "price": 2.51
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 1.16
+    },
+    {
+      "date": "2026-04-03",
+      "price": 1.21
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": 0.054
-    },
     {
       "date": "2025-04-04",
       "value": 0.091
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -0.923
+    },
+    {
+      "date": "2026-04-03",
+      "value": -0.815
     }
   ]
 }

@@ -1,43 +1,39 @@
 {
   "ticker": "NEO-USD",
   "display_name": "NEO",
-  "price": 2.65,
-  "conviction": 31.3,
+  "price": 2.83,
+  "conviction": 38.0,
   "is_signal": false,
-  "mtmdi_zscore": -0.244,
-  "mtmdi_raw": 0.644,
-  "mtmdi_direction": 0.284,
-  "mtmdi_velocity": 0.697,
-  "cascade_score": -0.0214,
-  "momentum_persistence": -0.892,
-  "range_compression": 0.508,
-  "vol_30d": 70.4,
+  "mtmdi_zscore": -0.135,
+  "mtmdi_raw": 0.679,
+  "mtmdi_direction": 0.637,
+  "mtmdi_velocity": 0.27,
+  "cascade_score": -0.0847,
+  "momentum_persistence": 1.225,
+  "range_compression": 0.622,
+  "vol_30d": 72.5,
   "vol_regime": "high",
-  "drawdown": -65.8,
-  "position_in_range": 4.3,
+  "drawdown": -63.4,
+  "position_in_range": 7.7,
   "returns": {
-    "7d": -0.94,
-    "14d": -2.44,
-    "30d": 3.19,
-    "90d": -35.58,
-    "180d": -85.22,
-    "365d": -55.25
+    "7d": 9.11,
+    "14d": 2.88,
+    "30d": 5.41,
+    "90d": -29.35,
+    "180d": -78.51,
+    "365d": -51.52
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": true,
+    "velocity": false,
     "cascade": false,
-    "momentum": false,
+    "momentum": true,
     "range_compress": false,
     "vol_surge": false
   },
   "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 4.74
-    },
     {
       "date": "2025-04-04",
       "price": 4.84
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 2.65
+    },
+    {
+      "date": "2026-04-03",
+      "price": 2.83
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.768
-    },
     {
       "date": "2025-04-04",
       "value": -1.069
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -0.244
+    },
+    {
+      "date": "2026-04-03",
+      "value": -0.135
     }
   ]
 }

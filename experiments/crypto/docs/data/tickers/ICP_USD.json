@@ -1,43 +1,39 @@
 {
   "ticker": "ICP-USD",
   "display_name": "ICP",
-  "price": 2.25,
-  "conviction": 35.8,
-  "is_signal": false,
-  "mtmdi_zscore": -1.292,
-  "mtmdi_raw": 0.315,
-  "mtmdi_direction": 0.223,
-  "mtmdi_velocity": -0.213,
-  "cascade_score": 0.0566,
-  "momentum_persistence": -0.81,
+  "price": 2.29,
+  "conviction": 40.7,
+  "is_signal": true,
+  "mtmdi_zscore": -1.163,
+  "mtmdi_raw": 0.355,
+  "mtmdi_direction": 0.307,
+  "mtmdi_velocity": -0.094,
+  "cascade_score": 0.0376,
+  "momentum_persistence": 1.293,
   "range_compression": 0.182,
-  "vol_30d": 63.3,
+  "vol_30d": 63.0,
   "vol_regime": "high",
-  "drawdown": -75.0,
-  "position_in_range": 2.3,
+  "drawdown": -74.5,
+  "position_in_range": 2.9,
   "returns": {
-    "7d": -2.47,
-    "14d": -10.4,
-    "30d": -9.07,
-    "90d": -34.01,
-    "180d": -69.46,
-    "365d": -80.39
+    "7d": 2.84,
+    "14d": -9.2,
+    "30d": -9.54,
+    "90d": -31.22,
+    "180d": -68.31,
+    "365d": -80.96
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 5.14
-    },
     {
       "date": "2025-04-04",
       "price": 5.06
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 2.25
+    },
+    {
+      "date": "2026-04-03",
+      "price": 2.29
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.029
-    },
     {
       "date": "2025-04-04",
       "value": -0.082
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -1.292
+    },
+    {
+      "date": "2026-04-03",
+      "value": -1.163
     }
   ]
 }

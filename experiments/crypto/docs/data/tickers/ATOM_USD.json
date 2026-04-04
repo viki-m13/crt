@@ -1,43 +1,39 @@
 {
   "ticker": "ATOM-USD",
   "display_name": "ATOM",
-  "price": 1.67,
-  "conviction": 29.3,
+  "price": 1.69,
+  "conviction": 36.6,
   "is_signal": false,
-  "mtmdi_zscore": -0.642,
-  "mtmdi_raw": 0.563,
-  "mtmdi_direction": 0.641,
-  "mtmdi_velocity": -0.225,
-  "cascade_score": 0.057,
-  "momentum_persistence": -0.77,
+  "mtmdi_zscore": -0.433,
+  "mtmdi_raw": 0.617,
+  "mtmdi_direction": 0.783,
+  "mtmdi_velocity": -0.35,
+  "cascade_score": 0.0506,
+  "momentum_persistence": 1.412,
   "range_compression": 0.185,
-  "vol_30d": 44.2,
+  "vol_30d": 42.4,
   "vol_regime": "normal",
-  "drawdown": -69.0,
-  "position_in_range": 0.6,
+  "drawdown": -68.6,
+  "position_in_range": 1.2,
   "returns": {
-    "7d": -1.89,
-    "14d": -8.46,
-    "30d": -8.55,
-    "90d": -26.23,
-    "180d": -90.99,
-    "365d": -93.03
+    "7d": 0.89,
+    "14d": -8.19,
+    "30d": -10.76,
+    "90d": -28.22,
+    "180d": -89.96,
+    "365d": -101.16
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 4.64
-    },
     {
       "date": "2025-04-04",
       "price": 4.98
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 1.67
+    },
+    {
+      "date": "2026-04-03",
+      "price": 1.69
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.04
-    },
     {
       "date": "2025-04-04",
       "value": 0.131
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -0.642
+    },
+    {
+      "date": "2026-04-03",
+      "value": -0.433
     }
   ]
 }

@@ -2,42 +2,38 @@
   "ticker": "CRV-USD",
   "display_name": "CRV",
   "price": 0.21,
-  "conviction": 37.9,
+  "conviction": 53.5,
   "is_signal": false,
-  "mtmdi_zscore": -1.37,
-  "mtmdi_raw": 0.53,
-  "mtmdi_direction": 0.921,
-  "mtmdi_velocity": -0.041,
-  "cascade_score": 0.0669,
-  "momentum_persistence": -1.098,
-  "range_compression": 0.226,
-  "vol_30d": 59.1,
+  "mtmdi_zscore": -0.484,
+  "mtmdi_raw": 0.686,
+  "mtmdi_direction": 1.146,
+  "mtmdi_velocity": 0.723,
+  "cascade_score": 0.0477,
+  "momentum_persistence": 1.296,
+  "range_compression": 0.205,
+  "vol_30d": 58.9,
   "vol_regime": "normal",
-  "drawdown": -81.1,
-  "position_in_range": 0.1,
+  "drawdown": -80.9,
+  "position_in_range": 0.3,
   "returns": {
-    "7d": -5.71,
-    "14d": -12.71,
-    "30d": -19.08,
-    "90d": -66.54,
-    "180d": -131.84,
-    "365d": -86.27
+    "7d": 1.21,
+    "14d": -11.73,
+    "30d": -19.73,
+    "90d": -70.6,
+    "180d": -129.74,
+    "365d": -90.65
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 0.52
-    },
     {
       "date": "2025-04-04",
       "price": 0.5
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 0.21
+    },
+    {
+      "date": "2026-04-03",
+      "price": 0.21
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.06
-    },
     {
       "date": "2025-04-04",
       "value": -0.406
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -1.37
+    },
+    {
+      "date": "2026-04-03",
+      "value": -0.484
     }
   ]
 }

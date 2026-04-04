@@ -2,42 +2,38 @@
   "ticker": "WLD-USD",
   "display_name": "WLD",
   "price": 0.27,
-  "conviction": 27.7,
+  "conviction": 60.1,
   "is_signal": false,
-  "mtmdi_zscore": -0.015,
-  "mtmdi_raw": 0.67,
-  "mtmdi_direction": 0.129,
-  "mtmdi_velocity": -0.153,
-  "cascade_score": 0.1086,
-  "momentum_persistence": -0.832,
-  "range_compression": 0.164,
-  "vol_30d": 99.5,
+  "mtmdi_zscore": 0.743,
+  "mtmdi_raw": 0.874,
+  "mtmdi_direction": 0.455,
+  "mtmdi_velocity": 0.592,
+  "cascade_score": 0.0707,
+  "momentum_persistence": 1.428,
+  "range_compression": 0.076,
+  "vol_30d": 95.4,
   "vol_regime": "high",
-  "drawdown": -86.1,
-  "position_in_range": 1.0,
+  "drawdown": -86.2,
+  "position_in_range": 0.9,
   "returns": {
-    "7d": -8.95,
-    "14d": -21.2,
-    "30d": -38.4,
-    "90d": -72.97,
-    "180d": -155.75,
-    "365d": -99.92
+    "7d": 6.1,
+    "14d": -18.82,
+    "30d": -45.51,
+    "90d": -78.51,
+    "180d": -155.08,
+    "365d": -103.7
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-04-03",
-      "price": 0.75
-    },
     {
       "date": "2025-04-04",
       "price": 0.76
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-02",
       "price": 0.27
+    },
+    {
+      "date": "2026-04-03",
+      "price": 0.27
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-03",
-      "value": -0.788
-    },
     {
       "date": "2025-04-04",
       "value": -0.707
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-02",
       "value": -0.015
+    },
+    {
+      "date": "2026-04-03",
+      "value": 0.743
     }
   ]
 }
