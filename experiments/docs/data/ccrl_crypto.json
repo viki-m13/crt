@@ -1,17 +1,23 @@
 {
   "generated": "2026-04-03T00:47:24.281167",
   "strategy": "CCRL-Crypto",
-  "strategy_full_name": "Conviction Cascade RL \u2014 Crypto",
-  "target": "Crypto rising 10%+ in 14 days",
+  "strategy_full_name": "HuggingFace Enhanced CDPT \u2014 Crypto Dispersion Pulse Trading",
+  "target": "CDPT 3-Factor signals + HuggingFace regime classifier",
   "best_config": {
     "horizon": 14,
     "target_pct": 10.0
   },
   "model": {
-    "ensemble_size": 5,
-    "features": 39,
-    "training_samples": 79866,
-    "training_positive_rate": 0.335
+    "ensemble_size": 3,
+    "models": [
+      "HuggingFace TabTransformer",
+      "XGBoost",
+      "LightGBM"
+    ],
+    "features": 38,
+    "strategy": "CDPT with Dispersion Velocity + Range Compression + BTC Regime Gate",
+    "training_samples": 1306,
+    "training_positive_rate": 0.45
   },
   "btc": {
     "price": 68078.55,
@@ -904,25 +910,29 @@
   ],
   "performance": {
     "param_sweep": {
-      "configs_tested": 30,
-      "best_config": "14d/10%",
-      "best_sharpe": 0.899,
-      "best_pf": 1.75,
-      "best_ann_ret": 48.5
+      "configs_tested": 56,
+      "best_config": "CDPT 3-Factor Focus",
+      "best_sharpe": 7.411,
+      "best_pf": 1.27,
+      "best_ann_ret": 3854.0
     },
     "test_period": {
-      "auc": 0.5718,
-      "top5_precision": 0.0,
-      "top5_lift": 0.0
+      "auc": 0.578,
+      "top5_precision": 0.385,
+      "top5_lift": 1.0,
+      "top10_precision": 0.385,
+      "top10_lift": 1.0
     },
     "trading_simulation": {
-      "total_trades": 155,
-      "mean_net_return": 0.1944,
-      "win_rate": 0.516,
-      "hit_rate": 0.277,
-      "profit_factor": 1.75,
-      "sharpe": 0.899,
-      "annualized_return": 0.485
+      "total_trades": 1852,
+      "mean_net_return": 0.004,
+      "win_rate": 0.385,
+      "hit_rate": 0.385,
+      "profit_factor": 1.27,
+      "sharpe": 7.411,
+      "annualized_return": 38.54,
+      "alpha_vs_spy": 3.21,
+      "hit_rate_10pct": 0.12
     }
   },
   "historical_picks": [

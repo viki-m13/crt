@@ -1,0 +1,33 @@
+{
+  "model": "HuggingFace Enhanced CDPT (TabTransformer + XGBoost + LightGBM)",
+  "strategy": "CDPT 3-Factor Confirmation + HuggingFace Regime Classifier + Weekly Allocation",
+  "features": "38 features: MTMDI, Velocity, Range Compression, CACS, MPR, RSI, Bollinger, MACD, BTC regime",
+  "anti_overfitting": "Purged walk-forward CV, 90-day buffer, 3 independent time periods",
+  "train": {
+    "sharpe": 6.346254881678749,
+    "cagr": 5.457349234814624,
+    "max_drawdown": -0.06702114527044603,
+    "n_trades": 1306,
+    "win_rate": 0.450229709035222,
+    "profit_factor": 1.2105241046771993,
+    "avg_hold_days": 2.462480857580398
+  },
+  "valid": {
+    "sharpe": 6.637410035591792,
+    "cagr": 50.232130426626846,
+    "max_drawdown": -0.12311406997472564,
+    "n_trades": 850,
+    "win_rate": 0.36705882352941177,
+    "profit_factor": 1.0704989481175629,
+    "avg_hold_days": 2.38
+  },
+  "test": {
+    "sharpe": 7.411154178140285,
+    "cagr": 38.540130558434456,
+    "max_drawdown": -0.09459855498008332,
+    "n_trades": 1852,
+    "win_rate": 0.3849892008639309,
+    "profit_factor": 1.2689429878865621,
+    "avg_hold_days": 2.523218142548596
+  }
+}
