@@ -715,247 +715,102 @@ function buildMarquee(items){
     }
   });
 
+
   /* ============================================================
-     BACKTEST — DCA OPTIMIZER
+     BACKTEST — WEEKLY DCA (stocks only, ranked by 60D probability)
      ============================================================ */
-
   const btSection = document.getElementById("backtest-section");
-  let btLoaded = false;
-  let btResults = null;   // cached results across tab switches
-  let btHoldDays = 60;  // default (trading days)
-
-  btSection.addEventListener("toggle", function(){
-    if (btSection.open && !btLoaded){
-      btLoaded = true;
-      runBacktest();
-    }
-  });
-
-  // Hold-period tab buttons
+  let btLoaded = false, btResults = null, btHoldDays = 60;
+  btSection.addEventListener("toggle", function(){ if (btSection.open && !btLoaded){ btLoaded = true; runBacktest(); } });
   document.querySelectorAll(".bt-hold-tabs .btn-lite").forEach(btn => {
     btn.addEventListener("click", function(){
       document.querySelectorAll(".bt-hold-tabs .btn-lite").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      btHoldDays = Number(btn.dataset.hold);
+      btn.classList.add("active"); btHoldDays = Number(btn.dataset.hold);
       if (btResults) renderBacktestResults(btResults, btHoldDays);
     });
   });
 
+  let _btAllData = null, _btPriceLookup = null, _btScoreLookup = null, _btCRYPTO = null;
+  function loadBtData(){
+    if (_btAllData) return;
+    _btAllData = {};
+    const btSeries = full.bt_series || {};
+    for (const [tk, s] of Object.entries(btSeries)) _btAllData[tk] = { series: s };
+    if (full.details) for (const [tk, det] of Object.entries(full.details)) _btAllData[tk] = det;
+    _btCRYPTO = new Set(items.filter(x => x.is_crypto === true || (x.ticker && x.ticker.endsWith("-USD") && x.ticker !== "SPY")).map(x => x.ticker));
+    for (const tk of Object.keys(_btAllData)) if (tk.endsWith("-USD") && tk !== "SPY") _btCRYPTO.add(tk);
+    _btPriceLookup = {}; _btScoreLookup = {};
+    for (const [tk, data] of Object.entries(_btAllData)){
+      const s = data.series; if (!s || !s.dates) continue;
+      const pm = new Map(), fm = new Map();
+      for (let i = 0; i < s.dates.length; i++){ pm.set(s.dates[i], Number(s.prices[i])); fm.set(s.dates[i], Number(s.final[i])); }
+      _btPriceLookup[tk] = pm; _btScoreLookup[tk] = fm;
+    }
+  }
+
+  function runWeeklyDCA(allDates, availTickers, holdDays, topN, priceLookup, rankFn){
+    const DCA = 1000, positions = []; let cash = 0;
+    const equity = new Float64Array(allDates.length); let totalInvested = 0;
+    const weeklyIdx = []; for (let i = 0; i < allDates.length; i += 5) weeklyIdx.push(i);
+    const dayToWeek = new Int32Array(allDates.length);
+    for (let w = 0; w < weeklyIdx.length; w++){
+      const end = w + 1 < weeklyIdx.length ? weeklyIdx[w + 1] : allDates.length;
+      for (let d = weeklyIdx[w]; d < end; d++) dayToWeek[d] = w;
+    }
+    const weeklyRanks = [];
+    for (const wIdx of weeklyIdx){
+      const date = allDates[wIdx], scored = [];
+      for (const tk of availTickers){
+        const rv = rankFn(tk, date), p = priceLookup[tk]?.get(date);
+        if (rv != null && Number.isFinite(rv) && rv > 0 && p != null && Number.isFinite(p) && p > 0)
+          scored.push({ ticker: tk, rankVal: rv, price: p });
+      }
+      scored.sort((a, b) => b.rankVal - a.rankVal);
+      weeklyRanks.push({ date, dateIdx: wIdx, picks: scored.slice(0, Math.min(topN, scored.length)) });
+    }
+    for (const { dateIdx, picks } of weeklyRanks){
+      if (!picks.length) continue; const per = DCA / picks.length;
+      for (const { ticker, price } of picks)
+        positions.push({ ticker, shares: per / price, cost: per, buyPrice: price, buyDayIdx: dateIdx, sellDayIdx: dateIdx + holdDays, sold: false, sellPrice: 0 });
+    }
+    let currentWeek = -1;
+    for (let d = 0; d < allDates.length; d++){
+      const date = allDates[d], wOrd = dayToWeek[d];
+      if (wOrd !== currentWeek){ currentWeek = wOrd; if (weeklyRanks[wOrd]?.picks.length > 0) totalInvested += DCA; }
+      for (const pos of positions) if (!pos.sold && d >= pos.sellDayIdx){ const sp = priceLookup[pos.ticker]?.get(date); if (sp > 0){ cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; } }
+      let openVal = 0;
+      for (const pos of positions){ if (pos.sold || d < pos.buyDayIdx) continue; const p = priceLookup[pos.ticker]?.get(date); if (p && Number.isFinite(p)) openVal += pos.shares * p; }
+      equity[d] = cash + openVal;
+    }
+    return { equity, totalInvested, positions };
+  }
+
+  function runBenchmarkDCA(allDates, benchTicker, holdDays, priceLookup){
+    return runWeeklyDCA(allDates, [benchTicker], holdDays, 1, priceLookup, (tk, date) => (priceLookup[tk]?.get(date) > 0) ? 1 : 0);
+  }
+
   async function runBacktest(){
     const body = byId("backtest-body");
-    body.innerHTML = `<div class="footnote">Loading all ticker data — this may take a moment&hellip;</div>`;
-
+    body.innerHTML = '<div class="footnote">Loading backtest data\u2026</div>';
     try {
-      // 1. Use bt_series embedded in full.json (no extra network requests needed)
-      const allData = {};
-      const btSeries = full.bt_series || {};
-
-      // Load from embedded bt_series (all tickers, lightweight: dates/prices/scores only)
-      for (const [tk, s] of Object.entries(btSeries)){
-        allData[tk] = { series: s };
+      loadBtData();
+      if (!_btAllData["SPY"]){ body.innerHTML = '<div class="footnote" style="color:#b00">SPY not available.</div>'; return; }
+      const ETFS = new Set(["SPY","QQQ","IWM","DIA"]); let allDates = null;
+      for (const [tk, data] of Object.entries(_btAllData)){
+        if (ETFS.has(tk) || _btCRYPTO.has(tk)) continue;
+        const s = data.series; if (!s?.dates || s.dates.length < 200) continue; allDates = s.dates; break;
       }
-      // Also merge full details for top 10 (has quality_parts, evidence, etc)
-      if (full.details){
-        for (const [tk, det] of Object.entries(full.details)){
-          allData[tk] = det;
-        }
-      }
-      console.log("[BT] Loaded", Object.keys(allData).length, "tickers from bt_series (no network requests)");
-
-      // Ensure SPY is loaded
-      if (!allData["SPY"]){
-        body.innerHTML = `<div class="footnote" style="color:#b00">SPY data not available for benchmarking.</div>`;
-        return;
-      }
-
-      // 2. Build aligned date grid — find the most common date range
-      //    (SPY may have offset dates due to feature computation cutoffs)
-      //    Use the first non-ETF stock ticker's dates as the canonical grid,
-      //    since all stocks share the same range.
-      const CRYPTO = new Set(items.filter(x => x.is_crypto).map(x => x.ticker));
-      // Fallback: also treat any -USD ticker as crypto
-      for (const tk of Object.keys(allData)){ if (tk.endsWith("-USD") && tk !== "SPY") CRYPTO.add(tk); }
-      const ETFS = new Set(["SPY", "QQQ", "IWM", "DIA"]);
-      let allDates = null;
-      for (const [tk, data] of Object.entries(allData)){
-        if (ETFS.has(tk) || CRYPTO.has(tk)) continue;
-        const s = data.series;
-        if (!s || !s.dates || s.dates.length < 200) continue;
-        allDates = s.dates;
-        break;
-      }
-      if (!allDates || allDates.length === 0){
-        body.innerHTML = `<div class="footnote" style="color:#b00">No date grid available for backtest.</div>`;
-        return;
-      }
-      console.log("[BT] allDates:", allDates[0], "to", allDates[allDates.length-1], "len:", allDates.length);
-
-      // Build price & score lookups per ticker (date string → value)
-      const priceLookup = {};  // tk → Map(date → price)
-      const scoreLookup = {};  // tk → Map(date → final score)
-      for (const [tk, data] of Object.entries(allData)){
-        const s = data.series;
-        if (!s || !s.dates) continue;
-        const pm = new Map();
-        const fm = new Map();
-        for (let i = 0; i < s.dates.length; i++){
-          pm.set(s.dates[i], Number(s.prices[i]));
-          fm.set(s.dates[i], Number(s.final[i]));
-        }
-        priceLookup[tk] = pm;
-        scoreLookup[tk] = fm;
-      }
-
-      // 3. Identify weekly entry points (every 5 trading days)
-      const weeklyIdx = [];
-      for (let i = 0; i < allDates.length; i += 5){
-        weeklyIdx.push(i);
-      }
-
-      // 4. Build prob lookups from items array (keyed by ticker)
-      const probLookup = {};
-      for (const item of items){
-        probLookup[item.ticker] = {
-          prob_10d: item.prob_10d,
-          prob_30d: item.prob_30d,
-          prob_60d: item.prob_60d,
-          conviction: item.conviction,
-        };
-      }
-
-      // 5. Run simulations
-      const availTickers = Object.keys(priceLookup).filter(t => t !== "SPY" && !CRYPTO.has(t));
-      const strategies = [1, 5, 10];
-      const holdPeriods = [10, 30, 60];
-      console.log("[BT] availTickers:", availTickers.length, "allDates:", allDates.length, "weekly:", weeklyIdx.length);
-
-      // Rank by historical opportunity score each week (dynamic, changes over time).
-      // The score already incorporates probability, quality, and pullback depth,
-      // and varies day-to-day so the backtest picks different stocks each week
-      // based on which ones were most attractive at that point in time.
-      function buildWeeklyRanks(holdDays){
-        const ranks = [];
-        for (const wIdx of weeklyIdx){
-          const date = allDates[wIdx];
-          const scored = [];
-          for (const tk of availTickers){
-            const s = scoreLookup[tk]?.get(date);
-            const p = priceLookup[tk]?.get(date);
-            if (s != null && Number.isFinite(s) && s > 0 &&
-                p != null && Number.isFinite(p) && p > 0){
-              scored.push({ ticker: tk, score: s });
-            }
-          }
-          scored.sort((a, b) => b.score - a.score);
-          ranks.push({ date, dateIdx: wIdx, ranked: scored.map(s => s.ticker) });
-        }
-        console.log("[BT] buildWeeklyRanks:", ranks.length, "weeks, first week scored:", ranks[0]?.ranked?.length, "top:", ranks[0]?.ranked?.slice(0,3));
-        return ranks;
-      }
-
-      // Precompute day→week ordinal for fast lookup
-      const dayToWeek = new Int32Array(allDates.length);
-      for (let w = 0; w < weeklyIdx.length; w++){
-        const start = weeklyIdx[w];
-        const end = w + 1 < weeklyIdx.length ? weeklyIdx[w + 1] : allDates.length;
-        for (let d = start; d < end; d++) dayToWeek[d] = w;
-      }
-
-      // Generic DCA simulation (weekly, hold in trading days)
-      function simulateDCA(holdDays, weeklyRanks, picksFn){
-        const DCA = 1000;
-        const positions = [];
-        let cash = 0;
-        const equity = new Float64Array(allDates.length);
-
-        // Build positions
-        for (let w = 0; w < weeklyRanks.length; w++){
-          const date = weeklyRanks[w].date;
-          const buyIdx = weeklyRanks[w].dateIdx;
-          const picks = picksFn(w, date);
-          if (picks.length === 0) continue;
-          const perStock = DCA / picks.length;
-          for (const { ticker, price } of picks){
-            if (!price || price <= 0) continue;
-            positions.push({ ticker, shares: perStock / price, cost: perStock, buyPrice: price, buyDayIdx: buyIdx, sellDayIdx: buyIdx + holdDays, sold: false, sellPrice: 0 });
-          }
-        }
-
-        // Walk daily
-        let totalInvested = 0;
-        let currentWeek = -1;
-        for (let d = 0; d < allDates.length; d++){
-          const date = allDates[d];
-          const wOrd = dayToWeek[d];
-
-          if (wOrd !== currentWeek){
-            currentWeek = wOrd;
-            const picks = picksFn(wOrd, weeklyRanks[wOrd]?.date);
-            if (picks.length > 0) totalInvested += DCA;
-          }
-
-          // Sell expired positions
-          for (const pos of positions){
-            if (!pos.sold && d >= pos.sellDayIdx){
-              const sp = priceLookup[pos.ticker]?.get(date);
-              if (sp && sp > 0){ cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
-            }
-          }
-
-          // Value open positions
-          let openVal = 0;
-          for (const pos of positions){
-            if (pos.sold || d < pos.buyDayIdx) continue;
-            const p = priceLookup[pos.ticker]?.get(date);
-            if (p && Number.isFinite(p)) openVal += pos.shares * p;
-          }
-          equity[d] = cash + openVal;
-        }
-
-        return { equity, totalInvested, positions };
-      }
-
-      function simulate(topN, holdDays, weeklyRanks){
-        const result = simulateDCA(holdDays, weeklyRanks, (w, date) => {
-          const ranked = weeklyRanks[w]?.ranked || [];
-          const picks = ranked.slice(0, Math.min(topN, ranked.length));
-          return picks.map(tk => ({ ticker: tk, price: priceLookup[tk]?.get(date) }));
-        });
-        console.log(`[BT] simulate top${topN} ${holdDays}D: invested=$${result.totalInvested} positions=${result.positions.length} finalEquity=${result.equity[result.equity.length-1].toFixed(0)}`);
-        return result;
-      }
-
-      function simulateSPY(holdDays, weeklyRanks){
-        // SPY buy-and-hold benchmark: invest $1000/week into SPY
-        // Use any available broad market ETF that has matching dates
-        const spyTicker = ["SPY", "DIA", "QQQ", "IWM"].find(t => {
-          const pm = priceLookup[t];
-          return pm && pm.get(allDates[Math.floor(allDates.length/2)]);
-        }) || "SPY";
-        return simulateDCA(holdDays, weeklyRanks, (w, date) => {
-          const price = priceLookup[spyTicker]?.get(date);
-          return price && price > 0 ? [{ ticker: spyTicker, price }] : [];
-        });
-      }
-
-      // Pre-compute all results
-      btResults = { allDates, priceLookup, holdPeriods: {} };
-      for (const hp of holdPeriods){
-        const weeklyRanks = buildWeeklyRanks(hp);
-        const spy = simulateSPY(hp, weeklyRanks);
-        const strats = {};
-        for (const n of strategies){
-          strats[n] = simulate(n, hp, weeklyRanks);
-        }
+      if (!allDates?.length){ body.innerHTML = '<div class="footnote" style="color:#b00">No date grid.</div>'; return; }
+      const availTickers = Object.keys(_btPriceLookup).filter(t => !ETFS.has(t) && !_btCRYPTO.has(t));
+      const rankByScore = (tk, date) => _btScoreLookup[tk]?.get(date) ?? 0;
+      btResults = { allDates, priceLookup: _btPriceLookup, holdPeriods: {} };
+      for (const hp of [10,30,60]){
+        const spy = runBenchmarkDCA(allDates, "SPY", hp, _btPriceLookup);
+        const strats = {}; for (const n of [1,5,10]) strats[n] = runWeeklyDCA(allDates, availTickers, hp, n, _btPriceLookup, rankByScore);
         btResults.holdPeriods[hp] = { spy, strats };
       }
-
       renderBacktestResults(btResults, btHoldDays);
-
-    } catch(err){
-      console.error("Backtest error:", err);
-      body.innerHTML = `<div class="footnote" style="color:#b00">Backtest error: ${err.message}</div>`;
-    }
+    } catch(err){ console.error("BT error:", err); body.innerHTML = '<div class="footnote" style="color:#b00">Backtest error: '+err.message+'</div>'; }
   }
 
   function aggregatePositions(positions, priceLookup, lastDate){
@@ -1380,7 +1235,6 @@ function buildMarquee(items){
     result.spy = calcForSeries(spy.equity, spy.totalInvested);
     return result;
   }
-
   /* ============================================================
      SHORT CRYPTO — screener + backtest (crypto only)
      ============================================================ */
@@ -1450,477 +1304,100 @@ function buildMarquee(items){
     cryptoListing.innerHTML = `<div class="footnote">No crypto data available yet. The daily scan needs to run with the expanded crypto universe.</div>`;
   }
 
-  // Crypto backtest
+  // ---- Crypto backtest ----
   const cryptoBtSection = document.getElementById("crypto-backtest-section");
-  let cryptoBtLoaded = false;
-  let cryptoBtResults = null;
-  let cryptoBtHoldDays = 60;
-
+  let cryptoBtLoaded = false, cryptoBtResults = null, cryptoBtHoldDays = 60;
   if (cryptoBtSection){
-    cryptoBtSection.addEventListener("toggle", function(){
-      if (cryptoBtSection.open && !cryptoBtLoaded){
-        cryptoBtLoaded = true;
-        runCryptoBacktest();
-      }
-    });
-
+    cryptoBtSection.addEventListener("toggle", function(){ if (cryptoBtSection.open && !cryptoBtLoaded){ cryptoBtLoaded = true; runCryptoBacktest(); } });
     document.querySelectorAll(".crypto-hold-tabs .btn-lite").forEach(btn => {
       btn.addEventListener("click", function(){
         document.querySelectorAll(".crypto-hold-tabs .btn-lite").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        cryptoBtHoldDays = Number(btn.dataset.cryptoHold);
+        btn.classList.add("active"); cryptoBtHoldDays = Number(btn.dataset.cryptoHold);
         if (cryptoBtResults) renderCryptoBacktestResults(cryptoBtResults, cryptoBtHoldDays);
       });
     });
   }
-
   async function runCryptoBacktest(){
     const body = byId("crypto-backtest-body");
-    body.innerHTML = `<div class="footnote">Loading crypto backtest data&hellip;</div>`;
-
+    body.innerHTML = '<div class="footnote">Loading crypto backtest\u2026</div>';
     try {
-      const allData = {};
-      const btSeries = full.bt_series || {};
-
-      for (const [tk, s] of Object.entries(btSeries)){
-        allData[tk] = { series: s };
-      }
-      if (full.details){
-        for (const [tk, det] of Object.entries(full.details)){
-          allData[tk] = det;
-        }
-      }
-
-      // Filter to crypto only: use is_crypto flag or -USD suffix
-      const cryptoSet = new Set(items.filter(x => x.is_crypto === true || (x.ticker && x.ticker.endsWith("-USD") && x.ticker !== "SPY")).map(x => x.ticker));
-      const cryptoAvail = Object.keys(allData).filter(tk => {
-        if (!cryptoSet.has(tk)) return false;
-        const s = allData[tk]?.series;
-        return s && s.dates && s.prices && s.final && s.dates.length >= 100;
-      });
-
-      if (cryptoAvail.length === 0){
-        body.innerHTML = `<div class="footnote" style="color:#b00">No crypto backtest data available yet. The daily scan needs to run with the expanded crypto universe.</div>`;
-        return;
-      }
-
-      // Use BTC-USD dates as the canonical grid (crypto trades 365 days)
-      const btcData = allData["BTC-USD"];
-      if (!btcData || !btcData.series || !btcData.series.dates){
-        body.innerHTML = `<div class="footnote" style="color:#b00">BTC-USD data not available for benchmarking.</div>`;
-        return;
-      }
+      loadBtData();
+      const btcData = _btAllData["BTC-USD"];
+      if (!btcData?.series?.dates){ body.innerHTML = '<div class="footnote" style="color:#b00">BTC-USD not available.</div>'; return; }
       const allDates = btcData.series.dates;
-      console.log("[Crypto BT] allDates:", allDates[0], "to", allDates[allDates.length-1], "len:", allDates.length);
-
-      // Build price & score lookups
-      const priceLookup = {};
-      const scoreLookup = {};
-      for (const tk of cryptoAvail.concat(["BTC-USD"])){
-        const s = allData[tk]?.series;
-        if (!s || !s.dates) continue;
-        const pm = new Map();
-        const fm = new Map();
-        for (let i = 0; i < s.dates.length; i++){
-          pm.set(s.dates[i], Number(s.prices[i]));
-          fm.set(s.dates[i], Number(s.final[i]));
-        }
-        priceLookup[tk] = pm;
-        scoreLookup[tk] = fm;
-      }
-
-      // Weekly entry points (every 7 calendar days for crypto)
-      const weeklyIdx = [];
-      for (let i = 0; i < allDates.length; i += 5){
-        weeklyIdx.push(i);
-      }
-
-      const availTickers = cryptoAvail.filter(t => t !== "BTC-USD" && priceLookup[t]);
-      const strategies = [1, 3, 5];
-      const holdPeriods = [10, 30, 60];
-      console.log("[Crypto BT] availTickers:", availTickers.length, "weekly:", weeklyIdx.length);
-
-      function buildCryptoWeeklyRanks(holdDays){
-        const ranks = [];
-        for (const wIdx of weeklyIdx){
-          const date = allDates[wIdx];
-          const scored = [];
-          for (const tk of availTickers){
-            const s = scoreLookup[tk]?.get(date);
-            const p = priceLookup[tk]?.get(date);
-            if (s != null && Number.isFinite(s) && s > 0 &&
-                p != null && Number.isFinite(p) && p > 0){
-              scored.push({ ticker: tk, score: s });
-            }
-          }
-          scored.sort((a, b) => b.score - a.score);
-          ranks.push({ date, dateIdx: wIdx, ranked: scored.map(s => s.ticker) });
-        }
-        return ranks;
-      }
-
-      const dayToWeek = new Int32Array(allDates.length);
-      for (let w = 0; w < weeklyIdx.length; w++){
-        const start = weeklyIdx[w];
-        const end = w + 1 < weeklyIdx.length ? weeklyIdx[w + 1] : allDates.length;
-        for (let d = start; d < end; d++) dayToWeek[d] = w;
-      }
-
-      function simulateCryptoDCA(holdDays, weeklyRanks, picksFn){
-        const DCA = 1000;
-        const positions = [];
-        let cash = 0;
-        const equity = new Float64Array(allDates.length);
-
-        for (let w = 0; w < weeklyRanks.length; w++){
-          const date = weeklyRanks[w].date;
-          const buyIdx = weeklyRanks[w].dateIdx;
-          const picks = picksFn(w, date);
-          if (picks.length === 0) continue;
-          const perStock = DCA / picks.length;
-          for (const { ticker, price } of picks){
-            if (!price || price <= 0) continue;
-            positions.push({ ticker, shares: perStock / price, cost: perStock, buyPrice: price, buyDayIdx: buyIdx, sellDayIdx: buyIdx + holdDays, sold: false, sellPrice: 0 });
-          }
-        }
-
-        let totalInvested = 0;
-        let currentWeek = -1;
-        for (let d = 0; d < allDates.length; d++){
-          const date = allDates[d];
-          const wOrd = dayToWeek[d];
-          if (wOrd !== currentWeek){
-            currentWeek = wOrd;
-            const picks = picksFn(wOrd, weeklyRanks[wOrd]?.date);
-            if (picks.length > 0) totalInvested += DCA;
-          }
-          for (const pos of positions){
-            if (!pos.sold && d >= pos.sellDayIdx){
-              const sp = priceLookup[pos.ticker]?.get(date);
-              if (sp && sp > 0){ cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
-            }
-          }
-          let openVal = 0;
-          for (const pos of positions){
-            if (pos.sold || d < pos.buyDayIdx) continue;
-            const p = priceLookup[pos.ticker]?.get(date);
-            if (p && Number.isFinite(p)) openVal += pos.shares * p;
-          }
-          equity[d] = cash + openVal;
-        }
-
-        return { equity, totalInvested, positions };
-      }
-
-      function simulateCrypto(topN, holdDays, weeklyRanks){
-        return simulateCryptoDCA(holdDays, weeklyRanks, (w, date) => {
-          const ranked = weeklyRanks[w]?.ranked || [];
-          const picks = ranked.slice(0, Math.min(topN, ranked.length));
-          return picks.map(tk => ({ ticker: tk, price: priceLookup[tk]?.get(date) }));
-        });
-      }
-
-      function simulateBTC(holdDays, weeklyRanks){
-        return simulateCryptoDCA(holdDays, weeklyRanks, (w, date) => {
-          const price = priceLookup["BTC-USD"]?.get(date);
-          return price && price > 0 ? [{ ticker: "BTC-USD", price }] : [];
-        });
-      }
-
-      cryptoBtResults = { allDates, priceLookup, holdPeriods: {} };
-      for (const hp of holdPeriods){
-        const weeklyRanks = buildCryptoWeeklyRanks(hp);
-        const btc = simulateBTC(hp, weeklyRanks);
-        const strats = {};
-        for (const n of strategies){
-          strats[n] = simulateCrypto(n, hp, weeklyRanks);
-        }
+      const cryptoAvail = Object.keys(_btPriceLookup).filter(tk => {
+        if (!_btCRYPTO.has(tk) || tk === "BTC-USD") return false;
+        let v = 0; for (const d of allDates) if (_btPriceLookup[tk]?.get(d) > 0) v++; return v >= 100;
+      });
+      if (!cryptoAvail.length){ body.innerHTML = '<div class="footnote" style="color:#b00">No crypto data.</div>'; return; }
+      const rankByScore = (tk, date) => _btScoreLookup[tk]?.get(date) ?? 0;
+      cryptoBtResults = { allDates, priceLookup: _btPriceLookup, holdPeriods: {} };
+      for (const hp of [10,30,60]){
+        const btc = runBenchmarkDCA(allDates, "BTC-USD", hp, _btPriceLookup);
+        const strats = {}; for (const n of [1,5,10]) strats[n] = runWeeklyDCA(allDates, cryptoAvail, hp, n, _btPriceLookup, rankByScore);
         cryptoBtResults.holdPeriods[hp] = { spy: btc, strats };
       }
-
       renderCryptoBacktestResults(cryptoBtResults, cryptoBtHoldDays);
-
-    } catch(err){
-      console.error("Crypto backtest error:", err);
-      body.innerHTML = `<div class="footnote" style="color:#b00">Crypto backtest error: ${err.message}</div>`;
-    }
+    } catch(err){ console.error("Crypto BT error:", err); body.innerHTML = '<div class="footnote" style="color:#b00">Error: '+err.message+'</div>'; }
   }
-
   function renderCryptoBacktestResults(results, holdDays){
-    const body = byId("crypto-backtest-body");
-    body.innerHTML = "";
-
+    const body = byId("crypto-backtest-body"); body.innerHTML = "";
     const { allDates, priceLookup } = results;
     const data = results.holdPeriods[holdDays];
-    if (!data){ body.innerHTML = `<div class="footnote">No data for this hold period.</div>`; return; }
-
-    const { spy: btc, strats } = data;
-    const lastDate = allDates[allDates.length - 1];
-    const strategies = [1, 3, 5];
-
-    // Equity curve chart
-    const chartWrap = document.createElement("div");
-    chartWrap.className = "bt-chart-wrap";
-    const canvas = document.createElement("canvas");
-    canvas.className = "bt-canvas";
-    chartWrap.appendChild(canvas);
-
-    const legend = document.createElement("div");
-    legend.className = "bt-legend";
-    const colors = { 1: "#064e2b", 3: "#1a6dd1", 5: "#d4820e", spy: "#f7931a" };
-    const labels = { 1: "Top 1", 3: "Top 3", 5: "Top 5", spy: "BTC (benchmark)" };
-    for (const key of [1, 3, 5, "spy"]){
-      const swatch = document.createElement("span");
-      swatch.className = "bt-legend-item";
-      swatch.innerHTML = `<span class="bt-swatch" style="background:${colors[key]}"></span>${labels[key]}`;
-      legend.appendChild(swatch);
-    }
-    chartWrap.appendChild(legend);
-    body.appendChild(chartWrap);
-
+    if (!data){ body.innerHTML = '<div class="footnote">No data.</div>'; return; }
+    const { spy: btc, strats } = data, lastDate = allDates[allDates.length-1];
+    const chartWrap = document.createElement("div"); chartWrap.className = "bt-chart-wrap";
+    const canvas = document.createElement("canvas"); canvas.className = "bt-canvas"; chartWrap.appendChild(canvas);
+    const legend = document.createElement("div"); legend.className = "bt-legend";
+    const colors = {1:"#064e2b",5:"#1a6dd1",10:"#d4820e",spy:"#f7931a"};
+    const labels = {1:"Top 1",5:"Top 5",10:"Top 10",spy:"BTC (benchmark)"};
+    for (const key of [1,5,10,"spy"]){ const sw = document.createElement("span"); sw.className = "bt-legend-item"; sw.innerHTML = '<span class="bt-swatch" style="background:'+colors[key]+'"></span>'+labels[key]; legend.appendChild(sw); }
+    chartWrap.appendChild(legend); body.appendChild(chartWrap);
     requestAnimationFrame(() => drawBacktestChart(canvas, allDates, strats, btc, colors));
-
-    // Performance metrics
-    const metrics = {};
-    function calcForSeries(eq, totalInvested){
-      let start = 0;
-      for (let i = 0; i < eq.length; i++){ if (eq[i] > 0){ start = i; break; } }
-      const finalVal = eq[eq.length - 1];
-      const monthlyReturns = [];
-      let prevYM = "";
-      let monthStart = 0;
-      for (let i = start; i < eq.length; i++){
-        const ym = allDates[i].substring(0, 7);
-        if (ym !== prevYM){
-          if (prevYM && eq[monthStart] > 0) monthlyReturns.push((eq[i] - eq[monthStart]) / eq[monthStart]);
-          prevYM = ym;
-          monthStart = i;
-        }
-      }
-      let peak = 0, maxDD = 0;
-      for (let i = start; i < eq.length; i++){
-        if (eq[i] > peak) peak = eq[i];
-        const dd = (peak - eq[i]) / peak;
-        if (dd > maxDD) maxDD = dd;
-      }
-      const totalReturn = totalInvested > 0 ? (finalVal - totalInvested) / totalInvested : 0;
-      const startDate = new Date(allDates[start]);
-      const endDate = new Date(allDates[allDates.length - 1]);
-      const years = (endDate - startDate) / (365.25 * 86400000);
-      const cagr = years > 0 ? Math.pow(finalVal / totalInvested, 1 / years) - 1 : 0;
-      const avgR = monthlyReturns.reduce((a, b) => a + b, 0) / (monthlyReturns.length || 1);
-      const stdR = Math.sqrt(monthlyReturns.reduce((a, b) => a + (b - avgR) ** 2, 0) / (monthlyReturns.length || 1));
-      const sharpe = stdR > 0 ? (avgR / stdR) * Math.sqrt(12) : 0;
-      const winRate = monthlyReturns.length > 0 ? monthlyReturns.filter(r => r > 0).length / monthlyReturns.length : 0;
-      return {
-        totalInvested: Math.round(totalInvested), finalValue: Math.round(finalVal),
-        totalReturn, cagr, maxDrawdown: maxDD,
-        bestMonth: monthlyReturns.length ? Math.max(...monthlyReturns) : 0,
-        worstMonth: monthlyReturns.length ? Math.min(...monthlyReturns) : 0,
-        winRate, sharpe
-      };
-    }
-    for (const n of strategies) metrics[n] = calcForSeries(strats[n].equity, strats[n].totalInvested);
-    metrics.spy = calcForSeries(btc.equity, btc.totalInvested);
-
-    const table = document.createElement("table");
-    table.className = "outcomes-table bt-table";
-    const metricRows = [
-      ["Total Invested", (m) => "$" + m.totalInvested.toLocaleString()],
-      ["Final Value", (m) => "$" + m.finalValue.toLocaleString()],
-      ["Total Return", (m) => fmtPctSigned(m.totalReturn)],
-      ["CAGR", (m) => fmtPctSigned(m.cagr)],
-      ["Max Drawdown", (m) => fmtPctSigned(-m.maxDrawdown)],
-      ["Best Month", (m) => fmtPctSigned(m.bestMonth)],
-      ["Worst Month", (m) => fmtPctSigned(m.worstMonth)],
-      ["Win Rate (months)", (m) => Math.round(m.winRate * 100) + "%"],
-      ["Sharpe Ratio", (m) => m.sharpe.toFixed(2)],
-    ];
-    let hdr = `<thead><tr><th></th><th>Top 1</th><th>Top 3</th><th>Top 5</th><th>BTC</th></tr></thead>`;
-    let tbody = "<tbody>";
-    for (const [label, fn] of metricRows){
-      tbody += `<tr><td>${label}</td>`;
-      tbody += `<td>${fn(metrics[1])}</td>`;
-      tbody += `<td>${fn(metrics[3])}</td>`;
-      tbody += `<td>${fn(metrics[5])}</td>`;
-      tbody += `<td>${fn(metrics.spy)}</td>`;
-      tbody += `</tr>`;
-    }
-    tbody += "</tbody>";
-    table.innerHTML = hdr + tbody;
-    const tableScroll = document.createElement("div");
-    tableScroll.className = "table-scroll";
-    tableScroll.appendChild(table);
-    body.appendChild(tableScroll);
-
-    // Position details
-    for (const n of strategies){
-      const agg = aggregatePositions(strats[n].positions, priceLookup, lastDate);
-      if (agg.length === 0) continue;
-      const det = document.createElement("details");
-      det.className = "details bt-positions-details";
-      const stratLabel = n === 1 ? "Top 1" : n === 3 ? "Top 3" : "Top 5";
-      let posRows = "";
-      for (const p of agg){
-        const retColor = p.returnPct >= 0 ? "#064e2b" : "#b35900";
-        const statusTag = p.status === "open" ? `<span class="bt-status-open">holding</span>` : p.status === "partial" ? `<span class="bt-status-partial">partial</span>` : "";
-        posRows += `<tr>
-          <td style="text-align:left;font-weight:600">${p.ticker} ${statusTag}</td>
-          <td>${p.buys}</td>
-          <td>$${Math.round(p.totalInvested).toLocaleString()}</td>
-          <td>$${p.avgCost < 1 ? p.avgCost.toFixed(4) : p.avgCost < 100 ? p.avgCost.toFixed(2) : Math.round(p.avgCost).toLocaleString()}</td>
-          <td>$${p.blendedExit < 1 ? p.blendedExit.toFixed(4) : p.blendedExit < 100 ? p.blendedExit.toFixed(2) : Math.round(p.blendedExit).toLocaleString()}</td>
-          <td>$${Math.round(p.totalValue).toLocaleString()}</td>
-          <td style="color:${retColor};font-weight:600">${fmtPctSigned(p.returnPct)}</td>
-        </tr>`;
-      }
-      det.innerHTML = `
-        <summary class="details-summary">
-          <div class="evidence-summary-left">
-            <span class="section-title">${stratLabel} — CRYPTO DCA POSITIONS</span>
-            <span class="ev-sub">${agg.length} assets, averaged across ${agg.reduce((s,p) => s + p.buys, 0)} weekly purchases</span>
-          </div>
-          <span class="plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="details-body">
-          <div class="table-scroll">
-          <table class="outcomes-table bt-pos-table">
-            <thead><tr>
-              <th style="text-align:left">Ticker</th>
-              <th>Buys</th>
-              <th>Invested</th>
-              <th>Avg Cost</th>
-              <th>Avg Exit</th>
-              <th>Value</th>
-              <th>Return</th>
-            </tr></thead>
-            <tbody>${posRows}</tbody>
-          </table>
-          </div>
-        </div>
-      `;
+    const metrics = computeMetrics(allDates, strats, btc, holdDays);
+    const table = document.createElement("table"); table.className = "outcomes-table bt-table";
+    const mr = [["Total Invested",(m)=>"$"+m.totalInvested.toLocaleString()],["Final Value",(m)=>"$"+m.finalValue.toLocaleString()],["Total Return",(m)=>fmtPctSigned(m.totalReturn)],["CAGR",(m)=>fmtPctSigned(m.cagr)],["Max Drawdown",(m)=>fmtPctSigned(-m.maxDrawdown)],["Best Month",(m)=>fmtPctSigned(m.bestMonth)],["Worst Month",(m)=>fmtPctSigned(m.worstMonth)],["Win Rate (months)",(m)=>Math.round(m.winRate*100)+"%"],["Sharpe Ratio",(m)=>m.sharpe.toFixed(2)]];
+    let hdr = '<thead><tr><th></th><th>Top 1</th><th>Top 5</th><th>Top 10</th><th>BTC</th></tr></thead>';
+    let tb = "<tbody>"; for (const [l,fn] of mr) tb += '<tr><td>'+l+'</td><td>'+fn(metrics[1])+'</td><td>'+fn(metrics[5])+'</td><td>'+fn(metrics[10])+'</td><td>'+fn(metrics.spy)+'</td></tr>'; tb += "</tbody>";
+    table.innerHTML = hdr + tb;
+    const ts = document.createElement("div"); ts.className = "table-scroll"; ts.appendChild(table); body.appendChild(ts);
+    for (const n of [1,5,10]){
+      const agg = aggregatePositions(strats[n].positions, priceLookup, lastDate); if (!agg.length) continue;
+      const det = document.createElement("details"); det.className = "details bt-positions-details";
+      let pr = "";
+      for (const p of agg){ const rc = p.returnPct>=0?"#064e2b":"#b35900"; const st = p.status==="open"?'<span class="bt-status-open">holding</span>':p.status==="partial"?'<span class="bt-status-partial">partial</span>':""; pr += '<tr><td style="text-align:left;font-weight:600">'+p.ticker+' '+st+'</td><td>'+p.buys+'</td><td>$'+Math.round(p.totalInvested).toLocaleString()+'</td><td>$'+(p.avgCost<1?p.avgCost.toFixed(4):p.avgCost<100?p.avgCost.toFixed(2):Math.round(p.avgCost).toLocaleString())+'</td><td>$'+(p.blendedExit<1?p.blendedExit.toFixed(4):p.blendedExit<100?p.blendedExit.toFixed(2):Math.round(p.blendedExit).toLocaleString())+'</td><td>$'+Math.round(p.totalValue).toLocaleString()+'</td><td style="color:'+rc+';font-weight:600">'+fmtPctSigned(p.returnPct)+'</td></tr>'; }
+      det.innerHTML = '<summary class="details-summary"><div class="evidence-summary-left"><span class="section-title">Top '+n+' \u2014 CRYPTO POSITIONS</span><span class="ev-sub">'+agg.length+' assets, '+agg.reduce((s,p)=>s+p.buys,0)+' purchases</span></div><span class="plus">+</span></summary><div class="details-body"><div class="table-scroll"><table class="outcomes-table bt-pos-table"><thead><tr><th style="text-align:left">Ticker</th><th>Buys</th><th>Invested</th><th>Avg Cost</th><th>Avg Exit</th><th>Value</th><th>Return</th></tr></thead><tbody>'+pr+'</tbody></table></div></div>';
       body.appendChild(det);
     }
-
-    // Recent trades (Top 3 strategy)
-    const top3Pos = data.strats[3]?.positions || [];
-    const closedTrades = top3Pos
-      .filter(p => p.sold && p.sellPrice > 0 && p.buyDayIdx < allDates.length && p.sellDayIdx < allDates.length)
-      .map(p => {
-        const ret = (p.sellPrice / p.buyPrice - 1);
-        const buyDate = allDates[Math.min(p.buyDayIdx, allDates.length - 1)];
-        const sellDate = allDates[Math.min(p.sellDayIdx, allDates.length - 1)] || allDates[allDates.length - 1];
-        const daysHeld = p.sellDayIdx - p.buyDayIdx;
-        return { ticker: p.ticker, buyPrice: p.buyPrice, sellPrice: p.sellPrice, ret, buyDate, sellDate, daysHeld };
-      })
-      .sort((a, b) => b.sellDate.localeCompare(a.sellDate));
-
-    if (closedTrades.length > 0){
-      const wins = closedTrades.filter(t => t.ret > 0).length;
-      const total = closedTrades.length;
-      const avgRet = closedTrades.reduce((s, t) => s + t.ret, 0) / total;
-      const medRet = [...closedTrades].sort((a,b) => a.ret - b.ret)[Math.floor(total/2)]?.ret || 0;
-
-      const tradesDet = document.createElement("details");
-      tradesDet.className = "details bt-positions-details";
-      tradesDet.open = true;
-
-      let tradeRows = "";
-      const showTrades = closedTrades.slice(0, 30);
-      for (const t of showTrades){
-        const retColor = t.ret >= 0 ? "#064e2b" : "#b35900";
-        const hitTag = t.ret >= 0 ? `<span style="color:#064e2b;font-size:9px;text-transform:uppercase;letter-spacing:.06em;background:rgba(6,78,43,.08);padding:2px 6px;font-weight:500;margin-left:4px">WIN</span>` : "";
-        tradeRows += `<tr>
-          <td style="text-align:left;font-weight:600">${t.ticker} ${hitTag}</td>
-          <td>${t.buyDate}</td>
-          <td>${t.sellDate}</td>
-          <td>$${t.buyPrice < 10 ? t.buyPrice.toFixed(2) : Math.round(t.buyPrice).toLocaleString()}</td>
-          <td>$${t.sellPrice < 10 ? t.sellPrice.toFixed(2) : Math.round(t.sellPrice).toLocaleString()}</td>
-          <td>${t.daysHeld}d</td>
-          <td style="color:${retColor};font-weight:600">${fmtPctSigned(t.ret)}</td>
-        </tr>`;
-      }
-
-      tradesDet.innerHTML = `
-        <summary class="details-summary">
-          <div class="evidence-summary-left">
-            <span class="section-title">TOP 3 — RECENT CRYPTO TRADES</span>
-            <span class="ev-sub">${total} closed trades | Win rate: ${Math.round(wins/total*100)}% | Avg return: ${fmtPctSigned(avgRet)} | Median: ${fmtPctSigned(medRet)}</span>
-          </div>
-          <span class="plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="details-body">
-          <div class="table-scroll">
-          <table class="outcomes-table bt-pos-table">
-            <thead><tr>
-              <th style="text-align:left">Ticker</th>
-              <th>Buy Date</th>
-              <th>Sell Date</th>
-              <th>Buy Price</th>
-              <th>Sell Price</th>
-              <th>Held</th>
-              <th>Return</th>
-            </tr></thead>
-            <tbody>${tradeRows}</tbody>
-          </table>
-          </div>
-        </div>
-      `;
-      body.appendChild(tradesDet);
+    const top5Pos = data.strats[5]?.positions || [];
+    const closed = top5Pos.filter(p=>p.sold&&p.sellPrice>0).map(p=>({ticker:p.ticker,buyPrice:p.buyPrice,sellPrice:p.sellPrice,ret:p.sellPrice/p.buyPrice-1,buyDate:allDates[Math.min(p.buyDayIdx,allDates.length-1)],sellDate:allDates[Math.min(p.sellDayIdx,allDates.length-1)]||allDates[allDates.length-1],daysHeld:p.sellDayIdx-p.buyDayIdx})).sort((a,b)=>b.sellDate.localeCompare(a.sellDate));
+    if (closed.length){
+      const wins=closed.filter(t=>t.ret>0).length, total=closed.length, avgRet=closed.reduce((s,t)=>s+t.ret,0)/total, medRet=[...closed].sort((a,b)=>a.ret-b.ret)[Math.floor(total/2)]?.ret||0;
+      const td = document.createElement("details"); td.className = "details bt-positions-details"; td.open = true;
+      let tr = "";
+      for (const t of closed.slice(0,30)){ const rc=t.ret>=0?"#064e2b":"#b35900"; const ht=t.ret>=0?'<span style="color:#064e2b;font-size:9px;text-transform:uppercase;letter-spacing:.06em;background:rgba(6,78,43,.08);padding:2px 6px;font-weight:500;margin-left:4px">WIN</span>':""; tr += '<tr><td style="text-align:left;font-weight:600">'+t.ticker+' '+ht+'</td><td>'+t.buyDate+'</td><td>'+t.sellDate+'</td><td>$'+(t.buyPrice<10?t.buyPrice.toFixed(2):Math.round(t.buyPrice).toLocaleString())+'</td><td>$'+(t.sellPrice<10?t.sellPrice.toFixed(2):Math.round(t.sellPrice).toLocaleString())+'</td><td>'+t.daysHeld+'d</td><td style="color:'+rc+';font-weight:600">'+fmtPctSigned(t.ret)+'</td></tr>'; }
+      td.innerHTML = '<summary class="details-summary"><div class="evidence-summary-left"><span class="section-title">TOP 5 \u2014 RECENT CRYPTO TRADES</span><span class="ev-sub">'+total+' closed | Win: '+Math.round(wins/total*100)+'% | Avg: '+fmtPctSigned(avgRet)+'</span></div><span class="plus">+</span></summary><div class="details-body"><div class="table-scroll"><table class="outcomes-table bt-pos-table"><thead><tr><th style="text-align:left">Ticker</th><th>Buy</th><th>Sell</th><th>Buy $</th><th>Sell $</th><th>Held</th><th>Return</th></tr></thead><tbody>'+tr+'</tbody></table></div></div>';
+      body.appendChild(td);
     }
-
-    const disc = document.createElement("div");
-    disc.className = "footnote";
-    disc.textContent = "Crypto backtest — ranks by historical opportunity score (dynamic weekly picks), weekly DCA ($1,000/week). BTC buy-and-hold as benchmark. 10/30/60 trading day hold periods. Hypothetical simulation. Past performance does not predict future results. Does not account for transaction costs, taxes, slippage, or survivorship bias. Crypto markets are highly volatile.";
+    const disc = document.createElement("div"); disc.className = "footnote";
+    disc.textContent = "Crypto backtest \u2014 weekly DCA ranked by 60-day probability. BTC benchmark. Hypothetical. Past performance does not predict future results.";
     body.appendChild(disc);
   }
 
-
   } catch (err){
-    console.error("Daily Stock Guide render error:", err);
-    byId("listing").innerHTML = `<div class="footnote" style="color:#b00">Render error: ${err.message}</div>`;
+    console.error("Render error:", err);
+    byId("listing").innerHTML = '<div class="footnote" style="color:#b00">Render error: '+err.message+'</div>';
   }
 })();
 
-/* ============================================================
-   NAV — shrink on scroll + active section highlight
-   ============================================================ */
-
 (function(){
-  const nav = document.querySelector(".site-nav");
-  if (!nav) return;
-
+  const nav = document.querySelector(".site-nav"); if (!nav) return;
   let ticking = false;
-  window.addEventListener("scroll", function(){
-    if (!ticking){
-      requestAnimationFrame(function(){
-        nav.classList.toggle("nav-scrolled", window.scrollY > 10);
-        ticking = false;
-      });
-      ticking = true;
-    }
-  });
+  window.addEventListener("scroll", function(){ if (!ticking){ requestAnimationFrame(function(){ nav.classList.toggle("nav-scrolled", window.scrollY > 10); ticking = false; }); ticking = true; } });
 })();
-
-/* ============================================================
-   INTERSECTION OBSERVER — fade-in sections on scroll
-   ============================================================ */
-
 (function(){
   const targets = document.querySelectorAll(".stat-block, .details-card");
   if (!targets.length || !("IntersectionObserver" in window)) return;
-
-  const observer = new IntersectionObserver(function(entries){
-    for (const entry of entries){
-      if (entry.isIntersecting){
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
-    }
-  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
-
-  targets.forEach(function(el){
-    el.classList.add("fade-target");
-    observer.observe(el);
-  });
+  const observer = new IntersectionObserver(function(entries){ for (const entry of entries) if (entry.isIntersecting){ entry.target.classList.add("visible"); observer.unobserve(entry.target); } }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+  targets.forEach(function(el){ el.classList.add("fade-target"); observer.observe(el); });
 })();
