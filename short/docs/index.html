@@ -25,6 +25,7 @@
         <a href="#how-it-works">How It Works</a>
         <a href="#backtest-section">Backtest</a>
         <a href="#listing-section">Screener</a>
+        <a href="#crypto-section">Crypto</a>
         <a href="/">Main Site</a>
         <a href="/experiments/" class="nav-experiments">Experiments</a>
       </div>
@@ -183,6 +184,56 @@
     </div>
   </section>
 
+  <!-- ===== SHORT CRYPTO ===== -->
+  <section class="content-section" id="crypto-section">
+    <div class="section-inner">
+
+      <div class="crypto-section-header">
+        <h2 class="crypto-headline">Short Crypto</h2>
+        <p class="crypto-sub">Same short-term pullback methodology applied to 100+ cryptocurrencies. 10/30/60 day forward horizons with historical analog matching. BTC buy-and-hold as benchmark.</p>
+      </div>
+
+      <!-- Crypto Screener -->
+      <div class="listing-header">
+        <span title="Crypto asset">Ticker</span>
+        <span title="Opportunity score">Opp. Score</span>
+        <span title="Pullback severity">Pullback</span>
+        <span title="10-day recovery probability">10D Prob</span>
+        <span title="30-day recovery probability">30D Prob</span>
+        <span title="60-day recovery probability">60D Prob</span>
+        <span title="Typical 10-day return">Typical 10D</span>
+        <span title="Worst 1-in-10 outcome">Downside</span>
+        <span title="Number of similar historical cases">Cases</span>
+        <span title="Quality score">Quality</span>
+      </div>
+      <div id="crypto-listing"></div>
+
+      <!-- Crypto Backtest -->
+      <details class="details-card" id="crypto-backtest-section">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Crypto Backtest — DCA Optimizer</span>
+            <span class="details-card-cat">Historical Performance Simulation</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="bt-intro">What if you invested $1,000 every week into the top-ranked crypto pullback opportunities, held for 60 trading days, then sold?
+          Uses the same opportunity score methodology as the stock backtest, applied to 100+ cryptocurrencies. BTC buy-and-hold is shown as the benchmark. All proceeds stay as cash — no reinvestment.</p>
+          <div class="bt-hold-tabs crypto-hold-tabs">
+            <button class="btn-lite" data-crypto-hold="10">10-Day Hold</button>
+            <button class="btn-lite" data-crypto-hold="30">30-Day Hold</button>
+            <button class="btn-lite active" data-crypto-hold="60">60-Day Hold</button>
+          </div>
+          <div id="crypto-backtest-body">
+            <div class="footnote">Click to load crypto backtest data&hellip;</div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
   <!-- ===== FOOTER (clean, minimal) ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
@@ -195,6 +246,7 @@
       <div class="footer-col">
         <span class="footer-heading">Navigate</span>
         <a href="#listing-section" class="footer-link">Screener</a>
+        <a href="#crypto-section" class="footer-link">Crypto</a>
         <a href="#how-it-works" class="footer-link">How It Works</a>
         <a href="#backtest-section" class="footer-link">Backtest</a>
         <a href="/" class="footer-link">Main Site</a>
