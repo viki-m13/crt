@@ -362,20 +362,8 @@ function getActiveData(){return ACTIVE_TAB==='crypto'?CRYPTO_DATA:ACTIVE_TAB==='
 function renderAll(){
   const d=getActiveData();
   if(!d) return;
-  renderPicks(d);
-  renderPerformance(d);
-  renderEquityCurve(d);
-  renderHistoricalPicks(d);
-  renderDailyTop1(d);
-  renderCandidateTable(d);
+  // 1. Show/hide sections FIRST (before rendering charts)
   renderHowItWorks();
-  renderCryptoSections(d);
-  renderSectorSections(d);
-  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
-  document.getElementById('eqTitle').textContent=ACTIVE_TAB==='sectors'
-    ?'Equity Curve — C2C vs T+1 vs SPY ($10k)'
-    :`Equity Curve — Strategy vs ${bench} ($10k)`;
-  // Hide irrelevant sections for sectors
   const hideSectors=ACTIVE_TAB==='sectors';
   document.getElementById('picksSection').style.display=hideSectors?'none':'block';
   document.querySelectorAll('.section').forEach(s=>{
@@ -383,6 +371,24 @@ function renderAll(){
     if(title && (title.textContent.includes('All Scored') || title.textContent.includes('Daily Top-1'))){
       s.style.display=hideSectors?'none':'block';
     }
+  });
+  renderCryptoSections(d);
+  renderSectorSections(d);
+  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
+  document.getElementById('eqTitle').textContent=ACTIVE_TAB==='sectors'
+    ?'Equity Curve — C2C vs T+1 vs SPY ($10k)'
+    :`Equity Curve — Strategy vs ${bench} ($10k)`;
+
+  // 2. Render content (charts need visible containers for dimensions)
+  renderPicks(d);
+  renderPerformance(d);
+  renderHistoricalPicks(d);
+  renderCandidateTable(d);
+
+  // 3. Render charts LAST (after sections are visible)
+  requestAnimationFrame(()=>{
+    renderEquityCurve(d);
+    renderDailyTop1(d);
   });
 }
 
