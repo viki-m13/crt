@@ -60,85 +60,66 @@ def main():
     # Only keep weeks where strategy had exposure (return != 0)
     active_weeks = weekly_rets[weekly_rets != 0]
 
+    # Show actual individual coin trades with real entry/exit prices
     historical_picks = []
-    for date, ret in active_weeks.items():
-        # Find which tickers were traded that week
-        week_start = date - pd.Timedelta(days=6)
-        week_trades = test_trades[
-            (test_trades["entry_date"] >= week_start) &
-            (test_trades["entry_date"] <= date)
-        ] if len(test_trades) > 0 else pd.DataFrame()
+    if len(test_trades) > 0:
+        recent = test_trades.sort_values("entry_date", ascending=False).head(200)
+        for _, t in recent.iterrows():
+            ep = float(t["entry_price"]); xp = float(t["exit_price"])
+            historical_picks.append({
+                "entry_date": str(t["entry_date"].date()) if hasattr(t["entry_date"], "date") else str(t["entry_date"])[:10],
+                "exit_date": str(t["exit_date"].date()) if hasattr(t["exit_date"], "date") else str(t["exit_date"])[:10],
+                "ticker": t["ticker"].replace("-USD", ""),
+                "ticker_full": t["ticker"],
+                "score": round(float(t.get("size", 0.05)) * 10, 3),
+                "entry_price": round(ep, 6) if ep < 1 else (round(ep, 4) if ep < 100 else round(ep, 2)),
+                "exit_price": round(xp, 6) if xp < 1 else (round(xp, 4) if xp < 100 else round(xp, 2)),
+                "return_pct": round(float(t["gross_pnl"]) * 100, 2),
+                "net_return_pct": round(float(t["net_pnl"]) * 100, 2),
+                "hit_target": bool(t["net_pnl"] > 0.05),
+                "days_held": int(t["days_held"]),
+            })
 
-        tickers = list(week_trades["ticker"].unique()) if len(week_trades) > 0 else []
-        ticker_str = ", ".join([t.replace("-USD", "") for t in tickers[:5]])
-        if len(tickers) > 5:
-            ticker_str += f" +{len(tickers)-5}"
-
-        btc_ret = btc_weekly.get(date, 0)
-        if isinstance(btc_ret, (float, np.floating)) and np.isnan(btc_ret):
-            btc_ret = 0
-
-        historical_picks.append({
-            "entry_date": str(week_start.date()),
-            "exit_date": str(date.date()),
-            "ticker": ticker_str or "CASH",
-            "ticker_full": ticker_str or "CASH",
-            "score": round(abs(float(ret)) * 10, 3),
-            "entry_price": 1.0,
-            "exit_price": round(1.0 + float(ret), 4),
-            "return_pct": round(float(ret) * 100, 2),
-            "net_return_pct": round(float(ret) * 100, 2),
-            "hit_target": bool(ret > 0.05),
-            "days_held": 7,
-        })
-
-    # ---- 4. Daily top-1: show weekly portfolio performance (last 90 days) ----
-    print("  Building daily top-1 (portfolio view)...")
-    recent_weekly = weekly_rets.iloc[-13:]  # ~90 days = 13 weeks
-    recent_btc = btc_weekly.reindex(recent_weekly.index, fill_value=0)
-
+    # ---- 4. Daily top-1: show recent individual trades (last 90 days) ----
+    print("  Building daily top-1 (recent trades)...")
     daily_picks = []
-    val = 10000
-    bval = 10000
     daily_eq = []
     daily_eq_bench = []
+    val = 10000; bval = 10000
 
-    for date, ret in recent_weekly.items():
-        week_start = date - pd.Timedelta(days=6)
-        btc_ret = recent_btc.get(date, 0)
-        if isinstance(btc_ret, (float, np.floating)) and np.isnan(btc_ret):
-            btc_ret = 0
+    if len(test_trades) > 0:
+        cutoff = test_dates[-1] - pd.Timedelta(days=90)
+        recent_trades = test_trades[test_trades["entry_date"] >= cutoff].sort_values("entry_date")
+        for _, t in recent_trades.iterrows():
+            ep = float(t["entry_price"]); xp = float(t["exit_price"])
+            net_r = float(t["net_pnl"])
+            # BTC benchmark over same period
+            ed = t["entry_date"]; xd = t["exit_date"]
+            btc_ep = btc_close.loc[ed] if ed in btc_close.index else None
+            btc_xp = btc_close.loc[xd] if xd in btc_close.index else btc_ep
+            bench_ret = (btc_xp / btc_ep - 1) if btc_ep and btc_xp else 0
 
-        # Find traded tickers
-        week_trades = test_trades[
-            (test_trades["entry_date"] >= week_start) &
-            (test_trades["entry_date"] <= date)
-        ] if len(test_trades) > 0 else pd.DataFrame()
-        tickers = list(week_trades["ticker"].unique()) if len(week_trades) > 0 else []
-        best_ticker = tickers[0].replace("-USD", "") if tickers else "CASH"
-        n_trades_week = len(week_trades) if len(week_trades) > 0 else 0
+            val *= (1 + net_r * float(t.get("size", 0.05)))
+            bval *= (1 + bench_ret * float(t.get("size", 0.05)))
 
-        val *= (1 + float(ret))
-        bval *= (1 + float(btc_ret))
-
-        daily_picks.append({
-            "entry_date": str(week_start.date()),
-            "exit_date": str(date.date()),
-            "ticker": best_ticker,
-            "ticker_full": f"Portfolio ({n_trades_week} trades)",
-            "score": round(abs(float(ret)) * 10, 3),
-            "conviction": round(abs(float(ret)) * 100, 1),
-            "entry_price": round(val / (1 + float(ret)), 0),
-            "exit_price": round(val, 0),
-            "return_pct": round(float(ret) * 100, 2),
-            "net_return_pct": round(float(ret) * 100, 2),
-            "hit_target": bool(ret > 0.05),
-            "days_held": 7,
-            "benchmark_return_pct": round(float(btc_ret) * 100, 2),
-            "spy_return_pct": round(float(btc_ret) * 100, 2),
-        })
-        daily_eq.append({"date": str(date.date()), "value": round(val, 0)})
-        daily_eq_bench.append({"date": str(date.date()), "value": round(bval, 0)})
+            daily_picks.append({
+                "entry_date": str(ed.date()) if hasattr(ed, "date") else str(ed)[:10],
+                "exit_date": str(xd.date()) if hasattr(xd, "date") else str(xd)[:10],
+                "ticker": t["ticker"].replace("-USD", ""),
+                "ticker_full": t["ticker"],
+                "score": round(float(t.get("size", 0.05)) * 10, 3),
+                "conviction": round(float(t.get("size", 0.05)) * 100, 1),
+                "entry_price": round(ep, 6) if ep < 1 else (round(ep, 4) if ep < 100 else round(ep, 2)),
+                "exit_price": round(xp, 6) if xp < 1 else (round(xp, 4) if xp < 100 else round(xp, 2)),
+                "return_pct": round(float(t["gross_pnl"]) * 100, 2),
+                "net_return_pct": round(net_r * 100, 2),
+                "hit_target": bool(net_r > 0.05),
+                "days_held": int(t["days_held"]),
+                "benchmark_return_pct": round(float(bench_ret) * 100, 2),
+                "spy_return_pct": round(float(bench_ret) * 100, 2),
+            })
+            daily_eq.append({"date": str(xd.date()) if hasattr(xd, "date") else str(xd)[:10], "value": round(val, 0)})
+            daily_eq_bench.append({"date": str(xd.date()) if hasattr(xd, "date") else str(xd)[:10], "value": round(bval, 0)})
 
     # Stats for daily top-1
     if daily_picks:

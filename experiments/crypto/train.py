@@ -280,6 +280,7 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
     closed_trades = []
     daily_returns = []
     tc = TRANSACTION_COST_BPS / 10000
+    pending_entries = []  # signals generated today, entered NEXT bar
 
     for date in dates:
         prices = {}
@@ -287,7 +288,32 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
             if date in df.index and "Close" in df.columns:
                 prices[ticker] = df.loc[date, "Close"]
 
-        # Update positions
+        # Execute pending entries from PREVIOUS day's signals (next-bar entry)
+        total_exposure = sum(p["size"] for p in positions.values())
+        for ticker, strength, size, regime in pending_entries:
+            if total_exposure >= cfg.max_total_exposure:
+                break
+            if ticker in positions:
+                continue
+            price = prices.get(ticker)
+            if price is None or np.isnan(price):
+                continue
+            remaining = cfg.max_total_exposure - total_exposure
+            size = min(size, remaining)
+            if size < 0.005:
+                continue
+            positions[ticker] = {
+                "entry_date": date,
+                "entry_price": price,
+                "direction": 1,
+                "size": size,
+                "strength": strength,
+                "days_held": 0,
+            }
+            total_exposure += size
+        pending_entries = []
+
+        # Update positions (check exits)
         for ticker in list(positions.keys()):
             pos = positions[ticker]
             pos["days_held"] += 1
@@ -340,30 +366,14 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
 
         signals = generate_signals(date, features_dict, positions, cfg)
 
-        total_exposure = sum(p["size"] for p in positions.values())
-        for ticker, strength, size, regime in signals:
-            if total_exposure >= cfg.max_total_exposure:
-                break
-            price = prices.get(ticker)
-            if price is None or np.isnan(price):
-                continue
-            remaining = cfg.max_total_exposure - total_exposure
-            size = min(size, remaining)
-            if size < 0.005:
-                continue
-            positions[ticker] = {
-                "entry_date": date,
-                "entry_price": price,
-                "direction": 1,
-                "size": size,
-                "strength": strength,
-                "days_held": 0,
-            }
-            total_exposure += size
+        # Queue signals for NEXT bar entry (no same-bar execution)
+        pending_entries = signals
 
-        # Compute daily portfolio return
+        # Compute daily portfolio return (skip day 0 — entry day)
         daily_ret = 0.0
         for ticker, pos in positions.items():
+            if pos["days_held"] < 1:
+                continue  # just entered today, no return yet
             if ticker in data_dict:
                 df = data_dict[ticker]
                 if date in df.index:
