@@ -617,9 +617,9 @@ function renderPerformance(d){
     <div class="sub">After 10bps + 5bps costs</div>
   </div>`;
   html+=`<div class="card highlight">
-    <h3>Test Top-10 Precision</h3>
-    <div class="big" style="color:var(--green)">${((test.top10_precision||0)*100).toFixed(0)}%</div>
-    <div class="sub">${(test.top10_lift||0).toFixed(1)}x lift vs random</div>
+    <h3>Test Top-5 Precision</h3>
+    <div class="big" style="color:var(--green)">${((test.top5_precision||test.top10_precision||0)*100).toFixed(0)}%</div>
+    <div class="sub">${(test.top5_lift||test.top10_lift||0).toFixed(1)}x lift vs random</div>
   </div>`;
   html+=`<div class="card">
     <h3>Alpha vs SPY</h3>
@@ -634,7 +634,7 @@ function renderPerformance(d){
   html+=`<div class="card">
     <h3>Profit Factor</h3>
     <div class="big">${(sim.profit_factor||0).toFixed(2)}</div>
-    <div class="sub">Hit rate (10%+): ${((sim.hit_rate_10pct||0)*100).toFixed(0)}%</div>
+    <div class="sub">Hit rate: ${((sim.hit_rate_target||sim.hit_rate_10pct||sim.hit_rate||0)*100).toFixed(0)}%</div>
   </div>`;
   html+='</div>';
 
