@@ -1,0 +1,48 @@
+name: Daily Crypto Strategy Scan
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Run at 11:00pm UTC (6:00pm ET) every day
+    - cron: "0 23 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-crypto-strategy-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: experiments/requirements.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r experiments/requirements.txt
+
+      - name: Run Crypto CDPT Strategy scan
+        run: |
+          mkdir -p crypto/docs/data/tickers
+          cd crypto
+          python scripts/daily_scan.py
+
+      - name: Commit updated crypto strategy data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crypto/docs/data
+          git diff --cached --quiet || git commit -m "chore: daily crypto CDPT strategy scan"
+          git push

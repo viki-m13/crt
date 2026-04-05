@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <title>CDPT — Crypto Dispersion Pulse Trading</title>
+  <style>
+    :root {
+      --bg: #000000; --surface: #111111; --border: #222222;
+      --ink: #ffffff; --muted: #888888;
+      --green: #00c853; --green-bg: rgba(0,200,83,.10);
+      --red: #ff5252; --red-bg: rgba(255,82,82,.10);
+      --blue: #64b5f6; --gold: #ffc107; --gold-bg: rgba(255,193,7,.10);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+      --radius: 10px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); background:var(--bg); color:var(--ink); line-height:1.5; font-size:14px; -webkit-font-smoothing:antialiased; }
+    a { color:var(--blue); text-decoration:none; }
+
+    .login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .login-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; max-width:340px; width:100%; text-align:center; }
+    .login-box h1 { font-size:17px; margin-bottom:4px; }
+    .login-box p { color:var(--muted); font-size:13px; margin-bottom:20px; }
+    .login-box input { width:100%; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--ink); font-size:14px; margin-bottom:10px; outline:none; }
+    .login-box input:focus { border-color:var(--blue); }
+    .login-box button { width:100%; padding:10px; background:var(--ink); color:var(--bg); border:none; border-radius:6px; font-weight:600; cursor:pointer; font-size:14px; }
+    .login-error { color:var(--red); font-size:12px; margin-top:8px; display:none; }
+
+    .app { display:none; }
+    nav { position:sticky; top:0; z-index:100; background:var(--bg); border-bottom:1px solid var(--border); padding:0 16px; height:48px; display:flex; align-items:center; gap:10px; }
+    .nav-logo { font-weight:700; font-size:14px; white-space:nowrap; }
+    .nav-tag { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+    .nav-links { margin-left:auto; font-size:13px; display:flex; gap:12px; }
+
+    .container { max-width:900px; margin:0 auto; padding:0 16px; }
+    .section { padding-bottom:24px; }
+    .section-title { font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:12px; padding-top:20px; border-top:1px solid var(--border); }
+
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px; }
+    .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:16px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .card h3 { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+    .card .big { font-size:20px; font-weight:700; }
+    .card .sub { font-size:11px; color:var(--muted); margin-top:2px; }
+    .card.highlight { border:2px solid var(--green); }
+
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--border); border-radius:8px; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+    th { text-align:left; padding:6px 8px; background:var(--surface); border-bottom:1px solid var(--border); font-weight:600; color:var(--muted); font-size:10px; text-transform:uppercase; position:sticky; top:0; z-index:5; }
+    td { padding:6px 8px; border-bottom:1px solid var(--border); }
+    .ticker-sym { font-weight:700; font-family:var(--mono); font-size:12px; }
+    .pnl-pos { color:var(--green); font-weight:600; }
+    .pnl-neg { color:var(--red); font-weight:600; }
+
+    .action-card { background:var(--surface); border:2px solid var(--green); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
+    .action-card.sell { border-color:var(--red); }
+    .action-card.hold { border-color:var(--gold); }
+    .action-card .action-type { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .action-card .action-instruction { font-size:13px; line-height:1.7; }
+
+    .chart-container { width:100%; height:250px; background:var(--surface); border-radius:8px; overflow:hidden; border:1px solid var(--border); margin-top:10px; }
+    .chart-container canvas { width:100%; height:100%; }
+
+    .accordion { background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:12px; overflow:hidden; }
+    .accordion-header { padding:14px 16px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+    .accordion-header::after { content:'+'; font-size:18px; color:var(--muted); font-weight:400; }
+    .accordion.open .accordion-header::after { content:'\2212'; }
+    .accordion-body { display:none; padding:0 16px 16px; font-size:13px; line-height:1.8; }
+    .accordion.open .accordion-body { display:block; }
+
+    .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+    .badge-buy { background:var(--green-bg); color:var(--green); }
+    .badge-sell { background:var(--red-bg); color:var(--red); }
+    .badge-hold { background:var(--gold-bg); color:var(--gold); }
+
+    .disclaimer { text-align:center; color:var(--muted); font-size:11px; padding:24px 16px; border-top:1px solid var(--border); margin-top:24px; line-height:1.6; }
+    @media(max-width:600px){ .grid,.grid-3,.grid-4{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1>CDPT Crypto Strategy</h1>
+    <p>Dispersion Pulse Trading — Password required</p>
+    <input type="password" id="pwInput" placeholder="Password" autocomplete="off" />
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="loginError">Incorrect password</div>
+  </div>
+</div>
+
+
+<!-- APP -->
+<div class="app" id="app">
+  <nav>
+    <span class="nav-logo">CDPT Crypto</span>
+    <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULL</span>
+    <div class="nav-links">
+      <a href="/">Main</a>
+      <a href="/experiments/">Experiments</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- HEADER -->
+    <div class="section" style="padding-top:20px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Last scan: <span id="lastScan">&mdash;</span></div>
+      <div id="headerSummary" style="font-size:13px;margin-bottom:8px"></div>
+    </div>
+
+    <!-- TODAY'S TRADING INSTRUCTIONS -->
+    <div class="section" id="instructionsSection">
+      <div class="section-title">Today's Trading Instructions</div>
+      <div id="tradingInstructions"></div>
+    </div>
+
+    <!-- OPEN POSITIONS -->
+    <div class="section" id="positionsSection">
+      <div class="section-title">Open Positions</div>
+      <div id="openPositions"></div>
+    </div>
+
+    <!-- TOP SIGNALS -->
+    <div class="section" id="signalsSection">
+      <div class="section-title">Top 10 Coins by Conviction</div>
+      <div id="topSignals"></div>
+    </div>
+
+    <!-- STRATEGY RULES (explicit) -->
+    <div class="section" id="rulesSection">
+      <div class="section-title">Trading Rules — Exact Specification</div>
+      <div id="tradingRules"></div>
+    </div>
+
+    <!-- BACKTEST PERFORMANCE -->
+    <div class="section" id="backtestSection">
+      <div class="section-title">Backtest Performance</div>
+      <div id="backtestStats"></div>
+    </div>
+
+    <!-- EQUITY CURVE -->
+    <div class="section" id="equitySection">
+      <div class="section-title">Equity Curve — Test Period ($10k start)</div>
+      <div class="chart-container" style="height:300px"><canvas id="equityChart"></canvas></div>
+    </div>
+
+    <!-- 90-DAY EQUITY -->
+    <div class="section" id="equity90Section">
+      <div class="section-title">Equity Curve — Last 90 Days ($10k start)</div>
+      <div class="chart-container" style="height:250px"><canvas id="equity90Chart"></canvas></div>
+    </div>
+
+    <!-- DAILY TOP-1 PICK HISTORY -->
+    <div class="section" id="top1Section">
+      <div class="section-title">Daily Top-1 Pick History (Last 90+ Days)</div>
+      <div id="top1History"></div>
+    </div>
+
+    <!-- HISTORICAL PICKS / TRADE LOG -->
+    <div class="section" id="historicalSection">
+      <div class="section-title">Historical Picks — Full Trade Log</div>
+      <div id="historicalPicks"></div>
+    </div>
+
+    <!-- MONTHLY BREAKDOWN -->
+    <div class="section" id="monthlySection">
+      <div class="section-title">Monthly Breakdown</div>
+      <div id="monthlyBreakdown"></div>
+    </div>
+
+    <!-- LIVE TRADE LOG -->
+    <div class="section" id="liveLogSection">
+      <div class="section-title">Live Trade Log (Since Launch)</div>
+      <div id="liveTradeLog"></div>
+    </div>
+
+    <!-- ALL COINS TABLE -->
+    <div class="section" id="allCoinsSection">
+      <div class="section-title">All Scored Coins</div>
+      <div id="allCoinsTable"></div>
+    </div>
+
+    <div class="disclaimer">
+      Past performance does not guarantee future results. This is a research tool, not financial advice.
+      <br>CDPT strategy: purged walk-forward validated on 3 independent time periods. No lookahead bias.
+      <br>Trading frequency: DAILY scan at 23:00 UTC. Max hold: 5 days. SL: -4%, TP: +12%.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- LOGIN ---- */
+function tryLogin(){
+  const pw=document.getElementById('pwInput').value;
+  if(pw==='marti'){
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('app').style.display='block';
+    sessionStorage.setItem('cdpt_auth','1');
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display='block';
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+if(sessionStorage.getItem('cdpt_auth')==='1'){
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadData();
+}
+
+/* ---- DATA ---- */
+let D=null;
+
+function loadData(){
+  fetch(`./data/full.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
+    D=d;
+    renderAll();
+  }).catch(e=>{
+    document.getElementById('headerSummary').textContent='Failed to load data. Run daily scan first.';
+    console.error(e);
+  });
+}
+
+function pnlClass(v){ return v>=0?'pnl-pos':'pnl-neg'; }
+function pnlSign(v){ return v>=0?'+'+v.toFixed(2)+'%':v.toFixed(2)+'%'; }
+
+function renderAll(){
+  if(!D) return;
+  // Header
+  if(D.generated) document.getElementById('lastScan').textContent=D.generated.replace('T',' ').slice(0,19)+' UTC';
+  const btc=D.btc||{};
+  const tag=document.getElementById('regimeTag');
+  tag.textContent=btc.regime||'?';
+  tag.style.background=btc.regime==='BULL'?'var(--green-bg)':'var(--red-bg)';
+  tag.style.color=btc.regime==='BULL'?'var(--green)':'var(--red)';
+  document.getElementById('headerSummary').innerHTML=
+    `<strong>CDPT</strong> Daily Crypto Strategy &mdash; BTC $${(btc.price||0).toLocaleString()} &mdash; `+
+    `${D.n_active_signals||0} active signals &mdash; ${(D.open_positions||[]).length} open positions &mdash; `+
+    `Trading frequency: <strong>DAILY</strong> (scan at 23:00 UTC)`;
+
+  renderInstructions();
+  renderPositions();
+  renderTopSignals();
+  renderRules();
+  renderBacktest();
+  renderTop1();
+  renderHistorical();
+  renderMonthly();
+  renderLiveLog();
+  renderAllCoins();
+  requestAnimationFrame(()=>{
+    renderEquityChart('equityChart', D.backtest?.test_period?.equity_curve);
+    renderEquityChart('equity90Chart', D.backtest?.last_90_days?.equity_curve);
+  });
+}
+
+
+/* ---- TRADING INSTRUCTIONS ---- */
+function renderInstructions(){
+  const el=document.getElementById('tradingInstructions');
+  const inst=D.trading_instructions||{};
+  const actions=inst.actions_today||[];
+  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--muted)">EXECUTION WINDOW</div>
+    <div style="font-size:13px;margin-top:4px">${inst.execution_window||''}</div>
+    <div style="font-size:14px;font-weight:700;margin-top:8px;color:var(--green)">${inst.summary||'No actions'}</div>
+  </div>`;
+  for(const a of actions){
+    if(a.action==='BUY'){
+      html+=`<div class="action-card">
+        <div class="action-type" style="color:var(--green)">BUY ${a.display_name||a.ticker}</div>
+        <div class="action-instruction">${a.instruction||''}</div>
+        <div class="grid-4" style="margin-top:10px">
+          <div class="card"><h3>Limit Price</h3><div class="big">$${(a.limit_price||0).toLocaleString(undefined,{maximumFractionDigits:4})}</div></div>
+          <div class="card"><h3>Size</h3><div class="big">${a.position_size_pct||0}%</div></div>
+          <div class="card"><h3>Stop Loss</h3><div class="big" style="color:var(--red)">$${(a.stop_loss_price||0).toLocaleString(undefined,{maximumFractionDigits:4})}</div></div>
+          <div class="card"><h3>Take Profit</h3><div class="big" style="color:var(--green)">$${(a.take_profit_price||0).toLocaleString(undefined,{maximumFractionDigits:4})}</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Max hold until: ${a.max_hold_until||'?'} &middot; Conviction: ${a.conviction||0}</div>
+      </div>`;
+    } else if(a.action==='SELL'){
+      html+=`<div class="action-card sell">
+        <div class="action-type" style="color:var(--red)">SELL ${a.display_name||a.ticker} — ${a.exit_reason||''}</div>
+        <div class="action-instruction">${a.instruction||''}</div>
+        <div style="margin-top:6px;font-size:13px" class="${pnlClass(a.pnl_pct||0)}">P&L: ${pnlSign(a.pnl_pct||0)}</div>
+      </div>`;
+    } else {
+      html+=`<div class="action-card hold" style="border-color:var(--muted)">
+        <div class="action-type" style="color:var(--muted)">${a.action}</div>
+        <div class="action-instruction">${a.instruction||''}</div>
+      </div>`;
+    }
+  }
+
+  // Open position management
+  const mgmt=inst.open_position_management||[];
+  if(mgmt.length>0){
+    html+=`<div style="margin-top:16px;font-weight:700;font-size:13px;color:var(--blue)">Position Management</div>`;
+    for(const p of mgmt){
+      const cls=p.action==='HOLD'?'hold':'sell';
+      html+=`<div class="action-card ${cls}" style="margin-top:8px">
+        <div class="action-type" style="color:${p.action==='HOLD'?'var(--gold)':'var(--red)'}">${p.action} ${p.display_name}</div>
+        <div class="action-instruction">${p.instruction||''}</div>
+      </div>`;
+    }
+  }
+  el.innerHTML=html;
+}
+
+
+/* ---- OPEN POSITIONS ---- */
+function renderPositions(){
+  const el=document.getElementById('openPositions');
+  const pos=D.open_positions||[];
+  if(!pos.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No open positions.</div>'; return; }
+  let html='<div class="table-wrap"><table><thead><tr><th>Coin</th><th>Entry Date</th><th>Entry $</th><th>Current $</th><th>P&L</th><th>Size</th><th>Days</th><th>Stop Loss</th><th>Take Profit</th><th>Status</th></tr></thead><tbody>';
+  for(const p of pos){
+    html+=`<tr>
+      <td><span class="ticker-sym">${p.display_name}</span></td>
+      <td>${p.entry_date}</td>
+      <td>$${p.entry_price}</td>
+      <td>$${p.current_price}</td>
+      <td class="${pnlClass(p.pnl_pct)}">${pnlSign(p.pnl_pct)}</td>
+      <td>${p.position_size_pct}%</td>
+      <td>${p.days_held}/${D.config?.max_hold_days||5}</td>
+      <td style="color:var(--red)">$${p.stop_loss_price}</td>
+      <td style="color:var(--green)">$${p.take_profit_price}</td>
+      <td><span class="badge ${p.status==='HOLD'?'badge-hold':'badge-sell'}">${p.status}</span></td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+/* ---- TOP SIGNALS ---- */
+function renderTopSignals(){
+  const el=document.getElementById('topSignals');
+  const top=D.top_10||[];
+  if(!top.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No data.</div>'; return; }
+  let html='<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Coin</th><th>Price</th><th>Conviction</th><th>Signal?</th><th>Size</th><th>MTMDI z</th><th>Velocity</th><th>Range Comp</th><th>Regime</th><th>Factors</th></tr></thead><tbody>';
+  top.forEach((s,i)=>{
+    const sig=s.is_signal?'<span class="badge badge-buy">SIGNAL</span>':'<span style="color:var(--muted)">—</span>';
+    html+=`<tr>
+      <td>${i+1}</td>
+      <td><span class="ticker-sym">${s.display_name}</span></td>
+      <td>$${s.price}</td>
+      <td style="font-weight:700">${s.conviction}</td>
+      <td>${sig}</td>
+      <td>${s.is_signal?s.position_size_pct+'%':'—'}</td>
+      <td>${s.mtmdi_zscore||'—'}</td>
+      <td>${s.mtmdi_velocity||'—'}</td>
+      <td>${s.range_compression||'—'}</td>
+      <td>${s.vol_regime}</td>
+      <td>${s.confirming_factors}/5</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  if(top[0]?.is_signal){
+    html+=`<div style="margin-top:8px;font-size:12px;color:var(--muted)">
+      Stop Loss: $${top[0].stop_loss_price||'—'} &middot; Take Profit: $${top[0].take_profit_price||'—'}
+    </div>`;
+  }
+  el.innerHTML=html;
+}
+
+
+/* ---- TRADING RULES ---- */
+function renderRules(){
+  const el=document.getElementById('tradingRules');
+  const c=D.config||{};
+  el.innerHTML=`
+  <div class="accordion open">
+    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Complete Trading Rules</div>
+    <div class="accordion-body">
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--green)">WHEN TO TRADE:</strong><br>
+        &bull; Frequency: <strong>DAILY</strong> — scan runs at 23:00 UTC (6PM ET) every day<br>
+        &bull; Execute trades within 1 hour of scan results<br>
+        &bull; Use LIMIT orders at the scan price. If not filled in 1 hour, use MARKET<br>
+        &bull; Exchange: Any major CEX (Binance, Coinbase, Kraken). SPOT only, no leverage
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--green)">ENTRY CONDITIONS (ALL must be true):</strong><br>
+        1. MTMDI z-score &ge; <strong>${c.mtmdi_zscore_entry||1.0}</strong> (momentum dispersion spike)<br>
+        2. MTMDI direction &gt; 0 (short-term momentum exceeds long-term)<br>
+        3. At least <strong>${c.min_confirming_factors||3}</strong> of 5 confirming factors:<br>
+        &nbsp;&nbsp;&#10003; Cascade gap &gt; 0.01 (BTC beta divergence)<br>
+        &nbsp;&nbsp;&#10003; MPR z-score &gt; 0.0 (momentum persistence)<br>
+        &nbsp;&nbsp;&#10003; Dispersion Velocity &gt; ${c.velocity_threshold||0.3} (accelerating dispersion)<br>
+        &nbsp;&nbsp;&#10003; Range Compression &lt; ${c.range_compress_threshold||0.5} (coiled spring)<br>
+        &nbsp;&nbsp;&#10003; Volume surge &gt; 2x 20-day average
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--red)">EXIT CONDITIONS (ANY triggers immediate exit):</strong><br>
+        1. <strong>STOP LOSS:</strong> Price drops <strong>${Math.abs(c.stop_loss_pct||4)}%</strong> from entry &rarr; SELL immediately<br>
+        2. <strong>TAKE PROFIT:</strong> Price rises <strong>${c.take_profit_pct||12}%</strong> from entry &rarr; SELL immediately<br>
+        3. <strong>MAX HOLD:</strong> Position open for <strong>${c.max_hold_days||5}</strong> calendar days &rarr; SELL at next scan<br>
+        4. <strong>SIGNAL RESOLVED:</strong> MTMDI z-score drops below 0.4 OR velocity reverses below -0.3
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--blue)">POSITION SIZING:</strong><br>
+        &bull; Formula: size = ${c.vol_target_pct||40}% / coin_30d_volatility &times; signal_strength<br>
+        &bull; Max per coin: <strong>${c.max_position_pct||12}%</strong> of portfolio<br>
+        &bull; Max total exposure: <strong>${c.max_total_exposure_pct||90}%</strong><br>
+        &bull; High-vol regime: reduce size by 60%
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:8px">
+        <strong style="color:var(--gold)">ORDER EXECUTION:</strong><br>
+        &bull; <strong>BUY:</strong> Place LIMIT BUY at scan close price. Set SL and TP immediately after fill<br>
+        &bull; <strong>SELL:</strong> Place MARKET SELL immediately when exit condition triggers<br>
+        &bull; <strong>SL/TP:</strong> Use OCO (One-Cancels-Other) if exchange supports it<br>
+        &bull; <strong>If not filled:</strong> Switch to MARKET after 1 hour<br>
+        &bull; <strong>Slippage budget:</strong> 15 bps (0.15%) per side included in backtest
+      </div>
+    </div>
+  </div>`;
+}
+
+
+/* ---- BACKTEST STATS ---- */
+function renderBacktest(){
+  const el=document.getElementById('backtestStats');
+  const bt=D.backtest||{};
+  const test=bt.test_period?.stats||{};
+  const train=bt.train_period?.stats||{};
+  const valid=bt.validation_period?.stats||{};
+  const d90=bt.last_90_days?.stats||{};
+
+  el.innerHTML=`
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="card"><h3>Train (2018-2021)</h3><div class="big" style="color:var(--green)">${train.sharpe||'—'}</div><div class="sub">Sharpe &middot; ${train.total_trades||0} trades &middot; ${train.win_rate_pct||0}% WR &middot; PF ${train.profit_factor||0}</div></div>
+    <div class="card"><h3>Valid (2022-2023)</h3><div class="big" style="color:var(--green)">${valid.sharpe||'—'}</div><div class="sub">Sharpe &middot; ${valid.total_trades||0} trades &middot; ${valid.win_rate_pct||0}% WR &middot; PF ${valid.profit_factor||0}</div></div>
+    <div class="card highlight"><h3>Test (2023-Now)</h3><div class="big" style="color:var(--green)">${test.sharpe||'—'}</div><div class="sub">Sharpe &middot; ${test.total_trades||0} trades &middot; ${test.win_rate_pct||0}% WR &middot; PF ${test.profit_factor||0}</div></div>
+  </div>
+  <div class="grid-4">
+    <div class="card"><h3>CAGR</h3><div class="big">${test.cagr_pct||0}%</div><div class="sub">Test period</div></div>
+    <div class="card"><h3>Max Drawdown</h3><div class="big" style="color:var(--red)">${test.max_drawdown_pct||0}%</div></div>
+    <div class="card"><h3>Avg Hold</h3><div class="big">${test.avg_hold_days||0}d</div></div>
+    <div class="card"><h3>Final Equity</h3><div class="big">$${(test.final_equity||10000).toLocaleString()}</div><div class="sub">from $10k</div></div>
+  </div>
+  <div class="accordion" style="margin-top:12px">
+    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Last 90 Days Detail</div>
+    <div class="accordion-body">
+      <div class="grid-4">
+        <div class="card"><h3>Sharpe</h3><div class="big">${d90.sharpe||'—'}</div></div>
+        <div class="card"><h3>Trades</h3><div class="big">${d90.total_trades||0}</div></div>
+        <div class="card"><h3>Win Rate</h3><div class="big">${d90.win_rate_pct||0}%</div></div>
+        <div class="card"><h3>Profit Factor</h3><div class="big">${d90.profit_factor||0}</div></div>
+      </div>
+      <div class="grid-4">
+        <div class="card"><h3>Avg Win</h3><div class="big pnl-pos">${d90.avg_win_pct||0}%</div></div>
+        <div class="card"><h3>Avg Loss</h3><div class="big pnl-neg">${d90.avg_loss_pct||0}%</div></div>
+        <div class="card"><h3>Best Trade</h3><div class="big pnl-pos">${d90.best_trade_pct||0}%</div></div>
+        <div class="card"><h3>Worst Trade</h3><div class="big pnl-neg">${d90.worst_trade_pct||0}%</div></div>
+      </div>
+      ${renderExitReasons(d90.exit_reasons)}
+    </div>
+  </div>
+  <div class="accordion">
+    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Exit Reason Breakdown (Test Period)</div>
+    <div class="accordion-body">${renderExitReasons(test.exit_reasons)}</div>
+  </div>`;
+}
+
+function renderExitReasons(reasons){
+  if(!reasons||!Object.keys(reasons).length) return '<div style="color:var(--muted)">No data</div>';
+  let html='<div class="table-wrap"><table><thead><tr><th>Reason</th><th>Count</th><th>%</th><th>Avg P&L</th></tr></thead><tbody>';
+  for(const[r,d] of Object.entries(reasons)){
+    html+=`<tr><td>${r}</td><td>${d.count}</td><td>${d.pct}%</td><td class="${pnlClass(d.avg_pnl)}">${pnlSign(d.avg_pnl)}</td></tr>`;
+  }
+  return html+'</tbody></table></div>';
+}
+
+
+/* ---- DAILY TOP-1 HISTORY ---- */
+function renderTop1(){
+  const el=document.getElementById('top1History');
+  const picks=D.daily_top1_history||[];
+  if(!picks.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Run backtest to populate.</div>'; return; }
+  let html='<div class="table-wrap" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>Date</th><th>Coin</th><th>Entry $</th><th>Exit $</th><th>Exit Date</th><th>P&L</th><th>Days</th><th>Exit Reason</th></tr></thead><tbody>';
+  let cumPnl=0;
+  for(const p of picks.slice().reverse()){
+    cumPnl+=p.pnl_pct||0;
+    html+=`<tr>
+      <td>${p.date}</td>
+      <td><span class="ticker-sym">${p.display_name||p.ticker}</span></td>
+      <td>$${p.entry_price}</td>
+      <td>$${p.exit_price}</td>
+      <td>${p.exit_date}</td>
+      <td class="${pnlClass(p.pnl_pct)}">${pnlSign(p.pnl_pct)}</td>
+      <td>${p.days_held}</td>
+      <td>${p.exit_reason}</td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  html+=`<div style="margin-top:8px;font-size:12px;color:var(--muted)">Showing ${picks.length} daily top-1 picks &middot; Cumulative P&L: <span class="${pnlClass(cumPnl)}">${pnlSign(cumPnl)}</span></div>`;
+  el.innerHTML=html;
+}
+
+/* ---- HISTORICAL PICKS ---- */
+function renderHistorical(){
+  const el=document.getElementById('historicalPicks');
+  const trades=D.historical_picks||[];
+  if(!trades.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No historical data.</div>'; return; }
+  let html='<div class="table-wrap" style="max-height:600px;overflow-y:auto"><table><thead><tr><th>Entry</th><th>Exit</th><th>Coin</th><th>Entry $</th><th>Exit $</th><th>Size</th><th>Gross P&L</th><th>Net P&L</th><th>Days</th><th>SL $</th><th>TP $</th><th>Reason</th></tr></thead><tbody>';
+  for(const t of trades.slice().reverse()){
+    html+=`<tr>
+      <td>${t.entry_date}</td>
+      <td>${t.exit_date}</td>
+      <td><span class="ticker-sym">${t.display_name||t.ticker}</span></td>
+      <td>$${t.entry_price}</td>
+      <td>$${t.exit_price}</td>
+      <td>${t.position_size_pct||'—'}%</td>
+      <td class="${pnlClass(t.gross_pnl_pct)}">${pnlSign(t.gross_pnl_pct)}</td>
+      <td class="${pnlClass(t.net_pnl_pct)}">${pnlSign(t.net_pnl_pct)}</td>
+      <td>${t.days_held}</td>
+      <td style="color:var(--red)">${t.stop_loss_price?'$'+t.stop_loss_price:'—'}</td>
+      <td style="color:var(--green)">${t.take_profit_price?'$'+t.take_profit_price:'—'}</td>
+      <td>${t.exit_reason}</td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  html+=`<div style="margin-top:8px;font-size:12px;color:var(--muted)">${trades.length} trades shown (most recent first)</div>`;
+  el.innerHTML=html;
+}
+
+/* ---- MONTHLY BREAKDOWN ---- */
+function renderMonthly(){
+  const el=document.getElementById('monthlyBreakdown');
+  const months=D.backtest?.test_period?.stats?.monthly_breakdown||[];
+  if(!months.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No data.</div>'; return; }
+  let html='<div class="table-wrap"><table><thead><tr><th>Month</th><th>Trades</th><th>Wins</th><th>Win%</th><th>Total P&L</th><th>Avg P&L</th><th>Best</th><th>Worst</th></tr></thead><tbody>';
+  for(const m of months.slice().reverse()){
+    const wr=m.trades>0?Math.round(m.wins/m.trades*100):0;
+    html+=`<tr>
+      <td>${m.month}</td>
+      <td>${m.trades}</td>
+      <td>${m.wins}</td>
+      <td>${wr}%</td>
+      <td class="${pnlClass(m.total_pnl_pct)}">${pnlSign(m.total_pnl_pct)}</td>
+      <td class="${pnlClass(m.avg_pnl_pct)}">${pnlSign(m.avg_pnl_pct)}</td>
+      <td class="pnl-pos">${pnlSign(m.best)}</td>
+      <td class="pnl-neg">${pnlSign(m.worst)}</td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+/* ---- LIVE TRADE LOG ---- */
+function renderLiveLog(){
+  const el=document.getElementById('liveTradeLog');
+  const log=D.live_trade_log||[];
+  if(!log.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No live trades yet. Trades will appear after the first daily scan with signals.</div>'; return; }
+  let html='<div class="table-wrap" style="max-height:400px;overflow-y:auto"><table><thead><tr><th>Entry</th><th>Exit</th><th>Coin</th><th>Entry $</th><th>Exit $</th><th>P&L</th><th>Days</th><th>Reason</th></tr></thead><tbody>';
+  for(const t of log.slice().reverse()){
+    html+=`<tr>
+      <td>${t.entry_date}</td>
+      <td>${t.exit_date}</td>
+      <td><span class="ticker-sym">${t.display_name||t.ticker}</span></td>
+      <td>$${t.entry_price}</td>
+      <td>$${t.exit_price}</td>
+      <td class="${pnlClass(t.net_pnl_pct)}">${pnlSign(t.net_pnl_pct)}</td>
+      <td>${t.days_held}</td>
+      <td>${t.exit_reason}</td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+/* ---- ALL COINS ---- */
+function renderAllCoins(){
+  const el=document.getElementById('allCoinsTable');
+  const coins=D.all_coins||[];
+  if(!coins.length){ el.innerHTML='<div style="color:var(--muted)">No data.</div>'; return; }
+  let html='<div class="table-wrap" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>#</th><th>Coin</th><th>Price</th><th>Conv.</th><th>Signal</th><th>MTMDI z</th><th>Vel.</th><th>Regime</th><th>7d</th><th>30d</th></tr></thead><tbody>';
+  coins.forEach((c,i)=>{
+    const sig=c.is_signal?'<span class="badge badge-buy">YES</span>':'';
+    html+=`<tr>
+      <td>${i+1}</td>
+      <td><span class="ticker-sym">${c.display_name}</span></td>
+      <td>$${c.price}</td>
+      <td>${c.conviction}</td>
+      <td>${sig}</td>
+      <td>${c.mtmdi_zscore||'—'}</td>
+      <td>${c.mtmdi_velocity||'—'}</td>
+      <td>${c.vol_regime}</td>
+      <td class="${pnlClass(c.returns?.['7d']||0)}">${c.returns?.['7d']!=null?c.returns['7d']+'%':'—'}</td>
+      <td class="${pnlClass(c.returns?.['30d']||0)}">${c.returns?.['30d']!=null?c.returns['30d']+'%':'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+
+/* ---- EQUITY CHART (Canvas) ---- */
+function renderEquityChart(canvasId, curve){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas||!curve||!curve.length) return;
+  const ctx=canvas.getContext('2d');
+  const rect=canvas.parentElement.getBoundingClientRect();
+  const W=rect.width, H=rect.height;
+  canvas.width=W*2; canvas.height=H*2;
+  ctx.scale(2,2);
+
+  const vals=curve.map(c=>c.equity);
+  const dates=curve.map(c=>c.date);
+  const minV=Math.min(...vals)*0.98;
+  const maxV=Math.max(...vals)*1.02;
+  const range=maxV-minV||1;
+
+  // Background
+  ctx.fillStyle='#111111';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='#222222';
+  ctx.lineWidth=0.5;
+  for(let i=0;i<5;i++){
+    const y=H*0.1+i*(H*0.8/4);
+    ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-10,y); ctx.stroke();
+    const val=maxV-i*(range/4);
+    ctx.fillStyle='#888888'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText('$'+Math.round(val).toLocaleString(),36,y+3);
+  }
+
+  // Date labels
+  ctx.fillStyle='#888888'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(dates.length/6));
+  for(let i=0;i<dates.length;i+=step){
+    const x=40+(i/(dates.length-1))*(W-50);
+    ctx.fillText(dates[i],x,H-4);
+  }
+
+  // Line
+  ctx.strokeStyle='#00c853';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  for(let i=0;i<vals.length;i++){
+    const x=40+(i/(vals.length-1))*(W-50);
+    const y=H*0.1+(1-(vals[i]-minV)/range)*(H*0.8);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Fill
+  const lastX=40+((vals.length-1)/(vals.length-1))*(W-50);
+  const lastY=H*0.1+(1-(vals[vals.length-1]-minV)/range)*(H*0.8);
+  ctx.lineTo(lastX,H*0.9);
+  ctx.lineTo(40,H*0.9);
+  ctx.closePath();
+  ctx.fillStyle='rgba(0,200,83,0.08)';
+  ctx.fill();
+
+  // Final value label
+  ctx.fillStyle='#00c853'; ctx.font='bold 12px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('$'+Math.round(vals[vals.length-1]).toLocaleString(),lastX+4,lastY-4);
+}
+
+</script>
+</body>
+</html>
