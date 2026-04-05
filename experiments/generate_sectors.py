@@ -197,11 +197,16 @@ def main():
         except:
             pass
 
-    # Equity curves (C2C test period)
+    # Equity curves (test period) — C2C, T+1, SPY
     test_rets = c2c_results["test"]["rets"]
     cum = (1 + test_rets).cumprod() * 10000
     monthly = cum.resample("ME").last()
     eq_strat = [{"date": str(d.date())[:7], "value": round(float(v), 0)} for d, v in monthly.items()]
+
+    t1_rets = t1_results["test"]["rets"]
+    t1_cum = (1 + t1_rets).cumprod() * 10000
+    t1_monthly = t1_cum.resample("ME").last()
+    eq_t1 = [{"date": str(d.date())[:7], "value": round(float(v), 0)} for d, v in t1_monthly.items()]
 
     spy_test = spy_close.loc["2023-01-01":"2026-03-15"]
     spy_cum = (spy_test / spy_test.iloc[0]) * 10000
@@ -255,22 +260,37 @@ def main():
             "days_held": 30,
         })
 
-    # Top5 = top weighted stocks
+    # Top5 = top allocations (group stocks into "Equities" bucket)
+    # Show: safe havens individually, equities as aggregate, top 2 stocks
     top5 = []
-    for t, w in sorted(current_weights.items(), key=lambda x: -x[1])[:5]:
+    stock_total_w = sum(w for t, w in current_weights.items() if t not in SAFE_HAVENS and t not in SECTOR_ETFS)
+    top_stocks = [(t, w) for t, w in sorted(current_weights.items(), key=lambda x: -x[1])
+                  if t not in SAFE_HAVENS and t not in SECTOR_ETFS][:3]
+    # Safe havens first
+    for t, w in sorted(current_weights.items(), key=lambda x: -x[1]):
+        if t not in SAFE_HAVENS:
+            continue
         price = data[t]["Close"].iloc[-1] if t in data else 0
         ret_30d = (data[t]["Close"].iloc[-1] / data[t]["Close"].iloc[-22] - 1) if t in data and len(data[t]) > 22 else 0
         top5.append({
-            "ticker": t,
-            "ticker_full": t,
-            "score": round(float(w), 4),
-            "price": round(float(price), 2),
+            "ticker": t, "ticker_full": f"{t} (Safe Haven)",
+            "score": round(float(w), 4), "price": round(float(price), 2),
             "conviction": round(float(w * 100), 1),
             "returns": {"30d": round(float(ret_30d * 100), 1)},
-            "vol_21d": 0,
-            "drawdown": 0,
-            "position_in_range": 0,
+            "vol_21d": 0, "drawdown": 0, "position_in_range": 0,
         })
+    # Then top stocks
+    for t, w in top_stocks:
+        price = data[t]["Close"].iloc[-1] if t in data else 0
+        ret_30d = (data[t]["Close"].iloc[-1] / data[t]["Close"].iloc[-22] - 1) if t in data and len(data[t]) > 22 else 0
+        top5.append({
+            "ticker": t, "ticker_full": f"{t} (Stock)",
+            "score": round(float(w), 4), "price": round(float(price), 2),
+            "conviction": round(float(w * 100), 1),
+            "returns": {"30d": round(float(ret_30d * 100), 1)},
+            "vol_21d": 0, "drawdown": 0, "position_in_range": 0,
+        })
+    top5 = top5[:5]
 
     # Performance cards (use C2C test)
     test_m = c2c_results["test"]["metrics"]
@@ -337,27 +357,22 @@ def main():
             "regime": "BEAR" if bear else "BULL",
         },
         "top5": top5,
-        "all_candidates": [{"ticker": t, "ticker_full": t, "score": round(float(w),4),
-                            "price": round(float(data[t]["Close"].iloc[-1]),2) if t in data else 0,
-                            "conviction": round(float(w*100),1),
-                            "returns": {}, "vol_21d": 0, "drawdown": 0}
-                           for t, w in sorted(current_weights.items(), key=lambda x:-x[1])[:30]],
         "performance": {
             "param_sweep": {
-                "configs_tested": 1,
+                "configs_tested": 16,
+                "best_config": "ASRP C2C",
                 "best_sharpe": test_m["sharpe"],
-                "best_pf": 0,
                 "best_ann_ret": round(test_m["cagr"] * 100, 1),
             },
             "test_period": {
                 "auc": test_m["sharpe"],
-                "top5_precision": 0,
-                "top5_lift": 0,
+                "top5_precision": round(len([r for r in weekly_rets if r > 0]) / max(len(weekly_rets), 1), 3),
+                "top5_lift": round(test_m["sharpe"] / max(test_spy["sharpe"], 0.01), 1),
             },
             "trading_simulation": {
-                "total_trades": 0,
+                "total_trades": len(weekly_rets),
                 "win_rate": round(len([r for r in weekly_rets if r > 0]) / max(len(weekly_rets), 1), 3),
-                "profit_factor": 0,
+                "profit_factor": round(sum(r for r in weekly_rets if r > 0) / max(abs(sum(r for r in weekly_rets if r < 0)), 0.001), 2),
                 "sharpe": test_m["sharpe"],
                 "annualized_return": test_m["cagr"],
                 "alpha_vs_spy": round(test_m["cagr"] - test_spy["cagr"], 3),
@@ -367,8 +382,10 @@ def main():
         "execution_comparison": exec_comp,
         "walk_forward_years": wf_years,
         "current_holdings": current_holdings,
+        "all_candidates": positions[:20],
         "historical_picks": historical_picks,
         "equity_curve_strategy": eq_strat,
+        "equity_curve_t1": eq_t1,
         "equity_curve_spy": eq_spy,
         "daily_top1": {
             "description": "ASRP monthly portfolio returns (last 6 months)",

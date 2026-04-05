@@ -372,7 +372,18 @@ function renderAll(){
   renderCryptoSections(d);
   renderSectorSections(d);
   const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
-  document.getElementById('eqTitle').textContent=`Equity Curve — Strategy vs ${bench} ($10k)`;
+  document.getElementById('eqTitle').textContent=ACTIVE_TAB==='sectors'
+    ?'Equity Curve — C2C vs T+1 vs SPY ($10k)'
+    :`Equity Curve — Strategy vs ${bench} ($10k)`;
+  // Hide irrelevant sections for sectors
+  const hideSectors=ACTIVE_TAB==='sectors';
+  document.getElementById('picksSection').style.display=hideSectors?'none':'block';
+  document.querySelectorAll('.section').forEach(s=>{
+    const title=s.querySelector('.section-title');
+    if(title && (title.textContent.includes('All Scored') || title.textContent.includes('Daily Top-1'))){
+      s.style.display=hideSectors?'none':'block';
+    }
+  });
 }
 
 /* ---- CRYPTO-ONLY SECTIONS ---- */
@@ -869,17 +880,74 @@ function renderEquityCurve(d){
   const spy=d.equity_curve_spy||d.equity_curve_btc||[];
   if(strat.length<2) return;
   const canvas=document.getElementById('equityChart');
-  drawDualChart(canvas,strat,spy);
-  // Meta
-  const stratFinal=strat[strat.length-1].value;
-  const spyFinal=spy.length?spy[spy.length-1].value:10000;
-  const stratRet=((stratFinal/10000-1)*100).toFixed(1);
-  const spyRet=((spyFinal/10000-1)*100).toFixed(1);
-  const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
-  document.getElementById('equityMeta').innerHTML=`
-    <span style="color:var(--green)">Strategy: $${(stratFinal/1000).toFixed(1)}k (${stratRet>=0?'+':''}${stratRet}%)</span>
-    <span style="color:var(--muted)">${bench}: $${(spyFinal/1000).toFixed(1)}k (${spyRet>=0?'+':''}${spyRet}%)</span>
-    <span style="color:${stratFinal>spyFinal?'var(--green)':'var(--red)'}">Alpha: ${(stratRet-spyRet)>=0?'+':''}${(stratRet-spyRet).toFixed(1)}%</span>`;
+  const t1=d.equity_curve_t1||[];
+  if(ACTIVE_TAB==='sectors' && t1.length>=2){
+    drawTripleChart(canvas,strat,t1,spy);
+    const sf=strat[strat.length-1].value, tf=t1[t1.length-1].value, bf=spy[spy.length-1].value;
+    const sr=((sf/10000-1)*100).toFixed(1), tr=((tf/10000-1)*100).toFixed(1), br=((bf/10000-1)*100).toFixed(1);
+    document.getElementById('equityMeta').innerHTML=`
+      <span style="color:var(--green)">C2C: $${(sf/1000).toFixed(1)}k (${sr>=0?'+':''}${sr}%)</span>
+      <span style="color:var(--blue)">T+1: $${(tf/1000).toFixed(1)}k (${tr>=0?'+':''}${tr}%)</span>
+      <span style="color:var(--muted)">SPY: $${(bf/1000).toFixed(1)}k (${br>=0?'+':''}${br}%)</span>`;
+  } else {
+    drawDualChart(canvas,strat,spy);
+    const stratFinal=strat[strat.length-1].value;
+    const spyFinal=spy.length?spy[spy.length-1].value:10000;
+    const stratRet=((stratFinal/10000-1)*100).toFixed(1);
+    const spyRet=((spyFinal/10000-1)*100).toFixed(1);
+    const bench=ACTIVE_TAB==='crypto'?'BTC':'SPY';
+    document.getElementById('equityMeta').innerHTML=`
+      <span style="color:var(--green)">Strategy: $${(stratFinal/1000).toFixed(1)}k (${stratRet>=0?'+':''}${stratRet}%)</span>
+      <span style="color:var(--muted)">${bench}: $${(spyFinal/1000).toFixed(1)}k (${spyRet>=0?'+':''}${spyRet}%)</span>
+      <span style="color:${stratFinal>spyFinal?'var(--green)':'var(--red)'}">Alpha: ${(stratRet-spyRet)>=0?'+':''}${(stratRet-spyRet).toFixed(1)}%</span>`;
+  }
+}
+
+function drawTripleChart(canvas,d1,d2,d3){
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const v1=d1.map(d=>d.value),v2=d2.map(d=>d.value),v3=d3.map(d=>d.value);
+  const n=Math.max(v1.length,v2.length,v3.length);
+  if(n<2) return;
+  const padL=55,padR=15,padT=16,padB=24;
+  let mn=Infinity,mx=-Infinity;
+  for(const v of [...v1,...v2,...v3]){if(v<mn)mn=v;if(v>mx)mx=v;}
+  const rng=mx-mn||1;mn-=rng*0.05;mx+=rng*0.05;
+  const x=i=>padL+(W-padL-padR)*i/(n-1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4;const yy=y(val);ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();ctx.fillText('$'+(val/1000).toFixed(1)+'k',padL-6,yy+3);}
+  // SPY dashed
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();
+  for(let i=0;i<v3.length;i++){const px=x(i*(n-1)/(v3.length-1)),py=y(v3[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();ctx.setLineDash([]);
+  // T+1 (blue dashed)
+  ctx.strokeStyle='#64b5f6';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.beginPath();
+  for(let i=0;i<v2.length;i++){const px=x(i*(n-1)/(v2.length-1)),py=y(v2[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();ctx.setLineDash([]);
+  // C2C fill
+  ctx.beginPath();ctx.moveTo(x(0),y(v1[0]));
+  for(let i=1;i<v1.length;i++) ctx.lineTo(x(i*(n-1)/(v1.length-1)),y(v1[i]));
+  ctx.lineTo(x(n-1),y(mn));ctx.lineTo(x(0),y(mn));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(0,200,83,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // C2C line (green solid)
+  ctx.strokeStyle='#00c853';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<v1.length;i++){const px=x(i*(n-1)/(v1.length-1)),py=y(v1[i]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();
+  // Labels
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#00c853';ctx.fillText('C2C $'+(v1[v1.length-1]/1000).toFixed(1)+'k',padL+8,padT+12);
+  ctx.fillStyle='#64b5f6';ctx.fillText('T+1 $'+(v2[v2.length-1]/1000).toFixed(1)+'k',padL+8,padT+26);
+  ctx.fillStyle='#888';ctx.fillText('SPY $'+(v3[v3.length-1]/1000).toFixed(1)+'k',padL+8,padT+40);
 }
 
 function drawDualChart(canvas,data1,data2){
