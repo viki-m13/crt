@@ -280,40 +280,15 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
     closed_trades = []
     daily_returns = []
     tc = TRANSACTION_COST_BPS / 10000
-    pending_entries = []  # signals generated today, entered NEXT bar
 
     for date in dates:
+        # Today's close prices (used for signals, entries, and exits)
         prices = {}
         for ticker, df in data_dict.items():
             if date in df.index and "Close" in df.columns:
                 prices[ticker] = df.loc[date, "Close"]
 
-        # Execute pending entries from PREVIOUS day's signals (next-bar entry)
-        total_exposure = sum(p["size"] for p in positions.values())
-        for ticker, strength, size, regime in pending_entries:
-            if total_exposure >= cfg.max_total_exposure:
-                break
-            if ticker in positions:
-                continue
-            price = prices.get(ticker)
-            if price is None or np.isnan(price):
-                continue
-            remaining = cfg.max_total_exposure - total_exposure
-            size = min(size, remaining)
-            if size < 0.005:
-                continue
-            positions[ticker] = {
-                "entry_date": date,
-                "entry_price": price,
-                "direction": 1,
-                "size": size,
-                "strength": strength,
-                "days_held": 0,
-            }
-            total_exposure += size
-        pending_entries = []
-
-        # Update positions (check exits)
+        # 1. Update positions and check exits at today's close
         for ticker in list(positions.keys()):
             pos = positions[ticker]
             pos["days_held"] += 1
@@ -332,7 +307,6 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
             elif pos["days_held"] >= cfg.max_hold_days:
                 should_exit, exit_reason = True, "max_hold"
             elif pos["days_held"] >= 2:
-                # NOVEL: Dynamic exit on velocity reversal
                 feat = features_cache.get(ticker)
                 if feat is not None and date in feat.index:
                     mz = feat.loc[date].get("mtmdi_zscore", 0)
@@ -358,7 +332,8 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
                 })
                 del positions[ticker]
 
-        # Get features
+        # 2. Generate signals and enter at today's close
+        #    (live: we run after close, execute immediately)
         features_dict = {}
         for ticker, feats in features_cache.items():
             if date in feats.index:
@@ -366,14 +341,33 @@ def run_backtest(data_dict, start_date, end_date, cfg=None):
 
         signals = generate_signals(date, features_dict, positions, cfg)
 
-        # Queue signals for NEXT bar entry (no same-bar execution)
-        pending_entries = signals
+        total_exposure = sum(p["size"] for p in positions.values())
+        for ticker, strength, size, regime in signals:
+            if total_exposure >= cfg.max_total_exposure:
+                break
+            price = prices.get(ticker)
+            if price is None or np.isnan(price):
+                continue
+            remaining = cfg.max_total_exposure - total_exposure
+            size = min(size, remaining)
+            if size < 0.005:
+                continue
+            positions[ticker] = {
+                "entry_date": date,
+                "entry_price": price,
+                "direction": 1,
+                "size": size,
+                "strength": strength,
+                "days_held": 0,
+            }
+            total_exposure += size
 
-        # Compute daily portfolio return (skip day 0 — entry day)
+        # 3. Daily portfolio return
+        #    Entry-day positions earn NO return (entered at today's close)
         daily_ret = 0.0
         for ticker, pos in positions.items():
             if pos["days_held"] < 1:
-                continue  # just entered today, no return yet
+                continue
             if ticker in data_dict:
                 df = data_dict[ticker]
                 if date in df.index:
