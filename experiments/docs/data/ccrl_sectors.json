@@ -1,0 +1,1472 @@
+{
+  "generated": "2026-04-05T01:09:16.109718",
+  "strategy": "ASRP",
+  "strategy_full_name": "Adaptive Sector Risk Parity (ASRP)",
+  "target": "Multi-factor stock selection + cross-asset risk parity",
+  "best_config": {
+    "rebalance": "Monthly",
+    "regime_sma": 100,
+    "stocks": 30
+  },
+  "model": {
+    "ensemble_size": 1,
+    "features": 4,
+    "strategy": "Momentum-quality stock selection + TLT/GLD/IEF risk parity",
+    "stocks": 98,
+    "sectors": 11
+  },
+  "spy": {
+    "price": 655.83,
+    "sma100": 676.69,
+    "regime": "BEAR"
+  },
+  "top5": [
+    {
+      "ticker": "GLD",
+      "ticker_full": "GLD",
+      "score": 0.42,
+      "price": 429.41,
+      "conviction": 42.0,
+      "returns": {
+        "30d": -9.0
+      },
+      "vol_21d": 0,
+      "drawdown": 0,
+      "position_in_range": 0
+    },
+    {
+      "ticker": "IEF",
+      "ticker_full": "IEF",
+      "score": 0.28,
+      "price": 95.26,
+      "conviction": 28.0,
+      "returns": {
+        "30d": -1.3
+      },
+      "vol_21d": 0,
+      "drawdown": 0,
+      "position_in_range": 0
+    },
+    {
+      "ticker": "JNJ",
+      "ticker_full": "JNJ",
+      "score": 0.0592,
+      "price": 243.04,
+      "conviction": 5.9,
+      "returns": {
+        "30d": -0.9
+      },
+      "vol_21d": 0,
+      "drawdown": 0,
+      "position_in_range": 0
+    },
+    {
+      "ticker": "NEE",
+      "ticker_full": "NEE",
+      "score": 0.0467,
+      "price": 93.15,
+      "conviction": 4.7,
+      "returns": {
+        "30d": 0.6
+      },
+      "vol_21d": 0,
+      "drawdown": 0,
+      "position_in_range": 0
+    },
+    {
+      "ticker": "MRK",
+      "ticker_full": "MRK",
+      "score": 0.0408,
+      "price": 120.87,
+      "conviction": 4.1,
+      "returns": {
+        "30d": 1.2
+      },
+      "vol_21d": 0,
+      "drawdown": 0,
+      "position_in_range": 0
+    }
+  ],
+  "all_candidates": [
+    {
+      "ticker": "GLD",
+      "ticker_full": "GLD",
+      "score": 0.42,
+      "price": 429.41,
+      "conviction": 42.0,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "IEF",
+      "ticker_full": "IEF",
+      "score": 0.28,
+      "price": 95.26,
+      "conviction": 28.0,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "JNJ",
+      "ticker_full": "JNJ",
+      "score": 0.0592,
+      "price": 243.04,
+      "conviction": 5.9,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "NEE",
+      "ticker_full": "NEE",
+      "score": 0.0467,
+      "price": 93.15,
+      "conviction": 4.7,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "MRK",
+      "ticker_full": "MRK",
+      "score": 0.0408,
+      "price": 120.87,
+      "conviction": 4.1,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "CVX",
+      "ticker_full": "CVX",
+      "score": 0.037,
+      "price": 198.97,
+      "conviction": 3.7,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "XOM",
+      "ticker_full": "XOM",
+      "score": 0.0326,
+      "price": 160.69,
+      "conviction": 3.3,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "CAT",
+      "ticker_full": "CAT",
+      "score": 0.0242,
+      "price": 717.22,
+      "conviction": 2.4,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "AMAT",
+      "ticker_full": "AMAT",
+      "score": 0.017,
+      "price": 348.47,
+      "conviction": 1.7,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "KLAC",
+      "ticker_full": "KLAC",
+      "score": 0.0157,
+      "price": 1516.84,
+      "conviction": 1.6,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "LRCX",
+      "ticker_full": "LRCX",
+      "score": 0.0149,
+      "price": 218.44,
+      "conviction": 1.5,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    },
+    {
+      "ticker": "INTC",
+      "ticker_full": "INTC",
+      "score": 0.0119,
+      "price": 50.38,
+      "conviction": 1.2,
+      "returns": {},
+      "vol_21d": 0,
+      "drawdown": 0
+    }
+  ],
+  "performance": {
+    "param_sweep": {
+      "configs_tested": 1,
+      "best_sharpe": 1.732,
+      "best_pf": 0,
+      "best_ann_ret": 20.7
+    },
+    "test_period": {
+      "auc": 1.732,
+      "top5_precision": 0,
+      "top5_lift": 0
+    },
+    "trading_simulation": {
+      "total_trades": 0,
+      "win_rate": 0.667,
+      "profit_factor": 0,
+      "sharpe": 1.732,
+      "annualized_return": 0.2068,
+      "alpha_vs_spy": 0.002,
+      "hit_rate_target": 0.667
+    }
+  },
+  "execution_comparison": {
+    "close_to_close": {
+      "train_sharpe": "1.12",
+      "train_cagr": "13.2%",
+      "train_dd": "-9.3%",
+      "valid_sharpe": "0.51",
+      "valid_cagr": "8.2%",
+      "valid_dd": "-15.0%",
+      "test_sharpe": "1.73",
+      "test_cagr": "20.7%",
+      "test_dd": "-7.1%"
+    },
+    "t1_open": {
+      "train_sharpe": "1.05",
+      "train_cagr": "12.7%",
+      "train_dd": "-9.3%",
+      "valid_sharpe": "0.72",
+      "valid_cagr": "11.5%",
+      "valid_dd": "-15.2%",
+      "test_sharpe": "1.47",
+      "test_cagr": "18.2%",
+      "test_dd": "-7.1%"
+    },
+    "spy_bh": {
+      "train_sharpe": "0.79",
+      "train_cagr": "13.3%",
+      "train_dd": "-19.4%",
+      "valid_sharpe": "0.33",
+      "valid_cagr": "7.3%",
+      "valid_dd": "-33.7%",
+      "test_sharpe": "1.18",
+      "test_cagr": "20.5%",
+      "test_dd": "-18.8%"
+    }
+  },
+  "walk_forward_years": [
+    {
+      "year": 2011,
+      "asrp_sharpe": "1.38",
+      "spy_sharpe": "0.07",
+      "asrp_cagr": "16.5%",
+      "asrp_cagr_num": 0.1653,
+      "spy_cagr": "0.9%",
+      "max_dd": "-5.6%"
+    },
+    {
+      "year": 2012,
+      "asrp_sharpe": "0.77",
+      "spy_sharpe": "0.96",
+      "asrp_cagr": "8.2%",
+      "asrp_cagr_num": 0.0815,
+      "spy_cagr": "14.2%",
+      "max_dd": "-6.1%"
+    },
+    {
+      "year": 2013,
+      "asrp_sharpe": "1.54",
+      "spy_sharpe": "2.23",
+      "asrp_cagr": "17.6%",
+      "asrp_cagr_num": 0.1761,
+      "spy_cagr": "29.0%",
+      "max_dd": "-5.1%"
+    },
+    {
+      "year": 2014,
+      "asrp_sharpe": "1.08",
+      "spy_sharpe": "1.09",
+      "asrp_cagr": "10.8%",
+      "asrp_cagr_num": 0.1085,
+      "spy_cagr": "14.6%",
+      "max_dd": "-5.3%"
+    },
+    {
+      "year": 2015,
+      "asrp_sharpe": "-0.07",
+      "spy_sharpe": "0.03",
+      "asrp_cagr": "0.7%",
+      "asrp_cagr_num": 0.0072,
+      "spy_cagr": "1.3%",
+      "max_dd": "-9.3%"
+    },
+    {
+      "year": 2016,
+      "asrp_sharpe": "0.39",
+      "spy_sharpe": "0.90",
+      "asrp_cagr": "4.7%",
+      "asrp_cagr_num": 0.0471,
+      "spy_cagr": "13.6%",
+      "max_dd": "-5.7%"
+    },
+    {
+      "year": 2017,
+      "asrp_sharpe": "2.33",
+      "spy_sharpe": "2.57",
+      "asrp_cagr": "18.8%",
+      "asrp_cagr_num": 0.1884,
+      "spy_cagr": "20.8%",
+      "max_dd": "-4.4%"
+    },
+    {
+      "year": 2018,
+      "asrp_sharpe": "0.16",
+      "spy_sharpe": "-0.35",
+      "asrp_cagr": "3.2%",
+      "asrp_cagr_num": 0.0324,
+      "spy_cagr": "-5.2%",
+      "max_dd": "-8.2%"
+    },
+    {
+      "year": 2019,
+      "asrp_sharpe": "1.84",
+      "spy_sharpe": "2.07",
+      "asrp_cagr": "18.7%",
+      "asrp_cagr_num": 0.1868,
+      "spy_cagr": "31.1%",
+      "max_dd": "-4.0%"
+    },
+    {
+      "year": 2020,
+      "asrp_sharpe": "1.07",
+      "spy_sharpe": "0.58",
+      "asrp_cagr": "20.8%",
+      "asrp_cagr_num": 0.2077,
+      "spy_cagr": "17.2%",
+      "max_dd": "-15.0%"
+    },
+    {
+      "year": 2021,
+      "asrp_sharpe": "1.41",
+      "spy_sharpe": "1.98",
+      "asrp_cagr": "19.5%",
+      "asrp_cagr_num": 0.1952,
+      "spy_cagr": "30.5%",
+      "max_dd": "-6.2%"
+    },
+    {
+      "year": 2022,
+      "asrp_sharpe": "-1.05",
+      "spy_sharpe": "-0.82",
+      "asrp_cagr": "-6.5%",
+      "asrp_cagr_num": -0.0654,
+      "spy_cagr": "-18.6%",
+      "max_dd": "-11.2%"
+    },
+    {
+      "year": 2023,
+      "asrp_sharpe": "1.67",
+      "spy_sharpe": "1.74",
+      "asrp_cagr": "19.6%",
+      "asrp_cagr_num": 0.1961,
+      "spy_cagr": "26.7%",
+      "max_dd": "-5.6%"
+    },
+    {
+      "year": 2024,
+      "asrp_sharpe": "1.30",
+      "spy_sharpe": "1.72",
+      "asrp_cagr": "15.3%",
+      "asrp_cagr_num": 0.153,
+      "spy_cagr": "25.6%",
+      "max_dd": "-5.1%"
+    },
+    {
+      "year": 2025,
+      "asrp_sharpe": "1.37",
+      "spy_sharpe": "0.85",
+      "asrp_cagr": "15.0%",
+      "asrp_cagr_num": 0.1504,
+      "spy_cagr": "18.0%",
+      "max_dd": "-4.4%"
+    },
+    {
+      "year": 2026,
+      "asrp_sharpe": "-0.40",
+      "spy_sharpe": "-1.16",
+      "asrp_cagr": "-0.5%",
+      "asrp_cagr_num": -0.0051,
+      "spy_cagr": "-3.7%",
+      "max_dd": "-5.4%"
+    }
+  ],
+  "current_holdings": {
+    "regime": "BEAR",
+    "equity_pct": "30%",
+    "hedge_pct": "70%",
+    "n_stocks": 10,
+    "next_rebalance": "1st of month",
+    "positions": [
+      {
+        "ticker": "GLD",
+        "type": "Safe Haven",
+        "weight": "42.0%"
+      },
+      {
+        "ticker": "IEF",
+        "type": "Safe Haven",
+        "weight": "28.0%"
+      },
+      {
+        "ticker": "JNJ",
+        "type": "Stock",
+        "weight": "5.9%"
+      },
+      {
+        "ticker": "NEE",
+        "type": "Stock",
+        "weight": "4.7%"
+      },
+      {
+        "ticker": "MRK",
+        "type": "Stock",
+        "weight": "4.1%"
+      },
+      {
+        "ticker": "CVX",
+        "type": "Stock",
+        "weight": "3.7%"
+      },
+      {
+        "ticker": "XOM",
+        "type": "Stock",
+        "weight": "3.3%"
+      },
+      {
+        "ticker": "CAT",
+        "type": "Stock",
+        "weight": "2.4%"
+      },
+      {
+        "ticker": "AMAT",
+        "type": "Stock",
+        "weight": "1.7%"
+      },
+      {
+        "ticker": "KLAC",
+        "type": "Stock",
+        "weight": "1.6%"
+      },
+      {
+        "ticker": "LRCX",
+        "type": "Stock",
+        "weight": "1.5%"
+      },
+      {
+        "ticker": "INTC",
+        "type": "Stock",
+        "weight": "1.2%"
+      }
+    ]
+  },
+  "historical_picks": [
+    {
+      "entry_date": "2023-01-01",
+      "exit_date": "2023-01-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.0,
+      "entry_price": 10000,
+      "exit_price": 10000.0,
+      "return_pct": 0.0,
+      "net_return_pct": 0.0,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-02-01",
+      "exit_date": "2023-02-28",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.202,
+      "entry_price": 10000.0,
+      "exit_price": 9798.0,
+      "return_pct": -2.02,
+      "net_return_pct": -2.02,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-03-01",
+      "exit_date": "2023-03-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.247,
+      "entry_price": 9798.0,
+      "exit_price": 10039.0,
+      "return_pct": 2.47,
+      "net_return_pct": 2.47,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-04-01",
+      "exit_date": "2023-04-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.209,
+      "entry_price": 10039.0,
+      "exit_price": 10250.0,
+      "return_pct": 2.09,
+      "net_return_pct": 2.09,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-05-01",
+      "exit_date": "2023-05-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.168,
+      "entry_price": 10250.0,
+      "exit_price": 10421.0,
+      "return_pct": 1.68,
+      "net_return_pct": 1.68,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-06-01",
+      "exit_date": "2023-06-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.545,
+      "entry_price": 10421.0,
+      "exit_price": 10990.0,
+      "return_pct": 5.45,
+      "net_return_pct": 5.45,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-07-01",
+      "exit_date": "2023-07-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.271,
+      "entry_price": 10990.0,
+      "exit_price": 11288.0,
+      "return_pct": 2.71,
+      "net_return_pct": 2.71,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-08-01",
+      "exit_date": "2023-08-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.13,
+      "entry_price": 11288.0,
+      "exit_price": 11435.0,
+      "return_pct": 1.3,
+      "net_return_pct": 1.3,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-09-01",
+      "exit_date": "2023-09-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.46,
+      "entry_price": 11435.0,
+      "exit_price": 10909.0,
+      "return_pct": -4.6,
+      "net_return_pct": -4.6,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-10-01",
+      "exit_date": "2023-10-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.011,
+      "entry_price": 10909.0,
+      "exit_price": 10897.0,
+      "return_pct": -0.11,
+      "net_return_pct": -0.11,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-11-01",
+      "exit_date": "2023-11-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.475,
+      "entry_price": 10897.0,
+      "exit_price": 11414.0,
+      "return_pct": 4.75,
+      "net_return_pct": 4.75,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-12-01",
+      "exit_date": "2023-12-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.479,
+      "entry_price": 11414.0,
+      "exit_price": 11961.0,
+      "return_pct": 4.79,
+      "net_return_pct": 4.79,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-01-01",
+      "exit_date": "2024-01-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.421,
+      "entry_price": 11961.0,
+      "exit_price": 12464.0,
+      "return_pct": 4.21,
+      "net_return_pct": 4.21,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-02-01",
+      "exit_date": "2024-02-29",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.479,
+      "entry_price": 12464.0,
+      "exit_price": 13061.0,
+      "return_pct": 4.79,
+      "net_return_pct": 4.79,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-03-01",
+      "exit_date": "2024-03-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.339,
+      "entry_price": 13061.0,
+      "exit_price": 13504.0,
+      "return_pct": 3.39,
+      "net_return_pct": 3.39,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-04-01",
+      "exit_date": "2024-04-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.282,
+      "entry_price": 13504.0,
+      "exit_price": 13123.0,
+      "return_pct": -2.82,
+      "net_return_pct": -2.82,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-05-01",
+      "exit_date": "2024-05-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.322,
+      "entry_price": 13123.0,
+      "exit_price": 13546.0,
+      "return_pct": 3.22,
+      "net_return_pct": 3.22,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-06-01",
+      "exit_date": "2024-06-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.022,
+      "entry_price": 13546.0,
+      "exit_price": 13575.0,
+      "return_pct": 0.22,
+      "net_return_pct": 0.22,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-07-01",
+      "exit_date": "2024-07-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.145,
+      "entry_price": 13575.0,
+      "exit_price": 13772.0,
+      "return_pct": 1.45,
+      "net_return_pct": 1.45,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-08-01",
+      "exit_date": "2024-08-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.508,
+      "entry_price": 13772.0,
+      "exit_price": 14472.0,
+      "return_pct": 5.08,
+      "net_return_pct": 5.08,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-09-01",
+      "exit_date": "2024-09-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.031,
+      "entry_price": 14472.0,
+      "exit_price": 14427.0,
+      "return_pct": -0.31,
+      "net_return_pct": -0.31,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-10-01",
+      "exit_date": "2024-10-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.089,
+      "entry_price": 14427.0,
+      "exit_price": 14298.0,
+      "return_pct": -0.89,
+      "net_return_pct": -0.89,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-11-01",
+      "exit_date": "2024-11-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.607,
+      "entry_price": 14298.0,
+      "exit_price": 15166.0,
+      "return_pct": 6.07,
+      "net_return_pct": 6.07,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-12-01",
+      "exit_date": "2024-12-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.415,
+      "entry_price": 15166.0,
+      "exit_price": 14537.0,
+      "return_pct": -4.15,
+      "net_return_pct": -4.15,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-01-01",
+      "exit_date": "2025-01-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.346,
+      "entry_price": 14537.0,
+      "exit_price": 15041.0,
+      "return_pct": 3.46,
+      "net_return_pct": 3.46,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-02-01",
+      "exit_date": "2025-02-28",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.015,
+      "entry_price": 15041.0,
+      "exit_price": 15019.0,
+      "return_pct": -0.15,
+      "net_return_pct": -0.15,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-03-01",
+      "exit_date": "2025-03-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.193,
+      "entry_price": 15019.0,
+      "exit_price": 15309.0,
+      "return_pct": 1.93,
+      "net_return_pct": 1.93,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-04-01",
+      "exit_date": "2025-04-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.114,
+      "entry_price": 15309.0,
+      "exit_price": 15483.0,
+      "return_pct": 1.14,
+      "net_return_pct": 1.14,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-05-01",
+      "exit_date": "2025-05-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.018,
+      "entry_price": 15483.0,
+      "exit_price": 15455.0,
+      "return_pct": -0.18,
+      "net_return_pct": -0.18,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-06-01",
+      "exit_date": "2025-06-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.229,
+      "entry_price": 15455.0,
+      "exit_price": 15809.0,
+      "return_pct": 2.29,
+      "net_return_pct": 2.29,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-07-01",
+      "exit_date": "2025-07-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.085,
+      "entry_price": 15809.0,
+      "exit_price": 15943.0,
+      "return_pct": 0.85,
+      "net_return_pct": 0.85,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-08-01",
+      "exit_date": "2025-08-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.05,
+      "entry_price": 15943.0,
+      "exit_price": 15863.0,
+      "return_pct": -0.5,
+      "net_return_pct": -0.5,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-09-01",
+      "exit_date": "2025-09-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.486,
+      "entry_price": 15863.0,
+      "exit_price": 16634.0,
+      "return_pct": 4.86,
+      "net_return_pct": 4.86,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-10-01",
+      "exit_date": "2025-10-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.189,
+      "entry_price": 16634.0,
+      "exit_price": 16948.0,
+      "return_pct": 1.89,
+      "net_return_pct": 1.89,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-11-01",
+      "exit_date": "2025-11-30",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.237,
+      "entry_price": 16948.0,
+      "exit_price": 17349.0,
+      "return_pct": 2.37,
+      "net_return_pct": 2.37,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-12-01",
+      "exit_date": "2025-12-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.045,
+      "entry_price": 17349.0,
+      "exit_price": 17272.0,
+      "return_pct": -0.45,
+      "net_return_pct": -0.45,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2026-01-01",
+      "exit_date": "2026-01-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.442,
+      "entry_price": 17272.0,
+      "exit_price": 18036.0,
+      "return_pct": 4.42,
+      "net_return_pct": 4.42,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2026-02-01",
+      "exit_date": "2026-02-28",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.341,
+      "entry_price": 18036.0,
+      "exit_price": 18650.0,
+      "return_pct": 3.41,
+      "net_return_pct": 3.41,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2026-03-01",
+      "exit_date": "2026-03-31",
+      "ticker": "ASRP Portfolio",
+      "ticker_full": "ASRP Portfolio",
+      "score": 0.254,
+      "entry_price": 18650.0,
+      "exit_price": 18177.0,
+      "return_pct": -2.54,
+      "net_return_pct": -2.54,
+      "hit_target": false,
+      "days_held": 30
+    }
+  ],
+  "equity_curve_strategy": [
+    {
+      "date": "2023-01",
+      "value": 10000.0
+    },
+    {
+      "date": "2023-02",
+      "value": 9798.0
+    },
+    {
+      "date": "2023-03",
+      "value": 10039.0
+    },
+    {
+      "date": "2023-04",
+      "value": 10250.0
+    },
+    {
+      "date": "2023-05",
+      "value": 10421.0
+    },
+    {
+      "date": "2023-06",
+      "value": 10990.0
+    },
+    {
+      "date": "2023-07",
+      "value": 11288.0
+    },
+    {
+      "date": "2023-08",
+      "value": 11435.0
+    },
+    {
+      "date": "2023-09",
+      "value": 10909.0
+    },
+    {
+      "date": "2023-10",
+      "value": 10897.0
+    },
+    {
+      "date": "2023-11",
+      "value": 11414.0
+    },
+    {
+      "date": "2023-12",
+      "value": 11961.0
+    },
+    {
+      "date": "2024-01",
+      "value": 12464.0
+    },
+    {
+      "date": "2024-02",
+      "value": 13061.0
+    },
+    {
+      "date": "2024-03",
+      "value": 13504.0
+    },
+    {
+      "date": "2024-04",
+      "value": 13123.0
+    },
+    {
+      "date": "2024-05",
+      "value": 13546.0
+    },
+    {
+      "date": "2024-06",
+      "value": 13575.0
+    },
+    {
+      "date": "2024-07",
+      "value": 13772.0
+    },
+    {
+      "date": "2024-08",
+      "value": 14472.0
+    },
+    {
+      "date": "2024-09",
+      "value": 14427.0
+    },
+    {
+      "date": "2024-10",
+      "value": 14298.0
+    },
+    {
+      "date": "2024-11",
+      "value": 15166.0
+    },
+    {
+      "date": "2024-12",
+      "value": 14537.0
+    },
+    {
+      "date": "2025-01",
+      "value": 15041.0
+    },
+    {
+      "date": "2025-02",
+      "value": 15019.0
+    },
+    {
+      "date": "2025-03",
+      "value": 15309.0
+    },
+    {
+      "date": "2025-04",
+      "value": 15483.0
+    },
+    {
+      "date": "2025-05",
+      "value": 15455.0
+    },
+    {
+      "date": "2025-06",
+      "value": 15809.0
+    },
+    {
+      "date": "2025-07",
+      "value": 15943.0
+    },
+    {
+      "date": "2025-08",
+      "value": 15863.0
+    },
+    {
+      "date": "2025-09",
+      "value": 16634.0
+    },
+    {
+      "date": "2025-10",
+      "value": 16948.0
+    },
+    {
+      "date": "2025-11",
+      "value": 17349.0
+    },
+    {
+      "date": "2025-12",
+      "value": 17272.0
+    },
+    {
+      "date": "2026-01",
+      "value": 18036.0
+    },
+    {
+      "date": "2026-02",
+      "value": 18650.0
+    },
+    {
+      "date": "2026-03",
+      "value": 18177.0
+    }
+  ],
+  "equity_curve_spy": [
+    {
+      "date": "2023-01",
+      "value": 10674.0
+    },
+    {
+      "date": "2023-02",
+      "value": 10405.0
+    },
+    {
+      "date": "2023-03",
+      "value": 10791.0
+    },
+    {
+      "date": "2023-04",
+      "value": 10964.0
+    },
+    {
+      "date": "2023-05",
+      "value": 11014.0
+    },
+    {
+      "date": "2023-06",
+      "value": 11728.0
+    },
+    {
+      "date": "2023-07",
+      "value": 12112.0
+    },
+    {
+      "date": "2023-08",
+      "value": 11915.0
+    },
+    {
+      "date": "2023-09",
+      "value": 11350.0
+    },
+    {
+      "date": "2023-10",
+      "value": 11103.0
+    },
+    {
+      "date": "2023-11",
+      "value": 12118.0
+    },
+    {
+      "date": "2023-12",
+      "value": 12671.0
+    },
+    {
+      "date": "2024-01",
+      "value": 12873.0
+    },
+    {
+      "date": "2024-02",
+      "value": 13545.0
+    },
+    {
+      "date": "2024-03",
+      "value": 13987.0
+    },
+    {
+      "date": "2024-04",
+      "value": 13423.0
+    },
+    {
+      "date": "2024-05",
+      "value": 14102.0
+    },
+    {
+      "date": "2024-06",
+      "value": 14600.0
+    },
+    {
+      "date": "2024-07",
+      "value": 14777.0
+    },
+    {
+      "date": "2024-08",
+      "value": 15122.0
+    },
+    {
+      "date": "2024-09",
+      "value": 15440.0
+    },
+    {
+      "date": "2024-10",
+      "value": 15302.0
+    },
+    {
+      "date": "2024-11",
+      "value": 16214.0
+    },
+    {
+      "date": "2024-12",
+      "value": 15824.0
+    },
+    {
+      "date": "2025-01",
+      "value": 16249.0
+    },
+    {
+      "date": "2025-02",
+      "value": 16043.0
+    },
+    {
+      "date": "2025-03",
+      "value": 15149.0
+    },
+    {
+      "date": "2025-04",
+      "value": 15018.0
+    },
+    {
+      "date": "2025-05",
+      "value": 15962.0
+    },
+    {
+      "date": "2025-06",
+      "value": 16782.0
+    },
+    {
+      "date": "2025-07",
+      "value": 17168.0
+    },
+    {
+      "date": "2025-08",
+      "value": 17521.0
+    },
+    {
+      "date": "2025-09",
+      "value": 18145.0
+    },
+    {
+      "date": "2025-10",
+      "value": 18577.0
+    },
+    {
+      "date": "2025-11",
+      "value": 18613.0
+    },
+    {
+      "date": "2025-12",
+      "value": 18628.0
+    },
+    {
+      "date": "2026-01",
+      "value": 18903.0
+    },
+    {
+      "date": "2026-02",
+      "value": 18739.0
+    },
+    {
+      "date": "2026-03",
+      "value": 18092.0
+    }
+  ],
+  "daily_top1": {
+    "description": "ASRP monthly portfolio returns (last 6 months)",
+    "picks": [
+      {
+        "entry_date": "2025-10-01",
+        "exit_date": "2025-10-31",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.189,
+        "conviction": 0,
+        "entry_price": 10000.0,
+        "exit_price": 10189.0,
+        "return_pct": 1.89,
+        "net_return_pct": 1.89,
+        "hit_target": true,
+        "days_held": 30,
+        "benchmark_return_pct": 2.38,
+        "spy_return_pct": 2.38
+      },
+      {
+        "entry_date": "2025-11-01",
+        "exit_date": "2025-11-30",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.237,
+        "conviction": 0,
+        "entry_price": 10189.0,
+        "exit_price": 10430.0,
+        "return_pct": 2.37,
+        "net_return_pct": 2.37,
+        "hit_target": true,
+        "days_held": 30,
+        "benchmark_return_pct": 0.2,
+        "spy_return_pct": 0.2
+      },
+      {
+        "entry_date": "2025-12-01",
+        "exit_date": "2025-12-31",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.045,
+        "conviction": 0,
+        "entry_price": 10430.0,
+        "exit_price": 10384.0,
+        "return_pct": -0.45,
+        "net_return_pct": -0.45,
+        "hit_target": false,
+        "days_held": 30,
+        "benchmark_return_pct": 0.08,
+        "spy_return_pct": 0.08
+      },
+      {
+        "entry_date": "2026-01-01",
+        "exit_date": "2026-01-31",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.442,
+        "conviction": 0,
+        "entry_price": 10384.0,
+        "exit_price": 10843.0,
+        "return_pct": 4.42,
+        "net_return_pct": 4.42,
+        "hit_target": true,
+        "days_held": 30,
+        "benchmark_return_pct": 1.47,
+        "spy_return_pct": 1.47
+      },
+      {
+        "entry_date": "2026-02-01",
+        "exit_date": "2026-02-28",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.341,
+        "conviction": 0,
+        "entry_price": 10843.0,
+        "exit_price": 11212.0,
+        "return_pct": 3.41,
+        "net_return_pct": 3.41,
+        "hit_target": true,
+        "days_held": 30,
+        "benchmark_return_pct": -0.86,
+        "spy_return_pct": -0.86
+      },
+      {
+        "entry_date": "2026-03-01",
+        "exit_date": "2026-03-31",
+        "ticker": "ASRP",
+        "ticker_full": "Portfolio",
+        "score": 0.254,
+        "conviction": 0,
+        "entry_price": 11212.0,
+        "exit_price": 10928.0,
+        "return_pct": -2.54,
+        "net_return_pct": -2.54,
+        "hit_target": false,
+        "days_held": 30,
+        "benchmark_return_pct": -3.45,
+        "spy_return_pct": -3.45
+      }
+    ],
+    "equity_curve": [
+      {
+        "date": "2025-10-31",
+        "value": 10189.0
+      },
+      {
+        "date": "2025-11-30",
+        "value": 10430.0
+      },
+      {
+        "date": "2025-12-31",
+        "value": 10384.0
+      },
+      {
+        "date": "2026-01-31",
+        "value": 10843.0
+      },
+      {
+        "date": "2026-02-28",
+        "value": 11212.0
+      },
+      {
+        "date": "2026-03-31",
+        "value": 10928.0
+      }
+    ],
+    "equity_curve_benchmark": [
+      {
+        "date": "2025-10-31",
+        "value": 10238.0
+      },
+      {
+        "date": "2025-11-30",
+        "value": 10258.0
+      },
+      {
+        "date": "2025-12-31",
+        "value": 10267.0
+      },
+      {
+        "date": "2026-01-31",
+        "value": 10418.0
+      },
+      {
+        "date": "2026-02-28",
+        "value": 10328.0
+      },
+      {
+        "date": "2026-03-31",
+        "value": 9971.0
+      }
+    ],
+    "stats": {
+      "n_trades": 6,
+      "win_rate": 66.7,
+      "hit_rate": 66.7,
+      "avg_net_return": 1.5,
+      "profit_factor": 4.04,
+      "alpha": 1.5,
+      "final_value": 10928.0,
+      "benchmark_final_value": 9971.0
+    }
+  }
+}
