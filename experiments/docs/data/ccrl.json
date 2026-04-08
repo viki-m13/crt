@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-06T23:58:55.351968",
+  "generated": "2026-04-08T00:03:33.365963",
   "strategy": "CCRL",
   "strategy_full_name": "Conviction Cascade Reinforcement Learning",
   "target": "Stocks rising 5%+ in 30 trading days",
@@ -13,1008 +13,1008 @@
       "Ridge"
     ],
     "features": 46,
-    "training_samples": 341119,
-    "training_positive_rate": 0.347
+    "training_samples": 348381,
+    "training_positive_rate": 0.3459
   },
   "spy": {
-    "price": 655.83,
-    "sma100": 676.69,
+    "price": 658.93,
+    "sma100": 676.6,
     "regime": "BEAR",
-    "ret_21d": -4.0,
-    "ret_63d": -3.6
+    "ret_21d": -3.0,
+    "ret_63d": -3.3
   },
   "top5": [
     {
       "ticker": "ORCL",
-      "score": 0.6902496619593308,
-      "uncertainty": 0.05917281321455882,
-      "price": 146.38,
-      "conviction": 64.9,
+      "score": 0.677931541875475,
+      "uncertainty": 0.051949194842743913,
+      "price": 145.54,
+      "conviction": 64.3,
       "returns": {
-        "5d": 2.5,
-        "21d": -3.9,
-        "63d": -24.7,
-        "126d": -49.1
+        "5d": 4.2,
+        "21d": -6.0,
+        "63d": -25.4,
+        "126d": -49.4
       },
-      "vol_21d": 49.6,
-      "drawdown": -55.2,
-      "position_in_range": 11.9,
-      "atf_coiled_spring": 74.0,
-      "tam": -12.9
+      "vol_21d": 49.2,
+      "drawdown": -55.5,
+      "position_in_range": 11.5,
+      "atf_coiled_spring": 74.4,
+      "tam": -12.75
+    },
+    {
+      "ticker": "SNPS",
+      "score": 0.6549237039896869,
+      "uncertainty": 0.07196649493285603,
+      "price": 397.07,
+      "conviction": 60.8,
+      "returns": {
+        "5d": 4.4,
+        "21d": -10.2,
+        "63d": -17.3,
+        "126d": -15.7
+      },
+      "vol_21d": 34.9,
+      "drawdown": -38.5,
+      "position_in_range": 6.3,
+      "atf_coiled_spring": 89.5,
+      "tam": -8.49
     },
     {
       "ticker": "NOW",
-      "score": 0.6700666339069589,
-      "uncertainty": 0.03967410591769821,
-      "price": 102.0,
-      "conviction": 64.3,
+      "score": 0.6482363929352256,
+      "uncertainty": 0.04077074563503975,
+      "price": 102.42,
+      "conviction": 62.2,
       "returns": {
-        "5d": -1.6,
-        "21d": -10.4,
-        "63d": -33.4,
-        "126d": -44.1
+        "5d": 3.0,
+        "21d": -14.9,
+        "63d": -30.5,
+        "126d": -43.7
       },
-      "vol_21d": 46.5,
-      "drawdown": -51.2,
-      "position_in_range": 2.4,
-      "atf_coiled_spring": 54.7,
-      "tam": -20.62
-    },
-    {
-      "ticker": "FIS",
-      "score": 0.6483023298400309,
-      "uncertainty": 0.03212865270962561,
-      "price": 46.29,
-      "conviction": 62.7,
-      "returns": {
-        "5d": -2.4,
-        "21d": -6.8,
-        "63d": -29.8,
-        "126d": -29.4
-      },
-      "vol_21d": 25.6,
-      "drawdown": -42.6,
-      "position_in_range": 3.2,
-      "atf_coiled_spring": 68.3,
-      "tam": -16.92
-    },
-    {
-      "ticker": "UNH",
-      "score": 0.6400300672231098,
-      "uncertainty": 0.07574053755547189,
-      "price": 277.26,
-      "conviction": 59.2,
-      "returns": {
-        "5d": 3.4,
-        "21d": -4.3,
-        "63d": -15.4,
-        "126d": -19.2
-      },
-      "vol_21d": 26.8,
-      "drawdown": -52.4,
-      "position_in_range": 12.7,
-      "atf_coiled_spring": 90.7,
-      "tam": -12.01
+      "vol_21d": 41.1,
+      "drawdown": -51.0,
+      "position_in_range": 2.7,
+      "atf_coiled_spring": 62.3,
+      "tam": -18.9
     },
     {
       "ticker": "WDAY",
-      "score": 0.6291524311110627,
-      "uncertainty": 0.060202266761327554,
-      "price": 132.26,
-      "conviction": 59.1,
+      "score": 0.6397858584208668,
+      "uncertainty": 0.04277626589798546,
+      "price": 129.72,
+      "conviction": 61.2,
       "returns": {
-        "5d": 3.4,
-        "21d": -7.5,
-        "63d": -38.4,
-        "126d": -43.0
+        "5d": 4.5,
+        "21d": -11.9,
+        "63d": -37.0,
+        "126d": -44.1
       },
-      "vol_21d": 40.2,
-      "drawdown": -51.9,
-      "position_in_range": 5.4,
-      "atf_coiled_spring": 52.1,
-      "tam": -21.14
+      "vol_21d": 38.7,
+      "drawdown": -52.8,
+      "position_in_range": 3.7,
+      "atf_coiled_spring": 55.3,
+      "tam": -21.69
+    },
+    {
+      "ticker": "UNH",
+      "score": 0.6229225509313873,
+      "uncertainty": 0.05823167629440773,
+      "price": 281.36,
+      "conviction": 58.7,
+      "returns": {
+        "5d": 8.6,
+        "21d": -1.8,
+        "63d": -15.7,
+        "126d": -19.3
+      },
+      "vol_21d": 27.2,
+      "drawdown": -51.7,
+      "position_in_range": 13.8,
+      "atf_coiled_spring": 92.5,
+      "tam": -10.0
     }
   ],
   "all_candidates": [
     {
       "ticker": "ORCL",
-      "score": 0.6902496619593308,
-      "uncertainty": 0.05917281321455882,
-      "price": 146.38,
-      "conviction": 64.9,
+      "score": 0.677931541875475,
+      "uncertainty": 0.051949194842743913,
+      "price": 145.54,
+      "conviction": 64.3,
       "returns": {
-        "5d": 2.5,
-        "21d": -3.9,
-        "63d": -24.7,
-        "126d": -49.1
+        "5d": 4.2,
+        "21d": -6.0,
+        "63d": -25.4,
+        "126d": -49.4
       },
-      "vol_21d": 49.6,
-      "drawdown": -55.2,
-      "position_in_range": 11.9,
-      "atf_coiled_spring": 74.0,
-      "tam": -12.9
+      "vol_21d": 49.2,
+      "drawdown": -55.5,
+      "position_in_range": 11.5,
+      "atf_coiled_spring": 74.4,
+      "tam": -12.75
+    },
+    {
+      "ticker": "SNPS",
+      "score": 0.6549237039896869,
+      "uncertainty": 0.07196649493285603,
+      "price": 397.07,
+      "conviction": 60.8,
+      "returns": {
+        "5d": 4.4,
+        "21d": -10.2,
+        "63d": -17.3,
+        "126d": -15.7
+      },
+      "vol_21d": 34.9,
+      "drawdown": -38.5,
+      "position_in_range": 6.3,
+      "atf_coiled_spring": 89.5,
+      "tam": -8.49
     },
     {
       "ticker": "NOW",
-      "score": 0.6700666339069589,
-      "uncertainty": 0.03967410591769821,
-      "price": 102.0,
-      "conviction": 64.3,
+      "score": 0.6482363929352256,
+      "uncertainty": 0.04077074563503975,
+      "price": 102.42,
+      "conviction": 62.2,
       "returns": {
-        "5d": -1.6,
-        "21d": -10.4,
-        "63d": -33.4,
-        "126d": -44.1
+        "5d": 3.0,
+        "21d": -14.9,
+        "63d": -30.5,
+        "126d": -43.7
       },
-      "vol_21d": 46.5,
-      "drawdown": -51.2,
-      "position_in_range": 2.4,
-      "atf_coiled_spring": 54.7,
-      "tam": -20.62
-    },
-    {
-      "ticker": "FIS",
-      "score": 0.6483023298400309,
-      "uncertainty": 0.03212865270962561,
-      "price": 46.29,
-      "conviction": 62.7,
-      "returns": {
-        "5d": -2.4,
-        "21d": -6.8,
-        "63d": -29.8,
-        "126d": -29.4
-      },
-      "vol_21d": 25.6,
-      "drawdown": -42.6,
-      "position_in_range": 3.2,
-      "atf_coiled_spring": 68.3,
-      "tam": -16.92
-    },
-    {
-      "ticker": "UNH",
-      "score": 0.6400300672231098,
-      "uncertainty": 0.07574053755547189,
-      "price": 277.26,
-      "conviction": 59.2,
-      "returns": {
-        "5d": 3.4,
-        "21d": -4.3,
-        "63d": -15.4,
-        "126d": -19.2
-      },
-      "vol_21d": 26.8,
-      "drawdown": -52.4,
-      "position_in_range": 12.7,
-      "atf_coiled_spring": 90.7,
-      "tam": -12.01
+      "vol_21d": 41.1,
+      "drawdown": -51.0,
+      "position_in_range": 2.7,
+      "atf_coiled_spring": 62.3,
+      "tam": -18.9
     },
     {
       "ticker": "WDAY",
-      "score": 0.6291524311110627,
-      "uncertainty": 0.060202266761327554,
-      "price": 132.26,
-      "conviction": 59.1,
+      "score": 0.6397858584208668,
+      "uncertainty": 0.04277626589798546,
+      "price": 129.72,
+      "conviction": 61.2,
       "returns": {
-        "5d": 3.4,
-        "21d": -7.5,
-        "63d": -38.4,
-        "126d": -43.0
+        "5d": 4.5,
+        "21d": -11.9,
+        "63d": -37.0,
+        "126d": -44.1
       },
-      "vol_21d": 40.2,
-      "drawdown": -51.9,
-      "position_in_range": 5.4,
-      "atf_coiled_spring": 52.1,
-      "tam": -21.14
+      "vol_21d": 38.7,
+      "drawdown": -52.8,
+      "position_in_range": 3.7,
+      "atf_coiled_spring": 55.3,
+      "tam": -21.69
     },
     {
-      "ticker": "ADBE",
-      "score": 0.621898344261857,
-      "uncertainty": 0.06629017082351796,
-      "price": 242.92,
-      "conviction": 58.1,
+      "ticker": "UNH",
+      "score": 0.6229225509313873,
+      "uncertainty": 0.05823167629440773,
+      "price": 281.36,
+      "conviction": 58.7,
       "returns": {
-        "5d": 0.8,
-        "21d": -11.1,
-        "63d": -30.6,
-        "126d": -29.3
+        "5d": 8.6,
+        "21d": -1.8,
+        "63d": -15.7,
+        "126d": -19.3
       },
-      "vol_21d": 38.8,
-      "drawdown": -42.3,
-      "position_in_range": 4.3,
-      "atf_coiled_spring": 57.4,
-      "tam": -17.31
+      "vol_21d": 27.2,
+      "drawdown": -51.7,
+      "position_in_range": 13.8,
+      "atf_coiled_spring": 92.5,
+      "tam": -10.0
     },
     {
       "ticker": "LRCX",
-      "score": 0.6184031385057673,
-      "uncertainty": 0.04323971527353955,
-      "price": 218.44,
-      "conviction": 59.2,
+      "score": 0.619190281475883,
+      "uncertainty": 0.04057938953613922,
+      "price": 220.65,
+      "conviction": 59.4,
       "returns": {
-        "5d": 3.2,
-        "21d": -2.0,
-        "63d": 27.8,
-        "126d": 53.4
+        "5d": 4.4,
+        "21d": 2.8,
+        "63d": 19.4,
+        "126d": 50.5
       },
-      "vol_21d": 69.0,
-      "drawdown": -12.3,
-      "position_in_range": 83.9,
-      "atf_coiled_spring": 35.9,
-      "tam": 31.16
+      "vol_21d": 67.8,
+      "drawdown": -11.5,
+      "position_in_range": 85.0,
+      "atf_coiled_spring": 37.5,
+      "tam": 31.65
     },
     {
-      "ticker": "TSLA",
-      "score": 0.6170839476968888,
-      "uncertainty": 0.05433726048306915,
-      "price": 360.59,
-      "conviction": 58.4,
+      "ticker": "FIS",
+      "score": 0.6174842008476922,
+      "uncertainty": 0.02812127552256208,
+      "price": 46.68,
+      "conviction": 60.0,
       "returns": {
-        "5d": -3.1,
-        "21d": -11.2,
-        "63d": -19.8,
-        "126d": -21.5
+        "5d": -0.4,
+        "21d": -6.9,
+        "63d": -28.3,
+        "126d": -28.7
       },
-      "vol_21d": 41.3,
-      "drawdown": -26.4,
-      "position_in_range": 51.8,
-      "atf_coiled_spring": 84.9,
-      "tam": -6.21
-    },
-    {
-      "ticker": "CRM",
-      "score": 0.6140067197235382,
-      "uncertainty": 0.038067227201629174,
-      "price": 187.18,
-      "conviction": 59.1,
-      "returns": {
-        "5d": 0.8,
-        "21d": -3.1,
-        "63d": -29.3,
-        "126d": -20.5
-      },
-      "vol_21d": 39.1,
-      "drawdown": -35.4,
-      "position_in_range": 8.1,
-      "atf_coiled_spring": 43.2,
-      "tam": -13.09
+      "vol_21d": 25.5,
+      "drawdown": -42.1,
+      "position_in_range": 4.3,
+      "atf_coiled_spring": 68.6,
+      "tam": -15.3
     },
     {
       "ticker": "AMAT",
-      "score": 0.6120130308335727,
-      "uncertainty": 0.0696727648419804,
-      "price": 348.47,
-      "conviction": 56.9,
+      "score": 0.6160765378551218,
+      "uncertainty": 0.04762562554494686,
+      "price": 352.62,
+      "conviction": 58.7,
       "returns": {
-        "5d": 2.9,
-        "21d": -2.6,
-        "63d": 35.8,
-        "126d": 60.6
+        "5d": 4.6,
+        "21d": 1.8,
+        "63d": 31.3,
+        "126d": 58.2
       },
-      "vol_21d": 57.1,
-      "drawdown": -11.8,
-      "position_in_range": 82.7,
-      "atf_coiled_spring": 42.2,
-      "tam": 31.11
+      "vol_21d": 56.2,
+      "drawdown": -10.7,
+      "position_in_range": 84.3,
+      "atf_coiled_spring": 43.8,
+      "tam": 31.93
     },
     {
-      "ticker": "QCOM",
-      "score": 0.6089268651935386,
-      "uncertainty": 0.050012534917078966,
-      "price": 126.8,
-      "conviction": 57.8,
+      "ticker": "ADBE",
+      "score": 0.6141321226994678,
+      "uncertainty": 0.047899306912500314,
+      "price": 244.36,
+      "conviction": 58.5,
       "returns": {
-        "5d": -2.9,
-        "21d": -8.5,
-        "63d": -25.4,
-        "126d": -23.0
+        "5d": 4.1,
+        "21d": -13.3,
+        "63d": -26.7,
+        "126d": -30.5
       },
-      "vol_21d": 20.0,
-      "drawdown": -31.7,
-      "position_in_range": 7.8,
-      "atf_coiled_spring": 95.5,
-      "tam": -13.44
+      "vol_21d": 36.7,
+      "drawdown": -41.9,
+      "position_in_range": 5.1,
+      "atf_coiled_spring": 61.5,
+      "tam": -15.78
     },
     {
-      "ticker": "ISRG",
-      "score": 0.604544718325567,
-      "uncertainty": 0.04232837917234244,
-      "price": 452.07,
-      "conviction": 57.9,
+      "ticker": "CRM",
+      "score": 0.6042095861449664,
+      "uncertainty": 0.03878541939737579,
+      "price": 185.03,
+      "conviction": 58.1,
       "returns": {
-        "5d": -3.5,
-        "21d": -9.8,
-        "63d": -20.2,
-        "126d": 3.2
+        "5d": 3.2,
+        "21d": -8.1,
+        "63d": -27.0,
+        "126d": -22.4
       },
-      "vol_21d": 23.7,
-      "drawdown": -23.7,
-      "position_in_range": 13.8,
-      "atf_coiled_spring": 84.9,
-      "tam": -7.96
+      "vol_21d": 35.8,
+      "drawdown": -36.1,
+      "position_in_range": 6.2,
+      "atf_coiled_spring": 51.7,
+      "tam": -13.16
+    },
+    {
+      "ticker": "TSLA",
+      "score": 0.6042031354323614,
+      "uncertainty": 0.051624493255695854,
+      "price": 352.82,
+      "conviction": 57.3,
+      "returns": {
+        "5d": -2.5,
+        "21d": -13.0,
+        "63d": -19.5,
+        "126d": -19.1
+      },
+      "vol_21d": 41.6,
+      "drawdown": -28.0,
+      "position_in_range": 48.9,
+      "atf_coiled_spring": 84.5,
+      "tam": -7.75
     },
     {
       "ticker": "TXN",
-      "score": 0.6036570559814031,
-      "uncertainty": 0.06459152759360386,
-      "price": 194.87,
-      "conviction": 56.5,
+      "score": 0.599959730597544,
+      "uncertainty": 0.03464497969194763,
+      "price": 199.42,
+      "conviction": 57.9,
       "returns": {
-        "5d": 0.8,
-        "21d": -3.7,
+        "5d": 4.8,
+        "21d": 0.7,
         "63d": 13.1,
-        "126d": 9.7
+        "126d": 11.1
       },
-      "vol_21d": 32.0,
-      "drawdown": -14.0,
-      "position_in_range": 62.9,
-      "atf_coiled_spring": 76.4,
-      "tam": 2.5
-    },
-    {
-      "ticker": "ACN",
-      "score": 0.5854218687462207,
-      "uncertainty": 0.05372286326662258,
-      "price": 201.33,
-      "conviction": 55.4,
-      "returns": {
-        "5d": 2.5,
-        "21d": -4.1,
-        "63d": -25.0,
-        "126d": -17.4
-      },
-      "vol_21d": 33.5,
-      "drawdown": -37.4,
-      "position_in_range": 7.6,
-      "atf_coiled_spring": 59.8,
-      "tam": -14.7
+      "vol_21d": 32.3,
+      "drawdown": -12.0,
+      "position_in_range": 68.2,
+      "atf_coiled_spring": 76.1,
+      "tam": 5.14
     },
     {
       "ticker": "MCHP",
-      "score": 0.5853313976116523,
-      "uncertainty": 0.0627600106204685,
-      "price": 65.6,
-      "conviction": 54.9,
+      "score": 0.5937577832499207,
+      "uncertainty": 0.023025576751750237,
+      "price": 67.22,
+      "conviction": 58.0,
       "returns": {
-        "5d": 2.2,
-        "21d": -6.2,
-        "63d": 3.6,
-        "126d": 3.9
+        "5d": 8.4,
+        "21d": -0.9,
+        "63d": 4.0,
+        "126d": 3.2
       },
-      "vol_21d": 44.6,
-      "drawdown": -18.3,
-      "position_in_range": 68.1,
-      "atf_coiled_spring": 80.1,
-      "tam": 3.63
+      "vol_21d": 44.4,
+      "drawdown": -16.3,
+      "position_in_range": 71.6,
+      "atf_coiled_spring": 80.3,
+      "tam": 6.87
+    },
+    {
+      "ticker": "ACN",
+      "score": 0.5796805034673223,
+      "uncertainty": 0.05049754676479475,
+      "price": 198.95,
+      "conviction": 55.0,
+      "returns": {
+        "5d": 3.3,
+        "21d": -7.0,
+        "63d": -23.5,
+        "126d": -18.6
+      },
+      "vol_21d": 32.7,
+      "drawdown": -38.1,
+      "position_in_range": 5.7,
+      "atf_coiled_spring": 61.4,
+      "tam": -14.04
+    },
+    {
+      "ticker": "QCOM",
+      "score": 0.5719941540725577,
+      "uncertainty": 0.06204792322551949,
+      "price": 125.73,
+      "conviction": 53.7,
+      "returns": {
+        "5d": -1.1,
+        "21d": -8.2,
+        "63d": -26.8,
+        "126d": -24.7
+      },
+      "vol_21d": 19.9,
+      "drawdown": -32.2,
+      "position_in_range": 6.2,
+      "atf_coiled_spring": 95.7,
+      "tam": -13.39
     },
     {
       "ticker": "META",
-      "score": 0.5851205451591025,
-      "uncertainty": 0.054439988690111754,
-      "price": 574.46,
-      "conviction": 55.3,
+      "score": 0.5700563273408797,
+      "uncertainty": 0.04898976734671482,
+      "price": 573.02,
+      "conviction": 54.2,
       "returns": {
-        "5d": 4.9,
-        "21d": -13.9,
-        "63d": -12.9,
-        "126d": -19.8
-      },
-      "vol_21d": 46.7,
-      "drawdown": -27.1,
-      "position_in_range": 29.9,
-      "atf_coiled_spring": 50.5,
-      "tam": -9.76
-    },
-    {
-      "ticker": "LOW",
-      "score": 0.5727565562745198,
-      "uncertainty": 0.0647911419736777,
-      "price": 231.03,
-      "conviction": 53.6,
-      "returns": {
-        "5d": -2.1,
-        "21d": -10.7,
-        "63d": -3.8,
-        "126d": -6.0
-      },
-      "vol_21d": 28.9,
-      "drawdown": -19.6,
-      "position_in_range": 29.4,
-      "atf_coiled_spring": 35.8,
-      "tam": -5.19
-    },
-    {
-      "ticker": "CDNS",
-      "score": 0.5682891652963182,
-      "uncertainty": 0.06969190473592708,
-      "price": 278.72,
-      "conviction": 52.9,
-      "returns": {
-        "5d": -0.7,
-        "21d": -8.7,
-        "63d": -10.8,
-        "126d": -20.8
-      },
-      "vol_21d": 25.2,
-      "drawdown": -25.4,
-      "position_in_range": 33.2,
-      "atf_coiled_spring": 82.1,
-      "tam": -5.83
-    },
-    {
-      "ticker": "BKNG",
-      "score": 0.565077240676158,
-      "uncertainty": 0.05458707504158722,
-      "price": 167.77,
-      "conviction": 53.4,
-      "returns": {
-        "5d": -0.5,
-        "21d": -1.2,
-        "63d": -21.5,
-        "126d": -21.3
-      },
-      "vol_21d": 41.1,
-      "drawdown": -27.5,
-      "position_in_range": 17.3,
-      "atf_coiled_spring": 38.6,
-      "tam": -9.98
-    },
-    {
-      "ticker": "NFLX",
-      "score": 0.5642394560297279,
-      "uncertainty": 0.08344116260392373,
-      "price": 98.66,
-      "conviction": 51.7,
-      "returns": {
-        "5d": 5.7,
-        "21d": 0.0,
-        "63d": 5.2,
-        "126d": -15.7
-      },
-      "vol_21d": 26.4,
-      "drawdown": -26.3,
-      "position_in_range": 39.3,
-      "atf_coiled_spring": 74.2,
-      "tam": 4.48
-    },
-    {
-      "ticker": "EMR",
-      "score": 0.5627228204944897,
-      "uncertainty": 0.05837213808671617,
-      "price": 131.7,
-      "conviction": 53.0,
-      "returns": {
-        "5d": 4.3,
-        "21d": -9.3,
-        "63d": -0.4,
-        "126d": 1.2
-      },
-      "vol_21d": 36.2,
-      "drawdown": -18.2,
-      "position_in_range": 57.1,
-      "atf_coiled_spring": 58.8,
-      "tam": 0.03
-    },
-    {
-      "ticker": "GE",
-      "score": 0.5613280763903428,
-      "uncertainty": 0.07739281210925901,
-      "price": 281.16,
-      "conviction": 51.8,
-      "returns": {
-        "5d": -1.4,
-        "21d": -17.1,
-        "63d": -8.6,
-        "126d": -6.3
-      },
-      "vol_21d": 40.6,
-      "drawdown": -18.6,
-      "position_in_range": 64.3,
-      "atf_coiled_spring": 51.2,
-      "tam": -1.33
-    },
-    {
-      "ticker": "PANW",
-      "score": 0.5589872566762599,
-      "uncertainty": 0.07398730637941779,
-      "price": 163.21,
-      "conviction": 51.8,
-      "returns": {
-        "5d": 4.4,
-        "21d": 2.9,
-        "63d": -11.4,
+        "5d": 9.0,
+        "21d": -13.2,
+        "63d": -11.8,
         "126d": -21.1
       },
-      "vol_21d": 41.9,
-      "drawdown": -26.3,
-      "position_in_range": 27.0,
-      "atf_coiled_spring": 47.4,
-      "tam": -5.52
+      "vol_21d": 46.7,
+      "drawdown": -27.3,
+      "position_in_range": 29.5,
+      "atf_coiled_spring": 50.4,
+      "tam": -8.53
     },
     {
-      "ticker": "MSFT",
-      "score": 0.5589314684001924,
-      "uncertainty": 0.06561504478059417,
-      "price": 373.46,
-      "conviction": 52.2,
+      "ticker": "ISRG",
+      "score": 0.5680006637023615,
+      "uncertainty": 0.04661325708581237,
+      "price": 452.58,
+      "conviction": 54.2,
       "returns": {
-        "5d": 2.0,
-        "21d": -7.8,
-        "63d": -22.6,
-        "126d": -27.8
+        "5d": -0.0,
+        "21d": -8.9,
+        "63d": -19.5,
+        "126d": 2.2
       },
-      "vol_21d": 22.1,
-      "drawdown": -30.8,
-      "position_in_range": 11.5,
-      "atf_coiled_spring": 71.3,
-      "tam": -10.59
-    },
-    {
-      "ticker": "GOOGL",
-      "score": 0.5587335833862259,
-      "uncertainty": 0.07790093910850729,
-      "price": 295.77,
-      "conviction": 51.5,
-      "returns": {
-        "5d": 5.3,
-        "21d": -2.4,
-        "63d": -5.4,
-        "126d": 20.9
-      },
-      "vol_21d": 33.9,
-      "drawdown": -13.9,
-      "position_in_range": 76.1,
-      "atf_coiled_spring": 49.5,
-      "tam": 10.32
-    },
-    {
-      "ticker": "UNP",
-      "score": 0.5571139240847027,
-      "uncertainty": 0.04938353743636522,
-      "price": 244.71,
-      "conviction": 53.0,
-      "returns": {
-        "5d": 2.3,
-        "21d": -8.2,
-        "63d": 6.3,
-        "126d": 5.4
-      },
-      "vol_21d": 20.0,
-      "drawdown": -8.3,
-      "position_in_range": 64.9,
-      "atf_coiled_spring": 77.6,
-      "tam": 2.83
-    },
-    {
-      "ticker": "AVGO",
-      "score": 0.5559021733857382,
-      "uncertainty": 0.10324967124522196,
-      "price": 314.55,
-      "conviction": 49.9,
-      "returns": {
-        "5d": 1.7,
-        "21d": -0.7,
-        "63d": -8.9,
-        "126d": -5.3
-      },
-      "vol_21d": 43.5,
-      "drawdown": -23.5,
-      "position_in_range": 63.6,
-      "atf_coiled_spring": 70.8,
-      "tam": 9.77
-    },
-    {
-      "ticker": "ADP",
-      "score": 0.555609494662545,
-      "uncertainty": 0.06931555748582156,
-      "price": 204.01,
-      "conviction": 51.7,
-      "returns": {
-        "5d": -0.2,
-        "21d": -5.3,
-        "63d": -20.0,
-        "126d": -29.0
-      },
-      "vol_21d": 25.5,
-      "drawdown": -36.0,
-      "position_in_range": 2.3,
-      "atf_coiled_spring": 47.5,
-      "tam": -14.63
-    },
-    {
-      "ticker": "UPS",
-      "score": 0.5555032509404253,
-      "uncertainty": 0.06422953928955831,
-      "price": 98.18,
-      "conviction": 52.0,
-      "returns": {
-        "5d": 0.7,
-        "21d": -11.1,
-        "63d": 0.4,
-        "126d": 20.0
-      },
-      "vol_21d": 30.8,
-      "drawdown": -17.0,
-      "position_in_range": 47.3,
-      "atf_coiled_spring": 58.3,
-      "tam": -0.69
-    },
-    {
-      "ticker": "AMZN",
-      "score": 0.5525683903054712,
-      "uncertainty": 0.053622600522242575,
-      "price": 209.77,
-      "conviction": 52.3,
-      "returns": {
-        "5d": 1.1,
-        "21d": -3.3,
-        "63d": -9.1,
-        "126d": -4.9
-      },
-      "vol_21d": 30.5,
-      "drawdown": -17.4,
-      "position_in_range": 49.0,
-      "atf_coiled_spring": 71.5,
-      "tam": -2.76
-    },
-    {
-      "ticker": "DE",
-      "score": 0.5488593086280049,
-      "uncertainty": 0.057493609114355665,
-      "price": 575.71,
-      "conviction": 51.7,
-      "returns": {
-        "5d": -0.7,
-        "21d": -6.0,
-        "63d": 24.0,
-        "126d": 28.3
-      },
-      "vol_21d": 25.1,
-      "drawdown": -12.8,
-      "position_in_range": 66.5,
-      "atf_coiled_spring": 72.2,
-      "tam": 9.13
-    },
-    {
-      "ticker": "ITW",
-      "score": 0.5473638621757482,
-      "uncertainty": 0.0628596383758395,
-      "price": 258.21,
-      "conviction": 51.3,
-      "returns": {
-        "5d": -0.6,
-        "21d": -9.5,
-        "63d": 5.5,
-        "126d": 0.6
-      },
-      "vol_21d": 20.6,
-      "drawdown": -13.3,
-      "position_in_range": 53.4,
-      "atf_coiled_spring": 73.6,
-      "tam": -0.25
-    },
-    {
-      "ticker": "KLAC",
-      "score": 0.5459212399654024,
-      "uncertainty": 0.08808095594196941,
-      "price": 1516.84,
-      "conviction": 49.8,
-      "returns": {
-        "5d": 4.5,
-        "21d": 2.8,
-        "63d": 25.0,
-        "126d": 34.8
-      },
-      "vol_21d": 55.1,
-      "drawdown": -9.8,
-      "position_in_range": 85.1,
-      "atf_coiled_spring": 47.6,
-      "tam": 26.22
-    },
-    {
-      "ticker": "HD",
-      "score": 0.545712584400417,
-      "uncertainty": 0.038338622995717775,
-      "price": 321.63,
-      "conviction": 52.5,
-      "returns": {
-        "5d": -2.1,
-        "21d": -12.3,
-        "63d": -5.9,
-        "126d": -17.9
-      },
-      "vol_21d": 25.7,
-      "drawdown": -23.0,
-      "position_in_range": 0.9,
-      "atf_coiled_spring": 43.9,
-      "tam": -9.16
-    },
-    {
-      "ticker": "TMO",
-      "score": 0.5416752117437124,
-      "uncertainty": 0.0828761147285965,
-      "price": 491.46,
-      "conviction": 49.7,
-      "returns": {
-        "5d": 0.5,
-        "21d": -4.0,
-        "63d": -15.1,
-        "126d": -7.2
-      },
-      "vol_21d": 30.4,
-      "drawdown": -23.1,
-      "position_in_range": 41.0,
-      "atf_coiled_spring": 58.0,
-      "tam": -4.71
-    },
-    {
-      "ticker": "LLY",
-      "score": 0.5405630492201885,
-      "uncertainty": 0.08061287133467364,
-      "price": 935.58,
-      "conviction": 49.7,
-      "returns": {
-        "5d": 4.3,
-        "21d": -6.8,
-        "63d": -12.8,
-        "126d": 13.7
-      },
-      "vol_21d": 35.0,
-      "drawdown": -15.6,
-      "position_in_range": 64.5,
-      "atf_coiled_spring": 74.5,
-      "tam": 0.88
-    },
-    {
-      "ticker": "CAT",
-      "score": 0.5402658140120906,
-      "uncertainty": 0.08710590477864383,
-      "price": 717.22,
-      "conviction": 49.3,
-      "returns": {
-        "5d": 2.0,
-        "21d": -2.0,
-        "63d": 25.5,
-        "126d": 49.9
-      },
-      "vol_21d": 40.9,
-      "drawdown": -7.5,
-      "position_in_range": 88.6,
-      "atf_coiled_spring": 43.9,
-      "tam": 24.55
-    },
-    {
-      "ticker": "DHR",
-      "score": 0.5397320739981103,
-      "uncertainty": 0.0663591934159743,
-      "price": 191.12,
-      "conviction": 50.4,
-      "returns": {
-        "5d": 1.8,
-        "21d": -6.4,
-        "63d": -16.3,
-        "126d": -9.9
-      },
-      "vol_21d": 31.0,
-      "drawdown": -20.9,
-      "position_in_range": 26.0,
-      "atf_coiled_spring": 64.5,
-      "tam": -7.05
-    },
-    {
-      "ticker": "ABT",
-      "score": 0.5391648917320551,
-      "uncertainty": 0.05953608488637926,
-      "price": 102.87,
-      "conviction": 50.7,
-      "returns": {
-        "5d": -1.6,
-        "21d": -9.0,
-        "63d": -17.5,
-        "126d": -22.2
-      },
-      "vol_21d": 20.9,
-      "drawdown": -24.5,
-      "position_in_range": 2.9,
-      "atf_coiled_spring": 69.0,
-      "tam": -11.0
+      "vol_21d": 23.7,
+      "drawdown": -23.7,
+      "position_in_range": 14.1,
+      "atf_coiled_spring": 84.8,
+      "tam": -6.99
     },
     {
       "ticker": "INTC",
-      "score": 0.5376698375320949,
-      "uncertainty": 0.09297706953981302,
-      "price": 50.38,
-      "conviction": 48.8,
+      "score": 0.562451983038875,
+      "uncertainty": 0.039600245513901025,
+      "price": 50.78,
+      "conviction": 54.0,
       "returns": {
-        "5d": 14.2,
+        "5d": 17.7,
         "21d": 10.5,
-        "63d": 36.5,
-        "126d": 40.2
+        "63d": 28.9,
+        "126d": 36.1
       },
       "vol_21d": 72.1,
-      "drawdown": -7.3,
-      "position_in_range": 89.1,
+      "drawdown": -6.5,
+      "position_in_range": 90.2,
       "atf_coiled_spring": 48.5,
-      "tam": 33.18
+      "tam": 33.66
     },
     {
-      "ticker": "PNC",
-      "score": 0.5371989157860183,
-      "uncertainty": 0.06907309382126507,
-      "price": 211.7,
-      "conviction": 50.0,
+      "ticker": "EMR",
+      "score": 0.5586912638311189,
+      "uncertainty": 0.034768335809181046,
+      "price": 132.66,
+      "conviction": 53.9,
       "returns": {
-        "5d": 3.0,
-        "21d": -1.0,
-        "63d": 2.2,
-        "126d": 8.5
+        "5d": 5.8,
+        "21d": -6.7,
+        "63d": -2.0,
+        "126d": 0.5
       },
-      "vol_21d": 20.6,
-      "drawdown": -12.7,
-      "position_in_range": 68.6,
-      "atf_coiled_spring": 80.9,
-      "tam": 4.19
+      "vol_21d": 35.9,
+      "drawdown": -17.6,
+      "position_in_range": 58.5,
+      "atf_coiled_spring": 59.3,
+      "tam": 0.52
+    },
+    {
+      "ticker": "PANW",
+      "score": 0.5512931833864181,
+      "uncertainty": 0.053299444460182324,
+      "price": 161.95,
+      "conviction": 52.2,
+      "returns": {
+        "5d": 10.2,
+        "21d": -0.7,
+        "63d": -9.7,
+        "126d": -22.6
+      },
+      "vol_21d": 40.8,
+      "drawdown": -26.8,
+      "position_in_range": 25.4,
+      "atf_coiled_spring": 49.5,
+      "tam": -4.33
+    },
+    {
+      "ticker": "NFLX",
+      "score": 0.5510207379151382,
+      "uncertainty": 0.070140149460459,
+      "price": 98.93,
+      "conviction": 51.2,
+      "returns": {
+        "5d": 5.9,
+        "21d": -0.2,
+        "63d": 8.7,
+        "126d": -14.9
+      },
+      "vol_21d": 26.4,
+      "drawdown": -26.1,
+      "position_in_range": 39.7,
+      "atf_coiled_spring": 74.3,
+      "tam": 5.74
+    },
+    {
+      "ticker": "UPS",
+      "score": 0.5470786090456243,
+      "uncertainty": 0.052071336534300315,
+      "price": 97.16,
+      "conviction": 51.9,
+      "returns": {
+        "5d": 2.5,
+        "21d": -6.6,
+        "63d": -2.5,
+        "126d": 17.1
+      },
+      "vol_21d": 23.8,
+      "drawdown": -17.9,
+      "position_in_range": 44.7,
+      "atf_coiled_spring": 76.2,
+      "tam": -1.06
+    },
+    {
+      "ticker": "CAT",
+      "score": 0.5432659301744938,
+      "uncertainty": 0.05662148468708565,
+      "price": 721.24,
+      "conviction": 51.3,
+      "returns": {
+        "5d": 3.7,
+        "21d": 2.1,
+        "63d": 20.8,
+        "126d": 47.8
+      },
+      "vol_21d": 38.9,
+      "drawdown": -6.9,
+      "position_in_range": 89.3,
+      "atf_coiled_spring": 48.5,
+      "tam": 24.62
+    },
+    {
+      "ticker": "AVGO",
+      "score": 0.5408825355424408,
+      "uncertainty": 0.09415101571749106,
+      "price": 314.43,
+      "conviction": 49.0,
+      "returns": {
+        "5d": 4.6,
+        "21d": -5.3,
+        "63d": -9.4,
+        "126d": -6.6
+      },
+      "vol_21d": 40.0,
+      "drawdown": -23.6,
+      "position_in_range": 63.6,
+      "atf_coiled_spring": 75.8,
+      "tam": 9.73
+    },
+    {
+      "ticker": "LOW",
+      "score": 0.5401918187195159,
+      "uncertainty": 0.05877774631835977,
+      "price": 235.2,
+      "conviction": 50.8,
+      "returns": {
+        "5d": 2.1,
+        "21d": -7.7,
+        "63d": -4.3,
+        "126d": -4.0
+      },
+      "vol_21d": 29.8,
+      "drawdown": -18.2,
+      "position_in_range": 34.7,
+      "atf_coiled_spring": 32.9,
+      "tam": -3.04
+    },
+    {
+      "ticker": "DE",
+      "score": 0.5357376629819326,
+      "uncertainty": 0.022071957283520023,
+      "price": 575.09,
+      "conviction": 52.4,
+      "returns": {
+        "5d": 1.8,
+        "21d": -2.4,
+        "63d": 23.6,
+        "126d": 25.3
+      },
+      "vol_21d": 21.5,
+      "drawdown": -12.9,
+      "position_in_range": 66.2,
+      "atf_coiled_spring": 82.6,
+      "tam": 9.84
+    },
+    {
+      "ticker": "UNP",
+      "score": 0.534727278209152,
+      "uncertainty": 0.02507175764790518,
+      "price": 245.54,
+      "conviction": 52.1,
+      "returns": {
+        "5d": 2.8,
+        "21d": -5.6,
+        "63d": 6.4,
+        "126d": 5.9
+      },
+      "vol_21d": 18.7,
+      "drawdown": -8.0,
+      "position_in_range": 66.3,
+      "atf_coiled_spring": 82.2,
+      "tam": 3.08
     },
     {
       "ticker": "CMCSA",
-      "score": 0.536757927866309,
-      "uncertainty": 0.04114755928078949,
-      "price": 27.93,
-      "conviction": 51.5,
+      "score": 0.5330201464649407,
+      "uncertainty": 0.02094457007708535,
+      "price": 27.66,
+      "conviction": 52.2,
       "returns": {
-        "5d": -1.6,
-        "21d": -12.0,
-        "63d": 2.0,
-        "126d": -1.4
+        "5d": -1.2,
+        "21d": -11.5,
+        "63d": 2.3,
+        "126d": -0.6
       },
-      "vol_21d": 24.7,
-      "drawdown": -15.0,
-      "position_in_range": 42.8,
-      "atf_coiled_spring": 59.6,
-      "tam": -5.07
-    },
-    {
-      "ticker": "ROP",
-      "score": 0.5357485160598473,
-      "uncertainty": 0.06690949439092873,
-      "price": 357.88,
-      "conviction": 50.0,
-      "returns": {
-        "5d": 1.9,
-        "21d": -0.9,
-        "63d": -19.4,
-        "126d": -27.9
-      },
-      "vol_21d": 19.6,
-      "drawdown": -39.0,
-      "position_in_range": 15.6,
-      "atf_coiled_spring": 80.7,
-      "tam": -10.97
-    },
-    {
-      "ticker": "FTNT",
-      "score": 0.5308535495336197,
-      "uncertainty": 0.07312040658551777,
-      "price": 82.53,
-      "conviction": 49.2,
-      "returns": {
-        "5d": 1.9,
-        "21d": -0.3,
-        "63d": 3.9,
-        "126d": -3.1
-      },
-      "vol_21d": 30.3,
-      "drawdown": -24.1,
-      "position_in_range": 23.7,
-      "atf_coiled_spring": 85.6,
-      "tam": -1.76
+      "vol_21d": 24.6,
+      "drawdown": -15.2,
+      "position_in_range": 40.9,
+      "atf_coiled_spring": 60.1,
+      "tam": -5.37
     },
     {
       "ticker": "ETN",
-      "score": 0.5308152045113157,
-      "uncertainty": 0.06777328024645793,
-      "price": 361.1,
-      "conviction": 49.5,
+      "score": 0.531690277519025,
+      "uncertainty": 0.039231657617686384,
+      "price": 363.89,
+      "conviction": 51.1,
       "returns": {
-        "5d": 1.1,
-        "21d": 2.2,
-        "63d": 13.7,
+        "5d": 1.8,
+        "21d": 2.9,
+        "63d": 11.5,
         "126d": -3.1
       },
-      "vol_21d": 36.4,
+      "vol_21d": 36.5,
+      "drawdown": -7.8,
+      "position_in_range": 79.4,
+      "atf_coiled_spring": 61.7,
+      "tam": 6.04
+    },
+    {
+      "ticker": "ADP",
+      "score": 0.5287450107605979,
+      "uncertainty": 0.06354261681838598,
+      "price": 204.34,
+      "conviction": 49.5,
+      "returns": {
+        "5d": 1.5,
+        "21d": -7.5,
+        "63d": -18.5,
+        "126d": -28.5
+      },
+      "vol_21d": 23.5,
+      "drawdown": -35.9,
+      "position_in_range": 2.6,
+      "atf_coiled_spring": 54.4,
+      "tam": -13.58
+    },
+    {
+      "ticker": "TMO",
+      "score": 0.5283066013123425,
+      "uncertainty": 0.0709256657890309,
+      "price": 488.19,
+      "conviction": 49.1,
+      "returns": {
+        "5d": 3.1,
+        "21d": -5.8,
+        "63d": -17.5,
+        "126d": -6.8
+      },
+      "vol_21d": 30.0,
+      "drawdown": -23.6,
+      "position_in_range": 39.6,
+      "atf_coiled_spring": 59.0,
+      "tam": -5.16
+    },
+    {
+      "ticker": "FTNT",
+      "score": 0.5280682029324069,
+      "uncertainty": 0.044826822030674326,
+      "price": 82.29,
+      "conviction": 50.4,
+      "returns": {
+        "5d": 5.2,
+        "21d": -2.5,
+        "63d": 5.7,
+        "126d": -4.6
+      },
+      "vol_21d": 29.5,
+      "drawdown": -24.3,
+      "position_in_range": 23.0,
+      "atf_coiled_spring": 86.7,
+      "tam": -1.22
+    },
+    {
+      "ticker": "LLY",
+      "score": 0.5279509764705959,
+      "uncertainty": 0.06335519831694093,
+      "price": 927.06,
+      "conviction": 49.5,
+      "returns": {
+        "5d": 5.6,
+        "21d": -5.7,
+        "63d": -14.0,
+        "126d": 13.4
+      },
+      "vol_21d": 34.5,
+      "drawdown": -16.3,
+      "position_in_range": 62.7,
+      "atf_coiled_spring": 75.3,
+      "tam": 1.02
+    },
+    {
+      "ticker": "BKNG",
+      "score": 0.5266405528247206,
+      "uncertainty": 0.05372470470676978,
+      "price": 176.19,
+      "conviction": 49.8,
+      "returns": {
+        "5d": 8.4,
+        "21d": -4.3,
+        "63d": -17.1,
+        "126d": -18.5
+      },
+      "vol_21d": 33.9,
+      "drawdown": -23.8,
+      "position_in_range": 28.3,
+      "atf_coiled_spring": 55.9,
+      "tam": -5.0
+    },
+    {
+      "ticker": "CDNS",
+      "score": 0.5258082603676741,
+      "uncertainty": 0.07654702968324731,
+      "price": 279.39,
+      "conviction": 48.6,
+      "returns": {
+        "5d": 2.8,
+        "21d": -6.8,
+        "63d": -10.0,
+        "126d": -19.5
+      },
+      "vol_21d": 24.7,
+      "drawdown": -25.2,
+      "position_in_range": 33.7,
+      "atf_coiled_spring": 82.9,
+      "tam": -3.93
+    },
+    {
+      "ticker": "KLAC",
+      "score": 0.5248549338527585,
+      "uncertainty": 0.08358245683043311,
+      "price": 1540.06,
+      "conviction": 48.1,
+      "returns": {
+        "5d": 6.7,
+        "21d": 7.7,
+        "63d": 21.0,
+        "126d": 35.6
+      },
+      "vol_21d": 53.9,
       "drawdown": -8.5,
-      "position_in_range": 77.6,
-      "atf_coiled_spring": 61.8,
-      "tam": 6.11
+      "position_in_range": 87.2,
+      "atf_coiled_spring": 49.5,
+      "tam": 28.43
+    },
+    {
+      "ticker": "ITW",
+      "score": 0.5231293668074862,
+      "uncertainty": 0.03417239445015875,
+      "price": 258.48,
+      "conviction": 50.5,
+      "returns": {
+        "5d": 0.4,
+        "21d": -7.9,
+        "63d": 4.3,
+        "126d": 0.4
+      },
+      "vol_21d": 20.2,
+      "drawdown": -13.2,
+      "position_in_range": 53.7,
+      "atf_coiled_spring": 74.6,
+      "tam": -0.64
+    },
+    {
+      "ticker": "MSFT",
+      "score": 0.5225227023012322,
+      "uncertainty": 0.06461460515623649,
+      "price": 372.88,
+      "conviction": 48.9,
+      "returns": {
+        "5d": 4.5,
+        "21d": -9.2,
+        "63d": -21.0,
+        "126d": -27.4
+      },
+      "vol_21d": 21.2,
+      "drawdown": -30.9,
+      "position_in_range": 11.2,
+      "atf_coiled_spring": 73.4,
+      "tam": -9.56
+    },
+    {
+      "ticker": "GOOGL",
+      "score": 0.52099368306916,
+      "uncertainty": 0.07245280875223879,
+      "price": 299.99,
+      "conviction": 48.3,
+      "returns": {
+        "5d": 9.3,
+        "21d": -0.2,
+        "63d": -4.7,
+        "126d": 22.3
+      },
+      "vol_21d": 34.2,
+      "drawdown": -12.7,
+      "position_in_range": 78.2,
+      "atf_coiled_spring": 48.7,
+      "tam": 12.98
+    },
+    {
+      "ticker": "AMZN",
+      "score": 0.5202826164211564,
+      "uncertainty": 0.04226466626846688,
+      "price": 212.79,
+      "conviction": 49.8,
+      "returns": {
+        "5d": 6.7,
+        "21d": -2.8,
+        "63d": -6.1,
+        "126d": -4.3
+      },
+      "vol_21d": 30.7,
+      "drawdown": -16.2,
+      "position_in_range": 52.5,
+      "atf_coiled_spring": 71.0,
+      "tam": -0.52
+    },
+    {
+      "ticker": "ROP",
+      "score": 0.5183204890586441,
+      "uncertainty": 0.03617614020968754,
+      "price": 360.19,
+      "conviction": 50.0,
+      "returns": {
+        "5d": 4.8,
+        "21d": -1.3,
+        "63d": -16.9,
+        "126d": -27.2
+      },
+      "vol_21d": 19.3,
+      "drawdown": -37.7,
+      "position_in_range": 17.2,
+      "atf_coiled_spring": 81.4,
+      "tam": -8.93
+    },
+    {
+      "ticker": "DHR",
+      "score": 0.5172098362832205,
+      "uncertainty": 0.05412206944698667,
+      "price": 192.12,
+      "conviction": 48.9,
+      "returns": {
+        "5d": 5.8,
+        "21d": -4.7,
+        "63d": -16.4,
+        "126d": -8.3
+      },
+      "vol_21d": 30.9,
+      "drawdown": -20.5,
+      "position_in_range": 27.4,
+      "atf_coiled_spring": 64.8,
+      "tam": -5.62
+    },
+    {
+      "ticker": "CL",
+      "score": 0.5151796444683903,
+      "uncertainty": 0.019570875827357115,
+      "price": 84.53,
+      "conviction": 50.5,
+      "returns": {
+        "5d": 0.3,
+        "21d": -8.8,
+        "63d": 9.5,
+        "126d": 9.3
+      },
+      "vol_21d": 21.4,
+      "drawdown": -14.7,
+      "position_in_range": 40.6,
+      "atf_coiled_spring": 62.0,
+      "tam": -1.39
+    },
+    {
+      "ticker": "GE",
+      "score": 0.5122152994711483,
+      "uncertainty": 0.08444699943788823,
+      "price": 288.69,
+      "conviction": 46.9,
+      "returns": {
+        "5d": 2.1,
+        "21d": -11.6,
+        "63d": -9.9,
+        "126d": -3.3
+      },
+      "vol_21d": 40.9,
+      "drawdown": -16.4,
+      "position_in_range": 68.5,
+      "atf_coiled_spring": 50.7,
+      "tam": 2.06
+    },
+    {
+      "ticker": "PNC",
+      "score": 0.5108925777973629,
+      "uncertainty": 0.05790345210434064,
+      "price": 213.14,
+      "conviction": 48.1,
+      "returns": {
+        "5d": 5.3,
+        "21d": 0.4,
+        "63d": 1.6,
+        "126d": 9.4
+      },
+      "vol_21d": 20.6,
+      "drawdown": -12.1,
+      "position_in_range": 70.1,
+      "atf_coiled_spring": 80.9,
+      "tam": 4.61
+    },
+    {
+      "ticker": "HD",
+      "score": 0.5103994238956318,
+      "uncertainty": 0.04430793974827918,
+      "price": 326.65,
+      "conviction": 48.8,
+      "returns": {
+        "5d": 1.6,
+        "21d": -9.1,
+        "63d": -4.9,
+        "126d": -16.2
+      },
+      "vol_21d": 26.2,
+      "drawdown": -21.8,
+      "position_in_range": 6.1,
+      "atf_coiled_spring": 42.1,
+      "tam": -6.92
     },
     {
       "ticker": "NSC",
-      "score": 0.5306838899721289,
-      "uncertainty": 0.060295935022448274,
-      "price": 288.0,
-      "conviction": 49.9,
+      "score": 0.5070756380587648,
+      "uncertainty": 0.04382262522204203,
+      "price": 288.05,
+      "conviction": 48.5,
       "returns": {
         "5d": 1.7,
-        "21d": -9.4,
-        "63d": 0.2,
-        "126d": -2.7
+        "21d": -7.4,
+        "63d": 0.5,
+        "126d": -2.5
       },
-      "vol_21d": 19.8,
+      "vol_21d": 18.8,
       "drawdown": -9.4,
       "position_in_range": 74.2,
-      "atf_coiled_spring": 77.8,
-      "tam": 1.68
+      "atf_coiled_spring": 80.4,
+      "tam": 1.5
     },
     {
-      "ticker": "NVDA",
-      "score": 0.5295611749963347,
-      "uncertainty": 0.07848642409227903,
-      "price": 177.39,
-      "conviction": 48.8,
+      "ticker": "CI",
+      "score": 0.5053994232490868,
+      "uncertainty": 0.04729880481793857,
+      "price": 275.69,
+      "conviction": 48.1,
       "returns": {
-        "5d": 3.6,
-        "21d": -3.1,
-        "63d": -4.9,
-        "126d": -5.3
+        "5d": 5.2,
+        "21d": -2.0,
+        "63d": -0.7,
+        "126d": -6.1
       },
-      "vol_21d": 35.8,
-      "drawdown": -14.3,
-      "position_in_range": 73.7,
-      "atf_coiled_spring": 79.4,
-      "tam": 6.95
+      "vol_21d": 29.1,
+      "drawdown": -17.2,
+      "position_in_range": 37.2,
+      "atf_coiled_spring": 74.6,
+      "tam": -2.03
     },
     {
-      "ticker": "DIS",
-      "score": 0.527782918316893,
-      "uncertainty": 0.06524642852659406,
-      "price": 96.61,
-      "conviction": 49.3,
+      "ticker": "MMM",
+      "score": 0.5039254444510021,
+      "uncertainty": 0.054133147556990356,
+      "price": 144.5,
+      "conviction": 47.7,
       "returns": {
-        "5d": 2.0,
-        "21d": -6.2,
-        "63d": -15.1,
-        "126d": -13.9
+        "5d": 1.0,
+        "21d": -7.5,
+        "63d": -10.3,
+        "126d": -8.2
       },
-      "vol_21d": 18.6,
-      "drawdown": -21.6,
-      "position_in_range": 37.3,
-      "atf_coiled_spring": 87.9,
-      "tam": -6.34
+      "vol_21d": 28.3,
+      "drawdown": -16.9,
+      "position_in_range": 41.4,
+      "atf_coiled_spring": 74.1,
+      "tam": -4.22
     },
     {
-      "ticker": "V",
-      "score": 0.5277517251850262,
-      "uncertainty": 0.06560593155763586,
-      "price": 300.8,
-      "conviction": 49.3,
+      "ticker": "AMGN",
+      "score": 0.5000464360251994,
+      "uncertainty": 0.040447071142443815,
+      "price": 342.57,
+      "conviction": 48.0,
       "returns": {
-        "5d": -1.5,
-        "21d": -6.1,
-        "63d": -14.1,
-        "126d": -13.2
+        "5d": -1.8,
+        "21d": -6.8,
+        "63d": 5.3,
+        "126d": 16.8
       },
-      "vol_21d": 19.8,
-      "drawdown": -19.0,
-      "position_in_range": 7.0,
-      "atf_coiled_spring": 81.2,
-      "tam": -8.15
-    },
-    {
-      "ticker": "USB",
-      "score": 0.5258489413356515,
-      "uncertainty": 0.06617520123660628,
-      "price": 52.95,
-      "conviction": 49.1,
-      "returns": {
-        "5d": 3.7,
-        "21d": -1.6,
-        "63d": 0.3,
-        "126d": 12.8
-      },
-      "vol_21d": 19.6,
-      "drawdown": -11.9,
-      "position_in_range": 71.7,
-      "atf_coiled_spring": 88.8,
-      "tam": 5.37
+      "vol_21d": 19.3,
+      "drawdown": -11.7,
+      "position_in_range": 65.9,
+      "atf_coiled_spring": 79.8,
+      "tam": 3.9
     }
   ],
   "performance": {
@@ -1053,7 +1053,7 @@
       "entry_date": "2023-04-03",
       "exit_date": "2023-05-16",
       "ticker": "FIS",
-      "score": 0.675,
+      "score": 0.678,
       "entry_price": 50.07,
       "exit_price": 50.83,
       "return_pct": 1.52,
@@ -1065,7 +1065,7 @@
       "entry_date": "2023-04-03",
       "exit_date": "2023-05-16",
       "ticker": "TSLA",
-      "score": 0.666,
+      "score": 0.663,
       "entry_price": 194.77,
       "exit_price": 166.52,
       "return_pct": -14.5,
@@ -1077,7 +1077,7 @@
       "entry_date": "2023-04-03",
       "exit_date": "2023-05-16",
       "ticker": "SCHW",
-      "score": 0.663,
+      "score": 0.662,
       "entry_price": 49.35,
       "exit_price": 48.19,
       "return_pct": -2.36,
@@ -1089,7 +1089,7 @@
       "entry_date": "2023-04-03",
       "exit_date": "2023-05-16",
       "ticker": "AMZN",
-      "score": 0.631,
+      "score": 0.623,
       "entry_price": 102.41,
       "exit_price": 113.4,
       "return_pct": 10.73,
@@ -1100,12 +1100,12 @@
     {
       "entry_date": "2023-04-03",
       "exit_date": "2023-05-16",
-      "ticker": "DIS",
+      "ticker": "USB",
       "score": 0.6,
-      "entry_price": 97.46,
-      "exit_price": 88.89,
-      "return_pct": -8.8,
-      "net_return_pct": -9.1,
+      "entry_price": 30.99,
+      "exit_price": 24.94,
+      "return_pct": -19.53,
+      "net_return_pct": -19.83,
       "hit_target": false,
       "days_held": 30
     },
@@ -1113,7 +1113,7 @@
       "entry_date": "2023-05-01",
       "exit_date": "2023-06-13",
       "ticker": "TSLA",
-      "score": 0.615,
+      "score": 0.611,
       "entry_price": 161.83,
       "exit_price": 258.71,
       "return_pct": 59.87,
@@ -1125,7 +1125,7 @@
       "entry_date": "2023-05-01",
       "exit_date": "2023-06-13",
       "ticker": "FIS",
-      "score": 0.614,
+      "score": 0.593,
       "entry_price": 52.48,
       "exit_price": 51.58,
       "return_pct": -1.7,
@@ -1137,7 +1137,7 @@
       "entry_date": "2023-05-01",
       "exit_date": "2023-06-13",
       "ticker": "SCHW",
-      "score": 0.568,
+      "score": 0.556,
       "entry_price": 49.58,
       "exit_price": 52.67,
       "return_pct": 6.23,
@@ -1148,24 +1148,24 @@
     {
       "entry_date": "2023-05-01",
       "exit_date": "2023-06-13",
-      "ticker": "WDAY",
-      "score": 0.552,
-      "entry_price": 186.34,
-      "exit_price": 214.06,
-      "return_pct": 14.88,
-      "net_return_pct": 14.58,
+      "ticker": "NFLX",
+      "score": 0.542,
+      "entry_price": 32.41,
+      "exit_price": 43.57,
+      "return_pct": 34.43,
+      "net_return_pct": 34.13,
       "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2023-05-01",
       "exit_date": "2023-06-13",
-      "ticker": "INTC",
-      "score": 0.542,
-      "entry_price": 29.57,
-      "exit_price": 33.23,
-      "return_pct": 12.37,
-      "net_return_pct": 12.07,
+      "ticker": "MCHP",
+      "score": 0.541,
+      "entry_price": 69.96,
+      "exit_price": 79.93,
+      "return_pct": 14.26,
+      "net_return_pct": 13.96,
       "hit_target": true,
       "days_held": 30
     },
@@ -1173,7 +1173,7 @@
       "entry_date": "2023-06-01",
       "exit_date": "2023-07-17",
       "ticker": "FIS",
-      "score": 0.671,
+      "score": 0.663,
       "entry_price": 50.91,
       "exit_price": 54.54,
       "return_pct": 7.12,
@@ -1185,7 +1185,7 @@
       "entry_date": "2023-06-01",
       "exit_date": "2023-07-17",
       "ticker": "USB",
-      "score": 0.644,
+      "score": 0.642,
       "entry_price": 26.54,
       "exit_price": 31.12,
       "return_pct": 17.27,
@@ -1196,20 +1196,8 @@
     {
       "entry_date": "2023-06-01",
       "exit_date": "2023-07-17",
-      "ticker": "SCHW",
-      "score": 0.61,
-      "entry_price": 50.7,
-      "exit_price": 56.42,
-      "return_pct": 11.27,
-      "net_return_pct": 10.97,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-06-01",
-      "exit_date": "2023-07-17",
       "ticker": "MMM",
-      "score": 0.609,
+      "score": 0.604,
       "entry_price": 72.21,
       "exit_price": 77.89,
       "return_pct": 7.87,
@@ -1220,8 +1208,20 @@
     {
       "entry_date": "2023-06-01",
       "exit_date": "2023-07-17",
+      "ticker": "SCHW",
+      "score": 0.599,
+      "entry_price": 50.7,
+      "exit_price": 56.42,
+      "return_pct": 11.27,
+      "net_return_pct": 10.97,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-06-01",
+      "exit_date": "2023-07-17",
       "ticker": "BAC",
-      "score": 0.586,
+      "score": 0.587,
       "entry_price": 25.9,
       "exit_price": 27.41,
       "return_pct": 5.83,
@@ -1233,7 +1233,7 @@
       "entry_date": "2023-07-03",
       "exit_date": "2023-08-15",
       "ticker": "FIS",
-      "score": 0.608,
+      "score": 0.598,
       "entry_price": 54.2,
       "exit_price": 52.22,
       "return_pct": -3.66,
@@ -1244,32 +1244,8 @@
     {
       "entry_date": "2023-07-03",
       "exit_date": "2023-08-15",
-      "ticker": "GOOGL",
-      "score": 0.55,
-      "entry_price": 118.92,
-      "exit_price": 128.72,
-      "return_pct": 8.24,
-      "net_return_pct": 7.94,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-07-03",
-      "exit_date": "2023-08-15",
-      "ticker": "NFLX",
-      "score": 0.543,
-      "entry_price": 44.14,
-      "exit_price": 42.37,
-      "return_pct": -4.02,
-      "net_return_pct": -4.32,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-07-03",
-      "exit_date": "2023-08-15",
       "ticker": "NVDA",
-      "score": 0.543,
+      "score": 0.538,
       "entry_price": 42.38,
       "exit_price": 43.91,
       "return_pct": 3.6,
@@ -1280,12 +1256,36 @@
     {
       "entry_date": "2023-07-03",
       "exit_date": "2023-08-15",
-      "ticker": "ADBE",
-      "score": 0.541,
-      "entry_price": 485.21,
-      "exit_price": 518.7,
-      "return_pct": 6.9,
-      "net_return_pct": 6.6,
+      "ticker": "NFLX",
+      "score": 0.535,
+      "entry_price": 44.14,
+      "exit_price": 42.37,
+      "return_pct": -4.02,
+      "net_return_pct": -4.32,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-07-03",
+      "exit_date": "2023-08-15",
+      "ticker": "MMM",
+      "score": 0.533,
+      "entry_price": 77.46,
+      "exit_price": 77.46,
+      "return_pct": 0.0,
+      "net_return_pct": -0.3,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-07-03",
+      "exit_date": "2023-08-15",
+      "ticker": "GOOGL",
+      "score": 0.53,
+      "entry_price": 118.92,
+      "exit_price": 128.72,
+      "return_pct": 8.24,
+      "net_return_pct": 7.94,
       "hit_target": false,
       "days_held": 30
     },
@@ -1293,7 +1293,7 @@
       "entry_date": "2023-08-01",
       "exit_date": "2023-09-13",
       "ticker": "FIS",
-      "score": 0.608,
+      "score": 0.579,
       "entry_price": 57.07,
       "exit_price": 52.12,
       "return_pct": -8.67,
@@ -1304,20 +1304,8 @@
     {
       "entry_date": "2023-08-01",
       "exit_date": "2023-09-13",
-      "ticker": "NFLX",
-      "score": 0.572,
-      "entry_price": 43.86,
-      "exit_price": 41.22,
-      "return_pct": -6.01,
-      "net_return_pct": -6.31,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-08-01",
-      "exit_date": "2023-09-13",
       "ticker": "TSLA",
-      "score": 0.558,
+      "score": 0.572,
       "entry_price": 261.07,
       "exit_price": 271.3,
       "return_pct": 3.92,
@@ -1328,8 +1316,20 @@
     {
       "entry_date": "2023-08-01",
       "exit_date": "2023-09-13",
+      "ticker": "NFLX",
+      "score": 0.567,
+      "entry_price": 43.86,
+      "exit_price": 41.22,
+      "return_pct": -6.01,
+      "net_return_pct": -6.31,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-08-01",
+      "exit_date": "2023-09-13",
       "ticker": "NVDA",
-      "score": 0.522,
+      "score": 0.544,
       "entry_price": 46.47,
       "exit_price": 45.45,
       "return_pct": -2.19,
@@ -1340,24 +1340,12 @@
     {
       "entry_date": "2023-08-01",
       "exit_date": "2023-09-13",
-      "ticker": "ADBE",
-      "score": 0.518,
-      "entry_price": 549.1,
-      "exit_price": 553.56,
-      "return_pct": 0.81,
-      "net_return_pct": 0.51,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-09-01",
-      "exit_date": "2023-10-16",
-      "ticker": "SCHW",
-      "score": 0.652,
-      "entry_price": 58.43,
-      "exit_price": 51.88,
-      "return_pct": -11.21,
-      "net_return_pct": -11.51,
+      "ticker": "PFE",
+      "score": 0.519,
+      "entry_price": 30.37,
+      "exit_price": 29.06,
+      "return_pct": -4.3,
+      "net_return_pct": -4.6,
       "hit_target": false,
       "days_held": 30
     },
@@ -1365,7 +1353,7 @@
       "entry_date": "2023-09-01",
       "exit_date": "2023-10-16",
       "ticker": "FIS",
-      "score": 0.637,
+      "score": 0.602,
       "entry_price": 52.97,
       "exit_price": 49.62,
       "return_pct": -6.32,
@@ -1377,7 +1365,7 @@
       "entry_date": "2023-09-01",
       "exit_date": "2023-10-16",
       "ticker": "TSLA",
-      "score": 0.626,
+      "score": 0.58,
       "entry_price": 245.01,
       "exit_price": 253.92,
       "return_pct": 3.64,
@@ -1388,24 +1376,36 @@
     {
       "entry_date": "2023-09-01",
       "exit_date": "2023-10-16",
-      "ticker": "DIS",
-      "score": 0.614,
-      "entry_price": 79.76,
-      "exit_price": 83.74,
-      "return_pct": 4.99,
-      "net_return_pct": 4.69,
+      "ticker": "META",
+      "score": 0.57,
+      "entry_price": 294.07,
+      "exit_price": 318.65,
+      "return_pct": 8.36,
+      "net_return_pct": 8.06,
       "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2023-09-01",
       "exit_date": "2023-10-16",
-      "ticker": "USB",
-      "score": 0.609,
-      "entry_price": 32.72,
-      "exit_price": 29.23,
-      "return_pct": -10.69,
-      "net_return_pct": -10.99,
+      "ticker": "SCHW",
+      "score": 0.565,
+      "entry_price": 58.43,
+      "exit_price": 51.88,
+      "return_pct": -11.21,
+      "net_return_pct": -11.51,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-09-01",
+      "exit_date": "2023-10-16",
+      "ticker": "PFE",
+      "score": 0.56,
+      "entry_price": 30.51,
+      "exit_price": 28.37,
+      "return_pct": -7.02,
+      "net_return_pct": -7.32,
       "hit_target": false,
       "days_held": 30
     },
@@ -1413,7 +1413,7 @@
       "entry_date": "2023-10-02",
       "exit_date": "2023-11-13",
       "ticker": "NVDA",
-      "score": 0.62,
+      "score": 0.618,
       "entry_price": 44.75,
       "exit_price": 48.59,
       "return_pct": 8.57,
@@ -1424,20 +1424,8 @@
     {
       "entry_date": "2023-10-02",
       "exit_date": "2023-11-13",
-      "ticker": "USB",
-      "score": 0.614,
-      "entry_price": 28.8,
-      "exit_price": 30.46,
-      "return_pct": 5.79,
-      "net_return_pct": 5.49,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-10-02",
-      "exit_date": "2023-11-13",
       "ticker": "FIS",
-      "score": 0.607,
+      "score": 0.605,
       "entry_price": 51.17,
       "exit_price": 49.42,
       "return_pct": -3.41,
@@ -1448,12 +1436,12 @@
     {
       "entry_date": "2023-10-02",
       "exit_date": "2023-11-13",
-      "ticker": "SCHW",
-      "score": 0.603,
-      "entry_price": 51.72,
-      "exit_price": 52.35,
-      "return_pct": 1.23,
-      "net_return_pct": 0.93,
+      "ticker": "USB",
+      "score": 0.599,
+      "entry_price": 28.8,
+      "exit_price": 30.46,
+      "return_pct": 5.79,
+      "net_return_pct": 5.49,
       "hit_target": false,
       "days_held": 30
     },
@@ -1470,10 +1458,22 @@
       "days_held": 30
     },
     {
+      "entry_date": "2023-10-02",
+      "exit_date": "2023-11-13",
+      "ticker": "SCHW",
+      "score": 0.579,
+      "entry_price": 51.72,
+      "exit_price": 52.35,
+      "return_pct": 1.23,
+      "net_return_pct": 0.93,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
       "entry_date": "2023-11-01",
       "exit_date": "2023-12-14",
       "ticker": "FIS",
-      "score": 0.73,
+      "score": 0.733,
       "entry_price": 46.49,
       "exit_price": 57.45,
       "return_pct": 23.57,
@@ -1485,7 +1485,7 @@
       "entry_date": "2023-11-01",
       "exit_date": "2023-12-14",
       "ticker": "NVDA",
-      "score": 0.72,
+      "score": 0.716,
       "entry_price": 42.3,
       "exit_price": 48.32,
       "return_pct": 14.25,
@@ -1496,20 +1496,8 @@
     {
       "entry_date": "2023-11-01",
       "exit_date": "2023-12-14",
-      "ticker": "SCHW",
-      "score": 0.686,
-      "entry_price": 51.01,
-      "exit_price": 68.83,
-      "return_pct": 34.92,
-      "net_return_pct": 34.62,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-11-01",
-      "exit_date": "2023-12-14",
       "ticker": "TSLA",
-      "score": 0.685,
+      "score": 0.682,
       "entry_price": 205.66,
       "exit_price": 251.05,
       "return_pct": 22.07,
@@ -1520,20 +1508,32 @@
     {
       "entry_date": "2023-11-01",
       "exit_date": "2023-12-14",
-      "ticker": "MCHP",
-      "score": 0.667,
-      "entry_price": 66.6,
-      "exit_price": 87.6,
-      "return_pct": 31.54,
-      "net_return_pct": 31.24,
+      "ticker": "SCHW",
+      "score": 0.679,
+      "entry_price": 51.01,
+      "exit_price": 68.83,
+      "return_pct": 34.92,
+      "net_return_pct": 34.62,
       "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2023-11-01",
+      "exit_date": "2023-12-14",
+      "ticker": "META",
+      "score": 0.675,
+      "entry_price": 309.42,
+      "exit_price": 330.58,
+      "return_pct": 6.84,
+      "net_return_pct": 6.54,
+      "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2023-12-01",
       "exit_date": "2024-01-17",
       "ticker": "NVDA",
-      "score": 0.566,
+      "score": 0.579,
       "entry_price": 46.73,
       "exit_price": 56.02,
       "return_pct": 19.87,
@@ -1545,7 +1545,7 @@
       "entry_date": "2023-12-01",
       "exit_date": "2024-01-17",
       "ticker": "FTNT",
-      "score": 0.554,
+      "score": 0.555,
       "entry_price": 52.49,
       "exit_price": 60.62,
       "return_pct": 15.49,
@@ -1556,20 +1556,8 @@
     {
       "entry_date": "2023-12-01",
       "exit_date": "2024-01-17",
-      "ticker": "META",
-      "score": 0.54,
-      "entry_price": 322.29,
-      "exit_price": 365.5,
-      "return_pct": 13.41,
-      "net_return_pct": 13.11,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2023-12-01",
-      "exit_date": "2024-01-17",
       "ticker": "NFLX",
-      "score": 0.528,
+      "score": 0.537,
       "entry_price": 46.57,
       "exit_price": 48.03,
       "return_pct": 3.13,
@@ -1581,7 +1569,7 @@
       "entry_date": "2023-12-01",
       "exit_date": "2024-01-17",
       "ticker": "TSLA",
-      "score": 0.524,
+      "score": 0.536,
       "entry_price": 238.83,
       "exit_price": 215.55,
       "return_pct": -9.75,
@@ -1590,10 +1578,22 @@
       "days_held": 30
     },
     {
+      "entry_date": "2023-12-01",
+      "exit_date": "2024-01-17",
+      "ticker": "NEE",
+      "score": 0.522,
+      "entry_price": 55.38,
+      "exit_price": 54.54,
+      "return_pct": -1.52,
+      "net_return_pct": -1.82,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
       "entry_date": "2024-01-02",
       "exit_date": "2024-02-14",
       "ticker": "NVDA",
-      "score": 0.602,
+      "score": 0.607,
       "entry_price": 48.14,
       "exit_price": 73.85,
       "return_pct": 53.42,
@@ -1604,20 +1604,8 @@
     {
       "entry_date": "2024-01-02",
       "exit_date": "2024-02-14",
-      "ticker": "META",
-      "score": 0.581,
-      "entry_price": 343.59,
-      "exit_price": 469.59,
-      "return_pct": 36.67,
-      "net_return_pct": 36.37,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-01-02",
-      "exit_date": "2024-02-14",
       "ticker": "PANW",
-      "score": 0.58,
+      "score": 0.586,
       "entry_price": 144.46,
       "exit_price": 184.16,
       "return_pct": 27.49,
@@ -1628,20 +1616,32 @@
     {
       "entry_date": "2024-01-02",
       "exit_date": "2024-02-14",
-      "ticker": "MCHP",
+      "ticker": "META",
+      "score": 0.559,
+      "entry_price": 343.59,
+      "exit_price": 469.59,
+      "return_pct": 36.67,
+      "net_return_pct": 36.37,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-01-02",
+      "exit_date": "2024-02-14",
+      "ticker": "NFLX",
       "score": 0.551,
-      "entry_price": 81.57,
-      "exit_price": 75.93,
-      "return_pct": -6.91,
-      "net_return_pct": -7.21,
-      "hit_target": false,
+      "entry_price": 46.85,
+      "exit_price": 57.93,
+      "return_pct": 23.66,
+      "net_return_pct": 23.36,
+      "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2024-01-02",
       "exit_date": "2024-02-14",
       "ticker": "TSLA",
-      "score": 0.543,
+      "score": 0.533,
       "entry_price": 248.42,
       "exit_price": 188.71,
       "return_pct": -24.04,
@@ -1652,20 +1652,8 @@
     {
       "entry_date": "2024-02-01",
       "exit_date": "2024-03-15",
-      "ticker": "SCHW",
-      "score": 0.608,
-      "entry_price": 60.41,
-      "exit_price": 65.3,
-      "return_pct": 8.09,
-      "net_return_pct": 7.79,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-02-01",
-      "exit_date": "2024-03-15",
       "ticker": "USB",
-      "score": 0.602,
+      "score": 0.594,
       "entry_price": 37.05,
       "exit_price": 38.13,
       "return_pct": 2.91,
@@ -1676,8 +1664,32 @@
     {
       "entry_date": "2024-02-01",
       "exit_date": "2024-03-15",
-      "ticker": "TSLA",
+      "ticker": "SCHW",
+      "score": 0.59,
+      "entry_price": 60.41,
+      "exit_price": 65.3,
+      "return_pct": 8.09,
+      "net_return_pct": 7.79,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-02-01",
+      "exit_date": "2024-03-15",
+      "ticker": "FTNT",
       "score": 0.587,
+      "entry_price": 66.45,
+      "exit_price": 66.72,
+      "return_pct": 0.41,
+      "net_return_pct": 0.11,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-02-01",
+      "exit_date": "2024-03-15",
+      "ticker": "TSLA",
+      "score": 0.582,
       "entry_price": 188.86,
       "exit_price": 163.57,
       "return_pct": -13.39,
@@ -1689,7 +1701,7 @@
       "entry_date": "2024-02-01",
       "exit_date": "2024-03-15",
       "ticker": "META",
-      "score": 0.572,
+      "score": 0.582,
       "entry_price": 391.71,
       "exit_price": 480.84,
       "return_pct": 22.76,
@@ -1698,22 +1710,10 @@
       "days_held": 30
     },
     {
-      "entry_date": "2024-02-01",
-      "exit_date": "2024-03-15",
-      "ticker": "PANW",
-      "score": 0.559,
-      "entry_price": 169.99,
-      "exit_price": 141.08,
-      "return_pct": -17.0,
-      "net_return_pct": -17.3,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
       "entry_date": "2024-03-01",
       "exit_date": "2024-04-15",
       "ticker": "TSLA",
-      "score": 0.589,
+      "score": 0.611,
       "entry_price": 202.64,
       "exit_price": 161.48,
       "return_pct": -20.31,
@@ -1725,7 +1725,7 @@
       "entry_date": "2024-03-01",
       "exit_date": "2024-04-15",
       "ticker": "PANW",
-      "score": 0.565,
+      "score": 0.582,
       "entry_price": 151.2,
       "exit_price": 136.07,
       "return_pct": -10.0,
@@ -1737,7 +1737,7 @@
       "entry_date": "2024-03-01",
       "exit_date": "2024-04-15",
       "ticker": "USB",
-      "score": 0.539,
+      "score": 0.547,
       "entry_price": 37.53,
       "exit_price": 37.97,
       "return_pct": 1.19,
@@ -1748,24 +1748,24 @@
     {
       "entry_date": "2024-03-01",
       "exit_date": "2024-04-15",
-      "ticker": "FTNT",
-      "score": 0.538,
-      "entry_price": 70.44,
-      "exit_price": 64.73,
-      "return_pct": -8.11,
-      "net_return_pct": -8.41,
-      "hit_target": false,
+      "ticker": "NEE",
+      "score": 0.528,
+      "entry_price": 52.15,
+      "exit_price": 59.27,
+      "return_pct": 13.66,
+      "net_return_pct": 13.36,
+      "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2024-03-01",
       "exit_date": "2024-04-15",
-      "ticker": "SCHW",
-      "score": 0.521,
-      "entry_price": 64.75,
-      "exit_price": 69.39,
-      "return_pct": 7.16,
-      "net_return_pct": 6.86,
+      "ticker": "NFLX",
+      "score": 0.528,
+      "entry_price": 61.93,
+      "exit_price": 60.72,
+      "return_pct": -1.97,
+      "net_return_pct": -2.27,
       "hit_target": false,
       "days_held": 30
     },
@@ -1773,7 +1773,7 @@
       "entry_date": "2024-04-01",
       "exit_date": "2024-05-13",
       "ticker": "TSLA",
-      "score": 0.618,
+      "score": 0.615,
       "entry_price": 175.22,
       "exit_price": 171.89,
       "return_pct": -1.9,
@@ -1785,7 +1785,7 @@
       "entry_date": "2024-04-01",
       "exit_date": "2024-05-13",
       "ticker": "NVDA",
-      "score": 0.529,
+      "score": 0.535,
       "entry_price": 90.31,
       "exit_price": 90.35,
       "return_pct": 0.04,
@@ -1797,7 +1797,7 @@
       "entry_date": "2024-04-01",
       "exit_date": "2024-05-13",
       "ticker": "PANW",
-      "score": 0.523,
+      "score": 0.529,
       "entry_price": 139.71,
       "exit_price": 151.12,
       "return_pct": 8.17,
@@ -1809,7 +1809,7 @@
       "entry_date": "2024-04-01",
       "exit_date": "2024-05-13",
       "ticker": "FTNT",
-      "score": 0.517,
+      "score": 0.494,
       "entry_price": 67.82,
       "exit_price": 59.63,
       "return_pct": -12.08,
@@ -1820,24 +1820,12 @@
     {
       "entry_date": "2024-04-01",
       "exit_date": "2024-05-13",
-      "ticker": "UPS",
-      "score": 0.509,
-      "entry_price": 131.42,
-      "exit_price": 135.56,
-      "return_pct": 3.15,
-      "net_return_pct": 2.85,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-05-01",
-      "exit_date": "2024-06-13",
-      "ticker": "TSLA",
-      "score": 0.643,
-      "entry_price": 179.99,
-      "exit_price": 182.47,
-      "return_pct": 1.38,
-      "net_return_pct": 1.08,
+      "ticker": "PFE",
+      "score": 0.493,
+      "entry_price": 24.32,
+      "exit_price": 25.33,
+      "return_pct": 4.14,
+      "net_return_pct": 3.84,
       "hit_target": false,
       "days_held": 30
     },
@@ -1845,7 +1833,7 @@
       "entry_date": "2024-05-01",
       "exit_date": "2024-06-13",
       "ticker": "NVDA",
-      "score": 0.632,
+      "score": 0.653,
       "entry_price": 82.99,
       "exit_price": 129.55,
       "return_pct": 56.09,
@@ -1856,32 +1844,20 @@
     {
       "entry_date": "2024-05-01",
       "exit_date": "2024-06-13",
-      "ticker": "FIS",
-      "score": 0.618,
-      "entry_price": 64.29,
-      "exit_price": 74.07,
-      "return_pct": 15.22,
-      "net_return_pct": 14.92,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-05-01",
-      "exit_date": "2024-06-13",
-      "ticker": "PANW",
-      "score": 0.613,
-      "entry_price": 143.67,
-      "exit_price": 159.83,
-      "return_pct": 11.25,
-      "net_return_pct": 10.95,
-      "hit_target": true,
+      "ticker": "TSLA",
+      "score": 0.625,
+      "entry_price": 179.99,
+      "exit_price": 182.47,
+      "return_pct": 1.38,
+      "net_return_pct": 1.08,
+      "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2024-05-01",
       "exit_date": "2024-06-13",
       "ticker": "AMAT",
-      "score": 0.611,
+      "score": 0.623,
       "entry_price": 190.66,
       "exit_price": 233.9,
       "return_pct": 22.68,
@@ -1890,10 +1866,34 @@
       "days_held": 30
     },
     {
+      "entry_date": "2024-05-01",
+      "exit_date": "2024-06-13",
+      "ticker": "GILD",
+      "score": 0.619,
+      "entry_price": 61.5,
+      "exit_price": 59.67,
+      "return_pct": -2.98,
+      "net_return_pct": -3.28,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-05-01",
+      "exit_date": "2024-06-13",
+      "ticker": "PANW",
+      "score": 0.615,
+      "entry_price": 143.67,
+      "exit_price": 159.83,
+      "return_pct": 11.25,
+      "net_return_pct": 10.95,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
       "entry_date": "2024-06-03",
       "exit_date": "2024-07-17",
       "ticker": "TSLA",
-      "score": 0.664,
+      "score": 0.657,
       "entry_price": 176.29,
       "exit_price": 248.5,
       "return_pct": 40.96,
@@ -1905,7 +1905,7 @@
       "entry_date": "2024-06-03",
       "exit_date": "2024-07-17",
       "ticker": "PANW",
-      "score": 0.627,
+      "score": 0.618,
       "entry_price": 147.24,
       "exit_price": 166.07,
       "return_pct": 12.79,
@@ -1917,7 +1917,7 @@
       "entry_date": "2024-06-03",
       "exit_date": "2024-07-17",
       "ticker": "INTC",
-      "score": 0.606,
+      "score": 0.599,
       "entry_price": 30.1,
       "exit_price": 34.24,
       "return_pct": 13.77,
@@ -1929,7 +1929,7 @@
       "entry_date": "2024-06-03",
       "exit_date": "2024-07-17",
       "ticker": "FTNT",
-      "score": 0.599,
+      "score": 0.588,
       "entry_price": 58.8,
       "exit_price": 59.11,
       "return_pct": 0.53,
@@ -1940,13 +1940,13 @@
     {
       "entry_date": "2024-06-03",
       "exit_date": "2024-07-17",
-      "ticker": "USB",
-      "score": 0.558,
-      "entry_price": 36.41,
-      "exit_price": 41.99,
-      "return_pct": 15.34,
-      "net_return_pct": 15.04,
-      "hit_target": true,
+      "ticker": "NVDA",
+      "score": 0.568,
+      "entry_price": 114.94,
+      "exit_price": 117.93,
+      "return_pct": 2.61,
+      "net_return_pct": 2.31,
+      "hit_target": false,
       "days_held": 30
     },
     {
@@ -1964,8 +1964,32 @@
     {
       "entry_date": "2024-07-01",
       "exit_date": "2024-08-13",
-      "ticker": "TSLA",
+      "ticker": "FTNT",
       "score": 0.574,
+      "entry_price": 59.85,
+      "exit_price": 71.5,
+      "return_pct": 19.47,
+      "net_return_pct": 19.17,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-07-01",
+      "exit_date": "2024-08-13",
+      "ticker": "PANW",
+      "score": 0.574,
+      "entry_price": 170.45,
+      "exit_price": 166.62,
+      "return_pct": -2.25,
+      "net_return_pct": -2.55,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-07-01",
+      "exit_date": "2024-08-13",
+      "ticker": "TSLA",
+      "score": 0.573,
       "entry_price": 209.86,
       "exit_price": 207.83,
       "return_pct": -0.97,
@@ -1977,7 +2001,7 @@
       "entry_date": "2024-07-01",
       "exit_date": "2024-08-13",
       "ticker": "USB",
-      "score": 0.558,
+      "score": 0.563,
       "entry_price": 36.41,
       "exit_price": 39.34,
       "return_pct": 8.05,
@@ -1986,34 +2010,10 @@
       "days_held": 30
     },
     {
-      "entry_date": "2024-07-01",
-      "exit_date": "2024-08-13",
-      "ticker": "PANW",
-      "score": 0.557,
-      "entry_price": 170.45,
-      "exit_price": 166.62,
-      "return_pct": -2.25,
-      "net_return_pct": -2.55,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-07-01",
-      "exit_date": "2024-08-13",
-      "ticker": "FTNT",
-      "score": 0.555,
-      "entry_price": 59.85,
-      "exit_price": 71.5,
-      "return_pct": 19.47,
-      "net_return_pct": 19.17,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
       "entry_date": "2024-08-01",
       "exit_date": "2024-09-13",
       "ticker": "PANW",
-      "score": 0.555,
+      "score": 0.56,
       "entry_price": 157.81,
       "exit_price": 173.45,
       "return_pct": 9.91,
@@ -2025,7 +2025,7 @@
       "entry_date": "2024-08-01",
       "exit_date": "2024-09-13",
       "ticker": "INTC",
-      "score": 0.555,
+      "score": 0.541,
       "entry_price": 28.87,
       "exit_price": 19.66,
       "return_pct": -31.89,
@@ -2037,7 +2037,7 @@
       "entry_date": "2024-08-01",
       "exit_date": "2024-09-13",
       "ticker": "ORCL",
-      "score": 0.524,
+      "score": 0.532,
       "entry_price": 135.49,
       "exit_price": 159.65,
       "return_pct": 17.83,
@@ -2049,7 +2049,7 @@
       "entry_date": "2024-08-01",
       "exit_date": "2024-09-13",
       "ticker": "AMGN",
-      "score": 0.51,
+      "score": 0.526,
       "entry_price": 317.94,
       "exit_price": 317.22,
       "return_pct": -0.23,
@@ -2061,7 +2061,7 @@
       "entry_date": "2024-08-01",
       "exit_date": "2024-09-13",
       "ticker": "TSLA",
-      "score": 0.51,
+      "score": 0.522,
       "entry_price": 216.86,
       "exit_price": 230.29,
       "return_pct": 6.19,
@@ -2085,7 +2085,7 @@
       "entry_date": "2024-09-03",
       "exit_date": "2024-10-15",
       "ticker": "TSLA",
-      "score": 0.596,
+      "score": 0.605,
       "entry_price": 210.6,
       "exit_price": 219.57,
       "return_pct": 4.26,
@@ -2097,7 +2097,7 @@
       "entry_date": "2024-09-03",
       "exit_date": "2024-10-15",
       "ticker": "LRCX",
-      "score": 0.582,
+      "score": 0.592,
       "entry_price": 75.33,
       "exit_price": 75.35,
       "return_pct": 0.03,
@@ -2109,7 +2109,7 @@
       "entry_date": "2024-09-03",
       "exit_date": "2024-10-15",
       "ticker": "AMAT",
-      "score": 0.557,
+      "score": 0.569,
       "entry_price": 180.9,
       "exit_price": 188.45,
       "return_pct": 4.17,
@@ -2120,20 +2120,20 @@
     {
       "entry_date": "2024-09-03",
       "exit_date": "2024-10-15",
-      "ticker": "NVDA",
-      "score": 0.544,
-      "entry_price": 107.95,
-      "exit_price": 131.55,
-      "return_pct": 21.86,
-      "net_return_pct": 21.56,
-      "hit_target": true,
+      "ticker": "QCOM",
+      "score": 0.547,
+      "entry_price": 157.01,
+      "exit_price": 168.31,
+      "return_pct": 7.2,
+      "net_return_pct": 6.9,
+      "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2024-10-01",
       "exit_date": "2024-11-12",
       "ticker": "INTC",
-      "score": 0.713,
+      "score": 0.718,
       "entry_price": 22.69,
       "exit_price": 24.16,
       "return_pct": 6.48,
@@ -2145,7 +2145,7 @@
       "entry_date": "2024-10-01",
       "exit_date": "2024-11-12",
       "ticker": "LRCX",
-      "score": 0.623,
+      "score": 0.618,
       "entry_price": 78.68,
       "exit_price": 74.69,
       "return_pct": -5.06,
@@ -2156,24 +2156,24 @@
     {
       "entry_date": "2024-10-01",
       "exit_date": "2024-11-12",
-      "ticker": "NVDA",
-      "score": 0.604,
-      "entry_price": 116.95,
-      "exit_price": 148.23,
-      "return_pct": 26.74,
-      "net_return_pct": 26.44,
+      "ticker": "SNPS",
+      "score": 0.598,
+      "entry_price": 495.56,
+      "exit_price": 553.47,
+      "return_pct": 11.69,
+      "net_return_pct": 11.39,
       "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2024-10-01",
       "exit_date": "2024-11-12",
-      "ticker": "WDAY",
-      "score": 0.6,
-      "entry_price": 240.66,
-      "exit_price": 270.32,
-      "return_pct": 12.32,
-      "net_return_pct": 12.02,
+      "ticker": "NVDA",
+      "score": 0.59,
+      "entry_price": 116.95,
+      "exit_price": 148.23,
+      "return_pct": 26.74,
+      "net_return_pct": 26.44,
       "hit_target": true,
       "days_held": 30
     },
@@ -2193,7 +2193,7 @@
       "entry_date": "2024-11-01",
       "exit_date": "2024-12-16",
       "ticker": "INTC",
-      "score": 0.585,
+      "score": 0.595,
       "entry_price": 23.2,
       "exit_price": 20.83,
       "return_pct": -10.22,
@@ -2205,7 +2205,7 @@
       "entry_date": "2024-11-01",
       "exit_date": "2024-12-16",
       "ticker": "NVDA",
-      "score": 0.546,
+      "score": 0.556,
       "entry_price": 135.35,
       "exit_price": 131.96,
       "return_pct": -2.5,
@@ -2216,20 +2216,8 @@
     {
       "entry_date": "2024-11-01",
       "exit_date": "2024-12-16",
-      "ticker": "LRCX",
-      "score": 0.544,
-      "entry_price": 73.81,
-      "exit_price": 77.03,
-      "return_pct": 4.37,
-      "net_return_pct": 4.07,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2024-11-01",
-      "exit_date": "2024-12-16",
       "ticker": "FTNT",
-      "score": 0.542,
+      "score": 0.554,
       "entry_price": 78.8,
       "exit_price": 98.16,
       "return_pct": 24.57,
@@ -2240,8 +2228,20 @@
     {
       "entry_date": "2024-11-01",
       "exit_date": "2024-12-16",
+      "ticker": "LRCX",
+      "score": 0.552,
+      "entry_price": 73.81,
+      "exit_price": 77.03,
+      "return_pct": 4.37,
+      "net_return_pct": 4.07,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2024-11-01",
+      "exit_date": "2024-12-16",
       "ticker": "AVGO",
-      "score": 0.539,
+      "score": 0.545,
       "entry_price": 166.61,
       "exit_price": 246.58,
       "return_pct": 48.0,
@@ -2253,7 +2253,7 @@
       "entry_date": "2024-12-02",
       "exit_date": "2025-01-16",
       "ticker": "INTC",
-      "score": 0.64,
+      "score": 0.627,
       "entry_price": 23.93,
       "exit_price": 19.67,
       "return_pct": -17.8,
@@ -2265,7 +2265,7 @@
       "entry_date": "2024-12-02",
       "exit_date": "2025-01-16",
       "ticker": "MCHP",
-      "score": 0.574,
+      "score": 0.582,
       "entry_price": 67.76,
       "exit_price": 54.15,
       "return_pct": -20.08,
@@ -2277,7 +2277,7 @@
       "entry_date": "2024-12-02",
       "exit_date": "2025-01-16",
       "ticker": "LRCX",
-      "score": 0.542,
+      "score": 0.563,
       "entry_price": 77.47,
       "exit_price": 78.41,
       "return_pct": 1.21,
@@ -2289,7 +2289,7 @@
       "entry_date": "2024-12-02",
       "exit_date": "2025-01-16",
       "ticker": "NVDA",
-      "score": 0.533,
+      "score": 0.559,
       "entry_price": 138.58,
       "exit_price": 133.53,
       "return_pct": -3.64,
@@ -2300,25 +2300,13 @@
     {
       "entry_date": "2024-12-02",
       "exit_date": "2025-01-16",
-      "ticker": "PANW",
-      "score": 0.533,
-      "entry_price": 195.09,
-      "exit_price": 177.17,
-      "return_pct": -9.18,
-      "net_return_pct": -9.48,
+      "ticker": "AMAT",
+      "score": 0.548,
+      "entry_price": 181.23,
+      "exit_price": 184.4,
+      "return_pct": 1.75,
+      "net_return_pct": 1.45,
       "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-01-02",
-      "exit_date": "2025-02-18",
-      "ticker": "INTC",
-      "score": 0.604,
-      "entry_price": 20.22,
-      "exit_price": 27.39,
-      "return_pct": 35.46,
-      "net_return_pct": 35.16,
-      "hit_target": true,
       "days_held": 30
     },
     {
@@ -2336,20 +2324,8 @@
     {
       "entry_date": "2025-01-02",
       "exit_date": "2025-02-18",
-      "ticker": "NVDA",
-      "score": 0.597,
-      "entry_price": 138.26,
-      "exit_price": 139.35,
-      "return_pct": 0.79,
-      "net_return_pct": 0.49,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-01-02",
-      "exit_date": "2025-02-18",
       "ticker": "TSLA",
-      "score": 0.596,
+      "score": 0.597,
       "entry_price": 379.28,
       "exit_price": 354.11,
       "return_pct": -6.64,
@@ -2360,8 +2336,32 @@
     {
       "entry_date": "2025-01-02",
       "exit_date": "2025-02-18",
+      "ticker": "INTC",
+      "score": 0.591,
+      "entry_price": 20.22,
+      "exit_price": 27.39,
+      "return_pct": 35.46,
+      "net_return_pct": 35.16,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-01-02",
+      "exit_date": "2025-02-18",
+      "ticker": "NVDA",
+      "score": 0.587,
+      "entry_price": 138.26,
+      "exit_price": 139.35,
+      "return_pct": 0.79,
+      "net_return_pct": 0.49,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-01-02",
+      "exit_date": "2025-02-18",
       "ticker": "MCHP",
-      "score": 0.582,
+      "score": 0.583,
       "entry_price": 54.82,
       "exit_price": 55.76,
       "return_pct": 1.72,
@@ -2373,7 +2373,7 @@
       "entry_date": "2025-02-03",
       "exit_date": "2025-03-18",
       "ticker": "MCHP",
-      "score": 0.678,
+      "score": 0.676,
       "entry_price": 50.36,
       "exit_price": 52.63,
       "return_pct": 4.49,
@@ -2385,7 +2385,7 @@
       "entry_date": "2025-02-03",
       "exit_date": "2025-03-18",
       "ticker": "INTC",
-      "score": 0.672,
+      "score": 0.633,
       "entry_price": 19.38,
       "exit_price": 25.92,
       "return_pct": 33.75,
@@ -2397,7 +2397,7 @@
       "entry_date": "2025-02-03",
       "exit_date": "2025-03-18",
       "ticker": "TSLA",
-      "score": 0.642,
+      "score": 0.624,
       "entry_price": 383.68,
       "exit_price": 225.31,
       "return_pct": -41.28,
@@ -2409,7 +2409,7 @@
       "entry_date": "2025-02-03",
       "exit_date": "2025-03-18",
       "ticker": "CMCSA",
-      "score": 0.601,
+      "score": 0.586,
       "entry_price": 29.53,
       "exit_price": 32.04,
       "return_pct": 8.5,
@@ -2420,12 +2420,12 @@
     {
       "entry_date": "2025-02-03",
       "exit_date": "2025-03-18",
-      "ticker": "DHR",
-      "score": 0.599,
-      "entry_price": 212.47,
-      "exit_price": 211.0,
-      "return_pct": -0.69,
-      "net_return_pct": -0.99,
+      "ticker": "NVDA",
+      "score": 0.585,
+      "entry_price": 116.62,
+      "exit_price": 115.4,
+      "return_pct": -1.05,
+      "net_return_pct": -1.35,
       "hit_target": false,
       "days_held": 30
     },
@@ -2433,7 +2433,7 @@
       "entry_date": "2025-03-03",
       "exit_date": "2025-04-14",
       "ticker": "TSLA",
-      "score": 0.664,
+      "score": 0.653,
       "entry_price": 284.65,
       "exit_price": 252.35,
       "return_pct": -11.35,
@@ -2445,7 +2445,7 @@
       "entry_date": "2025-03-03",
       "exit_date": "2025-04-14",
       "ticker": "INTC",
-      "score": 0.633,
+      "score": 0.637,
       "entry_price": 22.74,
       "exit_price": 20.31,
       "return_pct": -10.69,
@@ -2457,7 +2457,7 @@
       "entry_date": "2025-03-03",
       "exit_date": "2025-04-14",
       "ticker": "LRCX",
-      "score": 0.604,
+      "score": 0.629,
       "entry_price": 75.0,
       "exit_price": 67.37,
       "return_pct": -10.18,
@@ -2469,7 +2469,7 @@
       "entry_date": "2025-03-03",
       "exit_date": "2025-04-14",
       "ticker": "AVGO",
-      "score": 0.602,
+      "score": 0.624,
       "entry_price": 185.3,
       "exit_price": 176.93,
       "return_pct": -4.52,
@@ -2481,7 +2481,7 @@
       "entry_date": "2025-03-03",
       "exit_date": "2025-04-14",
       "ticker": "KLAC",
-      "score": 0.587,
+      "score": 0.609,
       "entry_price": 685.95,
       "exit_price": 664.93,
       "return_pct": -3.06,
@@ -2492,44 +2492,8 @@
     {
       "entry_date": "2025-04-01",
       "exit_date": "2025-05-14",
-      "ticker": "CRM",
-      "score": 0.611,
-      "entry_price": 268.45,
-      "exit_price": 289.31,
-      "return_pct": 7.77,
-      "net_return_pct": 7.47,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-04-01",
-      "exit_date": "2025-05-14",
-      "ticker": "INTC",
-      "score": 0.606,
-      "entry_price": 22.05,
-      "exit_price": 21.52,
-      "return_pct": -2.4,
-      "net_return_pct": -2.7,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-04-01",
-      "exit_date": "2025-05-14",
-      "ticker": "WDAY",
-      "score": 0.601,
-      "entry_price": 234.53,
-      "exit_price": 271.17,
-      "return_pct": 15.62,
-      "net_return_pct": 15.32,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-04-01",
-      "exit_date": "2025-05-14",
       "ticker": "TSLA",
-      "score": 0.598,
+      "score": 0.614,
       "entry_price": 268.46,
       "exit_price": 347.68,
       "return_pct": 29.51,
@@ -2540,8 +2504,44 @@
     {
       "entry_date": "2025-04-01",
       "exit_date": "2025-05-14",
-      "ticker": "MCHP",
+      "ticker": "INTC",
+      "score": 0.61,
+      "entry_price": 22.05,
+      "exit_price": 21.52,
+      "return_pct": -2.4,
+      "net_return_pct": -2.7,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-04-01",
+      "exit_date": "2025-05-14",
+      "ticker": "CRM",
+      "score": 0.601,
+      "entry_price": 268.45,
+      "exit_price": 289.31,
+      "return_pct": 7.77,
+      "net_return_pct": 7.47,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-04-01",
+      "exit_date": "2025-05-14",
+      "ticker": "WDAY",
       "score": 0.593,
+      "entry_price": 234.53,
+      "exit_price": 271.17,
+      "return_pct": 15.62,
+      "net_return_pct": 15.32,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-04-01",
+      "exit_date": "2025-05-14",
+      "ticker": "MCHP",
+      "score": 0.591,
       "entry_price": 47.09,
       "exit_price": 58.89,
       "return_pct": 25.05,
@@ -2553,24 +2553,12 @@
       "entry_date": "2025-05-01",
       "exit_date": "2025-06-13",
       "ticker": "INTC",
-      "score": 0.676,
+      "score": 0.652,
       "entry_price": 19.98,
       "exit_price": 20.14,
       "return_pct": 0.8,
       "net_return_pct": 0.5,
       "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-05-01",
-      "exit_date": "2025-06-13",
-      "ticker": "MCHP",
-      "score": 0.615,
-      "entry_price": 44.64,
-      "exit_price": 64.32,
-      "return_pct": 44.06,
-      "net_return_pct": 43.76,
-      "hit_target": true,
       "days_held": 30
     },
     {
@@ -2588,8 +2576,20 @@
     {
       "entry_date": "2025-05-01",
       "exit_date": "2025-06-13",
+      "ticker": "MCHP",
+      "score": 0.6,
+      "entry_price": 44.64,
+      "exit_price": 64.32,
+      "return_pct": 44.06,
+      "net_return_pct": 43.76,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-05-01",
+      "exit_date": "2025-06-13",
       "ticker": "UPS",
-      "score": 0.599,
+      "score": 0.583,
       "entry_price": 88.55,
       "exit_price": 95.14,
       "return_pct": 7.45,
@@ -2600,24 +2600,12 @@
     {
       "entry_date": "2025-05-01",
       "exit_date": "2025-06-13",
-      "ticker": "UNH",
-      "score": 0.588,
-      "entry_price": 389.69,
-      "exit_price": 304.93,
-      "return_pct": -21.75,
-      "net_return_pct": -22.05,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-06-02",
-      "exit_date": "2025-07-16",
-      "ticker": "INTC",
-      "score": 0.657,
-      "entry_price": 19.74,
-      "exit_price": 22.69,
-      "return_pct": 14.94,
-      "net_return_pct": 14.64,
+      "ticker": "AMAT",
+      "score": 0.561,
+      "entry_price": 147.64,
+      "exit_price": 169.56,
+      "return_pct": 14.85,
+      "net_return_pct": 14.55,
       "hit_target": true,
       "days_held": 30
     },
@@ -2625,7 +2613,7 @@
       "entry_date": "2025-06-02",
       "exit_date": "2025-07-16",
       "ticker": "UNH",
-      "score": 0.653,
+      "score": 0.62,
       "entry_price": 296.36,
       "exit_price": 286.49,
       "return_pct": -3.33,
@@ -2636,24 +2624,24 @@
     {
       "entry_date": "2025-06-02",
       "exit_date": "2025-07-16",
-      "ticker": "TMO",
-      "score": 0.594,
-      "entry_price": 395.02,
-      "exit_price": 415.21,
-      "return_pct": 5.11,
-      "net_return_pct": 4.81,
-      "hit_target": false,
+      "ticker": "INTC",
+      "score": 0.614,
+      "entry_price": 19.74,
+      "exit_price": 22.69,
+      "return_pct": 14.94,
+      "net_return_pct": 14.64,
+      "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2025-06-02",
       "exit_date": "2025-07-16",
-      "ticker": "MRK",
-      "score": 0.593,
-      "entry_price": 73.58,
-      "exit_price": 80.34,
-      "return_pct": 9.19,
-      "net_return_pct": 8.89,
+      "ticker": "TSLA",
+      "score": 0.55,
+      "entry_price": 342.69,
+      "exit_price": 321.67,
+      "return_pct": -6.13,
+      "net_return_pct": -6.43,
       "hit_target": false,
       "days_held": 30
     },
@@ -2661,7 +2649,7 @@
       "entry_date": "2025-06-02",
       "exit_date": "2025-07-16",
       "ticker": "AMAT",
-      "score": 0.591,
+      "score": 0.549,
       "entry_price": 156.32,
       "exit_price": 193.63,
       "return_pct": 23.87,
@@ -2670,10 +2658,22 @@
       "days_held": 30
     },
     {
+      "entry_date": "2025-06-02",
+      "exit_date": "2025-07-16",
+      "ticker": "LLY",
+      "score": 0.548,
+      "entry_price": 743.15,
+      "exit_price": 785.6,
+      "return_pct": 5.71,
+      "net_return_pct": 5.41,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
       "entry_date": "2025-07-01",
       "exit_date": "2025-08-13",
       "ticker": "TSLA",
-      "score": 0.618,
+      "score": 0.603,
       "entry_price": 300.71,
       "exit_price": 339.38,
       "return_pct": 12.86,
@@ -2685,7 +2685,7 @@
       "entry_date": "2025-07-01",
       "exit_date": "2025-08-13",
       "ticker": "UNH",
-      "score": 0.608,
+      "score": 0.599,
       "entry_price": 319.45,
       "exit_price": 266.23,
       "return_pct": -16.66,
@@ -2697,7 +2697,7 @@
       "entry_date": "2025-07-01",
       "exit_date": "2025-08-13",
       "ticker": "ADBE",
-      "score": 0.568,
+      "score": 0.562,
       "entry_price": 392.1,
       "exit_price": 351.07,
       "return_pct": -10.46,
@@ -2708,20 +2708,8 @@
     {
       "entry_date": "2025-07-01",
       "exit_date": "2025-08-13",
-      "ticker": "LLY",
-      "score": 0.549,
-      "entry_price": 771.78,
-      "exit_price": 656.98,
-      "return_pct": -14.87,
-      "net_return_pct": -15.17,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-07-01",
-      "exit_date": "2025-08-13",
       "ticker": "INTC",
-      "score": 0.544,
+      "score": 0.541,
       "entry_price": 22.85,
       "exit_price": 22.22,
       "return_pct": -2.76,
@@ -2730,10 +2718,22 @@
       "days_held": 30
     },
     {
+      "entry_date": "2025-07-01",
+      "exit_date": "2025-08-13",
+      "ticker": "LLY",
+      "score": 0.54,
+      "entry_price": 771.78,
+      "exit_price": 656.98,
+      "return_pct": -14.87,
+      "net_return_pct": -15.17,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
       "entry_date": "2025-08-01",
       "exit_date": "2025-09-15",
       "ticker": "INTC",
-      "score": 0.625,
+      "score": 0.61,
       "entry_price": 19.31,
       "exit_price": 24.77,
       "return_pct": 28.28,
@@ -2745,7 +2745,7 @@
       "entry_date": "2025-08-01",
       "exit_date": "2025-09-15",
       "ticker": "TSLA",
-      "score": 0.592,
+      "score": 0.581,
       "entry_price": 302.63,
       "exit_price": 410.04,
       "return_pct": 35.49,
@@ -2757,7 +2757,7 @@
       "entry_date": "2025-08-01",
       "exit_date": "2025-09-15",
       "ticker": "MCHP",
-      "score": 0.565,
+      "score": 0.572,
       "entry_price": 64.93,
       "exit_price": 62.24,
       "return_pct": -4.15,
@@ -2769,7 +2769,7 @@
       "entry_date": "2025-08-01",
       "exit_date": "2025-09-15",
       "ticker": "ACN",
-      "score": 0.563,
+      "score": 0.568,
       "entry_price": 255.37,
       "exit_price": 237.87,
       "return_pct": -6.85,
@@ -2781,7 +2781,7 @@
       "entry_date": "2025-08-01",
       "exit_date": "2025-09-15",
       "ticker": "ADBE",
-      "score": 0.558,
+      "score": 0.551,
       "entry_price": 347.8,
       "exit_price": 347.1,
       "return_pct": -0.2,
@@ -2793,7 +2793,7 @@
       "entry_date": "2025-09-02",
       "exit_date": "2025-10-14",
       "ticker": "UNH",
-      "score": 0.591,
+      "score": 0.592,
       "entry_price": 302.46,
       "exit_price": 354.77,
       "return_pct": 17.29,
@@ -2804,32 +2804,8 @@
     {
       "entry_date": "2025-09-02",
       "exit_date": "2025-10-14",
-      "ticker": "KLAC",
-      "score": 0.579,
-      "entry_price": 843.84,
-      "exit_price": 1022.66,
-      "return_pct": 21.19,
-      "net_return_pct": 20.89,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-09-02",
-      "exit_date": "2025-10-14",
-      "ticker": "MCHP",
-      "score": 0.574,
-      "entry_price": 62.66,
-      "exit_price": 63.65,
-      "return_pct": 1.57,
-      "net_return_pct": 1.27,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-09-02",
-      "exit_date": "2025-10-14",
       "ticker": "NVDA",
-      "score": 0.572,
+      "score": 0.578,
       "entry_price": 170.75,
       "exit_price": 180.01,
       "return_pct": 5.42,
@@ -2840,20 +2816,56 @@
     {
       "entry_date": "2025-09-02",
       "exit_date": "2025-10-14",
-      "ticker": "TSLA",
-      "score": 0.566,
-      "entry_price": 329.36,
-      "exit_price": 429.24,
-      "return_pct": 30.33,
-      "net_return_pct": 30.03,
+      "ticker": "MCHP",
+      "score": 0.578,
+      "entry_price": 62.66,
+      "exit_price": 63.65,
+      "return_pct": 1.57,
+      "net_return_pct": 1.27,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-09-02",
+      "exit_date": "2025-10-14",
+      "ticker": "KLAC",
+      "score": 0.576,
+      "entry_price": 843.84,
+      "exit_price": 1022.66,
+      "return_pct": 21.19,
+      "net_return_pct": 20.89,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-09-02",
+      "exit_date": "2025-10-14",
+      "ticker": "ORCL",
+      "score": 0.57,
+      "entry_price": 224.32,
+      "exit_price": 298.21,
+      "return_pct": 32.94,
+      "net_return_pct": 32.64,
       "hit_target": true,
       "days_held": 30
     },
     {
       "entry_date": "2025-10-01",
       "exit_date": "2025-11-12",
+      "ticker": "ACN",
+      "score": 0.635,
+      "entry_price": 243.71,
+      "exit_price": 246.53,
+      "return_pct": 1.16,
+      "net_return_pct": 0.86,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-10-01",
+      "exit_date": "2025-11-12",
       "ticker": "CRM",
-      "score": 0.624,
+      "score": 0.631,
       "entry_price": 235.31,
       "exit_price": 245.62,
       "return_pct": 4.38,
@@ -2876,20 +2888,8 @@
     {
       "entry_date": "2025-10-01",
       "exit_date": "2025-11-12",
-      "ticker": "ACN",
-      "score": 0.615,
-      "entry_price": 243.71,
-      "exit_price": 246.53,
-      "return_pct": 1.16,
-      "net_return_pct": 0.86,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-10-01",
-      "exit_date": "2025-11-12",
       "ticker": "ADBE",
-      "score": 0.599,
+      "score": 0.62,
       "entry_price": 343.72,
       "exit_price": 337.05,
       "return_pct": -1.94,
@@ -2900,12 +2900,24 @@
     {
       "entry_date": "2025-10-01",
       "exit_date": "2025-11-12",
-      "ticker": "ORCL",
-      "score": 0.584,
-      "entry_price": 287.75,
-      "exit_price": 226.39,
-      "return_pct": -21.32,
-      "net_return_pct": -21.62,
+      "ticker": "SNPS",
+      "score": 0.597,
+      "entry_price": 488.78,
+      "exit_price": 398.81,
+      "return_pct": -18.41,
+      "net_return_pct": -18.71,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-11-03",
+      "exit_date": "2025-12-16",
+      "ticker": "SNPS",
+      "score": 0.661,
+      "entry_price": 445.72,
+      "exit_price": 463.34,
+      "return_pct": 3.95,
+      "net_return_pct": 3.65,
       "hit_target": false,
       "days_held": 30
     },
@@ -2913,7 +2925,7 @@
       "entry_date": "2025-11-03",
       "exit_date": "2025-12-16",
       "ticker": "UNH",
-      "score": 0.628,
+      "score": 0.63,
       "entry_price": 329.0,
       "exit_price": 331.62,
       "return_pct": 0.8,
@@ -2925,7 +2937,7 @@
       "entry_date": "2025-11-03",
       "exit_date": "2025-12-16",
       "ticker": "ORCL",
-      "score": 0.615,
+      "score": 0.597,
       "entry_price": 257.17,
       "exit_price": 188.15,
       "return_pct": -26.84,
@@ -2937,7 +2949,7 @@
       "entry_date": "2025-11-03",
       "exit_date": "2025-12-16",
       "ticker": "ADBE",
-      "score": 0.583,
+      "score": 0.582,
       "entry_price": 337.47,
       "exit_price": 347.89,
       "return_pct": 3.09,
@@ -2948,20 +2960,8 @@
     {
       "entry_date": "2025-11-03",
       "exit_date": "2025-12-16",
-      "ticker": "FIS",
-      "score": 0.582,
-      "entry_price": 61.3,
-      "exit_price": 66.05,
-      "return_pct": 7.76,
-      "net_return_pct": 7.46,
-      "hit_target": false,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-11-03",
-      "exit_date": "2025-12-16",
       "ticker": "CMCSA",
-      "score": 0.573,
+      "score": 0.569,
       "entry_price": 24.71,
       "exit_price": 27.22,
       "return_pct": 10.19,
@@ -2973,7 +2973,7 @@
       "entry_date": "2025-12-01",
       "exit_date": "2026-01-14",
       "ticker": "UNH",
-      "score": 0.656,
+      "score": 0.652,
       "entry_price": 318.57,
       "exit_price": 332.38,
       "return_pct": 4.33,
@@ -2984,8 +2984,20 @@
     {
       "entry_date": "2025-12-01",
       "exit_date": "2026-01-14",
+      "ticker": "SNPS",
+      "score": 0.615,
+      "entry_price": 438.29,
+      "exit_price": 505.34,
+      "return_pct": 15.3,
+      "net_return_pct": 15.0,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-12-01",
+      "exit_date": "2026-01-14",
       "ticker": "ORCL",
-      "score": 0.59,
+      "score": 0.61,
       "entry_price": 200.41,
       "exit_price": 193.61,
       "return_pct": -3.39,
@@ -2996,8 +3008,20 @@
     {
       "entry_date": "2025-12-01",
       "exit_date": "2026-01-14",
+      "ticker": "ACN",
+      "score": 0.578,
+      "entry_price": 257.43,
+      "exit_price": 288.54,
+      "return_pct": 12.08,
+      "net_return_pct": 11.78,
+      "hit_target": true,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2025-12-01",
+      "exit_date": "2026-01-14",
       "ticker": "ADBE",
-      "score": 0.574,
+      "score": 0.575,
       "entry_price": 322.85,
       "exit_price": 304.44,
       "return_pct": -5.7,
@@ -3006,34 +3030,10 @@
       "days_held": 30
     },
     {
-      "entry_date": "2025-12-01",
-      "exit_date": "2026-01-14",
-      "ticker": "MCHP",
-      "score": 0.567,
-      "entry_price": 53.12,
-      "exit_price": 74.24,
-      "return_pct": 39.77,
-      "net_return_pct": 39.47,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2025-12-01",
-      "exit_date": "2026-01-14",
-      "ticker": "TXN",
-      "score": 0.566,
-      "entry_price": 167.07,
-      "exit_price": 192.2,
-      "return_pct": 15.04,
-      "net_return_pct": 14.74,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
       "entry_date": "2026-01-02",
       "exit_date": "2026-02-17",
       "ticker": "UNH",
-      "score": 0.62,
+      "score": 0.613,
       "entry_price": 333.8,
       "exit_price": 286.86,
       "return_pct": -14.06,
@@ -3045,7 +3045,7 @@
       "entry_date": "2026-01-02",
       "exit_date": "2026-02-17",
       "ticker": "ORCL",
-      "score": 0.611,
+      "score": 0.602,
       "entry_price": 195.19,
       "exit_price": 153.97,
       "return_pct": -21.12,
@@ -3056,8 +3056,20 @@
     {
       "entry_date": "2026-01-02",
       "exit_date": "2026-02-17",
+      "ticker": "AVGO",
+      "score": 0.59,
+      "entry_price": 346.89,
+      "exit_price": 331.84,
+      "return_pct": -4.34,
+      "net_return_pct": -4.64,
+      "hit_target": false,
+      "days_held": 30
+    },
+    {
+      "entry_date": "2026-01-02",
+      "exit_date": "2026-02-17",
       "ticker": "TSLA",
-      "score": 0.589,
+      "score": 0.585,
       "entry_price": 438.07,
       "exit_price": 410.63,
       "return_pct": -6.26,
@@ -3068,24 +3080,12 @@
     {
       "entry_date": "2026-01-02",
       "exit_date": "2026-02-17",
-      "ticker": "INTC",
-      "score": 0.574,
-      "entry_price": 39.38,
-      "exit_price": 46.18,
-      "return_pct": 17.27,
-      "net_return_pct": 16.97,
-      "hit_target": true,
-      "days_held": 30
-    },
-    {
-      "entry_date": "2026-01-02",
-      "exit_date": "2026-02-17",
-      "ticker": "ACN",
-      "score": 0.573,
-      "entry_price": 259.95,
-      "exit_price": 219.89,
-      "return_pct": -15.41,
-      "net_return_pct": -15.71,
+      "ticker": "SNPS",
+      "score": 0.583,
+      "entry_price": 480.42,
+      "exit_price": 421.95,
+      "return_pct": -12.17,
+      "net_return_pct": -12.47,
       "hit_target": false,
       "days_held": 30
     },
@@ -3093,7 +3093,7 @@
       "entry_date": "2026-02-02",
       "exit_date": "2026-03-17",
       "ticker": "ORCL",
-      "score": 0.67,
+      "score": 0.663,
       "entry_price": 160.06,
       "exit_price": 154.69,
       "return_pct": -3.35,
@@ -3104,36 +3104,36 @@
     {
       "entry_date": "2026-02-02",
       "exit_date": "2026-03-17",
-      "ticker": "CRM",
-      "score": 0.602,
-      "entry_price": 210.81,
-      "exit_price": 195.31,
-      "return_pct": -7.35,
-      "net_return_pct": -7.65,
+      "ticker": "SNPS",
+      "score": 0.655,
+      "entry_price": 457.89,
+      "exit_price": 429.29,
+      "return_pct": -6.25,
+      "net_return_pct": -6.55,
       "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2026-02-02",
       "exit_date": "2026-03-17",
-      "ticker": "CDNS",
-      "score": 0.596,
-      "entry_price": 289.19,
-      "exit_price": 293.75,
-      "return_pct": 1.58,
-      "net_return_pct": 1.28,
+      "ticker": "ADBE",
+      "score": 0.615,
+      "entry_price": 293.38,
+      "exit_price": 254.2,
+      "return_pct": -13.35,
+      "net_return_pct": -13.65,
       "hit_target": false,
       "days_held": 30
     },
     {
       "entry_date": "2026-02-02",
       "exit_date": "2026-03-17",
-      "ticker": "TSLA",
-      "score": 0.594,
-      "entry_price": 421.81,
-      "exit_price": 399.27,
-      "return_pct": -5.34,
-      "net_return_pct": -5.64,
+      "ticker": "WDAY",
+      "score": 0.603,
+      "entry_price": 173.38,
+      "exit_price": 135.17,
+      "return_pct": -22.04,
+      "net_return_pct": -22.34,
       "hit_target": false,
       "days_held": 30
     },
@@ -3141,7 +3141,7 @@
       "entry_date": "2026-02-02",
       "exit_date": "2026-03-17",
       "ticker": "PANW",
-      "score": 0.592,
+      "score": 0.6,
       "entry_price": 175.42,
       "exit_price": 169.19,
       "return_pct": -3.55,
@@ -3151,273 +3151,273 @@
     },
     {
       "entry_date": "2026-03-02",
-      "exit_date": "2026-04-02",
+      "exit_date": "2026-04-06",
       "ticker": "UNH",
-      "score": 0.714,
+      "score": 0.706,
       "entry_price": 292.65,
-      "exit_price": 277.26,
-      "return_pct": -5.26,
-      "net_return_pct": -5.56,
+      "exit_price": 281.36,
+      "return_pct": -3.86,
+      "net_return_pct": -4.16,
       "hit_target": false,
-      "days_held": 23
+      "days_held": 24
     },
     {
       "entry_date": "2026-03-02",
-      "exit_date": "2026-04-02",
+      "exit_date": "2026-04-06",
+      "ticker": "SNPS",
+      "score": 0.695,
+      "entry_price": 424.66,
+      "exit_price": 397.07,
+      "return_pct": -6.5,
+      "net_return_pct": -6.8,
+      "hit_target": false,
+      "days_held": 24
+    },
+    {
+      "entry_date": "2026-03-02",
+      "exit_date": "2026-04-06",
       "ticker": "ADBE",
-      "score": 0.68,
+      "score": 0.679,
       "entry_price": 260.88,
-      "exit_price": 242.92,
-      "return_pct": -6.88,
-      "net_return_pct": -7.18,
+      "exit_price": 244.36,
+      "return_pct": -6.33,
+      "net_return_pct": -6.63,
       "hit_target": false,
-      "days_held": 23
+      "days_held": 24
     },
     {
       "entry_date": "2026-03-02",
-      "exit_date": "2026-04-02",
-      "ticker": "WDAY",
-      "score": 0.667,
-      "entry_price": 134.01,
-      "exit_price": 132.26,
-      "return_pct": -1.31,
-      "net_return_pct": -1.61,
+      "exit_date": "2026-04-06",
+      "ticker": "MCHP",
+      "score": 0.674,
+      "entry_price": 74.31,
+      "exit_price": 67.22,
+      "return_pct": -9.54,
+      "net_return_pct": -9.84,
       "hit_target": false,
-      "days_held": 23
+      "days_held": 24
     },
     {
       "entry_date": "2026-03-02",
-      "exit_date": "2026-04-02",
+      "exit_date": "2026-04-06",
       "ticker": "ORCL",
       "score": 0.662,
       "entry_price": 149.25,
-      "exit_price": 146.38,
-      "return_pct": -1.92,
-      "net_return_pct": -2.22,
+      "exit_price": 145.54,
+      "return_pct": -2.49,
+      "net_return_pct": -2.79,
       "hit_target": false,
-      "days_held": 23
-    },
-    {
-      "entry_date": "2026-03-02",
-      "exit_date": "2026-04-02",
-      "ticker": "MCHP",
-      "score": 0.657,
-      "entry_price": 74.31,
-      "exit_price": 65.6,
-      "return_pct": -11.72,
-      "net_return_pct": -12.02,
-      "hit_target": false,
-      "days_held": 23
+      "days_held": 24
     },
     {
       "entry_date": "2026-04-01",
-      "exit_date": "2026-04-02",
-      "ticker": "NOW",
-      "score": 0.664,
-      "entry_price": 104.04,
-      "exit_price": 102.0,
-      "return_pct": -1.96,
-      "net_return_pct": -2.26,
-      "hit_target": false,
-      "days_held": 1
-    },
-    {
-      "entry_date": "2026-04-01",
-      "exit_date": "2026-04-02",
-      "ticker": "FIS",
-      "score": 0.662,
-      "entry_price": 45.17,
-      "exit_price": 46.29,
-      "return_pct": 2.48,
-      "net_return_pct": 2.18,
-      "hit_target": false,
-      "days_held": 1
-    },
-    {
-      "entry_date": "2026-04-01",
-      "exit_date": "2026-04-02",
+      "exit_date": "2026-04-06",
       "ticker": "ORCL",
-      "score": 0.654,
+      "score": 0.67,
       "entry_price": 145.23,
-      "exit_price": 146.38,
-      "return_pct": 0.79,
-      "net_return_pct": 0.49,
+      "exit_price": 145.54,
+      "return_pct": 0.21,
+      "net_return_pct": -0.09,
       "hit_target": false,
-      "days_held": 1
+      "days_held": 2
     },
     {
       "entry_date": "2026-04-01",
-      "exit_date": "2026-04-02",
-      "ticker": "UNH",
-      "score": 0.637,
-      "entry_price": 273.98,
-      "exit_price": 277.26,
-      "return_pct": 1.2,
-      "net_return_pct": 0.9,
+      "exit_date": "2026-04-06",
+      "ticker": "SNPS",
+      "score": 0.661,
+      "entry_price": 396.74,
+      "exit_price": 397.07,
+      "return_pct": 0.08,
+      "net_return_pct": -0.22,
       "hit_target": false,
-      "days_held": 1
+      "days_held": 2
     },
     {
       "entry_date": "2026-04-01",
-      "exit_date": "2026-04-02",
+      "exit_date": "2026-04-06",
+      "ticker": "NOW",
+      "score": 0.652,
+      "entry_price": 104.04,
+      "exit_price": 102.42,
+      "return_pct": -1.56,
+      "net_return_pct": -1.86,
+      "hit_target": false,
+      "days_held": 2
+    },
+    {
+      "entry_date": "2026-04-01",
+      "exit_date": "2026-04-06",
+      "ticker": "FIS",
+      "score": 0.649,
+      "entry_price": 45.17,
+      "exit_price": 46.68,
+      "return_pct": 3.34,
+      "net_return_pct": 3.04,
+      "hit_target": false,
+      "days_held": 2
+    },
+    {
+      "entry_date": "2026-04-01",
+      "exit_date": "2026-04-06",
       "ticker": "ADBE",
-      "score": 0.637,
+      "score": 0.646,
       "entry_price": 241.37,
-      "exit_price": 242.92,
-      "return_pct": 0.64,
-      "net_return_pct": 0.34,
+      "exit_price": 244.36,
+      "return_pct": 1.24,
+      "net_return_pct": 0.94,
       "hit_target": false,
-      "days_held": 1
+      "days_held": 2
     }
   ],
   "equity_curve_strategy": [
     {
       "date": "2023-04",
-      "value": 9702.0
+      "value": 9487.0
     },
     {
       "date": "2023-05",
-      "value": 11451.0
+      "value": 11605.0
     },
     {
       "date": "2023-06",
-      "value": 12547.0
+      "value": 12715.0
     },
     {
       "date": "2023-07",
-      "value": 12787.0
+      "value": 12783.0
     },
     {
       "date": "2023-08",
-      "value": 12438.0
+      "value": 12304.0
     },
     {
       "date": "2023-09",
-      "value": 11914.0
+      "value": 11958.0
     },
     {
       "date": "2023-10",
-      "value": 12363.0
+      "value": 12409.0
     },
     {
       "date": "2023-11",
-      "value": 15450.0
+      "value": 14894.0
     },
     {
       "date": "2023-12",
-      "value": 16706.0
+      "value": 15660.0
     },
     {
       "date": "2024-01",
-      "value": 19550.0
+      "value": 19284.0
     },
     {
       "date": "2024-02",
-      "value": 19623.0
+      "value": 20028.0
     },
     {
       "date": "2024-03",
-      "value": 18384.0
+      "value": 19269.0
     },
     {
       "date": "2024-04",
-      "value": 18233.0
+      "value": 19149.0
     },
     {
       "date": "2024-05",
-      "value": 22066.0
+      "value": 22478.0
     },
     {
       "date": "2024-06",
-      "value": 25680.0
+      "value": 25587.0
     },
     {
       "date": "2024-07",
-      "value": 26514.0
+      "value": 26418.0
     },
     {
       "date": "2024-08",
-      "value": 26530.0
+      "value": 26434.0
     },
     {
       "date": "2024-09",
-      "value": 28736.0
+      "value": 27856.0
     },
     {
       "date": "2024-10",
-      "value": 31728.0
+      "value": 30722.0
     },
     {
       "date": "2024-11",
-      "value": 35707.0
+      "value": 34575.0
     },
     {
       "date": "2024-12",
-      "value": 32066.0
+      "value": 31805.0
     },
     {
       "date": "2025-01",
-      "value": 35231.0
+      "value": 34944.0
     },
     {
       "date": "2025-02",
-      "value": 35461.0
+      "value": 35148.0
     },
     {
       "date": "2025-03",
-      "value": 32532.0
+      "value": 32245.0
     },
     {
       "date": "2025-04",
-      "value": 37350.0
+      "value": 37020.0
     },
     {
       "date": "2025-05",
-      "value": 39861.0
+      "value": 42218.0
     },
     {
       "date": "2025-06",
-      "value": 43710.0
+      "value": 45052.0
     },
     {
       "date": "2025-07",
-      "value": 40791.0
+      "value": 42043.0
     },
     {
       "date": "2025-08",
-      "value": 44957.0
+      "value": 46338.0
     },
     {
       "date": "2025-09",
-      "value": 51638.0
+      "value": 53465.0
     },
     {
       "date": "2025-10",
-      "value": 49379.0
+      "value": 51438.0
     },
     {
       "date": "2025-11",
-      "value": 48737.0
+      "value": 50377.0
     },
     {
       "date": "2025-12",
-      "value": 53470.0
+      "value": 52505.0
     },
     {
       "date": "2026-01",
-      "value": 49077.0
+      "value": 46262.0
     },
     {
       "date": "2026-02",
-      "value": 47162.0
+      "value": 41633.0
     },
     {
       "date": "2026-03",
-      "value": 44465.0
+      "value": 39116.0
     },
     {
       "date": "2026-04",
-      "value": 44612.0
+      "value": 39258.0
     }
   ],
   "equity_curve_spy": [
@@ -3574,29 +3574,15 @@
     "description": "Daily #1 pick, held 30d, last 90 trading days",
     "picks": [
       {
-        "entry_date": "2025-10-10",
-        "exit_date": "2025-11-21",
-        "ticker": "UNH",
-        "score": 0.643,
-        "conviction": 59.5,
-        "entry_price": 349.42,
-        "exit_price": 315.38,
-        "return_pct": -9.74,
-        "net_return_pct": -10.04,
-        "hit_target": false,
-        "days_held": 30,
-        "spy_return_pct": 0.92
-      },
-      {
         "entry_date": "2025-10-13",
         "exit_date": "2025-11-24",
-        "ticker": "UNH",
-        "score": 0.622,
-        "conviction": 57.5,
-        "entry_price": 353.52,
-        "exit_price": 314.47,
-        "return_pct": -11.04,
-        "net_return_pct": -11.34,
+        "ticker": "SNPS",
+        "score": 0.64,
+        "conviction": 61.8,
+        "entry_price": 448.0,
+        "exit_price": 404.63,
+        "return_pct": -9.68,
+        "net_return_pct": -9.98,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 0.86
@@ -3604,13 +3590,13 @@
       {
         "entry_date": "2025-10-14",
         "exit_date": "2025-11-25",
-        "ticker": "UNH",
-        "score": 0.609,
-        "conviction": 55.8,
-        "entry_price": 354.77,
-        "exit_price": 321.6,
-        "return_pct": -9.35,
-        "net_return_pct": -9.65,
+        "ticker": "SNPS",
+        "score": 0.628,
+        "conviction": 60.3,
+        "entry_price": 443.76,
+        "exit_price": 401.61,
+        "return_pct": -9.5,
+        "net_return_pct": -9.8,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 1.93
@@ -3618,13 +3604,13 @@
       {
         "entry_date": "2025-10-15",
         "exit_date": "2025-11-26",
-        "ticker": "ACN",
-        "score": 0.61,
-        "conviction": 58.7,
-        "entry_price": 239.71,
-        "exit_price": 247.85,
-        "return_pct": 3.4,
-        "net_return_pct": 3.1,
+        "ticker": "SNPS",
+        "score": 0.636,
+        "conviction": 60.9,
+        "entry_price": 435.9,
+        "exit_price": 409.68,
+        "return_pct": -6.02,
+        "net_return_pct": -6.32,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 2.18
@@ -3633,8 +3619,8 @@
         "entry_date": "2025-10-16",
         "exit_date": "2025-11-28",
         "ticker": "ACN",
-        "score": 0.632,
-        "conviction": 60.4,
+        "score": 0.652,
+        "conviction": 62.6,
         "entry_price": 234.02,
         "exit_price": 250.0,
         "return_pct": 6.83,
@@ -3646,27 +3632,27 @@
       {
         "entry_date": "2025-10-17",
         "exit_date": "2025-12-01",
-        "ticker": "ACN",
-        "score": 0.651,
-        "conviction": 62.6,
-        "entry_price": 238.39,
-        "exit_price": 257.43,
-        "return_pct": 7.99,
-        "net_return_pct": 7.69,
-        "hit_target": true,
+        "ticker": "SNPS",
+        "score": 0.65,
+        "conviction": 62.3,
+        "entry_price": 447.64,
+        "exit_price": 438.29,
+        "return_pct": -2.09,
+        "net_return_pct": -2.39,
+        "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 2.39
       },
       {
         "entry_date": "2025-10-20",
         "exit_date": "2025-12-02",
-        "ticker": "ORCL",
-        "score": 0.621,
-        "conviction": 57.7,
-        "entry_price": 276.45,
-        "exit_price": 200.57,
-        "return_pct": -27.45,
-        "net_return_pct": -27.75,
+        "ticker": "SNPS",
+        "score": 0.641,
+        "conviction": 61.8,
+        "entry_price": 453.35,
+        "exit_price": 449.35,
+        "return_pct": -0.88,
+        "net_return_pct": -1.18,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 1.52
@@ -3675,8 +3661,8 @@
         "entry_date": "2025-10-21",
         "exit_date": "2025-12-03",
         "ticker": "ORCL",
-        "score": 0.61,
-        "conviction": 57.2,
+        "score": 0.612,
+        "conviction": 57.7,
         "entry_price": 274.42,
         "exit_price": 207.18,
         "return_pct": -24.5,
@@ -3688,13 +3674,13 @@
       {
         "entry_date": "2025-10-22",
         "exit_date": "2025-12-04",
-        "ticker": "ORCL",
-        "score": 0.627,
-        "conviction": 60.1,
-        "entry_price": 271.94,
-        "exit_price": 213.76,
-        "return_pct": -21.39,
-        "net_return_pct": -21.69,
+        "ticker": "SNPS",
+        "score": 0.62,
+        "conviction": 59.7,
+        "entry_price": 454.3,
+        "exit_price": 463.74,
+        "return_pct": 2.08,
+        "net_return_pct": 1.78,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 2.48
@@ -3702,13 +3688,13 @@
       {
         "entry_date": "2025-10-23",
         "exit_date": "2025-12-05",
-        "ticker": "ORCL",
-        "score": 0.634,
-        "conviction": 61.0,
-        "entry_price": 279.33,
-        "exit_price": 217.01,
-        "return_pct": -22.31,
-        "net_return_pct": -22.61,
+        "ticker": "SNPS",
+        "score": 0.613,
+        "conviction": 59.1,
+        "entry_price": 456.09,
+        "exit_price": 466.76,
+        "return_pct": 2.34,
+        "net_return_pct": 2.04,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 2.07
@@ -3717,8 +3703,8 @@
         "entry_date": "2025-10-24",
         "exit_date": "2025-12-08",
         "ticker": "ORCL",
-        "score": 0.614,
-        "conviction": 58.4,
+        "score": 0.6,
+        "conviction": 56.6,
         "entry_price": 282.58,
         "exit_price": 219.96,
         "return_pct": -22.16,
@@ -3730,13 +3716,13 @@
       {
         "entry_date": "2025-10-27",
         "exit_date": "2025-12-09",
-        "ticker": "ORCL",
-        "score": 0.599,
-        "conviction": 56.7,
-        "entry_price": 280.66,
-        "exit_price": 220.95,
-        "return_pct": -21.28,
-        "net_return_pct": -21.58,
+        "ticker": "SNPS",
+        "score": 0.605,
+        "conviction": 58.5,
+        "entry_price": 465.41,
+        "exit_price": 465.85,
+        "return_pct": 0.09,
+        "net_return_pct": -0.21,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -0.32
@@ -3744,13 +3730,13 @@
       {
         "entry_date": "2025-10-28",
         "exit_date": "2025-12-10",
-        "ticker": "ORCL",
-        "score": 0.598,
-        "conviction": 56.7,
-        "entry_price": 280.09,
-        "exit_price": 222.42,
-        "return_pct": -20.59,
-        "net_return_pct": -20.89,
+        "ticker": "SNPS",
+        "score": 0.613,
+        "conviction": 59.0,
+        "entry_price": 456.83,
+        "exit_price": 475.83,
+        "return_pct": 4.16,
+        "net_return_pct": 3.86,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 0.07
@@ -3758,13 +3744,13 @@
       {
         "entry_date": "2025-10-29",
         "exit_date": "2025-12-11",
-        "ticker": "ORCL",
-        "score": 0.612,
-        "conviction": 57.8,
-        "entry_price": 274.57,
-        "exit_price": 198.33,
-        "return_pct": -27.77,
-        "net_return_pct": -28.07,
+        "ticker": "SNPS",
+        "score": 0.633,
+        "conviction": 61.2,
+        "entry_price": 455.34,
+        "exit_price": 477.26,
+        "return_pct": 4.81,
+        "net_return_pct": 4.51,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 0.26
@@ -3772,13 +3758,13 @@
       {
         "entry_date": "2025-10-30",
         "exit_date": "2025-12-12",
-        "ticker": "UNH",
-        "score": 0.624,
-        "conviction": 58.5,
-        "entry_price": 339.81,
-        "exit_price": 339.2,
-        "return_pct": -0.18,
-        "net_return_pct": -0.48,
+        "ticker": "SNPS",
+        "score": 0.647,
+        "conviction": 61.9,
+        "entry_price": 442.93,
+        "exit_price": 452.95,
+        "return_pct": 2.26,
+        "net_return_pct": 1.96,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 0.28
@@ -3786,13 +3772,13 @@
       {
         "entry_date": "2025-10-31",
         "exit_date": "2025-12-15",
-        "ticker": "UNH",
-        "score": 0.658,
-        "conviction": 63.1,
-        "entry_price": 336.66,
-        "exit_price": 338.47,
-        "return_pct": 0.54,
-        "net_return_pct": 0.24,
+        "ticker": "SNPS",
+        "score": 0.655,
+        "conviction": 62.7,
+        "entry_price": 453.82,
+        "exit_price": 454.67,
+        "return_pct": 0.19,
+        "net_return_pct": -0.11,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -0.2
@@ -3800,13 +3786,13 @@
       {
         "entry_date": "2025-11-03",
         "exit_date": "2025-12-16",
-        "ticker": "UNH",
-        "score": 0.628,
-        "conviction": 58.6,
-        "entry_price": 329.0,
-        "exit_price": 331.62,
-        "return_pct": 0.8,
-        "net_return_pct": 0.5,
+        "ticker": "SNPS",
+        "score": 0.661,
+        "conviction": 63.1,
+        "entry_price": 445.72,
+        "exit_price": 463.34,
+        "return_pct": 3.95,
+        "net_return_pct": 3.65,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -0.65
@@ -3814,98 +3800,98 @@
       {
         "entry_date": "2025-11-04",
         "exit_date": "2025-12-17",
-        "ticker": "UNH",
-        "score": 0.635,
-        "conviction": 59.2,
-        "entry_price": 326.09,
-        "exit_price": 329.07,
-        "return_pct": 0.92,
-        "net_return_pct": 0.62,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.653,
+        "conviction": 61.8,
+        "entry_price": 416.35,
+        "exit_price": 453.07,
+        "return_pct": 8.82,
+        "net_return_pct": 8.52,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": -0.57
       },
       {
         "entry_date": "2025-11-05",
         "exit_date": "2025-12-18",
-        "ticker": "UNH",
-        "score": 0.691,
-        "conviction": 64.6,
-        "entry_price": 323.04,
-        "exit_price": 325.61,
-        "return_pct": 0.8,
-        "net_return_pct": 0.5,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.715,
+        "conviction": 68.2,
+        "entry_price": 409.11,
+        "exit_price": 458.13,
+        "return_pct": 11.98,
+        "net_return_pct": 11.68,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": -0.16
       },
       {
         "entry_date": "2025-11-06",
         "exit_date": "2025-12-19",
-        "ticker": "UNH",
-        "score": 0.674,
-        "conviction": 62.6,
-        "entry_price": 316.95,
-        "exit_price": 324.89,
-        "return_pct": 2.51,
-        "net_return_pct": 2.21,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.722,
+        "conviction": 68.7,
+        "entry_price": 396.14,
+        "exit_price": 463.73,
+        "return_pct": 17.06,
+        "net_return_pct": 16.76,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 1.83
       },
       {
         "entry_date": "2025-11-07",
         "exit_date": "2025-12-22",
-        "ticker": "UNH",
-        "score": 0.693,
-        "conviction": 64.5,
-        "entry_price": 319.56,
-        "exit_price": 322.65,
-        "return_pct": 0.97,
-        "net_return_pct": 0.67,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.713,
+        "conviction": 67.7,
+        "entry_price": 393.43,
+        "exit_price": 481.24,
+        "return_pct": 22.32,
+        "net_return_pct": 22.02,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 2.37
       },
       {
         "entry_date": "2025-11-10",
         "exit_date": "2025-12-23",
-        "ticker": "UNH",
-        "score": 0.681,
-        "conviction": 64.1,
-        "entry_price": 316.97,
-        "exit_price": 322.29,
-        "return_pct": 1.68,
-        "net_return_pct": 1.38,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.698,
+        "conviction": 66.7,
+        "entry_price": 400.77,
+        "exit_price": 475.47,
+        "return_pct": 18.64,
+        "net_return_pct": 18.34,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 1.26
       },
       {
         "entry_date": "2025-11-11",
         "exit_date": "2025-12-24",
-        "ticker": "UNH",
-        "score": 0.672,
-        "conviction": 63.0,
-        "entry_price": 322.75,
-        "exit_price": 325.05,
-        "return_pct": 0.71,
-        "net_return_pct": 0.41,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.688,
+        "conviction": 65.5,
+        "entry_price": 395.6,
+        "exit_price": 475.75,
+        "return_pct": 20.26,
+        "net_return_pct": 19.96,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 1.38
       },
       {
         "entry_date": "2025-11-12",
         "exit_date": "2025-12-26",
-        "ticker": "UNH",
-        "score": 0.663,
-        "conviction": 63.0,
-        "entry_price": 334.2,
-        "exit_price": 329.27,
-        "return_pct": -1.47,
-        "net_return_pct": -1.77,
-        "hit_target": false,
+        "ticker": "SNPS",
+        "score": 0.68,
+        "conviction": 64.8,
+        "entry_price": 398.81,
+        "exit_price": 477.14,
+        "return_pct": 19.64,
+        "net_return_pct": 19.34,
+        "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 1.31
       },
@@ -3913,8 +3899,8 @@
         "entry_date": "2025-11-13",
         "exit_date": "2025-12-29",
         "ticker": "UNH",
-        "score": 0.679,
-        "conviction": 64.8,
+        "score": 0.68,
+        "conviction": 64.9,
         "entry_price": 327.75,
         "exit_price": 326.4,
         "return_pct": -0.41,
@@ -3927,8 +3913,8 @@
         "entry_date": "2025-11-14",
         "exit_date": "2025-12-30",
         "ticker": "UNH",
-        "score": 0.692,
-        "conviction": 66.4,
+        "score": 0.695,
+        "conviction": 66.5,
         "entry_price": 317.24,
         "exit_price": 329.6,
         "return_pct": 3.89,
@@ -3941,7 +3927,7 @@
         "entry_date": "2025-11-17",
         "exit_date": "2025-12-31",
         "ticker": "UNH",
-        "score": 0.715,
+        "score": 0.718,
         "conviction": 68.3,
         "entry_price": 315.92,
         "exit_price": 327.56,
@@ -3954,13 +3940,13 @@
       {
         "entry_date": "2025-11-18",
         "exit_date": "2026-01-02",
-        "ticker": "UNH",
-        "score": 0.649,
-        "conviction": 61.8,
-        "entry_price": 309.08,
-        "exit_price": 333.8,
-        "return_pct": 8.0,
-        "net_return_pct": 7.7,
+        "ticker": "SNPS",
+        "score": 0.653,
+        "conviction": 61.5,
+        "entry_price": 383.82,
+        "exit_price": 480.42,
+        "return_pct": 25.17,
+        "net_return_pct": 24.87,
         "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 3.8
@@ -3968,13 +3954,13 @@
       {
         "entry_date": "2025-11-19",
         "exit_date": "2026-01-05",
-        "ticker": "UNH",
-        "score": 0.599,
-        "conviction": 57.1,
-        "entry_price": 304.66,
-        "exit_price": 339.38,
-        "return_pct": 11.4,
-        "net_return_pct": 11.1,
+        "ticker": "SNPS",
+        "score": 0.608,
+        "conviction": 56.8,
+        "entry_price": 386.3,
+        "exit_price": 494.19,
+        "return_pct": 27.93,
+        "net_return_pct": 27.63,
         "hit_target": true,
         "days_held": 30,
         "spy_return_pct": 4.09
@@ -3983,7 +3969,7 @@
         "entry_date": "2025-11-20",
         "exit_date": "2026-01-06",
         "ticker": "UNH",
-        "score": 0.669,
+        "score": 0.671,
         "conviction": 64.0,
         "entry_price": 307.07,
         "exit_price": 346.28,
@@ -3997,8 +3983,8 @@
         "entry_date": "2025-11-21",
         "exit_date": "2026-01-07",
         "ticker": "UNH",
-        "score": 0.642,
-        "conviction": 61.4,
+        "score": 0.652,
+        "conviction": 62.4,
         "entry_price": 315.38,
         "exit_price": 339.06,
         "return_pct": 7.51,
@@ -4011,8 +3997,8 @@
         "entry_date": "2025-11-24",
         "exit_date": "2026-01-08",
         "ticker": "UNH",
-        "score": 0.629,
-        "conviction": 59.8,
+        "score": 0.645,
+        "conviction": 61.8,
         "entry_price": 314.47,
         "exit_price": 344.17,
         "return_pct": 9.44,
@@ -4025,8 +4011,8 @@
         "entry_date": "2025-11-25",
         "exit_date": "2026-01-09",
         "ticker": "UNH",
-        "score": 0.64,
-        "conviction": 62.0,
+        "score": 0.644,
+        "conviction": 62.4,
         "entry_price": 321.6,
         "exit_price": 341.33,
         "return_pct": 6.13,
@@ -4039,8 +4025,8 @@
         "entry_date": "2025-11-26",
         "exit_date": "2026-01-12",
         "ticker": "UNH",
-        "score": 0.637,
-        "conviction": 61.4,
+        "score": 0.64,
+        "conviction": 61.7,
         "entry_price": 324.98,
         "exit_price": 337.88,
         "return_pct": 3.97,
@@ -4053,8 +4039,8 @@
         "entry_date": "2025-11-28",
         "exit_date": "2026-01-13",
         "ticker": "UNH",
-        "score": 0.655,
-        "conviction": 63.2,
+        "score": 0.658,
+        "conviction": 63.3,
         "entry_price": 325.04,
         "exit_price": 331.35,
         "return_pct": 1.94,
@@ -4067,8 +4053,8 @@
         "entry_date": "2025-12-01",
         "exit_date": "2026-01-14",
         "ticker": "UNH",
-        "score": 0.656,
-        "conviction": 63.3,
+        "score": 0.652,
+        "conviction": 62.9,
         "entry_price": 318.57,
         "exit_price": 332.38,
         "return_pct": 4.33,
@@ -4081,8 +4067,8 @@
         "entry_date": "2025-12-02",
         "exit_date": "2026-01-15",
         "ticker": "UNH",
-        "score": 0.635,
-        "conviction": 61.1,
+        "score": 0.622,
+        "conviction": 59.1,
         "entry_price": 319.89,
         "exit_price": 336.35,
         "return_pct": 5.15,
@@ -4095,7 +4081,7 @@
         "entry_date": "2025-12-03",
         "exit_date": "2026-01-16",
         "ticker": "UNH",
-        "score": 0.618,
+        "score": 0.617,
         "conviction": 59.1,
         "entry_price": 334.84,
         "exit_price": 328.47,
@@ -4109,8 +4095,8 @@
         "entry_date": "2025-12-04",
         "exit_date": "2026-01-20",
         "ticker": "UNH",
-        "score": 0.674,
-        "conviction": 64.9,
+        "score": 0.655,
+        "conviction": 62.7,
         "entry_price": 328.71,
         "exit_price": 335.82,
         "return_pct": 2.16,
@@ -4123,8 +4109,8 @@
         "entry_date": "2025-12-05",
         "exit_date": "2026-01-21",
         "ticker": "UNH",
-        "score": 0.65,
-        "conviction": 62.4,
+        "score": 0.649,
+        "conviction": 62.5,
         "entry_price": 326.16,
         "exit_price": 345.07,
         "return_pct": 5.8,
@@ -4137,8 +4123,8 @@
         "entry_date": "2025-12-08",
         "exit_date": "2026-01-22",
         "ticker": "UNH",
-        "score": 0.628,
-        "conviction": 60.0,
+        "score": 0.613,
+        "conviction": 57.7,
         "entry_price": 321.12,
         "exit_price": 351.74,
         "return_pct": 9.53,
@@ -4151,8 +4137,8 @@
         "entry_date": "2025-12-09",
         "exit_date": "2026-01-23",
         "ticker": "UNH",
-        "score": 0.617,
-        "conviction": 58.5,
+        "score": 0.605,
+        "conviction": 56.7,
         "entry_price": 321.1,
         "exit_price": 353.51,
         "return_pct": 10.09,
@@ -4165,8 +4151,8 @@
         "entry_date": "2025-12-10",
         "exit_date": "2026-01-26",
         "ticker": "UNH",
-        "score": 0.613,
-        "conviction": 57.5,
+        "score": 0.603,
+        "conviction": 56.0,
         "entry_price": 325.84,
         "exit_price": 348.93,
         "return_pct": 7.09,
@@ -4179,8 +4165,8 @@
         "entry_date": "2025-12-11",
         "exit_date": "2026-01-27",
         "ticker": "UNH",
-        "score": 0.603,
-        "conviction": 56.0,
+        "score": 0.589,
+        "conviction": 54.0,
         "entry_price": 334.13,
         "exit_price": 280.52,
         "return_pct": -16.05,
@@ -4193,8 +4179,8 @@
         "entry_date": "2025-12-12",
         "exit_date": "2026-01-28",
         "ticker": "UNH",
-        "score": 0.604,
-        "conviction": 56.7,
+        "score": 0.588,
+        "conviction": 54.2,
         "entry_price": 339.2,
         "exit_price": 291.75,
         "return_pct": -13.99,
@@ -4207,8 +4193,8 @@
         "entry_date": "2025-12-15",
         "exit_date": "2026-01-29",
         "ticker": "UNH",
-        "score": 0.59,
-        "conviction": 55.3,
+        "score": 0.582,
+        "conviction": 54.0,
         "entry_price": 338.47,
         "exit_price": 290.04,
         "return_pct": -14.31,
@@ -4221,8 +4207,8 @@
         "entry_date": "2025-12-16",
         "exit_date": "2026-01-30",
         "ticker": "UNH",
-        "score": 0.63,
-        "conviction": 58.7,
+        "score": 0.631,
+        "conviction": 58.9,
         "entry_price": 331.62,
         "exit_price": 284.72,
         "return_pct": -14.14,
@@ -4235,8 +4221,8 @@
         "entry_date": "2025-12-17",
         "exit_date": "2026-02-02",
         "ticker": "UNH",
-        "score": 0.618,
-        "conviction": 58.6,
+        "score": 0.622,
+        "conviction": 59.1,
         "entry_price": 329.07,
         "exit_price": 283.39,
         "return_pct": -13.88,
@@ -4248,13 +4234,13 @@
       {
         "entry_date": "2025-12-18",
         "exit_date": "2026-02-03",
-        "ticker": "UNH",
-        "score": 0.574,
-        "conviction": 53.2,
-        "entry_price": 325.61,
-        "exit_price": 281.99,
-        "return_pct": -13.4,
-        "net_return_pct": -13.7,
+        "ticker": "ORCL",
+        "score": 0.549,
+        "conviction": 48.3,
+        "entry_price": 179.56,
+        "exit_price": 154.67,
+        "return_pct": -13.86,
+        "net_return_pct": -14.16,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 2.23
@@ -4263,8 +4249,8 @@
         "entry_date": "2025-12-19",
         "exit_date": "2026-02-04",
         "ticker": "UNH",
-        "score": 0.661,
-        "conviction": 62.3,
+        "score": 0.64,
+        "conviction": 59.8,
         "entry_price": 324.89,
         "exit_price": 273.79,
         "return_pct": -15.73,
@@ -4277,8 +4263,8 @@
         "entry_date": "2025-12-22",
         "exit_date": "2026-02-05",
         "ticker": "UNH",
-        "score": 0.645,
-        "conviction": 61.1,
+        "score": 0.628,
+        "conviction": 58.8,
         "entry_price": 322.65,
         "exit_price": 266.48,
         "return_pct": -17.41,
@@ -4292,7 +4278,7 @@
         "exit_date": "2026-02-06",
         "ticker": "UNH",
         "score": 0.637,
-        "conviction": 59.2,
+        "conviction": 59.4,
         "entry_price": 322.29,
         "exit_price": 274.52,
         "return_pct": -14.82,
@@ -4305,8 +4291,8 @@
         "entry_date": "2025-12-24",
         "exit_date": "2026-02-09",
         "ticker": "UNH",
-        "score": 0.629,
-        "conviction": 58.9,
+        "score": 0.628,
+        "conviction": 58.6,
         "entry_price": 325.05,
         "exit_price": 273.57,
         "return_pct": -15.84,
@@ -4318,13 +4304,13 @@
       {
         "entry_date": "2025-12-26",
         "exit_date": "2026-02-10",
-        "ticker": "UNH",
-        "score": 0.621,
-        "conviction": 58.4,
-        "entry_price": 329.27,
-        "exit_price": 271.11,
-        "return_pct": -17.66,
-        "net_return_pct": -17.96,
+        "ticker": "ORCL",
+        "score": 0.611,
+        "conviction": 57.9,
+        "entry_price": 197.47,
+        "exit_price": 159.89,
+        "return_pct": -19.03,
+        "net_return_pct": -19.33,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": 0.26
@@ -4334,7 +4320,7 @@
         "exit_date": "2026-02-11",
         "ticker": "UNH",
         "score": 0.599,
-        "conviction": 55.2,
+        "conviction": 55.1,
         "entry_price": 326.4,
         "exit_price": 276.76,
         "return_pct": -15.21,
@@ -4347,8 +4333,8 @@
         "entry_date": "2025-12-30",
         "exit_date": "2026-02-12",
         "ticker": "UNH",
-        "score": 0.61,
-        "conviction": 56.9,
+        "score": 0.608,
+        "conviction": 56.4,
         "entry_price": 329.6,
         "exit_price": 282.18,
         "return_pct": -14.39,
@@ -4361,8 +4347,8 @@
         "entry_date": "2025-12-31",
         "exit_date": "2026-02-13",
         "ticker": "UNH",
-        "score": 0.619,
-        "conviction": 57.1,
+        "score": 0.621,
+        "conviction": 57.5,
         "entry_price": 327.56,
         "exit_price": 290.93,
         "return_pct": -11.18,
@@ -4375,8 +4361,8 @@
         "entry_date": "2026-01-02",
         "exit_date": "2026-02-17",
         "ticker": "UNH",
-        "score": 0.62,
-        "conviction": 58.1,
+        "score": 0.613,
+        "conviction": 57.6,
         "entry_price": 333.8,
         "exit_price": 286.86,
         "return_pct": -14.06,
@@ -4389,8 +4375,8 @@
         "entry_date": "2026-01-05",
         "exit_date": "2026-02-18",
         "ticker": "UNH",
-        "score": 0.574,
-        "conviction": 53.3,
+        "score": 0.58,
+        "conviction": 53.7,
         "entry_price": 339.38,
         "exit_price": 285.98,
         "return_pct": -15.74,
@@ -4403,8 +4389,8 @@
         "entry_date": "2026-01-06",
         "exit_date": "2026-02-19",
         "ticker": "ORCL",
-        "score": 0.625,
-        "conviction": 55.7,
+        "score": 0.544,
+        "conviction": 49.0,
         "entry_price": 193.24,
         "exit_price": 156.54,
         "return_pct": -18.99,
@@ -4417,8 +4403,8 @@
         "entry_date": "2026-01-07",
         "exit_date": "2026-02-20",
         "ticker": "ORCL",
-        "score": 0.623,
-        "conviction": 55.2,
+        "score": 0.639,
+        "conviction": 58.2,
         "entry_price": 192.33,
         "exit_price": 148.08,
         "return_pct": -23.01,
@@ -4431,8 +4417,8 @@
         "entry_date": "2026-01-08",
         "exit_date": "2026-02-23",
         "ticker": "ORCL",
-        "score": 0.659,
-        "conviction": 59.7,
+        "score": 0.669,
+        "conviction": 61.9,
         "entry_price": 189.15,
         "exit_price": 141.31,
         "return_pct": -25.29,
@@ -4445,8 +4431,8 @@
         "entry_date": "2026-01-09",
         "exit_date": "2026-02-24",
         "ticker": "ORCL",
-        "score": 0.643,
-        "conviction": 58.4,
+        "score": 0.656,
+        "conviction": 61.2,
         "entry_price": 198.52,
         "exit_price": 146.14,
         "return_pct": -26.39,
@@ -4459,8 +4445,8 @@
         "entry_date": "2026-01-12",
         "exit_date": "2026-02-25",
         "ticker": "ORCL",
-        "score": 0.674,
-        "conviction": 63.5,
+        "score": 0.657,
+        "conviction": 62.3,
         "entry_price": 204.68,
         "exit_price": 147.89,
         "return_pct": -27.75,
@@ -4473,8 +4459,8 @@
         "entry_date": "2026-01-13",
         "exit_date": "2026-02-26",
         "ticker": "ORCL",
-        "score": 0.682,
-        "conviction": 64.9,
+        "score": 0.66,
+        "conviction": 62.5,
         "entry_price": 202.29,
         "exit_price": 150.31,
         "return_pct": -25.7,
@@ -4487,8 +4473,8 @@
         "entry_date": "2026-01-14",
         "exit_date": "2026-02-27",
         "ticker": "ORCL",
-        "score": 0.681,
-        "conviction": 64.9,
+        "score": 0.656,
+        "conviction": 61.8,
         "entry_price": 193.61,
         "exit_price": 145.4,
         "return_pct": -24.9,
@@ -4501,8 +4487,8 @@
         "entry_date": "2026-01-15",
         "exit_date": "2026-03-02",
         "ticker": "ORCL",
-        "score": 0.698,
-        "conviction": 66.7,
+        "score": 0.676,
+        "conviction": 64.2,
         "entry_price": 189.85,
         "exit_price": 149.25,
         "return_pct": -21.39,
@@ -4515,8 +4501,8 @@
         "entry_date": "2026-01-16",
         "exit_date": "2026-03-03",
         "ticker": "ORCL",
-        "score": 0.708,
-        "conviction": 67.7,
+        "score": 0.688,
+        "conviction": 65.4,
         "entry_price": 191.09,
         "exit_price": 149.01,
         "return_pct": -22.02,
@@ -4529,8 +4515,8 @@
         "entry_date": "2026-01-20",
         "exit_date": "2026-03-04",
         "ticker": "ORCL",
-        "score": 0.731,
-        "conviction": 69.3,
+        "score": 0.709,
+        "conviction": 67.2,
         "entry_price": 179.92,
         "exit_price": 152.37,
         "return_pct": -15.31,
@@ -4543,8 +4529,8 @@
         "entry_date": "2026-01-21",
         "exit_date": "2026-03-05",
         "ticker": "ORCL",
-        "score": 0.65,
-        "conviction": 60.2,
+        "score": 0.629,
+        "conviction": 57.4,
         "entry_price": 173.88,
         "exit_price": 154.79,
         "return_pct": -10.98,
@@ -4557,8 +4543,8 @@
         "entry_date": "2026-01-22",
         "exit_date": "2026-03-06",
         "ticker": "ORCL",
-        "score": 0.651,
-        "conviction": 59.6,
+        "score": 0.639,
+        "conviction": 57.9,
         "entry_price": 178.18,
         "exit_price": 152.96,
         "return_pct": -14.15,
@@ -4571,8 +4557,8 @@
         "entry_date": "2026-01-23",
         "exit_date": "2026-03-09",
         "ticker": "ORCL",
-        "score": 0.628,
-        "conviction": 57.2,
+        "score": 0.606,
+        "conviction": 53.6,
         "entry_price": 177.16,
         "exit_price": 151.56,
         "return_pct": -14.45,
@@ -4585,8 +4571,8 @@
         "entry_date": "2026-01-26",
         "exit_date": "2026-03-10",
         "ticker": "ORCL",
-        "score": 0.642,
-        "conviction": 60.3,
+        "score": 0.63,
+        "conviction": 58.4,
         "entry_price": 182.44,
         "exit_price": 149.4,
         "return_pct": -18.11,
@@ -4599,8 +4585,8 @@
         "entry_date": "2026-01-27",
         "exit_date": "2026-03-11",
         "ticker": "ORCL",
-        "score": 0.605,
-        "conviction": 56.0,
+        "score": 0.604,
+        "conviction": 55.5,
         "entry_price": 174.9,
         "exit_price": 163.12,
         "return_pct": -6.74,
@@ -4613,8 +4599,8 @@
         "entry_date": "2026-01-28",
         "exit_date": "2026-03-12",
         "ticker": "ORCL",
-        "score": 0.594,
-        "conviction": 54.7,
+        "score": 0.598,
+        "conviction": 55.0,
         "entry_price": 172.8,
         "exit_price": 159.16,
         "return_pct": -7.89,
@@ -4626,13 +4612,13 @@
       {
         "entry_date": "2026-01-29",
         "exit_date": "2026-03-13",
-        "ticker": "ORCL",
-        "score": 0.584,
-        "conviction": 53.3,
-        "entry_price": 169.01,
-        "exit_price": 155.11,
-        "return_pct": -8.22,
-        "net_return_pct": -8.52,
+        "ticker": "SNPS",
+        "score": 0.6,
+        "conviction": 55.4,
+        "entry_price": 480.0,
+        "exit_price": 412.63,
+        "return_pct": -14.04,
+        "net_return_pct": -14.34,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -4.57
@@ -4640,13 +4626,13 @@
       {
         "entry_date": "2026-01-30",
         "exit_date": "2026-03-16",
-        "ticker": "ORCL",
-        "score": 0.625,
-        "conviction": 58.3,
-        "entry_price": 164.58,
-        "exit_price": 155.97,
-        "return_pct": -5.23,
-        "net_return_pct": -5.53,
+        "ticker": "SNPS",
+        "score": 0.627,
+        "conviction": 58.1,
+        "entry_price": 465.12,
+        "exit_price": 425.88,
+        "return_pct": -8.44,
+        "net_return_pct": -8.74,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -3.32
@@ -4655,8 +4641,8 @@
         "entry_date": "2026-02-02",
         "exit_date": "2026-03-17",
         "ticker": "ORCL",
-        "score": 0.67,
-        "conviction": 62.8,
+        "score": 0.663,
+        "conviction": 62.3,
         "entry_price": 160.06,
         "exit_price": 154.69,
         "return_pct": -3.35,
@@ -4669,8 +4655,8 @@
         "entry_date": "2026-02-03",
         "exit_date": "2026-03-18",
         "ticker": "ORCL",
-        "score": 0.651,
-        "conviction": 60.5,
+        "score": 0.627,
+        "conviction": 56.8,
         "entry_price": 154.67,
         "exit_price": 152.9,
         "return_pct": -1.14,
@@ -4683,8 +4669,8 @@
         "entry_date": "2026-02-04",
         "exit_date": "2026-03-19",
         "ticker": "ORCL",
-        "score": 0.667,
-        "conviction": 63.1,
+        "score": 0.628,
+        "conviction": 56.8,
         "entry_price": 146.67,
         "exit_price": 155.52,
         "return_pct": 6.03,
@@ -4697,8 +4683,8 @@
         "entry_date": "2026-02-05",
         "exit_date": "2026-03-20",
         "ticker": "ORCL",
-        "score": 0.682,
-        "conviction": 64.9,
+        "score": 0.652,
+        "conviction": 60.1,
         "entry_price": 136.48,
         "exit_price": 149.68,
         "return_pct": 9.67,
@@ -4711,8 +4697,8 @@
         "entry_date": "2026-02-06",
         "exit_date": "2026-03-23",
         "ticker": "ORCL",
-        "score": 0.666,
-        "conviction": 63.4,
+        "score": 0.655,
+        "conviction": 60.2,
         "entry_price": 142.82,
         "exit_price": 154.34,
         "return_pct": 8.07,
@@ -4724,13 +4710,13 @@
       {
         "entry_date": "2026-02-09",
         "exit_date": "2026-03-24",
-        "ticker": "ADBE",
-        "score": 0.601,
-        "conviction": 57.6,
-        "entry_price": 266.9,
-        "exit_price": 238.87,
-        "return_pct": -10.5,
-        "net_return_pct": -10.8,
+        "ticker": "SNPS",
+        "score": 0.63,
+        "conviction": 59.0,
+        "entry_price": 438.9,
+        "exit_price": 415.62,
+        "return_pct": -5.3,
+        "net_return_pct": -5.6,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -5.62
@@ -4738,13 +4724,13 @@
       {
         "entry_date": "2026-02-10",
         "exit_date": "2026-03-25",
-        "ticker": "ADBE",
-        "score": 0.617,
-        "conviction": 58.6,
-        "entry_price": 264.67,
-        "exit_price": 237.25,
-        "return_pct": -10.36,
-        "net_return_pct": -10.66,
+        "ticker": "SNPS",
+        "score": 0.6,
+        "conviction": 54.0,
+        "entry_price": 437.45,
+        "exit_price": 410.13,
+        "return_pct": -6.25,
+        "net_return_pct": -6.55,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -4.84
@@ -4752,13 +4738,13 @@
       {
         "entry_date": "2026-02-11",
         "exit_date": "2026-03-26",
-        "ticker": "ORCL",
-        "score": 0.612,
-        "conviction": 57.4,
-        "entry_price": 157.16,
-        "exit_price": 142.81,
-        "return_pct": -9.13,
-        "net_return_pct": -9.43,
+        "ticker": "SNPS",
+        "score": 0.605,
+        "conviction": 55.1,
+        "entry_price": 438.21,
+        "exit_price": 401.95,
+        "return_pct": -8.27,
+        "net_return_pct": -8.57,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -6.52
@@ -4766,13 +4752,13 @@
       {
         "entry_date": "2026-02-12",
         "exit_date": "2026-03-27",
-        "ticker": "ORCL",
-        "score": 0.576,
-        "conviction": 53.3,
-        "entry_price": 156.48,
-        "exit_price": 139.66,
-        "return_pct": -10.75,
-        "net_return_pct": -11.05,
+        "ticker": "SNPS",
+        "score": 0.607,
+        "conviction": 54.3,
+        "entry_price": 423.35,
+        "exit_price": 380.47,
+        "return_pct": -10.13,
+        "net_return_pct": -10.43,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -6.67
@@ -4781,8 +4767,8 @@
         "entry_date": "2026-02-13",
         "exit_date": "2026-03-30",
         "ticker": "ADBE",
-        "score": 0.564,
-        "conviction": 52.7,
+        "score": 0.57,
+        "conviction": 53.0,
         "entry_price": 263.97,
         "exit_price": 241.13,
         "return_pct": -8.65,
@@ -4794,13 +4780,13 @@
       {
         "entry_date": "2026-02-17",
         "exit_date": "2026-03-31",
-        "ticker": "ADBE",
-        "score": 0.564,
-        "conviction": 52.6,
-        "entry_price": 260.45,
-        "exit_price": 243.08,
-        "return_pct": -6.67,
-        "net_return_pct": -6.97,
+        "ticker": "SNPS",
+        "score": 0.565,
+        "conviction": 47.8,
+        "entry_price": 421.95,
+        "exit_price": 396.48,
+        "return_pct": -6.04,
+        "net_return_pct": -6.34,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -4.5
@@ -4808,13 +4794,13 @@
       {
         "entry_date": "2026-02-18",
         "exit_date": "2026-04-01",
-        "ticker": "ADBE",
-        "score": 0.556,
-        "conviction": 52.1,
-        "entry_price": 263.17,
-        "exit_price": 241.37,
-        "return_pct": -8.28,
-        "net_return_pct": -8.58,
+        "ticker": "SNPS",
+        "score": 0.564,
+        "conviction": 48.8,
+        "entry_price": 442.31,
+        "exit_price": 396.74,
+        "return_pct": -10.3,
+        "net_return_pct": -10.6,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -4.26
@@ -4822,760 +4808,774 @@
       {
         "entry_date": "2026-02-19",
         "exit_date": "2026-04-02",
-        "ticker": "ADBE",
-        "score": 0.657,
-        "conviction": 61.7,
-        "entry_price": 259.21,
-        "exit_price": 242.92,
-        "return_pct": -6.28,
-        "net_return_pct": -6.58,
+        "ticker": "SNPS",
+        "score": 0.659,
+        "conviction": 59.0,
+        "entry_price": 442.44,
+        "exit_price": 395.95,
+        "return_pct": -10.51,
+        "net_return_pct": -10.81,
         "hit_target": false,
         "days_held": 30,
         "spy_return_pct": -3.92
+      },
+      {
+        "entry_date": "2026-02-20",
+        "exit_date": "2026-04-06",
+        "ticker": "SNPS",
+        "score": 0.609,
+        "conviction": 53.9,
+        "entry_price": 439.94,
+        "exit_price": 397.07,
+        "return_pct": -9.74,
+        "net_return_pct": -10.04,
+        "hit_target": false,
+        "days_held": 30,
+        "spy_return_pct": -4.16
       }
     ],
     "equity_curve": [
       {
-        "date": "2025-10-10",
+        "date": "2025-10-13",
         "value": 10000
       },
       {
-        "date": "2025-10-10",
-        "value": 8996.0
-      },
-      {
         "date": "2025-10-13",
-        "value": 7975.0
+        "value": 9002.0
       },
       {
         "date": "2025-10-14",
-        "value": 7206.0
+        "value": 8120.0
       },
       {
         "date": "2025-10-15",
-        "value": 7429.0
+        "value": 7607.0
       },
       {
         "date": "2025-10-16",
-        "value": 7914.0
+        "value": 8104.0
       },
       {
         "date": "2025-10-17",
-        "value": 8522.0
+        "value": 7910.0
       },
       {
         "date": "2025-10-20",
-        "value": 6158.0
+        "value": 7817.0
       },
       {
         "date": "2025-10-21",
-        "value": 4630.0
+        "value": 5878.0
       },
       {
         "date": "2025-10-22",
-        "value": 3626.0
+        "value": 5982.0
       },
       {
         "date": "2025-10-23",
-        "value": 2806.0
+        "value": 6104.0
       },
       {
         "date": "2025-10-24",
-        "value": 2176.0
+        "value": 4733.0
       },
       {
         "date": "2025-10-27",
-        "value": 1706.0
+        "value": 4724.0
       },
       {
         "date": "2025-10-28",
-        "value": 1350.0
+        "value": 4906.0
       },
       {
         "date": "2025-10-29",
-        "value": 971.0
+        "value": 5127.0
       },
       {
         "date": "2025-10-30",
-        "value": 966.0
+        "value": 5228.0
       },
       {
         "date": "2025-10-31",
-        "value": 969.0
+        "value": 5222.0
       },
       {
         "date": "2025-11-03",
-        "value": 973.0
+        "value": 5413.0
       },
       {
         "date": "2025-11-04",
-        "value": 979.0
+        "value": 5874.0
       },
       {
         "date": "2025-11-05",
-        "value": 984.0
+        "value": 6560.0
       },
       {
         "date": "2025-11-06",
-        "value": 1006.0
+        "value": 7660.0
       },
       {
         "date": "2025-11-07",
-        "value": 1013.0
+        "value": 9346.0
       },
       {
         "date": "2025-11-10",
-        "value": 1027.0
+        "value": 11060.0
       },
       {
         "date": "2025-11-11",
-        "value": 1031.0
+        "value": 13268.0
       },
       {
         "date": "2025-11-12",
-        "value": 1013.0
+        "value": 15834.0
       },
       {
         "date": "2025-11-13",
-        "value": 1005.0
+        "value": 15721.0
       },
       {
         "date": "2025-11-14",
-        "value": 1042.0
+        "value": 16286.0
       },
       {
         "date": "2025-11-17",
-        "value": 1077.0
+        "value": 16838.0
       },
       {
         "date": "2025-11-18",
-        "value": 1160.0
+        "value": 21025.0
       },
       {
         "date": "2025-11-19",
-        "value": 1288.0
+        "value": 26834.0
       },
       {
         "date": "2025-11-20",
-        "value": 1449.0
+        "value": 30179.0
       },
       {
         "date": "2025-11-21",
-        "value": 1553.0
+        "value": 32355.0
       },
       {
         "date": "2025-11-24",
-        "value": 1696.0
+        "value": 35314.0
       },
       {
         "date": "2025-11-25",
-        "value": 1794.0
+        "value": 37374.0
       },
       {
         "date": "2025-11-26",
-        "value": 1860.0
+        "value": 38746.0
       },
       {
         "date": "2025-11-28",
-        "value": 1891.0
+        "value": 39382.0
       },
       {
         "date": "2025-12-01",
-        "value": 1967.0
+        "value": 40970.0
       },
       {
         "date": "2025-12-02",
-        "value": 2062.0
+        "value": 42955.0
       },
       {
         "date": "2025-12-03",
-        "value": 2017.0
+        "value": 42009.0
       },
       {
         "date": "2025-12-04",
-        "value": 2055.0
+        "value": 42792.0
       },
       {
         "date": "2025-12-05",
-        "value": 2167.0
+        "value": 45143.0
       },
       {
         "date": "2025-12-08",
-        "value": 2368.0
+        "value": 49311.0
       },
       {
         "date": "2025-12-09",
-        "value": 2599.0
+        "value": 54140.0
       },
       {
         "date": "2025-12-10",
-        "value": 2776.0
+        "value": 57814.0
       },
       {
         "date": "2025-12-11",
-        "value": 2322.0
+        "value": 48364.0
       },
       {
         "date": "2025-12-12",
-        "value": 1990.0
+        "value": 41453.0
       },
       {
         "date": "2025-12-15",
-        "value": 1700.0
+        "value": 35397.0
       },
       {
         "date": "2025-12-16",
-        "value": 1454.0
+        "value": 30284.0
       },
       {
         "date": "2025-12-17",
-        "value": 1248.0
+        "value": 25989.0
       },
       {
         "date": "2025-12-18",
-        "value": 1077.0
+        "value": 22309.0
       },
       {
         "date": "2025-12-19",
-        "value": 904.0
+        "value": 18733.0
       },
       {
         "date": "2025-12-22",
-        "value": 744.0
+        "value": 15416.0
       },
       {
         "date": "2025-12-23",
-        "value": 632.0
+        "value": 13084.0
       },
       {
         "date": "2025-12-24",
-        "value": 530.0
+        "value": 10973.0
       },
       {
         "date": "2025-12-26",
-        "value": 435.0
+        "value": 8852.0
       },
       {
         "date": "2025-12-29",
-        "value": 367.0
+        "value": 7479.0
       },
       {
         "date": "2025-12-30",
-        "value": 313.0
+        "value": 6380.0
       },
       {
         "date": "2025-12-31",
-        "value": 277.0
+        "value": 5648.0
       },
       {
         "date": "2026-01-02",
-        "value": 237.0
+        "value": 4836.0
       },
       {
         "date": "2026-01-05",
-        "value": 199.0
+        "value": 4061.0
       },
       {
         "date": "2026-01-06",
-        "value": 161.0
+        "value": 3277.0
       },
       {
         "date": "2026-01-07",
-        "value": 123.0
+        "value": 2514.0
       },
       {
         "date": "2026-01-08",
-        "value": 92.0
+        "value": 1870.0
       },
       {
         "date": "2026-01-09",
-        "value": 67.0
+        "value": 1371.0
       },
       {
         "date": "2026-01-12",
-        "value": 48.0
+        "value": 987.0
       },
       {
         "date": "2026-01-13",
-        "value": 36.0
+        "value": 730.0
       },
       {
         "date": "2026-01-14",
-        "value": 27.0
+        "value": 546.0
       },
       {
         "date": "2026-01-15",
-        "value": 21.0
+        "value": 428.0
       },
       {
         "date": "2026-01-16",
-        "value": 16.0
+        "value": 332.0
       },
       {
         "date": "2026-01-20",
-        "value": 14.0
+        "value": 280.0
       },
       {
         "date": "2026-01-21",
-        "value": 12.0
+        "value": 249.0
       },
       {
         "date": "2026-01-22",
-        "value": 10.0
+        "value": 213.0
       },
       {
         "date": "2026-01-23",
-        "value": 9.0
+        "value": 181.0
       },
       {
         "date": "2026-01-26",
-        "value": 7.0
+        "value": 148.0
       },
       {
         "date": "2026-01-27",
-        "value": 7.0
+        "value": 138.0
       },
       {
         "date": "2026-01-28",
-        "value": 6.0
+        "value": 126.0
       },
       {
         "date": "2026-01-29",
-        "value": 6.0
+        "value": 108.0
       },
       {
         "date": "2026-01-30",
-        "value": 5.0
+        "value": 99.0
       },
       {
         "date": "2026-02-02",
-        "value": 5.0
+        "value": 95.0
       },
       {
         "date": "2026-02-03",
-        "value": 5.0
+        "value": 94.0
       },
       {
         "date": "2026-02-04",
-        "value": 5.0
+        "value": 99.0
       },
       {
         "date": "2026-02-05",
-        "value": 6.0
+        "value": 108.0
       },
       {
         "date": "2026-02-06",
-        "value": 6.0
+        "value": 117.0
       },
       {
         "date": "2026-02-09",
-        "value": 6.0
+        "value": 110.0
       },
       {
         "date": "2026-02-10",
-        "value": 5.0
+        "value": 103.0
       },
       {
         "date": "2026-02-11",
-        "value": 5.0
+        "value": 94.0
       },
       {
         "date": "2026-02-12",
-        "value": 4.0
+        "value": 84.0
       },
       {
         "date": "2026-02-13",
-        "value": 4.0
+        "value": 77.0
       },
       {
         "date": "2026-02-17",
-        "value": 3.0
+        "value": 72.0
       },
       {
         "date": "2026-02-18",
-        "value": 3.0
+        "value": 64.0
       },
       {
         "date": "2026-02-19",
-        "value": 3.0
+        "value": 57.0
+      },
+      {
+        "date": "2026-02-20",
+        "value": 52.0
       }
     ],
     "equity_curve_benchmark": [
       {
-        "date": "2025-10-10",
+        "date": "2025-10-13",
         "value": 10000
       },
       {
-        "date": "2025-10-10",
-        "value": 10092.0
-      },
-      {
         "date": "2025-10-13",
-        "value": 10179.0
+        "value": 10086.0
       },
       {
         "date": "2025-10-14",
-        "value": 10375.0
+        "value": 10281.0
       },
       {
         "date": "2025-10-15",
-        "value": 10602.0
+        "value": 10505.0
       },
       {
         "date": "2025-10-16",
-        "value": 10967.0
+        "value": 10867.0
       },
       {
         "date": "2025-10-17",
-        "value": 11229.0
+        "value": 11126.0
       },
       {
         "date": "2025-10-20",
-        "value": 11400.0
+        "value": 11296.0
       },
       {
         "date": "2025-10-21",
-        "value": 11614.0
+        "value": 11508.0
       },
       {
         "date": "2025-10-22",
-        "value": 11902.0
+        "value": 11794.0
       },
       {
         "date": "2025-10-23",
-        "value": 12149.0
+        "value": 12038.0
       },
       {
         "date": "2025-10-24",
-        "value": 12264.0
+        "value": 12152.0
       },
       {
         "date": "2025-10-27",
-        "value": 12224.0
+        "value": 12113.0
       },
       {
         "date": "2025-10-28",
-        "value": 12233.0
+        "value": 12122.0
       },
       {
         "date": "2025-10-29",
-        "value": 12265.0
+        "value": 12153.0
       },
       {
         "date": "2025-10-30",
-        "value": 12300.0
+        "value": 12188.0
       },
       {
         "date": "2025-10-31",
-        "value": 12276.0
+        "value": 12164.0
       },
       {
         "date": "2025-11-03",
-        "value": 12196.0
+        "value": 12084.0
       },
       {
         "date": "2025-11-04",
-        "value": 12126.0
+        "value": 12016.0
       },
       {
         "date": "2025-11-05",
-        "value": 12106.0
+        "value": 11996.0
       },
       {
         "date": "2025-11-06",
-        "value": 12328.0
+        "value": 12216.0
       },
       {
         "date": "2025-11-07",
-        "value": 12620.0
+        "value": 12505.0
       },
       {
         "date": "2025-11-10",
-        "value": 12779.0
+        "value": 12662.0
       },
       {
         "date": "2025-11-11",
-        "value": 12955.0
+        "value": 12837.0
       },
       {
         "date": "2025-11-12",
-        "value": 13125.0
+        "value": 13005.0
       },
       {
         "date": "2025-11-13",
-        "value": 13473.0
+        "value": 13350.0
       },
       {
         "date": "2025-11-14",
-        "value": 13816.0
+        "value": 13690.0
       },
       {
         "date": "2025-11-17",
-        "value": 14195.0
+        "value": 14066.0
       },
       {
         "date": "2025-11-18",
-        "value": 14735.0
+        "value": 14601.0
       },
       {
         "date": "2025-11-19",
-        "value": 15339.0
+        "value": 15199.0
       },
       {
         "date": "2025-11-20",
-        "value": 16310.0
+        "value": 16161.0
       },
       {
         "date": "2025-11-21",
-        "value": 17116.0
+        "value": 16960.0
       },
       {
         "date": "2025-11-24",
-        "value": 17700.0
+        "value": 17539.0
       },
       {
         "date": "2025-11-25",
-        "value": 18254.0
+        "value": 18087.0
       },
       {
         "date": "2025-11-26",
-        "value": 18725.0
+        "value": 18554.0
       },
       {
         "date": "2025-11-28",
-        "value": 19065.0
+        "value": 18891.0
       },
       {
         "date": "2025-12-01",
-        "value": 19405.0
+        "value": 19228.0
       },
       {
         "date": "2025-12-02",
-        "value": 19768.0
+        "value": 19588.0
       },
       {
         "date": "2025-12-03",
-        "value": 20052.0
+        "value": 19869.0
       },
       {
         "date": "2025-12-04",
-        "value": 19911.0
+        "value": 19730.0
       },
       {
         "date": "2025-12-05",
-        "value": 19962.0
+        "value": 19780.0
       },
       {
         "date": "2025-12-08",
-        "value": 20177.0
+        "value": 19993.0
       },
       {
         "date": "2025-12-09",
-        "value": 20420.0
+        "value": 20234.0
       },
       {
         "date": "2025-12-10",
-        "value": 20634.0
+        "value": 20446.0
       },
       {
         "date": "2025-12-11",
-        "value": 20885.0
+        "value": 20695.0
       },
       {
         "date": "2025-12-12",
-        "value": 21367.0
+        "value": 21172.0
       },
       {
         "date": "2025-12-15",
-        "value": 21849.0
+        "value": 21649.0
       },
       {
         "date": "2025-12-16",
-        "value": 22336.0
+        "value": 22132.0
       },
       {
         "date": "2025-12-17",
-        "value": 23203.0
+        "value": 22992.0
       },
       {
         "date": "2025-12-18",
-        "value": 23721.0
+        "value": 23505.0
       },
       {
         "date": "2025-12-19",
-        "value": 23916.0
+        "value": 23698.0
       },
       {
         "date": "2025-12-22",
-        "value": 23664.0
+        "value": 23449.0
       },
       {
         "date": "2025-12-23",
-        "value": 23756.0
+        "value": 23539.0
       },
       {
         "date": "2025-12-24",
-        "value": 23879.0
+        "value": 23661.0
       },
       {
         "date": "2025-12-26",
-        "value": 23941.0
+        "value": 23723.0
       },
       {
         "date": "2025-12-29",
-        "value": 24084.0
+        "value": 23865.0
       },
       {
         "date": "2025-12-30",
-        "value": 23883.0
+        "value": 23665.0
       },
       {
         "date": "2025-12-31",
-        "value": 23877.0
+        "value": 23660.0
       },
       {
         "date": "2026-01-02",
-        "value": 23866.0
+        "value": 23648.0
       },
       {
         "date": "2026-01-05",
-        "value": 23816.0
+        "value": 23599.0
       },
       {
         "date": "2026-01-06",
-        "value": 23564.0
+        "value": 23349.0
       },
       {
         "date": "2026-01-07",
-        "value": 23559.0
+        "value": 23344.0
       },
       {
         "date": "2026-01-08",
-        "value": 23316.0
+        "value": 23103.0
       },
       {
         "date": "2026-01-09",
-        "value": 23090.0
+        "value": 22879.0
       },
       {
         "date": "2026-01-12",
-        "value": 23023.0
+        "value": 22813.0
       },
       {
         "date": "2026-01-13",
-        "value": 22875.0
+        "value": 22666.0
       },
       {
         "date": "2026-01-14",
-        "value": 22730.0
+        "value": 22523.0
       },
       {
         "date": "2026-01-15",
-        "value": 22538.0
+        "value": 22332.0
       },
       {
         "date": "2026-01-16",
-        "value": 22168.0
+        "value": 21966.0
       },
       {
         "date": "2026-01-20",
-        "value": 22415.0
+        "value": 22211.0
       },
       {
         "date": "2026-01-21",
-        "value": 22282.0
+        "value": 22079.0
       },
       {
         "date": "2026-01-22",
-        "value": 21745.0
+        "value": 21547.0
       },
       {
         "date": "2026-01-23",
-        "value": 21399.0
+        "value": 21204.0
       },
       {
         "date": "2026-01-26",
-        "value": 20919.0
+        "value": 20728.0
       },
       {
         "date": "2026-01-27",
-        "value": 20342.0
+        "value": 20157.0
       },
       {
         "date": "2026-01-28",
-        "value": 19484.0
+        "value": 19306.0
       },
       {
         "date": "2026-01-29",
-        "value": 18592.0
+        "value": 18423.0
       },
       {
         "date": "2026-01-30",
-        "value": 17976.0
+        "value": 17812.0
       },
       {
         "date": "2026-02-02",
-        "value": 17340.0
+        "value": 17181.0
       },
       {
         "date": "2026-02-03",
-        "value": 16633.0
+        "value": 16481.0
       },
       {
         "date": "2026-02-04",
-        "value": 15993.0
+        "value": 15847.0
       },
       {
         "date": "2026-02-05",
-        "value": 15349.0
+        "value": 15209.0
       },
       {
         "date": "2026-02-06",
-        "value": 14606.0
+        "value": 14473.0
       },
       {
         "date": "2026-02-09",
-        "value": 13785.0
+        "value": 13660.0
       },
       {
         "date": "2026-02-10",
-        "value": 13118.0
+        "value": 12998.0
       },
       {
         "date": "2026-02-11",
-        "value": 12263.0
+        "value": 12151.0
       },
       {
         "date": "2026-02-12",
-        "value": 11445.0
+        "value": 11340.0
       },
       {
         "date": "2026-02-13",
-        "value": 10638.0
+        "value": 10541.0
       },
       {
         "date": "2026-02-17",
-        "value": 10159.0
+        "value": 10067.0
       },
       {
         "date": "2026-02-18",
-        "value": 9726.0
+        "value": 9637.0
       },
       {
         "date": "2026-02-19",
-        "value": 9344.0
+        "value": 9259.0
+      },
+      {
+        "date": "2026-02-20",
+        "value": 8874.0
       }
     ],
     "stats": {
       "n_trades": 90,
-      "avg_net_return": -7.94,
-      "win_rate": 34.4,
-      "hit_rate": 17.8,
-      "profit_factor": 0.18,
-      "avg_spy_return": -0.04,
-      "alpha": -7.9,
-      "final_value": 3.0,
-      "spy_final_value": 9344.0
+      "avg_net_return": -4.81,
+      "win_rate": 37.8,
+      "hit_rate": 24.4,
+      "profit_factor": 0.41,
+      "avg_spy_return": -0.09,
+      "alpha": -4.72,
+      "final_value": 52.0,
+      "spy_final_value": 8874.0
     }
   }
 }
