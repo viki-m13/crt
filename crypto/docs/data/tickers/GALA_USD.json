@@ -1,47 +1,43 @@
 {
   "ticker": "GALA-USD",
   "display_name": "GALA",
-  "price": 0.0029,
-  "price_date": "2026-04-06",
-  "conviction": 46.8,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 0.0031,
+  "price_date": "2026-04-07",
+  "conviction": 49.9,
+  "is_signal": true,
+  "position_size_pct": 12.0,
+  "stop_loss_price": 0.003,
+  "take_profit_price": 0.0035,
   "max_hold_days": 5,
-  "mtmdi_zscore": 0.5957,
-  "mtmdi_direction": 1.5024,
-  "mtmdi_velocity": 0.4844,
-  "cascade_score": 0.0839,
-  "momentum_persistence": -0.7642,
-  "range_compression": 0.0828,
-  "vol_30d": 55.7295,
-  "vol_regime": "normal",
-  "drawdown": -87.3246,
-  "position_in_range": 0.4844,
+  "mtmdi_zscore": 1.0288,
+  "mtmdi_direction": 1.7346,
+  "mtmdi_velocity": 0.3045,
+  "cascade_score": 0.0561,
+  "momentum_persistence": 1.3866,
+  "range_compression": 0.2603,
+  "vol_30d": 62.7223,
+  "vol_regime": "high",
+  "drawdown": -86.2974,
+  "position_in_range": 1.6549,
   "returns": {
-    "7d": -0.28,
-    "14d": -11.07,
-    "30d": -13.66,
-    "90d": -97.5,
-    "180d": -171.56,
-    "365d": -178.91
+    "7d": 6.44,
+    "14d": -3.43,
+    "30d": -5.78,
+    "90d": -86.01,
+    "180d": -160.67,
+    "365d": -171.56
   },
   "signals": {
-    "mtmdi_spike": false,
+    "mtmdi_spike": true,
     "direction_positive": true,
     "velocity_accelerating": true,
     "cascade_divergence": true,
-    "momentum_persistent": false,
+    "momentum_persistent": true,
     "range_compressed": true,
     "volume_surge": false
   },
-  "confirming_factors": 3,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-03-23",
-      "price": 0.02
-    },
     {
       "date": "2025-03-24",
       "price": 0.02
@@ -1496,6 +1492,10 @@
     },
     {
       "date": "2026-04-06",
+      "price": 0.0
+    },
+    {
+      "date": "2026-04-07",
       "price": 0.0
     }
   ]
