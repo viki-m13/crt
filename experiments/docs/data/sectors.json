@@ -1,8 +1,8 @@
 {
-  "generated": "2026-04-09T22:31:39.213271",
+  "generated": "2026-04-09T22:46:05.355641",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
   "current_status": {
     "spy_price": 676.01,
     "vol_regime": "normal",
@@ -18,7 +18,8 @@
       "cacs": -0.098,
       "mpr_z": 1.63,
       "strength": 0.893,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=2.58; MPR z=1.63; regime=normal"
     },
     {
       "ticker": "BAC",
@@ -27,7 +28,8 @@
       "cacs": -0.084,
       "mpr_z": 1.37,
       "strength": 0.848,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=2.47; MPR z=1.37; regime=normal"
     },
     {
       "ticker": "GS",
@@ -36,7 +38,8 @@
       "cacs": -0.09,
       "mpr_z": 1.56,
       "strength": 0.831,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.25; MPR z=1.56; regime=high"
     },
     {
       "ticker": "GE",
@@ -45,7 +48,8 @@
       "cacs": 0.042,
       "mpr_z": 1.53,
       "strength": 0.747,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.06; cascade=0.042; MPR z=1.53; regime=high"
     },
     {
       "ticker": "JPM",
@@ -54,7 +58,8 @@
       "cacs": -0.068,
       "mpr_z": 1.31,
       "strength": 0.742,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.86; MPR z=1.31; regime=normal"
     },
     {
       "ticker": "MDT",
@@ -63,7 +68,8 @@
       "cacs": 0.021,
       "mpr_z": 1.4,
       "strength": 0.571,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.83; cascade=0.021; MPR z=1.40; regime=normal"
     },
     {
       "ticker": "AVGO",
@@ -72,7 +78,8 @@
       "cacs": -0.017,
       "mpr_z": 1.42,
       "strength": 0.517,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.63; MPR z=1.42; regime=high"
     },
     {
       "ticker": "EMR",
@@ -81,23 +88,11 @@
       "cacs": -0.012,
       "mpr_z": 1.26,
       "strength": 0.489,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.75; MPR z=1.26; regime=high"
     }
   ],
   "performance": {
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
-      }
-    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -122,6 +117,19 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
+      }
+    },
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
       }
     }
   },
