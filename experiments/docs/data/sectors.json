@@ -1,58 +1,103 @@
 {
-  "generated": "2026-04-08T22:46:13.215596",
+  "generated": "2026-04-09T22:31:39.213271",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
   "current_status": {
-    "spy_price": 659.22,
+    "spy_price": 676.01,
     "vol_regime": "normal",
-    "n_signals": 4,
+    "n_signals": 8,
     "n_positions": 0,
     "total_exposure": 0
   },
   "top_signals": [
     {
-      "ticker": "RTX",
-      "price": 197.92,
-      "mtmdi_z": 1.57,
-      "cacs": 0.045,
-      "mpr_z": 1.98,
-      "strength": 0.728,
-      "vol_regime": "normal",
-      "rationale": "MTMDI z=1.57; cascade=0.045; MPR z=1.98; regime=normal"
+      "ticker": "MS",
+      "price": 176.02,
+      "mtmdi_z": 2.58,
+      "cacs": -0.098,
+      "mpr_z": 1.63,
+      "strength": 0.893,
+      "vol_regime": "normal"
     },
     {
-      "ticker": "MS",
-      "price": 168.43,
-      "mtmdi_z": 1.58,
-      "cacs": -0.068,
-      "mpr_z": 1.64,
-      "strength": 0.728,
-      "vol_regime": "normal",
-      "rationale": "MTMDI z=1.58; MPR z=1.64; regime=normal"
+      "ticker": "BAC",
+      "price": 51.88,
+      "mtmdi_z": 2.47,
+      "cacs": -0.084,
+      "mpr_z": 1.37,
+      "strength": 0.848,
+      "vol_regime": "normal"
+    },
+    {
+      "ticker": "GS",
+      "price": 905.75,
+      "mtmdi_z": 2.25,
+      "cacs": -0.09,
+      "mpr_z": 1.56,
+      "strength": 0.831,
+      "vol_regime": "high"
+    },
+    {
+      "ticker": "GE",
+      "price": 308.06,
+      "mtmdi_z": 2.06,
+      "cacs": 0.042,
+      "mpr_z": 1.53,
+      "strength": 0.747,
+      "vol_regime": "high"
     },
     {
       "ticker": "JPM",
-      "price": 297.4,
-      "mtmdi_z": 1.66,
-      "cacs": -0.049,
-      "mpr_z": 1.32,
-      "strength": 0.702,
-      "vol_regime": "normal",
-      "rationale": "MTMDI z=1.66; MPR z=1.32; regime=normal"
+      "price": 307.97,
+      "mtmdi_z": 1.86,
+      "cacs": -0.068,
+      "mpr_z": 1.31,
+      "strength": 0.742,
+      "vol_regime": "normal"
     },
     {
-      "ticker": "NVDA",
-      "price": 178.1,
-      "mtmdi_z": 1.61,
-      "cacs": -0.031,
-      "mpr_z": 1.41,
-      "strength": 0.597,
-      "vol_regime": "high",
-      "rationale": "MTMDI z=1.61; MPR z=1.41; regime=high"
+      "ticker": "MDT",
+      "price": 88.65,
+      "mtmdi_z": 1.83,
+      "cacs": 0.021,
+      "mpr_z": 1.4,
+      "strength": 0.571,
+      "vol_regime": "normal"
+    },
+    {
+      "ticker": "AVGO",
+      "price": 350.63,
+      "mtmdi_z": 1.63,
+      "cacs": -0.017,
+      "mpr_z": 1.42,
+      "strength": 0.517,
+      "vol_regime": "high"
+    },
+    {
+      "ticker": "EMR",
+      "price": 142.66,
+      "mtmdi_z": 1.75,
+      "cacs": -0.012,
+      "mpr_z": 1.26,
+      "strength": 0.489,
+      "vol_regime": "high"
     }
   ],
   "performance": {
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
+      }
+    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -77,19 +122,6 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
-      }
-    },
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
       }
     }
   },
