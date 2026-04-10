@@ -1,8 +1,8 @@
 {
-  "generated": "2026-04-10T22:30:54.201136",
+  "generated": "2026-04-10T22:45:53.395377",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
   "current_status": {
     "spy_price": 679.91,
     "vol_regime": "normal",
@@ -18,7 +18,8 @@
       "cacs": -0.1,
       "mpr_z": 1.62,
       "strength": 0.848,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.31; MPR z=1.62; regime=high"
     },
     {
       "ticker": "GS",
@@ -27,7 +28,8 @@
       "cacs": -0.074,
       "mpr_z": 1.55,
       "strength": 0.811,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.13; MPR z=1.55; regime=high"
     },
     {
       "ticker": "BAC",
@@ -36,7 +38,8 @@
       "cacs": -0.078,
       "mpr_z": 1.36,
       "strength": 0.756,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.92; MPR z=1.36; regime=normal"
     },
     {
       "ticker": "GE",
@@ -45,7 +48,8 @@
       "cacs": 0.054,
       "mpr_z": 1.52,
       "strength": 0.737,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.71; cascade=0.054; MPR z=1.52; regime=high"
     },
     {
       "ticker": "SCHW",
@@ -54,7 +58,8 @@
       "cacs": -0.04,
       "mpr_z": 1.35,
       "strength": 0.707,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.98; MPR z=1.35; regime=normal"
     },
     {
       "ticker": "JPM",
@@ -63,7 +68,8 @@
       "cacs": -0.073,
       "mpr_z": 1.3,
       "strength": 0.685,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.53; MPR z=1.30; regime=normal"
     },
     {
       "ticker": "ORCL",
@@ -72,7 +78,8 @@
       "cacs": 0.082,
       "mpr_z": -1.2,
       "strength": 0.571,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=-1.62; cascade=0.082; regime=high"
     },
     {
       "ticker": "SHW",
@@ -81,23 +88,11 @@
       "cacs": -0.008,
       "mpr_z": 1.15,
       "strength": 0.516,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=-2.13; MPR z=1.15; regime=high"
     }
   ],
   "performance": {
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
-      }
-    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -122,6 +117,19 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
+      }
+    },
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
       }
     }
   },
