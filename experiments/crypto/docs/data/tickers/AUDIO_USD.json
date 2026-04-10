@@ -2,42 +2,38 @@
   "ticker": "AUDIO-USD",
   "display_name": "AUDIO",
   "price": 0.02,
-  "conviction": 40.3,
+  "conviction": 43.2,
   "is_signal": false,
-  "mtmdi_zscore": -1.217,
-  "mtmdi_raw": 0.381,
-  "mtmdi_direction": 0.231,
-  "mtmdi_velocity": -0.982,
-  "cascade_score": 0.1156,
-  "momentum_persistence": -0.754,
-  "range_compression": 0.125,
-  "vol_30d": 44.7,
+  "mtmdi_zscore": -0.466,
+  "mtmdi_raw": 0.572,
+  "mtmdi_direction": 0.662,
+  "mtmdi_velocity": -0.114,
+  "cascade_score": 0.1266,
+  "momentum_persistence": 1.34,
+  "range_compression": 0.102,
+  "vol_30d": 45.1,
   "vol_regime": "normal",
-  "drawdown": -80.2,
-  "position_in_range": 0.6,
+  "drawdown": -80.0,
+  "position_in_range": 0.9,
   "returns": {
-    "7d": -2.06,
-    "14d": -12.53,
-    "30d": -18.83,
-    "90d": -61.28,
-    "180d": -86.14,
-    "365d": -122.5
+    "7d": 3.75,
+    "14d": -8.93,
+    "30d": -16.89,
+    "90d": -59.43,
+    "180d": -87.9,
+    "365d": -129.65
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.06
-    },
     {
       "date": "2025-04-10",
       "price": 0.06
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.02
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.02
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.06
-    },
     {
       "date": "2025-04-10",
       "value": -0.023
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.217
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.466
     }
   ]
 }

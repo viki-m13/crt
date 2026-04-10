@@ -2,42 +2,38 @@
   "ticker": "PERP-USD",
   "display_name": "PERP",
   "price": 0.03,
-  "conviction": 35.5,
+  "conviction": 44.7,
   "is_signal": false,
-  "mtmdi_zscore": -0.847,
-  "mtmdi_raw": 0.478,
-  "mtmdi_direction": 0.658,
-  "mtmdi_velocity": 0.013,
-  "cascade_score": 0.1211,
-  "momentum_persistence": -0.767,
+  "mtmdi_zscore": -0.442,
+  "mtmdi_raw": 0.648,
+  "mtmdi_direction": 1.04,
+  "mtmdi_velocity": 0.341,
+  "cascade_score": 0.0478,
+  "momentum_persistence": 1.483,
   "range_compression": 0.223,
-  "vol_30d": 128.1,
+  "vol_30d": 121.9,
   "vol_regime": "high",
-  "drawdown": -92.0,
-  "position_in_range": 3.1,
+  "drawdown": -92.1,
+  "position_in_range": 3.0,
   "returns": {
-    "7d": -0.89,
-    "14d": -13.05,
-    "30d": -37.44,
-    "90d": -113.23,
-    "180d": -196.36,
-    "365d": -191.54
+    "7d": 7.05,
+    "14d": -5.06,
+    "30d": -26.55,
+    "90d": -117.27,
+    "180d": -198.25,
+    "365d": -204.65
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
+    "velocity": true,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 4,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.22
-    },
     {
       "date": "2025-04-10",
       "price": 0.19
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.03
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.03
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": -1.055
-    },
     {
       "date": "2025-04-10",
       "value": -0.632
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -0.847
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.442
     }
   ]
 }

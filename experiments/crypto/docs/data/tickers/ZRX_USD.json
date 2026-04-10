@@ -2,42 +2,38 @@
   "ticker": "ZRX-USD",
   "display_name": "ZRX",
   "price": 0.1,
-  "conviction": 35.0,
-  "is_signal": false,
-  "mtmdi_zscore": -1.871,
-  "mtmdi_raw": 0.152,
-  "mtmdi_direction": 0.157,
-  "mtmdi_velocity": -2.186,
-  "cascade_score": 0.029,
-  "momentum_persistence": -0.901,
+  "conviction": 33.2,
+  "is_signal": true,
+  "mtmdi_zscore": -1.131,
+  "mtmdi_raw": 0.341,
+  "mtmdi_direction": 0.605,
+  "mtmdi_velocity": -1.412,
+  "cascade_score": 0.0116,
+  "momentum_persistence": 1.183,
   "range_compression": 0.276,
-  "vol_30d": 50.9,
+  "vol_30d": 50.4,
   "vol_regime": "normal",
-  "drawdown": -67.2,
-  "position_in_range": 3.1,
+  "drawdown": -66.8,
+  "position_in_range": 3.7,
   "returns": {
-    "7d": -2.41,
-    "14d": -3.15,
-    "30d": -7.41,
-    "90d": -32.03,
-    "180d": -61.13,
-    "365d": -70.24
+    "7d": 1.19,
+    "14d": 1.88,
+    "30d": -3.52,
+    "90d": -32.93,
+    "180d": -62.44,
+    "365d": -79.94
   },
   "signals": {
     "mtmdi": true,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.23
-    },
     {
       "date": "2025-04-10",
       "price": 0.23
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.1
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.1
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.586
-    },
     {
       "date": "2025-04-10",
       "value": 0.406
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.871
+    },
+    {
+      "date": "2026-04-09",
+      "value": -1.131
     }
   ]
 }

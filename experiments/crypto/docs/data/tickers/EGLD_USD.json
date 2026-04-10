@@ -1,43 +1,39 @@
 {
   "ticker": "EGLD-USD",
   "display_name": "EGLD",
-  "price": 3.8,
-  "conviction": 39.4,
+  "price": 3.87,
+  "conviction": 37.2,
   "is_signal": false,
-  "mtmdi_zscore": -1.785,
-  "mtmdi_raw": 0.202,
-  "mtmdi_direction": 0.317,
-  "mtmdi_velocity": -1.787,
-  "cascade_score": 0.0573,
-  "momentum_persistence": -0.771,
-  "range_compression": 0.278,
-  "vol_30d": 49.0,
+  "mtmdi_zscore": -0.72,
+  "mtmdi_raw": 0.498,
+  "mtmdi_direction": 0.863,
+  "mtmdi_velocity": -0.729,
+  "cascade_score": 0.0452,
+  "momentum_persistence": 1.331,
+  "range_compression": 0.231,
+  "vol_30d": 49.5,
   "vol_regime": "normal",
-  "drawdown": -81.4,
-  "position_in_range": 0.7,
+  "drawdown": -81.0,
+  "position_in_range": 1.1,
   "returns": {
-    "7d": -0.6,
-    "14d": -6.14,
-    "30d": -9.0,
-    "90d": -44.57,
-    "180d": -84.65,
-    "365d": -118.87
+    "7d": 4.98,
+    "14d": -0.72,
+    "30d": -6.56,
+    "90d": -47.8,
+    "180d": -90.21,
+    "365d": -129.9
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 14.2
-    },
     {
       "date": "2025-04-10",
       "price": 13.76
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 3.8
+    },
+    {
+      "date": "2026-04-09",
+      "price": 3.87
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": -0.461
-    },
     {
       "date": "2025-04-10",
       "value": -0.747
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.785
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.72
     }
   ]
 }

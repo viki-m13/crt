@@ -1,43 +1,39 @@
 {
   "ticker": "THETA-USD",
   "display_name": "THETA",
-  "price": 0.16,
-  "conviction": 33.7,
+  "price": 0.17,
+  "conviction": 48.5,
   "is_signal": false,
-  "mtmdi_zscore": -0.887,
-  "mtmdi_raw": 0.476,
-  "mtmdi_direction": 0.802,
-  "mtmdi_velocity": -1.149,
-  "cascade_score": 0.0418,
-  "momentum_persistence": 1.336,
-  "range_compression": 0.537,
-  "vol_30d": 66.9,
+  "mtmdi_zscore": 0.817,
+  "mtmdi_raw": 0.966,
+  "mtmdi_direction": 1.532,
+  "mtmdi_velocity": 0.676,
+  "cascade_score": -0.0415,
+  "momentum_persistence": 1.328,
+  "range_compression": 0.624,
+  "vol_30d": 74.9,
   "vol_regime": "high",
-  "drawdown": -85.0,
-  "position_in_range": 1.6,
+  "drawdown": -83.4,
+  "position_in_range": 3.4,
   "returns": {
-    "7d": 4.18,
-    "14d": -4.61,
-    "30d": -10.64,
-    "90d": -65.09,
-    "180d": -108.2,
-    "365d": -146.51
+    "7d": 19.64,
+    "14d": 9.64,
+    "30d": -3.78,
+    "90d": -54.58,
+    "180d": -101.75,
+    "365d": -148.25
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
+    "velocity": true,
+    "cascade": false,
     "momentum": true,
     "range_compress": false,
-    "vol_surge": false
+    "vol_surge": true
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.77
-    },
     {
       "date": "2025-04-10",
       "price": 0.73
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.16
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.17
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.665
-    },
     {
       "date": "2025-04-10",
       "value": 0.333
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -0.887
+    },
+    {
+      "date": "2026-04-09",
+      "value": 0.817
     }
   ]
 }

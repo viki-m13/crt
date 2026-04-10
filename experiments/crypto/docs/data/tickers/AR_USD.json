@@ -1,43 +1,39 @@
 {
   "ticker": "AR-USD",
   "display_name": "AR",
-  "price": 1.67,
-  "conviction": 31.3,
+  "price": 1.72,
+  "conviction": 33.5,
   "is_signal": false,
-  "mtmdi_zscore": 0.495,
-  "mtmdi_raw": 0.979,
-  "mtmdi_direction": 0.041,
-  "mtmdi_velocity": 0.095,
-  "cascade_score": 0.0974,
-  "momentum_persistence": -0.859,
+  "mtmdi_zscore": -0.014,
+  "mtmdi_raw": 0.839,
+  "mtmdi_direction": 0.347,
+  "mtmdi_velocity": -0.89,
+  "cascade_score": 0.0855,
+  "momentum_persistence": 1.247,
   "range_compression": 0.401,
-  "vol_30d": 88.3,
+  "vol_30d": 88.0,
   "vol_regime": "high",
-  "drawdown": -80.8,
-  "position_in_range": 2.0,
+  "drawdown": -80.3,
+  "position_in_range": 2.5,
   "returns": {
-    "7d": -2.52,
-    "14d": -10.62,
-    "30d": 5.05,
-    "90d": -82.75,
-    "180d": -86.93,
-    "365d": -107.65
+    "7d": 2.97,
+    "14d": -2.88,
+    "30d": 4.36,
+    "90d": -79.32,
+    "180d": -85.66,
+    "365d": -114.9
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 5.42
-    },
     {
       "date": "2025-04-10",
       "price": 5.23
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 1.67
+    },
+    {
+      "date": "2026-04-09",
+      "price": 1.72
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.365
-    },
     {
       "date": "2025-04-10",
       "value": -0.105
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": 0.495
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.014
     }
   ]
 }

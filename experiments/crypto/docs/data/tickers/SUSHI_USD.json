@@ -2,42 +2,38 @@
   "ticker": "SUSHI-USD",
   "display_name": "SUSHI",
   "price": 0.19,
-  "conviction": 27.5,
+  "conviction": 36.7,
   "is_signal": false,
-  "mtmdi_zscore": -1.161,
-  "mtmdi_raw": 0.4,
-  "mtmdi_direction": 0.687,
-  "mtmdi_velocity": -1.358,
-  "cascade_score": 0.0353,
-  "momentum_persistence": -0.854,
-  "range_compression": 0.382,
-  "vol_30d": 54.1,
+  "mtmdi_zscore": -0.662,
+  "mtmdi_raw": 0.516,
+  "mtmdi_direction": 0.928,
+  "mtmdi_velocity": -0.669,
+  "cascade_score": 0.0452,
+  "momentum_persistence": 1.383,
+  "range_compression": 0.251,
+  "vol_30d": 53.9,
   "vol_regime": "normal",
-  "drawdown": -81.0,
-  "position_in_range": 0.9,
+  "drawdown": -81.1,
+  "position_in_range": 0.8,
   "returns": {
-    "7d": -0.58,
-    "14d": -3.85,
-    "30d": -0.21,
-    "90d": -52.59,
-    "180d": -90.1,
-    "365d": -92.27
+    "7d": 3.14,
+    "14d": -0.57,
+    "30d": -2.26,
+    "90d": -53.39,
+    "180d": -94.75,
+    "365d": -105.0
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.55
-    },
     {
       "date": "2025-04-10",
       "price": 0.53
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.19
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.19
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.061
-    },
     {
       "date": "2025-04-10",
       "value": -0.281
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.161
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.662
     }
   ]
 }

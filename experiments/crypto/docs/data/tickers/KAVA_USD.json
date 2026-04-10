@@ -2,42 +2,38 @@
   "ticker": "KAVA-USD",
   "display_name": "KAVA",
   "price": 0.05,
-  "conviction": 29.3,
+  "conviction": 39.7,
   "is_signal": false,
-  "mtmdi_zscore": -1.036,
-  "mtmdi_raw": 0.583,
-  "mtmdi_direction": 0.631,
-  "mtmdi_velocity": -0.492,
-  "cascade_score": 0.0383,
-  "momentum_persistence": -0.736,
-  "range_compression": 0.214,
-  "vol_30d": 68.7,
+  "mtmdi_zscore": -0.515,
+  "mtmdi_raw": 0.76,
+  "mtmdi_direction": 0.935,
+  "mtmdi_velocity": 0.323,
+  "cascade_score": -0.03,
+  "momentum_persistence": 1.378,
+  "range_compression": 0.296,
+  "vol_30d": 68.8,
   "vol_regime": "high",
-  "drawdown": -89.6,
-  "position_in_range": 1.2,
+  "drawdown": -89.3,
+  "position_in_range": 1.4,
   "returns": {
-    "7d": -1.51,
-    "14d": -4.02,
-    "30d": -24.75,
-    "90d": -48.3,
-    "180d": -118.57,
-    "365d": -204.77
+    "7d": 3.84,
+    "14d": 3.63,
+    "30d": -24.59,
+    "90d": -47.17,
+    "180d": -122.29,
+    "365d": -209.28
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
-    "velocity": false,
-    "cascade": true,
-    "momentum": false,
+    "velocity": true,
+    "cascade": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.43
-    },
     {
       "date": "2025-04-10",
       "price": 0.41
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.05
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.05
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": -0.347
-    },
     {
       "date": "2025-04-10",
       "value": -0.589
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.036
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.515
     }
   ]
 }

@@ -1,43 +1,39 @@
 {
   "ticker": "XMR-USD",
   "display_name": "XMR",
-  "price": 325.72,
-  "conviction": 26.4,
+  "price": 347.11,
+  "conviction": 23.6,
   "is_signal": false,
-  "mtmdi_zscore": -1.133,
-  "mtmdi_raw": 0.522,
-  "mtmdi_direction": 0.837,
-  "mtmdi_velocity": -0.344,
-  "cascade_score": 0.0408,
-  "momentum_persistence": -1.406,
-  "range_compression": 0.504,
-  "vol_30d": 58.9,
-  "vol_regime": "normal",
-  "drawdown": -54.3,
-  "position_in_range": 24.4,
+  "mtmdi_zscore": -0.452,
+  "mtmdi_raw": 0.726,
+  "mtmdi_direction": 1.187,
+  "mtmdi_velocity": 0.041,
+  "cascade_score": -0.0075,
+  "momentum_persistence": 1.314,
+  "range_compression": 0.547,
+  "vol_30d": 61.9,
+  "vol_regime": "high",
+  "drawdown": -51.3,
+  "position_in_range": 28.5,
   "returns": {
-    "7d": -3.28,
-    "14d": -4.45,
-    "30d": -4.59,
-    "90d": -32.71,
-    "180d": 9.97,
-    "365d": 51.5
+    "7d": 6.24,
+    "14d": 5.54,
+    "30d": -1.71,
+    "90d": -26.17,
+    "180d": 15.16,
+    "365d": 53.64
   },
   "signals": {
-    "mtmdi": true,
+    "mtmdi": false,
     "direction": true,
     "velocity": false,
-    "cascade": true,
-    "momentum": false,
+    "cascade": false,
+    "momentum": true,
     "range_compress": false,
     "vol_surge": false
   },
   "confirming_factors": 1,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 203.0
-    },
     {
       "date": "2025-04-10",
       "price": 200.86
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 325.72
+    },
+    {
+      "date": "2026-04-09",
+      "price": 347.11
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.679
-    },
     {
       "date": "2025-04-10",
       "value": 1.111
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -1.133
+    },
+    {
+      "date": "2026-04-09",
+      "value": -0.452
     }
   ]
 }

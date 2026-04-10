@@ -2,42 +2,38 @@
   "ticker": "ROSE-USD",
   "display_name": "ROSE",
   "price": 0.01,
-  "conviction": 39.5,
+  "conviction": 48.0,
   "is_signal": false,
-  "mtmdi_zscore": -0.374,
-  "mtmdi_raw": 0.683,
-  "mtmdi_direction": -0.986,
-  "mtmdi_velocity": 0.335,
-  "cascade_score": 0.1541,
-  "momentum_persistence": -0.829,
-  "range_compression": 0.172,
-  "vol_30d": 55.8,
+  "mtmdi_zscore": -1.093,
+  "mtmdi_raw": 0.495,
+  "mtmdi_direction": -0.668,
+  "mtmdi_velocity": -0.886,
+  "cascade_score": 0.1385,
+  "momentum_persistence": 1.289,
+  "range_compression": 0.173,
+  "vol_30d": 57.1,
   "vol_regime": "normal",
-  "drawdown": -77.0,
-  "position_in_range": 1.0,
+  "drawdown": -76.2,
+  "position_in_range": 2.0,
   "returns": {
-    "7d": -4.92,
-    "14d": -17.01,
-    "30d": -21.57,
-    "90d": -20.85,
-    "180d": -68.5,
-    "365d": -76.6
+    "7d": 2.12,
+    "14d": -10.1,
+    "30d": -15.76,
+    "90d": -16.89,
+    "180d": -61.88,
+    "365d": -84.93
   },
   "signals": {
-    "mtmdi": false,
+    "mtmdi": true,
     "direction": false,
-    "velocity": true,
+    "velocity": false,
     "cascade": true,
-    "momentum": false,
+    "momentum": true,
     "range_compress": true,
     "vol_surge": false
   },
   "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 0.02
-    },
     {
       "date": "2025-04-10",
       "price": 0.02
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.01
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.01
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": -0.184
-    },
     {
       "date": "2025-04-10",
       "value": -0.358
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -0.374
+    },
+    {
+      "date": "2026-04-09",
+      "value": -1.093
     }
   ]
 }

@@ -1,43 +1,39 @@
 {
   "ticker": "QTUM-USD",
   "display_name": "QTUM",
-  "price": 0.91,
-  "conviction": 11.7,
+  "price": 0.92,
+  "conviction": 29.1,
   "is_signal": false,
-  "mtmdi_zscore": -0.278,
-  "mtmdi_raw": 0.608,
-  "mtmdi_direction": 0.945,
-  "mtmdi_velocity": -2.488,
-  "cascade_score": -0.0102,
-  "momentum_persistence": -0.905,
-  "range_compression": 0.532,
+  "mtmdi_zscore": 0.487,
+  "mtmdi_raw": 0.806,
+  "mtmdi_direction": 1.442,
+  "mtmdi_velocity": -1.28,
+  "cascade_score": -0.0275,
+  "momentum_persistence": 1.236,
+  "range_compression": 0.349,
   "vol_30d": 79.7,
   "vol_regime": "high",
-  "drawdown": -70.5,
-  "position_in_range": 4.9,
+  "drawdown": -70.3,
+  "position_in_range": 5.2,
   "returns": {
-    "7d": -2.09,
-    "14d": 0.66,
-    "30d": 4.73,
-    "90d": -48.24,
-    "180d": -68.78,
-    "365d": -62.48
+    "7d": 4.36,
+    "14d": 7.78,
+    "30d": 4.34,
+    "90d": -48.31,
+    "180d": -70.76,
+    "365d": -72.57
   },
   "signals": {
     "mtmdi": false,
     "direction": true,
     "velocity": false,
     "cascade": false,
-    "momentum": false,
-    "range_compress": false,
+    "momentum": true,
+    "range_compress": true,
     "vol_surge": false
   },
-  "confirming_factors": 0,
+  "confirming_factors": 2,
   "chart": [
-    {
-      "date": "2025-04-09",
-      "price": 1.9
-    },
     {
       "date": "2025-04-10",
       "price": 1.88
@@ -1493,13 +1489,13 @@
     {
       "date": "2026-04-08",
       "price": 0.91
+    },
+    {
+      "date": "2026-04-09",
+      "price": 0.92
     }
   ],
   "mtmdi_history": [
-    {
-      "date": "2025-04-09",
-      "value": 0.778
-    },
     {
       "date": "2025-04-10",
       "value": 0.959
@@ -2955,6 +2951,10 @@
     {
       "date": "2026-04-08",
       "value": -0.278
+    },
+    {
+      "date": "2026-04-09",
+      "value": 0.487
     }
   ]
 }
