@@ -1,95 +1,135 @@
 {
-  "generated": "2026-04-10T22:45:53.395377",
+  "generated": "2026-04-11T22:44:46.997396",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
   "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
   "current_status": {
-    "spy_price": 679.91,
+    "spy_price": 679.46,
     "vol_regime": "normal",
-    "n_signals": 8,
+    "n_signals": 12,
     "n_positions": 0,
     "total_exposure": 0
   },
   "top_signals": [
     {
       "ticker": "MS",
-      "price": 178.16,
-      "mtmdi_z": 2.31,
-      "cacs": -0.1,
-      "mpr_z": 1.62,
-      "strength": 0.848,
+      "price": 177.64,
+      "mtmdi_z": 2.37,
+      "cacs": -0.096,
+      "mpr_z": 1.61,
+      "strength": 0.856,
       "vol_regime": "high",
-      "rationale": "MTMDI z=2.31; MPR z=1.62; regime=high"
-    },
-    {
-      "ticker": "GS",
-      "price": 903.72,
-      "mtmdi_z": 2.13,
-      "cacs": -0.074,
-      "mpr_z": 1.55,
-      "strength": 0.811,
-      "vol_regime": "high",
-      "rationale": "MTMDI z=2.13; MPR z=1.55; regime=high"
-    },
-    {
-      "ticker": "BAC",
-      "price": 52.71,
-      "mtmdi_z": 1.92,
-      "cacs": -0.078,
-      "mpr_z": 1.36,
-      "strength": 0.756,
-      "vol_regime": "normal",
-      "rationale": "MTMDI z=1.92; MPR z=1.36; regime=normal"
+      "rationale": "MTMDI z=2.37; MPR z=1.61; regime=high"
     },
     {
       "ticker": "GE",
-      "price": 313.02,
-      "mtmdi_z": 1.71,
-      "cacs": 0.054,
-      "mpr_z": 1.52,
-      "strength": 0.737,
+      "price": 308.35,
+      "mtmdi_z": 2.23,
+      "cacs": 0.066,
+      "mpr_z": 1.51,
+      "strength": 0.822,
       "vol_regime": "high",
-      "rationale": "MTMDI z=1.71; cascade=0.054; MPR z=1.52; regime=high"
+      "rationale": "MTMDI z=2.23; cascade=0.066; MPR z=1.51; regime=high"
     },
     {
-      "ticker": "SCHW",
-      "price": 97.27,
-      "mtmdi_z": 1.98,
-      "cacs": -0.04,
+      "ticker": "GS",
+      "price": 907.8,
+      "mtmdi_z": 2.14,
+      "cacs": -0.091,
+      "mpr_z": 1.54,
+      "strength": 0.81,
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.14; MPR z=1.54; regime=high"
+    },
+    {
+      "ticker": "BAC",
+      "price": 52.54,
+      "mtmdi_z": 2.07,
+      "cacs": -0.075,
       "mpr_z": 1.35,
-      "strength": 0.707,
+      "strength": 0.78,
       "vol_regime": "normal",
-      "rationale": "MTMDI z=1.98; MPR z=1.35; regime=normal"
+      "rationale": "MTMDI z=2.07; MPR z=1.35; regime=normal"
+    },
+    {
+      "ticker": "AVGO",
+      "price": 371.55,
+      "mtmdi_z": 1.96,
+      "cacs": -0.077,
+      "mpr_z": 1.4,
+      "strength": 0.766,
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.96; MPR z=1.40; regime=high"
     },
     {
       "ticker": "JPM",
-      "price": 310.33,
-      "mtmdi_z": 1.53,
-      "cacs": -0.073,
-      "mpr_z": 1.3,
-      "strength": 0.685,
+      "price": 309.87,
+      "mtmdi_z": 1.63,
+      "cacs": -0.076,
+      "mpr_z": 1.29,
+      "strength": 0.7,
       "vol_regime": "normal",
-      "rationale": "MTMDI z=1.53; MPR z=1.30; regime=normal"
+      "rationale": "MTMDI z=1.63; MPR z=1.29; regime=normal"
+    },
+    {
+      "ticker": "QCOM",
+      "price": 128.06,
+      "mtmdi_z": 1.59,
+      "cacs": 0.05,
+      "mpr_z": 1.3,
+      "strength": 0.693,
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.59; cascade=0.050; MPR z=1.30; regime=normal"
+    },
+    {
+      "ticker": "AMZN",
+      "price": 238.38,
+      "mtmdi_z": 1.54,
+      "cacs": -0.11,
+      "mpr_z": 1.19,
+      "strength": 0.675,
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.54; MPR z=1.19; regime=high"
     },
     {
       "ticker": "ORCL",
-      "price": 137.86,
-      "mtmdi_z": -1.62,
-      "cacs": 0.082,
+      "price": 138.09,
+      "mtmdi_z": -1.57,
+      "cacs": 0.16,
       "mpr_z": -1.2,
-      "strength": 0.571,
+      "strength": 0.562,
       "vol_regime": "high",
-      "rationale": "MTMDI z=-1.62; cascade=0.082; regime=high"
+      "rationale": "MTMDI z=-1.57; cascade=0.160; regime=high"
     },
     {
-      "ticker": "SHW",
-      "price": 335.73,
-      "mtmdi_z": -2.13,
-      "cacs": -0.008,
-      "mpr_z": 1.15,
-      "strength": 0.516,
+      "ticker": "NVDA",
+      "price": 188.63,
+      "mtmdi_z": 2.26,
+      "cacs": -0.003,
+      "mpr_z": 1.37,
+      "strength": 0.529,
       "vol_regime": "high",
-      "rationale": "MTMDI z=-2.13; MPR z=1.15; regime=high"
+      "rationale": "MTMDI z=2.26; MPR z=1.37; regime=high"
+    },
+    {
+      "ticker": "EMR",
+      "price": 143.77,
+      "mtmdi_z": 1.82,
+      "cacs": -0.017,
+      "mpr_z": 1.24,
+      "strength": 0.527,
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.82; MPR z=1.24; regime=high"
+    },
+    {
+      "ticker": "ECL",
+      "price": 273.29,
+      "mtmdi_z": 1.82,
+      "cacs": 0.018,
+      "mpr_z": 1.1,
+      "strength": 0.521,
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.82; MPR z=1.10; regime=normal"
     }
   ],
   "performance": {
