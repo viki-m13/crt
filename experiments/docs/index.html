@@ -99,6 +99,14 @@
 
     .disclaimer { text-align: center; color: var(--muted); font-size: 11px; padding: 24px 16px; border-top: 1px solid var(--border); margin-top: 24px; line-height: 1.6; }
 
+    /* HEATMAP */
+    .heat { display: grid; grid-template-columns: 44px repeat(12, 1fr) 56px; gap: 2px; font-size: 10px; }
+    .heat-cell { background: var(--surface); padding: 6px 2px; text-align: center; border-radius: 2px; font-family: var(--mono); font-weight: 600; color: var(--ink); }
+    .heat-head { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 9px; background: transparent; }
+    .heat-year { color: var(--muted); text-align: right; padding-right: 6px; font-weight: 700; display: flex; align-items: center; justify-content: flex-end; background: transparent; }
+    .kv-table td { padding: 6px 10px; }
+    .kv-table td:first-child { color: var(--muted); width: 45%; }
+
     @media (max-width: 420px) {
       .pick-ticker { font-size: 17px; }
       .pick-stat-value { font-size: 14px; }
@@ -213,6 +221,49 @@
       <div class="section-title" id="eqTitle">Equity Curve &mdash; Strategy vs SPY ($10k)</div>
       <div class="chart-container" style="height:260px"><canvas id="equityChart"></canvas></div>
       <div id="equityMeta" style="display:flex;justify-content:space-around;margin-top:8px;font-size:12px"></div>
+    </div>
+
+    <!-- ============ STRATEGY FACTSHEET ============ -->
+    <div class="section">
+      <div class="section-title">Risk &amp; Return Statistics</div>
+      <div id="riskStatsBox"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Trailing Returns</div>
+      <div id="trailingReturnsBox"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Calendar Year Returns</div>
+      <div id="calYearBox"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Monthly Returns Heatmap (%)</div>
+      <div id="monthlyHeatmapBox"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Drawdown</div>
+      <div class="chart-container" style="height:200px"><canvas id="drawdownChart"></canvas></div>
+      <div id="drawdownMeta" style="margin-top:8px;font-size:12px;color:var(--muted);text-align:center"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Rolling 12-Month Sharpe</div>
+      <div class="chart-container" style="height:200px"><canvas id="rollSharpeChart"></canvas></div>
+      <div id="rollSharpeMeta" style="margin-top:8px;font-size:12px;color:var(--muted);text-align:center"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Stress Test Analysis</div>
+      <div id="stressTestBox"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Portfolio Parameters</div>
+      <div id="portfolioParamsBox"></div>
     </div>
 
     <!-- HISTORICAL PICKS -->
@@ -385,10 +436,20 @@ function renderAll(){
   renderHistoricalPicks(d);
   renderCandidateTable(d);
 
+  // Factsheet sections (DOM-only, computed from equity curve)
+  renderRiskStats(d);
+  renderTrailingReturns(d);
+  renderCalendarYears(d);
+  renderMonthlyHeatmap(d);
+  renderStressTests(d);
+  renderPortfolioParams(d);
+
   // 3. Render charts LAST (after sections are visible)
   requestAnimationFrame(()=>{
     renderEquityCurve(d);
     renderDailyTop1(d);
+    renderDrawdownChart(d);
+    renderRollingSharpe(d);
   });
 }
 
@@ -1116,6 +1177,470 @@ function drawPriceChart(canvas,data,ticker,buys){
     ctx.fillStyle='var(--blue)';ctx.font='10px -apple-system,sans-serif';
     ctx.fillText(`${buys.length} historical pick${buys.length>1?'s':''}`,padL+8,padT+28);
   }
+}
+
+/* ============================================================
+   STRATEGY FACTSHEET — Trailing returns, risk stats, calendar
+   year returns, monthly heatmap, drawdown curve, rolling Sharpe,
+   stress tests, and portfolio parameters. All derived client-side
+   from the monthly equity_curve_strategy series in each dataset.
+   ============================================================ */
+function getBenchmarkEquity(d){
+  return d.equity_curve_btc||d.equity_curve_spy||[];
+}
+function getBenchmarkName(){
+  return ACTIVE_TAB==='crypto'?'BTC':'SPY';
+}
+function monthlyReturns(eq){
+  const r=[];
+  for(let i=1;i<eq.length;i++){
+    if(eq[i-1].value>0) r.push({date:eq[i].date, ret:eq[i].value/eq[i-1].value-1});
+  }
+  return r;
+}
+function computeStats(eq){
+  if(!eq||eq.length<2) return null;
+  const rets=monthlyReturns(eq);
+  const n=rets.length;
+  if(n<1) return null;
+  const rs=rets.map(r=>r.ret);
+  const mean=rs.reduce((a,b)=>a+b,0)/n;
+  const variance=n>1?rs.reduce((a,b)=>a+(b-mean)**2,0)/(n-1):0;
+  const std=Math.sqrt(variance);
+  const annRet=Math.pow(eq[eq.length-1].value/eq[0].value,12/n)-1;
+  const annVol=std*Math.sqrt(12);
+  const sharpe=annVol>0?annRet/annVol:0;
+  const downSq=rs.reduce((a,b)=>a+(b<0?b*b:0),0)/n;
+  const downStd=Math.sqrt(downSq)*Math.sqrt(12);
+  const sortino=downStd>0?annRet/downStd:0;
+  let peak=eq[0].value,maxDD=0,tmpPeakDate=eq[0].date,maxPeakDate=eq[0].date,maxTroughDate=eq[0].date;
+  const ddCurve=[];
+  for(const p of eq){
+    if(p.value>peak){peak=p.value;tmpPeakDate=p.date;}
+    const dd=p.value/peak-1;
+    ddCurve.push({date:p.date,dd});
+    if(dd<maxDD){maxDD=dd;maxPeakDate=tmpPeakDate;maxTroughDate=p.date;}
+  }
+  const calmar=maxDD<0?annRet/Math.abs(maxDD):0;
+  const posMonths=n>0?rs.filter(v=>v>0).length/n:0;
+  const bestM=rs.length?Math.max(...rs):0;
+  const worstM=rs.length?Math.min(...rs):0;
+  const m3=n>0?rs.reduce((a,b)=>a+(b-mean)**3,0)/n:0;
+  const m4=n>0?rs.reduce((a,b)=>a+(b-mean)**4,0)/n:0;
+  const skew=std>0?m3/Math.pow(std,3):0;
+  const kurt=std>0?(m4/Math.pow(std,4)-3):0;
+  return {rets,n,annRet,annVol,sharpe,sortino,calmar,maxDD,posMonths,bestM,worstM,skew,kurt,ddCurve,maxPeakDate,maxTroughDate};
+}
+function trailingReturn(eq,months){
+  if(!eq||eq.length<2) return null;
+  if(months>=eq.length) months=eq.length-1;
+  if(months<=0) return null;
+  const last=eq[eq.length-1].value;
+  const prev=eq[eq.length-1-months].value;
+  if(!prev) return null;
+  return last/prev-1;
+}
+function ytdReturn(eq){
+  if(!eq||eq.length<2) return null;
+  const lastDate=eq[eq.length-1].date;
+  const year=lastDate.slice(0,4);
+  let startIdx=-1;
+  for(let i=eq.length-1;i>=0;i--){
+    if(eq[i].date.slice(0,4)<year){startIdx=i;break;}
+  }
+  if(startIdx<0) startIdx=0;
+  return eq[eq.length-1].value/eq[startIdx].value-1;
+}
+function siReturn(eq){
+  if(!eq||eq.length<2) return null;
+  return eq[eq.length-1].value/eq[0].value-1;
+}
+
+function renderTrailingReturns(d){
+  const el=document.getElementById('trailingReturnsBox');
+  if(!el) return;
+  const strat=d.equity_curve_strategy||[];
+  const bench=getBenchmarkEquity(d);
+  const benchName=getBenchmarkName();
+  if(strat.length<2){el.innerHTML='';return;}
+  const periods=[
+    {label:'1M',fn:(eq)=>trailingReturn(eq,1)},
+    {label:'3M',fn:(eq)=>trailingReturn(eq,3)},
+    {label:'6M',fn:(eq)=>trailingReturn(eq,6)},
+    {label:'YTD',fn:(eq)=>ytdReturn(eq)},
+    {label:'1Y',fn:(eq)=>trailingReturn(eq,12)},
+    {label:'2Y',fn:(eq)=>trailingReturn(eq,24)},
+    {label:'3Y',fn:(eq)=>trailingReturn(eq,36)},
+    {label:'SI',fn:(eq)=>siReturn(eq)},
+  ];
+  const fmt=(v)=>v==null?'&mdash;':((v>=0?'+':'')+(v*100).toFixed(1)+'%');
+  const cls=(v)=>v==null?'':(v>=0?'pnl-pos':'pnl-neg');
+  let head='<tr><th></th>';
+  for(const p of periods) head+=`<th>${p.label}</th>`;
+  head+='</tr>';
+  const row=(name,eq,style)=>{
+    let h=`<tr><td style="${style||''}"><strong>${name}</strong></td>`;
+    for(const p of periods){
+      const v=eq.length?p.fn(eq):null;
+      h+=`<td class="${cls(v)}">${fmt(v)}</td>`;
+    }
+    return h+'</tr>';
+  };
+  let alphaRow='';
+  if(bench.length>=2){
+    let ar='<tr><td style="color:var(--muted)"><strong>Alpha</strong></td>';
+    for(const p of periods){
+      const sv=p.fn(strat), bv=p.fn(bench);
+      const a=(sv!=null&&bv!=null)?(sv-bv):null;
+      ar+=`<td class="${cls(a)}">${fmt(a)}</td>`;
+    }
+    alphaRow=ar+'</tr>';
+  }
+  el.innerHTML=`<div class="table-wrap"><table><thead>${head}</thead><tbody>
+    ${row('Strategy',strat,'color:var(--green)')}
+    ${bench.length?row(benchName,bench,'color:var(--muted)'):''}
+    ${alphaRow}
+  </tbody></table></div>
+  <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Computed from monthly equity curve. SI = since inception of the backtest.</div>`;
+}
+
+function renderRiskStats(d){
+  const el=document.getElementById('riskStatsBox');
+  if(!el) return;
+  const strat=d.equity_curve_strategy||[];
+  const bench=getBenchmarkEquity(d);
+  const benchName=getBenchmarkName();
+  const s=computeStats(strat);
+  const b=computeStats(bench);
+  if(!s){el.innerHTML='';return;}
+  const pct=(v)=>(v*100).toFixed(1)+'%';
+  const vs=b?`<span style="color:var(--muted)"> &middot; ${benchName}: ${pct(b.annRet)}</span>`:'';
+  const vsV=b?`<span style="color:var(--muted)"> &middot; ${benchName}: ${pct(b.annVol)}</span>`:'';
+  const vsS=b?`<span style="color:var(--muted)"> &middot; ${benchName}: ${b.sharpe.toFixed(2)}</span>`:'';
+  const vsDD=b?`<span style="color:var(--muted)"> &middot; ${benchName}: ${pct(b.maxDD)}</span>`:'';
+  el.innerHTML=`<div class="grid" style="grid-template-columns:repeat(2,1fr)">
+    <div class="card"><h3>Annualized Return</h3><div class="big" style="color:var(--green)">${pct(s.annRet)}</div><div class="sub">Since ${strat[0].date}${vs}</div></div>
+    <div class="card"><h3>Annualized Volatility</h3><div class="big">${pct(s.annVol)}</div><div class="sub">Monthly std &times; &radic;12${vsV}</div></div>
+    <div class="card highlight"><h3>Sharpe Ratio</h3><div class="big" style="color:var(--green)">${s.sharpe.toFixed(2)}</div><div class="sub">Ann ret / ann vol${vsS}</div></div>
+    <div class="card"><h3>Sortino Ratio</h3><div class="big" style="color:var(--green)">${s.sortino.toFixed(2)}</div><div class="sub">Downside deviation only</div></div>
+    <div class="card"><h3>Max Drawdown</h3><div class="big pnl-neg">${pct(s.maxDD)}</div><div class="sub">${s.maxPeakDate} &rarr; ${s.maxTroughDate}${vsDD}</div></div>
+    <div class="card"><h3>Calmar Ratio</h3><div class="big" style="color:var(--green)">${s.calmar.toFixed(2)}</div><div class="sub">Ann ret / |max DD|</div></div>
+    <div class="card"><h3>% Positive Months</h3><div class="big">${pct(s.posMonths)}</div><div class="sub">${s.rets.filter(r=>r.ret>0).length} of ${s.n} months</div></div>
+    <div class="card"><h3>Best / Worst Month</h3><div class="big" style="font-size:15px"><span class="pnl-pos">+${(s.bestM*100).toFixed(1)}%</span> / <span class="pnl-neg">${(s.worstM*100).toFixed(1)}%</span></div><div class="sub">Skew ${s.skew.toFixed(2)} &middot; Excess kurt ${s.kurt.toFixed(2)}</div></div>
+  </div>`;
+}
+
+function renderCalendarYears(d){
+  const el=document.getElementById('calYearBox');
+  if(!el) return;
+  const strat=d.equity_curve_strategy||[];
+  const bench=getBenchmarkEquity(d);
+  const benchName=getBenchmarkName();
+  if(strat.length<2){el.innerHTML='';return;}
+  const yearReturns=(eq)=>{
+    const byYear={};
+    for(let i=1;i<eq.length;i++){
+      const y=eq[i].date.slice(0,4);
+      const r=eq[i].value/eq[i-1].value-1;
+      if(!byYear[y]) byYear[y]={cum:1,months:0};
+      byYear[y].cum*=1+r;
+      byYear[y].months+=1;
+    }
+    const out={};
+    for(const y in byYear) out[y]={ret:byYear[y].cum-1,months:byYear[y].months};
+    return out;
+  };
+  const sY=yearReturns(strat);
+  const bY=bench.length?yearReturns(bench):{};
+  const years=Object.keys(sY).sort();
+  const fmt=(v)=>v==null?'&mdash;':((v>=0?'+':'')+(v*100).toFixed(1)+'%');
+  const cls=(v)=>v==null?'':(v>=0?'pnl-pos':'pnl-neg');
+  let html='<div class="table-wrap"><table><thead><tr><th>Year</th><th>Months</th><th>Strategy</th>'
+    +(bench.length?`<th>${benchName}</th><th>Alpha</th>`:'')+'</tr></thead><tbody>';
+  for(const y of years){
+    const sR=sY[y].ret;
+    const bR=bY[y]?bY[y].ret:null;
+    const alpha=(sR!=null&&bR!=null)?(sR-bR):null;
+    html+=`<tr><td>${y}</td><td>${sY[y].months}</td>`;
+    html+=`<td class="${cls(sR)}">${fmt(sR)}</td>`;
+    if(bench.length){
+      html+=`<td class="${cls(bR)}">${fmt(bR)}</td>`;
+      html+=`<td class="${cls(alpha)}">${fmt(alpha)}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderMonthlyHeatmap(d){
+  const el=document.getElementById('monthlyHeatmapBox');
+  if(!el) return;
+  const strat=d.equity_curve_strategy||[];
+  if(strat.length<2){el.innerHTML='';return;}
+  const rets=monthlyReturns(strat);
+  const grid={};
+  for(const r of rets){
+    const [y,m]=r.date.split('-');
+    if(!grid[y]) grid[y]={};
+    grid[y][parseInt(m)]=r.ret;
+  }
+  const years=Object.keys(grid).sort();
+  const colorFor=(v)=>{
+    if(v==null||isNaN(v)) return 'var(--surface)';
+    const a=Math.min(Math.abs(v)*10,0.85);
+    return v>=0?`rgba(0,200,83,${a})`:`rgba(255,82,82,${a})`;
+  };
+  const months=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  let html='<div class="heat"><div class="heat-head heat-year"></div>';
+  for(const m of months) html+=`<div class="heat-head heat-cell">${m}</div>`;
+  html+='<div class="heat-head heat-cell">YTD</div>';
+  for(const y of years){
+    html+=`<div class="heat-year">${y}</div>`;
+    let ytd=1,hasYTD=false;
+    for(let mi=1;mi<=12;mi++){
+      const v=grid[y]?grid[y][mi]:null;
+      if(v!=null){ ytd*=1+v; hasYTD=true; }
+      html+=`<div class="heat-cell" style="background:${colorFor(v)};color:${v==null?'var(--muted)':'var(--ink)'}">${v==null?'&mdash;':((v*100).toFixed(1))}</div>`;
+    }
+    const ytdRet=hasYTD?ytd-1:null;
+    html+=`<div class="heat-cell" style="background:${colorFor(ytdRet)};font-weight:800">${ytdRet==null?'&mdash;':((ytdRet*100).toFixed(1))}</div>`;
+  }
+  html+='</div>';
+  html+='<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Values are monthly % returns. YTD column is the cumulative calendar-year return.</div>';
+  el.innerHTML=html;
+}
+
+function renderDrawdownChart(d){
+  const canvas=document.getElementById('drawdownChart');
+  if(!canvas) return;
+  const eq=d.equity_curve_strategy||[];
+  const s=computeStats(eq);
+  const meta=document.getElementById('drawdownMeta');
+  if(!s||!s.ddCurve.length){if(meta)meta.textContent='';return;}
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const dd=s.ddCurve;
+  const n=dd.length;
+  const padL=55,padR=15,padT=16,padB=24;
+  let mn=Math.min(...dd.map(p=>p.dd));
+  if(mn>=0) mn=-0.01;
+  const mx=0;
+  const rng=mx-mn||1;
+  const top=mx+rng*0.05, bot=mn-rng*0.05;
+  const x=i=>padL+(W-padL-padR)*i/Math.max(n-1,1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-bot)/(top-bot));
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const val=bot+(top-bot)*i/4;
+    const yy=y(val);
+    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
+    ctx.fillText((val*100).toFixed(0)+'%',padL-6,yy+3);
+  }
+  // Fill
+  ctx.beginPath();ctx.moveTo(x(0),y(0));
+  for(let i=0;i<n;i++) ctx.lineTo(x(i),y(dd[i].dd));
+  ctx.lineTo(x(n-1),y(0));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(255,82,82,0.05)');
+  grad.addColorStop(1,'rgba(255,82,82,0.35)');
+  ctx.fillStyle=grad;ctx.fill();
+  // Line
+  ctx.strokeStyle='#ff5252';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<n;i++){i===0?ctx.moveTo(x(i),y(dd[i].dd)):ctx.lineTo(x(i),y(dd[i].dd));}
+  ctx.stroke();
+  // Zero line
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(padL,y(0));ctx.lineTo(W-padR,y(0));ctx.stroke();ctx.setLineDash([]);
+  // Label
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.fillStyle='#ff5252';
+  ctx.fillText(`Max DD ${(s.maxDD*100).toFixed(1)}% (${s.maxPeakDate} \u2192 ${s.maxTroughDate})`,padL+8,padT+12);
+  if(meta) meta.textContent=`Max drawdown: ${(s.maxDD*100).toFixed(1)}% \u00B7 Calmar: ${s.calmar.toFixed(2)} \u00B7 Worst trough ${s.maxTroughDate}`;
+}
+
+function renderRollingSharpe(d){
+  const canvas=document.getElementById('rollSharpeChart');
+  if(!canvas) return;
+  const eq=d.equity_curve_strategy||[];
+  const meta=document.getElementById('rollSharpeMeta');
+  if(eq.length<13){if(meta)meta.textContent='Not enough history for 12-month rolling Sharpe.';return;}
+  const rets=monthlyReturns(eq).map(r=>r.ret);
+  const win=12;
+  const series=[];
+  for(let i=win-1;i<rets.length;i++){
+    const slice=rets.slice(i-win+1,i+1);
+    const m=slice.reduce((a,b)=>a+b,0)/win;
+    const v=Math.sqrt(slice.reduce((a,b)=>a+(b-m)**2,0)/(win-1));
+    const annR=Math.pow(1+m,12)-1;
+    const annV=v*Math.sqrt(12);
+    const sh=annV>0?annR/annV:0;
+    series.push({date:eq[i+1].date,sh});
+  }
+  if(!series.length){if(meta)meta.textContent='';return;}
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const vals=series.map(p=>p.sh);
+  const n=vals.length;
+  const padL=55,padR=15,padT=16,padB=24;
+  let mn=Math.min(0,...vals),mx=Math.max(1,...vals);
+  const rng=mx-mn||1;mn-=rng*0.05;mx+=rng*0.05;
+  const x=i=>padL+(W-padL-padR)*i/Math.max(n-1,1);
+  const y=v=>padT+(H-padT-padB)*(1-(v-mn)/(mx-mn));
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  ctx.font='10px -apple-system,sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4;const yy=y(val);ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();ctx.fillText(val.toFixed(1),padL-6,yy+3);}
+  if(mn<0&&mx>0){
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(padL,y(0));ctx.lineTo(W-padR,y(0));ctx.stroke();ctx.setLineDash([]);
+  }
+  // Fill
+  ctx.beginPath();ctx.moveTo(x(0),y(Math.max(mn,0)));
+  for(let i=0;i<n;i++) ctx.lineTo(x(i),y(vals[i]));
+  ctx.lineTo(x(n-1),y(Math.max(mn,0)));ctx.closePath();
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(100,181,246,0.22)');
+  grad.addColorStop(1,'rgba(100,181,246,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // Line
+  ctx.strokeStyle='#64b5f6';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<n;i++){i===0?ctx.moveTo(x(i),y(vals[i])):ctx.lineTo(x(i),y(vals[i]));}
+  ctx.stroke();
+  // Label
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.fillStyle='#64b5f6';
+  const avg=vals.reduce((a,b)=>a+b,0)/n;
+  ctx.fillText(`Current ${vals[n-1].toFixed(2)} \u00B7 Avg ${avg.toFixed(2)}`,padL+8,padT+12);
+  if(meta) meta.textContent=`12-month rolling Sharpe \u00B7 range ${Math.min(...vals).toFixed(2)} to ${Math.max(...vals).toFixed(2)} \u00B7 avg ${avg.toFixed(2)}`;
+}
+
+function renderStressTests(d){
+  const el=document.getElementById('stressTestBox');
+  if(!el) return;
+  const strat=d.equity_curve_strategy||[];
+  const bench=getBenchmarkEquity(d);
+  const benchName=getBenchmarkName();
+  if(strat.length<2){el.innerHTML='';return;}
+  const windowReturn=(eq,start,end)=>{
+    let sIdx=-1,eIdx=-1;
+    for(let i=0;i<eq.length;i++){
+      if(eq[i].date>=start && sIdx<0) sIdx=i;
+      if(eq[i].date<=end) eIdx=i;
+    }
+    if(sIdx<0||eIdx<=sIdx) return null;
+    return eq[eIdx].value/eq[sIdx].value-1;
+  };
+  const stresses=[
+    {name:'Post-SVB Banking Crisis',start:'2023-03',end:'2023-05'},
+    {name:'2023 Rate Scare',start:'2023-08',end:'2023-10'},
+    {name:'2024 Yen Carry Unwind',start:'2024-07',end:'2024-08'},
+    {name:'2024 Q4 Rate Repricing',start:'2024-11',end:'2024-12'},
+    {name:'2025 Tariff Shock',start:'2025-02',end:'2025-04'},
+    {name:'2025 Summer Volatility',start:'2025-07',end:'2025-09'},
+  ];
+  const fmt=(v)=>v==null?'&mdash;':((v>=0?'+':'')+(v*100).toFixed(1)+'%');
+  const cls=(v)=>v==null?'':(v>=0?'pnl-pos':'pnl-neg');
+  let html='<div class="table-wrap"><table><thead><tr><th>Scenario</th><th>Window</th><th>Strategy</th><th>'+benchName+'</th><th>Alpha</th></tr></thead><tbody>';
+  let any=false;
+  for(const sc of stresses){
+    const sR=windowReturn(strat,sc.start,sc.end);
+    if(sR==null) continue;
+    const bR=bench.length?windowReturn(bench,sc.start,sc.end):null;
+    const a=(sR!=null&&bR!=null)?(sR-bR):null;
+    html+=`<tr><td><strong>${sc.name}</strong></td><td style="color:var(--muted)">${sc.start} \u2192 ${sc.end}</td><td class="${cls(sR)}">${fmt(sR)}</td><td class="${cls(bR)}">${fmt(bR)}</td><td class="${cls(a)}">${fmt(a)}</td></tr>`;
+    any=true;
+  }
+  if(!any){
+    html+='<tr><td colspan="5" style="text-align:center;color:var(--muted)">No overlapping stress windows in the backtest period.</td></tr>';
+  }
+  html+='</tbody></table></div>';
+  // Hypothetical scenarios from empirical distribution
+  const s=computeStats(strat);
+  if(s){
+    const shocks=[
+      {name:'1-sigma monthly loss',mag:-s.annVol/Math.sqrt(12)},
+      {name:'2-sigma monthly loss',mag:-2*s.annVol/Math.sqrt(12)},
+      {name:'Repeat of worst month',mag:s.worstM},
+      {name:'Repeat of max drawdown',mag:s.maxDD},
+    ];
+    html+='<div style="margin-top:12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Hypothetical Scenarios (applied to $10k)</div>';
+    html+='<div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>Scenario</th><th>Shock</th><th>$10k &rarr;</th></tr></thead><tbody>';
+    for(const sh of shocks){
+      const after=10000*(1+sh.mag);
+      html+=`<tr><td>${sh.name}</td><td class="${cls(sh.mag)}">${fmt(sh.mag)}</td><td>$${after.toFixed(0)}</td></tr>`;
+    }
+    html+='</tbody></table></div>';
+  }
+  html+='<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Historical windows computed from the monthly equity curve. Hypothetical scenarios derived from the strategy&rsquo;s own empirical distribution.</div>';
+  el.innerHTML=html;
+}
+
+function renderPortfolioParams(d){
+  const el=document.getElementById('portfolioParamsBox');
+  if(!el) return;
+  const model=d.model||{};
+  const cfg=d.best_config||{};
+  const perf=d.performance||{};
+  const ps=perf.param_sweep||{};
+  const rows=[];
+  rows.push(['Strategy',d.strategy_full_name||d.strategy||'&mdash;']);
+  rows.push(['Target',d.target||'&mdash;']);
+  if(ACTIVE_TAB==='stocks'){
+    rows.push(['Rebalance','Daily scoring, 30-day holding window']);
+    rows.push(['Horizon','30 trading days']);
+    rows.push(['Universe','~500 liquid US stocks']);
+    rows.push(['Ensemble',(model.models||[]).join(', ')||`${model.ensemble_size||0} models`]);
+    rows.push(['Features',`${model.features||'?'}`]);
+    rows.push(['Training samples',`${(model.training_samples||0).toLocaleString()}`]);
+    rows.push(['Training positive rate',`${((model.training_positive_rate||0)*100).toFixed(1)}%`]);
+    rows.push(['Best config',ps.best_config||'&mdash;']);
+    rows.push(['Configs tested',`${ps.configs_tested||'?'}`]);
+    rows.push(['Runner up',ps.runner_up||'&mdash;']);
+    rows.push(['Execution costs','10 bps slippage + 5 bps commission']);
+    rows.push(['Cross-validation','Purged walk-forward, 30-day purge + 10-day embargo']);
+  } else if(ACTIVE_TAB==='crypto'){
+    rows.push(['Rebalance','Event-driven on dispersion signal']);
+    rows.push(['Max hold',`${cfg.horizon||5} calendar days`]);
+    rows.push(['Take profit',`+${cfg.target_pct||12}%`]);
+    rows.push(['Stop loss',`${cfg.stop_loss_pct||-4}%`]);
+    rows.push(['Min confirming factors',`${cfg.min_confirming||3} of 5`]);
+    rows.push(['Universe','~86 liquid cryptos (top 100 screened)']);
+    rows.push(['Ensemble',(model.models||[]).join(', ')||`${model.ensemble_size||0} models`]);
+    rows.push(['Features',`${model.features||'?'}`]);
+    rows.push(['Training samples',`${(model.training_samples||0).toLocaleString()}`]);
+    rows.push(['Training positive rate',`${((model.training_positive_rate||0)*100).toFixed(1)}%`]);
+    rows.push(['Regime gate','BTC vs 50-day SMA (closed in bear)']);
+    rows.push(['Execution costs','10 bps slippage per trade']);
+    rows.push(['Cross-validation','Purged walk-forward, 90-day buffer']);
+  } else if(ACTIVE_TAB==='sectors'){
+    rows.push(['Rebalance',cfg.rebalance||'Monthly']);
+    rows.push(['Regime filter',`SPY vs ${cfg.regime_sma||100}-day SMA`]);
+    rows.push(['Top stocks',`${cfg.stocks||30}`]);
+    rows.push(['Universe',`${model.stocks||'?'} stocks + ${model.sectors||'?'} sector/hedge ETFs`]);
+    rows.push(['Stock weighting','Inverse realized volatility']);
+    rows.push(['Hedge sleeve','TLT / GLD / IEF risk parity']);
+    rows.push(['Bull allocation','80% equities / 20% hedge']);
+    rows.push(['Bear allocation','30% equities / 70% hedge']);
+    rows.push(['Correlation adaptation','SPY\u2013TLT > 0.2 shifts to GLD/IEF']);
+    rows.push(['Trend filter','Assets < 200 SMA receive 25% weight']);
+    rows.push(['Execution costs','5 bps slippage per trade']);
+    rows.push(['Leverage','None']);
+  }
+  let html='<div class="table-wrap"><table class="kv-table"><tbody>';
+  for(const r of rows) html+=`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`;
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
 }
 
 </script>
