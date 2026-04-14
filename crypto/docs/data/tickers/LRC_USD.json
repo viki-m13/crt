@@ -1,47 +1,43 @@
 {
   "ticker": "LRC-USD",
   "display_name": "LRC",
-  "price": 0.0158,
-  "price_date": "2026-04-12",
-  "conviction": 36.4,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 0.0164,
+  "price_date": "2026-04-13",
+  "conviction": 61.2,
+  "is_signal": true,
+  "position_size_pct": 12.0,
+  "stop_loss_price": 0.0157,
+  "take_profit_price": 0.0183,
   "max_hold_days": 5,
-  "mtmdi_zscore": 0.7948,
-  "mtmdi_direction": 0.729,
-  "mtmdi_velocity": -0.2819,
-  "cascade_score": 0.3185,
-  "momentum_persistence": -0.7145,
-  "range_compression": 0.1055,
-  "vol_30d": 76.2621,
+  "mtmdi_zscore": 1.8521,
+  "mtmdi_direction": 1.1539,
+  "mtmdi_velocity": 0.5722,
+  "cascade_score": 0.296,
+  "momentum_persistence": -0.7101,
+  "range_compression": 0.1062,
+  "vol_30d": 78.5349,
   "vol_regime": "high",
-  "drawdown": -87.1751,
-  "position_in_range": 0.0,
+  "drawdown": -86.7599,
+  "position_in_range": 0.4763,
   "returns": {
-    "7d": -9.72,
-    "14d": -29.59,
-    "30d": -65.92,
-    "90d": -116.31,
-    "180d": -157.25,
-    "365d": -176.35
+    "7d": -3.5,
+    "14d": -20.37,
+    "30d": -61.02,
+    "90d": -121.75,
+    "180d": -148.37,
+    "365d": -170.15
   },
   "signals": {
-    "mtmdi_spike": false,
+    "mtmdi_spike": true,
     "direction_positive": true,
-    "velocity_accelerating": false,
+    "velocity_accelerating": true,
     "cascade_divergence": true,
     "momentum_persistent": false,
     "range_compressed": true,
     "volume_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-13",
-      "price": 0.09
-    },
     {
       "date": "2025-04-14",
       "price": 0.09
@@ -1496,6 +1492,10 @@
     },
     {
       "date": "2026-04-12",
+      "price": 0.02
+    },
+    {
+      "date": "2026-04-13",
       "price": 0.02
     }
   ]

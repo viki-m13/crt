@@ -1,47 +1,43 @@
 {
   "ticker": "REQ-USD",
   "display_name": "REQ",
-  "price": 0.0649,
-  "price_date": "2026-04-12",
-  "conviction": 20.9,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 0.0676,
+  "price_date": "2026-04-13",
+  "conviction": 43.1,
+  "is_signal": true,
+  "position_size_pct": 12.0,
+  "stop_loss_price": 0.0649,
+  "take_profit_price": 0.0757,
   "max_hold_days": 5,
-  "mtmdi_zscore": 0.6002,
-  "mtmdi_direction": 1.5877,
-  "mtmdi_velocity": -0.4344,
-  "cascade_score": 0.0326,
-  "momentum_persistence": -1.0303,
-  "range_compression": 0.4112,
-  "vol_30d": 41.5496,
+  "mtmdi_zscore": 1.228,
+  "mtmdi_direction": 1.8309,
+  "mtmdi_velocity": 0.1863,
+  "cascade_score": 0.038,
+  "momentum_persistence": 1.2842,
+  "range_compression": 0.3746,
+  "vol_30d": 44.0203,
   "vol_regime": "normal",
-  "drawdown": -58.804,
-  "position_in_range": 3.6633,
+  "drawdown": -57.1168,
+  "position_in_range": 6.4274,
   "returns": {
-    "7d": -0.28,
-    "14d": 2.68,
-    "30d": -6.89,
-    "90d": -46.53,
-    "180d": -67.68,
-    "365d": -41.88
+    "7d": 4.47,
+    "14d": 5.6,
+    "30d": -2.0,
+    "90d": -45.96,
+    "180d": -58.38,
+    "365d": -34.59
   },
   "signals": {
-    "mtmdi_spike": false,
+    "mtmdi_spike": true,
     "direction_positive": true,
     "velocity_accelerating": false,
     "cascade_divergence": true,
-    "momentum_persistent": false,
+    "momentum_persistent": true,
     "range_compressed": true,
     "volume_surge": false
   },
-  "confirming_factors": 2,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-13",
-      "price": 0.1
-    },
     {
       "date": "2025-04-14",
       "price": 0.1
@@ -1497,6 +1493,10 @@
     {
       "date": "2026-04-12",
       "price": 0.06
+    },
+    {
+      "date": "2026-04-13",
+      "price": 0.07
     }
   ]
 }
