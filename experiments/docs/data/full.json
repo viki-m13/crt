@@ -1,31 +1,57 @@
 {
-  "generated": "2026-04-14T22:31:36.093829",
+  "generated": "2026-04-15T22:31:27.624334",
   "strategy": "DailyPicker",
   "strategy_full_name": "Daily Best Stock Picker",
   "n_tickers": 98,
-  "market_regime": "WAIT",
+  "market_regime": "BULLISH",
   "todays_pick": {
-    "ticker": null,
-    "score": 0,
-    "price": 0
+    "ticker": "MRK",
+    "score": 0.913,
+    "price": 119.96
   },
-  "top5": [],
+  "top5": [
+    {
+      "ticker": "MRK",
+      "score": 0.913,
+      "price": 119.96
+    },
+    {
+      "ticker": "JNJ",
+      "score": 0.887,
+      "price": 240.1
+    },
+    {
+      "ticker": "CSCO",
+      "score": 0.758,
+      "price": 82.61
+    },
+    {
+      "ticker": "RTX",
+      "score": 0.745,
+      "price": 202.81
+    },
+    {
+      "ticker": "TXN",
+      "score": 0.743,
+      "price": 218.87
+    }
+  ],
   "all_stocks": [
     {
       "ticker": "MRK",
-      "price": 120.15,
-      "score": 0.901,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 94.2,
-      "vol_21d": 19.4,
-      "drawdown": -2.5,
+      "price": 119.96,
+      "score": 0.913,
+      "is_pick": true,
+      "qualifies": true,
+      "position_in_range": 93.8,
+      "vol_21d": 19.3,
+      "drawdown": -2.6,
       "returns": {
-        "5d": -0.6,
-        "21d": 4.3,
-        "63d": 9.1,
-        "126d": 33.3,
-        "252d": 41.9
+        "5d": 0.6,
+        "21d": 4.4,
+        "63d": 10.1,
+        "126d": 34.9,
+        "252d": 47.2
       },
       "conditions": {
         "trend_1y": true,
@@ -38,69 +64,19 @@
     },
     {
       "ticker": "JNJ",
-      "price": 237.96,
-      "score": 0.859,
+      "price": 240.1,
+      "score": 0.887,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 90.0,
-      "vol_21d": 14.4,
-      "drawdown": -4.3,
+      "qualifies": true,
+      "position_in_range": 92.0,
+      "vol_21d": 14.8,
+      "drawdown": -3.4,
       "returns": {
-        "5d": -1.3,
-        "21d": -1.7,
-        "63d": 15.7,
-        "126d": 23.1,
-        "252d": 48.3
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "NEE",
-      "price": 92.3,
-      "score": 0.78,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 91.5,
-      "vol_21d": 18.5,
-      "drawdown": -2.9,
-      "returns": {
-        "5d": -0.5,
-        "21d": 0.6,
-        "63d": 15.1,
-        "126d": 11.1,
-        "252d": 34.1
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "RTX",
-      "price": 201.41,
-      "score": 0.761,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 89.3,
-      "vol_21d": 21.8,
-      "drawdown": -5.1,
-      "returns": {
-        "5d": 1.5,
-        "21d": -0.8,
-        "63d": 7.0,
-        "126d": 22.4,
-        "252d": 46.7
+        "5d": 0.7,
+        "21d": -0.6,
+        "63d": 14.1,
+        "126d": 24.2,
+        "252d": 50.7
       },
       "conditions": {
         "trend_1y": true,
@@ -113,69 +89,19 @@
     },
     {
       "ticker": "CSCO",
-      "price": 82.35,
-      "score": 0.719,
+      "price": 82.61,
+      "score": 0.758,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 88.1,
+      "qualifies": true,
+      "position_in_range": 88.8,
       "vol_21d": 27.7,
-      "drawdown": -4.6,
-      "returns": {
-        "5d": 2.3,
-        "21d": 6.3,
-        "63d": 11.4,
-        "126d": 17.4,
-        "252d": 37.1
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "APD",
-      "price": 298.65,
-      "score": 0.71,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 99.9,
-      "vol_21d": 16.8,
-      "drawdown": -0.0,
-      "returns": {
-        "5d": 1.5,
-        "21d": 3.4,
-        "63d": 13.1,
-        "126d": 14.2,
-        "252d": 12.7
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "HON",
-      "price": 233.64,
-      "score": 0.707,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 79.3,
-      "vol_21d": 23.2,
-      "drawdown": -5.8,
+      "drawdown": -4.3,
       "returns": {
         "5d": 2.4,
-        "21d": 0.1,
-        "63d": 12.4,
-        "126d": 20.5,
-        "252d": 24.0
+        "21d": 5.9,
+        "63d": 11.5,
+        "126d": 20.6,
+        "252d": 40.1
       },
       "conditions": {
         "trend_1y": true,
@@ -187,20 +113,20 @@
       }
     },
     {
-      "ticker": "INTC",
-      "price": 65.18,
-      "score": 0.7,
+      "ticker": "RTX",
+      "price": 202.81,
+      "score": 0.745,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 100.0,
-      "vol_21d": 73.3,
-      "drawdown": 0.0,
+      "qualifies": true,
+      "position_in_range": 90.7,
+      "vol_21d": 21.8,
+      "drawdown": -4.4,
       "returns": {
-        "5d": 25.0,
-        "21d": 36.5,
-        "63d": 35.8,
-        "126d": 54.5,
-        "252d": 110.8
+        "5d": 2.4,
+        "21d": -0.8,
+        "63d": 4.9,
+        "126d": 25.9,
+        "252d": 48.4
       },
       "conditions": {
         "trend_1y": true,
@@ -208,373 +134,23 @@
         "trend_3m": true,
         "near_high": true,
         "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "CAT",
-      "price": 791.73,
-      "score": 0.7,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 100.0,
-      "vol_21d": 40.0,
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 9.3,
-        "21d": 12.2,
-        "63d": 25.1,
-        "126d": 46.4,
-        "252d": 98.1
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "LRCX",
-      "price": 267.32,
-      "score": 0.7,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 100.0,
-      "vol_21d": 65.8,
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 19.2,
-        "21d": 24.4,
-        "63d": 20.3,
-        "126d": 64.3,
-        "252d": 133.2
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "KLAC",
-      "price": 1768.78,
-      "score": 0.7,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 100.0,
-      "vol_21d": 48.8,
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 13.8,
-        "21d": 22.7,
-        "63d": 23.5,
-        "126d": 52.1,
-        "252d": 93.0
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": false
+        "vol_ok": true
       }
     },
     {
       "ticker": "TXN",
-      "price": 216.71,
-      "score": 0.697,
+      "price": 218.87,
+      "score": 0.743,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 88.5,
+      "qualifies": true,
+      "position_in_range": 91.0,
       "vol_21d": 30.7,
-      "drawdown": -4.3,
-      "returns": {
-        "5d": 8.3,
-        "21d": 13.1,
-        "63d": 13.6,
-        "126d": 20.7,
-        "252d": 27.7
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "USB",
-      "price": 56.51,
-      "score": 0.695,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 85.4,
-      "vol_21d": 19.7,
-      "drawdown": -5.9,
-      "returns": {
-        "5d": 5.6,
-        "21d": 10.3,
-        "63d": 3.4,
-        "126d": 20.2,
-        "252d": 40.5
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "LIN",
-      "price": 508.87,
-      "score": 0.688,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 100.0,
-      "vol_21d": 17.9,
-      "drawdown": 0.0,
-      "returns": {
-        "5d": 1.9,
-        "21d": 3.7,
-        "63d": 14.0,
-        "126d": 11.2,
-        "252d": 14.5
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "WMT",
-      "price": 124.57,
-      "score": 0.685,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 79.3,
-      "vol_21d": 25.8,
-      "drawdown": -6.8,
-      "returns": {
-        "5d": -1.8,
-        "21d": -0.4,
-        "63d": 8.6,
-        "126d": 20.6,
-        "252d": 33.8
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "AMAT",
-      "price": 395.73,
-      "score": 0.679,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 98.6,
-      "vol_21d": 54.8,
-      "drawdown": -0.9,
-      "returns": {
-        "5d": 11.5,
-        "21d": 16.0,
-        "63d": 27.4,
-        "126d": 58.9,
-        "252d": 98.1
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "GILD",
-      "price": 139.03,
-      "score": 0.648,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 73.7,
-      "vol_21d": 21.1,
-      "drawdown": -10.3,
-      "returns": {
-        "5d": -0.8,
-        "21d": -3.8,
-        "63d": 14.4,
-        "126d": 18.7,
-        "252d": 30.5
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "MO",
-      "price": 66.81,
-      "score": 0.636,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 89.1,
-      "vol_21d": 18.8,
-      "drawdown": -2.5,
-      "returns": {
-        "5d": 0.4,
-        "21d": 0.3,
-        "63d": 16.6,
-        "126d": 5.1,
-        "252d": 23.8
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "PFE",
-      "price": 27.34,
-      "score": 0.634,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 85.6,
-      "vol_21d": 24.9,
-      "drawdown": -4.2,
-      "returns": {
-        "5d": -1.8,
-        "21d": 1.8,
-        "63d": 8.7,
-        "126d": 11.4,
-        "252d": 26.5
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "CB",
-      "price": 329.98,
-      "score": 0.615,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 84.6,
-      "vol_21d": 14.7,
       "drawdown": -3.4,
       "returns": {
-        "5d": 0.9,
-        "21d": 0.4,
-        "63d": 7.6,
-        "126d": 15.2,
-        "252d": 15.4
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "CVX",
-      "price": 191.78,
-      "score": 0.613,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 76.7,
-      "vol_21d": 28.2,
-      "drawdown": -9.2,
-      "returns": {
-        "5d": -3.6,
-        "21d": -2.7,
-        "63d": 17.8,
-        "126d": 25.6,
-        "252d": 31.7
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "DE",
-      "price": 603.04,
-      "score": 0.61,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 74.4,
-      "vol_21d": 29.4,
-      "drawdown": -8.7,
-      "returns": {
-        "5d": 4.7,
-        "21d": 3.2,
-        "63d": 21.4,
-        "126d": 28.5,
-        "252d": 30.0
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "PNC",
-      "price": 223.0,
-      "score": 0.603,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 79.7,
-      "vol_21d": 19.7,
-      "drawdown": -8.0,
-      "returns": {
-        "5d": 4.5,
-        "21d": 9.5,
-        "63d": 3.2,
-        "126d": 17.3,
+        "5d": 9.1,
+        "21d": 13.7,
+        "63d": 15.3,
+        "126d": 25.8,
         "252d": 36.6
       },
       "conditions": {
@@ -587,20 +163,20 @@
       }
     },
     {
-      "ticker": "CME",
-      "price": 300.59,
-      "score": 0.603,
+      "ticker": "NEE",
+      "price": 91.31,
+      "score": 0.741,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 73.9,
-      "vol_21d": 22.8,
-      "drawdown": -5.7,
+      "qualifies": true,
+      "position_in_range": 88.4,
+      "vol_21d": 18.4,
+      "drawdown": -3.9,
       "returns": {
         "5d": -2.6,
-        "21d": -3.5,
-        "63d": 15.9,
-        "126d": 14.0,
-        "252d": 20.5
+        "21d": -1.6,
+        "63d": 12.5,
+        "126d": 10.5,
+        "252d": 34.3
       },
       "conditions": {
         "trend_1y": true,
@@ -612,20 +188,270 @@
       }
     },
     {
-      "ticker": "ETN",
-      "price": 403.36,
-      "score": 0.59,
+      "ticker": "APD",
+      "price": 296.63,
+      "score": 0.74,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 97.1,
+      "vol_21d": 16.6,
+      "drawdown": -0.7,
+      "returns": {
+        "5d": 1.4,
+        "21d": 3.6,
+        "63d": 11.1,
+        "126d": 15.7,
+        "252d": 15.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "HON",
+      "price": 233.24,
+      "score": 0.728,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 78.8,
+      "vol_21d": 23.2,
+      "drawdown": -6.0,
+      "returns": {
+        "5d": 4.1,
+        "21d": -0.5,
+        "63d": 11.7,
+        "126d": 21.9,
+        "252d": 26.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CAT",
+      "price": 794.25,
+      "score": 0.705,
       "is_pick": false,
       "qualifies": false,
       "position_in_range": 100.0,
-      "vol_21d": 37.8,
+      "vol_21d": 39.6,
       "drawdown": 0.0,
       "returns": {
-        "5d": 10.3,
-        "21d": 14.6,
-        "63d": 22.1,
-        "126d": 7.0,
-        "252d": 36.2
+        "5d": 9.2,
+        "21d": 13.5,
+        "63d": 23.4,
+        "126d": 48.6,
+        "252d": 102.4
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "LRCX",
+      "price": 272.41,
+      "score": 0.7,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 100.0,
+      "vol_21d": 65.8,
+      "drawdown": 0.0,
+      "returns": {
+        "5d": 19.4,
+        "21d": 25.0,
+        "63d": 21.3,
+        "126d": 73.2,
+        "252d": 141.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "KLAC",
+      "price": 1795.91,
+      "score": 0.7,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 100.0,
+      "vol_21d": 48.8,
+      "drawdown": 0.0,
+      "returns": {
+        "5d": 14.8,
+        "21d": 23.6,
+        "63d": 23.0,
+        "126d": 60.6,
+        "252d": 101.4
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "USB",
+      "price": 56.09,
+      "score": 0.687,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 83.3,
+      "vol_21d": 19.5,
+      "drawdown": -6.6,
+      "returns": {
+        "5d": 4.4,
+        "21d": 10.5,
+        "63d": 4.1,
+        "126d": 23.4,
+        "252d": 45.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "AMAT",
+      "price": 395.64,
+      "score": 0.678,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 98.5,
+      "vol_21d": 54.9,
+      "drawdown": -1.0,
+      "returns": {
+        "5d": 11.0,
+        "21d": 14.7,
+        "63d": 25.4,
+        "126d": 63.7,
+        "252d": 106.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "GILD",
+      "price": 140.45,
+      "score": 0.673,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 76.1,
+      "vol_21d": 21.4,
+      "drawdown": -9.3,
+      "returns": {
+        "5d": 1.2,
+        "21d": -3.2,
+        "63d": 14.2,
+        "126d": 19.3,
+        "252d": 35.2
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "WMT",
+      "price": 125.05,
+      "score": 0.659,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 80.2,
+      "vol_21d": 25.6,
+      "drawdown": -6.4,
+      "returns": {
+        "5d": 2.1,
+        "21d": -1.0,
+        "63d": 6.0,
+        "126d": 20.9,
+        "252d": 33.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PFE",
+      "price": 27.11,
+      "score": 0.655,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 82.3,
+      "vol_21d": 24.8,
+      "drawdown": -5.0,
+      "returns": {
+        "5d": 0.0,
+        "21d": 2.0,
+        "63d": 8.7,
+        "126d": 12.4,
+        "252d": 29.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "INTC",
+      "price": 63.81,
+      "score": 0.653,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 97.0,
+      "vol_21d": 74.5,
+      "drawdown": -2.1,
+      "returns": {
+        "5d": 18.7,
+        "21d": 33.2,
+        "63d": 37.0,
+        "126d": 56.2,
+        "252d": 116.6
       },
       "conditions": {
         "trend_1y": true,
@@ -638,19 +464,19 @@
     },
     {
       "ticker": "MS",
-      "price": 181.14,
-      "score": 0.57,
+      "price": 183.34,
+      "score": 0.646,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 89.6,
+      "position_in_range": 92.1,
       "vol_21d": 25.4,
-      "drawdown": -4.8,
+      "drawdown": -3.6,
       "returns": {
-        "5d": 8.4,
-        "21d": 16.0,
-        "63d": -2.3,
-        "126d": 15.9,
-        "252d": 51.0
+        "5d": 8.5,
+        "21d": 16.9,
+        "63d": -1.2,
+        "126d": 20.0,
+        "252d": 56.9
       },
       "conditions": {
         "trend_1y": true,
@@ -662,20 +488,45 @@
       }
     },
     {
-      "ticker": "DUK",
-      "price": 130.4,
-      "score": 0.557,
+      "ticker": "PNC",
+      "price": 221.2,
+      "score": 0.644,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 87.7,
-      "vol_21d": 15.1,
-      "drawdown": -2.3,
+      "qualifies": true,
+      "position_in_range": 79.6,
+      "vol_21d": 19.3,
+      "drawdown": -8.1,
       "returns": {
-        "5d": -0.8,
-        "21d": -1.1,
-        "63d": 11.9,
-        "126d": 6.2,
-        "252d": 14.9
+        "5d": 4.1,
+        "21d": 10.3,
+        "63d": 4.0,
+        "126d": 20.9,
+        "252d": 41.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "LIN",
+      "price": 499.65,
+      "score": 0.642,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 92.4,
+      "vol_21d": 19.0,
+      "drawdown": -1.8,
+      "returns": {
+        "5d": 1.0,
+        "21d": 1.2,
+        "63d": 12.2,
+        "126d": 10.3,
+        "252d": 15.9
       },
       "conditions": {
         "trend_1y": true,
@@ -688,19 +539,19 @@
     },
     {
       "ticker": "AMGN",
-      "price": 349.82,
-      "score": 0.552,
+      "price": 350.95,
+      "score": 0.615,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 71.4,
-      "vol_21d": 20.1,
-      "drawdown": -9.9,
+      "position_in_range": 72.2,
+      "vol_21d": 20.2,
+      "drawdown": -9.6,
       "returns": {
-        "5d": 2.1,
-        "21d": -5.0,
-        "63d": 7.7,
-        "126d": 18.3,
-        "252d": 21.5
+        "5d": 3.2,
+        "21d": -4.3,
+        "63d": 8.2,
+        "126d": 20.4,
+        "252d": 25.2
       },
       "conditions": {
         "trend_1y": true,
@@ -712,20 +563,70 @@
       }
     },
     {
-      "ticker": "XOM",
-      "price": 152.64,
-      "score": 0.541,
+      "ticker": "ETN",
+      "price": 401.9,
+      "score": 0.607,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 74.8,
-      "vol_21d": 33.1,
-      "drawdown": -11.0,
+      "position_in_range": 99.0,
+      "vol_21d": 37.7,
+      "drawdown": -0.4,
       "returns": {
-        "5d": -6.8,
-        "21d": -0.6,
-        "63d": 21.0,
-        "126d": 31.7,
-        "252d": 40.0
+        "5d": 8.6,
+        "21d": 12.3,
+        "63d": 20.3,
+        "126d": 9.1,
+        "252d": 40.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "DE",
+      "price": 596.04,
+      "score": 0.583,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 71.3,
+      "vol_21d": 29.3,
+      "drawdown": -9.8,
+      "returns": {
+        "5d": 3.4,
+        "21d": 3.5,
+        "63d": 19.7,
+        "126d": 29.6,
+        "252d": 30.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CVX",
+      "price": 187.02,
+      "score": 0.575,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 71.0,
+      "vol_21d": 29.4,
+      "drawdown": -11.4,
+      "returns": {
+        "5d": -7.5,
+        "21d": -5.1,
+        "63d": 15.1,
+        "126d": 24.9,
+        "252d": 37.0
       },
       "conditions": {
         "trend_1y": true,
@@ -733,49 +634,24 @@
         "trend_3m": true,
         "near_high": true,
         "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "KO",
-      "price": 76.41,
-      "score": 0.54,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 71.7,
-      "vol_21d": 16.6,
-      "drawdown": -5.7,
-      "returns": {
-        "5d": -1.1,
-        "21d": -0.9,
-        "63d": 8.7,
-        "126d": 15.5,
-        "252d": 11.7
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
         "vol_ok": true
       }
     },
     {
       "ticker": "UNP",
-      "price": 251.34,
-      "score": 0.506,
+      "price": 252.04,
+      "score": 0.569,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 73.6,
-      "vol_21d": 14.0,
-      "drawdown": -5.9,
+      "qualifies": true,
+      "position_in_range": 74.8,
+      "vol_21d": 13.7,
+      "drawdown": -5.6,
       "returns": {
-        "5d": 2.3,
-        "21d": 2.9,
-        "63d": 10.1,
-        "126d": 9.3,
-        "252d": 14.1
+        "5d": 2.4,
+        "21d": 3.9,
+        "63d": 9.9,
+        "126d": 12.3,
+        "252d": 16.2
       },
       "conditions": {
         "trend_1y": true,
@@ -788,19 +664,44 @@
     },
     {
       "ticker": "BMY",
-      "price": 58.06,
-      "score": 0.501,
+      "price": 58.08,
+      "score": 0.561,
       "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 81.7,
+      "qualifies": true,
+      "position_in_range": 81.8,
       "vol_21d": 25.7,
-      "drawdown": -6.0,
+      "drawdown": -5.9,
       "returns": {
-        "5d": -2.2,
-        "21d": -0.5,
-        "63d": 4.9,
-        "126d": 28.4,
-        "252d": 12.6
+        "5d": 0.7,
+        "21d": -0.7,
+        "63d": 5.1,
+        "126d": 30.1,
+        "252d": 18.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CB",
+      "price": 325.74,
+      "score": 0.546,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 79.1,
+      "vol_21d": 15.3,
+      "drawdown": -4.7,
+      "returns": {
+        "5d": -0.5,
+        "21d": -1.0,
+        "63d": 6.3,
+        "126d": 14.4,
+        "252d": 14.9
       },
       "conditions": {
         "trend_1y": true,
@@ -813,19 +714,19 @@
     },
     {
       "ticker": "GOOGL",
-      "price": 321.31,
-      "score": 0.485,
+      "price": 332.91,
+      "score": 0.539,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 88.7,
-      "vol_21d": 35.5,
-      "drawdown": -6.4,
+      "position_in_range": 94.6,
+      "vol_21d": 37.1,
+      "drawdown": -3.1,
       "returns": {
-        "5d": 6.9,
-        "21d": 5.7,
-        "63d": -2.2,
-        "126d": 28.7,
-        "252d": 70.9
+        "5d": 8.6,
+        "21d": 9.7,
+        "63d": 0.4,
+        "126d": 34.3,
+        "252d": 78.2
       },
       "conditions": {
         "trend_1y": true,
@@ -837,20 +738,20 @@
       }
     },
     {
-      "ticker": "VZ",
-      "price": 45.42,
-      "score": 0.481,
+      "ticker": "XOM",
+      "price": 149.24,
+      "score": 0.533,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 61.3,
-      "vol_21d": 16.2,
-      "drawdown": -10.3,
+      "position_in_range": 69.2,
+      "vol_21d": 33.4,
+      "drawdown": -13.0,
       "returns": {
-        "5d": -6.4,
-        "21d": -9.4,
-        "63d": 14.8,
-        "126d": 15.6,
-        "252d": 13.8
+        "5d": -9.4,
+        "21d": -4.5,
+        "63d": 19.2,
+        "126d": 31.4,
+        "252d": 43.5
       },
       "conditions": {
         "trend_1y": true,
@@ -858,29 +759,54 @@
         "trend_3m": true,
         "near_high": false,
         "low_dd": false,
-        "vol_ok": true
+        "vol_ok": false
       }
     },
     {
-      "ticker": "BAC",
-      "price": 53.35,
-      "score": 0.474,
+      "ticker": "GS",
+      "price": 909.63,
+      "score": 0.532,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 83.6,
-      "vol_21d": 21.2,
+      "position_in_range": 87.4,
+      "vol_21d": 29.0,
       "drawdown": -6.3,
       "returns": {
-        "5d": 6.4,
-        "21d": 12.4,
-        "63d": -4.0,
-        "126d": 8.0,
-        "252d": 38.4
+        "5d": 5.1,
+        "21d": 15.1,
+        "63d": -3.8,
+        "126d": 18.4,
+        "252d": 64.0
       },
       "conditions": {
         "trend_1y": true,
         "trend_6m": true,
         "trend_3m": false,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "MO",
+      "price": 65.62,
+      "score": 0.532,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 81.6,
+      "vol_21d": 19.8,
+      "drawdown": -4.3,
+      "returns": {
+        "5d": -1.0,
+        "21d": -1.7,
+        "63d": 13.1,
+        "126d": 2.1,
+        "252d": 22.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": true,
         "near_high": true,
         "low_dd": true,
         "vol_ok": true
@@ -888,19 +814,19 @@
     },
     {
       "ticker": "NSC",
-      "price": 297.56,
-      "score": 0.468,
+      "price": 299.7,
+      "score": 0.522,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 81.2,
-      "vol_21d": 16.5,
-      "drawdown": -6.4,
+      "position_in_range": 83.2,
+      "vol_21d": 16.4,
+      "drawdown": -5.7,
       "returns": {
-        "5d": 3.2,
-        "21d": 2.1,
-        "63d": 4.0,
-        "126d": 1.8,
-        "252d": 31.3
+        "5d": 3.8,
+        "21d": 3.5,
+        "63d": 4.2,
+        "126d": 4.8,
+        "252d": 35.0
       },
       "conditions": {
         "trend_1y": true,
@@ -912,20 +838,20 @@
       }
     },
     {
-      "ticker": "ITW",
-      "price": 274.51,
-      "score": 0.465,
+      "ticker": "CME",
+      "price": 297.03,
+      "score": 0.52,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 69.7,
-      "vol_21d": 23.9,
-      "drawdown": -7.8,
+      "position_in_range": 68.0,
+      "vol_21d": 23.1,
+      "drawdown": -6.8,
       "returns": {
-        "5d": 6.0,
-        "21d": 3.9,
-        "63d": 8.0,
-        "126d": 11.3,
-        "252d": 18.1
+        "5d": -4.5,
+        "21d": -4.7,
+        "63d": 13.8,
+        "126d": 11.8,
+        "252d": 17.7
       },
       "conditions": {
         "trend_1y": true,
@@ -937,25 +863,75 @@
       }
     },
     {
-      "ticker": "GS",
-      "price": 890.79,
-      "score": 0.45,
+      "ticker": "AMZN",
+      "price": 249.02,
+      "score": 0.506,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 83.7,
-      "vol_21d": 28.9,
-      "drawdown": -8.2,
+      "position_in_range": 94.3,
+      "vol_21d": 37.0,
+      "drawdown": -2.0,
       "returns": {
-        "5d": 2.8,
-        "21d": 12.3,
-        "63d": -4.7,
-        "126d": 14.3,
-        "252d": 56.5
+        "5d": 15.3,
+        "21d": 18.2,
+        "63d": 1.0,
+        "126d": 14.1,
+        "252d": 31.8
       },
       "conditions": {
         "trend_1y": true,
         "trend_6m": true,
         "trend_3m": false,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "BAC",
+      "price": 53.35,
+      "score": 0.506,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 83.6,
+      "vol_21d": 20.7,
+      "drawdown": -6.3,
+      "returns": {
+        "5d": 5.9,
+        "21d": 13.3,
+        "63d": -2.8,
+        "126d": 10.3,
+        "252d": 42.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": false,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "DUK",
+      "price": 129.78,
+      "score": 0.503,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 85.2,
+      "vol_21d": 14.7,
+      "drawdown": -2.8,
+      "returns": {
+        "5d": -1.6,
+        "21d": -2.6,
+        "63d": 11.5,
+        "126d": 3.9,
+        "252d": 14.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": true,
         "near_high": true,
         "low_dd": true,
         "vol_ok": true
@@ -963,19 +939,19 @@
     },
     {
       "ticker": "AVGO",
-      "price": 379.75,
-      "score": 0.446,
+      "price": 380.78,
+      "score": 0.483,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 87.2,
-      "vol_21d": 48.1,
-      "drawdown": -7.7,
+      "position_in_range": 87.6,
+      "vol_21d": 44.9,
+      "drawdown": -7.4,
       "returns": {
-        "5d": 18.9,
-        "21d": 12.5,
-        "63d": 9.8,
-        "126d": 10.0,
-        "252d": 72.6
+        "5d": 13.1,
+        "21d": 16.9,
+        "63d": 8.0,
+        "126d": 16.4,
+        "252d": 80.1
       },
       "conditions": {
         "trend_1y": true,
@@ -987,20 +963,95 @@
       }
     },
     {
-      "ticker": "PEP",
-      "price": 155.88,
-      "score": 0.437,
+      "ticker": "VZ",
+      "price": 45.48,
+      "score": 0.478,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 71.2,
-      "vol_21d": 20.2,
-      "drawdown": -7.8,
+      "position_in_range": 61.7,
+      "vol_21d": 14.8,
+      "drawdown": -10.2,
       "returns": {
-        "5d": -0.5,
+        "5d": -5.2,
+        "21d": -10.7,
+        "63d": 14.7,
+        "126d": 16.4,
+        "252d": 12.3
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "KO",
+      "price": 75.9,
+      "score": 0.475,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 68.6,
+      "vol_21d": 16.7,
+      "drawdown": -6.3,
+      "returns": {
+        "5d": -0.0,
         "21d": -1.9,
-        "63d": 11.7,
-        "126d": 9.3,
-        "252d": 10.8
+        "63d": 8.1,
+        "126d": 13.8,
+        "252d": 9.9
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "ITW",
+      "price": 272.25,
+      "score": 0.465,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 66.4,
+      "vol_21d": 24.1,
+      "drawdown": -8.6,
+      "returns": {
+        "5d": 5.0,
+        "21d": 2.6,
+        "63d": 7.4,
+        "126d": 11.8,
+        "252d": 20.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "NVDA",
+      "price": 196.51,
+      "score": 0.461,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 90.5,
+      "vol_21d": 35.8,
+      "drawdown": -5.1,
+      "returns": {
+        "5d": 9.8,
+        "21d": 8.6,
+        "63d": 6.1,
+        "126d": 7.0,
+        "252d": 60.3
       },
       "conditions": {
         "trend_1y": true,
@@ -1008,29 +1059,54 @@
         "trend_3m": true,
         "near_high": true,
         "low_dd": true,
-        "vol_ok": true
+        "vol_ok": false
       }
     },
     {
-      "ticker": "SO",
-      "price": 95.93,
-      "score": 0.437,
+      "ticker": "MCHP",
+      "price": 74.5,
+      "score": 0.453,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 81.2,
-      "vol_21d": 16.1,
-      "drawdown": -3.2,
+      "position_in_range": 86.7,
+      "vol_21d": 39.8,
+      "drawdown": -7.2,
       "returns": {
-        "5d": -1.0,
-        "21d": -2.0,
-        "63d": 10.5,
-        "126d": 1.4,
-        "252d": 12.1
+        "5d": 9.9,
+        "21d": 18.5,
+        "63d": 2.1,
+        "126d": 22.4,
+        "252d": 68.2
       },
       "conditions": {
         "trend_1y": true,
-        "trend_6m": false,
+        "trend_6m": true,
         "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "SCHW",
+      "price": 98.38,
+      "score": 0.417,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 74.2,
+      "vol_21d": 22.8,
+      "drawdown": -7.9,
+      "returns": {
+        "5d": 5.3,
+        "21d": 5.6,
+        "63d": -3.2,
+        "126d": 7.4,
+        "252d": 29.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": false,
         "near_high": true,
         "low_dd": true,
         "vol_ok": true
@@ -1038,19 +1114,19 @@
     },
     {
       "ticker": "JPM",
-      "price": 313.68,
-      "score": 0.423,
+      "price": 311.12,
+      "score": 0.413,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 82.5,
-      "vol_21d": 22.1,
-      "drawdown": -5.8,
+      "position_in_range": 79.9,
+      "vol_21d": 22.5,
+      "drawdown": -6.5,
       "returns": {
-        "5d": 6.0,
-        "21d": 10.8,
-        "63d": -4.3,
-        "126d": 3.6,
-        "252d": 31.1
+        "5d": 4.5,
+        "21d": 9.8,
+        "63d": -3.7,
+        "126d": 4.3,
+        "252d": 33.4
       },
       "conditions": {
         "trend_1y": true,
@@ -1062,20 +1138,70 @@
       }
     },
     {
-      "ticker": "MCHP",
-      "price": 73.55,
-      "score": 0.348,
+      "ticker": "SO",
+      "price": 95.96,
+      "score": 0.406,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 84.5,
-      "vol_21d": 40.4,
-      "drawdown": -8.4,
+      "position_in_range": 81.4,
+      "vol_21d": 16.1,
+      "drawdown": -3.2,
       "returns": {
-        "5d": 9.0,
-        "21d": 15.9,
-        "63d": -1.7,
-        "126d": 12.5,
-        "252d": 52.3
+        "5d": -0.9,
+        "21d": -2.1,
+        "63d": 10.9,
+        "126d": -0.8,
+        "252d": 10.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PEP",
+      "price": 155.72,
+      "score": 0.402,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 70.8,
+      "vol_21d": 20.0,
+      "drawdown": -7.8,
+      "returns": {
+        "5d": 1.6,
+        "21d": -2.6,
+        "63d": 10.6,
+        "126d": 5.6,
+        "252d": 11.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "AAPL",
+      "price": 258.83,
+      "score": 0.387,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 71.1,
+      "vol_21d": 19.2,
+      "drawdown": -9.5,
+      "returns": {
+        "5d": 2.1,
+        "21d": 3.4,
+        "63d": -0.5,
+        "126d": 5.6,
+        "252d": 31.1
       },
       "conditions": {
         "trend_1y": true,
@@ -1083,52 +1209,27 @@
         "trend_3m": false,
         "near_high": true,
         "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "EMR",
-      "price": 144.46,
-      "score": 0.339,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 74.9,
-      "vol_21d": 35.1,
-      "drawdown": -10.3,
-      "returns": {
-        "5d": 8.5,
-        "21d": 8.9,
-        "63d": 0.6,
-        "126d": 10.2,
-        "252d": 34.1
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": true,
-        "trend_3m": false,
-        "near_high": true,
-        "low_dd": false,
-        "vol_ok": false
+        "vol_ok": true
       }
     },
     {
       "ticker": "UPS",
-      "price": 102.02,
-      "score": 0.333,
+      "price": 103.22,
+      "score": 0.371,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 57.4,
+      "position_in_range": 60.5,
       "vol_21d": 22.0,
-      "drawdown": -13.8,
+      "drawdown": -12.8,
       "returns": {
-        "5d": 4.9,
-        "21d": 4.1,
-        "63d": -4.4,
-        "126d": 21.0,
-        "252d": 9.0
+        "5d": 5.6,
+        "21d": 6.0,
+        "63d": -3.2,
+        "126d": 25.1,
+        "252d": 13.3
       },
       "conditions": {
-        "trend_1y": false,
+        "trend_1y": true,
         "trend_6m": true,
         "trend_3m": false,
         "near_high": false,
@@ -1137,149 +1238,49 @@
       }
     },
     {
-      "ticker": "AAPL",
-      "price": 259.2,
-      "score": 0.324,
+      "ticker": "EMR",
+      "price": 144.56,
+      "score": 0.369,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 72.3,
-      "vol_21d": 20.9,
-      "drawdown": -9.3,
+      "position_in_range": 75.1,
+      "vol_21d": 35.1,
+      "drawdown": -10.3,
       "returns": {
-        "5d": 0.1,
-        "21d": 1.3,
-        "63d": 0.0,
-        "126d": 2.2,
-        "252d": 26.9
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "SCHW",
-      "price": 96.79,
-      "score": 0.319,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 70.3,
-      "vol_21d": 23.1,
-      "drawdown": -9.4,
-      "returns": {
-        "5d": 4.0,
-        "21d": 5.9,
-        "63d": -3.1,
-        "126d": 3.5,
-        "252d": 26.4
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "price": 189.31,
-      "score": 0.306,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 83.9,
-      "vol_21d": 34.3,
-      "drawdown": -8.6,
-      "returns": {
-        "5d": 6.4,
-        "21d": 3.3,
-        "63d": 2.4,
-        "126d": -1.7,
-        "252d": 50.5
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "price": 239.89,
-      "score": 0.297,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 83.7,
-      "vol_21d": 36.0,
-      "drawdown": -5.6,
-      "returns": {
-        "5d": 12.0,
-        "21d": 13.5,
-        "63d": -3.1,
-        "126d": 5.2,
-        "252d": 22.7
+        "5d": 7.1,
+        "21d": 8.9,
+        "63d": -0.2,
+        "126d": 14.5,
+        "252d": 38.8
       },
       "conditions": {
         "trend_1y": true,
         "trend_6m": true,
         "trend_3m": false,
         "near_high": true,
-        "low_dd": true,
+        "low_dd": false,
         "vol_ok": false
-      }
-    },
-    {
-      "ticker": "WM",
-      "price": 231.0,
-      "score": 0.294,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 71.1,
-      "vol_21d": 16.1,
-      "drawdown": -5.9,
-      "returns": {
-        "5d": -1.2,
-        "21d": -2.8,
-        "63d": 4.9,
-        "126d": 6.8,
-        "252d": 4.4
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": true,
-        "trend_3m": true,
-        "near_high": true,
-        "low_dd": true,
-        "vol_ok": true
       }
     },
     {
       "ticker": "GE",
-      "price": 311.9,
-      "score": 0.266,
+      "price": 318.0,
+      "score": 0.326,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 80.1,
-      "vol_21d": 43.6,
-      "drawdown": -9.7,
+      "position_in_range": 83.8,
+      "vol_21d": 43.1,
+      "drawdown": -7.9,
       "returns": {
-        "5d": 7.7,
-        "21d": 1.7,
-        "63d": -2.9,
-        "126d": 4.4,
-        "252d": 51.5
+        "5d": 9.7,
+        "21d": 5.9,
+        "63d": -1.8,
+        "126d": 9.0,
+        "252d": 56.6
       },
       "conditions": {
         "trend_1y": true,
-        "trend_6m": false,
+        "trend_6m": true,
         "trend_3m": false,
         "near_high": true,
         "low_dd": true,
@@ -1288,19 +1289,19 @@
     },
     {
       "ticker": "LLY",
-      "price": 929.55,
-      "score": 0.261,
+      "price": 922.5,
+      "score": 0.299,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 63.2,
-      "vol_21d": 34.6,
-      "drawdown": -16.1,
+      "position_in_range": 61.8,
+      "vol_21d": 34.4,
+      "drawdown": -16.7,
       "returns": {
-        "5d": 0.3,
-        "21d": -5.0,
-        "63d": -13.3,
-        "126d": 8.6,
-        "252d": 21.7
+        "5d": -0.9,
+        "21d": -6.6,
+        "63d": -15.7,
+        "126d": 10.5,
+        "252d": 25.4
       },
       "conditions": {
         "trend_1y": true,
@@ -1312,48 +1313,23 @@
       }
     },
     {
-      "ticker": "COST",
-      "price": 980.85,
-      "score": 0.244,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 64.8,
-      "vol_21d": 18.7,
-      "drawdown": -6.8,
-      "returns": {
-        "5d": -3.8,
-        "21d": -2.3,
-        "63d": 6.0,
-        "126d": 4.2,
-        "252d": 2.2
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": true,
-        "near_high": false,
-        "low_dd": true,
-        "vol_ok": true
-      }
-    },
-    {
       "ticker": "NFLX",
-      "price": 103.16,
-      "score": 0.238,
+      "price": 106.28,
+      "score": 0.279,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 47.0,
-      "vol_21d": 25.7,
-      "drawdown": -23.0,
+      "position_in_range": 52.4,
+      "vol_21d": 27.1,
+      "drawdown": -20.6,
       "returns": {
-        "5d": 4.2,
-        "21d": 9.0,
-        "63d": 14.2,
-        "126d": -17.7,
-        "252d": 8.7
+        "5d": 7.3,
+        "21d": 10.9,
+        "63d": 17.3,
+        "126d": -13.8,
+        "252d": 14.3
       },
       "conditions": {
-        "trend_1y": false,
+        "trend_1y": true,
         "trend_6m": false,
         "trend_3m": true,
         "near_high": false,
@@ -1362,20 +1338,45 @@
       }
     },
     {
-      "ticker": "ECL",
-      "price": 275.2,
-      "score": 0.202,
+      "ticker": "TMO",
+      "price": 527.22,
+      "score": 0.218,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 58.8,
-      "vol_21d": 27.5,
-      "drawdown": -10.5,
+      "position_in_range": 55.3,
+      "vol_21d": 26.0,
+      "drawdown": -17.5,
       "returns": {
-        "5d": 3.0,
-        "21d": 0.0,
-        "63d": 1.5,
-        "126d": 1.5,
-        "252d": 15.7
+        "5d": 7.4,
+        "21d": 12.7,
+        "63d": -15.4,
+        "126d": 0.6,
+        "252d": 21.3
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "BLK",
+      "price": 1054.56,
+      "score": 0.214,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 61.6,
+      "vol_21d": 29.3,
+      "drawdown": -11.4,
+      "returns": {
+        "5d": 9.6,
+        "21d": 13.2,
+        "63d": -2.7,
+        "126d": -6.1,
+        "252d": 22.6
       },
       "conditions": {
         "trend_1y": true,
@@ -1388,19 +1389,19 @@
     },
     {
       "ticker": "TSLA",
-      "price": 352.42,
-      "score": 0.183,
+      "price": 364.2,
+      "score": 0.21,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 47.6,
-      "vol_21d": 40.0,
-      "drawdown": -28.1,
+      "position_in_range": 52.1,
+      "vol_21d": 42.1,
+      "drawdown": -25.7,
       "returns": {
-        "5d": -0.1,
-        "21d": -11.4,
-        "63d": -23.3,
-        "126d": -21.2,
-        "252d": 25.8
+        "5d": 4.9,
+        "21d": -7.2,
+        "63d": -20.9,
+        "126d": -12.7,
+        "252d": 36.7
       },
       "conditions": {
         "trend_1y": true,
@@ -1412,24 +1413,24 @@
       }
     },
     {
-      "ticker": "PM",
-      "price": 162.75,
-      "score": 0.18,
+      "ticker": "ABBV",
+      "price": 210.26,
+      "score": 0.209,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 45.3,
-      "vol_21d": 27.9,
-      "drawdown": -13.5,
+      "position_in_range": 59.2,
+      "vol_21d": 29.3,
+      "drawdown": -12.6,
       "returns": {
-        "5d": 1.5,
-        "21d": -4.6,
-        "63d": 1.0,
-        "126d": 5.5,
-        "252d": 10.4
+        "5d": 1.9,
+        "21d": -4.4,
+        "63d": -3.7,
+        "126d": -7.7,
+        "252d": 22.1
       },
       "conditions": {
         "trend_1y": true,
-        "trend_6m": true,
+        "trend_6m": false,
         "trend_3m": false,
         "near_high": false,
         "low_dd": false,
@@ -1437,44 +1438,119 @@
       }
     },
     {
-      "ticker": "CL",
-      "price": 83.98,
-      "score": 0.178,
+      "ticker": "WM",
+      "price": 227.09,
+      "score": 0.205,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 38.4,
-      "vol_21d": 22.4,
-      "drawdown": -15.3,
+      "position_in_range": 63.3,
+      "vol_21d": 16.9,
+      "drawdown": -7.5,
       "returns": {
-        "5d": -0.7,
-        "21d": -4.6,
-        "63d": 3.6,
-        "126d": 8.9,
-        "252d": -4.7
+        "5d": -2.7,
+        "21d": -4.9,
+        "63d": 4.2,
+        "126d": 4.3,
+        "252d": 1.8
       },
       "conditions": {
         "trend_1y": false,
-        "trend_6m": true,
+        "trend_6m": false,
         "trend_3m": true,
+        "near_high": false,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "MMM",
+      "price": 152.55,
+      "score": 0.203,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 57.5,
+      "vol_21d": 25.9,
+      "drawdown": -12.2,
+      "returns": {
+        "5d": 5.5,
+        "21d": 1.0,
+        "63d": -9.2,
+        "126d": 3.4,
+        "252d": 15.6
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": false,
         "near_high": false,
         "low_dd": false,
         "vol_ok": true
       }
     },
     {
-      "ticker": "ABBV",
-      "price": 206.47,
-      "score": 0.169,
+      "ticker": "DIS",
+      "price": 102.59,
+      "score": 0.201,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 54.1,
-      "vol_21d": 29.4,
-      "drawdown": -14.2,
+      "position_in_range": 50.2,
+      "vol_21d": 23.7,
+      "drawdown": -16.7,
       "returns": {
-        "5d": -0.1,
-        "21d": -8.8,
-        "63d": -5.6,
-        "126d": -9.6,
+        "5d": 6.9,
+        "21d": 3.3,
+        "63d": -9.5,
+        "126d": -5.6,
+        "252d": 19.6
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "COST",
+      "price": 974.8,
+      "score": 0.199,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 61.9,
+      "vol_21d": 18.6,
+      "drawdown": -7.4,
+      "returns": {
+        "5d": -3.9,
+        "21d": -3.4,
+        "63d": 3.4,
+        "126d": 5.0,
+        "252d": 1.6
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "ECL",
+      "price": 273.13,
+      "score": 0.198,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 56.1,
+      "vol_21d": 27.6,
+      "drawdown": -11.2,
+      "returns": {
+        "5d": 4.1,
+        "21d": -0.1,
+        "63d": 1.1,
+        "126d": 0.9,
         "252d": 17.1
       },
       "conditions": {
@@ -1488,19 +1564,19 @@
     },
     {
       "ticker": "LOW",
-      "price": 247.08,
-      "score": 0.169,
+      "price": 248.44,
+      "score": 0.194,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 49.4,
-      "vol_21d": 34.3,
-      "drawdown": -14.0,
+      "position_in_range": 51.1,
+      "vol_21d": 34.1,
+      "drawdown": -13.6,
       "returns": {
-        "5d": 4.9,
-        "21d": 3.1,
-        "63d": -7.4,
-        "126d": 6.1,
-        "252d": 12.2
+        "5d": 7.0,
+        "21d": 4.5,
+        "63d": -8.2,
+        "126d": 7.7,
+        "252d": 13.6
       },
       "conditions": {
         "trend_1y": true,
@@ -1512,20 +1588,70 @@
       }
     },
     {
-      "ticker": "BLK",
-      "price": 1023.65,
-      "score": 0.158,
+      "ticker": "META",
+      "price": 662.49,
+      "score": 0.187,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 52.9,
-      "vol_21d": 28.1,
-      "drawdown": -14.0,
+      "position_in_range": 58.8,
+      "vol_21d": 52.2,
+      "drawdown": -15.9,
       "returns": {
-        "5d": 6.5,
-        "21d": 10.4,
-        "63d": -5.3,
-        "126d": -12.1,
-        "252d": 15.2
+        "5d": 14.2,
+        "21d": 7.7,
+        "63d": 3.2,
+        "126d": -6.1,
+        "252d": 19.6
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "CL",
+      "price": 84.16,
+      "score": 0.176,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 39.1,
+      "vol_21d": 22.0,
+      "drawdown": -15.1,
+      "returns": {
+        "5d": 1.2,
+        "21d": -5.4,
+        "63d": 3.3,
+        "126d": 8.9,
+        "252d": -6.3
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "ORCL",
+      "price": 163.0,
+      "score": 0.135,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 20.3,
+      "vol_21d": 59.4,
+      "drawdown": -50.0,
+      "returns": {
+        "5d": 13.3,
+        "21d": 5.3,
+        "63d": -22.4,
+        "126d": -58.0,
+        "252d": 21.1
       },
       "conditions": {
         "trend_1y": true,
@@ -1533,77 +1659,27 @@
         "trend_3m": false,
         "near_high": false,
         "low_dd": false,
-        "vol_ok": true
+        "vol_ok": false
       }
     },
     {
-      "ticker": "MMM",
-      "price": 152.79,
-      "score": 0.15,
+      "ticker": "MDT",
+      "price": 88.12,
+      "score": 0.12,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 57.9,
-      "vol_21d": 26.2,
-      "drawdown": -12.1,
+      "position_in_range": 38.9,
+      "vol_21d": 16.6,
+      "drawdown": -15.1,
       "returns": {
-        "5d": 5.6,
-        "21d": 2.4,
-        "63d": -7.4,
-        "126d": 0.8,
-        "252d": 11.8
+        "5d": 1.9,
+        "21d": 1.9,
+        "63d": -8.7,
+        "126d": -6.4,
+        "252d": 9.7
       },
       "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "TMO",
-      "price": 514.23,
-      "score": 0.142,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 50.1,
-      "vol_21d": 27.0,
-      "drawdown": -19.5,
-      "returns": {
-        "5d": 5.2,
-        "21d": 7.8,
-        "63d": -18.4,
-        "126d": -3.7,
-        "252d": 12.9
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "DIS",
-      "price": 101.18,
-      "score": 0.134,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 46.8,
-      "vol_21d": 23.3,
-      "drawdown": -17.9,
-      "returns": {
-        "5d": 5.0,
-        "21d": 1.7,
-        "63d": -13.6,
-        "126d": -8.6,
-        "252d": 11.2
-      },
-      "conditions": {
-        "trend_1y": true,
+        "trend_1y": false,
         "trend_6m": false,
         "trend_3m": false,
         "near_high": false,
@@ -1613,19 +1689,144 @@
     },
     {
       "ticker": "ICE",
-      "price": 164.31,
-      "score": 0.123,
+      "price": 162.04,
+      "score": 0.112,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 41.2,
+      "vol_21d": 26.8,
+      "drawdown": -13.2,
+      "returns": {
+        "5d": -2.6,
+        "21d": 2.1,
+        "63d": -2.2,
+        "126d": 3.5,
+        "252d": 5.5
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PM",
+      "price": 159.47,
+      "score": 0.11,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 38.2,
+      "vol_21d": 27.8,
+      "drawdown": -15.2,
+      "returns": {
+        "5d": 1.2,
+        "21d": -8.2,
+        "63d": -2.6,
+        "126d": 1.2,
+        "252d": 8.8
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "ISRG",
+      "price": 467.22,
+      "score": 0.105,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 23.0,
+      "vol_21d": 24.1,
+      "drawdown": -21.2,
+      "returns": {
+        "5d": 3.1,
+        "21d": -1.1,
+        "63d": -20.4,
+        "126d": 8.4,
+        "252d": -4.7
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": true,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CDNS",
+      "price": 292.37,
+      "score": 0.105,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 33.5,
+      "vol_21d": 45.6,
+      "drawdown": -21.7,
+      "returns": {
+        "5d": 4.5,
+        "21d": 1.8,
+        "63d": -10.7,
+        "126d": -11.2,
+        "252d": 14.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "DHR",
+      "price": 198.61,
+      "score": 0.1,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 29.7,
+      "vol_21d": 28.1,
+      "drawdown": -17.8,
+      "returns": {
+        "5d": 3.9,
+        "21d": 6.1,
+        "63d": -18.3,
+        "126d": -1.6,
+        "252d": 10.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CMCSA",
+      "price": 28.14,
+      "score": 0.088,
       "is_pick": false,
       "qualifies": false,
       "position_in_range": 46.6,
-      "vol_21d": 26.3,
-      "drawdown": -12.0,
+      "vol_21d": 23.7,
+      "drawdown": -13.7,
       "returns": {
-        "5d": -1.3,
-        "21d": 3.9,
-        "63d": -0.7,
-        "126d": 3.7,
-        "252d": 5.8
+        "5d": 1.3,
+        "21d": -5.8,
+        "63d": -0.9,
+        "126d": 4.2,
+        "252d": -7.2
       },
       "conditions": {
         "trend_1y": false,
@@ -1638,194 +1839,19 @@
     },
     {
       "ticker": "MCD",
-      "price": 304.51,
-      "score": 0.113,
+      "price": 303.22,
+      "score": 0.083,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 40.7,
-      "vol_21d": 18.0,
-      "drawdown": -10.2,
+      "position_in_range": 38.5,
+      "vol_21d": 17.6,
+      "drawdown": -10.6,
       "returns": {
-        "5d": -1.7,
-        "21d": -6.2,
-        "63d": -0.4,
-        "126d": 4.7,
-        "252d": 2.5
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "MDT",
-      "price": 88.0,
-      "score": 0.092,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 38.4,
-      "vol_21d": 16.7,
-      "drawdown": -15.2,
-      "returns": {
-        "5d": 2.0,
-        "21d": 1.5,
-        "63d": -9.5,
-        "126d": -7.7,
-        "252d": 6.3
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "META",
-      "price": 634.53,
-      "score": 0.084,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 49.6,
-      "vol_21d": 52.2,
-      "drawdown": -19.5,
-      "returns": {
-        "5d": 10.2,
-        "21d": -0.5,
-        "63d": -2.8,
-        "126d": -14.3,
-        "252d": 8.3
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "ORCL",
-      "price": 155.62,
-      "score": 0.082,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 16.7,
-      "vol_21d": 57.9,
-      "drawdown": -52.2,
-      "returns": {
-        "5d": 7.0,
-        "21d": -1.9,
-        "63d": -24.0,
-        "126d": -64.0,
-        "252d": 12.2
-      },
-      "conditions": {
-        "trend_1y": true,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "CMCSA",
-      "price": 28.05,
-      "score": 0.079,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 45.5,
-      "vol_21d": 23.6,
-      "drawdown": -14.0,
-      "returns": {
-        "5d": 1.4,
-        "21d": -6.1,
-        "63d": 1.2,
-        "126d": 1.8,
-        "252d": -11.9
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "CDNS",
-      "price": 288.2,
-      "score": 0.071,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 30.1,
-      "vol_21d": 45.5,
-      "drawdown": -22.8,
-      "returns": {
-        "5d": 3.1,
-        "21d": -0.7,
-        "63d": -12.7,
-        "126d": -19.0,
-        "252d": 8.5
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "ISRG",
-      "price": 458.96,
-      "score": 0.051,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 18.0,
-      "vol_21d": 23.6,
-      "drawdown": -22.6,
-      "returns": {
-        "5d": 1.4,
-        "21d": -4.3,
-        "63d": -24.5,
-        "126d": 3.4,
-        "252d": -13.1
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "PG",
-      "price": 143.58,
-      "score": 0.049,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 21.6,
-      "vol_21d": 18.6,
-      "drawdown": -14.1,
-      "returns": {
-        "5d": 0.6,
-        "21d": -4.7,
-        "63d": 1.9,
-        "126d": -3.4,
-        "252d": -9.6
+        "5d": -0.5,
+        "21d": -7.4,
+        "63d": -0.6,
+        "126d": 3.2,
+        "252d": 1.1
       },
       "conditions": {
         "trend_1y": false,
@@ -1838,144 +1864,19 @@
     },
     {
       "ticker": "SHW",
-      "price": 334.38,
-      "score": 0.046,
+      "price": 333.6,
+      "score": 0.055,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 44.1,
+      "position_in_range": 43.0,
       "vol_21d": 33.6,
-      "drawdown": -10.5,
+      "drawdown": -10.7,
       "returns": {
-        "5d": 5.5,
-        "21d": 5.1,
-        "63d": -5.3,
-        "126d": 0.8,
-        "252d": 0.3
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "DHR",
-      "price": 195.87,
-      "score": 0.044,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 26.4,
-      "vol_21d": 27.8,
-      "drawdown": -18.9,
-      "returns": {
-        "5d": 1.9,
-        "21d": 5.2,
-        "63d": -19.4,
-        "126d": -4.0,
-        "252d": 2.7
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "CI",
-      "price": 275.12,
-      "score": 0.035,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 36.6,
-      "vol_21d": 26.0,
-      "drawdown": -17.4,
-      "returns": {
-        "5d": -0.2,
-        "21d": 3.4,
-        "63d": -0.8,
-        "126d": -9.6,
-        "252d": -13.0
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "SYK",
-      "price": 347.24,
-      "score": 0.03,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 29.2,
-      "vol_21d": 22.2,
-      "drawdown": -13.3,
-      "returns": {
-        "5d": 4.4,
-        "21d": 3.2,
-        "63d": -5.4,
-        "126d": -5.9,
-        "252d": -3.5
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "BRK-B",
-      "price": 480.19,
-      "score": 0.027,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 26.1,
-      "vol_21d": 11.9,
-      "drawdown": -11.0,
-      "returns": {
-        "5d": 0.8,
-        "21d": -2.4,
-        "63d": -3.9,
-        "126d": -3.4,
-        "252d": -8.2
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "BKNG",
-      "price": 177.25,
-      "score": 0.023,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 29.7,
-      "vol_21d": 37.0,
-      "drawdown": -23.4,
-      "returns": {
-        "5d": 0.6,
-        "21d": 4.9,
-        "63d": -21.2,
-        "126d": -15.4,
-        "252d": -3.3
+        "5d": 6.1,
+        "21d": 4.2,
+        "63d": -6.7,
+        "126d": 0.7,
+        "252d": 2.0
       },
       "conditions": {
         "trend_1y": false,
@@ -1988,169 +1889,19 @@
     },
     {
       "ticker": "MA",
-      "price": 508.58,
-      "score": 0.022,
+      "price": 513.16,
+      "score": 0.05,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 22.3,
-      "vol_21d": 25.3,
-      "drawdown": -14.7,
+      "position_in_range": 26.4,
+      "vol_21d": 25.5,
+      "drawdown": -13.9,
       "returns": {
-        "5d": 1.6,
-        "21d": 2.4,
-        "63d": -12.2,
-        "126d": -10.1,
-        "252d": -0.7
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "V",
-      "price": 309.39,
-      "score": 0.019,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 18.3,
-      "vol_21d": 21.8,
-      "drawdown": -16.6,
-      "returns": {
-        "5d": 2.0,
-        "21d": 0.9,
-        "63d": -12.1,
-        "126d": -11.1,
-        "252d": -6.4
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "HD",
-      "price": 341.16,
-      "score": 0.019,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 22.6,
-      "vol_21d": 32.0,
-      "drawdown": -18.4,
-      "returns": {
-        "5d": 4.3,
-        "21d": 0.7,
-        "63d": -8.7,
-        "126d": -8.9,
-        "252d": -1.6
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": true
-      }
-    },
-    {
-      "ticker": "PANW",
-      "price": 162.51,
-      "score": 0.019,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 26.1,
-      "vol_21d": 54.7,
-      "drawdown": -26.6,
-      "returns": {
-        "5d": 0.3,
-        "21d": -3.4,
-        "63d": -15.1,
-        "126d": -28.1,
-        "252d": -6.3
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "AON",
-      "price": 325.4,
-      "score": 0.018,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 21.2,
-      "vol_21d": 32.3,
-      "drawdown": -15.0,
-      "returns": {
-        "5d": -0.2,
-        "21d": 3.0,
-        "63d": -7.5,
-        "126d": -10.2,
-        "252d": -13.3
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "UNH",
-      "price": 313.0,
-      "score": 0.017,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 22.9,
-      "vol_21d": 40.4,
-      "drawdown": -46.3,
-      "returns": {
-        "5d": 10.7,
-        "21d": 12.2,
-        "63d": -8.7,
-        "126d": -14.7,
-        "252d": -58.6
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "ROP",
-      "price": 356.35,
-      "score": 0.016,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 15.8,
-      "vol_21d": 22.5,
-      "drawdown": -38.4,
-      "returns": {
-        "5d": -1.1,
-        "21d": 3.0,
-        "63d": -19.6,
-        "126d": -37.0,
-        "252d": -43.3
+        "5d": 3.1,
+        "21d": 3.2,
+        "63d": -9.7,
+        "126d": -8.0,
+        "252d": 3.3
       },
       "conditions": {
         "trend_1y": false,
@@ -2163,19 +1914,19 @@
     },
     {
       "ticker": "MSFT",
-      "price": 384.37,
-      "score": 0.015,
+      "price": 393.11,
+      "score": 0.047,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 15.3,
-      "vol_21d": 25.4,
-      "drawdown": -28.8,
+      "position_in_range": 20.0,
+      "vol_21d": 26.2,
+      "drawdown": -27.2,
       "returns": {
-        "5d": 3.0,
-        "21d": -4.4,
-        "63d": -21.8,
-        "126d": -30.3,
-        "252d": -0.8
+        "5d": 5.4,
+        "21d": -0.6,
+        "63d": -19.2,
+        "126d": -25.8,
+        "252d": 3.8
       },
       "conditions": {
         "trend_1y": false,
@@ -2187,20 +1938,95 @@
       }
     },
     {
-      "ticker": "QCOM",
-      "price": 131.24,
-      "score": 0.012,
+      "ticker": "PG",
+      "price": 144.38,
+      "score": 0.044,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 11.7,
-      "vol_21d": 21.3,
-      "drawdown": -29.3,
+      "position_in_range": 24.3,
+      "vol_21d": 18.8,
+      "drawdown": -13.6,
       "returns": {
-        "5d": 4.3,
-        "21d": 0.1,
-        "63d": -29.7,
-        "126d": -22.1,
-        "252d": -6.7
+        "5d": 2.2,
+        "21d": -4.3,
+        "63d": 1.3,
+        "126d": -2.2,
+        "252d": -9.8
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "BKNG",
+      "price": 181.12,
+      "score": 0.036,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 34.7,
+      "vol_21d": 37.6,
+      "drawdown": -21.7,
+      "returns": {
+        "5d": 4.4,
+        "21d": 6.5,
+        "63d": -17.2,
+        "126d": -12.7,
+        "252d": 1.5
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "CI",
+      "price": 272.6,
+      "score": 0.032,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 33.8,
+      "vol_21d": 26.2,
+      "drawdown": -18.1,
+      "returns": {
+        "5d": -0.6,
+        "21d": 2.0,
+        "63d": -0.7,
+        "126d": -8.7,
+        "252d": -16.2
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "SYK",
+      "price": 345.88,
+      "score": 0.03,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 27.4,
+      "vol_21d": 22.3,
+      "drawdown": -13.6,
+      "returns": {
+        "5d": 4.1,
+        "21d": 2.9,
+        "63d": -4.1,
+        "126d": -4.8,
+        "252d": 0.2
       },
       "conditions": {
         "trend_1y": false,
@@ -2213,19 +2039,19 @@
     },
     {
       "ticker": "SNPS",
-      "price": 417.77,
-      "score": 0.01,
+      "price": 418.8,
+      "score": 0.027,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 14.1,
-      "vol_21d": 43.4,
-      "drawdown": -35.3,
+      "position_in_range": 14.5,
+      "vol_21d": 43.1,
+      "drawdown": -35.1,
       "returns": {
         "5d": 5.1,
-        "21d": -0.2,
-        "63d": -22.9,
-        "126d": -14.8,
-        "252d": -2.6
+        "21d": 1.5,
+        "63d": -24.2,
+        "126d": -4.7,
+        "252d": 2.9
       },
       "conditions": {
         "trend_1y": false,
@@ -2234,73 +2060,223 @@
         "near_high": false,
         "low_dd": false,
         "vol_ok": false
+      }
+    },
+    {
+      "ticker": "BRK-B",
+      "price": 477.54,
+      "score": 0.024,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 22.8,
+      "vol_21d": 12.0,
+      "drawdown": -11.5,
+      "returns": {
+        "5d": -0.1,
+        "21d": -2.6,
+        "63d": -4.3,
+        "126d": -2.4,
+        "252d": -7.7
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "QCOM",
+      "price": 132.84,
+      "score": 0.024,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 14.3,
+      "vol_21d": 21.3,
+      "drawdown": -28.4,
+      "returns": {
+        "5d": 6.8,
+        "21d": 2.3,
+        "63d": -23.6,
+        "126d": -13.4,
+        "252d": 1.1
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "V",
+      "price": 311.37,
+      "score": 0.021,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 21.0,
+      "vol_21d": 21.9,
+      "drawdown": -16.1,
+      "returns": {
+        "5d": 2.9,
+        "21d": 1.4,
+        "63d": -9.5,
+        "126d": -9.5,
+        "252d": -3.4
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "HD",
+      "price": 342.71,
+      "score": 0.021,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 24.1,
+      "vol_21d": 32.0,
+      "drawdown": -18.0,
+      "returns": {
+        "5d": 7.2,
+        "21d": 1.1,
+        "63d": -8.3,
+        "126d": -7.9,
+        "252d": -0.6
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PANW",
+      "price": 161.59,
+      "score": 0.018,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 25.0,
+      "vol_21d": 54.7,
+      "drawdown": -27.0,
+      "returns": {
+        "5d": -5.0,
+        "21d": -3.3,
+        "63d": -15.6,
+        "126d": -25.5,
+        "252d": -4.1
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "UNH",
+      "price": 314.19,
+      "score": 0.017,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 23.2,
+      "vol_21d": 40.2,
+      "drawdown": -46.1,
+      "returns": {
+        "5d": 2.1,
+        "21d": 10.8,
+        "63d": -7.3,
+        "126d": -10.6,
+        "252d": -61.0
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "AON",
+      "price": 323.02,
+      "score": 0.015,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 17.9,
+      "vol_21d": 31.9,
+      "drawdown": -15.6,
+      "returns": {
+        "5d": 0.2,
+        "21d": 0.5,
+        "63d": -8.2,
+        "126d": -10.9,
+        "252d": -12.9
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "ROP",
+      "price": 354.0,
+      "score": 0.015,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 14.9,
+      "vol_21d": 22.3,
+      "drawdown": -38.8,
+      "returns": {
+        "5d": -1.4,
+        "21d": 1.1,
+        "63d": -19.7,
+        "126d": -35.9,
+        "252d": -43.2
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": true
       }
     },
     {
       "ticker": "FTNT",
-      "price": 78.74,
+      "price": 78.7,
       "score": 0.01,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 12.7,
-      "vol_21d": 37.5,
+      "position_in_range": 12.6,
+      "vol_21d": 37.4,
       "drawdown": -27.6,
       "returns": {
-        "5d": -4.4,
-        "21d": -6.9,
-        "63d": -0.6,
-        "126d": -9.0,
-        "252d": -23.8
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "ACN",
-      "price": 191.95,
-      "score": 0.007,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 8.9,
-      "vol_21d": 40.5,
-      "drawdown": -39.8,
-      "returns": {
-        "5d": -2.7,
-        "21d": -1.3,
-        "63d": -37.2,
-        "126d": -26.4,
-        "252d": -42.8
-      },
-      "conditions": {
-        "trend_1y": false,
-        "trend_6m": false,
-        "trend_3m": false,
-        "near_high": false,
-        "low_dd": false,
-        "vol_ok": false
-      }
-    },
-    {
-      "ticker": "ADBE",
-      "price": 240.11,
-      "score": 0.006,
-      "is_pick": false,
-      "qualifies": false,
-      "position_in_range": 7.6,
-      "vol_21d": 45.4,
-      "drawdown": -42.9,
-      "returns": {
-        "5d": -1.8,
-        "21d": -11.7,
-        "63d": -33.0,
-        "126d": -37.0,
-        "252d": -41.8
+        "5d": -6.2,
+        "21d": -5.8,
+        "63d": 0.1,
+        "126d": -5.4,
+        "252d": -20.2
       },
       "conditions": {
         "trend_1y": false,
@@ -2313,19 +2289,19 @@
     },
     {
       "ticker": "FIS",
-      "price": 46.43,
-      "score": 0.006,
+      "price": 46.98,
+      "score": 0.007,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 8.2,
-      "vol_21d": 40.0,
-      "drawdown": -42.5,
+      "position_in_range": 9.7,
+      "vol_21d": 40.1,
+      "drawdown": -41.8,
       "returns": {
-        "5d": -0.5,
-        "21d": -5.9,
-        "63d": -35.6,
-        "126d": -37.5,
-        "252d": -41.9
+        "5d": 1.7,
+        "21d": -5.6,
+        "63d": -33.5,
+        "126d": -33.8,
+        "252d": -36.6
       },
       "conditions": {
         "trend_1y": false,
@@ -2337,20 +2313,20 @@
       }
     },
     {
-      "ticker": "CRM",
-      "price": 172.82,
-      "score": 0.005,
+      "ticker": "ACN",
+      "price": 190.37,
+      "score": 0.006,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 6.3,
-      "vol_21d": 41.9,
-      "drawdown": -40.2,
+      "position_in_range": 7.8,
+      "vol_21d": 40.6,
+      "drawdown": -40.3,
       "returns": {
-        "5d": -6.6,
-        "21d": -14.0,
-        "63d": -40.6,
-        "126d": -34.6,
-        "252d": -41.9
+        "5d": -2.7,
+        "21d": -2.4,
+        "63d": -38.1,
+        "126d": -22.7,
+        "252d": -39.1
       },
       "conditions": {
         "trend_1y": false,
@@ -2363,19 +2339,19 @@
     },
     {
       "ticker": "ADP",
-      "price": 195.38,
+      "price": 195.08,
       "score": 0.005,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 5.1,
-      "vol_21d": 26.8,
-      "drawdown": -38.7,
+      "position_in_range": 4.8,
+      "vol_21d": 26.1,
+      "drawdown": -38.8,
       "returns": {
-        "5d": -4.5,
-        "21d": -5.2,
-        "63d": -30.0,
-        "126d": -36.6,
-        "252d": -38.6
+        "5d": -4.3,
+        "21d": -6.7,
+        "63d": -29.0,
+        "126d": -36.5,
+        "252d": -37.9
       },
       "conditions": {
         "trend_1y": false,
@@ -2387,20 +2363,20 @@
       }
     },
     {
-      "ticker": "NOW",
-      "price": 89.06,
+      "ticker": "ADBE",
+      "price": 235.72,
       "score": 0.004,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 4.8,
-      "vol_21d": 58.5,
-      "drawdown": -57.4,
+      "position_in_range": 5.3,
+      "vol_21d": 37.2,
+      "drawdown": -44.0,
       "returns": {
-        "5d": -14.0,
-        "21d": -23.8,
-        "63d": -46.5,
-        "126d": -72.3,
-        "252d": -61.8
+        "5d": -1.9,
+        "21d": -5.6,
+        "63d": -32.9,
+        "126d": -35.9,
+        "252d": -39.5
       },
       "conditions": {
         "trend_1y": false,
@@ -2412,20 +2388,45 @@
       }
     },
     {
-      "ticker": "WDAY",
-      "price": 119.92,
+      "ticker": "CRM",
+      "price": 171.31,
+      "score": 0.004,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 5.1,
+      "vol_21d": 40.8,
+      "drawdown": -40.7,
+      "returns": {
+        "5d": -6.3,
+        "21d": -11.6,
+        "63d": -41.2,
+        "126d": -34.0,
+        "252d": -39.1
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
+    },
+    {
+      "ticker": "NOW",
+      "price": 87.79,
       "score": 0.003,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 4.6,
-      "vol_21d": 49.4,
-      "drawdown": -56.3,
+      "position_in_range": 3.8,
+      "vol_21d": 58.1,
+      "drawdown": -58.0,
       "returns": {
-        "5d": -7.9,
-        "21d": -11.2,
-        "63d": -54.7,
-        "126d": -68.6,
-        "252d": -65.7
+        "5d": -13.6,
+        "21d": -25.8,
+        "63d": -48.5,
+        "126d": -70.5,
+        "252d": -57.9
       },
       "conditions": {
         "trend_1y": false,
@@ -2438,19 +2439,19 @@
     },
     {
       "ticker": "ABT",
-      "price": 100.69,
-      "score": 0.001,
+      "price": 101.05,
+      "score": 0.002,
       "is_pick": false,
       "qualifies": false,
-      "position_in_range": 1.1,
-      "vol_21d": 18.2,
-      "drawdown": -26.1,
+      "position_in_range": 2.1,
+      "vol_21d": 18.3,
+      "drawdown": -25.8,
       "returns": {
-        "5d": -1.6,
-        "21d": -7.1,
-        "63d": -21.9,
-        "126d": -27.1,
-        "252d": -21.4
+        "5d": -0.8,
+        "21d": -6.7,
+        "63d": -20.5,
+        "126d": -26.2,
+        "252d": -19.0
       },
       "conditions": {
         "trend_1y": false,
@@ -2460,7 +2461,483 @@
         "low_dd": false,
         "vol_ok": true
       }
+    },
+    {
+      "ticker": "WDAY",
+      "price": 117.86,
+      "score": 0.002,
+      "is_pick": false,
+      "qualifies": false,
+      "position_in_range": 3.3,
+      "vol_21d": 49.6,
+      "drawdown": -57.1,
+      "returns": {
+        "5d": -7.9,
+        "21d": -12.2,
+        "63d": -56.8,
+        "126d": -68.2,
+        "252d": -64.5
+      },
+      "conditions": {
+        "trend_1y": false,
+        "trend_6m": false,
+        "trend_3m": false,
+        "near_high": false,
+        "low_dd": false,
+        "vol_ok": false
+      }
     }
   ],
-  "qualifying": []
+  "qualifying": [
+    {
+      "ticker": "MRK",
+      "price": 119.96,
+      "score": 0.913,
+      "is_pick": true,
+      "qualifies": true,
+      "position_in_range": 93.8,
+      "vol_21d": 19.3,
+      "drawdown": -2.6,
+      "returns": {
+        "5d": 0.6,
+        "21d": 4.4,
+        "63d": 10.1,
+        "126d": 34.9,
+        "252d": 47.2
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "JNJ",
+      "price": 240.1,
+      "score": 0.887,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 92.0,
+      "vol_21d": 14.8,
+      "drawdown": -3.4,
+      "returns": {
+        "5d": 0.7,
+        "21d": -0.6,
+        "63d": 14.1,
+        "126d": 24.2,
+        "252d": 50.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CSCO",
+      "price": 82.61,
+      "score": 0.758,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 88.8,
+      "vol_21d": 27.7,
+      "drawdown": -4.3,
+      "returns": {
+        "5d": 2.4,
+        "21d": 5.9,
+        "63d": 11.5,
+        "126d": 20.6,
+        "252d": 40.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "RTX",
+      "price": 202.81,
+      "score": 0.745,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 90.7,
+      "vol_21d": 21.8,
+      "drawdown": -4.4,
+      "returns": {
+        "5d": 2.4,
+        "21d": -0.8,
+        "63d": 4.9,
+        "126d": 25.9,
+        "252d": 48.4
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "TXN",
+      "price": 218.87,
+      "score": 0.743,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 91.0,
+      "vol_21d": 30.7,
+      "drawdown": -3.4,
+      "returns": {
+        "5d": 9.1,
+        "21d": 13.7,
+        "63d": 15.3,
+        "126d": 25.8,
+        "252d": 36.6
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "NEE",
+      "price": 91.31,
+      "score": 0.741,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 88.4,
+      "vol_21d": 18.4,
+      "drawdown": -3.9,
+      "returns": {
+        "5d": -2.6,
+        "21d": -1.6,
+        "63d": 12.5,
+        "126d": 10.5,
+        "252d": 34.3
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "APD",
+      "price": 296.63,
+      "score": 0.74,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 97.1,
+      "vol_21d": 16.6,
+      "drawdown": -0.7,
+      "returns": {
+        "5d": 1.4,
+        "21d": 3.6,
+        "63d": 11.1,
+        "126d": 15.7,
+        "252d": 15.0
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "HON",
+      "price": 233.24,
+      "score": 0.728,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 78.8,
+      "vol_21d": 23.2,
+      "drawdown": -6.0,
+      "returns": {
+        "5d": 4.1,
+        "21d": -0.5,
+        "63d": 11.7,
+        "126d": 21.9,
+        "252d": 26.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "USB",
+      "price": 56.09,
+      "score": 0.687,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 83.3,
+      "vol_21d": 19.5,
+      "drawdown": -6.6,
+      "returns": {
+        "5d": 4.4,
+        "21d": 10.5,
+        "63d": 4.1,
+        "126d": 23.4,
+        "252d": 45.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "WMT",
+      "price": 125.05,
+      "score": 0.659,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 80.2,
+      "vol_21d": 25.6,
+      "drawdown": -6.4,
+      "returns": {
+        "5d": 2.1,
+        "21d": -1.0,
+        "63d": 6.0,
+        "126d": 20.9,
+        "252d": 33.1
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PFE",
+      "price": 27.11,
+      "score": 0.655,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 82.3,
+      "vol_21d": 24.8,
+      "drawdown": -5.0,
+      "returns": {
+        "5d": 0.0,
+        "21d": 2.0,
+        "63d": 8.7,
+        "126d": 12.4,
+        "252d": 29.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PNC",
+      "price": 221.2,
+      "score": 0.644,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 79.6,
+      "vol_21d": 19.3,
+      "drawdown": -8.1,
+      "returns": {
+        "5d": 4.1,
+        "21d": 10.3,
+        "63d": 4.0,
+        "126d": 20.9,
+        "252d": 41.8
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "LIN",
+      "price": 499.65,
+      "score": 0.642,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 92.4,
+      "vol_21d": 19.0,
+      "drawdown": -1.8,
+      "returns": {
+        "5d": 1.0,
+        "21d": 1.2,
+        "63d": 12.2,
+        "126d": 10.3,
+        "252d": 15.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "DE",
+      "price": 596.04,
+      "score": 0.583,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 71.3,
+      "vol_21d": 29.3,
+      "drawdown": -9.8,
+      "returns": {
+        "5d": 3.4,
+        "21d": 3.5,
+        "63d": 19.7,
+        "126d": 29.6,
+        "252d": 30.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "UNP",
+      "price": 252.04,
+      "score": 0.569,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 74.8,
+      "vol_21d": 13.7,
+      "drawdown": -5.6,
+      "returns": {
+        "5d": 2.4,
+        "21d": 3.9,
+        "63d": 9.9,
+        "126d": 12.3,
+        "252d": 16.2
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "BMY",
+      "price": 58.08,
+      "score": 0.561,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 81.8,
+      "vol_21d": 25.7,
+      "drawdown": -5.9,
+      "returns": {
+        "5d": 0.7,
+        "21d": -0.7,
+        "63d": 5.1,
+        "126d": 30.1,
+        "252d": 18.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "CB",
+      "price": 325.74,
+      "score": 0.546,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 79.1,
+      "vol_21d": 15.3,
+      "drawdown": -4.7,
+      "returns": {
+        "5d": -0.5,
+        "21d": -1.0,
+        "63d": 6.3,
+        "126d": 14.4,
+        "252d": 14.9
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    },
+    {
+      "ticker": "PEP",
+      "price": 155.72,
+      "score": 0.402,
+      "is_pick": false,
+      "qualifies": true,
+      "position_in_range": 70.8,
+      "vol_21d": 20.0,
+      "drawdown": -7.8,
+      "returns": {
+        "5d": 1.6,
+        "21d": -2.6,
+        "63d": 10.6,
+        "126d": 5.6,
+        "252d": 11.7
+      },
+      "conditions": {
+        "trend_1y": true,
+        "trend_6m": true,
+        "trend_3m": true,
+        "near_high": true,
+        "low_dd": true,
+        "vol_ok": true
+      }
+    }
+  ]
 }
