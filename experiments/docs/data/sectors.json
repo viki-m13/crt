@@ -1,8 +1,8 @@
 {
-  "generated": "2026-04-15T22:31:27.977008",
+  "generated": "2026-04-15T22:46:27.969799",
   "strategy": "TMD-ARC",
   "strategy_full_name": "Temporal Momentum Dispersion with Adaptive Regime Cascade",
-  "description": "Detects regime transitions via cross-timeframe momentum disagreement.",
+  "description": "Detects regime transitions via cross-timeframe momentum disagreement. Novel features: MTMDI, CACS, MPR.",
   "current_status": {
     "spy_price": 694.46,
     "vol_regime": "normal",
@@ -18,7 +18,8 @@
       "cacs": -0.077,
       "mpr_z": 1.2,
       "strength": 0.883,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=2.78; MPR z=1.20; regime=normal"
     },
     {
       "ticker": "MS",
@@ -27,7 +28,8 @@
       "cacs": -0.132,
       "mpr_z": 1.59,
       "strength": 0.841,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=2.29; MPR z=1.59; regime=normal"
     },
     {
       "ticker": "AVGO",
@@ -36,7 +38,8 @@
       "cacs": -0.098,
       "mpr_z": 1.4,
       "strength": 0.752,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.87; MPR z=1.40; regime=high"
     },
     {
       "ticker": "GS",
@@ -45,7 +48,8 @@
       "cacs": -0.101,
       "mpr_z": 1.53,
       "strength": 0.727,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.65; MPR z=1.53; regime=normal"
     },
     {
       "ticker": "HD",
@@ -54,7 +58,8 @@
       "cacs": 0.056,
       "mpr_z": 1.22,
       "strength": 0.723,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.80; cascade=0.056; MPR z=1.22; regime=high"
     },
     {
       "ticker": "BAC",
@@ -63,7 +68,8 @@
       "cacs": -0.096,
       "mpr_z": 1.33,
       "strength": 0.721,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.72; MPR z=1.33; regime=normal"
     },
     {
       "ticker": "AMZN",
@@ -72,7 +78,8 @@
       "cacs": -0.119,
       "mpr_z": 1.18,
       "strength": 0.705,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.72; MPR z=1.18; regime=high"
     },
     {
       "ticker": "JPM",
@@ -81,7 +88,8 @@
       "cacs": -0.054,
       "mpr_z": 1.28,
       "strength": 0.698,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.62; MPR z=1.28; regime=normal"
     },
     {
       "ticker": "MSFT",
@@ -90,7 +98,8 @@
       "cacs": 0.058,
       "mpr_z": 1.31,
       "strength": 0.695,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.58; cascade=0.058; MPR z=1.31; regime=normal"
     },
     {
       "ticker": "GE",
@@ -99,7 +108,8 @@
       "cacs": 0.027,
       "mpr_z": 1.49,
       "strength": 0.666,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=2.12; cascade=0.027; MPR z=1.49; regime=high"
     },
     {
       "ticker": "META",
@@ -108,7 +118,8 @@
       "cacs": 0.043,
       "mpr_z": 1.25,
       "strength": 0.662,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.68; cascade=0.043; MPR z=1.25; regime=high"
     },
     {
       "ticker": "MMM",
@@ -117,7 +128,8 @@
       "cacs": 0.042,
       "mpr_z": 1.29,
       "strength": 0.645,
-      "vol_regime": "normal"
+      "vol_regime": "normal",
+      "rationale": "MTMDI z=1.57; cascade=0.042; MPR z=1.29; regime=normal"
     },
     {
       "ticker": "SCHW",
@@ -126,7 +138,8 @@
       "cacs": -0.025,
       "mpr_z": 1.32,
       "strength": 0.563,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.68; MPR z=1.32; regime=high"
     },
     {
       "ticker": "SHW",
@@ -135,7 +148,8 @@
       "cacs": 0.02,
       "mpr_z": 1.13,
       "strength": 0.54,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.84; cascade=0.020; MPR z=1.13; regime=high"
     },
     {
       "ticker": "NVDA",
@@ -144,23 +158,11 @@
       "cacs": -0.008,
       "mpr_z": 1.37,
       "strength": 0.483,
-      "vol_regime": "high"
+      "vol_regime": "high",
+      "rationale": "MTMDI z=1.78; MPR z=1.37; regime=high"
     }
   ],
   "performance": {
-    "train": {
-      "strategy": {
-        "sharpe": 2.839,
-        "cagr": 0.3268,
-        "max_dd": -0.0752,
-        "sortino": 4.054
-      },
-      "spy": {
-        "sharpe": 0.786,
-        "cagr": 0.1327,
-        "max_dd": -0.1935
-      }
-    },
     "valid": {
       "strategy": {
         "sharpe": 2.242,
@@ -185,6 +187,19 @@
         "sharpe": 1.239,
         "cagr": 0,
         "max_dd": -0.1876
+      }
+    },
+    "train": {
+      "strategy": {
+        "sharpe": 2.839,
+        "cagr": 0.3268,
+        "max_dd": -0.0752,
+        "sortino": 4.054
+      },
+      "spy": {
+        "sharpe": 0.786,
+        "cagr": 0.1327,
+        "max_dd": -0.1935
       }
     }
   },
