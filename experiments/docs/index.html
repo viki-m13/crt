@@ -129,7 +129,7 @@
   <nav>
     <span class="nav-logo">CCRL AI Picks</span>
     <span class="nav-tag" id="regimeTag" style="background:var(--green-bg);color:var(--green)">BULL</span>
-    <div class="nav-links"><a href="/crypto/">Crypto</a> <a href="/">Main &rarr;</a></div>
+    <div class="nav-links"><a href="/max/">Max</a> <a href="/">Main &rarr;</a></div>
   </nav>
 
   <div class="container">
@@ -346,6 +346,8 @@ let SECTORS_DATA=null;
 let ACTIVE_TAB='stocks';
 
 function loadData(){
+  // Honor a #crypto / #sectors / #stocks hash on first load
+  switchTabFromHash();
   // Load both datasets
   fetch(`./data/ccrl.json?v=${Date.now()}`).then(r=>r.json()).then(d=>{
     DATA=d;
@@ -407,6 +409,12 @@ function switchTab(tab){
   else if(tab==='crypto'&&CRYPTO_DATA) activateData(CRYPTO_DATA);
   else if(tab==='sectors'&&SECTORS_DATA) activateData(SECTORS_DATA);
 }
+
+function switchTabFromHash(){
+  const h=(location.hash||'').replace('#','').trim().toLowerCase();
+  if(h==='crypto'||h==='sectors'||h==='stocks') switchTab(h);
+}
+window.addEventListener('hashchange', switchTabFromHash);
 
 function getActiveData(){return ACTIVE_TAB==='crypto'?CRYPTO_DATA:ACTIVE_TAB==='sectors'?SECTORS_DATA:DATA;}
 

@@ -1,0 +1,54 @@
+name: Daily Max Scan
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 6:00pm America/New_York = 23:00 UTC — after main CRT scan at 22:00 UTC
+    - cron: "0 23 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-max-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: max/scripts/requirements.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          # Max scanner reuses the main requirements set (pandas, numpy, yfinance, requests)
+          if [ -f max/scripts/requirements.txt ]; then
+            pip install -r max/scripts/requirements.txt
+          else
+            pip install -r scripts/requirements.txt
+          fi
+
+      - name: Run max scan
+        env:
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+        run: |
+          mkdir -p max/docs/data/tickers
+          python max/scripts/daily_scan_max.py
+
+      - name: Commit updated max data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add max/docs/data
+          git diff --cached --quiet || git commit -m "Daily max scan"
+          git push

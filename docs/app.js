@@ -851,28 +851,22 @@ function buildMarquee(items){
       const strategies = [1, 5, 10];
       const holdPeriods = [12, 36, 60];
 
-      // Build 1Y probability lookup from items (best Sharpe + win rate in backtests)
-      const probLookup = {};
-      for (const item of items){
-        if (item.prob_1y != null && Number.isFinite(Number(item.prob_1y))){
-          probLookup[item.ticker] = Number(item.prob_1y);
-        }
-      }
-
-      // For each month, rank tickers by 1Y probability (with score as tiebreaker)
+      // For each month, rank tickers by POINT-IN-TIME final score (no look-ahead).
+      // Earlier versions ranked by today's prob_1y applied to all past months — that leaked
+      // future information into historical picks. The daily_scan's `final` score is the
+      // opportunity score as of that date, so it's the honest historical ranking signal.
       const monthlyRanks = [];
       for (const mIdx of monthFirstIdx){
         const date = allDates[mIdx];
         const scored = [];
         for (const tk of availTickers){
-          const prob = probLookup[tk];
           const s = scoreLookup[tk]?.get(date);
           const p = priceLookup[tk]?.get(date);
-          if (prob != null && prob > 0 && p != null && Number.isFinite(p) && p > 0){
-            scored.push({ ticker: tk, prob, score: (s != null && Number.isFinite(s)) ? s : 0 });
+          if (s != null && Number.isFinite(s) && s > 0 && p != null && Number.isFinite(p) && p > 0){
+            scored.push({ ticker: tk, score: s });
           }
         }
-        scored.sort((a, b) => b.prob - a.prob || b.score - a.score);
+        scored.sort((a, b) => b.score - a.score);
         monthlyRanks.push({ date, dateIdx: mIdx, ranked: scored.map(s => s.ticker) });
       }
 
