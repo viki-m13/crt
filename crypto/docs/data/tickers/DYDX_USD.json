@@ -1,47 +1,43 @@
 {
   "ticker": "DYDX-USD",
   "display_name": "DYDX",
-  "price": 0.1017,
-  "price_date": "2026-04-15",
-  "conviction": 38.3,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 0.1294,
+  "price_date": "2026-04-16",
+  "conviction": 70.6,
+  "is_signal": true,
+  "position_size_pct": 9.61,
+  "stop_loss_price": 0.1242,
+  "take_profit_price": 0.1449,
   "max_hold_days": 5,
-  "mtmdi_zscore": -0.5675,
-  "mtmdi_direction": 1.0546,
-  "mtmdi_velocity": -0.0974,
-  "cascade_score": 0.1434,
-  "momentum_persistence": 1.2861,
-  "range_compression": 0.4698,
-  "vol_30d": 83.265,
+  "mtmdi_zscore": 1.7687,
+  "mtmdi_direction": 2.112,
+  "mtmdi_velocity": 1.646,
+  "cascade_score": -0.1539,
+  "momentum_persistence": 1.2786,
+  "range_compression": 0.7762,
+  "vol_30d": 117.6325,
   "vol_regime": "high",
-  "drawdown": -86.5302,
-  "position_in_range": 3.2141,
+  "drawdown": -82.8547,
+  "position_in_range": 7.3253,
   "returns": {
-    "7d": 2.5,
-    "14d": 2.48,
-    "30d": 7.14,
-    "90d": -66.0,
-    "180d": -116.66,
-    "365d": -167.65
+    "7d": 29.69,
+    "14d": 29.76,
+    "30d": 32.16,
+    "90d": -42.96,
+    "180d": -93.45,
+    "365d": -143.99
   },
   "signals": {
-    "mtmdi_spike": false,
+    "mtmdi_spike": true,
     "direction_positive": true,
-    "velocity_accelerating": false,
-    "cascade_divergence": true,
+    "velocity_accelerating": true,
+    "cascade_divergence": false,
     "momentum_persistent": true,
-    "range_compressed": true,
-    "volume_surge": false
+    "range_compressed": false,
+    "volume_surge": true
   },
   "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-16",
-      "price": 0.55
-    },
     {
       "date": "2025-04-17",
       "price": 0.56
@@ -1497,6 +1493,10 @@
     {
       "date": "2026-04-15",
       "price": 0.1
+    },
+    {
+      "date": "2026-04-16",
+      "price": 0.13
     }
   ]
 }

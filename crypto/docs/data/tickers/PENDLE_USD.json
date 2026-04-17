@@ -1,47 +1,43 @@
 {
   "ticker": "PENDLE-USD",
   "display_name": "PENDLE",
-  "price": 1.0967,
-  "price_date": "2026-04-15",
-  "conviction": 41.6,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 1.2767,
+  "price_date": "2026-04-16",
+  "conviction": 49.0,
+  "is_signal": true,
+  "position_size_pct": 8.14,
+  "stop_loss_price": 1.2257,
+  "take_profit_price": 1.43,
   "max_hold_days": 5,
-  "mtmdi_zscore": -0.2983,
-  "mtmdi_direction": 1.1369,
-  "mtmdi_velocity": 0.0852,
-  "cascade_score": 0.1888,
-  "momentum_persistence": 1.4166,
-  "range_compression": 0.2729,
-  "vol_30d": 78.9732,
+  "mtmdi_zscore": 1.1091,
+  "mtmdi_direction": 1.7661,
+  "mtmdi_velocity": 1.0059,
+  "cascade_score": 0.0015,
+  "momentum_persistence": 1.4081,
+  "range_compression": 0.8624,
+  "vol_30d": 96.3026,
   "vol_regime": "high",
-  "drawdown": -81.9983,
-  "position_in_range": 1.655,
+  "drawdown": -79.0431,
+  "position_in_range": 5.1993,
   "returns": {
-    "7d": 7.38,
-    "14d": -3.22,
-    "30d": -22.81,
-    "90d": -65.88,
-    "180d": -105.41,
-    "365d": -102.22
+    "7d": 18.14,
+    "14d": 16.48,
+    "30d": -5.13,
+    "90d": -50.91,
+    "180d": -92.93,
+    "365d": -90.27
   },
   "signals": {
-    "mtmdi_spike": false,
+    "mtmdi_spike": true,
     "direction_positive": true,
-    "velocity_accelerating": false,
-    "cascade_divergence": true,
+    "velocity_accelerating": true,
+    "cascade_divergence": false,
     "momentum_persistent": true,
-    "range_compressed": true,
-    "volume_surge": false
+    "range_compressed": false,
+    "volume_surge": true
   },
   "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-16",
-      "price": 3.15
-    },
     {
       "date": "2025-04-17",
       "price": 3.11
@@ -1497,6 +1493,10 @@
     {
       "date": "2026-04-15",
       "price": 1.1
+    },
+    {
+      "date": "2026-04-16",
+      "price": 1.28
     }
   ]
 }
