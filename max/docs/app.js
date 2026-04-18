@@ -1,7 +1,8 @@
 /* Max Strategy v9-max — 10D/30D/60D/3M/6M/1Y/3Y/5Y horizons
-   Three sections: Top Recommendations, Stocks, Crypto. Each with its own
-   backtest. Ranking in the backtest uses point-in-time final score (no
-   look-ahead); the current listing uses the latest scan's analog probabilities. */
+   Two sections: Top Recommendations, Stocks, Crypto. ETFs are bucketed with
+   stocks so they surface in the stock ranking when competitive. Ranking in
+   the backtest uses point-in-time final score (no look-ahead); the current
+   listing uses the latest scan's analog probabilities. */
 
 const DATA_URL = "./data/full.json";
 
@@ -17,20 +18,18 @@ const HORIZONS = [
 ];
 const HORIZON_BY_ID = Object.fromEntries(HORIZONS.map(h => [h.id, h]));
 
-const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D", etfs: "1Y" };
-const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], etfs: ["SPY"], topstocks: ["SPY"], topcrypto: ["BTC-USD"], topetfs: ["SPY"] };
+const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D" };
+const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], topstocks: ["SPY"], topcrypto: ["BTC-USD"] };
 const DCA_MONTHLY = 1000;
 
 let FULL = null;
 let ITEMS_STOCKS = [];
 let ITEMS_CRYPTO = [];
-let ITEMS_ETFS = [];
 let BT = null; // built once from bt_series
 
 function sectionItems(section) {
   if (section === "stocks" || section === "topstocks") return ITEMS_STOCKS;
   if (section === "crypto" || section === "topcrypto") return ITEMS_CRYPTO;
-  if (section === "etfs"   || section === "topetfs")   return ITEMS_ETFS;
   return [];
 }
 
@@ -81,18 +80,15 @@ async function load() {
   renderTopPicks();
   setupHorizonTabs("stocks");
   setupHorizonTabs("crypto");
-  setupHorizonTabs("etfs");
   renderSectionListing("stocks", SECTION_DEFAULT_HORIZON.stocks);
   renderSectionListing("crypto", SECTION_DEFAULT_HORIZON.crypto);
-  renderSectionListing("etfs",   SECTION_DEFAULT_HORIZON.etfs);
   setupBacktestTriggers();
 }
 
 function splitItems() {
   const items = FULL.items || [];
-  ITEMS_ETFS   = items.filter(i => i.is_etf);
   ITEMS_CRYPTO = items.filter(i => i.is_crypto);
-  ITEMS_STOCKS = items.filter(i => !i.is_crypto && !i.is_etf);
+  ITEMS_STOCKS = items.filter(i => !i.is_crypto);
 }
 
 function updateHeader() {
@@ -198,12 +194,12 @@ function sellDateFor(item, horizonDays, asOf) {
    crypto — so stocks aren't held to crypto's volatility-warped distribution
    and vice versa. We then rank picks by edge × sqrt(n_analogs) to prefer
    well-evidenced edges, and require positive expected return. */
-const BASELINES = { stocks: null, crypto: null, etfs: null };
+const BASELINES = { stocks: null, crypto: null };
 /* ticker -> preferred hold in trading days (built from today's bestHorizonFor
    across every item in a section). Used by the Per-Pick backtest so each
    position is sold at the horizon the scanner recommends for that ticker,
    mixing 30D, 60D, 1Y, 5Y etc. in a single DCA run. */
-const TOP_HORIZONS = { topstocks: {}, topcrypto: {}, topetfs: {} };
+const TOP_HORIZONS = { topstocks: {}, topcrypto: {} };
 function computeBaselines(items) {
   const out = {};
   for (const h of HORIZONS) {
@@ -245,13 +241,10 @@ function bestHorizonFor(item, baselines) {
 function renderTopPicks() {
   BASELINES.stocks = computeBaselines(ITEMS_STOCKS);
   BASELINES.crypto = computeBaselines(ITEMS_CRYPTO);
-  BASELINES.etfs   = computeBaselines(ITEMS_ETFS);
   renderTopPicksFor("stocks");
   renderTopPicksFor("crypto");
-  renderTopPicksFor("etfs");
   TOP_HORIZONS.topstocks = buildHorizonByTicker(ITEMS_STOCKS, BASELINES.stocks);
   TOP_HORIZONS.topcrypto = buildHorizonByTicker(ITEMS_CRYPTO, BASELINES.crypto);
-  TOP_HORIZONS.topetfs   = buildHorizonByTicker(ITEMS_ETFS,   BASELINES.etfs);
 }
 
 function buildHorizonByTicker(items, baselines) {
@@ -839,10 +832,8 @@ function setupBacktestTriggers() {
   };
   lazySection("stocks-backtest-section", "stocks");
   lazySection("crypto-backtest-section", "crypto");
-  lazySection("etfs-backtest-section",   "etfs");
   lazyTop("topstocks-backtest-section", "topstocks");
   lazyTop("topcrypto-backtest-section", "topcrypto");
-  lazyTop("topetfs-backtest-section",   "topetfs");
 }
 
 function currentHorizon(section) {
@@ -888,7 +879,7 @@ function runTopBacktestPerPick(which, universe, benchTickers) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
   const horizonByTicker = TOP_HORIZONS[which] || {};
-  const fallback = which === "topcrypto" ? 60 : 252; // topetfs + topstocks default to 1Y
+  const fallback = which === "topcrypto" ? 60 : 252; // topstocks defaults to 1Y
   const startMonthIdx = firstValidMonthIdx(universe, 3);
   const results = {};
   for (const n of [1, 5, 10]) {
