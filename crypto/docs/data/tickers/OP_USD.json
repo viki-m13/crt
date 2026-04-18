@@ -1,47 +1,43 @@
 {
   "ticker": "OP-USD",
   "display_name": "OP",
-  "price": 0.1323,
-  "price_date": "2026-04-16",
-  "conviction": 35.7,
-  "is_signal": false,
-  "position_size_pct": 0,
-  "stop_loss_price": null,
-  "take_profit_price": null,
+  "price": 0.1346,
+  "price_date": "2026-04-17",
+  "conviction": 53.5,
+  "is_signal": true,
+  "position_size_pct": 10.65,
+  "stop_loss_price": 0.1292,
+  "take_profit_price": 0.1508,
   "max_hold_days": 5,
-  "mtmdi_zscore": 1.1398,
-  "mtmdi_direction": 1.7821,
-  "mtmdi_velocity": 0.2292,
-  "cascade_score": -0.0373,
+  "mtmdi_zscore": 1.2095,
+  "mtmdi_direction": 1.8882,
+  "mtmdi_velocity": 1.3783,
+  "cascade_score": 0.0267,
   "momentum_persistence": 1.2164,
-  "range_compression": 0.8354,
-  "vol_30d": 84.533,
+  "range_compression": 0.8471,
+  "vol_30d": 80.3799,
   "vol_regime": "high",
-  "drawdown": -85.5052,
-  "position_in_range": 3.749,
+  "drawdown": -85.2499,
+  "position_in_range": 4.0363,
   "returns": {
-    "7d": 14.89,
-    "14d": 21.78,
-    "30d": -2.83,
-    "90d": -94.16,
-    "180d": -117.3,
-    "365d": -156.61
+    "7d": 15.7,
+    "14d": 20.16,
+    "30d": 6.43,
+    "90d": -94.58,
+    "180d": -118.06,
+    "365d": -156.79
   },
   "signals": {
     "mtmdi_spike": true,
     "direction_positive": true,
-    "velocity_accelerating": false,
-    "cascade_divergence": false,
+    "velocity_accelerating": true,
+    "cascade_divergence": true,
     "momentum_persistent": true,
     "range_compressed": false,
     "volume_surge": false
   },
-  "confirming_factors": 1,
+  "confirming_factors": 3,
   "chart": [
-    {
-      "date": "2025-04-17",
-      "price": 0.65
-    },
     {
       "date": "2025-04-18",
       "price": 0.66
@@ -1496,6 +1492,10 @@
     },
     {
       "date": "2026-04-16",
+      "price": 0.13
+    },
+    {
+      "date": "2026-04-17",
       "price": 0.13
     }
   ]
