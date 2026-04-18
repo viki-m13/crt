@@ -80,37 +80,6 @@ SHORT_UNIVERSE = [
     "ARM", "SMCI", "COIN", "MARA", "SQ",
 ]
 
-# ── ETF universe: broad market + style/factor + sector + international + fixed
-#    income + commodities + thematic + real estate. Keeps to highly-liquid
-#    names so MIN_MED_DVOL_USD filter doesn't drop half the list. Avoids
-#    leveraged/inverse funds (path-dependent, misleading to backtest). ──
-ETF_UNIVERSE = [
-    # Broad US market
-    "SPY", "VOO", "IVV", "VTI", "QQQ", "IWM", "DIA", "IJR", "IJH",
-    # Style / factor
-    "IWF", "IWD", "VUG", "VTV", "MTUM", "QUAL", "USMV", "VLUE",
-    "DVY", "VIG", "VYM", "SCHD", "SDY",
-    # US sectors (SPDR)
-    "XLK", "XLF", "XLE", "XLV", "XLI", "XLP", "XLY", "XLU", "XLB", "XLRE", "XLC",
-    # International developed
-    "VEA", "EFA", "IEFA", "VGK", "EWJ", "EWU", "EWG",
-    # Emerging markets
-    "VWO", "EEM", "IEMG", "MCHI", "INDA", "EWZ", "FXI",
-    # Fixed income
-    "TLT", "IEF", "SHY", "AGG", "BND", "LQD", "HYG", "TIP", "MUB", "EMB",
-    # Commodities
-    "GLD", "SLV", "IAU", "USO", "UNG", "DBC", "GSG",
-    # Thematic / innovation
-    "SMH", "SOXX", "ARKK", "ARKG", "IBB", "XBI", "KWEB",
-    "CIBR", "HACK", "JETS", "ITB", "XHB", "XRT", "IYT",
-    # Energy transition / materials thematic
-    "ICLN", "TAN", "LIT", "URA", "REMX",
-    # Real estate
-    "VNQ", "IYR", "SCHH",
-    # Other broad/alts
-    "PFF", "BIL",
-]
-
 # ── Full crypto universe: top coins by market cap + DeFi + L1/L2 + gaming + more ──
 CRYPTO_UNIVERSE = [
     # Top 20 by Market Cap
@@ -1580,12 +1549,11 @@ def main():
     print("MAX SCANNER (v9-max) — 10D/30D/60D/3M/6M/1Y/3Y/5Y horizons")
     print("=" * 110)
 
-    # Universe — curated stocks + full crypto universe + ETF universe
+    # Universe — curated stocks + full crypto universe
     tickers = list(SHORT_UNIVERSE)
     crypto_set = set(CRYPTO_UNIVERSE)
-    etf_set = set(ETF_UNIVERSE)
-    universe = sorted(set(tickers + CRYPTO_UNIVERSE + ETF_UNIVERSE + ALWAYS_PLOT + [BENCH] + extra_tickers))
-    print(f"[UNIVERSE] stocks={len(tickers)} | crypto={len(CRYPTO_UNIVERSE)} | etfs={len(ETF_UNIVERSE)} | extra={len(extra_tickers)} | universe={len(universe)}")
+    universe = sorted(set(tickers + CRYPTO_UNIVERSE + ALWAYS_PLOT + [BENCH] + extra_tickers))
+    print(f"[UNIVERSE] stocks={len(tickers)} | crypto={len(CRYPTO_UNIVERSE)} | extra={len(extra_tickers)} | universe={len(universe)}")
 
     print(f"[DATA] Downloading {INTERVAL} OHLCV for {len(universe)} tickers...")
     data = download_ohlcv_period(universe, period=PERIOD, interval=INTERVAL, chunk_size=CHUNK_SIZE)
@@ -1629,7 +1597,6 @@ def main():
             continue
         row, det = out
         row["is_crypto"] = t in crypto_set
-        row["is_etf"] = (t in etf_set) and not row["is_crypto"]
         rows.append(row)
 
         # Write per-ticker detail

@@ -1,8 +1,7 @@
 /* Max Strategy v9-max — 10D/30D/60D/3M/6M/1Y/3Y/5Y horizons
-   Two sections: Top Recommendations, Stocks, Crypto. ETFs are bucketed with
-   stocks so they surface in the stock ranking when competitive. Ranking in
-   the backtest uses point-in-time final score (no look-ahead); the current
-   listing uses the latest scan's analog probabilities. */
+   Two sections: Top Recommendations, Stocks, Crypto. Each with its own
+   backtest. Ranking in the backtest uses point-in-time final score (no
+   look-ahead); the current listing uses the latest scan's analog probabilities. */
 
 const DATA_URL = "./data/full.json";
 
