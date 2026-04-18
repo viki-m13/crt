@@ -709,48 +709,23 @@ function setupBacktestTriggers() {
   cryptoDet?.addEventListener("toggle", () => {
     if (cryptoDet.open && !cryptoLoaded) { cryptoLoaded = true; runSectionBacktest("crypto"); }
   });
-  // Top stocks picks
+  // Top stocks picks — always per-pick hold.
   const topStocksDet = byId("topstocks-backtest-section");
   let topStocksLoaded = false;
   topStocksDet?.addEventListener("toggle", () => {
-    if (topStocksDet.open && !topStocksLoaded) { topStocksLoaded = true; runTopBacktest("topstocks", currentTopHoldDays("topstocks")); }
+    if (topStocksDet.open && !topStocksLoaded) { topStocksLoaded = true; runTopBacktest("topstocks"); }
   });
-  document.querySelectorAll('.bt-hold-tabs[data-backtest="topstocks"] .btn-lite').forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll('.bt-hold-tabs[data-backtest="topstocks"] .btn-lite').forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const v = btn.dataset.hold;
-      if (topStocksLoaded) runTopBacktest("topstocks", v === "perpick" ? "perpick" : Number(v));
-    });
-  });
-  // Top crypto picks
+  // Top crypto picks — always per-pick hold.
   const topCryptoDet = byId("topcrypto-backtest-section");
   let topCryptoLoaded = false;
   topCryptoDet?.addEventListener("toggle", () => {
-    if (topCryptoDet.open && !topCryptoLoaded) { topCryptoLoaded = true; runTopBacktest("topcrypto", currentTopHoldDays("topcrypto")); }
-  });
-  document.querySelectorAll('.bt-hold-tabs[data-backtest="topcrypto"] .btn-lite').forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll('.bt-hold-tabs[data-backtest="topcrypto"] .btn-lite').forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const v = btn.dataset.hold;
-      if (topCryptoLoaded) runTopBacktest("topcrypto", v === "perpick" ? "perpick" : Number(v));
-    });
+    if (topCryptoDet.open && !topCryptoLoaded) { topCryptoLoaded = true; runTopBacktest("topcrypto"); }
   });
 }
 
 function currentHorizon(section) {
   const active = document.querySelector(`.horizon-tabs[data-section="${section}"] .btn-lite.active`);
   return active ? HORIZON_BY_ID[active.dataset.horizon] : HORIZON_BY_ID[SECTION_DEFAULT_HORIZON[section]];
-}
-
-function currentTopHoldDays(which) {
-  const active = document.querySelector(`.bt-hold-tabs[data-backtest="${which}"] .btn-lite.active`);
-  if (active) {
-    const v = active.dataset.hold;
-    return v === "perpick" ? "perpick" : Number(v);
-  }
-  return "perpick";
 }
 
 function portfolioUniverse(section) {
@@ -777,22 +752,15 @@ function runSectionBacktest(section) {
   }, 10);
 }
 
-function runTopBacktest(which, holdArg) {
+function runTopBacktest(which) {
   const universe = portfolioUniverse(which);
   const benchTickers = SECTION_BENCHMARK[which];
   const bodyId = `${which}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
-    let results, label;
-    if (holdArg === "perpick") {
-      results = runTopBacktestPerPick(which, universe, benchTickers);
-      label = "Per-Pick";
-    } else {
-      results = runBacktestFor(which, Number(holdArg), universe, benchTickers);
-      label = Number(holdArg) + " Trading Days";
-    }
+    const results = runTopBacktestPerPick(which, universe, benchTickers);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
-    renderBacktest(bodyId, results, benchTickers, holdArg, label);
+    renderBacktest(bodyId, results, benchTickers, null, "Per-Pick");
   }, 10);
 }
 
