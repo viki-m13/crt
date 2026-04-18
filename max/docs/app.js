@@ -632,10 +632,71 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
   scroll.appendChild(tbl);
   body.appendChild(scroll);
 
+  // Last 10 completed transactions (from the Top 5 sim, the representative one)
+  renderRecentTransactions(body, results[5].sim, allDates);
+
   const info = document.createElement("div");
   info.className = "footnote";
-  info.textContent = `${horizonLabel} hold. Ranking uses the scanner's point-in-time opportunity score on each DCA date — no look-ahead. Not financial advice; past performance does not predict future results.`;
+  info.textContent = `${horizonLabel} hold. DCA buys $1,000 on the first trading day of each calendar month, splitting the cash equally across that month's top-N ranked picks. Each position is sold at the close of its hold horizon. Ranking uses the scanner's point-in-time opportunity score on each DCA date — no look-ahead. Not financial advice; past performance does not predict future results.`;
   body.appendChild(info);
+}
+
+function renderRecentTransactions(body, sim, allDates) {
+  const closed = [];
+  for (const p of sim.positions || []) {
+    if (!p.sold || !(p.sellPrice > 0)) continue;
+    if (p.buyIdx < 0 || p.buyIdx >= allDates.length) continue;
+    const sellIdxClamped = Math.min(p.sellIdx, allDates.length - 1);
+    const buyPrice = p.shares > 0 ? p.cost / p.shares : 0;
+    const proceeds = p.shares * p.sellPrice;
+    closed.push({
+      ticker: p.tk,
+      buyDate: allDates[p.buyIdx],
+      sellDate: allDates[sellIdxClamped],
+      holdDays: p.sellIdx - p.buyIdx,
+      buyPrice, sellPrice: p.sellPrice,
+      cost: p.cost, proceeds,
+      returnPct: buyPrice > 0 ? (p.sellPrice - buyPrice) / buyPrice : 0,
+    });
+  }
+  if (!closed.length) return;
+  closed.sort((a, b) => b.sellDate.localeCompare(a.sellDate));
+  const recent = closed.slice(0, 10);
+
+  const heading = document.createElement("div");
+  heading.className = "section-title";
+  heading.style.cssText = "margin-top: 20px; font-size: 12px; letter-spacing: .08em;";
+  heading.textContent = "Last 10 Completed Transactions — Top 5 Portfolio";
+  body.appendChild(heading);
+
+  const tbl = document.createElement("table");
+  tbl.className = "outcomes-table bt-table";
+  let html = `<thead><tr>
+    <th>Ticker</th><th>Hold</th>
+    <th>Buy Date</th><th>Buy $</th>
+    <th>Sell Date</th><th>Sell $</th>
+    <th>Return</th><th>Invested</th><th>Proceeds</th>
+  </tr></thead><tbody>`;
+  const fmtPrice = v => v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(3) : v.toPrecision(3);
+  for (const t of recent) {
+    html += `<tr>
+      <td>${t.ticker}</td>
+      <td>${t.holdDays}d</td>
+      <td>${t.buyDate}</td>
+      <td>$${fmtPrice(t.buyPrice)}</td>
+      <td>${t.sellDate}</td>
+      <td>$${fmtPrice(t.sellPrice)}</td>
+      <td style="color:${t.returnPct >= 0 ? '#064e2b' : '#b00020'}">${fmtPctSigned(t.returnPct)}</td>
+      <td>$${Math.round(t.cost).toLocaleString()}</td>
+      <td>$${Math.round(t.proceeds).toLocaleString()}</td>
+    </tr>`;
+  }
+  html += "</tbody>";
+  tbl.innerHTML = html;
+  const scroll = document.createElement("div");
+  scroll.className = "table-scroll";
+  scroll.appendChild(tbl);
+  body.appendChild(scroll);
 }
 
 function drawEquityChart(canvas, dates, results, colors) {
@@ -650,8 +711,16 @@ function drawEquityChart(canvas, dates, results, colors) {
     { eq: results[10].sim.equity, color: colors[10] },
     { eq: results.bench.sim.equity, color: colors.bench },
   ];
+  // Crop to first index where any series has non-zero equity. The spine goes
+  // back to 2014 but DCA can't start until bt_series scores exist (often
+  // 2021+), so without cropping every chart has years of flat-zero leader.
+  let startIdx = 0;
+  const len = dates.length;
+  outer: for (let i = 0; i < len; i++) {
+    for (const s of series) if (s.eq[i] > 0) { startIdx = i; break outer; }
+  }
   let maxY = 1;
-  for (const s of series) for (let i = 0; i < s.eq.length; i++) if (s.eq[i] > maxY) maxY = s.eq[i];
+  for (const s of series) for (let i = startIdx; i < s.eq.length; i++) if (s.eq[i] > maxY) maxY = s.eq[i];
   maxY *= 1.05;
   ctx.strokeStyle = "#eee"; ctx.lineWidth = 1 * dpr;
   ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(w, h - 1); ctx.stroke();
@@ -662,15 +731,25 @@ function drawEquityChart(canvas, dates, results, colors) {
     const v = (g / 4) * maxY;
     ctx.fillText("$" + Math.round(v).toLocaleString(), 4 * dpr, y - 2 * dpr);
   }
+  // Date axis — start + end labels.
+  const endIdx = len - 1;
+  const startLbl = dates[startIdx] || "";
+  const endLbl = dates[endIdx] || "";
+  ctx.textAlign = "left";
+  ctx.fillText(startLbl, 4 * dpr, h - 4 * dpr);
+  ctx.textAlign = "right";
+  ctx.fillText(endLbl, w - 4 * dpr, h - 4 * dpr);
+  ctx.textAlign = "left";
+  const span = Math.max(1, endIdx - startIdx);
   for (const s of series) {
     if (!s.eq.length) continue;
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 1.8 * dpr;
     ctx.beginPath();
-    for (let i = 0; i < s.eq.length; i++) {
-      const x = (i / (s.eq.length - 1)) * w;
+    for (let i = startIdx; i < s.eq.length; i++) {
+      const x = ((i - startIdx) / span) * w;
       const y = (h - 1) - (s.eq[i] / maxY) * (h - 20 * dpr);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      if (i === startIdx) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
