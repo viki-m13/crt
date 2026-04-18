@@ -208,8 +208,9 @@
         <div class="details-card-body">
           <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score), held for the selected horizon, then sold. Benchmark: SPY DCA on the same schedule.</p>
           <div class="bt-hold-tabs" data-backtest="topstocks">
+            <button class="btn-lite active" data-hold="perpick">Per-Pick Hold</button>
             <button class="btn-lite" data-hold="60">60D Hold</button>
-            <button class="btn-lite active" data-hold="252">1Y Hold</button>
+            <button class="btn-lite" data-hold="252">1Y Hold</button>
             <button class="btn-lite" data-hold="756">3Y Hold</button>
             <button class="btn-lite" data-hold="1260">5Y Hold</button>
           </div>
@@ -243,7 +244,8 @@
         <div class="details-card-body">
           <p class="bt-intro">$1,000 every month into the top-ranked crypto assets (by point-in-time opportunity score), held for the selected horizon, then sold. Benchmark: BTC DCA on the same schedule.</p>
           <div class="bt-hold-tabs" data-backtest="topcrypto">
-            <button class="btn-lite active" data-hold="60">60D Hold</button>
+            <button class="btn-lite active" data-hold="perpick">Per-Pick Hold</button>
+            <button class="btn-lite" data-hold="60">60D Hold</button>
             <button class="btn-lite" data-hold="252">1Y Hold</button>
             <button class="btn-lite" data-hold="756">3Y Hold</button>
             <button class="btn-lite" data-hold="1260">5Y Hold</button>
@@ -379,6 +381,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260417a"></script>
+  <script src="app.js?v=20260418a"></script>
 </body>
 </html>

@@ -161,6 +161,11 @@ function buildRow(item, h, opts) {
    and vice versa. We then rank picks by edge × sqrt(n_analogs) to prefer
    well-evidenced edges, and require positive expected return. */
 const BASELINES = { stocks: null, crypto: null };
+/* ticker -> preferred hold in trading days (built from today's bestHorizonFor
+   across every item in a section). Used by the Per-Pick backtest so each
+   position is sold at the horizon the scanner recommends for that ticker,
+   mixing 30D, 60D, 1Y, 5Y etc. in a single DCA run. */
+const TOP_HORIZONS = { topstocks: {}, topcrypto: {} };
 function computeBaselines(items) {
   const out = {};
   for (const h of HORIZONS) {
@@ -204,6 +209,17 @@ function renderTopPicks() {
   BASELINES.crypto = computeBaselines(ITEMS_CRYPTO);
   renderTopPicksFor("stocks");
   renderTopPicksFor("crypto");
+  TOP_HORIZONS.topstocks = buildHorizonByTicker(ITEMS_STOCKS, BASELINES.stocks);
+  TOP_HORIZONS.topcrypto = buildHorizonByTicker(ITEMS_CRYPTO, BASELINES.crypto);
+}
+
+function buildHorizonByTicker(items, baselines) {
+  const map = {};
+  for (const it of items) {
+    const best = bestHorizonFor(it, baselines);
+    if (best) map[it.ticker] = best.horizon.days;
+  }
+  return map;
 }
 
 function renderTopPicksFor(section) {
@@ -414,6 +430,122 @@ function simulateBenchmarkDCA(benchTickers, holdDays, opts) {
   return { equity, totalInvested, positions };
 }
 
+/* Per-pick DCA: rank by point-in-time final score, but hold each pick for the
+   trading-day horizon chosen by today's bestHorizonFor() for that ticker
+   (30D, 60D, 1Y, 3Y, …). Tickers that didn't produce a best-horizon today
+   fall back to `opts.fallbackHold`. Returns the per-month horizon schedule so
+   the benchmark can mirror it. */
+function simulateDCAPerPick(universe, topN, horizonByTicker, opts) {
+  const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
+  const equity = new Float64Array(allDates.length);
+  const positions = [];
+  const pickHorizonsByMonth = [];
+  let cash = 0, totalInvested = 0;
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const fallback = (opts && opts.fallbackHold != null) ? opts.fallbackHold : 252;
+
+  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+    const dIdx = monthFirstIdx[m];
+    const date = allDates[dIdx];
+    const ranked = [];
+    for (const tk of universe) {
+      const s = scoreLookup[tk]?.get(date);
+      const p = priceLookup[tk]?.get(date);
+      if (s != null && Number.isFinite(s) && s > 0 && p != null && Number.isFinite(p) && p > 0) {
+        ranked.push({ tk, s, p });
+      }
+    }
+    if (!ranked.length) continue;
+    ranked.sort((a, b) => b.s - a.s);
+    const picks = ranked.slice(0, Math.min(topN, ranked.length));
+    const perAsset = DCA_MONTHLY / picks.length;
+    totalInvested += DCA_MONTHLY;
+    const monthHorizons = [];
+    for (const { tk, p } of picks) {
+      const hold = horizonByTicker[tk] || fallback;
+      monthHorizons.push(hold);
+      positions.push({ tk, shares: perAsset / p, cost: perAsset, buyIdx: dIdx, sellIdx: dIdx + hold, sold: false, sellPrice: 0 });
+    }
+    pickHorizonsByMonth.push({ dIdx, horizons: monthHorizons });
+  }
+
+  for (let d = 0; d < allDates.length; d++) {
+    const date = allDates[d];
+    for (const pos of positions) {
+      if (!pos.sold && d >= pos.sellIdx) {
+        const sp = priceLookup[pos.tk]?.get(date);
+        if (sp && sp > 0) { cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
+      }
+    }
+    let open = 0;
+    for (const pos of positions) {
+      if (pos.sold || d < pos.buyIdx) continue;
+      const px = priceLookup[pos.tk]?.get(date);
+      if (px && Number.isFinite(px)) open += pos.shares * px;
+    }
+    equity[d] = cash + open;
+  }
+
+  return { equity, totalInvested, positions, pickHorizonsByMonth };
+}
+
+/* Benchmark DCA that mirrors the portfolio's per-pick hold schedule: for every
+   DCA month, open N benchmark positions (N = portfolio picks that month) with
+   the exact same per-position hold lengths. Keeps capital timing identical
+   so the comparison isn't distorted by different hold-profile cash drag. */
+function simulateBenchmarkDCAPerPick(benchTickers, pickHorizonsByMonth, opts) {
+  const { allDates, priceLookup } = buildBT();
+  const filled = {};
+  for (const tk of benchTickers) {
+    const pm = priceLookup[tk];
+    if (!pm) continue;
+    const spineStart = allDates[0] || "";
+    let last = 0;
+    for (const [d, v] of pm.entries()) {
+      if (d <= spineStart && Number.isFinite(v) && v > 0 && d > "") last = v;
+    }
+    const arr = new Float64Array(allDates.length);
+    for (let i = 0; i < allDates.length; i++) {
+      const v = pm.get(allDates[i]);
+      if (v != null && Number.isFinite(v) && v > 0) last = v;
+      arr[i] = last;
+    }
+    filled[tk] = arr;
+  }
+  const equity = new Float64Array(allDates.length);
+  const positions = [];
+  let cash = 0, totalInvested = 0;
+  for (const { dIdx, horizons } of pickHorizonsByMonth) {
+    const avail = benchTickers.filter(t => filled[t] && filled[t][dIdx] > 0);
+    if (!avail.length || !horizons.length) continue;
+    const perSlot = DCA_MONTHLY / horizons.length;
+    const perLeg = perSlot / avail.length;
+    totalInvested += DCA_MONTHLY;
+    for (const hold of horizons) {
+      for (const tk of avail) {
+        const p = filled[tk][dIdx];
+        positions.push({ tk, shares: perLeg / p, cost: perLeg, buyIdx: dIdx, sellIdx: dIdx + hold, sold: false, sellPrice: 0 });
+      }
+    }
+  }
+  for (let d = 0; d < allDates.length; d++) {
+    for (const pos of positions) {
+      if (!pos.sold && d >= pos.sellIdx) {
+        const sp = filled[pos.tk]?.[Math.min(d, allDates.length - 1)];
+        if (sp && sp > 0) { cash += pos.shares * sp; pos.sold = true; pos.sellPrice = sp; }
+      }
+    }
+    let open = 0;
+    for (const pos of positions) {
+      if (pos.sold || d < pos.buyIdx) continue;
+      const px = filled[pos.tk]?.[d];
+      if (px && Number.isFinite(px)) open += pos.shares * px;
+    }
+    equity[d] = cash + open;
+  }
+  return { equity, totalInvested, positions };
+}
+
 /* ---------- Metrics ---------- */
 function computeMetrics(allDates, eq, totalInvested) {
   if (!eq || eq.length === 0) return null;
@@ -587,7 +719,8 @@ function setupBacktestTriggers() {
     btn.addEventListener("click", () => {
       document.querySelectorAll('.bt-hold-tabs[data-backtest="topstocks"] .btn-lite').forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      if (topStocksLoaded) runTopBacktest("topstocks", Number(btn.dataset.hold));
+      const v = btn.dataset.hold;
+      if (topStocksLoaded) runTopBacktest("topstocks", v === "perpick" ? "perpick" : Number(v));
     });
   });
   // Top crypto picks
@@ -600,7 +733,8 @@ function setupBacktestTriggers() {
     btn.addEventListener("click", () => {
       document.querySelectorAll('.bt-hold-tabs[data-backtest="topcrypto"] .btn-lite').forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      if (topCryptoLoaded) runTopBacktest("topcrypto", Number(btn.dataset.hold));
+      const v = btn.dataset.hold;
+      if (topCryptoLoaded) runTopBacktest("topcrypto", v === "perpick" ? "perpick" : Number(v));
     });
   });
 }
@@ -612,8 +746,11 @@ function currentHorizon(section) {
 
 function currentTopHoldDays(which) {
   const active = document.querySelector(`.bt-hold-tabs[data-backtest="${which}"] .btn-lite.active`);
-  if (active) return Number(active.dataset.hold);
-  return which === "topcrypto" ? 60 : 252;
+  if (active) {
+    const v = active.dataset.hold;
+    return v === "perpick" ? "perpick" : Number(v);
+  }
+  return "perpick";
 }
 
 function portfolioUniverse(section) {
@@ -640,17 +777,41 @@ function runSectionBacktest(section) {
   }, 10);
 }
 
-function runTopBacktest(which, holdDays) {
+function runTopBacktest(which, holdArg) {
   const universe = portfolioUniverse(which);
   const benchTickers = SECTION_BENCHMARK[which];
   const bodyId = `${which}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
-    const results = runBacktestFor(which, holdDays, universe, benchTickers);
+    let results, label;
+    if (holdArg === "perpick") {
+      results = runTopBacktestPerPick(which, universe, benchTickers);
+      label = "Per-Pick";
+    } else {
+      results = runBacktestFor(which, Number(holdArg), universe, benchTickers);
+      label = Number(holdArg) + " Trading Days";
+    }
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
-    const label = holdDays + " Trading Days";
-    renderBacktest(bodyId, results, benchTickers, holdDays, label);
+    renderBacktest(bodyId, results, benchTickers, holdArg, label);
   }, 10);
+}
+
+function runTopBacktestPerPick(which, universe, benchTickers) {
+  const bt = buildBT();
+  if (!bt.allDates || !bt.allDates.length) return null;
+  const horizonByTicker = TOP_HORIZONS[which] || {};
+  const fallback = which === "topcrypto" ? 60 : 252;
+  const startMonthIdx = firstValidMonthIdx(universe, 3);
+  const results = {};
+  for (const n of [1, 5, 10]) {
+    const sim = simulateDCAPerPick(universe, n, horizonByTicker, { startMonthIdx, fallbackHold: fallback });
+    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
+    results[n] = { sim, metrics };
+  }
+  // Benchmark mirrors Top-5's per-month horizon schedule so capital timing matches.
+  const benchSim = simulateBenchmarkDCAPerPick(benchTickers, results[5].sim.pickHorizonsByMonth, { startMonthIdx });
+  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
+  return results;
 }
 
 /* ---------- "Best horizon for section" ---------- */
