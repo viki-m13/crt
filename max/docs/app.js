@@ -18,7 +18,7 @@ const HORIZONS = [
 const HORIZON_BY_ID = Object.fromEntries(HORIZONS.map(h => [h.id, h]));
 
 const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D" };
-const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], top: ["SPY", "BTC-USD"] };
+const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], topstocks: ["SPY"], topcrypto: ["BTC-USD"] };
 const DCA_MONTHLY = 1000;
 
 let FULL = null;
@@ -154,13 +154,14 @@ function buildRow(item, h, opts) {
 }
 
 /* ---------- Top Picks: pick each item's best horizon ----------
-   We pick the horizon where the setup's edge over the universe at that
-   horizon is greatest. "Edge" = (item prob) − (universe median prob at that
-   horizon). This naturally produces a mix (some 30D, some 5Y) because each
-   horizon has its own baseline. We then rank picks by edge × sqrt(n_analogs)
-   to prefer well-evidenced edges, and require positive expected return. */
-let UNIVERSE_BASELINES = null;
-function computeUniverseBaselines(items) {
+   We pick the horizon where the setup's edge over its asset class baseline
+   at that horizon is greatest. "Edge" = (item prob) − (within-class median
+   prob at that horizon). Stocks are baselined against stocks, crypto against
+   crypto — so stocks aren't held to crypto's volatility-warped distribution
+   and vice versa. We then rank picks by edge × sqrt(n_analogs) to prefer
+   well-evidenced edges, and require positive expected return. */
+const BASELINES = { stocks: null, crypto: null };
+function computeBaselines(items) {
   const out = {};
   for (const h of HORIZONS) {
     const vals = [];
@@ -175,19 +176,19 @@ function computeUniverseBaselines(items) {
   return out;
 }
 
-function bestHorizonFor(item) {
-  if (!UNIVERSE_BASELINES) return null;
+function bestHorizonFor(item, baselines) {
+  if (!baselines) return null;
   let best = null;
   for (const h of HORIZONS) {
     const p = item[h.prob];
     const m = item[h.median];
-    const base = UNIVERSE_BASELINES[h.id];
+    const base = baselines[h.id];
     if (p == null || !Number.isFinite(Number(p)) || base == null) continue;
     const prob = Number(p);
     const med = Number.isFinite(Number(m)) ? Number(m) : 0;
     const expected = 1 + (prob / 100) * med;
-    if (expected <= 1) continue; // require positive expected return
-    const edge = prob - base; // percentage points above universe median
+    if (expected <= 1) continue;
+    const edge = prob - base;
     const n = Number(item.n_analogs || 0);
     const evidence = Math.sqrt(Math.min(n, 500)) / Math.sqrt(500);
     const score = edge * evidence;
@@ -199,17 +200,25 @@ function bestHorizonFor(item) {
 }
 
 function renderTopPicks() {
-  UNIVERSE_BASELINES = computeUniverseBaselines(FULL.items || []);
-  const scored = (FULL.items || [])
-    .map(it => ({ it, best: bestHorizonFor(it) }))
+  BASELINES.stocks = computeBaselines(ITEMS_STOCKS);
+  BASELINES.crypto = computeBaselines(ITEMS_CRYPTO);
+  renderTopPicksFor("stocks");
+  renderTopPicksFor("crypto");
+}
+
+function renderTopPicksFor(section) {
+  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const baselines = BASELINES[section];
+  const scored = items
+    .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
     .filter(x => x.best != null && x.best.score > 0)
     .sort((a, b) => b.best.score - a.best.score)
     .slice(0, 15);
-
-  const container = byId("top-picks-listing");
+  const container = byId(`top-${section}-listing`);
+  if (!container) return;
   container.innerHTML = "";
   if (!scored.length) {
-    container.innerHTML = `<div class="footnote">No ranked picks available.</div>`;
+    container.innerHTML = `<div class="footnote">No ranked ${section} picks available.</div>`;
     return;
   }
   for (const { it, best } of scored) {
@@ -510,17 +519,30 @@ function setupBacktestTriggers() {
   cryptoDet?.addEventListener("toggle", () => {
     if (cryptoDet.open && !cryptoLoaded) { cryptoLoaded = true; runSectionBacktest("crypto"); }
   });
-  // Top picks
-  const topDet = byId("toppicks-backtest-section");
-  let topLoaded = false;
-  topDet?.addEventListener("toggle", () => {
-    if (topDet.open && !topLoaded) { topLoaded = true; runTopBacktest(currentTopHoldDays()); }
+  // Top stocks picks
+  const topStocksDet = byId("topstocks-backtest-section");
+  let topStocksLoaded = false;
+  topStocksDet?.addEventListener("toggle", () => {
+    if (topStocksDet.open && !topStocksLoaded) { topStocksLoaded = true; runTopBacktest("topstocks", currentTopHoldDays("topstocks")); }
   });
-  document.querySelectorAll('.bt-hold-tabs[data-backtest="top"] .btn-lite').forEach(btn => {
+  document.querySelectorAll('.bt-hold-tabs[data-backtest="topstocks"] .btn-lite').forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll('.bt-hold-tabs[data-backtest="top"] .btn-lite').forEach(b => b.classList.remove("active"));
+      document.querySelectorAll('.bt-hold-tabs[data-backtest="topstocks"] .btn-lite').forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      if (topLoaded) runTopBacktest(Number(btn.dataset.hold));
+      if (topStocksLoaded) runTopBacktest("topstocks", Number(btn.dataset.hold));
+    });
+  });
+  // Top crypto picks
+  const topCryptoDet = byId("topcrypto-backtest-section");
+  let topCryptoLoaded = false;
+  topCryptoDet?.addEventListener("toggle", () => {
+    if (topCryptoDet.open && !topCryptoLoaded) { topCryptoLoaded = true; runTopBacktest("topcrypto", currentTopHoldDays("topcrypto")); }
+  });
+  document.querySelectorAll('.bt-hold-tabs[data-backtest="topcrypto"] .btn-lite').forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll('.bt-hold-tabs[data-backtest="topcrypto"] .btn-lite').forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (topCryptoLoaded) runTopBacktest("topcrypto", Number(btn.dataset.hold));
     });
   });
 }
@@ -530,9 +552,10 @@ function currentHorizon(section) {
   return active ? HORIZON_BY_ID[active.dataset.horizon] : HORIZON_BY_ID[SECTION_DEFAULT_HORIZON[section]];
 }
 
-function currentTopHoldDays() {
-  const active = document.querySelector('.bt-hold-tabs[data-backtest="top"] .btn-lite.active');
-  return active ? Number(active.dataset.hold) : 252;
+function currentTopHoldDays(which) {
+  const active = document.querySelector(`.bt-hold-tabs[data-backtest="${which}"] .btn-lite.active`);
+  if (active) return Number(active.dataset.hold);
+  return which === "topcrypto" ? 60 : 252;
 }
 
 function runSectionBacktest(section) {
@@ -550,13 +573,14 @@ function runSectionBacktest(section) {
   }, 10);
 }
 
-function runTopBacktest(holdDays) {
-  const universe = (FULL.items || []).map(i => i.ticker);
-  const benchTickers = SECTION_BENCHMARK.top;
-  const bodyId = "toppicks-backtest-body";
+function runTopBacktest(which, holdDays) {
+  const items = which === "topstocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const universe = items.map(i => i.ticker);
+  const benchTickers = SECTION_BENCHMARK[which];
+  const bodyId = `${which}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
-    const results = runBacktestFor("top", holdDays, universe, benchTickers);
+    const results = runBacktestFor(which, holdDays, universe, benchTickers);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
     const label = holdDays + " Trading Days";
     renderBacktest(bodyId, results, benchTickers, holdDays, label);

@@ -182,8 +182,10 @@
   <section class="content-section" id="top-picks">
     <div class="section-inner">
       <div class="section-title">Top Recommendations &mdash; Best Horizon per Asset</div>
-      <p class="section-note">Each asset is evaluated across every horizon; we pick the horizon where its probability most exceeds the universe baseline for that horizon (the "edge"). The list mixes stocks and crypto — some positions ride a 60-day rebound, others a multi-year compounding tail.</p>
+      <p class="section-note">Each asset is evaluated across every horizon; we pick the horizon where its probability most exceeds the within-class baseline for that horizon (the "edge"). Stocks and crypto are ranked separately because their baselines and benchmarks differ — stocks vs SPY, crypto vs BTC.</p>
 
+      <!-- ----- Top Stock Picks ----- -->
+      <div class="section-title" style="margin-top: 24px; font-size: 16px;">Top Stock Picks</div>
       <div class="max-listing-header">
         <span>Ticker</span>
         <span>Best Prob</span>
@@ -193,25 +195,60 @@
         <span>Quality</span>
         <span class="max-col-cases">Cases</span>
       </div>
-      <div id="top-picks-listing"></div>
+      <div id="top-stocks-listing"></div>
 
-      <details class="details-card" id="toppicks-backtest-section" style="margin-top: 32px;">
+      <details class="details-card" id="topstocks-backtest-section" style="margin-top: 24px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
-            <span class="details-card-title">Combined Backtest &mdash; Top Picks DCA</span>
-            <span class="details-card-cat">Stocks + crypto, ranked by point-in-time opportunity score</span>
+            <span class="details-card-title">Top Stock Picks Backtest &mdash; DCA</span>
+            <span class="details-card-cat">Top-ranked stocks each month, benchmarked to SPY</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">$1,000 every month, split across the top-ranked assets (stocks + crypto combined) at that moment in time, held for the selected horizon, then sold. Benchmark: a 50/50 DCA into SPY &amp; BTC on the same schedule.</p>
-          <div class="bt-hold-tabs" data-backtest="top">
+          <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score), held for the selected horizon, then sold. Benchmark: SPY DCA on the same schedule.</p>
+          <div class="bt-hold-tabs" data-backtest="topstocks">
             <button class="btn-lite" data-hold="60">60D Hold</button>
             <button class="btn-lite active" data-hold="252">1Y Hold</button>
             <button class="btn-lite" data-hold="756">3Y Hold</button>
             <button class="btn-lite" data-hold="1260">5Y Hold</button>
           </div>
-          <div id="toppicks-backtest-body">
+          <div id="topstocks-backtest-body">
+            <div class="footnote">Click to load backtest data&hellip;</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- ----- Top Crypto Picks ----- -->
+      <div class="section-title" style="margin-top: 36px; font-size: 16px;">Top Crypto Picks</div>
+      <div class="max-listing-header">
+        <span>Ticker</span>
+        <span>Best Prob</span>
+        <span>Typical</span>
+        <span>Downside</span>
+        <span>Pullback</span>
+        <span>Quality</span>
+        <span class="max-col-cases">Cases</span>
+      </div>
+      <div id="top-crypto-listing"></div>
+
+      <details class="details-card" id="topcrypto-backtest-section" style="margin-top: 24px;">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Top Crypto Picks Backtest &mdash; DCA</span>
+            <span class="details-card-cat">Top-ranked crypto each month, benchmarked to BTC</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="bt-intro">$1,000 every month into the top-ranked crypto assets (by point-in-time opportunity score), held for the selected horizon, then sold. Benchmark: BTC DCA on the same schedule.</p>
+          <div class="bt-hold-tabs" data-backtest="topcrypto">
+            <button class="btn-lite active" data-hold="60">60D Hold</button>
+            <button class="btn-lite" data-hold="252">1Y Hold</button>
+            <button class="btn-lite" data-hold="756">3Y Hold</button>
+            <button class="btn-lite" data-hold="1260">5Y Hold</button>
+          </div>
+          <div id="topcrypto-backtest-body">
             <div class="footnote">Click to load backtest data&hellip;</div>
           </div>
         </div>
