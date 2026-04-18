@@ -232,14 +232,25 @@ function buildBT() {
   const bt_series = FULL.bt_series || {};
   const priceLookup = {}; // ticker -> Map(date -> price)
   const scoreLookup = {}; // ticker -> Map(date -> final)
-  // Build date spine as UNION of every ticker's dates — avoids being broken by
-  // any one ticker that happens to have stale/truncated history.
-  const dateSet = new Set();
+  // Find the freshest latest-date across all tickers. Series that end more than
+  // a year before that are "stale" and their dates get excluded from the spine —
+  // otherwise a single abandoned ticker (e.g. SPY bt_series ending 2020)
+  // creates a huge empty left-half in the chart and a fake cliff when its
+  // positions become un-markable mid-simulation.
+  let maxEndDate = "";
   for (const s of Object.values(bt_series)) {
-    for (const d of s.dates) dateSet.add(d);
+    if (s.dates && s.dates.length) {
+      const last = s.dates[s.dates.length - 1];
+      if (last > maxEndDate) maxEndDate = last;
+    }
   }
-  const allDates = Array.from(dateSet).sort();
+  const staleCutoff = shiftDateDays(maxEndDate, -365);
+  const dateSet = new Set();
   for (const [tk, s] of Object.entries(bt_series)) {
+    if (!s.dates || !s.dates.length) continue;
+    const last = s.dates[s.dates.length - 1];
+    // Always keep prices for lookups (benchmark forward-fill, etc) but only
+    // contribute to the spine if the series is fresh.
     const pm = new Map(), fm = new Map();
     for (let i = 0; i < s.dates.length; i++) {
       pm.set(s.dates[i], Number(s.prices[i]));
@@ -247,7 +258,11 @@ function buildBT() {
     }
     priceLookup[tk] = pm;
     scoreLookup[tk] = fm;
+    if (last >= staleCutoff) {
+      for (const d of s.dates) dateSet.add(d);
+    }
   }
+  const allDates = Array.from(dateSet).sort();
   const monthFirstIdx = [];
   let prevYM = "";
   for (let i = 0; i < allDates.length; i++) {
@@ -258,6 +273,34 @@ function buildBT() {
   return BT;
 }
 
+function shiftDateDays(isoDate, days) {
+  if (!isoDate) return "";
+  const d = new Date(isoDate + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().substring(0, 10);
+}
+
+/* Find the first month-first index where at least `minTickers` entries in
+   `universe` have a valid score+price. Used so both portfolio and benchmark
+   DCA from the same start date instead of the benchmark getting a 5-year
+   head start because SPY has earlier history than stocks. */
+function firstValidMonthIdx(universe, minTickers) {
+  const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
+  for (let m = 0; m < monthFirstIdx.length; m++) {
+    const date = allDates[monthFirstIdx[m]];
+    let n = 0;
+    for (const tk of universe) {
+      const s = scoreLookup[tk]?.get(date);
+      const p = priceLookup[tk]?.get(date);
+      if (s != null && Number.isFinite(s) && s > 0 && p != null && Number.isFinite(p) && p > 0) {
+        n++;
+        if (n >= minTickers) return m;
+      }
+    }
+  }
+  return 0;
+}
+
 /* Simulate DCA: pick up to topN tickers from `universe` ranked by point-in-time
    final score; hold each for holdDays trading days; sell at market. */
 function simulateDCA(universe, topN, holdDays, opts) {
@@ -266,9 +309,10 @@ function simulateDCA(universe, topN, holdDays, opts) {
   const positions = [];
   let cash = 0;
   let totalInvested = 0;
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
 
   // Precompute next-trading-day index for each month-first
-  for (let m = 0; m < monthFirstIdx.length; m++) {
+  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
     const dIdx = monthFirstIdx[m];
     const date = allDates[dIdx];
     // rank universe by point-in-time score
@@ -312,28 +356,37 @@ function simulateDCA(universe, topN, holdDays, opts) {
   return { equity, totalInvested, positions };
 }
 
-function simulateBenchmarkDCA(benchTickers, holdDays) {
+function simulateBenchmarkDCA(benchTickers, holdDays, opts) {
   const { allDates, priceLookup, monthFirstIdx } = buildBT();
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
   // Pre-build a per-ticker forward-filled price array aligned to allDates so that
   // benchmarks with stale-ending data (e.g. SPY series that cut off early) still
   // produce a meaningful equity curve rather than collapsing to zero.
+  // Seed `last` from the benchmark's most recent known price BEFORE the spine
+  // starts, so a benchmark that ended before the fresh-spine window still
+  // carries a valid starting price forward.
   const filled = {};
   for (const tk of benchTickers) {
     const pm = priceLookup[tk];
     if (!pm) continue;
-    const arr = new Float64Array(allDates.length);
+    const spineStart = allDates[0] || "";
     let last = 0;
+    for (const [d, v] of pm.entries()) {
+      if (d <= spineStart && Number.isFinite(v) && v > 0 && d > "") last = v;
+    }
+    const arr = new Float64Array(allDates.length);
     for (let i = 0; i < allDates.length; i++) {
       const v = pm.get(allDates[i]);
       if (v != null && Number.isFinite(v) && v > 0) last = v;
-      arr[i] = last; // 0 before first real price
+      arr[i] = last;
     }
     filled[tk] = arr;
   }
   const equity = new Float64Array(allDates.length);
   const positions = [];
   let cash = 0, totalInvested = 0;
-  for (const dIdx of monthFirstIdx) {
+  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+    const dIdx = monthFirstIdx[m];
     const avail = benchTickers.filter(t => filled[t] && filled[t][dIdx] > 0);
     if (!avail.length) continue;
     const per = DCA_MONTHLY / avail.length;
@@ -495,13 +548,18 @@ function drawEquityChart(canvas, dates, results, colors) {
 function runBacktestFor(section, holdDays, universe, benchTickers) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
+  // Both portfolio and benchmark start DCA from the same month — the first
+  // month the portfolio universe has enough tickers with real data. Otherwise
+  // a benchmark with deeper history (e.g. SPY 2014+) gets a years-long head
+  // start vs. stocks whose bt_series only begins in 2021.
+  const startMonthIdx = firstValidMonthIdx(universe, 3);
   const results = {};
   for (const n of [1, 5, 10]) {
-    const sim = simulateDCA(universe, n, holdDays);
+    const sim = simulateDCA(universe, n, holdDays, { startMonthIdx });
     const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
     results[n] = { sim, metrics };
   }
-  const benchSim = simulateBenchmarkDCA(benchTickers, holdDays);
+  const benchSim = simulateBenchmarkDCA(benchTickers, holdDays, { startMonthIdx });
   results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
   return results;
 }
@@ -558,10 +616,19 @@ function currentTopHoldDays(which) {
   return which === "topcrypto" ? 60 : 252;
 }
 
+function portfolioUniverse(section) {
+  // Exclude benchmark tickers from the pickable universe so the portfolio
+  // isn't just "buys SPY" by default — benchmarks are only for comparison.
+  const items = (section === "stocks" || section === "topstocks") ? ITEMS_STOCKS
+              : (section === "crypto" || section === "topcrypto") ? ITEMS_CRYPTO
+              : FULL.items || [];
+  const bench = new Set(SECTION_BENCHMARK[section] || []);
+  return items.map(i => i.ticker).filter(t => !bench.has(t));
+}
+
 function runSectionBacktest(section) {
   const h = currentHorizon(section);
-  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
-  const universe = items.map(i => i.ticker);
+  const universe = portfolioUniverse(section);
   const benchTickers = SECTION_BENCHMARK[section];
   const bodyId = `${section}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
@@ -574,8 +641,7 @@ function runSectionBacktest(section) {
 }
 
 function runTopBacktest(which, holdDays) {
-  const items = which === "topstocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
-  const universe = items.map(i => i.ticker);
+  const universe = portfolioUniverse(which);
   const benchTickers = SECTION_BENCHMARK[which];
   const bodyId = `${which}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
