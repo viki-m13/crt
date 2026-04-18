@@ -140,7 +140,11 @@ function buildRow(item, h, opts) {
   const prob = item[h.prob];
   const med = item[h.median];
   const down = h.downside ? item[h.downside] : null;
-  const hzBadge = opts && opts.showHorizon ? `<span class="row-horizon">${opts.showHorizon}</span>` : "";
+  let hzBadge = "";
+  if (opts && opts.showHorizon) {
+    const sellLbl = opts.sellDate ? ` <span class="row-sell">sell by ${opts.sellDate}</span>` : "";
+    hzBadge = `<span class="row-horizon">${opts.showHorizon}</span>${sellLbl}`;
+  }
   div.innerHTML = `
     <div class="row-ticker">${item.ticker}${hzBadge}</div>
     <div class="row-cell">${fmtProb(prob)}</div>
@@ -151,6 +155,19 @@ function buildRow(item, h, opts) {
     <div class="row-cell max-col-cases">${fmtNum(item.n_analogs)}</div>
   `;
   return div;
+}
+
+/* Converts the scanner's trading-day horizon to a calendar sell date anchored
+   on the last scan (FULL.as_of). Crypto trades 7 days/week so bars==calendar
+   days; equities trade ~5/7 so we scale. Returned as a short "Apr 17, 2027"
+   style label for the listing. */
+function sellDateFor(item, horizonDays, asOf) {
+  if (!asOf) return "";
+  const base = new Date(asOf + "T00:00:00Z");
+  if (isNaN(base)) return "";
+  const calDays = item.is_crypto ? horizonDays : Math.round(horizonDays * 7 / 5);
+  base.setUTCDate(base.getUTCDate() + calDays);
+  return base.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 /* ---------- Top Picks: pick each item's best horizon ----------
@@ -237,8 +254,10 @@ function renderTopPicksFor(section) {
     container.innerHTML = `<div class="footnote">No ranked ${section} picks available.</div>`;
     return;
   }
+  const asOf = FULL && FULL.as_of ? String(FULL.as_of).slice(0, 10) : "";
   for (const { it, best } of scored) {
-    container.appendChild(buildRow(it, best.horizon, { showHorizon: best.horizon.id }));
+    const sellDate = sellDateFor(it, best.horizon.days, asOf);
+    container.appendChild(buildRow(it, best.horizon, { showHorizon: best.horizon.id, sellDate }));
   }
 }
 
@@ -632,8 +651,11 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
   scroll.appendChild(tbl);
   body.appendChild(scroll);
 
-  // Last 10 completed transactions (from the Top 5 sim, the representative one)
-  renderRecentTransactions(body, results[5].sim, allDates);
+  // Last 10 completed transactions — show Top 1 (concentrated) and Top 5
+  // (diversified) so users can see both the outlier-driven and the
+  // smoothed-out position history.
+  renderRecentTransactions(body, results[1].sim, allDates, "Last 10 Completed Transactions — Top 1 Portfolio");
+  renderRecentTransactions(body, results[5].sim, allDates, "Last 10 Completed Transactions — Top 5 Portfolio");
 
   const info = document.createElement("div");
   info.className = "footnote";
@@ -641,7 +663,7 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
   body.appendChild(info);
 }
 
-function renderRecentTransactions(body, sim, allDates) {
+function renderRecentTransactions(body, sim, allDates, heading) {
   const closed = [];
   for (const p of sim.positions || []) {
     if (!p.sold || !(p.sellPrice > 0)) continue;
@@ -663,11 +685,11 @@ function renderRecentTransactions(body, sim, allDates) {
   closed.sort((a, b) => b.sellDate.localeCompare(a.sellDate));
   const recent = closed.slice(0, 10);
 
-  const heading = document.createElement("div");
-  heading.className = "section-title";
-  heading.style.cssText = "margin-top: 20px; font-size: 12px; letter-spacing: .08em;";
-  heading.textContent = "Last 10 Completed Transactions — Top 5 Portfolio";
-  body.appendChild(heading);
+  const hdr = document.createElement("div");
+  hdr.className = "section-title";
+  hdr.style.cssText = "margin-top: 20px; font-size: 12px; letter-spacing: .08em;";
+  hdr.textContent = heading || "Last 10 Completed Transactions";
+  body.appendChild(hdr);
 
   const tbl = document.createElement("table");
   tbl.className = "outcomes-table bt-table";
@@ -719,19 +741,36 @@ function drawEquityChart(canvas, dates, results, colors) {
   outer: for (let i = 0; i < len; i++) {
     for (const s of series) if (s.eq[i] > 0) { startIdx = i; break outer; }
   }
-  let maxY = 1;
+  // Log-scale y-axis: a single oversized position (FTM 27x in 2021, etc.) on
+  // a linear scale compresses the rest of the curve into a flat line. Log
+  // scale treats geometric growth as linear slope, which is what DCA equity
+  // actually is. minY starts at $100 (1/10 of the first deposit) so the
+  // first DCA tick has room to render without going off the top.
+  let maxY = 100;
   for (const s of series) for (let i = startIdx; i < s.eq.length; i++) if (s.eq[i] > maxY) maxY = s.eq[i];
-  maxY *= 1.05;
+  const minY = 100;
+  const logMin = Math.log10(minY);
+  const logMax = Math.log10(maxY * 1.1);
+  const chartTop = 10 * dpr;
+  const chartBottom = h - 18 * dpr;
+  const yFor = v => {
+    const lv = v > minY ? Math.log10(v) : logMin;
+    const frac = (lv - logMin) / (logMax - logMin);
+    return chartBottom - frac * (chartBottom - chartTop);
+  };
+  // Grid lines at 10^k boundaries.
   ctx.strokeStyle = "#eee"; ctx.lineWidth = 1 * dpr;
-  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(w, h - 1); ctx.stroke();
   ctx.font = `${10 * dpr}px system-ui,sans-serif`;
   ctx.fillStyle = "#888";
-  for (let g = 0; g <= 4; g++) {
-    const y = (h - 1) - (g / 4) * (h - 20 * dpr);
-    const v = (g / 4) * maxY;
-    ctx.fillText("$" + Math.round(v).toLocaleString(), 4 * dpr, y - 2 * dpr);
+  const kStart = Math.ceil(logMin);
+  const kEnd = Math.floor(logMax);
+  for (let k = kStart; k <= kEnd; k++) {
+    const v = Math.pow(10, k);
+    const y = yFor(v);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    ctx.fillText("$" + v.toLocaleString(), 4 * dpr, y - 2 * dpr);
   }
-  // Date axis — start + end labels.
+  // Date labels — start + end.
   const endIdx = len - 1;
   const startLbl = dates[startIdx] || "";
   const endLbl = dates[endIdx] || "";
@@ -746,10 +785,12 @@ function drawEquityChart(canvas, dates, results, colors) {
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 1.8 * dpr;
     ctx.beginPath();
+    let started = false;
     for (let i = startIdx; i < s.eq.length; i++) {
+      if (s.eq[i] <= 0) continue;
       const x = ((i - startIdx) / span) * w;
-      const y = (h - 1) - (s.eq[i] / maxY) * (h - 20 * dpr);
-      if (i === startIdx) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      const y = yFor(s.eq[i]);
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
