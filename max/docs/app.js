@@ -7,24 +7,32 @@ const DATA_URL = "./data/full.json";
 
 const HORIZONS = [
   { id: "10D", prob: "prob_10d", median: "median_10d", downside: "downside_10d", days: 10,   label: "10 Days" },
-  { id: "30D", prob: "prob_30d", median: "median_30d", downside: null,           days: 30,   label: "30 Days" },
-  { id: "60D", prob: "prob_60d", median: "median_60d", downside: null,           days: 60,   label: "60 Days" },
-  { id: "3M",  prob: "prob_3m",  median: "median_3m",  downside: null,           days: 63,   label: "3 Months" },
-  { id: "6M",  prob: "prob_6m",  median: "median_6m",  downside: null,           days: 126,  label: "6 Months" },
+  { id: "30D", prob: "prob_30d", median: "median_30d", downside: "downside_30d", days: 30,   label: "30 Days" },
+  { id: "60D", prob: "prob_60d", median: "median_60d", downside: "downside_60d", days: 60,   label: "60 Days" },
+  { id: "3M",  prob: "prob_3m",  median: "median_3m",  downside: "downside_3m",  days: 63,   label: "3 Months" },
+  { id: "6M",  prob: "prob_6m",  median: "median_6m",  downside: "downside_6m",  days: 126,  label: "6 Months" },
   { id: "1Y",  prob: "prob_1y",  median: "median_1y",  downside: "downside_1y",  days: 252,  label: "1 Year" },
-  { id: "3Y",  prob: "prob_3y",  median: "median_3y",  downside: null,           days: 756,  label: "3 Years" },
-  { id: "5Y",  prob: "prob_5y",  median: "median_5y",  downside: null,           days: 1260, label: "5 Years" },
+  { id: "3Y",  prob: "prob_3y",  median: "median_3y",  downside: "downside_3y",  days: 756,  label: "3 Years" },
+  { id: "5Y",  prob: "prob_5y",  median: "median_5y",  downside: "downside_5y",  days: 1260, label: "5 Years" },
 ];
 const HORIZON_BY_ID = Object.fromEntries(HORIZONS.map(h => [h.id, h]));
 
-const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D" };
-const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], topstocks: ["SPY"], topcrypto: ["BTC-USD"] };
+const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D", etfs: "1Y" };
+const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], etfs: ["SPY"], topstocks: ["SPY"], topcrypto: ["BTC-USD"], topetfs: ["SPY"] };
 const DCA_MONTHLY = 1000;
 
 let FULL = null;
 let ITEMS_STOCKS = [];
 let ITEMS_CRYPTO = [];
+let ITEMS_ETFS = [];
 let BT = null; // built once from bt_series
+
+function sectionItems(section) {
+  if (section === "stocks" || section === "topstocks") return ITEMS_STOCKS;
+  if (section === "crypto" || section === "topcrypto") return ITEMS_CRYPTO;
+  if (section === "etfs"   || section === "topetfs")   return ITEMS_ETFS;
+  return [];
+}
 
 /* ---------- util ---------- */
 function byId(id) { return document.getElementById(id); }
@@ -45,6 +53,15 @@ function fmtNum(v, d = 0) {
   if (v == null || !Number.isFinite(v)) return "—";
   return v.toLocaleString(undefined, { maximumFractionDigits: d });
 }
+function fmtPriceVal(v) {
+  if (v == null || !Number.isFinite(v)) return "—";
+  const abs = Math.abs(v);
+  if (abs >= 1000) return "$" + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (abs >= 10)   return "$" + v.toFixed(2);
+  if (abs >= 1)    return "$" + v.toFixed(3);
+  if (abs >= 0.01) return "$" + v.toFixed(4);
+  return "$" + v.toPrecision(3);
+}
 function horizonExists(items, hid) {
   const h = HORIZON_BY_ID[hid];
   return items.some(it => it[h.prob] != null && Number.isFinite(Number(it[h.prob])));
@@ -64,15 +81,18 @@ async function load() {
   renderTopPicks();
   setupHorizonTabs("stocks");
   setupHorizonTabs("crypto");
+  setupHorizonTabs("etfs");
   renderSectionListing("stocks", SECTION_DEFAULT_HORIZON.stocks);
   renderSectionListing("crypto", SECTION_DEFAULT_HORIZON.crypto);
+  renderSectionListing("etfs",   SECTION_DEFAULT_HORIZON.etfs);
   setupBacktestTriggers();
 }
 
 function splitItems() {
   const items = FULL.items || [];
-  ITEMS_STOCKS = items.filter(i => !i.is_crypto);
+  ITEMS_ETFS   = items.filter(i => i.is_etf);
   ITEMS_CRYPTO = items.filter(i => i.is_crypto);
+  ITEMS_STOCKS = items.filter(i => !i.is_crypto && !i.is_etf);
 }
 
 function updateHeader() {
@@ -88,7 +108,7 @@ function updateHeader() {
 
 /* ---------- horizon tabs ---------- */
 function setupHorizonTabs(section) {
-  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const items = sectionItems(section);
   const container = document.querySelector(`.horizon-tabs[data-section="${section}"]`);
   if (!container) return;
   container.innerHTML = "";
@@ -116,7 +136,7 @@ function setupHorizonTabs(section) {
 
 /* ---------- listing rendering ---------- */
 function renderSectionListing(section, horizonId) {
-  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const items = sectionItems(section);
   const h = HORIZON_BY_ID[horizonId];
   const probLabel = byId(`${section}-prob-label`);
   if (probLabel) probLabel.textContent = `${h.id} Prob`;
@@ -147,6 +167,7 @@ function buildRow(item, h, opts) {
   }
   div.innerHTML = `
     <div class="row-ticker">${item.ticker}${hzBadge}</div>
+    <div class="row-cell">${fmtPriceVal(item.last_price)}</div>
     <div class="row-cell">${fmtProb(prob)}</div>
     <div class="row-cell">${fmtPctSigned(med)}</div>
     <div class="row-cell">${fmtPctSigned(down)}</div>
@@ -177,12 +198,12 @@ function sellDateFor(item, horizonDays, asOf) {
    crypto — so stocks aren't held to crypto's volatility-warped distribution
    and vice versa. We then rank picks by edge × sqrt(n_analogs) to prefer
    well-evidenced edges, and require positive expected return. */
-const BASELINES = { stocks: null, crypto: null };
+const BASELINES = { stocks: null, crypto: null, etfs: null };
 /* ticker -> preferred hold in trading days (built from today's bestHorizonFor
    across every item in a section). Used by the Per-Pick backtest so each
    position is sold at the horizon the scanner recommends for that ticker,
    mixing 30D, 60D, 1Y, 5Y etc. in a single DCA run. */
-const TOP_HORIZONS = { topstocks: {}, topcrypto: {} };
+const TOP_HORIZONS = { topstocks: {}, topcrypto: {}, topetfs: {} };
 function computeBaselines(items) {
   const out = {};
   for (const h of HORIZONS) {
@@ -224,10 +245,13 @@ function bestHorizonFor(item, baselines) {
 function renderTopPicks() {
   BASELINES.stocks = computeBaselines(ITEMS_STOCKS);
   BASELINES.crypto = computeBaselines(ITEMS_CRYPTO);
+  BASELINES.etfs   = computeBaselines(ITEMS_ETFS);
   renderTopPicksFor("stocks");
   renderTopPicksFor("crypto");
+  renderTopPicksFor("etfs");
   TOP_HORIZONS.topstocks = buildHorizonByTicker(ITEMS_STOCKS, BASELINES.stocks);
   TOP_HORIZONS.topcrypto = buildHorizonByTicker(ITEMS_CRYPTO, BASELINES.crypto);
+  TOP_HORIZONS.topetfs   = buildHorizonByTicker(ITEMS_ETFS,   BASELINES.etfs);
 }
 
 function buildHorizonByTicker(items, baselines) {
@@ -240,7 +264,7 @@ function buildHorizonByTicker(items, baselines) {
 }
 
 function renderTopPicksFor(section) {
-  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const items = sectionItems(section);
   const baselines = BASELINES[section];
   const scored = items
     .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
@@ -733,44 +757,26 @@ function drawEquityChart(canvas, dates, results, colors) {
     { eq: results[10].sim.equity, color: colors[10] },
     { eq: results.bench.sim.equity, color: colors.bench },
   ];
-  // Crop to first index where any series has non-zero equity. The spine goes
-  // back to 2014 but DCA can't start until bt_series scores exist (often
-  // 2021+), so without cropping every chart has years of flat-zero leader.
+  // Crop x-axis to first index where any series has non-zero equity — the
+  // spine goes back to 2014 but DCA can't start until bt_series scores exist
+  // (often 2021+), so without cropping every chart has years of flat zero.
   let startIdx = 0;
   const len = dates.length;
   outer: for (let i = 0; i < len; i++) {
     for (const s of series) if (s.eq[i] > 0) { startIdx = i; break outer; }
   }
-  // Log-scale y-axis: a single oversized position (FTM 27x in 2021, etc.) on
-  // a linear scale compresses the rest of the curve into a flat line. Log
-  // scale treats geometric growth as linear slope, which is what DCA equity
-  // actually is. minY starts at $100 (1/10 of the first deposit) so the
-  // first DCA tick has room to render without going off the top.
-  let maxY = 100;
+  let maxY = 1;
   for (const s of series) for (let i = startIdx; i < s.eq.length; i++) if (s.eq[i] > maxY) maxY = s.eq[i];
-  const minY = 100;
-  const logMin = Math.log10(minY);
-  const logMax = Math.log10(maxY * 1.1);
-  const chartTop = 10 * dpr;
-  const chartBottom = h - 18 * dpr;
-  const yFor = v => {
-    const lv = v > minY ? Math.log10(v) : logMin;
-    const frac = (lv - logMin) / (logMax - logMin);
-    return chartBottom - frac * (chartBottom - chartTop);
-  };
-  // Grid lines at 10^k boundaries.
+  maxY *= 1.05;
   ctx.strokeStyle = "#eee"; ctx.lineWidth = 1 * dpr;
+  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(w, h - 1); ctx.stroke();
   ctx.font = `${10 * dpr}px system-ui,sans-serif`;
   ctx.fillStyle = "#888";
-  const kStart = Math.ceil(logMin);
-  const kEnd = Math.floor(logMax);
-  for (let k = kStart; k <= kEnd; k++) {
-    const v = Math.pow(10, k);
-    const y = yFor(v);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    ctx.fillText("$" + v.toLocaleString(), 4 * dpr, y - 2 * dpr);
+  for (let g = 0; g <= 4; g++) {
+    const y = (h - 1) - (g / 4) * (h - 20 * dpr);
+    const v = (g / 4) * maxY;
+    ctx.fillText("$" + Math.round(v).toLocaleString(), 4 * dpr, y - 2 * dpr);
   }
-  // Date labels — start + end.
   const endIdx = len - 1;
   const startLbl = dates[startIdx] || "";
   const endLbl = dates[endIdx] || "";
@@ -785,12 +791,10 @@ function drawEquityChart(canvas, dates, results, colors) {
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 1.8 * dpr;
     ctx.beginPath();
-    let started = false;
     for (let i = startIdx; i < s.eq.length; i++) {
-      if (s.eq[i] <= 0) continue;
       const x = ((i - startIdx) / span) * w;
-      const y = yFor(s.eq[i]);
-      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      const y = (h - 1) - (s.eq[i] / maxY) * (h - 20 * dpr);
+      if (i === startIdx) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
@@ -817,30 +821,28 @@ function runBacktestFor(section, holdDays, universe, benchTickers) {
 }
 
 function setupBacktestTriggers() {
-  // Stocks
-  const stocksDet = byId("stocks-backtest-section");
-  let stocksLoaded = false;
-  stocksDet?.addEventListener("toggle", () => {
-    if (stocksDet.open && !stocksLoaded) { stocksLoaded = true; runSectionBacktest("stocks"); }
-  });
-  // Crypto
-  const cryptoDet = byId("crypto-backtest-section");
-  let cryptoLoaded = false;
-  cryptoDet?.addEventListener("toggle", () => {
-    if (cryptoDet.open && !cryptoLoaded) { cryptoLoaded = true; runSectionBacktest("crypto"); }
-  });
-  // Top stocks picks — always per-pick hold.
-  const topStocksDet = byId("topstocks-backtest-section");
-  let topStocksLoaded = false;
-  topStocksDet?.addEventListener("toggle", () => {
-    if (topStocksDet.open && !topStocksLoaded) { topStocksLoaded = true; runTopBacktest("topstocks"); }
-  });
-  // Top crypto picks — always per-pick hold.
-  const topCryptoDet = byId("topcrypto-backtest-section");
-  let topCryptoLoaded = false;
-  topCryptoDet?.addEventListener("toggle", () => {
-    if (topCryptoDet.open && !topCryptoLoaded) { topCryptoLoaded = true; runTopBacktest("topcrypto"); }
-  });
+  const lazySection = (detId, section) => {
+    const det = byId(detId);
+    if (!det) return;
+    let loaded = false;
+    det.addEventListener("toggle", () => {
+      if (det.open && !loaded) { loaded = true; runSectionBacktest(section); }
+    });
+  };
+  const lazyTop = (detId, which) => {
+    const det = byId(detId);
+    if (!det) return;
+    let loaded = false;
+    det.addEventListener("toggle", () => {
+      if (det.open && !loaded) { loaded = true; runTopBacktest(which); }
+    });
+  };
+  lazySection("stocks-backtest-section", "stocks");
+  lazySection("crypto-backtest-section", "crypto");
+  lazySection("etfs-backtest-section",   "etfs");
+  lazyTop("topstocks-backtest-section", "topstocks");
+  lazyTop("topcrypto-backtest-section", "topcrypto");
+  lazyTop("topetfs-backtest-section",   "topetfs");
 }
 
 function currentHorizon(section) {
@@ -851,9 +853,7 @@ function currentHorizon(section) {
 function portfolioUniverse(section) {
   // Exclude benchmark tickers from the pickable universe so the portfolio
   // isn't just "buys SPY" by default — benchmarks are only for comparison.
-  const items = (section === "stocks" || section === "topstocks") ? ITEMS_STOCKS
-              : (section === "crypto" || section === "topcrypto") ? ITEMS_CRYPTO
-              : FULL.items || [];
+  const items = sectionItems(section);
   const bench = new Set(SECTION_BENCHMARK[section] || []);
   return items.map(i => i.ticker).filter(t => !bench.has(t));
 }
@@ -888,7 +888,7 @@ function runTopBacktestPerPick(which, universe, benchTickers) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
   const horizonByTicker = TOP_HORIZONS[which] || {};
-  const fallback = which === "topcrypto" ? 60 : 252;
+  const fallback = which === "topcrypto" ? 60 : 252; // topetfs + topstocks default to 1Y
   const startMonthIdx = firstValidMonthIdx(universe, 3);
   const results = {};
   for (const n of [1, 5, 10]) {
@@ -908,7 +908,7 @@ function renderBestHorizonNote(section) {
   if (!note) return;
   note.textContent = "Calculating best horizon for this section…";
   // Compute top-5 DCA Sharpe across all horizons — lightweight but not instant.
-  const items = section === "stocks" ? ITEMS_STOCKS : ITEMS_CRYPTO;
+  const items = sectionItems(section);
   const universe = items.map(i => i.ticker);
   const { allDates } = buildBT();
   let best = null;

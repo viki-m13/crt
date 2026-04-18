@@ -8,8 +8,8 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>Max Strategy — Multi-Horizon Scanner (10D → 5Y)</title>
-  <meta name="description" content="Max Strategy scans stocks and crypto across eight forward horizons (10D, 30D, 60D, 3M, 6M, 1Y, 3Y, 5Y), picks the best horizon per asset, and backtests the combined portfolio." />
-  <meta name="keywords" content="stock screener, crypto screener, multi-horizon pullback scanner, 10 day 30 day 60 day recovery, 1 year 3 year 5 year probability, DCA backtest" />
+  <meta name="description" content="Max Strategy scans stocks, crypto and ETFs across eight forward horizons (10D, 30D, 60D, 3M, 6M, 1Y, 3Y, 5Y), picks the best horizon per asset, and backtests the combined portfolio." />
+  <meta name="keywords" content="stock screener, crypto screener, ETF screener, multi-horizon pullback scanner, 10 day 30 day 60 day recovery, 1 year 3 year 5 year probability, DCA backtest" />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -20,7 +20,7 @@
     .max-listing-header,
     .max-ticker-row {
       display: grid;
-      grid-template-columns: 1.4fr 0.9fr 0.9fr 0.9fr 0.8fr 0.8fr 0.7fr;
+      grid-template-columns: 1.4fr 0.8fr 0.8fr 0.8fr 0.8fr 0.7fr 0.7fr 0.6fr;
       gap: 8px;
       padding: 14px 8px;
       font-family: var(--mono);
@@ -87,7 +87,7 @@
     @media (max-width: 720px) {
       .max-listing-header,
       .max-ticker-row {
-        grid-template-columns: 1.2fr 0.9fr 0.9fr 0.7fr 0.7fr 0.6fr;
+        grid-template-columns: 1.2fr 0.7fr 0.8fr 0.8fr 0.7fr 0.7fr 0.6fr;
       }
       .max-col-cases { display: none; }
     }
@@ -103,6 +103,7 @@
         <a href="#top-picks">Top Picks</a>
         <a href="#stocks-section">Stocks</a>
         <a href="#crypto-section">Crypto</a>
+        <a href="#etfs-section">ETFs</a>
         <a href="#how-it-works">How It Works</a>
         <a href="/">Main</a>
         <a href="/experiments/" class="nav-experiments">Experiments</a>
@@ -113,7 +114,7 @@
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Eight horizons, one ranking. Stocks &amp; crypto, each at its best time frame.</h1>
+      <h1 class="hero-headline">Eight horizons, one ranking. Stocks, crypto &amp; ETFs, each at its best time frame.</h1>
       <p class="hero-sub">Scans every position across 10D / 30D / 60D / 3M / 6M / 1Y / 3Y / 5Y, selects the horizon where it's historically strongest, and backtests the combined portfolio. Not financial advice.</p>
     </div>
   </section>
@@ -123,7 +124,7 @@
     <div class="stats-inner">
       <div class="stat-block">
         <span class="stat-number" id="statUniverse">&mdash;</span>
-        <span class="stat-label">Curated stocks &amp; crypto assets scanned daily</span>
+        <span class="stat-label">Stocks, crypto &amp; ETFs scanned daily</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
@@ -192,63 +193,125 @@
   <section class="content-section" id="top-picks">
     <div class="section-inner">
       <div class="section-title">Top Recommendations &mdash; Best Horizon per Asset</div>
-      <p class="section-note">Each asset is evaluated across every horizon; we pick the horizon where its probability most exceeds the within-class baseline for that horizon (the "edge"). Stocks and crypto are ranked separately because their baselines and benchmarks differ — stocks vs SPY, crypto vs BTC.</p>
+      <p class="section-note">Each asset is evaluated across every horizon; we pick the horizon where its probability most exceeds the within-class baseline for that horizon (the "edge"). Stocks, crypto and ETFs are ranked separately because their baselines and benchmarks differ — stocks and ETFs vs SPY, crypto vs BTC.</p>
 
       <!-- ----- Top Stock Picks ----- -->
-      <div class="section-title" style="margin-top: 24px; font-size: 16px;">Top Stock Picks</div>
-      <div class="max-listing-header">
-        <span>Ticker</span>
-        <span>Best Prob</span>
-        <span>Typical</span>
-        <span>Downside</span>
-        <span>Pullback</span>
-        <span>Quality</span>
-        <span class="max-col-cases">Cases</span>
-      </div>
-      <div id="top-stocks-listing"></div>
-
-      <details class="details-card" id="topstocks-backtest-section" style="margin-top: 24px;">
+      <details class="details-card" style="margin-top: 24px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
-            <span class="details-card-title">Top Stock Picks Backtest &mdash; DCA</span>
-            <span class="details-card-cat">Top-ranked stocks each month, benchmarked to SPY</span>
+            <span class="details-card-title">Top Stock Picks</span>
+            <span class="details-card-cat">Best horizon per stock, ranked by analog-based edge</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon (30D / 60D / 1Y / 3Y / 5Y etc.), so holds are mixed within the same portfolio. Benchmark: SPY DCA with the same per-position hold schedule.</p>
-          <div id="topstocks-backtest-body">
-            <div class="footnote">Click to load backtest data&hellip;</div>
+          <div class="max-listing-header">
+            <span>Ticker</span>
+            <span>Price</span>
+            <span>Best Prob</span>
+            <span>Typical</span>
+            <span>Downside</span>
+            <span>Pullback</span>
+            <span>Quality</span>
+            <span class="max-col-cases">Cases</span>
           </div>
+          <div id="top-stocks-listing"></div>
+
+          <details class="details-card" id="topstocks-backtest-section" style="margin-top: 24px;">
+            <summary class="details-card-summary">
+              <div class="details-card-left">
+                <span class="details-card-title">Top Stock Picks Backtest &mdash; DCA</span>
+                <span class="details-card-cat">Top-ranked stocks each month, benchmarked to SPY</span>
+              </div>
+              <span class="details-card-arrow">&darr;</span>
+            </summary>
+            <div class="details-card-body">
+              <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon (30D / 60D / 1Y / 3Y / 5Y etc.), so holds are mixed within the same portfolio. Benchmark: SPY DCA with the same per-position hold schedule.</p>
+              <div id="topstocks-backtest-body">
+                <div class="footnote">Click to load backtest data&hellip;</div>
+              </div>
+            </div>
+          </details>
         </div>
       </details>
 
       <!-- ----- Top Crypto Picks ----- -->
-      <div class="section-title" style="margin-top: 36px; font-size: 16px;">Top Crypto Picks</div>
-      <div class="max-listing-header">
-        <span>Ticker</span>
-        <span>Best Prob</span>
-        <span>Typical</span>
-        <span>Downside</span>
-        <span>Pullback</span>
-        <span>Quality</span>
-        <span class="max-col-cases">Cases</span>
-      </div>
-      <div id="top-crypto-listing"></div>
-
-      <details class="details-card" id="topcrypto-backtest-section" style="margin-top: 24px;">
+      <details class="details-card" style="margin-top: 16px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
-            <span class="details-card-title">Top Crypto Picks Backtest &mdash; DCA</span>
-            <span class="details-card-cat">Top-ranked crypto each month, benchmarked to BTC</span>
+            <span class="details-card-title">Top Crypto Picks</span>
+            <span class="details-card-cat">Best horizon per coin, ranked by analog-based edge</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
-          <p class="bt-intro">$1,000 every month into the top-ranked crypto assets (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon (30D / 60D / 1Y / 3Y / 5Y etc.), so holds are mixed within the same portfolio. Benchmark: BTC DCA with the same per-position hold schedule.</p>
-          <div id="topcrypto-backtest-body">
-            <div class="footnote">Click to load backtest data&hellip;</div>
+          <div class="max-listing-header">
+            <span>Ticker</span>
+            <span>Price</span>
+            <span>Best Prob</span>
+            <span>Typical</span>
+            <span>Downside</span>
+            <span>Pullback</span>
+            <span>Quality</span>
+            <span class="max-col-cases">Cases</span>
           </div>
+          <div id="top-crypto-listing"></div>
+
+          <details class="details-card" id="topcrypto-backtest-section" style="margin-top: 24px;">
+            <summary class="details-card-summary">
+              <div class="details-card-left">
+                <span class="details-card-title">Top Crypto Picks Backtest &mdash; DCA</span>
+                <span class="details-card-cat">Top-ranked crypto each month, benchmarked to BTC</span>
+              </div>
+              <span class="details-card-arrow">&darr;</span>
+            </summary>
+            <div class="details-card-body">
+              <p class="bt-intro">$1,000 every month into the top-ranked crypto assets (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon (30D / 60D / 1Y / 3Y / 5Y etc.), so holds are mixed within the same portfolio. Benchmark: BTC DCA with the same per-position hold schedule.</p>
+              <div id="topcrypto-backtest-body">
+                <div class="footnote">Click to load backtest data&hellip;</div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <!-- ----- Top ETF Picks ----- -->
+      <details class="details-card" style="margin-top: 16px;">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Top ETF Picks</span>
+            <span class="details-card-cat">Best horizon per ETF, ranked by analog-based edge</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <div class="max-listing-header">
+            <span>Ticker</span>
+            <span>Price</span>
+            <span>Best Prob</span>
+            <span>Typical</span>
+            <span>Downside</span>
+            <span>Pullback</span>
+            <span>Quality</span>
+            <span class="max-col-cases">Cases</span>
+          </div>
+          <div id="top-etfs-listing"></div>
+
+          <details class="details-card" id="topetfs-backtest-section" style="margin-top: 24px;">
+            <summary class="details-card-summary">
+              <div class="details-card-left">
+                <span class="details-card-title">Top ETF Picks Backtest &mdash; DCA</span>
+                <span class="details-card-cat">Top-ranked ETFs each month, benchmarked to SPY</span>
+              </div>
+              <span class="details-card-arrow">&darr;</span>
+            </summary>
+            <div class="details-card-body">
+              <p class="bt-intro">$1,000 every month into the top-ranked ETFs (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon, so holds are mixed within the same portfolio. Benchmark: SPY DCA with the same per-position hold schedule.</p>
+              <div id="topetfs-backtest-body">
+                <div class="footnote">Click to load backtest data&hellip;</div>
+              </div>
+            </div>
+          </details>
         </div>
       </details>
     </div>
@@ -257,7 +320,7 @@
   <!-- ===== STOCKS ===== -->
   <section class="content-section" id="stocks-section">
     <div class="section-inner">
-      <details class="details-card" open>
+      <details class="details-card">
         <summary class="details-card-summary">
           <div class="details-card-left">
             <span class="details-card-title">Stocks &mdash; Multi-Horizon Screener</span>
@@ -272,6 +335,7 @@
 
           <div class="max-listing-header">
             <span>Ticker</span>
+            <span>Price</span>
             <span id="stocks-prob-label">Prob</span>
             <span>Typical</span>
             <span>Downside</span>
@@ -320,6 +384,7 @@
 
           <div class="max-listing-header">
             <span>Ticker</span>
+            <span>Price</span>
             <span id="crypto-prob-label">Prob</span>
             <span>Typical</span>
             <span>Downside</span>
@@ -350,6 +415,55 @@
     </div>
   </section>
 
+  <!-- ===== ETFs ===== -->
+  <section class="content-section" id="etfs-section">
+    <div class="section-inner">
+      <details class="details-card">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">ETFs &mdash; Multi-Horizon Screener</span>
+            <span class="details-card-cat">Broad-market, style, sector, international, fixed income, commodities, thematic &amp; real estate ETFs</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="section-note">Same methodology applied to ETFs across every major category. Pick a horizon; the listing ranks ETFs by their probability at that horizon in similar historical pullbacks.</p>
+
+          <div class="horizon-tabs" data-section="etfs"></div>
+
+          <div class="max-listing-header">
+            <span>Ticker</span>
+            <span>Price</span>
+            <span id="etfs-prob-label">Prob</span>
+            <span>Typical</span>
+            <span>Downside</span>
+            <span>Pullback</span>
+            <span>Quality</span>
+            <span class="max-col-cases">Cases</span>
+          </div>
+          <div id="etfs-listing"></div>
+
+          <details class="details-card" id="etfs-backtest-section" style="margin-top: 32px;">
+            <summary class="details-card-summary">
+              <div class="details-card-left">
+                <span class="details-card-title">ETFs Backtest &mdash; DCA at Selected Horizon</span>
+                <span class="details-card-cat">Ranked by point-in-time opportunity score, benchmarked to SPY</span>
+              </div>
+              <span class="details-card-arrow">&darr;</span>
+            </summary>
+            <div class="details-card-body">
+              <p class="bt-intro">$1,000 every month into the top-ranked ETFs (by point-in-time opportunity score), held for the selected horizon, then sold. Benchmark: SPY DCA on the same schedule.</p>
+              <div id="etfs-backtest-body">
+                <div class="footnote">Click to load backtest data&hellip;</div>
+              </div>
+              <div id="etfs-best-horizon-note" class="section-note" style="margin-top: 8px;"></div>
+            </div>
+          </details>
+        </div>
+      </details>
+    </div>
+  </section>
+
   <!-- ===== FOOTER ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
@@ -364,6 +478,7 @@
         <a href="#top-picks" class="footer-link">Top Picks</a>
         <a href="#stocks-section" class="footer-link">Stocks</a>
         <a href="#crypto-section" class="footer-link">Crypto</a>
+        <a href="#etfs-section" class="footer-link">ETFs</a>
         <a href="#how-it-works" class="footer-link">How It Works</a>
         <a href="/" class="footer-link">Main Site</a>
         <a href="/experiments/" class="footer-link">Experiments</a>
@@ -377,6 +492,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260418d"></script>
+  <script src="app.js?v=20260418e"></script>
 </body>
 </html>
