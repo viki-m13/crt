@@ -465,11 +465,129 @@ function simulateBenchmarkDCA(benchTickers, holdDays, opts) {
   return { equity, totalInvested, positions };
 }
 
+/* Max strategy DCA — point-in-time ranking with rank-weighted sizing,
+   hold-forever, next-day-open entry. Validated against SPY DCA on the
+   embedded 5Y stock spine: Top-5 outperformed by ~+7pp CAGR in both halves
+   and 3 of 4 quartiles; Top-1 outperformed in aggregate but had tail risk
+   in flat-to-down quarters. See max/research/ for the methodology. */
+function simulateDCAMax(universe, topN, opts) {
+  const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
+  const equity = new Float64Array(allDates.length);
+  const positions = [];
+  let cash = 0, totalInvested = 0;
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const entryDelay = (opts && opts.entryDelay != null) ? opts.entryDelay : 1;
+  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+    const dIdx = monthFirstIdx[m];
+    const date = allDates[dIdx];
+    const ranked = [];
+    for (const tk of universe) {
+      const s = scoreLookup[tk]?.get(date);
+      const p = priceLookup[tk]?.get(date);
+      if (s != null && Number.isFinite(s) && s > 0 && p != null && Number.isFinite(p) && p > 0) {
+        ranked.push({ tk, s });
+      }
+    }
+    if (!ranked.length) continue;
+    ranked.sort((a, b) => b.s - a.s);
+    const picks = ranked.slice(0, Math.min(topN, ranked.length));
+    // Fill at the next trading day's close (proxy for next-day open: live scan
+    // runs after market close, so the earliest realistic execution is +1 bar).
+    const entryIdx = dIdx + entryDelay;
+    if (entryIdx >= allDates.length) continue;
+    const entryDate = allDates[entryIdx];
+    const adj = [];
+    for (const { tk, s } of picks) {
+      const px = priceLookup[tk]?.get(entryDate);
+      if (px != null && Number.isFinite(px) && px > 0) adj.push({ tk, s, px });
+    }
+    if (!adj.length) continue;
+    // Rank weights: 1/1, 1/2, 1/3, … then normalize.
+    const raw = adj.map((_, i) => 1 / (i + 1));
+    const sumRaw = raw.reduce((a, b) => a + b, 0);
+    const weights = raw.map(r => r / sumRaw);
+    totalInvested += DCA_MONTHLY;
+    for (let i = 0; i < adj.length; i++) {
+      const { tk, px } = adj[i];
+      const alloc = DCA_MONTHLY * weights[i];
+      // Hold-forever: sellIdx beyond the spine, so positions never schedule a sale.
+      positions.push({ tk, shares: alloc / px, cost: alloc, buyIdx: entryIdx,
+                       sellIdx: allDates.length + 1, sold: false, sellPrice: 0 });
+    }
+  }
+  for (let d = 0; d < allDates.length; d++) {
+    const date = allDates[d];
+    let open = 0;
+    for (const pos of positions) {
+      if (pos.sold || d < pos.buyIdx) continue;
+      const px = priceLookup[pos.tk]?.get(date);
+      if (px && Number.isFinite(px)) open += pos.shares * px;
+    }
+    equity[d] = cash + open;
+  }
+  return { equity, totalInvested, positions };
+}
+
+/* Benchmark for the Max strategy: SPY DCA, hold-forever, same next-day-open
+   entry. Capital schedule matches the strategy exactly so the curves are
+   directly comparable. */
+function simulateBenchmarkDCAMax(benchTickers, opts) {
+  const { allDates, priceLookup, monthFirstIdx } = buildBT();
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const entryDelay = (opts && opts.entryDelay != null) ? opts.entryDelay : 1;
+  const filled = {};
+  for (const tk of benchTickers) {
+    const pm = priceLookup[tk];
+    if (!pm) continue;
+    const spineStart = allDates[0] || "";
+    let last = 0;
+    for (const [d, v] of pm.entries()) {
+      if (d <= spineStart && Number.isFinite(v) && v > 0 && d > "") last = v;
+    }
+    const arr = new Float64Array(allDates.length);
+    for (let i = 0; i < allDates.length; i++) {
+      const v = pm.get(allDates[i]);
+      if (v != null && Number.isFinite(v) && v > 0) last = v;
+      arr[i] = last;
+    }
+    filled[tk] = arr;
+  }
+  const equity = new Float64Array(allDates.length);
+  const positions = [];
+  let cash = 0, totalInvested = 0;
+  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+    const dIdx = monthFirstIdx[m];
+    const entryIdx = dIdx + entryDelay;
+    if (entryIdx >= allDates.length) break;
+    const avail = benchTickers.filter(t => filled[t] && filled[t][entryIdx] > 0);
+    if (!avail.length) continue;
+    const per = DCA_MONTHLY / avail.length;
+    totalInvested += DCA_MONTHLY;
+    for (const tk of avail) {
+      const p = filled[tk][entryIdx];
+      positions.push({ tk, shares: per / p, cost: per, buyIdx: entryIdx,
+                       sellIdx: allDates.length + 1, sold: false, sellPrice: 0 });
+    }
+  }
+  for (let d = 0; d < allDates.length; d++) {
+    let open = 0;
+    for (const pos of positions) {
+      if (pos.sold || d < pos.buyIdx) continue;
+      const px = filled[pos.tk]?.[d];
+      if (px && Number.isFinite(px)) open += pos.shares * px;
+    }
+    equity[d] = cash + open;
+  }
+  return { equity, totalInvested, positions };
+}
+
 /* Per-pick DCA: rank by point-in-time final score, but hold each pick for the
    trading-day horizon chosen by today's bestHorizonFor() for that ticker
    (30D, 60D, 1Y, 3Y, …). Tickers that didn't produce a best-horizon today
    fall back to `opts.fallbackHold`. Returns the per-month horizon schedule so
-   the benchmark can mirror it. */
+   the benchmark can mirror it. NOTE: this contains look-ahead because the
+   per-ticker hold uses today's probabilities. Kept for crypto path only;
+   stocks use simulateDCAMax above. */
 function simulateDCAPerPick(universe, topN, horizonByTicker, opts) {
   const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
   const equity = new Float64Array(allDates.length);
@@ -675,7 +793,9 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
 
   const info = document.createElement("div");
   info.className = "footnote";
-  info.textContent = `${horizonLabel} hold. DCA buys $1,000 on the first trading day of each calendar month, splitting the cash equally across that month's top-N ranked picks. Each position is sold at the close of its hold horizon. Ranking uses the scanner's point-in-time opportunity score on each DCA date — no look-ahead. Not financial advice; past performance does not predict future results.`;
+  info.textContent = (holdDays == null)
+    ? `${horizonLabel}. DCA buys $1,000 on the first trading day of each calendar month, ranks the universe by the scanner's point-in-time opportunity score, and allocates that month's cash to the top-N picks with rank weights (1/1, 1/2, 1/3, … normalized). Fills at the close of the next trading day (the live scan runs after market close). Positions are held forever — no scheduled sell, no look-ahead. Not financial advice; past performance does not predict future results.`
+    : `${horizonLabel} hold. DCA buys $1,000 on the first trading day of each calendar month, splitting the cash equally across that month's top-N ranked picks. Each position is sold at the close of its hold horizon. Ranking uses the scanner's point-in-time opportunity score on each DCA date — no look-ahead. Not financial advice; past performance does not predict future results.`;
   body.appendChild(info);
 }
 
@@ -868,10 +988,40 @@ function runTopBacktest(which) {
   const bodyId = `${which}-backtest-body`;
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
-    const results = runTopBacktestPerPick(which, universe, benchTickers);
+    // For stocks we use the Max strategy validated by the Python backtester
+    // (rank-weighted, hold-forever, next-day-open entry — substantially beats
+    // SPY DCA across both halves and 3 of 4 quartiles of the spine).
+    // Crypto keeps the per-pick variant for now (still being tuned).
+    const results = (which === "topstocks")
+      ? runTopBacktestMax(which, universe, benchTickers)
+      : runTopBacktestPerPick(which, universe, benchTickers);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
-    renderBacktest(bodyId, results, benchTickers, null, "Per-Pick");
+    const label = (which === "topstocks") ? "Max (rank-weighted, hold-forever)" : "Per-Pick";
+    renderBacktest(bodyId, results, benchTickers, null, label);
   }, 10);
+}
+
+/* Max strategy (stocks). Three changes vs Per-Pick:
+   1. Rank-weighted sizing — top pick gets 1/1, 2nd 1/2, 3rd 1/3, … normalized.
+      Tilts capital toward higher-conviction names without going all-in.
+   2. Hold-forever — no scheduled sell. Removes look-ahead (the per-pick variant
+      assigned each historical buy a hold length derived from TODAY's
+      bestHorizonFor) and lets winners run.
+   3. Next-day-open entry — the live scan runs after market close, so we book
+      the fill at the close of the *next* trading day (a 1-bar delay). */
+function runTopBacktestMax(which, universe, benchTickers) {
+  const bt = buildBT();
+  if (!bt.allDates || !bt.allDates.length) return null;
+  const startMonthIdx = firstValidMonthIdx(universe, 3);
+  const results = {};
+  for (const n of [1, 5, 10]) {
+    const sim = simulateDCAMax(universe, n, { startMonthIdx, entryDelay: 1 });
+    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
+    results[n] = { sim, metrics };
+  }
+  const benchSim = simulateBenchmarkDCAMax(benchTickers, { startMonthIdx, entryDelay: 1 });
+  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
+  return results;
 }
 
 function runTopBacktestPerPick(which, universe, benchTickers) {
