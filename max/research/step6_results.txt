@@ -1,0 +1,14 @@
+Benchmark: CAGR +7.47%  TR +51.57%  Sharpe 1.93  MaxDD -16.03%  Inv $60,000  Final $90,943
+
+## Trailing stop (Top-5 rank, hold-forever)
+  trail=None | CAGR +14.75%  TR +121.22%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,733  excess +7.28pp
+  trail=0.15 | CAGR +0.96%  TR +5.66%  Sharpe 1.79  MaxDD -6.31%  Inv $60,000  Final $63,397  excess -6.52pp
+  trail=0.25 | CAGR +3.90%  TR +24.70%  Sharpe 1.85  MaxDD -9.22%  Inv $60,000  Final $74,821  excess -3.57pp
+  trail=0.35 | CAGR +7.65%  TR +53.02%  Sharpe 1.91  MaxDD -13.73%  Inv $60,000  Final $91,813  excess +0.18pp
+  trail=0.5 | CAGR +13.00%  TR +102.45%  Sharpe 1.99  MaxDD -18.73%  Inv $60,000  Final $121,470  excess +5.53pp
+
+## DD-from-cost stop
+  dd_stop=None | CAGR +14.75%  TR +121.22%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,733  excess +7.28pp
+  dd_stop=0.2 | CAGR +10.43%  TR +77.21%  Sharpe 1.96  MaxDD -15.80%  Inv $60,000  Final $106,328  excess +2.95pp
+  dd_stop=0.35 | CAGR +12.43%  TR +96.57%  Sharpe 1.99  MaxDD -18.57%  Inv $60,000  Final $117,940  excess +4.95pp
+  dd_stop=0.5 | CAGR +14.17%  TR +114.87%  Sharpe 2.01  MaxDD -20.34%  Inv $60,000  Final $128,920  excess +6.70pp

@@ -1,0 +1,19 @@
+Benchmark: CAGR +7.47%  TR +51.57%  Sharpe 1.93  MaxDD -16.03%  Inv $60,000  Final $90,943
+
+## Score momentum: rank by f[di] - f[di-W]
+  delta_W= 10 | CAGR +9.27%  TR +66.75%  Sharpe 1.79  MaxDD -21.56%  Inv $60,000  Final $100,047  excess +1.79pp
+  delta_W= 30 | CAGR +10.81%  TR +80.84%  Sharpe 2.13  MaxDD -18.47%  Inv $59,000  Final $106,696  excess +3.34pp
+  delta_W= 60 | CAGR +11.98%  TR +92.11%  Sharpe 2.15  MaxDD -20.40%  Inv $57,000  Final $109,502  excess +4.51pp
+  delta_W=120 | CAGR +14.22%  TR +115.40%  Sharpe 1.92  MaxDD -21.89%  Inv $54,000  Final $116,318  excess +6.75pp
+
+## Score momentum: rank by ratio f[di] / f[di-W]
+  ratio_W= 10 | CAGR +7.28%  TR +49.99%  Sharpe 1.81  MaxDD -19.84%  Inv $60,000  Final $89,994  excess -0.20pp
+  ratio_W= 30 | CAGR +8.22%  TR +57.73%  Sharpe 2.07  MaxDD -16.09%  Inv $59,000  Final $93,060  excess +0.74pp
+  ratio_W= 60 | CAGR +9.85%  TR +71.91%  Sharpe 2.13  MaxDD -16.23%  Inv $57,000  Final $97,988  excess +2.37pp
+  ratio_W=120 | CAGR +11.14%  TR +83.96%  Sharpe 1.89  MaxDD -17.28%  Inv $54,000  Final $99,337  excess +3.67pp
+
+## Combined: rank by f[di] * (f[di]/f[di-W]) — level boosted by momentum
+  level*ratio_W= 10 | CAGR +12.12%  TR +93.49%  Sharpe 1.95  MaxDD -19.13%  Inv $60,000  Final $116,092  excess +4.65pp
+  level*ratio_W= 30 | CAGR +9.52%  TR +69.03%  Sharpe 2.08  MaxDD -17.52%  Inv $59,000  Final $99,730  excess +2.05pp
+  level*ratio_W= 60 | CAGR +11.41%  TR +86.57%  Sharpe 2.16  MaxDD -18.26%  Inv $57,000  Final $106,342  excess +3.94pp
+  level*ratio_W=120 | CAGR +12.34%  TR +95.66%  Sharpe 1.92  MaxDD -19.43%  Inv $54,000  Final $105,655  excess +4.86pp

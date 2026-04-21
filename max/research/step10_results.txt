@@ -1,0 +1,19 @@
+Benchmark: CAGR +7.47%  TR +51.57%  Sharpe 1.93  MaxDD -16.03%  Inv $60,000  Final $90,943
+
+## Pure price momentum (no analog signal)
+  pmom lb=126 skip=0 | CAGR +11.12%  TR +83.77%  Sharpe 1.98  MaxDD -41.96%  Inv $54,000  Final $99,233  excess +3.65pp
+  pmom lb=126 skip=21 | CAGR +10.95%  TR +82.09%  Sharpe 2.07  MaxDD -32.19%  Inv $54,000  Final $98,330  excess +3.47pp
+  pmom lb=252 skip=0 | CAGR +8.30%  TR +58.39%  Sharpe 1.92  MaxDD -47.43%  Inv $48,000  Final $76,028  excess +0.82pp
+  pmom lb=252 skip=21 | CAGR +9.09%  TR +65.21%  Sharpe 1.94  MaxDD -44.88%  Inv $48,000  Final $79,299  excess +1.62pp
+
+## Final_score × price-momentum (sign-aware)
+  f*(1+pmom_126_0) | CAGR +11.10%  TR +83.52%  Sharpe 1.87  MaxDD -18.16%  Inv $54,000  Final $99,102  excess +3.62pp
+  f*(1+pmom_126_21) | CAGR +12.01%  TR +92.38%  Sharpe 1.90  MaxDD -18.75%  Inv $54,000  Final $103,886  excess +4.53pp
+  f*(1+pmom_252_0) | CAGR +12.13%  TR +93.60%  Sharpe 2.35  MaxDD -20.46%  Inv $48,000  Final $92,929  excess +4.66pp
+  f*(1+pmom_252_21) | CAGR +12.13%  TR +93.58%  Sharpe 2.30  MaxDD -21.31%  Inv $48,000  Final $92,921  excess +4.66pp
+
+## Final_score, but with price momentum > 0 filter
+  f gated by pmom>0 lb=126 skip=0 | CAGR +13.10%  TR +103.42%  Sharpe 1.94  MaxDD -22.86%  Inv $60,000  Final $122,054  excess +5.62pp
+  f gated by pmom>0 lb=126 skip=21 | CAGR +11.84%  TR +90.75%  Sharpe 1.97  MaxDD -19.03%  Inv $60,000  Final $114,451  excess +4.37pp
+  f gated by pmom>0 lb=252 skip=0 | CAGR +12.41%  TR +96.43%  Sharpe 1.97  MaxDD -21.12%  Inv $60,000  Final $117,860  excess +4.94pp
+  f gated by pmom>0 lb=252 skip=21 | CAGR +12.22%  TR +94.53%  Sharpe 1.97  MaxDD -20.83%  Inv $60,000  Final $116,717  excess +4.75pp

@@ -103,6 +103,7 @@
         <a href="#top-picks">Top Picks</a>
         <a href="#stocks-section">Stocks</a>
         <a href="#crypto-section">Crypto</a>
+        <a href="#validation">Validation</a>
         <a href="#how-it-works">How It Works</a>
         <a href="/">Main</a>
         <a href="/experiments/" class="nav-experiments">Experiments</a>
@@ -141,7 +142,70 @@
   <!-- ===== HOW IT WORKS ===== -->
   <section class="content-section" id="how-it-works">
     <div class="section-inner">
-      <details class="details-card">
+      <details class="details-card" id="validation">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">20-Year Validation</span>
+            <span class="details-card-cat">Top-5 rank hold-forever on extended 2006&ndash;2026 spine (96 stocks)</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="section-note">
+            We regenerated point-in-time opportunity scores back to 2006-04-25 using the same scoring
+            machinery the live scanner runs, then backtested $1,000/month DCA into the top 5
+            ranked stocks, holding each position forever, against SPY DCA on the identical schedule.
+            The spine covers the GFC, the 2010s bull, COVID, and the 2022 bear.
+          </p>
+
+          <div class="explain-grid">
+            <div>
+              <div class="section-title">Headline (2006 &rarr; 2026, ~20 years)</div>
+              <ul>
+                <li><strong>Top-5 CAGR +17.12%</strong> vs SPY DCA +7.86% &rarr; excess <strong>+9.26pp</strong></li>
+                <li>MaxDD &minus;48.92%, Sharpe 1.32, $241k invested grows to $5.64M vs $1.09M for SPY</li>
+                <li>Top-1 / Top-3 / Top-10 all land within &plusmn;0.3pp of Top-5 excess &mdash; the effect is not a single-pick artifact.</li>
+              </ul>
+
+              <div class="section-title" style="margin-top: 16px;">Walk-forward (did the edge persist?)</div>
+              <ul>
+                <li>First half (2006-2016): excess <strong>+5.45pp</strong></li>
+                <li>Second half (2016-2026): excess <strong>+7.88pp</strong></li>
+                <li>5-year quartiles Q1&ndash;Q4: <strong>+7.41, +10.92, +6.53, +7.36pp</strong> &mdash; all positive</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">Sub-era breakdown</div>
+              <ul>
+                <li>pre-GFC 2006-2008 (2.4y, short warmup): <strong>&minus;3.27pp</strong> (only losing window)</li>
+                <li>GFC + recovery 2008-2013: <strong>+3.33pp</strong></li>
+                <li>2010s bull 2013-2020: <strong>+8.66pp</strong></li>
+                <li>COVID + present 2020-2026: <strong>+7.25pp</strong></li>
+              </ul>
+
+              <div class="section-title" style="margin-top: 16px;">Robustness</div>
+              <ul>
+                <li><strong>Jackknife</strong> (drop one ticker at a time, 96 runs): minimum excess <strong>+6.71pp</strong> (dropping NVDA), 0 runs negative, 96/96 above +5pp.</li>
+                <li><strong>Bootstrap</strong> (200 random 50-ticker rosters): 0/200 lose to SPY, median <strong>+9.90pp</strong>, p10 +4.83pp.</li>
+                <li><strong>Drop top-5 winners</strong> (NVDA/NFLX/AMD/AMZN/AVGO): still <strong>+3.40pp</strong> excess.</li>
+                <li><strong>Transaction costs</strong>: 50 bps on entry notional moves excess by &minus;0.07pp.</li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="section-note" style="margin-top: 16px;">
+            Known honest caveats: universe-level survivorship bias (today's 96-stock roster reflects
+            companies that survived to 2026 &mdash; delisted names are not in the backtest); the quality
+            multiplier in the saved historical series uses today's value rather than the point-in-time
+            value, a known concession from the scanner's design (the rest of the score &mdash; analog
+            matching, probability, edge &mdash; is strictly point-in-time); small execution frictions
+            (slippage beyond 50 bps, borrow, taxes) are not modeled. Past performance does not predict
+            future results. Not financial advice.
+          </p>
+        </div>
+      </details>
+
+      <details class="details-card" style="margin-top: 16px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
             <span class="details-card-title">How to Read This</span>
@@ -389,6 +453,7 @@
         <a href="#top-picks" class="footer-link">Top Picks</a>
         <a href="#stocks-section" class="footer-link">Stocks</a>
         <a href="#crypto-section" class="footer-link">Crypto</a>
+        <a href="#validation" class="footer-link">Validation</a>
         <a href="#how-it-works" class="footer-link">How It Works</a>
         <a href="/" class="footer-link">Main Site</a>
         <a href="/experiments/" class="footer-link">Experiments</a>
@@ -402,6 +467,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260418g"></script>
+  <script src="app.js?v=20260421a"></script>
 </body>
 </html>
