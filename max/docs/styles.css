@@ -894,6 +894,154 @@ strong{font-weight:600}
 }
 
 /* ============================================================
+   MAX STRATEGY — This Month's Picks + Concentration + Rules
+   ============================================================ */
+
+.stats-inner-validation .stat-number-strong{
+  color:#1a7a3e;
+  font-variant-numeric:tabular-nums;
+}
+.stats-inner-validation .stat-label{
+  font-size:13px;
+}
+
+.single-pick-card{
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:28px 32px;
+  margin:24px 0 32px;
+  background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
+}
+.single-pick-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom:12px;
+}
+.single-pick-label{
+  font-size:11px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.single-pick-asof{
+  font-size:11px;
+  color:var(--muted);
+  font-family:var(--mono);
+}
+.single-pick-ticker{
+  font-size:56px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1;
+  font-family:var(--mono);
+  margin-bottom:10px;
+}
+.single-pick-meta{
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.6;
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px 24px;
+}
+.single-pick-meta strong{
+  color:var(--text);
+  font-weight:600;
+  font-family:var(--mono);
+}
+.single-pick-foot{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--rule-light);
+  line-height:1.5;
+}
+
+.month-picks-grid{
+  font-family:var(--mono);
+}
+.month-picks-header,
+.month-picks-row{
+  display:grid;
+  grid-template-columns:0.6fr 1fr 0.9fr 1fr 0.9fr 0.9fr 0.9fr 0.9fr;
+  gap:8px;
+  padding:12px 8px;
+}
+.month-picks-row{
+  font-size:13px;
+  border-top:1px solid var(--rule-light);
+  align-items:center;
+}
+.month-picks-row:hover{background:rgba(0,0,0,.03)}
+.month-picks-row .pk-rank{font-weight:700;color:var(--muted)}
+.month-picks-row .pk-ticker{font-weight:600}
+.month-picks-row .pk-cell{text-align:right}
+.month-picks-row.row-backfill{background:rgba(180,120,0,0.04)}
+.month-picks-row .backfill-badge{
+  display:inline-block;
+  font-size:9px;
+  letter-spacing:0.1em;
+  padding:1px 5px;
+  margin-left:6px;
+  border-radius:3px;
+  background:rgba(180,120,0,0.15);
+  color:#8a5a00;
+  text-transform:uppercase;
+}
+
+.concentration-header,
+.concentration-row{
+  display:grid;
+  grid-template-columns:0.9fr 0.6fr 0.9fr 0.9fr 1fr 0.9fr 1.2fr;
+  gap:8px;
+  padding:10px 8px;
+  font-family:var(--mono);
+}
+.concentration-row{
+  font-size:13px;
+  border-top:1px solid var(--rule-light);
+  align-items:center;
+}
+.concentration-row .cn-cell{text-align:right}
+.concentration-row .cn-ticker{font-weight:600;text-align:left}
+.concentration-row .cn-status{text-align:right;font-size:11px;letter-spacing:0.05em;text-transform:uppercase}
+.concentration-row .cn-status.status-cap{color:#b00020;font-weight:600}
+.concentration-row .cn-status.status-near{color:#8a5a00}
+.concentration-row .cn-status.status-ok{color:var(--muted)}
+.concentration-row .cn-pnl-pos{color:#1a7a3e;font-weight:600}
+.concentration-row .cn-pnl-neg{color:#b00020;font-weight:600}
+
+.rules-list{
+  margin:0;
+  padding-left:22px;
+  line-height:1.7;
+}
+.rules-list li{margin-bottom:10px}
+.rules-list li strong{font-weight:600}
+
+@media (max-width:720px){
+  .single-pick-ticker{font-size:42px}
+  .month-picks-header,
+  .month-picks-row{
+    grid-template-columns:0.5fr 1fr 0.8fr 1fr 0.8fr 0.7fr;
+    font-size:12px;
+  }
+  .month-picks-header span:nth-child(7),
+  .month-picks-header span:nth-child(8),
+  .month-picks-row .pk-cell-hide-mobile{display:none}
+  .concentration-header,
+  .concentration-row{
+    grid-template-columns:1fr 0.6fr 0.9fr 1fr 0.9fr;
+    font-size:12px;
+  }
+  .concentration-header span:nth-child(5),
+  .concentration-header span:nth-child(6),
+  .concentration-row .cn-cell-hide-mobile{display:none}
+}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 
