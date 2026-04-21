@@ -169,19 +169,14 @@ function renderSectionListing(section, horizonId) {
   }
 }
 
-function buildRow(item, h, opts) {
+function buildRow(item, h) {
   const div = document.createElement("div");
   div.className = "max-ticker-row";
   const prob = item[h.prob];
   const med = item[h.median];
   const down = h.downside ? item[h.downside] : null;
-  let hzBadge = "";
-  if (opts && opts.showHorizon) {
-    const sellLbl = opts.sellDate ? ` <span class="row-sell">sell by ${opts.sellDate}</span>` : "";
-    hzBadge = `<span class="row-horizon">${opts.showHorizon}</span>${sellLbl}`;
-  }
   div.innerHTML = `
-    <div class="row-ticker">${item.ticker}${hzBadge}</div>
+    <div class="row-ticker">${item.ticker}</div>
     <div class="row-cell">${fmtPriceVal(item.last_price)}</div>
     <div class="row-cell">${fmtProb(prob)}</div>
     <div class="row-cell">${fmtPctSigned(med)}</div>
@@ -191,19 +186,6 @@ function buildRow(item, h, opts) {
     <div class="row-cell max-col-cases">${fmtNum(item.n_analogs)}</div>
   `;
   return div;
-}
-
-/* Converts the scanner's trading-day horizon to a calendar sell date anchored
-   on the last scan (FULL.as_of). Crypto trades 7 days/week so bars==calendar
-   days; equities trade ~5/7 so we scale. Returned as a short "Apr 17, 2027"
-   style label for the listing. */
-function sellDateFor(item, horizonDays, asOf) {
-  if (!asOf) return "";
-  const base = new Date(asOf + "T00:00:00Z");
-  if (isNaN(base)) return "";
-  const calDays = item.is_crypto ? horizonDays : Math.round(horizonDays * 7 / 5);
-  base.setUTCDate(base.getUTCDate() + calDays);
-  return base.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 /* ---------- Top Picks: pick each item's best horizon ----------
@@ -305,10 +287,8 @@ function renderTopPicksFor(section) {
     container.innerHTML = `<div class="footnote">No ranked ${section} picks available.</div>`;
     return;
   }
-  const asOf = FULL && FULL.as_of ? String(FULL.as_of).slice(0, 10) : "";
   for (const { it, best } of scored) {
-    const sellDate = sellDateFor(it, best.horizon.days, asOf);
-    container.appendChild(buildRow(it, best.horizon, { showHorizon: best.horizon.id, sellDate }));
+    container.appendChild(buildRow(it, best.horizon));
   }
 }
 
