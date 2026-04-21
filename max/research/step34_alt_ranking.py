@@ -69,30 +69,30 @@ print(f"{'SPY benchmark':25s}  {spy_m['cagr']*100:+7.2f}%  {spy_m['total_return'
       f"{-spy_m['maxdd']*100:+7.2f}%  {spy_m['sharpe']:6.2f}  ${spy_m['final']:11,.0f}")
 
 rows = []
+baseline_cagr = None
 for label, cfg in VARIANTS:
     r = simulate(md, md.stocks, cfg)
     m = compute_metrics(md, r.equity, r.total_invested)
-    rows.append((label, m, r))
+    rows.append((label, cfg.rank_formula, cfg.rank_alpha, m, r))
+    if cfg.rank_formula == "final":
+        baseline_cagr = m['cagr']
     print(f"{label:25s}  {m['cagr']*100:+7.2f}%  {m['total_return']*100:+7.2f}%  "
           f"{-m['maxdd']*100:+7.2f}%  {m['sharpe']:6.2f}  ${m['final']:11,.0f}")
 
 # Rank by CAGR
 print("\n" + "=" * 90)
 print("Ranked by CAGR:")
-rows.sort(key=lambda x: -x[1]['cagr'])
-baseline_cagr = None
-for lbl, m, _ in rows:
-    if "final)" in lbl.strip() and "raw" not in lbl and "x" not in lbl.lower() and "+" not in lbl:
-        baseline_cagr = m['cagr']; break
-for lbl, m, _ in rows:
-    delta = f"{(m['cagr']-baseline_cagr)*100:+5.2f}pp" if baseline_cagr else ""
-    print(f"  {lbl:25s}  {m['cagr']*100:+7.2f}%  vs incumbent {delta}")
+rows.sort(key=lambda x: -x[3]['cagr'])
+for lbl, rf, alpha, m, _ in rows:
+    delta = (m['cagr'] - baseline_cagr) * 100 if baseline_cagr is not None else 0
+    mark = " ← incumbent" if rf == "final" else ""
+    print(f"  {lbl:25s}  {m['cagr']*100:+7.2f}%  Δ {delta:+5.2f}pp{mark}")
 
 
 # Top-5 last-month picks summary per variant
 print("\n" + "=" * 90)
 print("Last-month top-5 picks (most recent rebalance) per variant:")
-for lbl, m, r in rows:
+for lbl, rf, alpha, m, r in rows:
     if not r.picks_by_month:
         continue
     last_date, picks = r.picks_by_month[-1]
