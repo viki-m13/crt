@@ -41,18 +41,45 @@ def load_market_ext(bt_path: str = None, raw_dir: str = None,
     date_idx = {dd: i for i, dd in enumerate(all_dates)}
     n = len(all_dates)
 
+    has_wash = "wash" in df_live.columns
+    has_raw = "final_raw" in df_live.columns
+    has_q = "quality" in df_live.columns
+
     prices: dict = {}
     finals: dict = {}
+    washes: dict = {} if has_wash else None
+    finals_raw: dict = {} if has_raw else None
+    qualities: dict = {} if has_q else None
     for tk, grp in df_live.groupby("ticker"):
         p = np.full(n, np.nan)
         f = np.full(n, np.nan)
-        for dd, pv, fv in zip(grp["date_str"].values, grp["price"].values, grp["final"].values):
+        w = np.full(n, np.nan) if has_wash else None
+        fr = np.full(n, np.nan) if has_raw else None
+        dd_vals = grp["date_str"].values
+        pv_vals = grp["price"].values
+        fv_vals = grp["final"].values
+        wv_vals = grp["wash"].values if has_wash else None
+        frv_vals = grp["final_raw"].values if has_raw else None
+        for idx_row in range(len(dd_vals)):
+            dd = dd_vals[idx_row]
             if dd in date_idx:
                 ix = date_idx[dd]
-                p[ix] = pv
-                f[ix] = fv
+                p[ix] = pv_vals[idx_row]
+                f[ix] = fv_vals[idx_row]
+                if has_wash:
+                    w[ix] = wv_vals[idx_row]
+                if has_raw:
+                    fr[ix] = frv_vals[idx_row]
         prices[tk] = p
         finals[tk] = f
+        if has_wash:
+            washes[tk] = w
+        if has_raw:
+            finals_raw[tk] = fr
+        if has_q:
+            # quality is today-snapshot; take first non-null value for this ticker
+            q_ser = grp["quality"].dropna()
+            qualities[tk] = float(q_ser.iloc[0]) if len(q_ser) else None
 
     # Bench filled from raw AdjClose
     ac = pd.read_parquet(os.path.join(raw_dir, "AdjClose.parquet"))
@@ -93,6 +120,7 @@ def load_market_ext(bt_path: str = None, raw_dir: str = None,
         all_dates=all_dates, date_idx=date_idx, prices=prices, finals=finals,
         month_first_idx=month_first_idx, bench_filled=bench_filled,
         stocks=stocks, items_by_ticker={},
+        washes=washes, finals_raw=finals_raw, qualities=qualities,
     )
 
 

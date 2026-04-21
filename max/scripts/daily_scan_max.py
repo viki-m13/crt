@@ -1450,6 +1450,11 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     )
     conv_win = conv_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
+    # Raw FinalScore series (edge_score × (wash_floor + wash_weight × washout/100)).
+    # Different composite from conviction — exposed for research/backtest
+    # use so alternative score formulas can be evaluated.
+    final_raw_win = final_series_hist.reindex(win.index).ffill().astype(float)
+
     # Top-% washed-out (readable): "Top X%" of days by Washout Meter
     wtop = washout_top_pct(feat["washout_meter"].dropna(), wash_today)
 
@@ -1474,6 +1479,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "prices": [json_float(v) for v in px.values],
             "wash": [json_float(v) for v in wash.values],
             "final": [json_float(v) for v in conv_win.values],
+            "final_raw": [json_float(v) for v in final_raw_win.values],
         },
         "stability_samples": stab_samples,
         "quality": float(quality) if np.isfinite(quality) else None,

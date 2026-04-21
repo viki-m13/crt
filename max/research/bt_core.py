@@ -60,6 +60,11 @@ class MarketData:
     bench_filled: dict
     stocks: list
     items_by_ticker: dict
+    # Optional: extended score series (added by load_market_ext for research).
+    # None if the source data doesn't provide them.
+    washes: Optional[dict] = None      # ticker -> np.ndarray of washout_meter
+    finals_raw: Optional[dict] = None  # ticker -> np.ndarray of raw FinalScore
+    qualities: Optional[dict] = None   # ticker -> today-snapshot quality (scalar)
 
 
 def load_market(full_json_path: str, bench_tickers=("SPY",)) -> MarketData:
@@ -201,6 +206,19 @@ class StrategyConfig:
     # Single-ticker alt-pick: if None, ignore. If set to a ticker (e.g. "SPY"),
     # redirect skipped DCA capital into that ticker instead of sitting out.
     fallback_ticker: Optional[str] = None
+    # ------ Alternative ranking formulas (step34). Default "final" (= conviction
+    # score = quality × 10D_prob × pullback_gate). Other options require md to
+    # have the appropriate companion series loaded.
+    # Supported values:
+    #   "final"       - existing Opportunity/conviction score (default)
+    #   "final_raw"   - raw FinalScore = edge × (wash_floor + wash_weight × wash/100)
+    #   "wash"        - rank by washout_meter alone (contrarian)
+    #   "final_x_wash"- final × wash/100 (boost picks that are also washed out)
+    #   "raw_x_wash"  - final_raw × wash/100
+    #   "final+alpha_wash" - final × (1 + alpha × wash/100), tuneable
+    rank_formula: str = "final"
+    # Alpha blend weight for composite formulas (e.g. final+alpha_wash).
+    rank_alpha: float = 0.5
 
 
 @dataclass
@@ -250,6 +268,42 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
             fv, pv = f[di], p[di]
             if not (math.isfinite(fv) and fv > cfg.min_score and math.isfinite(pv) and pv > 0):
                 continue
+            # Compute ranking score per rank_formula.
+            rv = fv
+            if cfg.rank_formula != "final":
+                wv = None
+                if md.washes is not None:
+                    w_arr = md.washes.get(tk)
+                    if w_arr is not None:
+                        wv = w_arr[di]
+                frv = None
+                if md.finals_raw is not None:
+                    fr_arr = md.finals_raw.get(tk)
+                    if fr_arr is not None:
+                        frv = fr_arr[di]
+                rf = cfg.rank_formula
+                if rf == "final_raw":
+                    if frv is None or not math.isfinite(frv):
+                        continue
+                    rv = frv
+                elif rf == "wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = wv
+                elif rf == "final_x_wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = fv * (wv / 100.0)
+                elif rf == "raw_x_wash":
+                    if frv is None or wv is None or not (math.isfinite(frv) and math.isfinite(wv)):
+                        continue
+                    rv = frv * (wv / 100.0)
+                elif rf == "final+alpha_wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = fv * (1.0 + cfg.rank_alpha * (wv / 100.0))
+                else:
+                    raise ValueError(f"unknown rank_formula: {rf}")
             # Rebound confirmation: need positive trailing N-day return
             if apply_rebound:
                 lb = di - cfg.rebound_lookback_days
