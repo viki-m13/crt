@@ -21,6 +21,21 @@ const SECTION_DEFAULT_HORIZON = { stocks: "1Y", crypto: "60D" };
 const SECTION_BENCHMARK = { stocks: ["SPY"], crypto: ["BTC-USD"], topstocks: ["SPY"], topcrypto: ["BTC-USD"] };
 const DCA_MONTHLY = 1000;
 
+/* Backtest periods. `months` null = use the default firstValidMonthIdx start.
+   Otherwise the window starts `months` calendar-months before the end of the
+   spine. `half` picks the first or second half of the usable range. */
+const PERIODS = [
+  { id: "full", label: "Full",        months: null, half: null },
+  { id: "5y",   label: "Last 5Y",     months: 60,   half: null },
+  { id: "3y",   label: "Last 3Y",     months: 36,   half: null },
+  { id: "1y",   label: "Last 1Y",     months: 12,   half: null },
+  { id: "6m",   label: "Last 6M",     months: 6,    half: null },
+  { id: "h1",   label: "First Half",  months: null, half: 1 },
+  { id: "h2",   label: "Second Half", months: null, half: 2 },
+];
+const PERIOD_BY_KEY = Object.fromEntries(PERIODS.map(p => [p.id, p]));
+const PERIOD_STATE = {}; // key (section or top-name) -> selected period id
+
 let FULL = null;
 let ITEMS_STOCKS = [];
 let ITEMS_CRYPTO = [];
@@ -352,6 +367,50 @@ function firstValidMonthIdx(universe, minTickers) {
   return 0;
 }
 
+/* Resolve the user-selected period to {startMonthIdx, endMonthIdx}. End is
+   exclusive; null means "to the end of the spine". */
+function periodWindow(periodId, firstValid) {
+  const { monthFirstIdx } = buildBT();
+  const total = monthFirstIdx.length;
+  const p = PERIOD_BY_KEY[periodId] || PERIOD_BY_KEY.full;
+  if (p.half === 1) {
+    const mid = firstValid + Math.floor((total - firstValid) / 2);
+    return { startMonthIdx: firstValid, endMonthIdx: mid };
+  }
+  if (p.half === 2) {
+    const mid = firstValid + Math.floor((total - firstValid) / 2);
+    return { startMonthIdx: mid, endMonthIdx: total };
+  }
+  if (p.months == null) return { startMonthIdx: firstValid, endMonthIdx: total };
+  const s = Math.max(firstValid, total - p.months);
+  return { startMonthIdx: s, endMonthIdx: total };
+}
+
+function injectPeriodBar(bodyId, stateKey, onChange) {
+  const body = byId(bodyId);
+  if (!body) return;
+  const parent = body.parentElement;
+  let row = parent.querySelector(".bt-period-row");
+  if (row) return;
+  row = document.createElement("div");
+  row.className = "bt-period-row";
+  const cur = PERIOD_STATE[stateKey] || "full";
+  row.innerHTML = `<span class="bt-period-label">Period</span>` +
+    PERIODS.map(p => `<button type="button" class="btn-lite${p.id === cur ? " active" : ""}" data-period="${p.id}">${p.label}</button>`).join("");
+  parent.insertBefore(row, body);
+  row.addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".btn-lite");
+    if (!btn) return;
+    const pid = btn.dataset.period;
+    if (PERIOD_STATE[stateKey] === pid) return;
+    PERIOD_STATE[stateKey] = pid;
+    for (const b of row.querySelectorAll(".btn-lite")) {
+      b.classList.toggle("active", b.dataset.period === pid);
+    }
+    onChange();
+  });
+}
+
 /* Simulate DCA: pick up to topN tickers from `universe` ranked by point-in-time
    final score; hold each for holdDays trading days; sell at market. */
 function simulateDCA(universe, topN, holdDays, opts) {
@@ -361,9 +420,10 @@ function simulateDCA(universe, topN, holdDays, opts) {
   let cash = 0;
   let totalInvested = 0;
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
 
   // Precompute next-trading-day index for each month-first
-  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const date = allDates[dIdx];
     // rank universe by point-in-time score
@@ -436,7 +496,8 @@ function simulateBenchmarkDCA(benchTickers, holdDays, opts) {
   const equity = new Float64Array(allDates.length);
   const positions = [];
   let cash = 0, totalInvested = 0;
-  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const avail = benchTickers.filter(t => filled[t] && filled[t][dIdx] > 0);
     if (!avail.length) continue;
@@ -476,8 +537,9 @@ function simulateDCAMax(universe, topN, opts) {
   const positions = [];
   let cash = 0, totalInvested = 0;
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
   const entryDelay = (opts && opts.entryDelay != null) ? opts.entryDelay : 1;
-  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const date = allDates[dIdx];
     const ranked = [];
@@ -534,6 +596,7 @@ function simulateDCAMax(universe, topN, opts) {
 function simulateBenchmarkDCAMax(benchTickers, opts) {
   const { allDates, priceLookup, monthFirstIdx } = buildBT();
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
   const entryDelay = (opts && opts.entryDelay != null) ? opts.entryDelay : 1;
   const filled = {};
   for (const tk of benchTickers) {
@@ -555,7 +618,7 @@ function simulateBenchmarkDCAMax(benchTickers, opts) {
   const equity = new Float64Array(allDates.length);
   const positions = [];
   let cash = 0, totalInvested = 0;
-  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const entryIdx = dIdx + entryDelay;
     if (entryIdx >= allDates.length) break;
@@ -595,9 +658,10 @@ function simulateDCAPerPick(universe, topN, horizonByTicker, opts) {
   const pickHorizonsByMonth = [];
   let cash = 0, totalInvested = 0;
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
   const fallback = (opts && opts.fallbackHold != null) ? opts.fallbackHold : 252;
 
-  for (let m = startMonthIdx; m < monthFirstIdx.length; m++) {
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const date = allDates[dIdx];
     const ranked = [];
@@ -700,13 +764,19 @@ function simulateBenchmarkDCAPerPick(benchTickers, pickHorizonsByMonth, opts) {
 }
 
 /* ---------- Metrics ---------- */
-function computeMetrics(allDates, eq, totalInvested) {
+/* opts.fromIdx, opts.toIdx bound the measurement window on the day axis.
+   Defaults to the full spine. totalInvested should already reflect only the
+   window (the simulators take endMonthIdx for that). */
+function computeMetrics(allDates, eq, totalInvested, opts) {
   if (!eq || eq.length === 0) return null;
-  const final = eq[eq.length - 1];
-  // compute monthly returns
+  const from = (opts && opts.fromIdx != null) ? Math.max(0, opts.fromIdx) : 0;
+  const to = (opts && opts.toIdx != null) ? Math.min(eq.length, opts.toIdx) : eq.length;
+  if (to <= from) return null;
+  const final = eq[to - 1];
+  // compute monthly returns within window
   const monthFirst = [];
   let prevYM = "";
-  for (let i = 0; i < allDates.length; i++) {
+  for (let i = from; i < to; i++) {
     const ym = allDates[i].substring(0, 7);
     if (ym !== prevYM) { monthFirst.push(i); prevYM = ym; }
   }
@@ -719,9 +789,9 @@ function computeMetrics(allDates, eq, totalInvested) {
   const avg = monthlyRets.length ? monthlyRets.reduce((a, b) => a + b, 0) / monthlyRets.length : 0;
   const std = monthlyRets.length ? Math.sqrt(monthlyRets.reduce((a, b) => a + (b - avg) ** 2, 0) / monthlyRets.length) : 0;
   const sharpe = std > 0 ? (avg / std) * Math.sqrt(12) : 0;
-  // max drawdown on equity
+  // max drawdown on equity within window
   let peak = 0, maxDD = 0;
-  for (let i = 0; i < eq.length; i++) {
+  for (let i = from; i < to; i++) {
     if (eq[i] > peak) peak = eq[i];
     if (peak > 0) {
       const dd = (peak - eq[i]) / peak;
@@ -729,8 +799,8 @@ function computeMetrics(allDates, eq, totalInvested) {
     }
   }
   const totalReturn = totalInvested > 0 ? (final - totalInvested) / totalInvested : 0;
-  // CAGR using the time span
-  const yrs = allDates.length / 252;
+  // CAGR over the window
+  const yrs = (to - from) / 252;
   const cagr = (totalInvested > 0 && yrs > 0) ? Math.pow(final / totalInvested, 1 / yrs) - 1 : 0;
   return { final, totalInvested, totalReturn, cagr, maxDD, sharpe, nMonths: monthlyRets.length };
 }
@@ -761,7 +831,7 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
   }
   wrap.appendChild(legend);
   body.appendChild(wrap);
-  requestAnimationFrame(() => drawEquityChart(canvas, allDates, results, colors));
+  requestAnimationFrame(() => drawEquityChart(canvas, allDates, results, colors, results.window));
 
   // Metrics table
   const rows = [
@@ -857,7 +927,7 @@ function renderRecentTransactions(body, sim, allDates, heading) {
   body.appendChild(scroll);
 }
 
-function drawEquityChart(canvas, dates, results, colors) {
+function drawEquityChart(canvas, dates, results, colors, window_) {
   const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.width = Math.floor(canvas.clientWidth * dpr);
@@ -869,16 +939,17 @@ function drawEquityChart(canvas, dates, results, colors) {
     { eq: results[10].sim.equity, color: colors[10] },
     { eq: results.bench.sim.equity, color: colors.bench },
   ];
-  // Crop x-axis to first index where any series has non-zero equity — the
-  // spine goes back to 2014 but DCA can't start until bt_series scores exist
-  // (often 2021+), so without cropping every chart has years of flat zero.
-  let startIdx = 0;
+  // Crop x-axis to the selected window; within that, trim the left edge to the
+  // first index with non-zero equity so the chart doesn't open with flat zero.
   const len = dates.length;
-  outer: for (let i = 0; i < len; i++) {
+  const winFrom = (window_ && window_.fromIdx != null) ? Math.max(0, window_.fromIdx) : 0;
+  const winTo = (window_ && window_.toIdx != null) ? Math.min(len, window_.toIdx) : len;
+  let startIdx = winFrom;
+  outer: for (let i = winFrom; i < winTo; i++) {
     for (const s of series) if (s.eq[i] > 0) { startIdx = i; break outer; }
   }
   let maxY = 1;
-  for (const s of series) for (let i = startIdx; i < s.eq.length; i++) if (s.eq[i] > maxY) maxY = s.eq[i];
+  for (const s of series) for (let i = startIdx; i < Math.min(s.eq.length, winTo); i++) if (s.eq[i] > maxY) maxY = s.eq[i];
   maxY *= 1.05;
   ctx.strokeStyle = "#eee"; ctx.lineWidth = 1 * dpr;
   ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(w, h - 1); ctx.stroke();
@@ -889,7 +960,7 @@ function drawEquityChart(canvas, dates, results, colors) {
     const v = (g / 4) * maxY;
     ctx.fillText("$" + Math.round(v).toLocaleString(), 4 * dpr, y - 2 * dpr);
   }
-  const endIdx = len - 1;
+  const endIdx = Math.max(startIdx, winTo - 1);
   const startLbl = dates[startIdx] || "";
   const endLbl = dates[endIdx] || "";
   ctx.textAlign = "left";
@@ -903,7 +974,8 @@ function drawEquityChart(canvas, dates, results, colors) {
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 1.8 * dpr;
     ctx.beginPath();
-    for (let i = startIdx; i < s.eq.length; i++) {
+    const stop = Math.min(s.eq.length, endIdx + 1);
+    for (let i = startIdx; i < stop; i++) {
       const x = ((i - startIdx) / span) * w;
       const y = (h - 1) - (s.eq[i] / maxY) * (h - 20 * dpr);
       if (i === startIdx) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -913,22 +985,28 @@ function drawEquityChart(canvas, dates, results, colors) {
 }
 
 /* ---------- Backtest orchestrators ---------- */
-function runBacktestFor(section, holdDays, universe, benchTickers) {
+function runBacktestFor(section, holdDays, universe, benchTickers, periodId) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
   // Both portfolio and benchmark start DCA from the same month — the first
   // month the portfolio universe has enough tickers with real data. Otherwise
   // a benchmark with deeper history (e.g. SPY 2014+) gets a years-long head
   // start vs. stocks whose bt_series only begins in 2021.
-  const startMonthIdx = firstValidMonthIdx(universe, 3);
+  const firstValid = firstValidMonthIdx(universe, 3);
+  const { startMonthIdx, endMonthIdx } = periodWindow(periodId, firstValid);
+  const fromIdx = bt.monthFirstIdx[startMonthIdx] || 0;
+  const toIdx = endMonthIdx < bt.monthFirstIdx.length
+    ? bt.monthFirstIdx[endMonthIdx]
+    : bt.allDates.length;
   const results = {};
   for (const n of [1, 5, 10]) {
-    const sim = simulateDCA(universe, n, holdDays, { startMonthIdx });
-    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
+    const sim = simulateDCA(universe, n, holdDays, { startMonthIdx, endMonthIdx });
+    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested, { fromIdx, toIdx });
     results[n] = { sim, metrics };
   }
-  const benchSim = simulateBenchmarkDCA(benchTickers, holdDays, { startMonthIdx });
-  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
+  const benchSim = simulateBenchmarkDCA(benchTickers, holdDays, { startMonthIdx, endMonthIdx });
+  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested, { fromIdx, toIdx }) };
+  results.window = { fromIdx, toIdx };
   return results;
 }
 
@@ -973,9 +1051,11 @@ function runSectionBacktest(section) {
   const universe = portfolioUniverse(section);
   const benchTickers = SECTION_BENCHMARK[section];
   const bodyId = `${section}-backtest-body`;
+  injectPeriodBar(bodyId, section, () => runSectionBacktest(section));
+  const periodId = PERIOD_STATE[section] || "full";
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
-    const results = runBacktestFor(section, h.days, universe, benchTickers);
+    const results = runBacktestFor(section, h.days, universe, benchTickers, periodId);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
     renderBacktest(bodyId, results, benchTickers, h.days, h.label);
     renderBestHorizonNote(section);
@@ -986,6 +1066,8 @@ function runTopBacktest(which) {
   const universe = portfolioUniverse(which);
   const benchTickers = SECTION_BENCHMARK[which];
   const bodyId = `${which}-backtest-body`;
+  injectPeriodBar(bodyId, which, () => runTopBacktest(which));
+  const periodId = PERIOD_STATE[which] || "full";
   byId(bodyId).innerHTML = `<div class="footnote">Running backtest&hellip;</div>`;
   setTimeout(() => {
     // For stocks we use the Max strategy validated by the Python backtester
@@ -993,8 +1075,8 @@ function runTopBacktest(which) {
     // SPY DCA across both halves and 3 of 4 quartiles of the spine).
     // Crypto keeps the per-pick variant for now (still being tuned).
     const results = (which === "topstocks")
-      ? runTopBacktestMax(which, universe, benchTickers)
-      : runTopBacktestPerPick(which, universe, benchTickers);
+      ? runTopBacktestMax(which, universe, benchTickers, periodId)
+      : runTopBacktestPerPick(which, universe, benchTickers, periodId);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
     const label = (which === "topstocks") ? "Max (rank-weighted, hold-forever)" : "Per-Pick";
     renderBacktest(bodyId, results, benchTickers, null, label);
@@ -1009,36 +1091,48 @@ function runTopBacktest(which) {
       bestHorizonFor) and lets winners run.
    3. Next-day-open entry — the live scan runs after market close, so we book
       the fill at the close of the *next* trading day (a 1-bar delay). */
-function runTopBacktestMax(which, universe, benchTickers) {
+function runTopBacktestMax(which, universe, benchTickers, periodId) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
-  const startMonthIdx = firstValidMonthIdx(universe, 3);
+  const firstValid = firstValidMonthIdx(universe, 3);
+  const { startMonthIdx, endMonthIdx } = periodWindow(periodId, firstValid);
+  const fromIdx = bt.monthFirstIdx[startMonthIdx] || 0;
+  const toIdx = endMonthIdx < bt.monthFirstIdx.length
+    ? bt.monthFirstIdx[endMonthIdx]
+    : bt.allDates.length;
   const results = {};
   for (const n of [1, 5, 10]) {
-    const sim = simulateDCAMax(universe, n, { startMonthIdx, entryDelay: 1 });
-    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
+    const sim = simulateDCAMax(universe, n, { startMonthIdx, endMonthIdx, entryDelay: 1 });
+    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested, { fromIdx, toIdx });
     results[n] = { sim, metrics };
   }
-  const benchSim = simulateBenchmarkDCAMax(benchTickers, { startMonthIdx, entryDelay: 1 });
-  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
+  const benchSim = simulateBenchmarkDCAMax(benchTickers, { startMonthIdx, endMonthIdx, entryDelay: 1 });
+  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested, { fromIdx, toIdx }) };
+  results.window = { fromIdx, toIdx };
   return results;
 }
 
-function runTopBacktestPerPick(which, universe, benchTickers) {
+function runTopBacktestPerPick(which, universe, benchTickers, periodId) {
   const bt = buildBT();
   if (!bt.allDates || !bt.allDates.length) return null;
   const horizonByTicker = TOP_HORIZONS[which] || {};
   const fallback = which === "topcrypto" ? 60 : 252; // topstocks defaults to 1Y
-  const startMonthIdx = firstValidMonthIdx(universe, 3);
+  const firstValid = firstValidMonthIdx(universe, 3);
+  const { startMonthIdx, endMonthIdx } = periodWindow(periodId, firstValid);
+  const fromIdx = bt.monthFirstIdx[startMonthIdx] || 0;
+  const toIdx = endMonthIdx < bt.monthFirstIdx.length
+    ? bt.monthFirstIdx[endMonthIdx]
+    : bt.allDates.length;
   const results = {};
   for (const n of [1, 5, 10]) {
-    const sim = simulateDCAPerPick(universe, n, horizonByTicker, { startMonthIdx, fallbackHold: fallback });
-    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested);
+    const sim = simulateDCAPerPick(universe, n, horizonByTicker, { startMonthIdx, endMonthIdx, fallbackHold: fallback });
+    const metrics = computeMetrics(bt.allDates, sim.equity, sim.totalInvested, { fromIdx, toIdx });
     results[n] = { sim, metrics };
   }
   // Benchmark mirrors Top-5's per-month horizon schedule so capital timing matches.
   const benchSim = simulateBenchmarkDCAPerPick(benchTickers, results[5].sim.pickHorizonsByMonth, { startMonthIdx });
-  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested) };
+  results.bench = { sim: benchSim, metrics: computeMetrics(bt.allDates, benchSim.equity, benchSim.totalInvested, { fromIdx, toIdx }) };
+  results.window = { fromIdx, toIdx };
   return results;
 }
 
