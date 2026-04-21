@@ -1,0 +1,57 @@
+Benchmark SPY DCA B&H: CAGR +7.47%  TR +51.57%  Sharpe 1.93  MaxDD -16.03%  Inv $60,000  Final $90,943
+
+Full universe (97 stocks) baseline: CAGR +14.75%  TR +121.22%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,733  excess +7.28pp
+
+## 1. NVDA ablation
+  Drop NVDA: CAGR +11.91%  TR +91.45%  Sharpe 1.97  MaxDD -19.04%  Inv $60,000  Final $114,872  excess +4.44pp  (baseline +7.28pp)
+  Drop top-5 winners ['NVDA', 'NEM', 'AVGO', 'INTC', 'NFLX']: CAGR +8.96%  TR +64.05%  Sharpe 1.90  MaxDD -19.48%  Inv $60,000  Final $98,429  excess +1.48pp
+
+## 2. Jackknife: drop one ticker at a time
+  Drops that hurt MOST (biggest CAGR loss when removed):
+    drop NVDA    excess  +4.44pp  CAGR +11.91%
+    drop AVGO    excess  +6.34pp  CAGR +13.82%
+    drop INTC    excess  +6.79pp  CAGR +14.27%
+    drop NEM     excess  +6.82pp  CAGR +14.30%
+    drop META    excess  +6.95pp  CAGR +14.43%
+    drop NFLX    excess  +6.97pp  CAGR +14.44%
+    drop TSLA    excess  +7.06pp  CAGR +14.53%
+    drop AMAT    excess  +7.17pp  CAGR +14.65%
+  Drops that hurt LEAST (or helped):
+    drop T       excess  +7.49pp  CAGR +14.97%
+    drop PFE     excess  +7.50pp  CAGR +14.97%
+    drop D       excess  +7.69pp  CAGR +15.16%
+    drop CRM     excess  +7.72pp  CAGR +15.20%
+    drop SMCI    excess  +7.82pp  CAGR +15.29%
+
+  Jackknife distribution of excess CAGR (pp):
+    min     +4.44
+    p10     +7.20
+    p25     +7.27
+    median  +7.28
+    p75     +7.29
+    p90     +7.41
+    max     +7.82
+    n runs where excess < 0:   0 / 96
+    n runs where excess < 3pp: 0 / 96
+    n runs where excess > 5pp: 95 / 96
+
+## 3. Bootstrap: 200 runs on random 50-stock subsets
+  Distribution of excess CAGR (pp) across 200 random rosters:
+    min     +0.16
+    p10     +3.03
+    p25     +4.20
+    median  +5.86
+    mean    +5.89
+    p75     +7.55
+    p90     +8.81
+    max    +10.33
+    n runs losing vs SPY:      0 / 200
+    n runs with excess > 3pp:  182 / 200
+    n runs with excess > 5pp:  125 / 200
+
+## 4. Transaction cost sensitivity (bps charged on entry notional)
+  entry   0 bps | CAGR +14.75%  TR +121.22%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,733  excess +7.28pp
+  entry   5 bps | CAGR +14.74%  TR +121.11%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,667  excess +7.27pp
+  entry  10 bps | CAGR +14.73%  TR +121.00%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,600  excess +7.26pp
+  entry  25 bps | CAGR +14.70%  TR +120.67%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,401  excess +7.23pp
+  entry  50 bps | CAGR +14.65%  TR +120.12%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,069  excess +7.18pp
