@@ -97,6 +97,11 @@ async function load() {
   renderSectionListing("stocks", SECTION_DEFAULT_HORIZON.stocks);
   renderSectionListing("crypto", SECTION_DEFAULT_HORIZON.crypto);
   setupBacktestTriggers();
+  // Defer heavy computations so the listings paint immediately.
+  setTimeout(() => {
+    renderThisMonthsPicks();
+    renderConcentration();
+  }, 30);
 }
 
 function splitItems() {
@@ -1179,6 +1184,219 @@ function renderBestHorizonNote(section) {
     if (!best) { note.textContent = ""; return; }
     note.textContent = `Best horizon for ${section}: ${best.h.id} (Top-5 Sharpe ${best.m.sharpe.toFixed(2)}, CAGR ${fmtPctSigned(best.m.cagr)}).`;
   }, 50);
+}
+
+/* ---------- This Month's Picks + Concentration (CAP5) ---------- */
+
+/* Pull the cumulative CAP5 portfolio state by running the Max sim on the stocks
+   universe (SPY excluded) from the first valid month to the most recent. Used
+   by renderThisMonthsPicks (to know which tickers are already capped) and by
+   renderConcentration (to show cost-basis distribution). */
+function computeCap5State(topN = 5) {
+  const bt = buildBT();
+  if (!bt.allDates || !bt.allDates.length) return null;
+  const universe = ITEMS_STOCKS.map(i => i.ticker).filter(t => t !== "SPY");
+  const firstValid = firstValidMonthIdx(universe, 3);
+  const sim = simulateDCAMax(universe, topN, {
+    startMonthIdx: firstValid,
+    entryDelay: 1,
+    maxTickerFrac: MAX_TICKER_FRAC,
+  });
+  return { sim, universe, firstValid };
+}
+
+function tickerItemByTicker(ticker) {
+  return ITEMS_STOCKS.find(i => i.ticker === ticker) || null;
+}
+
+function renderThisMonthsPicks() {
+  const loading = byId("this-month-loading");
+  const content = byId("this-month-content");
+  if (!loading || !content) return;
+
+  const state = computeCap5State(5);
+  if (!state) {
+    loading.textContent = "Could not compute picks (no backtest data).";
+    return;
+  }
+
+  // Rank all stocks by today's final_score — that's what the scanner publishes.
+  // The CAP5 *exclusions* come from the long-running sim state, so we can tell
+  // the user "this ticker is capped, we'd backfill with the next candidate".
+  const stocks = ITEMS_STOCKS.filter(i => i.ticker !== "SPY" &&
+                                          i.final_score != null &&
+                                          Number.isFinite(Number(i.final_score)));
+  stocks.sort((a, b) => Number(b.final_score) - Number(a.final_score));
+
+  // Accumulated cost basis per ticker from the running sim.
+  const tkCost = new Map();
+  for (const pos of state.sim.positions) {
+    tkCost.set(pos.tk, (tkCost.get(pos.tk) || 0) + pos.cost);
+  }
+  const capDollars = (state.sim.totalInvested + DCA_MONTHLY) * MAX_TICKER_FRAC;
+
+  // Walk ranked list; mark each name as "eligible" or "capped". First 5
+  // eligible become the picks; any capped ones we show as context.
+  const picks = [];
+  const skipped = [];
+  for (const it of stocks) {
+    const basis = tkCost.get(it.ticker) || 0;
+    if (basis >= capDollars) {
+      skipped.push({ item: it, basis });
+      continue;
+    }
+    picks.push({ item: it, basis });
+    if (picks.length === 5) break;
+  }
+
+  if (!picks.length) {
+    loading.textContent = "No eligible stocks this month.";
+    return;
+  }
+
+  // Rank-weight normalized allocations over exactly picks.length (5).
+  const rawW = picks.map((_, i) => 1 / (i + 1));
+  const sumW = rawW.reduce((a, b) => a + b, 0);
+  const weights = rawW.map(r => r / sumW);
+
+  // Top-1 = first ranked eligible. Skipped names get shown if any were bumped.
+  const top = picks[0];
+  const topItem = top.item;
+  const asOfStr = FULL.as_of ? String(FULL.as_of).slice(0, 10) : "";
+
+  byId("single-pick-asof").textContent = asOfStr ? `as of ${asOfStr}` : "";
+  byId("single-pick-ticker").textContent = topItem.ticker;
+
+  const probBits = [];
+  for (const h of ["1y", "3y", "5y"]) {
+    const v = topItem[`prob_${h}`];
+    if (v != null && Number.isFinite(Number(v))) probBits.push(`${h.toUpperCase()} prob ${Number(v).toFixed(0)}%`);
+  }
+  byId("single-pick-meta").innerHTML = `
+    <span>Price <strong>${fmtPriceVal(topItem.last_price)}</strong></span>
+    <span>Score <strong>${Number(topItem.final_score).toFixed(1)}</strong></span>
+    <span>Pullback <strong>${Number(topItem.washout_today ?? 0).toFixed(0)}</strong></span>
+    <span>Quality <strong>${Number(topItem.quality ?? 0).toFixed(0)}</strong></span>
+    ${probBits.map(b => `<span>${b}</span>`).join("")}
+  `;
+  byId("single-pick-foot").textContent =
+    `The highest-ranked stock today by the Max opportunity score, after the 5% ` +
+    `concentration filter. If you chose to concentrate $1,000 into a single stock ` +
+    `this month under the Max rules, this is what the scanner points to. ` +
+    `Still do your own work. Drawdowns of 30% or more on single names are routine.`;
+
+  // Render the top-5 table.
+  const rowsEl = byId("month-picks-rows");
+  rowsEl.innerHTML = "";
+  for (let i = 0; i < picks.length; i++) {
+    const p = picks[i].item;
+    const alloc = weights[i] * DCA_MONTHLY;
+    const wPct = (weights[i] * 100).toFixed(1);
+    const row = document.createElement("div");
+    row.className = "max-ticker-row month-picks-row";
+    row.innerHTML = `
+      <span class="pk-rank">#${i + 1}</span>
+      <span class="pk-ticker">${p.ticker}</span>
+      <span class="pk-cell">${wPct}%</span>
+      <span class="pk-cell">$${alloc.toFixed(0)}</span>
+      <span class="pk-cell">${fmtPriceVal(p.last_price)}</span>
+      <span class="pk-cell">${Number(p.final_score ?? 0).toFixed(1)}</span>
+      <span class="pk-cell pk-cell-hide-mobile">${Number(p.washout_today ?? 0).toFixed(0)}</span>
+      <span class="pk-cell pk-cell-hide-mobile">${Number(p.quality ?? 0).toFixed(0)}</span>
+    `;
+    rowsEl.appendChild(row);
+  }
+
+  // Note about any ticker the cap bumped past.
+  const noteEl = byId("month-picks-note");
+  if (skipped.length) {
+    const names = skipped.slice(0, 3).map(s => `<strong>${s.item.ticker}</strong>`).join(", ");
+    noteEl.innerHTML = `The concentration cap filtered out ${names}${skipped.length > 3 ? ` and ${skipped.length - 3} more` : ""} — they&rsquo;re currently above 5% of your cumulative basis, so this month&rsquo;s capital rotates to the next-ranked candidates above.`;
+  } else {
+    noteEl.innerHTML = `No ticker is currently above the 5% cap, so the top-5 raw ranking and the post-cap picks are the same this month.`;
+  }
+
+  loading.style.display = "none";
+  content.style.display = "block";
+}
+
+function renderConcentration() {
+  const loading = byId("concentration-loading");
+  const content = byId("concentration-content");
+  if (!loading || !content) return;
+
+  const state = computeCap5State(5);
+  if (!state) { loading.textContent = "No data."; return; }
+  const { sim } = state;
+
+  // Roll up cost basis, position count, and current value by ticker.
+  const lastDayIdx = buildBT().allDates.length - 1;
+  const byTk = new Map();
+  for (const pos of sim.positions) {
+    const e = byTk.get(pos.tk) || { n: 0, cost: 0, value: 0 };
+    e.n += 1;
+    e.cost += pos.cost;
+    const px = buildBT().priceLookup[pos.tk]?.get(buildBT().allDates[lastDayIdx]);
+    if (px != null && Number.isFinite(px)) e.value += pos.shares * px;
+    byTk.set(pos.tk, e);
+  }
+  const total = sim.totalInvested;
+  if (!total) { loading.textContent = "No positions yet."; return; }
+
+  const rows = [...byTk.entries()].map(([tk, e]) => ({
+    tk,
+    n: e.n,
+    cost: e.cost,
+    value: e.value,
+    pct: e.cost / total,
+    pnl: e.value - e.cost,
+    pnlPct: e.cost > 0 ? (e.value - e.cost) / e.cost : 0,
+  }));
+  rows.sort((a, b) => b.pct - a.pct);
+
+  const rowsEl = byId("concentration-rows");
+  rowsEl.innerHTML = "";
+  let cappedCount = 0;
+  let nearCount = 0;
+  for (const r of rows.slice(0, 20)) {
+    const capped = r.pct >= MAX_TICKER_FRAC;
+    const near = r.pct >= MAX_TICKER_FRAC * 0.8;
+    const status = capped ? "CAPPED" : near ? "near cap" : "headroom";
+    const statusClass = capped ? "status-cap" : near ? "status-near" : "status-ok";
+    const pnlClass = r.pnl >= 0 ? "cn-pnl-pos" : "cn-pnl-neg";
+    if (capped) cappedCount++;
+    else if (near) nearCount++;
+    const row = document.createElement("div");
+    row.className = "concentration-row";
+    row.innerHTML = `
+      <span class="cn-ticker">${r.tk}</span>
+      <span class="cn-cell">${r.n}</span>
+      <span class="cn-cell">$${r.cost.toFixed(0)}</span>
+      <span class="cn-cell">${(r.pct * 100).toFixed(2)}%</span>
+      <span class="cn-cell cn-cell-hide-mobile">$${r.value.toFixed(0)}</span>
+      <span class="cn-cell cn-cell-hide-mobile ${pnlClass}">${r.pnlPct >= 0 ? "+" : ""}${(r.pnlPct * 100).toFixed(0)}%</span>
+      <span class="cn-status ${statusClass}">${status}</span>
+    `;
+    rowsEl.appendChild(row);
+  }
+
+  const totalVal = rows.reduce((a, r) => a + r.value, 0);
+  const summary = byId("concentration-summary");
+  const sinceMonth = state.firstValid != null && buildBT().allDates[buildBT().monthFirstIdx[state.firstValid]]
+    ? String(buildBT().allDates[buildBT().monthFirstIdx[state.firstValid]]).slice(0, 7)
+    : "start";
+  summary.innerHTML = `
+    ${sim.positions.length} positions opened since ${sinceMonth}.
+    Cumulative invested <strong>$${total.toLocaleString()}</strong>,
+    current portfolio value <strong>$${totalVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
+    (${totalVal > total ? "+" : ""}${((totalVal - total) / total * 100).toFixed(1)}%).
+    ${cappedCount} ticker${cappedCount === 1 ? " is" : "s are"} currently at or above the 5% cap;
+    ${nearCount} within 20% of the cap.
+    Showing top 20 of ${rows.length} held tickers by basis share.
+  `;
+
+  loading.style.display = "none";
+  content.style.display = "block";
 }
 
 /* ---------- go ---------- */

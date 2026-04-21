@@ -100,11 +100,11 @@
     <div class="nav-inner">
       <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Max Strategy</a>
       <div class="nav-links">
-        <a href="#top-picks">Top Picks</a>
-        <a href="#stocks-section">Stocks</a>
-        <a href="#crypto-section">Crypto</a>
+        <a href="#this-month">This Month</a>
+        <a href="#strategy-rules">Rules</a>
         <a href="#validation">Validation</a>
-        <a href="#how-it-works">How It Works</a>
+        <a href="#top-picks">Top Picks</a>
+        <a href="#disclosures">Disclosures</a>
         <a href="/">Main</a>
         <a href="/experiments/" class="nav-experiments">Experiments</a>
       </div>
@@ -114,8 +114,77 @@
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Eight horizons, one ranking. Stocks &amp; crypto, each at its best time frame.</h1>
-      <p class="hero-sub">Scans every position across 10D / 30D / 60D / 3M / 6M / 1Y / 3Y / 5Y, selects the horizon where it's historically strongest, and backtests the combined portfolio. Not financial advice.</p>
+      <h1 class="hero-headline">Five stocks a month. Undervalued, recovering, substantially beating SPY.</h1>
+      <p class="hero-sub">The Max strategy scans 96 stocks every market close, ranks by point-in-time opportunity score, and buys the top 5 with rank weights &mdash; capped at 5% per ticker so capital spreads across washed-out winners instead of doubling down on value traps. Validated 2006&ndash;2026. Not financial advice.</p>
+    </div>
+  </section>
+
+  <!-- ===== VALIDATION STATS BAND ===== -->
+  <section class="stats-section">
+    <div class="stats-inner stats-inner-validation">
+      <div class="stat-block">
+        <span class="stat-number stat-number-strong">+17.41%</span>
+        <span class="stat-label">20-year CAGR (SPY DCA: +7.86%)</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number stat-number-strong">+9.55pp</span>
+        <span class="stat-label">Annual excess over SPY, 2006&ndash;2026</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number">1.34</span>
+        <span class="stat-label">Sharpe (SPY: 1.24) / Calmar 0.38 vs 0.22</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number">&minus;46.2%</span>
+        <span class="stat-label">Max drawdown (during 2008 GFC)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== THIS MONTH'S PICKS ===== -->
+  <section class="content-section" id="this-month">
+    <div class="section-inner">
+      <div class="section-title">This month&rsquo;s picks</div>
+      <p class="section-note">
+        The Max strategy&rsquo;s five stock picks for this month, ranked by point-in-time opportunity score.
+        Capital is split with rank weights &mdash; roughly 44% to the top pick, 22% to the 2nd, 15% to the 3rd,
+        11% to the 4th, 9% to the 5th. A 5% per-ticker concentration cap drops any name whose cumulative cost
+        basis has already reached 5% of total invested and backfills from the next-ranked candidate.
+        <strong>These picks come from today&rsquo;s scan; they are not financial advice.</strong>
+      </p>
+
+      <div id="this-month-loading" class="footnote">Computing picks&hellip;</div>
+
+      <div id="this-month-content" style="display: none;">
+        <div class="single-pick-card" id="single-pick-card">
+          <div class="single-pick-head">
+            <span class="single-pick-label">If you could only buy one stock</span>
+            <span class="single-pick-asof" id="single-pick-asof"></span>
+          </div>
+          <div class="single-pick-ticker" id="single-pick-ticker">&mdash;</div>
+          <div class="single-pick-meta" id="single-pick-meta"></div>
+          <div class="single-pick-foot" id="single-pick-foot"></div>
+        </div>
+
+        <div class="month-picks-grid">
+          <div class="max-listing-header month-picks-header">
+            <span>Rank</span>
+            <span>Ticker</span>
+            <span>Weight</span>
+            <span>$1000 alloc</span>
+            <span>Price</span>
+            <span>Score</span>
+            <span>Pullback</span>
+            <span>Quality</span>
+          </div>
+          <div id="month-picks-rows"></div>
+        </div>
+
+        <p class="footnote" id="month-picks-note" style="margin-top: 14px;"></p>
+      </div>
     </div>
   </section>
 
@@ -142,7 +211,69 @@
   <!-- ===== HOW IT WORKS ===== -->
   <section class="content-section" id="how-it-works">
     <div class="section-inner">
-      <details class="details-card" id="validation">
+
+      <details class="details-card" id="strategy-rules">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">The Strategy, In Seven Rules</span>
+            <span class="details-card-cat">Explicit, replicable, no discretion</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <ol class="rules-list">
+            <li><strong>Contribute $1,000 on the first trading day of each calendar month.</strong> No attempt at market timing; DCA across all regimes.</li>
+            <li><strong>Rank all 96 stocks by point-in-time opportunity score.</strong> The score blends analog-based probability of recovery, edge vs the universe median at the same horizon, washout depth, and a quality multiplier.</li>
+            <li><strong>Take the top 5 ranked names.</strong> Top-1 / Top-3 / Top-5 / Top-10 all land within 0.3pp on 20Y CAGR; 5 is the sweet spot for diversification without diluting signal.</li>
+            <li><strong>Apply rank weights: 1/1, 1/2, 1/3, 1/4, 1/5, then normalize.</strong> Roughly 43.8% / 21.9% / 14.6% / 11.0% / 8.8%.</li>
+            <li><strong>Drop any pick whose cumulative cost basis already reached 5% of total invested.</strong> Backfill from the next-ranked candidate. This is the CAP5 rule &mdash; it prevents repeat-loading into value traps like ADBE/CRM/NOW.</li>
+            <li><strong>Fill at the close of the next trading day.</strong> The live scan runs after today&rsquo;s close, so the earliest realistic execution is tomorrow&rsquo;s close &mdash; a one-bar delay that the backtest models.</li>
+            <li><strong>Hold forever. No stop-loss, no profit-take, no rebalance.</strong> Every winner runs; every loser gets diluted by later contributions. Sells would add tax drag and transaction friction without improving expectancy.</li>
+          </ol>
+          <p class="section-note" style="margin-top: 12px;">
+            <strong>Why these rules survive the usual objections.</strong> The 20-year excess holds across every
+            ticker jackknife (0 of 96 drops go negative), every random 50-ticker bootstrap (0 of 200
+            subsets lose to SPY), and transaction-cost stress up to 100 bps. The concentration cap does the
+            heavy lifting on recent performance: without it, the strategy repeat-bought ADBE eight times in
+            the trailing year, spending scarce capital on a non-recovering name. With it, that capital rotates
+            to UPS / UNH / MRK &mdash; cheaper and actually bouncing.
+          </p>
+        </div>
+      </details>
+
+      <details class="details-card" id="concentration-card" style="margin-top: 16px;">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Portfolio Concentration</span>
+            <span class="details-card-cat">If you&rsquo;ve been DCA&rsquo;ing since 2021, where does your basis sit today?</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="section-note">
+            Snapshot of cumulative cost basis per ticker for a hypothetical investor who started
+            this strategy in April 2021 and contributed $1,000/month. A ticker is &ldquo;capped&rdquo; when its
+            share reaches 5% &mdash; subsequent months skip it and backfill from the next candidate.
+            PnL% shown is the simple return on cumulative basis vs current position value.
+          </p>
+          <div id="concentration-loading" class="footnote">Computing concentration&hellip;</div>
+          <div id="concentration-content" style="display: none;">
+            <div class="max-listing-header concentration-header">
+              <span>Ticker</span>
+              <span>Buys</span>
+              <span>Basis</span>
+              <span>% of Total</span>
+              <span>Current Value</span>
+              <span>PnL</span>
+              <span>Status</span>
+            </div>
+            <div id="concentration-rows"></div>
+            <p class="footnote" id="concentration-summary" style="margin-top: 12px;"></p>
+          </div>
+        </div>
+      </details>
+
+      <details class="details-card" id="validation" style="margin-top: 16px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
             <span class="details-card-title">20-Year Validation</span>
@@ -204,6 +335,54 @@
             expected during equity crises. Past performance does not predict future results. Not
             financial advice.
           </p>
+        </div>
+      </details>
+
+      <details class="details-card" id="disclosures" style="margin-top: 16px;">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Professional Disclosures</span>
+            <span class="details-card-cat">If you&rsquo;re thinking about deploying real capital, read this first</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <div class="explain-grid">
+            <div>
+              <div class="section-title">What this is</div>
+              <ul>
+                <li>A rules-based, fully mechanical DCA strategy. Every buy is driven by a published score; no discretion, no intraday trading.</li>
+                <li>Validated out-of-sample against 20 years of price history across 96 large-cap US equities, covering the GFC, 2010s bull, COVID, 2022 bear, and the current cycle.</li>
+                <li>Run it yourself: the scanner is open, the backtest code is in the repo, the monthly picks are published on this page.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">What this is <em>not</em></div>
+              <ul>
+                <li><strong>Not investment advice.</strong> Nothing on this page is personalized; nobody here knows your tax situation, risk tolerance, or liquidity needs.</li>
+                <li><strong>Not a guarantee.</strong> 20 years of favorable backtest does not mean the next 20 years will repeat. A repeat of 2008 would produce a ~46% drawdown; the backtest says so explicitly.</li>
+                <li><strong>Not a hedge fund.</strong> No shorting, no leverage, no overlays. Pure long-only equity DCA.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">Known limitations</div>
+              <ul>
+                <li><strong>Survivorship bias in the universe:</strong> the 96-stock roster reflects names that exist today. A name that was in the index in 2007 and delisted by 2015 is not in the backtest.</li>
+                <li><strong>Quality multiplier is not strictly point-in-time:</strong> the analog matching, probabilities, and edge are PIT, but the quality score uses today&rsquo;s value. A known concession; results are still robust when the quality factor is held out.</li>
+                <li><strong>Frictions not modeled beyond 100bps:</strong> borrow, bid-ask spread in small-caps, tax drag on forced sells. If you pay 1% all-in per entry, excess drops by ~0.06pp annually.</li>
+                <li><strong>Drawdowns are real:</strong> the backtest hit &minus;46.2% in 2008&ndash;2009. If that would force you to sell, this strategy is not for you.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">Before deploying client capital</div>
+              <ul>
+                <li>Review the Python backtester in <code>max/research/</code> &mdash; especially <code>step18</code> (20Y validation) and <code>step23</code> (CAP5 robustness battery).</li>
+                <li>Run your own walk-forward on your own universe. The strategy is not magical; it&rsquo;s a reweighting of a published score. Reproduce the excess before you trust it.</li>
+                <li>Paper-trade for at least 6 months. The hardest part of a mechanical strategy is executing when the most recent pick just lost 30%.</li>
+                <li>Have an exit plan. If the strategy deviates from its backtested path by more than a credible amount (say, 3 standard deviations of historical tracking error), stop and investigate before adding more capital.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </details>
 
@@ -452,13 +631,15 @@
       </div>
       <div class="footer-col">
         <span class="footer-heading">Navigate</span>
+        <a href="#this-month" class="footer-link">This Month&rsquo;s Picks</a>
+        <a href="#strategy-rules" class="footer-link">Strategy Rules</a>
+        <a href="#validation" class="footer-link">20-Year Validation</a>
+        <a href="#concentration-card" class="footer-link">Concentration</a>
         <a href="#top-picks" class="footer-link">Top Picks</a>
         <a href="#stocks-section" class="footer-link">Stocks</a>
         <a href="#crypto-section" class="footer-link">Crypto</a>
-        <a href="#validation" class="footer-link">Validation</a>
-        <a href="#how-it-works" class="footer-link">How It Works</a>
+        <a href="#disclosures" class="footer-link">Disclosures</a>
         <a href="/" class="footer-link">Main Site</a>
-        <a href="/experiments/" class="footer-link">Experiments</a>
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot"></span>Max Strategy</span>
@@ -469,6 +650,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260421b"></script>
+  <script src="app.js?v=20260421c"></script>
 </body>
 </html>
