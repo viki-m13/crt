@@ -176,6 +176,25 @@ class StrategyConfig:
     start_month_idx: Optional[int] = None
     universe_filter: Optional[set] = None  # restrict universe to this set if provided
     label: str = "strategy"
+    # ------ Experiment knobs (all default-off to preserve prior behavior) ------
+    # Cap cumulative cost basis per ticker to X fraction of total invested so
+    # far; picks hitting the cap are skipped in rank order.
+    max_ticker_frac: Optional[float] = None
+    # Require positive trailing price return over N trading days before buying.
+    rebound_lookback_days: Optional[int] = None
+    rebound_min_return: float = 0.0
+    # Value factor: require the stock to have UNDERPERFORMED SPY by at least
+    # `value_min_underperf` (positive number, e.g. 0.1 for 10pp) over the
+    # trailing `value_lookback_days`. Captures "long-term laggard" candidates.
+    value_lookback_days: Optional[int] = None
+    value_min_underperf: float = 0.0
+    # Zombie filter: skip picks whose trailing `zombie_lookback_days` return is
+    # below `zombie_min_return` (e.g. -0.5 for -50%). Avoids structurally broken.
+    zombie_lookback_days: Optional[int] = None
+    zombie_min_return: float = -1.0
+    # Single-ticker alt-pick: if None, ignore. If set to a ticker (e.g. "SPY"),
+    # redirect skipped DCA capital into that ticker instead of sitting out.
+    fallback_ticker: Optional[str] = None
 
 
 @dataclass
@@ -217,8 +236,55 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
             fv, pv = f[di], p[di]
             if not (math.isfinite(fv) and fv > cfg.min_score and math.isfinite(pv) and pv > 0):
                 continue
+            # Rebound confirmation: need positive trailing N-day return
+            if cfg.rebound_lookback_days is not None:
+                lb = di - cfg.rebound_lookback_days
+                if lb < 0:
+                    continue
+                prev = p[lb]
+                if not (math.isfinite(prev) and prev > 0):
+                    continue
+                ret = pv / prev - 1
+                if ret < cfg.rebound_min_return:
+                    continue
+            # Zombie filter: reject if trailing long-term return is too negative
+            if cfg.zombie_lookback_days is not None:
+                lb = di - cfg.zombie_lookback_days
+                if lb < 0:
+                    continue  # not enough history, play safe and skip
+                prev = p[lb]
+                if not (math.isfinite(prev) and prev > 0):
+                    continue
+                if pv / prev - 1 < cfg.zombie_min_return:
+                    continue
+            # Value factor: stock must have underperformed SPY over the lookback
+            if cfg.value_lookback_days is not None:
+                lb = di - cfg.value_lookback_days
+                if lb < 0:
+                    continue
+                prev = p[lb]
+                spy_cur = md.bench_filled.get("SPY", np.full_like(p, np.nan))[di]
+                spy_prev = md.bench_filled.get("SPY", np.full_like(p, np.nan))[lb]
+                if not all(math.isfinite(x) and x > 0 for x in (prev, spy_cur, spy_prev)):
+                    continue
+                stock_ret = pv / prev - 1
+                spy_ret = spy_cur / spy_prev - 1
+                if (spy_ret - stock_ret) < cfg.value_min_underperf:
+                    continue
             cand.append((tk, fv, pv))
         if not cand:
+            if cfg.fallback_ticker and md.bench_filled.get(cfg.fallback_ticker) is not None:
+                entry_idx = di + cfg.entry_delay
+                if entry_idx < n:
+                    px = md.bench_filled[cfg.fallback_ticker][entry_idx]
+                    if math.isfinite(px) and px > 0:
+                        total_invested += monthly
+                        positions.append({
+                            "tk": cfg.fallback_ticker, "buy_idx": entry_idx,
+                            "sell_idx": entry_idx + cfg.hold_days,
+                            "shares": monthly / px, "cost": monthly, "buy_price": px,
+                            "sold": False, "sell_price": 0.0, "peak": px,
+                        })
             continue
         cand.sort(key=lambda x: x[1], reverse=True)
 
@@ -248,6 +314,43 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
 
         if not picks:
             continue
+
+        # Per-ticker concentration cap. Drop picks whose cumulative cost basis
+        # already exceeds `max_ticker_frac * total_invested` (including this
+        # month's DCA so caps don't trivially fail on the first buy). Backfill
+        # with the next-ranked candidates that still pass the cap.
+        if cfg.max_ticker_frac is not None and cfg.max_ticker_frac > 0:
+            invested_after = total_invested + monthly
+            cap_dollars = cfg.max_ticker_frac * invested_after
+            by_tk = {}
+            for pos in positions:
+                by_tk[pos["tk"]] = by_tk.get(pos["tk"], 0.0) + pos["cost"]
+            def ok(tk):
+                return by_tk.get(tk, 0.0) < cap_dollars
+            filtered = [c for c in picks if ok(c[0])]
+            i = len(picks)
+            seen = set(c[0] for c in filtered)
+            while len(filtered) < cfg.top_n and i < len(cand):
+                c = cand[i]; i += 1
+                if c[0] in seen:
+                    continue
+                if ok(c[0]):
+                    filtered.append(c); seen.add(c[0])
+            picks = filtered
+            if not picks:
+                if cfg.fallback_ticker and md.bench_filled.get(cfg.fallback_ticker) is not None:
+                    entry_idx = di + cfg.entry_delay
+                    if entry_idx < n:
+                        px = md.bench_filled[cfg.fallback_ticker][entry_idx]
+                        if math.isfinite(px) and px > 0:
+                            total_invested += monthly
+                            positions.append({
+                                "tk": cfg.fallback_ticker, "buy_idx": entry_idx,
+                                "sell_idx": entry_idx + cfg.hold_days,
+                                "shares": monthly / px, "cost": monthly, "buy_price": px,
+                                "sold": False, "sell_price": 0.0, "peak": px,
+                            })
+                continue
 
         if cfg.weighting == "equal":
             weights = [1.0 / len(picks)] * len(picks)

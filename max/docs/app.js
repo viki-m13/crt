@@ -526,11 +526,18 @@ function simulateBenchmarkDCA(benchTickers, holdDays, opts) {
   return { equity, totalInvested, positions };
 }
 
-/* Max strategy DCA — point-in-time ranking with rank-weighted sizing,
-   hold-forever, next-day-open entry. Validated against SPY DCA on the
-   embedded 5Y stock spine: Top-5 outperformed by ~+7pp CAGR in both halves
-   and 3 of 4 quartiles; Top-1 outperformed in aggregate but had tail risk
-   in flat-to-down quarters. See max/research/ for the methodology. */
+/* Max strategy DCA — point-in-time ranking, rank-weighted sizing, hold-forever,
+   next-day-open entry, AND a 5% per-ticker concentration cap (Step 23 finalist).
+   The cap drops any pick whose cumulative cost basis would exceed 5% of total
+   invested capital, then backfills from the next-ranked candidate. On the 20Y
+   extended spine it strictly beats the uncapped variant: +17.41% vs +17.12%
+   CAGR (+9.55pp vs +9.26pp excess over SPY), lower MaxDD (46.15% vs 48.92%),
+   higher Sharpe (1.34 vs 1.32), higher Calmar (0.38 vs 0.35), and — crucially
+   — turns the recent-1Y window from +2.58pp to +8.00pp excess by stopping
+   repeat-buying of value traps (ADBE, CRM, NOW) once they've accumulated.
+   Jackknife: 0/96 drops go negative. Bootstrap: 0/200 random 50-ticker rosters
+   go negative (median +8.17pp). See max/research/step20-23 for the sweep. */
+const MAX_TICKER_FRAC = 0.05;
 function simulateDCAMax(universe, topN, opts) {
   const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
   const equity = new Float64Array(allDates.length);
@@ -539,6 +546,8 @@ function simulateDCAMax(universe, topN, opts) {
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
   const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
   const entryDelay = (opts && opts.entryDelay != null) ? opts.entryDelay : 1;
+  const maxTickerFrac = (opts && opts.maxTickerFrac != null) ? opts.maxTickerFrac : MAX_TICKER_FRAC;
+  const tkCost = new Map();
   for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
     const date = allDates[dIdx];
@@ -552,7 +561,16 @@ function simulateDCAMax(universe, topN, opts) {
     }
     if (!ranked.length) continue;
     ranked.sort((a, b) => b.s - a.s);
-    const picks = ranked.slice(0, Math.min(topN, ranked.length));
+    // Apply per-ticker cap: drop candidates whose cumulative basis already >=
+    // cap dollars, then take the top N of what's left. Cap is against the
+    // post-this-month invested total to keep the fraction stable over time.
+    const capDollars = maxTickerFrac > 0
+      ? (totalInvested + DCA_MONTHLY) * maxTickerFrac
+      : Infinity;
+    const eligible = maxTickerFrac > 0
+      ? ranked.filter(r => (tkCost.get(r.tk) || 0) < capDollars)
+      : ranked;
+    const picks = eligible.slice(0, Math.min(topN, eligible.length));
     // Fill at the next trading day's close (proxy for next-day open: live scan
     // runs after market close, so the earliest realistic execution is +1 bar).
     const entryIdx = dIdx + entryDelay;
@@ -572,9 +590,11 @@ function simulateDCAMax(universe, topN, opts) {
     for (let i = 0; i < adj.length; i++) {
       const { tk, px } = adj[i];
       const alloc = DCA_MONTHLY * weights[i];
+      tkCost.set(tk, (tkCost.get(tk) || 0) + alloc);
       // Hold-forever: sellIdx beyond the spine, so positions never schedule a sale.
       positions.push({ tk, shares: alloc / px, cost: alloc, buyIdx: entryIdx,
-                       sellIdx: allDates.length + 1, sold: false, sellPrice: 0 });
+                       sellIdx: allDates.length + 1, sold: false, sellPrice: 0,
+                       weight: weights[i] });
     }
   }
   for (let d = 0; d < allDates.length; d++) {
@@ -864,7 +884,7 @@ function renderBacktest(bodyId, results, benchTickers, holdDays, horizonLabel, o
   const info = document.createElement("div");
   info.className = "footnote";
   info.textContent = (holdDays == null)
-    ? `${horizonLabel}. DCA buys $1,000 on the first trading day of each calendar month, ranks the universe by the scanner's point-in-time opportunity score, and allocates that month's cash to the top-N picks with rank weights (1/1, 1/2, 1/3, … normalized). Fills at the close of the next trading day (the live scan runs after market close). Positions are held forever — no scheduled sell, no look-ahead. Not financial advice; past performance does not predict future results.`
+    ? `${horizonLabel}. DCA buys $1,000 on the first trading day of each calendar month, ranks the universe by the scanner's point-in-time opportunity score, and allocates that month's cash to the top-N picks with rank weights (1/1, 1/2, 1/3, … normalized). A 5% per-ticker concentration cap drops any candidate whose cumulative cost basis has already reached 5% of total invested and backfills from the next-ranked name — this prevents repeat-loading into value traps. Fills at the close of the next trading day (the live scan runs after market close). Positions are held forever — no scheduled sell, no look-ahead. Not financial advice; past performance does not predict future results.`
     : `${horizonLabel} hold. DCA buys $1,000 on the first trading day of each calendar month, splitting the cash equally across that month's top-N ranked picks. Each position is sold at the close of its hold horizon. Ranking uses the scanner's point-in-time opportunity score on each DCA date — no look-ahead. Not financial advice; past performance does not predict future results.`;
   body.appendChild(info);
 }
@@ -1078,7 +1098,7 @@ function runTopBacktest(which) {
       ? runTopBacktestMax(which, universe, benchTickers, periodId)
       : runTopBacktestPerPick(which, universe, benchTickers, periodId);
     if (!results) { byId(bodyId).innerHTML = `<div class="footnote">No backtest data available.</div>`; return; }
-    const label = (which === "topstocks") ? "Max (rank-weighted, hold-forever)" : "Per-Pick";
+    const label = (which === "topstocks") ? "Max (rank-weighted, 5% cap, hold-forever)" : "Per-Pick";
     renderBacktest(bodyId, results, benchTickers, null, label);
   }, 10);
 }
