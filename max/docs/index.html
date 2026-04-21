@@ -44,26 +44,6 @@
       border-top: 1px solid var(--rule-light);
     }
     .max-ticker-row:hover { background: rgba(0,0,0,.03); }
-    .max-ticker-row .row-horizon {
-      display: inline-block;
-      font-size: 10px;
-      letter-spacing: .08em;
-      padding: 1px 6px;
-      border-radius: 3px;
-      background: rgba(0,0,0,.06);
-      margin-left: 6px;
-      color: var(--muted);
-    }
-    .max-ticker-row .row-sell {
-      display: inline-block;
-      font-size: 10px;
-      margin-left: 6px;
-      color: var(--muted);
-      font-weight: 400;
-    }
-    @media (max-width: 480px) {
-      .max-ticker-row .row-sell { display: block; margin-left: 0; margin-top: 2px; }
-    }
     .horizon-tabs {
       display: flex;
       flex-wrap: wrap;
@@ -436,8 +416,8 @@
   <!-- ===== TOP RECOMMENDATIONS ===== -->
   <section class="content-section" id="top-picks">
     <div class="section-inner">
-      <div class="section-title">Top Recommendations &mdash; Best Horizon per Asset</div>
-      <p class="section-note">Each asset is evaluated across every horizon; we pick the horizon where its probability most exceeds the within-class baseline for that horizon (the "edge"). Stocks and crypto are ranked separately because their baselines and benchmarks differ — stocks vs SPY, crypto vs BTC.</p>
+      <div class="section-title">Top Recommendations</div>
+      <p class="section-note">Stocks are ranked by the Max opportunity score &mdash; the same point-in-time ranking the CAP5 strategy uses each month. Under CAP5, positions are held forever with a 5% per-ticker concentration cap; there is no scheduled sell. Crypto is ranked by probabilistic edge over the BTC baseline at each coin's strongest horizon. Stocks and crypto are listed separately because their baselines and benchmarks differ.</p>
 
       <!-- ----- Top Stock Picks ----- -->
       <details class="details-card" style="margin-top: 24px;">
@@ -650,6 +630,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260421d"></script>
+  <script src="app.js?v=20260421e"></script>
 </body>
 </html>
