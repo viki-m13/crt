@@ -1,0 +1,62 @@
+## 1. Headline 20Y
+  SPY DCA   CAGR  +7.86%  MaxDD +35.62%  Sharpe 1.24
+  Baseline T5 rank  CAGR +17.12% (+9.26pp)  MaxDD +48.92%  Sharpe 1.32  Calmar 0.35
+  CAP5 T5 rank     CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  Calmar 0.38
+
+## 2. Walk-forward: 10Y first-half vs 10Y second-half
+  First 10Y  (2006-04 -> 2016-03)
+    SPY DCA    CAGR  +5.39%  MaxDD +35.62%
+    Baseline T5 CAGR  +3.21% (-2.18pp)  MaxDD +44.24%
+    CAP5 T5     CAGR  +2.09% (-3.30pp)  MaxDD +39.49%
+  Second 10Y (2016-04 -> 2026-04)
+    SPY DCA    CAGR  +8.39%  MaxDD +32.56%
+    Baseline T5 CAGR +16.47% (+8.08pp)  MaxDD +37.50%
+    CAP5 T5     CAGR +15.91% (+7.52pp)  MaxDD +37.10%
+
+## 3. Rolling 10Y windows (CAGR excess in pp)
+  11 overlapping 10Y windows
+  window                    SPY       Base       CAP5  Δ vs base
+  2006-04->2016-03       +5.39%   +3.21%  -2.2   +2.09%  -3.3  -1.13
+  2007-04->2017-03       +6.42%   +6.25%  -0.2   +4.48%  -1.9  -1.77
+  2008-04->2018-03       +7.18%   +8.79%  +1.6   +7.07%  -0.1  -1.73
+  2009-04->2019-03       +6.99%   +9.50%  +2.5   +6.75%  -0.2  -2.75
+  2010-04->2020-03       +4.80%  +10.88%  +6.1   +6.99%  +2.2  -3.89
+  2011-04->2021-03       +8.21%  +16.43%  +8.2  +12.23%  +4.0  -4.20
+  2012-04->2022-03       +8.26%  +16.98%  +8.7  +13.95%  +5.7  -3.03
+  2013-04->2023-03       +5.97%  +11.03%  +5.1   +9.57%  +3.6  -1.46
+  2014-04->2024-03       +7.51%  +18.96% +11.4  +15.18%  +7.7  -3.78
+  2015-04->2025-03       +7.16%  +14.09%  +6.9  +12.47%  +5.3  -1.62
+  2016-04->2026-03       +7.55%  +15.28%  +7.7  +14.89%  +7.3  -0.39
+  CAP5 beats baseline: 0/11
+  CAP5 beats SPY     : 7/11
+  Base beats SPY     : 9/11
+
+## 4. Jackknife (drop each of 96 tickers)
+  Drops that made CAP5 lose to SPY: 0/96
+  Worst 5 drops:
+    drop NVDA   -> CAGR +13.38% (+5.52pp)
+    drop NFLX   -> CAGR +16.82% (+8.96pp)
+    drop AMD    -> CAGR +17.11% (+9.26pp)
+    drop CDNS   -> CAGR +17.25% (+9.39pp)
+    drop AVGO   -> CAGR +17.29% (+9.43pp)
+  Best 5 drops:
+    drop NEM    -> CAGR +17.45% (+9.59pp)
+    drop UNH    -> CAGR +17.45% (+9.59pp)
+    drop LLY    -> CAGR +17.44% (+9.59pp)
+    drop SO     -> CAGR +17.44% (+9.59pp)
+    drop INTC   -> CAGR +17.44% (+9.58pp)
+
+## 5. Bootstrap: 200 random 50-ticker rosters
+  Negative outcomes: 0/200
+  Median excess    : +8.17pp
+  5th percentile   : +3.31pp
+  95th percentile  : +9.71pp
+  Min              : +1.16pp
+  Max              : +10.04pp
+
+## 6. Transaction cost stress
+    0 bps  CAGR +17.35% (+9.49pp)  MaxDD +46.62%
+   10 bps  CAGR +17.34% (+9.48pp)  MaxDD +46.62%
+   25 bps  CAGR +17.33% (+9.47pp)  MaxDD +46.62%
+   50 bps  CAGR +17.32% (+9.46pp)  MaxDD +46.62%
+  100 bps  CAGR +17.29% (+9.43pp)  MaxDD +46.62%

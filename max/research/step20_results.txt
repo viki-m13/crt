@@ -1,0 +1,40 @@
+SPY full 20y: CAGR  +7.86%  MaxDD +35.62%
+SPY 1Y     : CAGR +10.54%  MaxDD  +7.51%
+
+## E0: baseline
+  baseline Top-5 rank hold-forever            20y CAGR +17.12% (+9.26pp)  MaxDD +48.92%  Sharpe 1.32  1Y +13.12% (+2.58pp)  n_pos 1205
+
+## E1: per-ticker concentration cap
+  max_ticker_frac=0.05                        20y CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+  max_ticker_frac=0.08                        20y CAGR +17.14% (+9.28pp)  MaxDD +47.65%  Sharpe 1.34  1Y +11.88% (+1.33pp)  n_pos 1205
+  max_ticker_frac=0.10                        20y CAGR +17.26% (+9.40pp)  MaxDD +48.73%  Sharpe 1.33  1Y +12.03% (+1.49pp)  n_pos 1205
+  max_ticker_frac=0.15                        20y CAGR +17.21% (+9.35pp)  MaxDD +48.90%  Sharpe 1.32  1Y +13.07% (+2.52pp)  n_pos 1205
+  max_ticker_frac=0.20                        20y CAGR +17.20% (+9.35pp)  MaxDD +48.93%  Sharpe 1.32  1Y +12.67% (+2.12pp)  n_pos 1205
+
+## E2: market-regime gate (SPY 200DMA)
+  regime_gate scale_down=0.00                 20y CAGR +16.77% (+8.91pp)  MaxDD +58.30%  Sharpe 1.27  1Y +10.92% (+0.37pp)  n_pos 970
+  regime_gate scale_down=0.25                 20y CAGR +16.88% (+9.02pp)  MaxDD +52.36%  Sharpe 1.29  1Y +11.55% (+1.00pp)  n_pos 1205
+  regime_gate scale_down=0.50                 20y CAGR +16.97% (+9.11pp)  MaxDD +50.32%  Sharpe 1.30  1Y +12.12% (+1.58pp)  n_pos 1205
+  regime_gate scale_down=1.00                 20y CAGR +17.12% (+9.26pp)  MaxDD +48.92%  Sharpe 1.32  1Y +13.12% (+2.58pp)  n_pos 1205
+  regime_gate SD=0.00 + fallback=SPY          20y CAGR +16.77% (+8.91pp)  MaxDD +58.30%  Sharpe 1.27  1Y +10.92% (+0.37pp)  n_pos 970
+
+## E3: zombie filter (trailing 3y/5y return floor)
+  zombie lb=756d thr=-50%                     20y CAGR +15.33% (+7.48pp)  MaxDD +45.26%  Sharpe 1.45  1Y +14.20% (+3.66pp)  n_pos 1020
+  zombie lb=756d thr=-30%                     20y CAGR +15.32% (+7.46pp)  MaxDD +44.48%  Sharpe 1.44  1Y +12.40% (+1.86pp)  n_pos 1020
+  zombie lb=756d thr=-10%                     20y CAGR +14.89% (+7.03pp)  MaxDD +44.02%  Sharpe 1.43  1Y +16.78% (+6.24pp)  n_pos 1020
+  zombie lb=1260d thr=-50%                    20y CAGR +15.11% (+7.25pp)  MaxDD +49.04%  Sharpe 1.43  1Y +10.89% (+0.35pp)  n_pos 900
+  zombie lb=1260d thr=-20%                    20y CAGR +12.27% (+4.41pp)  MaxDD +47.21%  Sharpe 1.38  1Y +15.97% (+5.43pp)  n_pos 900
+
+## E4: price-based value factor (underperformed SPY by X%)
+  value lb=756d underperf>=+0%                20y CAGR +16.68% (+8.82pp)  MaxDD +48.22%  Sharpe 1.42  1Y +17.81% (+7.26pp)  n_pos 1020
+  value lb=756d underperf>=+10%               20y CAGR +17.08% (+9.22pp)  MaxDD +47.91%  Sharpe 1.39  1Y +17.81% (+7.26pp)  n_pos 1020
+  value lb=756d underperf>=+20%               20y CAGR +17.56% (+9.70pp)  MaxDD +48.60%  Sharpe 1.38  1Y +18.21% (+7.67pp)  n_pos 1020
+  value lb=1260d underperf>=+0%               20y CAGR +16.04% (+8.18pp)  MaxDD +49.57%  Sharpe 1.44  1Y +14.63% (+4.09pp)  n_pos 900
+  value lb=1260d underperf>=+20%              20y CAGR +16.70% (+8.84pp)  MaxDD +51.04%  Sharpe 1.46  1Y +14.40% (+3.86pp)  n_pos 900
+
+## E5: rebound confirmation (positive trailing 63d/126d return)
+  rebound lb=63d thr>=+0%                     20y CAGR +15.78% (+7.92pp)  MaxDD +39.38%  Sharpe 1.35  1Y +19.50% (+8.95pp)  n_pos 1176
+  rebound lb=63d thr>=+5%                     20y CAGR +15.81% (+7.95pp)  MaxDD +38.99%  Sharpe 1.36  1Y +13.71% (+3.17pp)  n_pos 1171
+  rebound lb=126d thr>=+0%                    20y CAGR +15.40% (+7.54pp)  MaxDD +42.72%  Sharpe 1.36  1Y +18.92% (+8.38pp)  n_pos 1160
+  rebound lb=126d thr>=+5%                    20y CAGR +16.04% (+8.18pp)  MaxDD +45.07%  Sharpe 1.37  1Y +18.66% (+8.11pp)  n_pos 1155
+  rebound lb=252d thr>=+0%                    20y CAGR +16.81% (+8.95pp)  MaxDD +42.50%  Sharpe 1.43  1Y +11.87% (+1.33pp)  n_pos 1128
