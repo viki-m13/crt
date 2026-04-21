@@ -183,6 +183,12 @@ class StrategyConfig:
     # Require positive trailing price return over N trading days before buying.
     rebound_lookback_days: Optional[int] = None
     rebound_min_return: float = 0.0
+    # If True, the rebound gate is only applied when SPY is ABOVE its 200-day
+    # SMA (bull/neutral regimes). During SPY < 200DMA (bear), the gate is
+    # disabled so mean-reversion after crashes can be captured. Retains
+    # drawdown protection in normal markets without kneecapping V-shaped
+    # GFC-style recoveries.
+    rebound_only_in_bull: bool = False
     # Value factor: require the stock to have UNDERPERFORMED SPY by at least
     # `value_min_underperf` (positive number, e.g. 0.1 for 10pp) over the
     # trailing `value_lookback_days`. Captures "long-term laggard" candidates.
@@ -216,17 +222,25 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
     eff_universe = [t for t in universe if not cfg.universe_filter or t in cfg.universe_filter]
     if cfg.start_month_idx is None:
         cfg.start_month_idx = first_valid_month_idx(md, eff_universe, min_tickers=3)
-    sma = spy_200sma(md) if cfg.regime_gate else None
+    need_sma = cfg.regime_gate or cfg.rebound_only_in_bull
+    sma = spy_200sma(md) if need_sma else None
 
     for m in range(cfg.start_month_idx, len(md.month_first_idx)):
         di = md.month_first_idx[m]
         monthly = DCA_MONTHLY
-        if cfg.regime_gate and sma is not None:
+        # Evaluate "bull regime" = SPY >= 200DMA once per month
+        in_bull = True
+        if sma is not None:
             spy_p = md.bench_filled["SPY"][di]
-            if math.isfinite(sma[di]) and spy_p < sma[di]:
-                monthly = DCA_MONTHLY * cfg.regime_scale_down
-                if monthly <= 0:
-                    continue
+            if math.isfinite(sma[di]) and math.isfinite(spy_p):
+                in_bull = spy_p >= sma[di]
+        if cfg.regime_gate and not in_bull:
+            monthly = DCA_MONTHLY * cfg.regime_scale_down
+            if monthly <= 0:
+                continue
+
+        apply_rebound = (cfg.rebound_lookback_days is not None and
+                         (not cfg.rebound_only_in_bull or in_bull))
 
         cand = []
         for tk in eff_universe:
@@ -237,7 +251,7 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
             if not (math.isfinite(fv) and fv > cfg.min_score and math.isfinite(pv) and pv > 0):
                 continue
             # Rebound confirmation: need positive trailing N-day return
-            if cfg.rebound_lookback_days is not None:
+            if apply_rebound:
                 lb = di - cfg.rebound_lookback_days
                 if lb < 0:
                     continue

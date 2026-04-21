@@ -1,0 +1,89 @@
+## 1. Headline 20Y
+  SPY DCA    CAGR  +7.86%  MaxDD +35.62%  Sharpe 1.24
+  CAP5       CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  Calmar 0.38
+  CAP5R      CAGR +15.70% (+7.84pp)  MaxDD +39.11%  Sharpe 1.35  Calmar 0.40
+
+## 2. Walk-forward: 10Y first-half vs 10Y second-half
+  First 10Y  (2006-04 -> 2016-03)
+    SPY DCA    CAGR  +5.39%  MaxDD +35.62%  Sharpe 1.48
+    CAP5      CAGR  +2.09% (-3.30pp)  MaxDD +39.49%  Sharpe 1.50
+    CAP5R     CAGR  -0.24% (-5.63pp)  MaxDD +33.27%  Sharpe 1.49
+  Second 10Y (2016-04 -> 2026-04)
+    SPY DCA    CAGR  +8.39%  MaxDD +32.56%  Sharpe 1.53
+    CAP5      CAGR +15.91% (+7.52pp)  MaxDD +37.10%  Sharpe 1.59
+    CAP5R     CAGR +14.96% (+6.57pp)  MaxDD +35.36%  Sharpe 1.81
+
+## 3. Rolling 10Y windows (CAGR excess in pp)
+  11 overlapping 10Y windows
+  window                    SPY       CAP5     ex       CAP5R     ex    Δ(R-5)
+  2006-04->2016-03       +5.39%   +2.09%  -3.3    -0.24%  -5.6    -2.33
+  2007-04->2017-03       +6.42%   +4.48%  -1.9    +3.19%  -3.2    -1.28
+  2008-04->2018-03       +7.18%   +7.07%  -0.1    +5.76%  -1.4    -1.31
+  2009-04->2019-03       +6.99%   +6.75%  -0.2    +6.02%  -1.0    -0.73
+  2010-04->2020-03       +4.80%   +6.99%  +2.2    +6.06%  +1.3    -0.92
+  2011-04->2021-03       +8.21%  +12.23%  +4.0   +10.95%  +2.7    -1.28
+  2012-04->2022-03       +8.26%  +13.95%  +5.7   +12.29%  +4.0    -1.66
+  2013-04->2023-03       +5.97%   +9.57%  +3.6    +8.78%  +2.8    -0.79
+  2014-04->2024-03       +7.51%  +15.18%  +7.7   +13.47%  +6.0    -1.71
+  2015-04->2025-03       +7.16%  +12.47%  +5.3   +11.63%  +4.5    -0.83
+  2016-04->2026-03       +7.55%  +14.89%  +7.3   +13.78%  +6.2    -1.10
+  CAP5R beats CAP5 on CAGR  : 0/11
+  CAP5R beats CAP5 on Sharpe: 6/11
+  CAP5R beats CAP5 on MaxDD : 11/11 (lower is better)
+  CAP5R beats SPY           : 7/11
+  CAP5  beats SPY           : 7/11
+  CAP5R median rolling excess vs SPY: +2.74pp  min -5.63pp  max +6.23pp
+  *** FLAG: 4/11 rolling windows have NEGATIVE CAP5R excess vs SPY
+
+## 4. Jackknife on CAP5R (drop each of 96 tickers)
+  Drops that made CAP5R lose to SPY: 0/96
+  Worst 5 drops:
+    drop NVDA   -> CAGR +12.66% (+4.80pp)
+    drop AVGO   -> CAGR +15.06% (+7.20pp)
+    drop MU     -> CAGR +15.54% (+7.68pp)
+    drop AMD    -> CAGR +15.64% (+7.78pp)
+    drop MSFT   -> CAGR +15.67% (+7.81pp)
+  Best 5 drops:
+    drop BAC    -> CAGR +15.90% (+8.04pp)
+    drop CDNS   -> CAGR +15.90% (+8.04pp)
+    drop FCX    -> CAGR +15.83% (+7.97pp)
+    drop INTC   -> CAGR +15.81% (+7.96pp)
+    drop NEM    -> CAGR +15.76% (+7.90pp)
+
+## 5. Bootstrap CAP5R: 200 random 50-ticker rosters
+  Negative outcomes: 0/200
+  Median excess    : +7.68pp
+  5th percentile   : +2.73pp
+  95th percentile  : +9.07pp
+  Min              : +0.41pp
+  Max              : +9.45pp
+
+## 6. Transaction cost stress on CAP5R
+    0 bps  CAGR +15.70% (+7.84pp)  MaxDD +39.11%  Sharpe 1.35
+   10 bps  CAGR +15.69% (+7.83pp)  MaxDD +39.11%  Sharpe 1.35
+   25 bps  CAGR +15.68% (+7.82pp)  MaxDD +39.11%  Sharpe 1.35
+   50 bps  CAGR +15.67% (+7.81pp)  MaxDD +39.11%  Sharpe 1.35
+  100 bps  CAGR +15.64% (+7.78pp)  MaxDD +39.11%  Sharpe 1.35
+
+## 7. Head-to-head CAP5R vs CAP5 (rolling 10Y)
+  Window                CAGR5   CAGR R  Δcagr   Shp5   ShpR  Δshp   DD5    DDR   Δdd
+  2006-04->2016-03       +2.09  -0.24  -2.33  +1.50 +1.49  -0.01  +39.49 +33.27  -6.22
+  2007-04->2017-03       +4.48  +3.19  -1.28  +1.58 +1.57  -0.01  +37.51 +31.07  -6.44
+  2008-04->2018-03       +7.07  +5.76  -1.31  +1.51 +1.76  +0.24  +36.19 +27.98  -8.20
+  2009-04->2019-03       +6.75  +6.02  -0.73  +1.62 +1.64  +0.02  +31.32 +28.27  -3.05
+  2010-04->2020-03       +6.99  +6.06  -0.92  +1.78 +1.78  -0.00  +32.31 +32.02  -0.29
+  2011-04->2021-03      +12.23 +10.95  -1.28  +1.80 +1.79  -0.01  +32.81 +31.97  -0.84
+  2012-04->2022-03      +13.95 +12.29  -1.66  +1.71 +1.75  +0.04  +35.51 +32.85  -2.66
+  2013-04->2023-03       +9.57  +8.78  -0.79  +1.52 +1.54  +0.02  +34.01 +33.50  -0.51
+  2014-04->2024-03      +15.18 +13.47  -1.71  +1.65 +1.66  +0.02  +35.33 +33.50  -1.83
+  2015-04->2025-03      +12.47 +11.63  -0.83  +1.75 +1.63  -0.12  +36.36 +34.10  -2.27
+  2016-04->2026-03      +14.89 +13.78  -1.10  +1.61 +1.84  +0.23  +37.10 +35.36  -1.74
+  Median Δcagr : -1.28pp  (R>5 in 0/11)
+  Median Δsharpe: +0.02    (R>5 in 6/11)
+  Median Δmaxdd : -2.27pp  (R<5 in 11/11)  [lower MaxDD = better]
+
+## 8. Trailing 1Y
+  Window: 2025-05-01 -> 2026-04-20
+  SPY DCA    CAGR +10.54%  MaxDD  +7.51%  Sharpe 3.64
+  CAP5       CAGR +18.54% (+8.00pp)  MaxDD  +8.00%  Sharpe 3.58
+  CAP5R      CAGR +25.31% (+14.77pp)  MaxDD  +7.05%  Sharpe 3.59
