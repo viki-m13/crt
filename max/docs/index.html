@@ -444,7 +444,7 @@
         <summary class="details-card-summary">
           <div class="details-card-left">
             <span class="details-card-title">Top Stock Picks</span>
-            <span class="details-card-cat">Best horizon per stock, ranked by analog-based edge</span>
+            <span class="details-card-cat">Ranked by Max opportunity score &mdash; same ranking the CAP5 strategy uses each month</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
@@ -464,13 +464,13 @@
           <details class="details-card" id="topstocks-backtest-section" style="margin-top: 24px;">
             <summary class="details-card-summary">
               <div class="details-card-left">
-                <span class="details-card-title">Top Stock Picks Backtest &mdash; DCA</span>
-                <span class="details-card-cat">Top-ranked stocks each month, benchmarked to SPY</span>
+                <span class="details-card-title">Top Stock Picks Backtest &mdash; CAP5</span>
+                <span class="details-card-cat">Top-N each month, rank-weighted, 5% concentration cap, hold forever &mdash; benchmarked to SPY DCA</span>
               </div>
               <span class="details-card-arrow">&darr;</span>
             </summary>
             <div class="details-card-body">
-              <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score). Each position is sold at its own scanner-recommended horizon (30D / 60D / 1Y / 3Y / 5Y etc.), so holds are mixed within the same portfolio. Benchmark: SPY DCA with the same per-position hold schedule.</p>
+              <p class="bt-intro">$1,000 every month into the top-ranked stocks (by point-in-time opportunity score), split by rank weights (1/1, 1/2, 1/3&hellip; normalized so #1 gets ~44%, #5 gets ~9%). Entry at the next trading day's close. Positions are <strong>held forever</strong> &mdash; no scheduled sell. A <strong>5% per-ticker cumulative concentration cap</strong> drops any name whose cost basis has already hit 5% of total invested, and backfills from the next-ranked candidate. Benchmark: SPY DCA over the same window.</p>
               <div id="topstocks-backtest-body">
                 <div class="footnote">Click to load backtest data&hellip;</div>
               </div>
@@ -650,6 +650,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260421c"></script>
+  <script src="app.js?v=20260421d"></script>
 </body>
 </html>

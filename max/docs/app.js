@@ -278,11 +278,26 @@ function buildHorizonByTicker(items, baselines) {
 function renderTopPicksFor(section) {
   const items = sectionItems(section);
   const baselines = BASELINES[section];
-  const scored = items
-    .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
-    .filter(x => x.best != null && x.best.score > 0)
-    .sort((a, b) => b.best.score - a.best.score)
-    .slice(0, 15);
+  // Stocks rank by the same point-in-time opportunity score the Max CAP5
+  // strategy uses (final_score). Crypto keeps the best-horizon edge ranking
+  // since its backtest still uses the per-pick engine.
+  const rankByFinalScore = section === "stocks";
+  let scored;
+  if (rankByFinalScore) {
+    scored = items
+      .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
+      .filter(x => x.best != null &&
+                   x.it.final_score != null &&
+                   Number.isFinite(Number(x.it.final_score)))
+      .sort((a, b) => Number(b.it.final_score) - Number(a.it.final_score))
+      .slice(0, 15);
+  } else {
+    scored = items
+      .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
+      .filter(x => x.best != null && x.best.score > 0)
+      .sort((a, b) => b.best.score - a.best.score)
+      .slice(0, 15);
+  }
   const container = byId(`top-${section}-listing`);
   if (!container) return;
   container.innerHTML = "";
