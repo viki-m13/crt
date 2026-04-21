@@ -1,0 +1,57 @@
+Benchmark SPY DCA B&H: CAGR +7.47%  TR +51.57%  Sharpe 1.93  MaxDD -16.03%  Inv $60,000  Final $90,943
+
+## Per-pick outcomes (Top-5 rank hold-forever, all 300 buys)
+  buys total:         300
+  ending in loss:     51 (17.0%)
+  ending below -20%:  22 (7.3%)
+  ending below -50%:  0 (0.0%)
+  total PnL:          $72,733
+  top 10 picks = $28,085 (38.6% of PnL)
+
+## Biggest losers that never recovered (final return, buy date)
+  NKE    bought 2024-07-02 ret   -37.0%  worstDD  -50.7%  pnl $    -162
+  NKE    bought 2024-08-02 ret   -35.3%  worstDD  -50.7%  pnl $    -155
+  SMCI   bought 2024-12-03 ret   -29.0%  worstDD  -66.2%  pnl $    -127
+  ADBE   bought 2025-11-04 ret   -27.1%  worstDD  -37.0%  pnl $    -119
+  SMCI   bought 2025-03-04 ret   -27.0%  worstDD  -66.2%  pnl $    -118
+  ADBE   bought 2025-12-02 ret   -24.3%  worstDD  -37.0%  pnl $    -106
+  CRM    bought 2021-06-02 ret   -21.2%  worstDD  -58.6%  pnl $     -93
+  ADBE   bought 2022-04-04 ret   -47.9%  worstDD  -64.5%  pnl $     -70
+  SMCI   bought 2025-05-02 ret   -15.3%  worstDD  -66.2%  pnl $     -67
+  DIS    bought 2022-01-04 ret   -30.1%  worstDD  -49.8%  pnl $     -66
+
+## Biggest winners
+  NVDA   bought 2022-10-04 ret +1433.7%  worstDD  -36.9%  pnl $  +6,279
+  NVDA   bought 2022-11-02 ret +1427.7%  worstDD  -36.9%  pnl $  +6,253
+  NVDA   bought 2022-06-02 ret  +931.3%  worstDD  -42.7%  pnl $  +4,079
+  AVGO   bought 2021-05-04 ret  +910.8%  worstDD  -41.1%  pnl $  +1,994
+  AVGO   bought 2021-07-02 ret  +852.3%  worstDD  -41.1%  pnl $  +1,866
+  NFLX   bought 2022-07-05 ret  +423.5%  worstDD  -43.4%  pnl $  +1,855
+  NVDA   bought 2022-07-05 ret +1249.9%  worstDD  -41.6%  pnl $  +1,825
+  NFLX   bought 2022-08-02 ret  +339.5%  worstDD  -43.4%  pnl $  +1,487
+  AVGO   bought 2021-06-02 ret  +848.5%  worstDD  -41.1%  pnl $  +1,239
+  NVDA   bought 2022-09-02 ret +1380.2%  worstDD  -36.9%  pnl $  +1,209
+
+## PnL by ticker (aggregated across all DCA buys of that ticker)
+  NVDA   n_buys=  5  total PnL $   +19,644
+  NEM    n_buys= 16  total PnL $    +6,915
+  AVGO   n_buys=  5  total PnL $    +6,699
+  INTC   n_buys= 19  total PnL $    +5,827
+  NFLX   n_buys=  9  total PnL $    +5,825
+  TSLA   n_buys=  9  total PnL $    +3,748
+  META   n_buys=  7  total PnL $    +3,440
+  T      n_buys=  9  total PnL $    +2,290
+  D      n_buys= 16  total PnL $    +1,663
+  FDX    n_buys=  6  total PnL $    +1,213
+  AMAT   n_buys=  2  total PnL $    +1,104
+  AMGN   n_buys=  6  total PnL $    +1,093
+  AMD    n_buys=  5  total PnL $    +1,042
+  GILD   n_buys=  4  total PnL $    +1,032
+  RTX    n_buys=  2  total PnL $    +1,000
+
+## Strategy with a -50% hard stop (sell any position down 50% from buy)
+  stop -30% | CAGR +12.25%  TR +94.78%  Sharpe 1.99  MaxDD -17.78%  Inv $60,000  Final $116,869  excess +4.78pp
+  stop -40% | CAGR +12.64%  TR +98.75%  Sharpe 1.99  MaxDD -18.85%  Inv $60,000  Final $119,252  excess +5.17pp
+  stop -50% | CAGR +14.17%  TR +114.87%  Sharpe 2.01  MaxDD -20.34%  Inv $60,000  Final $128,920  excess +6.70pp
+  stop -60% | CAGR +14.58%  TR +119.31%  Sharpe 2.01  MaxDD -20.64%  Inv $60,000  Final $131,584  excess +7.11pp
+  no stop  | CAGR +14.75%  TR +121.22%  Sharpe 2.02  MaxDD -20.74%  Inv $60,000  Final $132,733  excess +7.28pp
