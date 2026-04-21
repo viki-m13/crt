@@ -1,0 +1,59 @@
+Extended spine: 2006-04-25 → 2026-04-20  N days=5028  N stocks=96  Start month idx (>=3 tickers): 0
+Start month: 2006-04-25
+
+SPY DCA B&H (benchmark): CAGR +7.86%  TR +352.41%  Sharpe 1.24  MaxDD -35.62%  Inv $241,000  Final $1,090,317
+
+## A. Baseline — Top-N rank hold-forever on extended history
+  Top- 1 rank, hold-forever | CAGR +17.05%  TR +2212.95%  Sharpe 1.28  MaxDD -53.23%  Inv $241,000  Final $5,574,219  excess +9.19pp
+  Top- 3 rank, hold-forever | CAGR +16.96%  TR +2175.98%  Sharpe 1.30  MaxDD -49.82%  Inv $241,000  Final $5,485,101  excess +9.10pp
+  Top- 5 rank, hold-forever | CAGR +17.12%  TR +2241.04%  Sharpe 1.32  MaxDD -48.92%  Inv $241,000  Final $5,641,903  excess +9.26pp
+  Top-10 rank, hold-forever | CAGR +16.85%  TR +2135.41%  Sharpe 1.33  MaxDD -47.40%  Inv $241,000  Final $5,387,331  excess +8.99pp
+
+## B. Walk-forward on extended spine
+  first half     (2006-04-25→2016-04-01, 9.9y)  SPY  +5.46%  Top-5 +10.91%  excess +5.45pp
+  second half    (2016-04-01→2026-04-01, 10.0y)  SPY  +7.63%  Top-5 +15.51%  excess +7.88pp
+  Q1             (2006-04-25→2011-04-01, 4.9y)  SPY  +3.48%  Top-5 +10.88%  excess +7.41pp
+  Q2             (2011-04-01→2016-04-01, 5.0y)  SPY  +6.20%  Top-5 +17.12%  excess +10.92pp
+  Q3             (2016-04-01→2021-04-01, 5.0y)  SPY  +9.49%  Top-5 +16.01%  excess +6.53pp
+  Q4             (2021-04-01→2026-04-01, 5.0y)  SPY  +7.15%  Top-5 +14.51%  excess +7.36pp
+
+## C. Named sub-eras (fixed boundaries)
+  pre-GFC        (2006-04-25→2008-09-02, 2.4y)  SPY  -2.48%  Top-5  -5.75%  excess -3.27pp
+  GFC+recovery   (2008-09-02→2013-01-02, 4.3y)  SPY  +7.20%  Top-5 +10.53%  excess +3.33pp
+  2010s bull     (2013-01-02→2020-01-02, 7.0y)  SPY  +7.17%  Top-5 +15.83%  excess +8.66pp
+  COVID+present  (2020-01-02→2026-04-01, 6.2y)  SPY  +7.43%  Top-5 +14.69%  excess +7.25pp
+
+## D. Jackknife — drop one ticker at a time
+  Full universe baseline: CAGR +17.12%  excess +9.26pp
+  Biggest CAGR loss when dropped:
+    drop NVDA    excess  +6.71pp  CAGR +14.57%
+    drop NFLX    excess  +8.93pp  CAGR +16.79%
+    drop AMD     excess  +9.08pp  CAGR +16.94%
+    drop AMZN    excess  +9.18pp  CAGR +17.04%
+    drop AVGO    excess  +9.20pp  CAGR +17.06%
+    drop CAT     excess  +9.25pp  CAGR +17.11%
+    drop PANW    excess  +9.26pp  CAGR +17.12%
+    drop GOOGL   excess  +9.26pp  CAGR +17.12%
+  Drops that hurt LEAST (or helped):
+    drop SMCI    excess  +9.46pp  CAGR +17.31%
+    drop GS      excess  +9.46pp  CAGR +17.32%
+    drop CDNS    excess  +9.49pp  CAGR +17.35%
+    drop NEM     excess  +9.52pp  CAGR +17.38%
+    drop BAC     excess  +9.67pp  CAGR +17.53%
+  Distribution of excess CAGR (pp): min +6.71  p10 +9.26  med +9.27  p90 +9.38  max +9.67
+  n runs excess<0: 0/96  excess<3pp: 0/96  excess>5pp: 96/96
+
+## E. Bootstrap — 200 runs on random 50-ticker subsets
+  Distribution of excess CAGR (pp): min +1.47  p10 +4.83  med +9.90  mean +8.53  p90 +11.32  max +12.21
+  n runs losing vs SPY: 0/200  excess>3pp: 195/200  excess>5pp: 179/200
+
+## F. NVDA ablation
+  Drop NVDA: CAGR +14.57%  TR +1409.34%  Sharpe 1.28  MaxDD -46.05%  Inv $241,000  Final $3,637,517  excess +6.71pp
+  Drop top-5 jackknife contributors ['NVDA', 'NFLX', 'AMD', 'AMZN', 'AVGO']: CAGR +11.26%  TR +740.80%  Sharpe 1.25  MaxDD -40.36%  Inv $241,000  Final $2,026,326  excess +3.40pp
+
+## G. Transaction cost sensitivity (bps on entry notional)
+  entry   0 bps | CAGR +17.08%  TR +2222.88%  Sharpe 1.21  MaxDD -49.30%  Inv $241,000  Final $5,598,149  excess +9.22pp
+  entry   5 bps | CAGR +17.07%  TR +2221.72%  Sharpe 1.21  MaxDD -49.30%  Inv $241,000  Final $5,595,350  excess +9.21pp
+  entry  10 bps | CAGR +17.07%  TR +2220.56%  Sharpe 1.21  MaxDD -49.30%  Inv $241,000  Final $5,592,551  excess +9.21pp
+  entry  25 bps | CAGR +17.06%  TR +2217.08%  Sharpe 1.21  MaxDD -49.30%  Inv $241,000  Final $5,584,154  excess +9.20pp
+  entry  50 bps | CAGR +17.05%  TR +2211.27%  Sharpe 1.21  MaxDD -49.30%  Inv $241,000  Final $5,570,158  excess +9.19pp
