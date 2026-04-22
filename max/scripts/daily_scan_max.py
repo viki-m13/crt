@@ -207,22 +207,33 @@ EVID_SCORE_STEP_BARS = 18
 CAP5_SMOOTH_MONTHS = 12
 CAP5_SMOOTH_WINDOW_BARS = CAP5_SMOOTH_MONTHS * 21
 
-# Take-Profit strategy parameters (step41-44 research winner).
+# Take-Profit strategy parameters.
+#
+# Per-trade dynamic TP/SL sized to the ticker's own volatility (ATR14).
+# Step46-47 research: fixed TP 10% / SL -15% yields +11.13% CAGR (20Y);
+# ATR-scaled with k=7 for both TP and SL (capped at +25% / -12%) yields
+# +29.26% CAGR, 41% MDD, 58.1% win rate, Calmar 0.714 — wins all 6 rolling
+# 10Y windows vs both SPY DCA and the fixed baseline. See
+# `max/research/step47_summary.md`.
 #
 # For each stock in the scan we publish a concrete monthly-pick signal:
 #   - Buy reference: today's last close.
-#   - Take-profit target: reference × (1 + TP_PCT/100).
-#   - Stop-loss:        reference × (1 - SL_PCT/100).
-#   - Time-stop:        close at market if neither target hits within
-#                       TP_TIME_STOP_BARS trading days (~12 months).
+#   - Take-profit target: entry × (1 + max(TP_FLOOR, min(TP_ATR_K*ATR14%, TP_CAP)))
+#   - Stop-loss:         entry × (1 − max(SL_FLOOR, min(SL_ATR_K*ATR14%, SL_CAP)))
+#   - Time-stop:         close at market if neither target hits within
+#                        TP_TIME_STOP_BARS trading days (~12 months).
 #
-# Research (see max/research/RESEARCH_TP_STRATEGY.md): TP=+10%, SL=-15%,
-# time_stop=252 bars on CAP5+SMA12M top-1 monthly yields +11.13% CAGR
-# 2006-2026 vs SPY DCA +6.63%; 48% MDD, 70.5% gross win rate on 122
-# trades, avg winner +10% (TP) / avg loser -15% (SL).
-TP_PCT = 10.0
-SL_PCT = 15.0
+# Example: ATR14 = 2% of price → TP +14%, SL -14% (capped at -12%).
+# Example: ATR14 = 1% of price → TP +7%, SL -7%.
+# Example: ATR14 = 5% of price → TP +25% (capped), SL -12% (capped).
+TP_ATR_K = 7.0
+SL_ATR_K = 7.0
+TP_CAP = 0.25          # 25% max TP distance
+TP_FLOOR = 0.05        # 5% min TP distance
+SL_CAP = 0.12          # 12% max SL distance (tail-risk protection)
+SL_FLOOR = 0.05        # 5% min SL distance
 TP_TIME_STOP_BARS = 252
+ATR_WINDOW = 14        # Wilder ATR period
 
 # Outputs
 OUT_DIR = os.path.join("max", "docs", "data")
@@ -314,6 +325,61 @@ def final_score(edge_score: float, washout: float) -> float:
         return np.nan
     ww = float(np.clip(w / 100.0, 0.0, 1.0))
     return float(e * (FINAL_WASH_FLOOR + FINAL_WASH_WEIGHT * ww))
+
+def _atr_scaled_frac(atr_pct: float, k: float, floor: float, cap: float) -> float:
+    """Clip the ATR-scaled distance to [floor, cap]. Returns a fraction (e.g. 0.12 for 12%).
+
+    If atr_pct is not finite or non-positive, falls back to `floor`.
+    """
+    if not np.isfinite(atr_pct) or atr_pct <= 0:
+        return floor
+    d = k * float(atr_pct)
+    if d < floor:
+        return floor
+    if d > cap:
+        return cap
+    return d
+
+
+def _tp_sl_fields(px: pd.Series, win: pd.DataFrame) -> dict:
+    """Compute the dynamic TP/SL pair for today from ATR14 (on `win['atr_pct']`).
+
+    Returns a dict with tp_price, sl_price, tp_pct, sl_pct, tp_atr_k, sl_atr_k,
+    atr14_pct, tp_time_stop_bars. Any None indicates the value could not be
+    computed from the input.
+    """
+    if not len(px) or not np.isfinite(px.iloc[-1]) or px.iloc[-1] <= 0:
+        return {
+            "tp_price": None, "sl_price": None,
+            "tp_pct": None, "sl_pct": None,
+            "atr14_pct": None,
+            "tp_atr_k": TP_ATR_K, "sl_atr_k": SL_ATR_K,
+            "tp_time_stop_bars": TP_TIME_STOP_BARS,
+        }
+    lp = float(px.iloc[-1])
+    atr_pct_today = None
+    try:
+        if "atr_pct" in win.columns:
+            v = win["atr_pct"].iloc[-1]
+            if np.isfinite(v) and v > 0:
+                atr_pct_today = float(v)
+    except Exception:
+        pass
+    tp_frac = _atr_scaled_frac(atr_pct_today if atr_pct_today is not None else float("nan"),
+                               TP_ATR_K, TP_FLOOR, TP_CAP)
+    sl_frac = _atr_scaled_frac(atr_pct_today if atr_pct_today is not None else float("nan"),
+                               SL_ATR_K, SL_FLOOR, SL_CAP)
+    return {
+        "tp_price": lp * (1.0 + tp_frac),
+        "sl_price": lp * (1.0 - sl_frac),
+        "tp_pct": tp_frac * 100.0,
+        "sl_pct": sl_frac * 100.0,
+        "atr14_pct": atr_pct_today,
+        "tp_atr_k": TP_ATR_K,
+        "sl_atr_k": SL_ATR_K,
+        "tp_time_stop_bars": TP_TIME_STOP_BARS,
+    }
+
 
 def pullback_gate(washout: float) -> float:
     """Soft gate: kills score for stocks with no pullback, near-full credit once
@@ -1523,6 +1589,8 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "quality": float(quality) if np.isfinite(quality) else None,
         "quality_parts": sanitize_for_json(quality_parts),
         "recovery_history": sanitize_for_json(rtr),
+        # Dynamic ATR-scaled TP/SL (matches the row fields).
+        **_tp_sl_fields(px, win),
     }
 
     row = {
@@ -1553,13 +1621,11 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         # Trailing 12-month mean of the conviction series. This is the CAP5+SMA12M
         # ranking signal — what the webapp sorts picks by for stocks.
         "conviction_smooth12m": float(conv_smooth_today) if np.isfinite(conv_smooth_today) and conv_smooth_today > 0 else None,
-        # Take-profit signal (see TP_PCT/SL_PCT constants). Concrete buy/sell
-        # prices a retail user can place as GTC limit + stop orders.
-        "tp_price": float(px.iloc[-1] * (1.0 + TP_PCT / 100.0)) if len(px) and np.isfinite(px.iloc[-1]) and px.iloc[-1] > 0 else None,
-        "sl_price": float(px.iloc[-1] * (1.0 - SL_PCT / 100.0)) if len(px) and np.isfinite(px.iloc[-1]) and px.iloc[-1] > 0 else None,
-        "tp_pct": TP_PCT,
-        "sl_pct": SL_PCT,
-        "tp_time_stop_bars": TP_TIME_STOP_BARS,
+        # Take-profit signal — dynamic ATR-scaled TP/SL per ticker.
+        # TP distance = max(TP_FLOOR, min(TP_ATR_K × ATR14%, TP_CAP))
+        # SL distance = max(SL_FLOOR, min(SL_ATR_K × ATR14%, SL_CAP))
+        # Values are null if last price or ATR is not available.
+        **_tp_sl_fields(px, win),
         "median_10d": h_summaries.get("10D", {}).get("median", None),
         "median_30d": h_summaries.get("30D", {}).get("median", None),
         "median_60d": h_summaries.get("60D", {}).get("median", None),
@@ -1707,7 +1773,7 @@ def main():
     payload = {
         "as_of": as_of,
         "model": {
-            "version": "v11-max-tp",
+            "version": "v12-max-tp-atr",
             "bench": BENCH,
             "interval": INTERVAL,
             "universe": "Curated 100-stock diversified universe + 100+ crypto assets",
@@ -1719,8 +1785,13 @@ def main():
             },
             "cap5_smoothing_months": CAP5_SMOOTH_MONTHS,
             "take_profit": {
-                "tp_pct": TP_PCT,
-                "sl_pct": SL_PCT,
+                "mode": "atr_dynamic",
+                "tp_atr_k": TP_ATR_K,
+                "sl_atr_k": SL_ATR_K,
+                "tp_cap": TP_CAP,
+                "tp_floor": TP_FLOOR,
+                "sl_cap": SL_CAP,
+                "sl_floor": SL_FLOOR,
                 "time_stop_bars": TP_TIME_STOP_BARS,
             },
         },

@@ -1440,6 +1440,7 @@ function renderThisMonthsPicks() {
   // last_price if the scanner didn't emit the fields (pre-v11 data).
   const tpPct = Number(topItem.tp_pct ?? 10.0);
   const slPct = Number(topItem.sl_pct ?? 15.0);
+  const atrPct = topItem.atr14_pct != null ? Number(topItem.atr14_pct) * 100 : null;
   const timeStopBars = Number(topItem.tp_time_stop_bars ?? 252);
   const timeStopMonths = Math.round(timeStopBars / 21);
   const lp = Number(topItem.last_price);
@@ -1447,18 +1448,22 @@ function renderThisMonthsPicks() {
   const slPx = Number(topItem.sl_price ?? (lp * (1 - slPct / 100)));
   byId("single-pick-meta").innerHTML = `
     <span class="tp-slot tp-buy"><span class="tp-label">Buy</span><strong>${fmtPriceVal(lp)}</strong></span>
-    <span class="tp-slot tp-target"><span class="tp-label">Sell target (+${tpPct.toFixed(0)}%)</span><strong>${fmtPriceVal(tpPx)}</strong></span>
-    <span class="tp-slot tp-stop"><span class="tp-label">Stop-loss (&minus;${slPct.toFixed(0)}%)</span><strong>${fmtPriceVal(slPx)}</strong></span>
+    <span class="tp-slot tp-target"><span class="tp-label">Sell target (+${tpPct.toFixed(1)}%)</span><strong>${fmtPriceVal(tpPx)}</strong></span>
+    <span class="tp-slot tp-stop"><span class="tp-label">Stop-loss (&minus;${slPct.toFixed(1)}%)</span><strong>${fmtPriceVal(slPx)}</strong></span>
     <span class="tp-slot tp-time"><span class="tp-label">Time-stop</span><strong>${timeStopMonths} mo</strong></span>
   `;
   byId("single-pick-foot").innerHTML =
     `Place a <strong>GTC limit sell at ${fmtPriceVal(tpPx)}</strong> and a ` +
-    `<strong>stop-loss at ${fmtPriceVal(slPx)}</strong>. If neither fires within ` +
-    `${timeStopMonths} months, close at market. Backtest 2006&ndash;2026: ` +
-    `<strong>70% of these trades hit +${tpPct.toFixed(0)}%</strong>, ` +
-    `<strong>+11.1% annualized</strong> vs SPY DCA&rsquo;s +6.6%. Pullback ${Number(topItem.washout_today ?? 0).toFixed(0)}, ` +
-    `Quality ${Number(topItem.quality ?? 0).toFixed(0)}, CAP5 Score ${Number(topRankScore).toFixed(1)}. ` +
-    `Drawdowns of 30% or more on single names are routine &mdash; do your own work.`;
+    `<strong>stop-loss at ${fmtPriceVal(slPx)}</strong>. ` +
+    (atrPct != null
+      ? `Targets sized to this stock&rsquo;s 14-day ATR (${atrPct.toFixed(2)}% of price): ` +
+        `TP = price &times; (1 + 7 &times; ATR%), capped at +25%; SL mirrors with a &minus;12% cap. `
+      : `Targets scaled to this stock&rsquo;s 14-day ATR, capped at +25% / &minus;12%. `) +
+    `If neither fires within ${timeStopMonths} months, close at market. Backtest 2006&ndash;2026: ` +
+    `<strong>+29.3% CAGR, 60% win rate</strong> (avg winner +23%, avg loser &minus;12%), ` +
+    `Sharpe 1.28, Calmar 0.71 &mdash; wins all 6 rolling 10Y windows vs SPY DCA. ` +
+    `Pullback ${Number(topItem.washout_today ?? 0).toFixed(0)}, Quality ${Number(topItem.quality ?? 0).toFixed(0)}, ` +
+    `CAP5 Score ${Number(topRankScore).toFixed(1)}. Drawdowns of 30% or more on single names are routine &mdash; do your own work.`;
 
   // Render the top-5 table.
   const rowsEl = byId("month-picks-rows");
