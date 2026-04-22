@@ -48,11 +48,12 @@ print(f"Original (without new): {len(original_universe)} tickers")
 print(f"Full (with new):        {len(full_universe)} tickers")
 
 
-def mk(universe_filter=None, label=""):
+def mk(universe_filter=None, label="", smooth=0):
     return StrategyConfig(
         start_month_idx=start_m,
         top_n=5, max_ticker_frac=0.05, hold_days=5000,
         weighting="rank", entry_delay=1,
+        smoothing_months=smooth,
         universe_filter=set(universe_filter) if universe_filter is not None else None,
         label=label,
     )
@@ -85,6 +86,16 @@ print(f"{'CAP5 (full 128)':35s}  {m_full['cagr']*100:+7.2f}%  {m_full['total_ret
 
 delta_full_vs_orig = (m_full['cagr'] - m_orig['cagr']) * 100
 print(f"\nΔ CAGR (full vs orig): {delta_full_vs_orig:+.2f}pp")
+
+# CAP5+SMA12M on orig and full universes (step 39 winner applied)
+print()
+for universe, uname in [(original_universe, "orig 97"), (full_universe, "full 128")]:
+    r = simulate(md, md.stocks, mk(universe_filter=universe, smooth=12, label=f"SMA12M-{uname}"))
+    m = compute_metrics(md, r.equity, r.total_invested)
+    base = m_orig if uname == "orig 97" else m_full
+    delta = (m['cagr'] - base['cagr']) * 100
+    print(f"{'CAP5+SMA12M (' + uname + ')':35s}  {m['cagr']*100:+7.2f}%  {m['total_return']*100:+7.2f}%  "
+          f"{-m['maxdd']*100:+7.2f}%  {m['sharpe']:6.2f}  ${m['final']:11,.0f}  (Δ {delta:+.2f}pp)")
 
 
 # How often are new tickers actually picked?
