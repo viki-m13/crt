@@ -357,7 +357,7 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
                 spy_ret = spy_cur / spy_prev - 1
                 if (spy_ret - stock_ret) < cfg.value_min_underperf:
                     continue
-            cand.append((tk, fv, pv))
+            cand.append((tk, rv, pv))
         if not cand:
             if cfg.fallback_ticker and md.bench_filled.get(cfg.fallback_ticker) is not None:
                 entry_idx = di + cfg.entry_delay

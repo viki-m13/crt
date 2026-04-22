@@ -60,6 +60,11 @@ VARIANTS = [
     # Step 39 integration: SMA 12M applied to final (smoothing applies to fv)
     ("CAP5 (final) + SMA12M ", mk("final", smooth=12, label="final_sma12")),
     ("CAP5 (final) + SMA24M ", mk("final", smooth=24, label="final_sma24")),
+    # Cross: smoothing applies to fv; rank_formula uses smoothed fv + raw wash
+    ("CAP5 (wash) + SMA12M  ", mk("wash", smooth=12, label="wash_sma12")),
+    ("CAP5 (wash) + SMA24M  ", mk("wash", smooth=24, label="wash_sma24")),
+    ("CAP5 (f+1w) + SMA12M  ", mk("final+alpha_wash", 1.0, "fw1_sma12", smooth=12)),
+    ("CAP5 (f+2w) + SMA12M  ", mk("final+alpha_wash", 2.0, "fw2_sma12", smooth=12)),
 ]
 
 
