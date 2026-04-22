@@ -1,0 +1,47 @@
+
+variant                                      CAGR   Sharpe    MaxDD          Final   Δ vs SMA12M
+--------------------------------------------------------------------------------------------------------------
+baseline (no smooth)                      +17.41%    1.34  -46.15%  $   5,921,752     -0.90pp
+SMA 12M                                   +18.31%    1.35  -47.51%  $   6,898,800     +0.00pp
+SMA 12M + sector_cap=2                    +17.94%    1.35  -47.30%  $   6,482,556     -0.37pp
+SMA 12M + sector_cap=3                    +18.29%    1.35  -47.45%  $   6,878,662     -0.02pp
+SMA 12M + rebound 63d                     +17.41%    1.35  -46.50%  $   5,803,379     -0.90pp
+SMA 12M + rebound 63d bull-only           +17.99%    1.35  -46.38%  $   6,429,215     -0.32pp
+SMA 12M + score_thresh=50                 +18.31%    1.35  -47.51%  $   6,898,800     +0.00pp
+SMA 12M + score_thresh=70                 +18.31%    1.35  -47.51%  $   6,898,800     +0.00pp
+SMA 12M + min_score=20                    +17.42%    1.08  -50.07%  $   2,167,489     -0.89pp
+SMA 12M + zombie -50% over 3Y             +15.46%    1.40  -44.49%  $   3,590,160     -2.85pp
+
+## Rolling 10Y (step 2Y) — does adding a gate lose alpha?
+window                 baseline (no sm          SMA 12M  SMA 12M + secto  SMA 12M + secto  SMA 12M + rebou  SMA 12M + rebou  SMA 12M + score  SMA 12M + score  SMA 12M + min_s  SMA 12M + zombi
+2006-04 → 2016-04         +459.29%         +462.28%         +462.36%         +462.29%         +455.25%         +456.95%         +462.28%         +462.28%         +395.11%         +425.36%
+2008-04 → 2018-04          +37.55%          +38.97%          +38.90%          +38.99%          +39.51%          +39.87%          +38.97%          +38.97%          +47.48%         +468.80%
+2010-04 → 2020-04          +30.49%          +31.14%          +31.06%          +31.14%          +31.75%          +30.94%          +31.14%          +31.14%          +24.25%          +41.40%
+2012-04 → 2022-04          +29.15%          +29.98%          +29.57%          +29.96%          +30.22%          +30.03%          +29.98%          +29.98%          +28.54%          +32.92%
+2014-04 → 2024-05          +31.68%          +32.78%          +31.94%          +32.72%          +32.44%          +32.86%          +32.78%          +32.78%          +32.68%          +33.06%
+
+wins vs baseline (5 windows):
+  SMA 12M                                     5/5
+  SMA 12M + sector_cap=2                      5/5
+  SMA 12M + sector_cap=3                      5/5
+  SMA 12M + rebound 63d                       4/5
+  SMA 12M + rebound 63d bull-only             4/5
+  SMA 12M + score_thresh=50                   5/5
+  SMA 12M + score_thresh=70                   5/5
+  SMA 12M + min_score=20                      2/5
+  SMA 12M + zombie -50% over 3Y               4/5
+
+## Calendar year (SMA 12M variant wins)
+
+calendar year wins vs baseline (18 years):
+  SMA 12M                                    10/18
+  SMA 12M + sector_cap=2                      9/18
+  SMA 12M + sector_cap=3                     10/18
+  SMA 12M + rebound 63d                      14/18
+  SMA 12M + rebound 63d bull-only            14/18
+  SMA 12M + score_thresh=50                  10/18
+  SMA 12M + score_thresh=70                  10/18
+  SMA 12M + min_score=20                     11/18
+  SMA 12M + zombie -50% over 3Y              12/18
+
+## DONE
