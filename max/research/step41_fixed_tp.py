@@ -207,16 +207,6 @@ def simulate(
     }
 
 
-def _mark_equity(*args, **kwargs):
-    # Placeholder (unused after refactor)
-    pass
-
-
-def _fill_equity_segment(*args, **kwargs):
-    # Placeholder (unused after refactor)
-    pass
-
-
 def _run_segment(
     equity,
     start_i,
@@ -235,13 +225,12 @@ def _run_segment(
     for d in range(start_i, end_i):
         if open_pos is not None:
             tk_idx = open_pos["tk_idx"]
-            # Check TP first (intraday high)
-            # Only check on days AFTER entry (we entered at entry_idx close)
+            # Check TP first (intraday high). Only check on days AFTER entry
+            # (we entered at entry_idx close — intrabar high already happened).
             if d > open_pos["entry_idx"]:
-                hi = high_arr[tk_idx, d]
+                hi = high_arr[d, tk_idx]
                 tp_target = open_pos["tp_px"]
                 if np.isfinite(hi) and hi >= tp_target:
-                    # Fill at TP price
                     proceeds = open_pos["shares"] * tp_target
                     cash += proceeds
                     positions.append({
@@ -258,11 +247,11 @@ def _run_segment(
                     open_pos = None
                 elif d >= open_pos["stop_idx"]:
                     # Time stop: close at close price of this bar
-                    px = close_arr[tk_idx, d]
+                    px = close_arr[d, tk_idx]
                     if not (np.isfinite(px) and px > 0):
-                        # fallback: walk back to last valid
+                        # fallback: walk back to last valid close
                         for back in range(d, open_pos["entry_idx"], -1):
-                            p2 = close_arr[tk_idx, back]
+                            p2 = close_arr[back, tk_idx]
                             if np.isfinite(p2) and p2 > 0:
                                 px = p2
                                 break
@@ -287,11 +276,11 @@ def _run_segment(
         eq_val = cash + pending_deposits
         if open_pos is not None and d >= open_pos["entry_idx"]:
             tk_idx = open_pos["tk_idx"]
-            px = close_arr[tk_idx, d]
+            px = close_arr[d, tk_idx]
             if not np.isfinite(px):
                 # carry-forward last valid
                 for back in range(d, open_pos["entry_idx"] - 1, -1):
-                    p2 = close_arr[tk_idx, back]
+                    p2 = close_arr[back, tk_idx]
                     if np.isfinite(p2) and p2 > 0:
                         px = p2
                         break
@@ -390,7 +379,8 @@ def spy_dca_baseline(close: pd.DataFrame) -> dict:
     """Monthly DCA into SPY for comparison."""
     dates = close.index
     month_idx = month_first_indices(dates)
-    spy = close["SPY"].to_numpy()
+    # Forward-fill SPY to handle missing final-day prices
+    spy = close["SPY"].ffill().to_numpy()
     n = len(dates)
     equity = np.zeros(n)
     positions = []
