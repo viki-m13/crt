@@ -29,8 +29,11 @@ def parse_args():
     ap.add_argument("--top-n", type=int, default=5)
     ap.add_argument("--weighting", default="rank")
     ap.add_argument("--hold-days", type=int, default=5000)
+    ap.add_argument("--smoothing-months", type=int, default=0,
+                    help="trailing SMA window for `final` score (step 39). 0 = no smoothing")
     ap.add_argument("--label", default=None)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--skip-jackknife", action="store_true")
     return ap.parse_args()
 
 
@@ -76,7 +79,11 @@ def main():
         entry_delay=1,
         rank_formula=args.rank_formula,
         rank_alpha=args.rank_alpha,
-        label=args.label or f"{args.rank_formula}_cap{args.cap}_top{args.top_n}",
+        smoothing_months=args.smoothing_months,
+        label=args.label or (
+            f"{args.rank_formula}_cap{args.cap}_top{args.top_n}"
+            + (f"_smooth{args.smoothing_months}M" if args.smoothing_months else "")
+        ),
     )
     print(f"Strategy: {cfg.label}")
 
@@ -151,33 +158,36 @@ def main():
     print(f"  Δ CAGR: {delta:+.2f}pp")
 
     # Jackknife (drop each ticker)
-    print("\n## Jackknife (drop each ticker)")
-    baseline_cagr = m['cagr']
-    deltas = []
-    for drop_tk in md.stocks:
-        uf = set(md.stocks) - {drop_tk}
-        cfg2 = StrategyConfig(
-            start_month_idx=start_m,
-            top_n=args.top_n,
-            max_ticker_frac=args.cap / 100.0 if args.cap > 0 else None,
-            hold_days=args.hold_days,
-            weighting=args.weighting, entry_delay=1,
-            rank_formula=args.rank_formula, rank_alpha=args.rank_alpha,
-            universe_filter=uf,
-        )
-        r2 = simulate(md, md.stocks, cfg2)
-        m2 = compute_metrics(md, r2.equity, r2.total_invested)
-        delta_cagr = (m2['cagr'] - baseline_cagr) * 100
-        deltas.append((drop_tk, m2['cagr'], delta_cagr))
-    deltas.sort(key=lambda x: x[2])
-    print(f"  Top 10 tickers whose removal HURTS CAP5 (big contributors):")
-    for tk, c, d in deltas[:10]:
-        print(f"    -{tk:6s} → {c*100:+.2f}% ({d:+.2f}pp)")
-    print(f"  Top 10 tickers whose removal HELPS CAP5 (drags):")
-    for tk, c, d in deltas[-10:][::-1]:
-        print(f"    -{tk:6s} → {c*100:+.2f}% ({d:+.2f}pp)")
-    med = np.median([d for _, _, d in deltas])
-    print(f"  Median jackknife delta: {med:+.2f}pp (baseline {baseline_cagr*100:+.2f}%)")
+    med = 0.0
+    if not args.skip_jackknife:
+        print("\n## Jackknife (drop each ticker)")
+        baseline_cagr = m['cagr']
+        deltas = []
+        for drop_tk in md.stocks:
+            uf = set(md.stocks) - {drop_tk}
+            cfg2 = StrategyConfig(
+                start_month_idx=start_m,
+                top_n=args.top_n,
+                max_ticker_frac=args.cap / 100.0 if args.cap > 0 else None,
+                hold_days=args.hold_days,
+                weighting=args.weighting, entry_delay=1,
+                rank_formula=args.rank_formula, rank_alpha=args.rank_alpha,
+                smoothing_months=args.smoothing_months,
+                universe_filter=uf,
+            )
+            r2 = simulate(md, md.stocks, cfg2)
+            m2 = compute_metrics(md, r2.equity, r2.total_invested)
+            delta_cagr = (m2['cagr'] - baseline_cagr) * 100
+            deltas.append((drop_tk, m2['cagr'], delta_cagr))
+        deltas.sort(key=lambda x: x[2])
+        print(f"  Top 10 tickers whose removal HURTS strategy (big contributors):")
+        for tk, c, d in deltas[:10]:
+            print(f"    -{tk:6s} → {c*100:+.2f}% ({d:+.2f}pp)")
+        print(f"  Top 10 tickers whose removal HELPS strategy (drags):")
+        for tk, c, d in deltas[-10:][::-1]:
+            print(f"    -{tk:6s} → {c*100:+.2f}% ({d:+.2f}pp)")
+        med = np.median([d for _, _, d in deltas])
+        print(f"  Median jackknife delta: {med:+.2f}pp (baseline {baseline_cagr*100:+.2f}%)")
 
     if args.out:
         summary = {

@@ -219,6 +219,14 @@ class StrategyConfig:
     rank_formula: str = "final"
     # Alpha blend weight for composite formulas (e.g. final+alpha_wash).
     rank_alpha: float = 0.5
+    # Signal smoothing (step 39): when > 0, the per-ticker ranking score at
+    # month-idx `di` is the mean of all finite `final` values in
+    # [max(0, di - smoothing_months*21), di]. Zero disables smoothing
+    # (incumbent behavior). Smoothing applies to the final value used for
+    # ranking AND for min_score gating; score_threshold gating uses the
+    # smoothed value too. Combines cleanly with rank_formula="final" and
+    # alternative formulas operate on their own (unsmoothed) signals.
+    smoothing_months: int = 0
 
 
 @dataclass
@@ -242,6 +250,7 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
         cfg.start_month_idx = first_valid_month_idx(md, eff_universe, min_tickers=3)
     need_sma = cfg.regime_gate or cfg.rebound_only_in_bull
     sma = spy_200sma(md) if need_sma else None
+    smooth_window = cfg.smoothing_months * 21 if cfg.smoothing_months > 0 else 0
 
     for m in range(cfg.start_month_idx, len(md.month_first_idx)):
         di = md.month_first_idx[m]
@@ -266,7 +275,16 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
             if f is None or p is None:
                 continue
             fv, pv = f[di], p[di]
-            if not (math.isfinite(fv) and fv > cfg.min_score and math.isfinite(pv) and pv > 0):
+            if not (math.isfinite(pv) and pv > 0):
+                continue
+            if smooth_window > 0:
+                lo = max(0, di - smooth_window)
+                vals = f[lo:di + 1]
+                valid = vals[np.isfinite(vals)]
+                if len(valid) == 0:
+                    continue
+                fv = float(np.mean(valid))
+            if not (math.isfinite(fv) and fv > cfg.min_score):
                 continue
             # Compute ranking score per rank_formula.
             rv = fv
