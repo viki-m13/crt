@@ -207,6 +207,23 @@ EVID_SCORE_STEP_BARS = 18
 CAP5_SMOOTH_MONTHS = 12
 CAP5_SMOOTH_WINDOW_BARS = CAP5_SMOOTH_MONTHS * 21
 
+# Take-Profit strategy parameters (step41-44 research winner).
+#
+# For each stock in the scan we publish a concrete monthly-pick signal:
+#   - Buy reference: today's last close.
+#   - Take-profit target: reference × (1 + TP_PCT/100).
+#   - Stop-loss:        reference × (1 - SL_PCT/100).
+#   - Time-stop:        close at market if neither target hits within
+#                       TP_TIME_STOP_BARS trading days (~12 months).
+#
+# Research (see max/research/RESEARCH_TP_STRATEGY.md): TP=+10%, SL=-15%,
+# time_stop=252 bars on CAP5+SMA12M top-1 monthly yields +11.13% CAGR
+# 2006-2026 vs SPY DCA +6.63%; 48% MDD, 70.5% gross win rate on 122
+# trades, avg winner +10% (TP) / avg loser -15% (SL).
+TP_PCT = 10.0
+SL_PCT = 15.0
+TP_TIME_STOP_BARS = 252
+
 # Outputs
 OUT_DIR = os.path.join("max", "docs", "data")
 TICKER_DIR = os.path.join(OUT_DIR, "tickers")
@@ -1536,6 +1553,13 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         # Trailing 12-month mean of the conviction series. This is the CAP5+SMA12M
         # ranking signal — what the webapp sorts picks by for stocks.
         "conviction_smooth12m": float(conv_smooth_today) if np.isfinite(conv_smooth_today) and conv_smooth_today > 0 else None,
+        # Take-profit signal (see TP_PCT/SL_PCT constants). Concrete buy/sell
+        # prices a retail user can place as GTC limit + stop orders.
+        "tp_price": float(px.iloc[-1] * (1.0 + TP_PCT / 100.0)) if len(px) and np.isfinite(px.iloc[-1]) and px.iloc[-1] > 0 else None,
+        "sl_price": float(px.iloc[-1] * (1.0 - SL_PCT / 100.0)) if len(px) and np.isfinite(px.iloc[-1]) and px.iloc[-1] > 0 else None,
+        "tp_pct": TP_PCT,
+        "sl_pct": SL_PCT,
+        "tp_time_stop_bars": TP_TIME_STOP_BARS,
         "median_10d": h_summaries.get("10D", {}).get("median", None),
         "median_30d": h_summaries.get("30D", {}).get("median", None),
         "median_60d": h_summaries.get("60D", {}).get("median", None),
@@ -1683,7 +1707,7 @@ def main():
     payload = {
         "as_of": as_of,
         "model": {
-            "version": "v10-max",
+            "version": "v11-max-tp",
             "bench": BENCH,
             "interval": INTERVAL,
             "universe": "Curated 100-stock diversified universe + 100+ crypto assets",
@@ -1694,6 +1718,11 @@ def main():
                 "wash_weight": FINAL_WASH_WEIGHT,
             },
             "cap5_smoothing_months": CAP5_SMOOTH_MONTHS,
+            "take_profit": {
+                "tp_pct": TP_PCT,
+                "sl_pct": SL_PCT,
+                "time_stop_bars": TP_TIME_STOP_BARS,
+            },
         },
         "items": res.to_dict(orient="records"),
         "details": details,

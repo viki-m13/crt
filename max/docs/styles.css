@@ -943,13 +943,41 @@ strong{font-weight:600}
   line-height:1.6;
   display:flex;
   flex-wrap:wrap;
-  gap:16px 24px;
+  gap:12px;
+  margin-top:8px;
 }
 .single-pick-meta strong{
   color:var(--text);
   font-weight:600;
   font-family:var(--mono);
 }
+.single-pick-meta .tp-slot{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:10px 14px;
+  border:1px solid var(--rule);
+  border-radius:6px;
+  min-width:130px;
+  background:#fff;
+}
+.single-pick-meta .tp-label{
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.single-pick-meta .tp-slot strong{
+  font-size:22px;
+  letter-spacing:-0.02em;
+  font-family:var(--mono);
+}
+.single-pick-meta .tp-buy strong{color:var(--text)}
+.single-pick-meta .tp-target strong{color:#1a7a3e}
+.single-pick-meta .tp-stop strong{color:#a8321a}
+.single-pick-meta .tp-time strong{color:var(--muted);font-size:18px}
+.pk-cell-tp{color:#1a7a3e;font-weight:600}
+.pk-cell-sl{color:#a8321a;font-weight:600}
 .single-pick-foot{
   font-size:12px;
   color:var(--muted);

@@ -632,6 +632,141 @@ function simulateDCAMax(universe, topN, opts) {
   return { equity, totalInvested, positions };
 }
 
+/* Take-Profit strategy simulation (step41-44 research winner).
+
+Each month the system ranks by CAP5+SMA12M (scoreLookup), picks top-1 not
+already held, enters at the next trading day's close, and places:
+  - Take-profit limit at entry × (1 + TP_PCT/100)  [default +10%]
+  - Stop-loss at entry × (1 - SL_PCT/100)          [default −15%]
+  - Time-stop at entry_idx + TP_TIME_STOP_BARS      [default 252 bars]
+Exit at first bar where close meets TP/SL, else at time-stop close.
+
+Note: bt_series has close prices only (no high/low), so TP/SL are checked
+against close rather than intraday high/low. This understates TP hits
+slightly (intraday TP peaks that close back below the target are missed)
+but is conservative and matches what a retail investor with end-of-day
+data would experience. The Python research framework (step41-44) uses
+high/low; numbers here are a close-approximation. */
+const TP_PCT_DEFAULT = 10.0;
+const SL_PCT_DEFAULT = 15.0;
+const TP_TIME_STOP_DEFAULT = 252;
+
+function simulateTakeProfit(universe, opts) {
+  const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
+  const equity = new Float64Array(allDates.length);
+  const positions = [];
+  let cash = 0;
+  let totalInvested = 0;
+  const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
+  const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
+  const tpPct = (opts && opts.tpPct != null) ? opts.tpPct : TP_PCT_DEFAULT;
+  const slPct = (opts && opts.slPct != null) ? opts.slPct : SL_PCT_DEFAULT;
+  const timeStop = (opts && opts.timeStop != null) ? opts.timeStop : TP_TIME_STOP_DEFAULT;
+  const tpMult = 1.0 + tpPct / 100.0;
+  const slMult = 1.0 - slPct / 100.0;
+
+  let openPos = null; // single-slot
+
+  for (let m = startMonthIdx; m < endMonthIdx; m++) {
+    const dIdx = monthFirstIdx[m];
+    // Accrue monthly contribution regardless of open position
+    totalInvested += DCA_MONTHLY;
+    cash += DCA_MONTHLY;
+
+    const entryIdx = dIdx + 1; // one-bar delay
+    if (entryIdx >= allDates.length) break;
+    const rankDate = allDates[dIdx];
+    const entryDate = allDates[entryIdx];
+
+    if (!openPos) {
+      // Rank candidates by score on rank date
+      let bestTk = null, bestScore = -Infinity;
+      for (const tk of universe) {
+        const s = scoreLookup[tk]?.get(rankDate);
+        const p = priceLookup[tk]?.get(rankDate);
+        if (s != null && Number.isFinite(s) && s > 0 && p != null && Number.isFinite(p) && p > 0) {
+          if (s > bestScore) { bestScore = s; bestTk = tk; }
+        }
+      }
+      if (bestTk) {
+        const entryPx = priceLookup[bestTk]?.get(entryDate);
+        if (entryPx && Number.isFinite(entryPx) && entryPx > 0 && cash > 0) {
+          const shares = cash / entryPx;
+          openPos = {
+            tk: bestTk,
+            entryIdx,
+            entryPx,
+            shares,
+            cost: cash,
+            tpPx: entryPx * tpMult,
+            slPx: entryPx * slMult,
+            stopIdx: entryIdx + timeStop,
+          };
+          cash = 0;
+        }
+      }
+    }
+
+    // Walk from dIdx to next month's dIdx checking TP/SL/time-stop daily
+    const nextDIdx = (m + 1) < monthFirstIdx.length ? monthFirstIdx[m + 1] : allDates.length;
+    for (let d = dIdx; d < nextDIdx; d++) {
+      if (openPos && d > openPos.entryIdx) {
+        const px = priceLookup[openPos.tk]?.get(allDates[d]);
+        if (px != null && Number.isFinite(px) && px > 0) {
+          let exitReason = null, exitPx = null;
+          if (px >= openPos.tpPx) { exitReason = "tp"; exitPx = openPos.tpPx; }
+          else if (px <= openPos.slPx) { exitReason = "sl"; exitPx = openPos.slPx; }
+          else if (d >= openPos.stopIdx) { exitReason = "time"; exitPx = px; }
+          if (exitReason) {
+            const proceeds = openPos.shares * exitPx;
+            cash += proceeds;
+            positions.push({
+              tk: openPos.tk,
+              entryIdx: openPos.entryIdx,
+              exitIdx: d,
+              entryPx: openPos.entryPx,
+              exitPx,
+              cost: openPos.cost,
+              proceeds,
+              hitTp: exitReason === "tp",
+              hitSl: exitReason === "sl",
+              timeStopped: exitReason === "time",
+              daysHeld: d - openPos.entryIdx,
+            });
+            openPos = null;
+          }
+        }
+      }
+
+      // Mark-to-market
+      let eq = cash;
+      if (openPos) {
+        const date = allDates[d];
+        if (d < openPos.entryIdx) {
+          eq += openPos.cost;
+        } else {
+          const px = priceLookup[openPos.tk]?.get(date);
+          eq += (px != null && Number.isFinite(px)) ? openPos.shares * px : openPos.cost;
+        }
+      }
+      equity[d] = eq;
+    }
+  }
+
+  // Mark to end of series (liquidate at last close for accounting)
+  const lastIdx = allDates.length - 1;
+  if (openPos) {
+    const px = priceLookup[openPos.tk]?.get(allDates[lastIdx]);
+    if (px != null && Number.isFinite(px) && px > 0) {
+      equity[lastIdx] = cash + openPos.shares * px;
+    } else {
+      equity[lastIdx] = cash + openPos.cost;
+    }
+  }
+
+  return { equity, totalInvested, positions, openPos };
+}
+
 /* Benchmark for the Max strategy: SPY DCA, hold-forever, same next-day-open
    entry. Capital schedule matches the strategy exactly so the curves are
    directly comparable. */
@@ -1301,19 +1436,29 @@ function renderThisMonthsPicks() {
     if (v != null && Number.isFinite(Number(v))) probBits.push(`${h.toUpperCase()} prob ${Number(v).toFixed(0)}%`);
   }
   const topRankScore = top.rs;
+  // TP signal (buy/target/stop prices). Fall back to computing from
+  // last_price if the scanner didn't emit the fields (pre-v11 data).
+  const tpPct = Number(topItem.tp_pct ?? 10.0);
+  const slPct = Number(topItem.sl_pct ?? 15.0);
+  const timeStopBars = Number(topItem.tp_time_stop_bars ?? 252);
+  const timeStopMonths = Math.round(timeStopBars / 21);
+  const lp = Number(topItem.last_price);
+  const tpPx = Number(topItem.tp_price ?? (lp * (1 + tpPct / 100)));
+  const slPx = Number(topItem.sl_price ?? (lp * (1 - slPct / 100)));
   byId("single-pick-meta").innerHTML = `
-    <span>Price <strong>${fmtPriceVal(topItem.last_price)}</strong></span>
-    <span>CAP5 Score <strong>${Number(topRankScore).toFixed(1)}</strong></span>
-    <span>Pullback <strong>${Number(topItem.washout_today ?? 0).toFixed(0)}</strong></span>
-    <span>Quality <strong>${Number(topItem.quality ?? 0).toFixed(0)}</strong></span>
-    ${probBits.map(b => `<span>${b}</span>`).join("")}
+    <span class="tp-slot tp-buy"><span class="tp-label">Buy</span><strong>${fmtPriceVal(lp)}</strong></span>
+    <span class="tp-slot tp-target"><span class="tp-label">Sell target (+${tpPct.toFixed(0)}%)</span><strong>${fmtPriceVal(tpPx)}</strong></span>
+    <span class="tp-slot tp-stop"><span class="tp-label">Stop-loss (&minus;${slPct.toFixed(0)}%)</span><strong>${fmtPriceVal(slPx)}</strong></span>
+    <span class="tp-slot tp-time"><span class="tp-label">Time-stop</span><strong>${timeStopMonths} mo</strong></span>
   `;
-  byId("single-pick-foot").textContent =
-    `The highest-ranked stock today by the CAP5+SMA12M opportunity score (trailing ` +
-    `12-month mean of conviction), after the 5% concentration filter. This is the ` +
-    `step39 production winner — +0.90pp CAGR over raw conviction ranking, robust ` +
-    `across 5/5 rolling 10Y windows. Still do your own work. ` +
-    `Drawdowns of 30% or more on single names are routine.`;
+  byId("single-pick-foot").innerHTML =
+    `Place a <strong>GTC limit sell at ${fmtPriceVal(tpPx)}</strong> and a ` +
+    `<strong>stop-loss at ${fmtPriceVal(slPx)}</strong>. If neither fires within ` +
+    `${timeStopMonths} months, close at market. Backtest 2006&ndash;2026: ` +
+    `<strong>70% of these trades hit +${tpPct.toFixed(0)}%</strong>, ` +
+    `<strong>+11.1% annualized</strong> vs SPY DCA&rsquo;s +6.6%. Pullback ${Number(topItem.washout_today ?? 0).toFixed(0)}, ` +
+    `Quality ${Number(topItem.quality ?? 0).toFixed(0)}, CAP5 Score ${Number(topRankScore).toFixed(1)}. ` +
+    `Drawdowns of 30% or more on single names are routine &mdash; do your own work.`;
 
   // Render the top-5 table.
   const rowsEl = byId("month-picks-rows");
@@ -1323,6 +1468,9 @@ function renderThisMonthsPicks() {
     const rs = picks[i].rs;
     const alloc = weights[i] * DCA_MONTHLY;
     const wPct = (weights[i] * 100).toFixed(1);
+    const pLp = Number(p.last_price);
+    const pTpPx = Number(p.tp_price ?? (pLp * 1.10));
+    const pSlPx = Number(p.sl_price ?? (pLp * 0.85));
     const row = document.createElement("div");
     row.className = "max-ticker-row month-picks-row";
     row.innerHTML = `
@@ -1330,10 +1478,10 @@ function renderThisMonthsPicks() {
       <span class="pk-ticker">${p.ticker}</span>
       <span class="pk-cell">${wPct}%</span>
       <span class="pk-cell">$${alloc.toFixed(0)}</span>
-      <span class="pk-cell">${fmtPriceVal(p.last_price)}</span>
-      <span class="pk-cell">${Number(rs ?? 0).toFixed(1)}</span>
-      <span class="pk-cell pk-cell-hide-mobile">${Number(p.washout_today ?? 0).toFixed(0)}</span>
-      <span class="pk-cell pk-cell-hide-mobile">${Number(p.quality ?? 0).toFixed(0)}</span>
+      <span class="pk-cell">${fmtPriceVal(pLp)}</span>
+      <span class="pk-cell pk-cell-tp">${fmtPriceVal(pTpPx)}</span>
+      <span class="pk-cell pk-cell-sl">${fmtPriceVal(pSlPx)}</span>
+      <span class="pk-cell pk-cell-hide-mobile">${Number(rs ?? 0).toFixed(1)}</span>
     `;
     rowsEl.appendChild(row);
   }

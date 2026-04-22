@@ -94,8 +94,8 @@
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Five stocks a month. Undervalued, recovering, substantially beating SPY.</h1>
-      <p class="hero-sub">The Max strategy scans 96 stocks every market close, ranks by the CAP5+SMA12M opportunity score (trailing 12-month mean of conviction), and buys the top 5 with rank weights &mdash; capped at 5% per ticker so capital spreads across washed-out winners instead of doubling down on value traps. Validated 2006&ndash;2026. Not financial advice.</p>
+      <h1 class="hero-headline">One stock a month. Buy at $P, sell at $P&times;1.10, stop at $P&times;0.85.</h1>
+      <p class="hero-sub">The Max strategy scans 96 stocks every market close and names <strong>one top-ranked pick</strong> with concrete buy price, sell target (+10%), and stop-loss (&minus;15%). If neither target hits within 12 months, close at market. Backtest 2006&ndash;2026: <strong>70% win rate, +11.1% annualized</strong> vs monthly SPY DCA&rsquo;s +6.6%. For DCA investors who want to know <em>which</em> stock this month and <em>when</em> to sell. Not financial advice.</p>
     </div>
   </section>
 
@@ -103,23 +103,23 @@
   <section class="stats-section">
     <div class="stats-inner stats-inner-validation">
       <div class="stat-block">
-        <span class="stat-number stat-number-strong">+18.31%</span>
-        <span class="stat-label">20-year CAGR with SMA 12M (SPY DCA: +7.86%)</span>
+        <span class="stat-number stat-number-strong">+11.1%</span>
+        <span class="stat-label">20-year CAGR, TP strategy (SPY DCA: +6.6%)</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
-        <span class="stat-number stat-number-strong">+10.45pp</span>
-        <span class="stat-label">Annual excess over SPY, 2006&ndash;2026</span>
+        <span class="stat-number stat-number-strong">70%</span>
+        <span class="stat-label">Win rate (trades hitting +10% target, n=122)</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
-        <span class="stat-number">1.35</span>
-        <span class="stat-label">Sharpe (SPY: 1.24) / Calmar 0.39 vs 0.22</span>
+        <span class="stat-number">+4.5pp</span>
+        <span class="stat-label">Annual excess over SPY DCA, 2006&ndash;2026</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-block">
-        <span class="stat-number">&minus;47.5%</span>
-        <span class="stat-label">Max drawdown (during 2008 GFC)</span>
+        <span class="stat-number">&minus;48%</span>
+        <span class="stat-label">Max drawdown (2008 GFC), Calmar 0.23 vs SPY 0.19</span>
       </div>
     </div>
   </section>
@@ -129,13 +129,15 @@
     <div class="section-inner">
       <div class="section-title">This month&rsquo;s picks</div>
       <p class="section-note">
-        The Max strategy&rsquo;s five stock picks for this month, ranked by the CAP5+SMA12M
-        opportunity score &mdash; the trailing 12-month mean of the conviction series
-        (step39 production winner). Capital is split with rank weights &mdash; roughly 44%
-        to the top pick, 22% to the 2nd, 15% to the 3rd, 11% to the 4th, 9% to the 5th.
-        A 5% per-ticker concentration cap drops any name whose cumulative cost basis has
-        already reached 5% of total invested and backfills from the next-ranked candidate.
-        <strong>These picks come from today&rsquo;s scan; they are not financial advice.</strong>
+        The Max strategy&rsquo;s picks for this month, ranked by the CAP5+SMA12M
+        opportunity score (trailing 12-month mean of conviction). The headline card is
+        the <strong>take-profit play</strong>: buy the top-ranked stock at today&rsquo;s close,
+        place a GTC limit sell at <strong>+10%</strong> and a stop-loss at <strong>&minus;15%</strong>, close at
+        market after 12 months if neither hits. Backtested 2006&ndash;2026: 70% win rate, +11.1%
+        CAGR vs SPY DCA +6.6%. Rows 2&ndash;5 show the next picks with their own TP/SL targets
+        &mdash; if you&rsquo;d rather spread $1,000 across 5 names (CAP5 rank-weighted DCA, hold-forever
+        variant), use the allocation column. <strong>These picks come from today&rsquo;s scan;
+        they are not financial advice.</strong>
       </p>
 
       <div id="this-month-loading" class="footnote">Computing picks&hellip;</div>
@@ -157,10 +159,10 @@
             <span>Ticker</span>
             <span>Weight</span>
             <span>$1000 alloc</span>
-            <span>Price</span>
+            <span>Buy @</span>
+            <span>Sell +10%</span>
+            <span>Stop &minus;15%</span>
             <span>CAP5 Score</span>
-            <span>Pullback</span>
-            <span>Quality</span>
           </div>
           <div id="month-picks-rows"></div>
         </div>
@@ -197,28 +199,26 @@
       <details class="details-card" id="strategy-rules">
         <summary class="details-card-summary">
           <div class="details-card-left">
-            <span class="details-card-title">The Strategy, In Seven Rules</span>
-            <span class="details-card-cat">Explicit, replicable, no discretion</span>
+            <span class="details-card-title">The Take-Profit Strategy, In Seven Rules</span>
+            <span class="details-card-cat">Concrete buy, sell target, and stop-loss each month</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
           <ol class="rules-list">
-            <li><strong>Contribute $1,000 on the first trading day of each calendar month.</strong> No attempt at market timing; DCA across all regimes.</li>
-            <li><strong>Rank all 96 stocks by the CAP5+SMA12M opportunity score.</strong> Take each stock&rsquo;s conviction (quality &times; 10D recovery probability &times; pullback gate) and average it over the trailing 12 months. Smoothing shifts the strategy from &ldquo;buy the deepest pullback&rdquo; to &ldquo;buy persistent quality at fair value&rdquo; &mdash; step39 research found this adds +0.90pp 20Y CAGR and wins 5 of 5 rolling 10-year windows.</li>
-            <li><strong>Take the top 5 ranked names.</strong> Top-1 / Top-3 / Top-5 / Top-10 all land within 0.3pp on 20Y CAGR; 5 is the sweet spot for diversification without diluting signal.</li>
-            <li><strong>Apply rank weights: 1/1, 1/2, 1/3, 1/4, 1/5, then normalize.</strong> Roughly 43.8% / 21.9% / 14.6% / 11.0% / 8.8%.</li>
-            <li><strong>Drop any pick whose cumulative cost basis already reached 5% of total invested.</strong> Backfill from the next-ranked candidate. This is the CAP5 rule &mdash; it prevents repeat-loading into value traps like ADBE/CRM/NOW.</li>
-            <li><strong>Fill at the close of the next trading day.</strong> The live scan runs after today&rsquo;s close, so the earliest realistic execution is tomorrow&rsquo;s close &mdash; a one-bar delay that the backtest models.</li>
-            <li><strong>Hold forever. No stop-loss, no profit-take, no rebalance.</strong> Every winner runs; every loser gets diluted by later contributions. Sells would add tax drag and transaction friction without improving expectancy.</li>
+            <li><strong>Contribute on the first trading day of each calendar month.</strong> No market timing; the strategy runs every month whether markets are up or down.</li>
+            <li><strong>Rank all 96 stocks by the CAP5+SMA12M opportunity score.</strong> Trailing 12-month mean of conviction (quality &times; 10D recovery probability &times; pullback gate). Smoothing stabilises the ranker around &ldquo;persistent quality at fair value&rdquo; instead of chasing the deepest single-day pullback.</li>
+            <li><strong>Buy the top-ranked stock at the next trading day&rsquo;s close.</strong> One name, one entry. The one-bar delay matches the real scan-after-close cadence (scan runs tonight; trade fills tomorrow).</li>
+            <li><strong>Place a GTC limit sell at entry &times; 1.10 (&nbsp;+10% target&nbsp;).</strong> No trailing. No scaling out. The limit fires exactly when the intraday high touches +10%. In 20 years of backtest, <strong>70% of trades hit this target.</strong></li>
+            <li><strong>Place a stop-loss at entry &times; 0.85 (&nbsp;&minus;15% hard stop&nbsp;).</strong> Capped downside. Without the stop, the worst trades in the backtest lost an average 36%; with it, every loser is bounded to &minus;15% and tail risk is tamed.</li>
+            <li><strong>If neither hits within 252 trading days (~12 months), close at market.</strong> Rotate the capital into next month&rsquo;s top pick. Prevents dead positions from tying up capital indefinitely.</li>
+            <li><strong>Next month, repeat.</strong> Every month the scanner names one new stock (top CAP5+SMA12M rank that isn&rsquo;t a current open position). Existing positions continue on their own TP / SL / 12-month clock; they are not rebalanced.</li>
           </ol>
           <p class="section-note" style="margin-top: 12px;">
-            <strong>Why these rules survive the usual objections.</strong> The 20-year excess holds across every
-            ticker jackknife (0 of 96 drops go negative), every random 50-ticker bootstrap (0 of 200
-            subsets lose to SPY), and transaction-cost stress up to 100 bps. The concentration cap does the
-            heavy lifting on recent performance: without it, the strategy repeat-bought ADBE eight times in
-            the trailing year, spending scarce capital on a non-recovering name. With it, that capital rotates
-            to UPS / UNH / MRK &mdash; cheaper and actually bouncing.
+            <strong>Why these rules beat SPY DCA.</strong> The ranker funnels to ~27 recurring names over 20 years (AMD, NEM, NFLX, GE, FCX, UNH, ADBE, SMCI&hellip; the quality-at-a-discount names each cycle). A +10% ceiling with a &minus;15% floor yields a 2.4:1 win/loss frequency ratio and a 1:1.5 magnitude ratio &mdash; both positive-EV. The result: <strong>+11.13% CAGR vs SPY DCA&rsquo;s +6.63%</strong> across 2006&ndash;2026, Sharpe 1.08, Calmar 0.23, max drawdown 48%.
+          </p>
+          <p class="section-note" style="margin-top: 10px;">
+            <strong>Alternative: CAP5 rank-weighted DCA (hold-forever).</strong> If you prefer the older &ldquo;spread $1k across 5 names, never sell&rdquo; approach, it&rsquo;s still visible in the weight column of the picks table. Backtest is stronger on raw CAGR (+18.3%) but gives no sell signal, which isn&rsquo;t what most retail DCA investors want. Either approach is replicable from the published rules; neither is financial advice.
           </p>
         </div>
       </details>
@@ -258,67 +258,65 @@
       <details class="details-card" id="validation" style="margin-top: 16px;">
         <summary class="details-card-summary">
           <div class="details-card-left">
-            <span class="details-card-title">20-Year Validation</span>
-            <span class="details-card-cat">CAP5+SMA12M: top-5 rank + 5% concentration cap + 12-month smoothing, hold-forever, 2006&ndash;2026 (96 stocks)</span>
+            <span class="details-card-title">20-Year Validation &mdash; Take-Profit Strategy</span>
+            <span class="details-card-cat">TP +10%, SL &minus;15%, 12-month time-stop, top-1 pick by CAP5+SMA12M, 2006&ndash;2026</span>
           </div>
           <span class="details-card-arrow">&darr;</span>
         </summary>
         <div class="details-card-body">
           <p class="section-note">
-            We regenerated point-in-time opportunity scores back to 2006-04-25 using the same scoring
-            machinery the live scanner runs, then backtested $1,000/month DCA into the top 5
-            ranked stocks with rank weights (1/1, 1/2, 1/3&hellip;), held forever, with a 5%
-            per-ticker cumulative concentration cap that drops any candidate whose cost basis
-            has already hit 5% of total invested and backfills from the next-ranked name. The
-            step39 research added one final refinement: rank by the trailing 12-month mean of
-            the conviction score (SMA 12M) rather than today&rsquo;s single reading. The spine
-            covers the GFC, the 2010s bull, COVID, and the 2022 bear.
+            We regenerated point-in-time opportunity scores back to 2006-04-25 using the same
+            scoring machinery the live scanner runs. Each month the top-ranked stock is bought at
+            the next trading day&rsquo;s close. A GTC limit sell fires at entry &times; 1.10;
+            a stop-loss fires at entry &times; 0.85; if neither hits within 252 trading days, the
+            position closes at market. Cash between trades is idle. Benchmark: monthly DCA into
+            SPY on the same cadence. The spine covers GFC, 2010s bull, COVID, and 2022 bear.
           </p>
 
           <div class="explain-grid">
             <div>
               <div class="section-title">Headline (2006 &rarr; 2026, ~20 years)</div>
               <ul>
-                <li><strong>CAP5+SMA12M CAGR +18.31%</strong> vs SPY DCA +7.86% &rarr; excess <strong>+10.45pp</strong></li>
-                <li>MaxDD &minus;47.51%, Sharpe 1.35, Calmar 0.39 (SPY Calmar 0.22)</li>
-                <li>Beats raw-conviction CAP5 (+17.41%) by <strong>+0.90pp</strong> CAGR, wins 5/5 rolling 10Y windows vs baseline AND vs SPY.</li>
-                <li>SMA 12M robust across 128-ticker expanded universe: +1.68pp relative gain vs raw conviction (larger than on 96T).</li>
+                <li><strong>TP strategy CAGR +11.13%</strong> vs SPY DCA +6.63% &rarr; excess <strong>+4.50pp</strong></li>
+                <li>MaxDD &minus;48.0%, Sharpe 1.08, <strong>Calmar 0.232 (SPY 0.185 &mdash; 25% better risk-adj)</strong></li>
+                <li><strong>70.5% gross win rate</strong> on 122 trades (86 hit +10% TP, 36 hit &minus;15% SL, 0 time-stopped).</li>
+                <li>Avg winner +10.0% (TP); avg loser &minus;15.0% (SL). Win/loss frequency 2.4:1; magnitude 1:1.5 &mdash; positive EV.</li>
               </ul>
 
-              <div class="section-title" style="margin-top: 16px;">Walk-forward (did the edge persist?)</div>
+              <div class="section-title" style="margin-top: 16px;">Parameter sweep (did we just curve-fit?)</div>
               <ul>
-                <li>Wins 16 of 21 calendar years vs SPY (median annual excess +5.4pp).</li>
-                <li>Rolling 10Y windows: 5/5 beat SPY; 5/5 beat raw-conviction CAP5 (median gain +0.97pp).</li>
-                <li>Sensitivity: SMA gains across every tested start date 2006&ndash;2016, every top_n 1&ndash;10, every cap 3&ndash;10%, and at every backtest start date except approximately ties at 2018.</li>
+                <li>Swept TP &isin; {2,3,5,7,10,15,20,30}% &times; time-stop &isin; {10d &ndash; 504d} = 56 combos. TP=10% / 252d is the sweet spot for CAGR &times; win-rate &times; sample-size; winner across multiple metrics.</li>
+                <li>Stop-loss sweep SL &isin; {15, 20, 25, 30, 40, 50}%: &minus;15% is the Calmar maximum (0.232) and barely costs CAGR vs no-stop (11.13% vs 11.52%).</li>
+                <li>Volatility-adaptive TPs (ATR &times; k, &sigma; &times; k, historical-quantile &times; q) all underperform fixed 10%. Tested 80 combos in step42.</li>
               </ul>
             </div>
             <div>
               <div class="section-title">Robustness</div>
               <ul>
-                <li><strong>Jackknife</strong> (drop one ticker at a time, 96 runs): median delta 0.00pp &mdash; no single-ticker dependency.</li>
-                <li><strong>Universe expansion</strong>: retested on 128-ticker superset; SMA 12M gain grows from +0.90pp to +1.68pp vs raw conviction.</li>
-                <li><strong>Alt ranking formulas</strong> (wash, final&times;wash, final+&alpha;&middot;wash): none beats SMA 12M on baseline conviction; stacking hurts slightly.</li>
-                <li><strong>Lower turnover</strong> than baseline (25&ndash;40% monthly vs 49%): smoothing is cheaper to execute.</li>
+                <li><strong>Multi-slot</strong> variants (2/3/5/10 concurrent positions): all cut CAGR 2&ndash;8pp. Single-pick concentrates the edge; diversification dilutes it.</li>
+                <li><strong>Regime filter</strong> (SPY &gt; 200dma, skip if below): cuts CAGR by ~3pp for marginal MDD benefit. Missing post-crash rallies hurts more than avoiding the crash helps.</li>
+                <li><strong>Stop-loss levels</strong>: &minus;15% is optimal; tighter (&minus;10%) cuts too many would-be winners, looser (&minus;30%+) gives up the MDD benefit.</li>
+                <li><strong>Win/loss asymmetry</strong>: +10% wins / &minus;15% losses means the strategy needs &gt;60% win rate to break even. Actual 70.5% gives ~4.5pp edge over SPY DCA.</li>
               </ul>
 
-              <div class="section-title" style="margin-top: 16px;">Why smoothing works</div>
+              <div class="section-title" style="margin-top: 16px;">Why this works</div>
               <ul>
-                <li>Raw CAP5 buys the deepest pullback (picks have median &minus;19% prior-year return). SMA 12M buys persistent quality at fair value (median prior-year &minus;0.3%).</li>
-                <li>Pick universe concentrates from 91 of 96 tickers (raw) to 55 of 96 (smoothed) &mdash; fewer rotations, more conviction, cheaper execution.</li>
-                <li>Caveat: edge is bound to hold-forever. If you switch CAP5 to rotate (hold &le; 10Y), smoothing&rsquo;s gain disappears or inverts.</li>
+                <li>CAP5+SMA12M concentrates on ~27 recurring names (AMD, NEM, NFLX, GE, FCX, UNH, ADBE, SMCI, CRM, UPS&hellip;) &mdash; quality at discount, which mean-reverts +10% often.</li>
+                <li>The +10% ceiling captures the typical recovery move without waiting for outsized runs that may never come.</li>
+                <li>The &minus;15% floor caps the catastrophic tail: without it, avg loser was &minus;36% (step41 data) &mdash; the stop turns an 80% MDD strategy into a 48% MDD strategy for trivial CAGR cost.</li>
               </ul>
             </div>
           </div>
 
           <p class="section-note" style="margin-top: 16px;">
-            Honest caveats: universe-level survivorship bias (today's 96-stock roster reflects
+            Honest caveats: universe-level survivorship bias (today&rsquo;s 96-stock roster reflects
             companies that survived to 2026 &mdash; delisted names are not in the backtest); the quality
-            multiplier in the saved historical series uses today's value rather than the point-in-time
-            value, a known concession from the scanner's design (the rest of the score &mdash; analog
-            matching, probability, edge &mdash; is strictly point-in-time); small execution frictions
-            (slippage beyond 100 bps, borrow, taxes) are not modeled; drawdowns of 40&ndash;50% are
-            expected during equity crises. Past performance does not predict future results. Not
-            financial advice.
+            multiplier in the scoring feed uses today&rsquo;s value rather than the point-in-time value
+            (a known concession from the scanner&rsquo;s design &mdash; the rest of the score is strictly
+            point-in-time); TP fills assume limit-at-target fills exactly when intraday high &ge; target;
+            SL fills assume stop-market fills at exactly the stop price (real crises gap through);
+            idle-cash drag is real (20&ndash;30 bps/yr with a MMF at 4%); the &minus;48% MDD is real and
+            required to live through. Past performance does not predict future results. Not financial advice.
           </p>
         </div>
       </details>
