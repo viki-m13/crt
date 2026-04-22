@@ -1,0 +1,60 @@
+Loaded 96 stocks, 5028 dates (2006-04-25 → 2026-04-20)
+Has wash column: True    Has final_raw column: True
+
+==========================================================================================
+variant                        CAGR         TR     MaxDD   Sharpe         Final
+------------------------------------------------------------------------------------------
+SPY benchmark                +7.86%  +352.41%   -35.62%    1.24  $  1,090,317
+CAP5 (final)                +17.41%  +2357.16%   -46.15%    1.34  $  5,921,752
+CAP5 (final_raw)            +17.33%  +2325.43%   -46.12%    1.35  $  5,845,285
+CAP5 (wash)                 +17.84%  +2545.67%   -48.25%    1.34  $  6,376,068
+CAP5 (final×wash)           +17.34%  +2331.30%   -46.04%    1.33  $  5,859,443
+CAP5 (raw×wash)             +17.50%  +2395.12%   -46.53%    1.35  $  6,013,240
+CAP5 (final+0.25*wash)      +17.45%  +2375.73%   -46.44%    1.34  $  5,966,507
+CAP5 (final+0.50*wash)      +17.52%  +2404.37%   -46.52%    1.34  $  6,035,538
+CAP5 (final+1.00*wash)      +17.61%  +2443.40%   -46.58%    1.34  $  6,129,598
+CAP5 (final+2.00*wash)      +17.65%  +2463.05%   -46.55%    1.34  $  6,176,950
+CAP5 (final) + SMA12M       +18.31%  +2762.57%   -47.51%    1.35  $  6,898,800
+CAP5 (final) + SMA24M       +18.60%  +2905.39%   -48.02%    1.36  $  7,243,001
+CAP5 (wash) + SMA12M        +17.84%  +2545.67%   -48.25%    1.34  $  6,376,068
+CAP5 (wash) + SMA24M        +17.84%  +2545.67%   -48.25%    1.34  $  6,376,068
+CAP5 (f+1w) + SMA12M        +18.19%  +2707.66%   -47.10%    1.35  $  6,766,457
+CAP5 (f+2w) + SMA12M        +18.23%  +2726.76%   -47.57%    1.35  $  6,812,486
+
+==========================================================================================
+Ranked by CAGR:
+  CAP5 (final) + SMA24M       +18.60%  Δ +0.00pp ← incumbent
+  CAP5 (final) + SMA12M       +18.31%  Δ -0.29pp ← incumbent
+  CAP5 (f+2w) + SMA12M        +18.23%  Δ -0.36pp
+  CAP5 (f+1w) + SMA12M        +18.19%  Δ -0.40pp
+  CAP5 (wash)                 +17.84%  Δ -0.76pp
+  CAP5 (wash) + SMA12M        +17.84%  Δ -0.76pp
+  CAP5 (wash) + SMA24M        +17.84%  Δ -0.76pp
+  CAP5 (final+2.00*wash)      +17.65%  Δ -0.94pp
+  CAP5 (final+1.00*wash)      +17.61%  Δ -0.99pp
+  CAP5 (final+0.50*wash)      +17.52%  Δ -1.08pp
+  CAP5 (raw×wash)             +17.50%  Δ -1.10pp
+  CAP5 (final+0.25*wash)      +17.45%  Δ -1.15pp
+  CAP5 (final)                +17.41%  Δ -1.19pp ← incumbent
+  CAP5 (final×wash)           +17.34%  Δ -1.25pp
+  CAP5 (final_raw)            +17.33%  Δ -1.27pp
+
+==========================================================================================
+Last-month top-5 picks (most recent rebalance) per variant:
+  CAP5 (final) + SMA24M      2026-04-01: ['SMCI', 'INTC', 'UPS', 'ADBE', 'UNH']
+  CAP5 (final) + SMA12M      2026-04-01: ['UNH', 'ADBE', 'UPS', 'CRM', 'MRK']
+  CAP5 (f+2w) + SMA12M       2026-04-01: ['UNH', 'SMCI', 'ADBE', 'CRM', 'NOW']
+  CAP5 (f+1w) + SMA12M       2026-04-01: ['UNH', 'ADBE', 'CRM', 'UPS', 'NOW']
+  CAP5 (wash)                2026-04-01: ['SMCI', 'NKE', 'NOW', 'COIN', 'UNH']
+  CAP5 (wash) + SMA12M       2026-04-01: ['SMCI', 'NKE', 'NOW', 'COIN', 'UNH']
+  CAP5 (wash) + SMA24M       2026-04-01: ['SMCI', 'NKE', 'NOW', 'COIN', 'UNH']
+  CAP5 (final+2.00*wash)     2026-04-01: ['SMCI', 'COIN', 'NOW', 'ADBE', 'UNH']
+  CAP5 (final+1.00*wash)     2026-04-01: ['COIN', 'ADBE', 'NOW', 'UNH', 'CRM']
+  CAP5 (final+0.50*wash)     2026-04-01: ['COIN', 'ADBE', 'NOW', 'UNH', 'CRM']
+  CAP5 (raw×wash)            2026-04-01: ['NOW', 'NKE', 'SMCI', 'UNH', 'ADBE']
+  CAP5 (final+0.25*wash)     2026-04-01: ['COIN', 'ADBE', 'UNH', 'NOW', 'CRM']
+  CAP5 (final)               2026-04-01: ['COIN', 'ADBE', 'UNH', 'NOW', 'META']
+  CAP5 (final×wash)          2026-04-01: ['SMCI', 'COIN', 'NOW', 'ADBE', 'UNH']
+  CAP5 (final_raw)           2026-04-01: ['NOW', 'NKE', 'UNH', 'SMCI', 'ADBE']
+
+## DONE

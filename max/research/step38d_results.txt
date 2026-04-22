@@ -1,0 +1,105 @@
+Loaded 96 stocks, 5028 dates
+
+====================================================================================================
+variant                                 CAGR        TR    MaxDD   Sharpe      Invested           Final
+----------------------------------------------------------------------------------------------------
+SPY                                   +7.86%  +352.41%  -35.62%    1.24  $    241,000  $    1,090,317
+flat (incumbent)                     +17.41%  +2357.16%  -46.15%    1.34  $    241,000  $    5,921,752
+2x at SPY -20%                       +17.80%  +2525.22%  -46.07%    1.36  $    268,000  $    7,035,581
+3x at SPY -20%                       +18.19%  +2707.18%  -45.83%    1.38  $    295,000  $    8,281,190
+linear dd-scaled                     +18.12%  +2672.74%  -46.50%    1.35  $    328,559  $    9,110,112
+0.5x at SPY -20% (downside test)     +16.90%  +2154.71%  -45.75%    1.33  $    227,500  $    5,129,473
+
+NOTE: variants that deploy extra capital on dips mechanically have MORE invested.
+Compare CAGR (IRR on actual cash flows) and final $ to judge real improvement.
+
+## DONE
+
+====================================================================================================
+variant                                      CAGR   Sharpe    MaxDD     Invested          Final
+----------------------------------------------------------------------------------------------------
+flat (baseline)                           +17.41%    1.34  -46.15%  $   241,000  $   5,921,752
+3x at -20%                                +18.19%    1.38  -45.83%  $   295,000  $   8,281,190
+3x at -20% + above 50DMA                  +18.08%    1.36  -46.82%  $   271,000  $   7,463,238
+3x at -20% + above 20D high               +17.91%    1.36  -46.74%  $   261,000  $   6,986,476
+3x when SPY<0.9*200DMA (bear trend)       +17.32%    1.35  -44.68%  $   263,000  $   6,373,545
+
+## Rolling 10Y win rate vs flat baseline
+
+  2006-04 → 2016-04:
+    flat (baseline)                           CAGR +459.29%  Sharpe 1.40
+    3x at -20%                                CAGR +484.96%  Sharpe 1.47
+    3x at -20% + above 50DMA                  CAGR +474.65%  Sharpe 1.45
+    3x at -20% + above 20D high               CAGR +469.38%  Sharpe 1.43
+    3x when SPY<0.9*200DMA (bear trend)       CAGR +470.29%  Sharpe 1.42
+
+  2008-04 → 2018-04:
+    flat (baseline)                           CAGR  +37.55%  Sharpe 1.40
+    3x at -20%                                CAGR  +42.97%  Sharpe 1.45
+    3x at -20% + above 50DMA                  CAGR  +40.99%  Sharpe 1.44
+    3x at -20% + above 20D high               CAGR  +39.78%  Sharpe 1.42
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +39.74%  Sharpe 1.38
+
+  2010-04 → 2020-04:
+    flat (baseline)                           CAGR  +30.49%  Sharpe 1.32
+    3x at -20%                                CAGR  +27.12%  Sharpe 1.22
+    3x at -20% + above 50DMA                  CAGR  +28.33%  Sharpe 1.26
+    3x at -20% + above 20D high               CAGR  +28.91%  Sharpe 1.28
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +27.89%  Sharpe 1.24
+
+  2012-04 → 2022-04:
+    flat (baseline)                           CAGR  +29.15%  Sharpe 1.24
+    3x at -20%                                CAGR  +26.09%  Sharpe 1.16
+    3x at -20% + above 50DMA                  CAGR  +27.31%  Sharpe 1.19
+    3x at -20% + above 20D high               CAGR  +27.91%  Sharpe 1.21
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +27.08%  Sharpe 1.19
+
+  2014-04 → 2024-05:
+    flat (baseline)                           CAGR  +31.68%  Sharpe 1.18
+    3x at -20%                                CAGR  +29.73%  Sharpe 1.14
+    3x at -20% + above 50DMA                  CAGR  +30.78%  Sharpe 1.16
+    3x at -20% + above 20D high               CAGR  +31.16%  Sharpe 1.17
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +29.97%  Sharpe 1.15
+
+  2016-01 → 2026-01:
+    flat (baseline)                           CAGR  +34.03%  Sharpe 1.16
+    3x at -20%                                CAGR  +32.55%  Sharpe 1.14
+    3x at -20% + above 50DMA                  CAGR  +33.50%  Sharpe 1.15
+    3x at -20% + above 20D high               CAGR  +33.87%  Sharpe 1.15
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +32.40%  Sharpe 1.14
+
+  2018-01 → 2026-04:
+    flat (baseline)                           CAGR  +32.99%  Sharpe 1.07
+    3x at -20%                                CAGR  +31.99%  Sharpe 1.06
+    3x at -20% + above 50DMA                  CAGR  +32.73%  Sharpe 1.06
+    3x at -20% + above 20D high               CAGR  +33.04%  Sharpe 1.07
+    3x when SPY<0.9*200DMA (bear trend)       CAGR  +31.49%  Sharpe 1.06
+
+## Calendar years (2008+)
+ year       flat (baseline)            3x at -20%  3x at -20% + above 5  3x at -20% + above 2  3x when SPY<0.9*200D
+  2008               +8.96%              +36.72%               +8.96%               +8.96%              +36.72%
+  2009             +111.90%             +207.14%             +204.43%             +161.98%             +146.30%
+  2010              +52.45%              +58.64%              +60.34%              +63.95%              +42.24%
+  2011               +7.59%               +4.32%               +4.72%               +5.14%               +6.28%
+  2012              +32.79%              +27.29%              +27.25%              +28.98%              +30.54%
+  2013              +61.06%              +50.90%              +55.04%              +56.51%              +53.59%
+  2014              +23.72%              +20.92%              +21.96%              +21.95%              +21.64%
+  2015              +20.74%              +17.18%              +18.33%              +19.19%              +18.15%
+  2016              +35.49%              +31.19%              +34.07%              +34.60%              +32.66%
+  2017              +39.62%              +37.02%              +38.09%              +38.52%              +38.40%
+  2018               +3.69%               +2.37%               +3.24%               +3.36%               +3.60%
+  2019              +41.99%              +41.51%              +42.06%              +42.15%              +41.57%
+  2020              +55.18%              +51.86%              +52.87%              +53.97%              +52.96%
+  2021              +46.87%              +46.91%              +47.42%              +47.78%              +45.10%
+  2022              -35.43%              -34.61%              -35.33%              -35.51%              -34.26%
+  2023              +91.37%              +88.30%              +91.10%              +91.96%              +85.51%
+  2024              +74.66%              +74.25%              +75.57%              +76.45%              +68.67%
+  2025              +30.69%              +29.55%              +30.40%              +30.46%              +29.40%
+
+Win rate vs flat (18 years):
+  3x at -20%                                       5/18
+  3x at -20% + above 50DMA                         6/18
+  3x at -20% + above 20D high                      6/18
+  3x when SPY<0.9*200DMA (bear trend)              3/18
+
+## DONE

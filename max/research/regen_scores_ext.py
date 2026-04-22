@@ -89,7 +89,12 @@ for i, t in enumerate(sorted(tickers), 1):
         "dates": series["dates"],
         "prices": series["prices"],
         "final": series["final"],
+        "wash": series.get("wash", [None] * len(series["dates"])),
+        "final_raw": series.get("final_raw", [None] * len(series["dates"])),
     }
+    # Also capture this ticker's today-snapshot quality so bt_core can
+    # reconstruct 10D_prob / apply quality overlays historically.
+    bt_records[t]["quality_today"] = row.get("quality")
     today_rows.append(row)
     if i % 10 == 0 or i == len(tickers):
         elapsed = time.time() - t0
@@ -97,11 +102,13 @@ for i, t in enumerate(sorted(tickers), 1):
 
 print(f"\nTotal scored: {len(bt_records)}")
 
-# Save: one long-form parquet with (ticker, date, price, final)
+# Save: one long-form parquet with (ticker, date, price, final, wash, final_raw, quality)
 rows = []
 for tk, s in bt_records.items():
-    for d, p, f in zip(s["dates"], s["prices"], s["final"]):
-        rows.append({"ticker": tk, "date": d, "price": p, "final": f})
+    q = s.get("quality_today")
+    for d, p, f, w, fr in zip(s["dates"], s["prices"], s["final"], s["wash"], s["final_raw"]):
+        rows.append({"ticker": tk, "date": d, "price": p, "final": f,
+                     "wash": w, "final_raw": fr, "quality": q})
 df = pd.DataFrame(rows)
 df["date"] = pd.to_datetime(df["date"])
 out_path = os.path.join(OUT, "bt_ext.parquet")

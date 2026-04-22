@@ -60,6 +60,11 @@ class MarketData:
     bench_filled: dict
     stocks: list
     items_by_ticker: dict
+    # Optional: extended score series (added by load_market_ext for research).
+    # None if the source data doesn't provide them.
+    washes: Optional[dict] = None      # ticker -> np.ndarray of washout_meter
+    finals_raw: Optional[dict] = None  # ticker -> np.ndarray of raw FinalScore
+    qualities: Optional[dict] = None   # ticker -> today-snapshot quality (scalar)
 
 
 def load_market(full_json_path: str, bench_tickers=("SPY",)) -> MarketData:
@@ -183,6 +188,12 @@ class StrategyConfig:
     # Require positive trailing price return over N trading days before buying.
     rebound_lookback_days: Optional[int] = None
     rebound_min_return: float = 0.0
+    # If True, the rebound gate is only applied when SPY is ABOVE its 200-day
+    # SMA (bull/neutral regimes). During SPY < 200DMA (bear), the gate is
+    # disabled so mean-reversion after crashes can be captured. Retains
+    # drawdown protection in normal markets without kneecapping V-shaped
+    # GFC-style recoveries.
+    rebound_only_in_bull: bool = False
     # Value factor: require the stock to have UNDERPERFORMED SPY by at least
     # `value_min_underperf` (positive number, e.g. 0.1 for 10pp) over the
     # trailing `value_lookback_days`. Captures "long-term laggard" candidates.
@@ -195,6 +206,27 @@ class StrategyConfig:
     # Single-ticker alt-pick: if None, ignore. If set to a ticker (e.g. "SPY"),
     # redirect skipped DCA capital into that ticker instead of sitting out.
     fallback_ticker: Optional[str] = None
+    # ------ Alternative ranking formulas (step34). Default "final" (= conviction
+    # score = quality × 10D_prob × pullback_gate). Other options require md to
+    # have the appropriate companion series loaded.
+    # Supported values:
+    #   "final"       - existing Opportunity/conviction score (default)
+    #   "final_raw"   - raw FinalScore = edge × (wash_floor + wash_weight × wash/100)
+    #   "wash"        - rank by washout_meter alone (contrarian)
+    #   "final_x_wash"- final × wash/100 (boost picks that are also washed out)
+    #   "raw_x_wash"  - final_raw × wash/100
+    #   "final+alpha_wash" - final × (1 + alpha × wash/100), tuneable
+    rank_formula: str = "final"
+    # Alpha blend weight for composite formulas (e.g. final+alpha_wash).
+    rank_alpha: float = 0.5
+    # Signal smoothing (step 39): when > 0, the per-ticker ranking score at
+    # month-idx `di` is the mean of all finite `final` values in
+    # [max(0, di - smoothing_months*21), di]. Zero disables smoothing
+    # (incumbent behavior). Smoothing applies to the final value used for
+    # ranking AND for min_score gating; score_threshold gating uses the
+    # smoothed value too. Combines cleanly with rank_formula="final" and
+    # alternative formulas operate on their own (unsmoothed) signals.
+    smoothing_months: int = 0
 
 
 @dataclass
@@ -216,17 +248,26 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
     eff_universe = [t for t in universe if not cfg.universe_filter or t in cfg.universe_filter]
     if cfg.start_month_idx is None:
         cfg.start_month_idx = first_valid_month_idx(md, eff_universe, min_tickers=3)
-    sma = spy_200sma(md) if cfg.regime_gate else None
+    need_sma = cfg.regime_gate or cfg.rebound_only_in_bull
+    sma = spy_200sma(md) if need_sma else None
+    smooth_window = cfg.smoothing_months * 21 if cfg.smoothing_months > 0 else 0
 
     for m in range(cfg.start_month_idx, len(md.month_first_idx)):
         di = md.month_first_idx[m]
         monthly = DCA_MONTHLY
-        if cfg.regime_gate and sma is not None:
+        # Evaluate "bull regime" = SPY >= 200DMA once per month
+        in_bull = True
+        if sma is not None:
             spy_p = md.bench_filled["SPY"][di]
-            if math.isfinite(sma[di]) and spy_p < sma[di]:
-                monthly = DCA_MONTHLY * cfg.regime_scale_down
-                if monthly <= 0:
-                    continue
+            if math.isfinite(sma[di]) and math.isfinite(spy_p):
+                in_bull = spy_p >= sma[di]
+        if cfg.regime_gate and not in_bull:
+            monthly = DCA_MONTHLY * cfg.regime_scale_down
+            if monthly <= 0:
+                continue
+
+        apply_rebound = (cfg.rebound_lookback_days is not None and
+                         (not cfg.rebound_only_in_bull or in_bull))
 
         cand = []
         for tk in eff_universe:
@@ -234,10 +275,55 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
             if f is None or p is None:
                 continue
             fv, pv = f[di], p[di]
-            if not (math.isfinite(fv) and fv > cfg.min_score and math.isfinite(pv) and pv > 0):
+            if not (math.isfinite(pv) and pv > 0):
                 continue
+            if smooth_window > 0:
+                lo = max(0, di - smooth_window)
+                vals = f[lo:di + 1]
+                valid = vals[np.isfinite(vals)]
+                if len(valid) == 0:
+                    continue
+                fv = float(np.mean(valid))
+            if not (math.isfinite(fv) and fv > cfg.min_score):
+                continue
+            # Compute ranking score per rank_formula.
+            rv = fv
+            if cfg.rank_formula != "final":
+                wv = None
+                if md.washes is not None:
+                    w_arr = md.washes.get(tk)
+                    if w_arr is not None:
+                        wv = w_arr[di]
+                frv = None
+                if md.finals_raw is not None:
+                    fr_arr = md.finals_raw.get(tk)
+                    if fr_arr is not None:
+                        frv = fr_arr[di]
+                rf = cfg.rank_formula
+                if rf == "final_raw":
+                    if frv is None or not math.isfinite(frv):
+                        continue
+                    rv = frv
+                elif rf == "wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = wv
+                elif rf == "final_x_wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = fv * (wv / 100.0)
+                elif rf == "raw_x_wash":
+                    if frv is None or wv is None or not (math.isfinite(frv) and math.isfinite(wv)):
+                        continue
+                    rv = frv * (wv / 100.0)
+                elif rf == "final+alpha_wash":
+                    if wv is None or not math.isfinite(wv):
+                        continue
+                    rv = fv * (1.0 + cfg.rank_alpha * (wv / 100.0))
+                else:
+                    raise ValueError(f"unknown rank_formula: {rf}")
             # Rebound confirmation: need positive trailing N-day return
-            if cfg.rebound_lookback_days is not None:
+            if apply_rebound:
                 lb = di - cfg.rebound_lookback_days
                 if lb < 0:
                     continue
@@ -271,7 +357,7 @@ def simulate(md: MarketData, universe: list, cfg: StrategyConfig) -> SimResult:
                 spy_ret = spy_cur / spy_prev - 1
                 if (spy_ret - stock_ret) < cfg.value_min_underperf:
                     continue
-            cand.append((tk, fv, pv))
+            cand.append((tk, rv, pv))
         if not cand:
             if cfg.fallback_ticker and md.bench_filled.get(cfg.fallback_ticker) is not None:
                 entry_idx = di + cfg.entry_delay

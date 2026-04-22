@@ -1,0 +1,123 @@
+Loaded 127 stocks, 5028 dates
+New tickers in parquet: 31/31
+  ['ACN', 'ADP', 'ARCC', 'ASML', 'AZO', 'BX', 'CHTR', 'CME', 'CPRT', 'EMR', 'EXPE', 'GIS', 'GRMN', 'INFY', 'ISRG', 'JCI', 'KLAC', 'LRCX', 'LUV', 'MA', 'NTAP', 'ORCL', 'PSA', 'QCOM', 'REGN', 'SCCO', 'SHW', 'STZ', 'SWKS', 'TER', 'VRTX']
+Original (without new): 96 tickers
+Full (with new):        127 tickers
+
+==========================================================================================
+variant                                  CAGR         TR     MaxDD   Sharpe         Final
+------------------------------------------------------------------------------------------
+SPY benchmark                          +7.86%  +352.41%   -35.62%    1.24  $  1,090,317
+CAP5 (original 97)                    +17.41%  +2357.16%   -46.15%    1.34  $  5,921,752
+CAP5 (full 128)                       +16.54%  +2018.39%   -43.60%    1.34  $  5,105,329
+
+Δ CAGR (full vs orig): -0.87pp
+
+CAP5+SMA12M (orig 97)                 +18.31%  +2762.57%   -47.51%    1.35  $  6,898,800  (Δ +0.90pp)
+CAP5+SMA12M (full 128)                +18.21%  +2717.41%   -46.68%    1.36  $  6,789,960  (Δ +1.68pp)
+
+==========================================================================================
+New-ticker pick frequency (CAP5 full 128):
+Total picks across all months: 1205
+Picks on NEW tickers: 303 (25.1%)
+
+Per-new-ticker pick count (sorted descending):
+  EXPE      29  (2.41% of all picks)
+  VRTX      29  (2.41% of all picks)
+  REGN      26  (2.16% of all picks)
+  INFY      24  (1.99% of all picks)
+  GIS       20  (1.66% of all picks)
+  SCCO      20  (1.66% of all picks)
+  ISRG      17  (1.41% of all picks)
+  STZ       17  (1.41% of all picks)
+  QCOM      16  (1.33% of all picks)
+  GRMN      14  (1.16% of all picks)
+  LRCX      14  (1.16% of all picks)
+  KLAC      12  (1.00% of all picks)
+  PSA       12  (1.00% of all picks)
+  CPRT       9  (0.75% of all picks)
+  AZO        7  (0.58% of all picks)
+  NTAP       7  (0.58% of all picks)
+  ACN        6  (0.50% of all picks)
+  BX         5  (0.41% of all picks)
+  JCI        5  (0.41% of all picks)
+  ARCC       4  (0.33% of all picks)
+  SHW        3  (0.25% of all picks)
+  CME        2  (0.17% of all picks)
+  ORCL       2  (0.17% of all picks)
+  TER        2  (0.17% of all picks)
+  EMR        1  (0.08% of all picks)
+  ADP        0  (0.00% of all picks)
+  ASML       0  (0.00% of all picks)
+  CHTR       0  (0.00% of all picks)
+  LUV        0  (0.00% of all picks)
+  MA         0  (0.00% of all picks)
+  SWKS       0  (0.00% of all picks)
+
+==========================================================================================
+Marginal effect — add ONE new ticker at a time:
++ ticker        CAGR  ΔvsOrig     MaxDD   Picks
+------------------------------------------------------------
+  ACN        +17.40%   -0.00   -46.15%       8
+  ADP        +17.41%   -0.00   -46.15%       2
+  ARCC       +17.37%   -0.03   -46.02%      12
+  ASML       +17.39%   -0.02   -46.15%       5
+  AZO        +17.42%   +0.01   -45.89%      11
+  BX         +17.34%   -0.07   -46.03%      14
+  CHTR       +17.41%   +0.00   -46.15%       0
+  CME        +17.39%   -0.01   -46.14%       3
+  CPRT       +17.41%   +0.00   -46.13%      11
+  EMR        +17.40%   -0.00   -46.16%       4
+  EXPE       +17.06%   -0.35   -46.27%      34
+  GIS        +17.40%   -0.01   -46.08%      29
+  GRMN       +17.31%   -0.09   -46.19%      20
+  INFY       +17.02%   -0.38   -45.63%      30
+  ISRG       +17.38%   -0.02   -46.58%      17
+  JCI        +17.24%   -0.17   -46.04%       5
+  KLAC       +17.41%   +0.00   -45.80%      13
+  LRCX       +17.30%   -0.10   -46.12%      21
+  LUV        +17.41%   +0.00   -46.15%       0
+  MA         +17.41%   +0.00   -46.15%       0
+  NTAP       +17.29%   -0.11   -46.03%      13
+  ORCL       +17.41%   +0.00   -46.15%       4
+  PSA        +17.34%   -0.07   -45.88%      17
+  QCOM       +17.28%   -0.12   -46.19%      18
+  REGN       +17.39%   -0.02   -45.59%      33
+  SCCO       +17.40%   -0.01   -46.21%      24
+  SHW        +17.37%   -0.04   -46.08%       6
+  STZ        +17.43%   +0.02   -45.56%      18
+  SWKS       +17.41%   +0.00   -46.15%       0
+  TER        +17.39%   -0.02   -46.13%       5
+  VRTX       +17.25%   -0.16   -44.87%      34
+
+Top-10 positive marginal contributors (vs original CAP5 +17.41%):
+  +STZ    → +17.43% (+0.02pp, 18 picks)
+  +AZO    → +17.42% (+0.01pp, 11 picks)
+  +KLAC   → +17.41% (+0.00pp, 13 picks)
+  +ORCL   → +17.41% (+0.00pp, 4 picks)
+  +CPRT   → +17.41% (+0.00pp, 11 picks)
+  +CHTR   → +17.41% (+0.00pp, 0 picks)
+  +LUV    → +17.41% (+0.00pp, 0 picks)
+  +MA     → +17.41% (+0.00pp, 0 picks)
+  +SWKS   → +17.41% (+0.00pp, 0 picks)
+  +ADP    → +17.41% (-0.00pp, 2 picks)
+
+Top-10 negative marginal contributors:
+  +PSA    → +17.34% (-0.07pp, 17 picks)
+  +BX     → +17.34% (-0.07pp, 14 picks)
+  +GRMN   → +17.31% (-0.09pp, 20 picks)
+  +LRCX   → +17.30% (-0.10pp, 21 picks)
+  +NTAP   → +17.29% (-0.11pp, 13 picks)
+  +QCOM   → +17.28% (-0.12pp, 18 picks)
+  +VRTX   → +17.25% (-0.16pp, 34 picks)
+  +JCI    → +17.24% (-0.17pp, 5 picks)
+  +EXPE   → +17.06% (-0.35pp, 34 picks)
+  +INFY   → +17.02% (-0.38pp, 30 picks)
+
+Positive marginal contributors: 5
+  ['STZ', 'AZO', 'KLAC', 'ORCL', 'CPRT']
+
+  CAP5 (orig + 5 positives):
+    CAGR +17.50% (+0.10pp)  MaxDD -45.03%  Sharpe 1.35  Final $6,018,328
+
+## DONE

@@ -1,0 +1,86 @@
+SPY full 20y: CAGR  +7.86%  MaxDD +35.62%
+SPY 1Y     : CAGR +10.54%  MaxDD  +7.51%
+
+## E0: CAP5 baseline (Top-5 rank, 5% cap)
+  CAP5 baseline (max_ticker_frac=0.05)              20y CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+
+## E1: cap fraction sweep on Top-5 rank
+  E1 cap_frac=0.03                                  20y CAGR +15.62% (+7.77pp)  MaxDD +41.05%  Sharpe 1.32  1Y +18.62% (+8.08pp)  n_pos 1205
+  E1 cap_frac=0.04                                  20y CAGR +16.65% (+8.79pp)  MaxDD +43.85%  Sharpe 1.33  1Y +18.42% (+7.88pp)  n_pos 1205
+  E1 cap_frac=0.05                                  20y CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+  E1 cap_frac=0.06                                  20y CAGR +17.60% (+9.74pp)  MaxDD +47.49%  Sharpe 1.34  1Y +14.28% (+3.74pp)  n_pos 1205
+  E1 cap_frac=0.07                                  20y CAGR +17.28% (+9.42pp)  MaxDD +47.87%  Sharpe 1.34  1Y +13.76% (+3.22pp)  n_pos 1205
+  E1 cap_frac=0.08                                  20y CAGR +17.14% (+9.28pp)  MaxDD +47.65%  Sharpe 1.34  1Y +11.88% (+1.33pp)  n_pos 1205
+
+## E2: top_n sweep with 5% cap
+  E2 top_n=2 cap=0.05                               20y CAGR +17.28% (+9.42pp)  MaxDD +46.08%  Sharpe 1.34  1Y +14.37% (+3.83pp)  n_pos 482
+  E2 top_n=3 cap=0.05                               20y CAGR +17.28% (+9.43pp)  MaxDD +46.38%  Sharpe 1.34  1Y +14.52% (+3.98pp)  n_pos 723
+  E2 top_n=4 cap=0.05                               20y CAGR +17.26% (+9.40pp)  MaxDD +46.05%  Sharpe 1.34  1Y +18.34% (+7.79pp)  n_pos 964
+  E2 top_n=5 cap=0.05                               20y CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+  E2 top_n=6 cap=0.05                               20y CAGR +17.35% (+9.49pp)  MaxDD +46.11%  Sharpe 1.34  1Y +20.60% (+10.06pp)  n_pos 1446
+  E2 top_n=7 cap=0.05                               20y CAGR +16.84% (+8.99pp)  MaxDD +44.97%  Sharpe 1.34  1Y +19.73% (+9.19pp)  n_pos 1687
+  E2 top_n=8 cap=0.05                               20y CAGR +16.92% (+9.06pp)  MaxDD +45.28%  Sharpe 1.34  1Y +19.98% (+9.44pp)  n_pos 1928
+  E2 top_n=10 cap=0.05                              20y CAGR +16.79% (+8.93pp)  MaxDD +45.04%  Sharpe 1.34  1Y +21.19% (+10.65pp)  n_pos 2410
+
+## E3: sector_cap on CAP5
+  E3 sector_cap=1 cap=0.05                          20y CAGR +16.41% (+8.55pp)  MaxDD +44.54%  Sharpe 1.33  1Y +17.92% (+7.38pp)  n_pos 1205
+  E3 sector_cap=2 cap=0.05                          20y CAGR +17.02% (+9.16pp)  MaxDD +45.76%  Sharpe 1.33  1Y +19.40% (+8.86pp)  n_pos 1205
+  E3 sector_cap=3 cap=0.05                          20y CAGR +17.32% (+9.46pp)  MaxDD +45.99%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+  E3 sector_cap=4 cap=0.05                          20y CAGR +17.41% (+9.55pp)  MaxDD +46.15%  Sharpe 1.34  1Y +18.54% (+8.00pp)  n_pos 1205
+
+## E4: rebound gate on CAP5 (isolated)
+  E4 rebound lb=63d thr>=+0% cap=0.05               20y CAGR +15.70% (+7.84pp)  MaxDD +39.11%  Sharpe 1.35  1Y +25.31% (+14.77pp)  n_pos 1176
+  E4 rebound lb=63d thr>=+5% cap=0.05               20y CAGR +15.38% (+7.52pp)  MaxDD +39.23%  Sharpe 1.34  1Y +21.99% (+11.45pp)  n_pos 1170
+  E4 rebound lb=126d thr>=+0% cap=0.05              20y CAGR +14.81% (+6.96pp)  MaxDD +39.32%  Sharpe 1.38  1Y +22.39% (+11.85pp)  n_pos 1159
+  E4 rebound lb=126d thr>=+5% cap=0.05              20y CAGR +14.90% (+7.04pp)  MaxDD +38.91%  Sharpe 1.37  1Y +23.54% (+13.00pp)  n_pos 1152
+  E4 rebound lb=252d thr>=+0% cap=0.05              20y CAGR +15.64% (+7.78pp)  MaxDD +40.16%  Sharpe 1.43  1Y +11.73% (+1.19pp)  n_pos 1125
+  E4 rebound lb=252d thr>=+5% cap=0.05              20y CAGR +15.86% (+8.01pp)  MaxDD +40.93%  Sharpe 1.43  1Y  +7.99% (-2.55pp)  n_pos 1115
+  E4 rebound lb=252d thr>=+10% cap=0.05             20y CAGR +15.92% (+8.06pp)  MaxDD +42.08%  Sharpe 1.42  1Y +10.05% (-0.49pp)  n_pos 1105
+
+## E5: regime scale-down on CAP5
+  E5 regime_gate SD=0.30 cap=0.05                   20y CAGR +16.68% (+8.82pp)  MaxDD +45.84%  Sharpe 1.31  1Y +15.99% (+5.45pp)  n_pos 1205
+  E5 regime_gate SD=0.50 cap=0.05                   20y CAGR +16.78% (+8.92pp)  MaxDD +45.49%  Sharpe 1.32  1Y +15.61% (+5.07pp)  n_pos 1205
+  E5 regime_gate SD=0.70 cap=0.05                   20y CAGR +17.16% (+9.30pp)  MaxDD +46.09%  Sharpe 1.33  1Y +16.35% (+5.81pp)  n_pos 1205
+
+## E6: combined winners
+
+  Top 8 standalone candidates by composite score:
+    E4 rebound lb=63d thr>=+0% cap=0.05               score=+15.22  20y +15.70% (+7.84pp)  MDD +39.11%  1Y (+14.77pp)
+    E2 top_n=6 cap=0.05                               score=+14.50  20y +17.35% (+9.49pp)  MDD +46.11%  1Y (+10.06pp)
+    E2 top_n=10 cap=0.05                              score=+14.26  20y +16.79% (+8.93pp)  MDD +45.04%  1Y (+10.65pp)
+    E2 top_n=8 cap=0.05                               score=+13.78  20y +16.92% (+9.06pp)  MDD +45.28%  1Y (+9.44pp)
+    E3 sector_cap=2 cap=0.05                          score=+13.59  20y +17.02% (+9.16pp)  MDD +45.76%  1Y (+8.86pp)
+    E2 top_n=7 cap=0.05                               score=+13.58  20y +16.84% (+8.99pp)  MDD +44.97%  1Y (+9.19pp)
+    E4 rebound lb=126d thr>=+5% cap=0.05              score=+13.54  20y +14.90% (+7.04pp)  MDD +38.91%  1Y (+13.00pp)
+    E1 cap_frac=0.05                                  score=+13.51  20y +17.41% (+9.55pp)  MDD +46.15%  1Y (+8.00pp)
+
+  Best-per-experiment:
+    E1: E1 cap_frac=0.05  score=+13.51
+    E2: E2 top_n=6 cap=0.05  score=+14.50
+    E3: E3 sector_cap=2 cap=0.05  score=+13.59
+    E4: E4 rebound lb=63d thr>=+0% cap=0.05  score=+15.22
+    E5: E5 regime_gate SD=0.70 cap=0.05  score=+12.18
+
+  Extracted knobs: cap=0.05 top_n=6 sector_cap=2 rebound=(63,0.0) regime_sd=0.7
+
+  Combined variants:
+  E6a cap=0.05 + top_n=6                            20y CAGR +17.35% (+9.49pp)  MaxDD +46.11%  Sharpe 1.34  1Y +20.60% (+10.06pp)  n_pos 1446
+  E6b cap=0.05 + sector_cap=2                       20y CAGR +17.02% (+9.16pp)  MaxDD +45.76%  Sharpe 1.33  1Y +19.40% (+8.86pp)  n_pos 1205
+  E6c cap=0.05 + rebound lb=63d thr>=+0%            20y CAGR +15.70% (+7.84pp)  MaxDD +39.11%  Sharpe 1.35  1Y +25.31% (+14.77pp)  n_pos 1176
+  E6d cap=0.05 + regime_sd=0.70                     20y CAGR +17.16% (+9.30pp)  MaxDD +46.09%  Sharpe 1.33  1Y +16.35% (+5.81pp)  n_pos 1205
+  E6e cap + top_n + sector_cap + rebound            20y CAGR +15.28% (+7.42pp)  MaxDD +38.10%  Sharpe 1.35  1Y +18.77% (+8.23pp)  n_pos 1411
+  E6f cap + top_n + sector_cap + regime_sd          20y CAGR +16.54% (+8.68pp)  MaxDD +45.71%  Sharpe 1.32  1Y +17.55% (+7.01pp)  n_pos 1446
+  E6g cap + top_n + rebound + regime_sd             20y CAGR +15.45% (+7.59pp)  MaxDD +39.24%  Sharpe 1.34  1Y +25.89% (+15.35pp)  n_pos 1411
+  E6h cap + top_n + sector_cap + rebound + regime_sd  20y CAGR +15.23% (+7.37pp)  MaxDD +38.70%  Sharpe 1.34  1Y +19.70% (+9.15pp)  n_pos 1411
+
+## FINAL: Top-10 across ALL experiments by composite score
+  E6g cap + top_n + rebound + regime_sd                 score=+15.27  20y +15.45% (+7.59pp)  MDD +39.24%  Sh 1.34  1Y (+15.35pp)
+  E4 rebound lb=63d thr>=+0% cap=0.05                   score=+15.22  20y +15.70% (+7.84pp)  MDD +39.11%  Sh 1.35  1Y (+14.77pp)
+  E6c cap=0.05 + rebound lb=63d thr>=+0%                score=+15.22  20y +15.70% (+7.84pp)  MDD +39.11%  Sh 1.35  1Y (+14.77pp)
+  E2 top_n=6 cap=0.05                                   score=+14.50  20y +17.35% (+9.49pp)  MDD +46.11%  Sh 1.34  1Y (+10.06pp)
+  E6a cap=0.05 + top_n=6                                score=+14.50  20y +17.35% (+9.49pp)  MDD +46.11%  Sh 1.34  1Y (+10.06pp)
+  E2 top_n=10 cap=0.05                                  score=+14.26  20y +16.79% (+8.93pp)  MDD +45.04%  Sh 1.34  1Y (+10.65pp)
+  E2 top_n=8 cap=0.05                                   score=+13.78  20y +16.92% (+9.06pp)  MDD +45.28%  Sh 1.34  1Y (+9.44pp)
+  E3 sector_cap=2 cap=0.05                              score=+13.59  20y +17.02% (+9.16pp)  MDD +45.76%  Sh 1.33  1Y (+8.86pp)
+  E6b cap=0.05 + sector_cap=2                           score=+13.59  20y +17.02% (+9.16pp)  MDD +45.76%  Sh 1.33  1Y (+8.86pp)
+  E2 top_n=7 cap=0.05                                   score=+13.58  20y +16.84% (+8.99pp)  MDD +44.97%  Sh 1.34  1Y (+9.19pp)

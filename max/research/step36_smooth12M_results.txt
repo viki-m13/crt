@@ -1,0 +1,75 @@
+Loaded 96 stocks, 5028 dates (2006-04-25 → 2026-04-20)
+Strategy: CAP5_smooth12M
+
+## Full 20Y: CAP5_smooth12M
+  CAGR    +18.31%  (SPY +7.86%, Δ +10.45pp)
+  MaxDD   -47.51%  (SPY -35.62%)
+  Sharpe   1.35  (SPY 1.24)
+  Final  $6,898,800  Invested $241,000
+
+## Rolling 10Y windows
+  2006-04 → 2016-04  CAGR +462.28%  SPY +438.96%  Δ +23.32pp  MaxDD -100.0%
+  2008-04 → 2018-04  CAGR +38.97%  SPY +28.05%  Δ +10.92pp  MaxDD -42.1%
+  2010-04 → 2020-04  CAGR +31.14%  SPY +21.94%  Δ +9.20pp  MaxDD -33.6%
+  2012-04 → 2022-04  CAGR +29.98%  SPY +20.54%  Δ +9.44pp  MaxDD -37.2%
+  2014-04 → 2024-05  CAGR +32.78%  SPY +16.71%  Δ +16.06pp  MaxDD -47.5%
+
+  median excess vs SPY: +10.92pp
+  win rate vs SPY:      5/5
+
+## 1Y calendar-year windows
+  2006  +49653591789.95%  SPY +47209508503.36%  Δ +2444083286.59pp
+  2007  +128.78%  SPY +129.73%  Δ -0.95pp
+  2008    +3.91%  SPY  +4.25%  Δ -0.34pp
+  2009  +127.54%  SPY +84.51%  Δ +43.03pp
+  2010   +49.00%  SPY +43.42%  Δ +5.58pp
+  2011    +5.37%  SPY +19.48%  Δ -14.11pp
+  2012   +31.74%  SPY +30.58%  Δ +1.17pp
+  2013   +69.21%  SPY +42.24%  Δ +26.98pp
+  2014   +20.77%  SPY +23.38%  Δ -2.61pp
+  2015   +24.87%  SPY  +7.91%  Δ +16.96pp
+  2016   +37.19%  SPY +20.34%  Δ +16.85pp
+  2017   +41.91%  SPY +26.59%  Δ +15.33pp
+  2018    +3.82%  SPY  -1.54%  Δ +5.36pp
+  2019   +41.16%  SPY +35.73%  Δ +5.43pp
+  2020   +54.43%  SPY +20.70%  Δ +33.73pp
+  2021   +47.50%  SPY +33.36%  Δ +14.14pp
+  2022   -35.69%  SPY -16.97%  Δ -18.72pp
+  2023   +95.35%  SPY +29.52%  Δ +65.83pp
+  2024   +80.87%  SPY +27.54%  Δ +53.33pp
+  2025   +31.18%  SPY +19.71%  Δ +11.47pp
+  2026   +34.96%  SPY +15.51%  Δ +19.45pp
+
+  Annual win rate: 16/21
+
+## GFC decade (2008-2018)
+  CAP5_smooth12M  CAGR +38.78%  MaxDD -42.1%  Sharpe 1.41
+  SPY           CAGR +29.69%  MaxDD -35.6%  Sharpe 1.32
+  Δ CAGR: +9.09pp
+
+## Jackknife (drop each ticker)
+  Top 10 tickers whose removal HURTS strategy (big contributors):
+    -NVDA   → +13.83% (-4.48pp)
+    -NFLX   → +17.76% (-0.54pp)
+    -AMD    → +17.99% (-0.31pp)
+    -MU     → +18.13% (-0.17pp)
+    -AMZN   → +18.16% (-0.15pp)
+    -MRK    → +18.20% (-0.11pp)
+    -GOOGL  → +18.20% (-0.11pp)
+    -HON    → +18.24% (-0.07pp)
+    -AMAT   → +18.24% (-0.07pp)
+    -SO     → +18.24% (-0.06pp)
+  Top 10 tickers whose removal HELPS strategy (drags):
+    -NEM    → +18.45% (+0.15pp)
+    -INTC   → +18.44% (+0.13pp)
+    -CSCO   → +18.44% (+0.13pp)
+    -FCX    → +18.42% (+0.11pp)
+    -BLK    → +18.41% (+0.10pp)
+    -GILD   → +18.40% (+0.09pp)
+    -GS     → +18.39% (+0.08pp)
+    -WMT    → +18.38% (+0.07pp)
+    -SLB    → +18.37% (+0.06pp)
+    -SBUX   → +18.37% (+0.06pp)
+  Median jackknife delta: +0.00pp (baseline +18.31%)
+
+Saved summary → step36_smooth12M.json
