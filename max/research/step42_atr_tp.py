@@ -499,7 +499,7 @@ def run_fixed_pct(close, high, low, final_smooth, pct: float, time_stop: int,
     mtm = np.zeros(n)
     for pos in open_positions:
         for d in range(pos["buy_idx"], pos["sell_idx"]):
-            px = close_np[pos["tk"]][d]
+            px = close_mtm[pos["tk"]][d]
             if math.isfinite(px) and px > 0:
                 mtm[d] += pos["shares"] * px
     equity = cash_running + mtm
@@ -606,6 +606,29 @@ def main():
             print(f"  Q   q={q:<4} ts={ts:<3}  CAGR={r['cagr']*100:6.2f}%  "
                   f"WR={r['win_rate']*100:5.1f}%  N={r['n_trades']:3d}  "
                   f"sigTkWR={r['sigma_ticker_wr']:.3f}")
+
+    # Build top-5 summaries per formula, plus also include best WR.
+    def flat(fmt_name, d):
+        rows = []
+        for key, r in d.items():
+            rows.append({
+                "key": key, "cagr": r["cagr"], "mdd": r["mdd"],
+                "sharpe": r["sharpe"], "calmar": r["calmar"],
+                "win_rate": r["win_rate"], "avg_ret": r["avg_ret"],
+                "avg_days": r["avg_days"], "n_trades": r["n_trades"],
+                "sigma_ticker_wr": r["sigma_ticker_wr"],
+            })
+        return rows
+    summary = {}
+    for fmt_name in ("atr", "sigma", "quantile"):
+        rows = flat(fmt_name, results[fmt_name])
+        summary[fmt_name] = {
+            "top5_by_cagr": sorted(rows, key=lambda r: -r["cagr"])[:5],
+            "top5_by_wr":   sorted(rows, key=lambda r: -r["win_rate"])[:5],
+            "top5_by_calmar": sorted(rows, key=lambda r: -r["calmar"])[:5],
+            "lowest_sigma_tk_wr": sorted(rows, key=lambda r: r["sigma_ticker_wr"])[:5],
+        }
+    results["summary"] = summary
 
     # Save
     out_path = ROOT / "step42_results.json"
