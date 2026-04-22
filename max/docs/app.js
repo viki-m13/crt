@@ -260,18 +260,27 @@ function buildHorizonByTicker(items, baselines) {
 function renderTopPicksFor(section) {
   const items = sectionItems(section);
   const baselines = BASELINES[section];
-  // Stocks rank by the same point-in-time opportunity score the Max CAP5
-  // strategy uses (final_score). Crypto keeps the best-horizon edge ranking
-  // since its backtest still uses the per-pick engine.
-  const rankByFinalScore = section === "stocks";
+  // Stocks rank by the CAP5+SMA12M point-in-time opportunity score — the
+  // trailing 12-month mean of the conviction series (step39 winner). If the
+  // smoothed value is missing (new tickers without 12M of history), fall
+  // back to the raw conviction, then final_score. Crypto keeps best-horizon
+  // edge ranking since its backtest uses the per-pick engine.
+  const rankByConviction = section === "stocks";
+  const convScore = (it) => {
+    const s = it.conviction_smooth12m;
+    if (s != null && Number.isFinite(Number(s))) return Number(s);
+    const c = it.conviction;
+    if (c != null && Number.isFinite(Number(c))) return Number(c);
+    const f = it.final_score;
+    if (f != null && Number.isFinite(Number(f))) return Number(f);
+    return null;
+  };
   let scored;
-  if (rankByFinalScore) {
+  if (rankByConviction) {
     scored = items
-      .map(it => ({ it, best: bestHorizonFor(it, baselines) }))
-      .filter(x => x.best != null &&
-                   x.it.final_score != null &&
-                   Number.isFinite(Number(x.it.final_score)))
-      .sort((a, b) => Number(b.it.final_score) - Number(a.it.final_score))
+      .map(it => ({ it, best: bestHorizonFor(it, baselines), score: convScore(it) }))
+      .filter(x => x.best != null && x.score != null)
+      .sort((a, b) => b.score - a.score)
       .slice(0, 15);
   } else {
     scored = items
@@ -292,12 +301,20 @@ function renderTopPicksFor(section) {
   }
 }
 
-/* ---------- Backtest engine (point-in-time ranking) ---------- */
+/* ---------- Backtest engine (point-in-time ranking) ----------
+
+The Max CAP5 strategy ranks candidates by the trailing 12-month mean of the
+conviction score (step39 research winner — SMA 12M, adopted as production
+default). The scanner publishes both the raw conviction series (`final`)
+and the smoothed series (`final_smooth12m`) in `bt_series[ticker]`. If the
+smoothed series is missing (older JSON payloads), the raw series is used
+so the webapp stays compatible with pre-v10 scans. */
 function buildBT() {
   if (BT) return BT;
   const bt_series = FULL.bt_series || {};
   const priceLookup = {}; // ticker -> Map(date -> price)
-  const scoreLookup = {}; // ticker -> Map(date -> final)
+  const scoreLookup = {}; // ticker -> Map(date -> final smoothed)
+  const scoreRawLookup = {}; // ticker -> Map(date -> final raw)
   // Find the freshest latest-date across all tickers. Series that end more than
   // a year before that are "stale" and their dates get excluded from the spine —
   // otherwise a single abandoned ticker (e.g. SPY bt_series ending 2020)
@@ -317,13 +334,18 @@ function buildBT() {
     const last = s.dates[s.dates.length - 1];
     // Always keep prices for lookups (benchmark forward-fill, etc) but only
     // contribute to the spine if the series is fresh.
-    const pm = new Map(), fm = new Map();
+    const pm = new Map(), fm = new Map(), fmRaw = new Map();
+    const smooth = (s.final_smooth12m && s.final_smooth12m.length === s.dates.length)
+      ? s.final_smooth12m
+      : s.final;
     for (let i = 0; i < s.dates.length; i++) {
       pm.set(s.dates[i], Number(s.prices[i]));
-      fm.set(s.dates[i], Number(s.final[i]));
+      fm.set(s.dates[i], Number(smooth[i]));
+      fmRaw.set(s.dates[i], Number(s.final[i]));
     }
     priceLookup[tk] = pm;
     scoreLookup[tk] = fm;
+    scoreRawLookup[tk] = fmRaw;
     if (last >= staleCutoff) {
       for (const d of s.dates) dateSet.add(d);
     }
@@ -335,7 +357,7 @@ function buildBT() {
     const ym = allDates[i].substring(0, 7);
     if (ym !== prevYM) { monthFirstIdx.push(i); prevYM = ym; }
   }
-  BT = { allDates, priceLookup, scoreLookup, monthFirstIdx };
+  BT = { allDates, priceLookup, scoreLookup, scoreRawLookup, monthFirstIdx };
   return BT;
 }
 
@@ -1215,13 +1237,24 @@ function renderThisMonthsPicks() {
     return;
   }
 
-  // Rank all stocks by today's final_score — that's what the scanner publishes.
-  // The CAP5 *exclusions* come from the long-running sim state, so we can tell
-  // the user "this ticker is capped, we'd backfill with the next candidate".
-  const stocks = ITEMS_STOCKS.filter(i => i.ticker !== "SPY" &&
-                                          i.final_score != null &&
-                                          Number.isFinite(Number(i.final_score)));
-  stocks.sort((a, b) => Number(b.final_score) - Number(a.final_score));
+  // Rank all stocks by today's CAP5+SMA12M score (trailing 12-month mean of
+  // conviction) — the step39 production winner. The CAP5 *exclusions* come
+  // from the long-running sim state, so we can tell the user "this ticker
+  // is capped, we'd backfill with the next candidate". Tickers without 12M
+  // of smoothed history fall back to raw conviction, then final_score.
+  const stockRankScore = (it) => {
+    const s = it.conviction_smooth12m;
+    if (s != null && Number.isFinite(Number(s))) return Number(s);
+    const c = it.conviction;
+    if (c != null && Number.isFinite(Number(c))) return Number(c);
+    const f = it.final_score;
+    if (f != null && Number.isFinite(Number(f))) return Number(f);
+    return null;
+  };
+  const stocks = ITEMS_STOCKS
+    .filter(i => i.ticker !== "SPY" && stockRankScore(i) != null)
+    .map(i => ({ it: i, rs: stockRankScore(i) }));
+  stocks.sort((a, b) => b.rs - a.rs);
 
   // Accumulated cost basis per ticker from the running sim.
   const tkCost = new Map();
@@ -1234,13 +1267,13 @@ function renderThisMonthsPicks() {
   // eligible become the picks; any capped ones we show as context.
   const picks = [];
   const skipped = [];
-  for (const it of stocks) {
+  for (const { it, rs } of stocks) {
     const basis = tkCost.get(it.ticker) || 0;
     if (basis >= capDollars) {
-      skipped.push({ item: it, basis });
+      skipped.push({ item: it, basis, rs });
       continue;
     }
-    picks.push({ item: it, basis });
+    picks.push({ item: it, basis, rs });
     if (picks.length === 5) break;
   }
 
@@ -1267,24 +1300,27 @@ function renderThisMonthsPicks() {
     const v = topItem[`prob_${h}`];
     if (v != null && Number.isFinite(Number(v))) probBits.push(`${h.toUpperCase()} prob ${Number(v).toFixed(0)}%`);
   }
+  const topRankScore = top.rs;
   byId("single-pick-meta").innerHTML = `
     <span>Price <strong>${fmtPriceVal(topItem.last_price)}</strong></span>
-    <span>Score <strong>${Number(topItem.final_score).toFixed(1)}</strong></span>
+    <span>CAP5 Score <strong>${Number(topRankScore).toFixed(1)}</strong></span>
     <span>Pullback <strong>${Number(topItem.washout_today ?? 0).toFixed(0)}</strong></span>
     <span>Quality <strong>${Number(topItem.quality ?? 0).toFixed(0)}</strong></span>
     ${probBits.map(b => `<span>${b}</span>`).join("")}
   `;
   byId("single-pick-foot").textContent =
-    `The highest-ranked stock today by the Max opportunity score, after the 5% ` +
-    `concentration filter. If you chose to concentrate $1,000 into a single stock ` +
-    `this month under the Max rules, this is what the scanner points to. ` +
-    `Still do your own work. Drawdowns of 30% or more on single names are routine.`;
+    `The highest-ranked stock today by the CAP5+SMA12M opportunity score (trailing ` +
+    `12-month mean of conviction), after the 5% concentration filter. This is the ` +
+    `step39 production winner — +0.90pp CAGR over raw conviction ranking, robust ` +
+    `across 5/5 rolling 10Y windows. Still do your own work. ` +
+    `Drawdowns of 30% or more on single names are routine.`;
 
   // Render the top-5 table.
   const rowsEl = byId("month-picks-rows");
   rowsEl.innerHTML = "";
   for (let i = 0; i < picks.length; i++) {
     const p = picks[i].item;
+    const rs = picks[i].rs;
     const alloc = weights[i] * DCA_MONTHLY;
     const wPct = (weights[i] * 100).toFixed(1);
     const row = document.createElement("div");
@@ -1295,7 +1331,7 @@ function renderThisMonthsPicks() {
       <span class="pk-cell">${wPct}%</span>
       <span class="pk-cell">$${alloc.toFixed(0)}</span>
       <span class="pk-cell">${fmtPriceVal(p.last_price)}</span>
-      <span class="pk-cell">${Number(p.final_score ?? 0).toFixed(1)}</span>
+      <span class="pk-cell">${Number(rs ?? 0).toFixed(1)}</span>
       <span class="pk-cell pk-cell-hide-mobile">${Number(p.washout_today ?? 0).toFixed(0)}</span>
       <span class="pk-cell pk-cell-hide-mobile">${Number(p.quality ?? 0).toFixed(0)}</span>
     `;

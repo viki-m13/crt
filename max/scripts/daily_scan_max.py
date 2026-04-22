@@ -199,6 +199,14 @@ MIN_QUALITY_GATE  = 50        # quality gate: stocks below this get no Opp Score
 PLOT_SCORE_STEP_BARS = 12
 EVID_SCORE_STEP_BARS = 18
 
+# CAP5 smoothing: trailing N-month mean of the conviction series at ranking
+# time. step39 research (20Y, 97-ticker universe) found SMA 12M adds +0.90pp
+# CAGR over raw-conviction ranking, wins 5/5 rolling 10Y windows, and holds
+# up on the expanded 128-ticker universe with a wider gap (+1.68pp). The
+# recommended production default is 12 months (252 trading days).
+CAP5_SMOOTH_MONTHS = 12
+CAP5_SMOOTH_WINDOW_BARS = CAP5_SMOOTH_MONTHS * 21
+
 # Outputs
 OUT_DIR = os.path.join("max", "docs", "data")
 TICKER_DIR = os.path.join(OUT_DIR, "tickers")
@@ -1450,6 +1458,16 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
     )
     conv_win = conv_series_window.reindex(win.index).ffill().fillna(0).astype(float)
 
+    # Smoothed conviction: trailing 12-month (252 trading-day) mean of the
+    # conviction series. This is the CAP5+SMA12M ranking signal identified in
+    # step39 research as the production optimum. Early rows (before 12M of
+    # history is available) fall back to the expanding mean so the signal is
+    # defined from day 1 rather than appearing as NaN.
+    conv_smooth_win = conv_win.rolling(
+        CAP5_SMOOTH_WINDOW_BARS, min_periods=1
+    ).mean().astype(float)
+    conv_smooth_today = float(conv_smooth_win.iloc[-1]) if len(conv_smooth_win) else float("nan")
+
     # Raw FinalScore series (edge_score × (wash_floor + wash_weight × washout/100)).
     # Different composite from conviction — exposed for research/backtest
     # use so alternative score formulas can be evaluated.
@@ -1470,6 +1488,8 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "fragile": bool(fragile),
         "risk": risk,
         "similar_cases": int(n_eff),
+        # Trailing 12-month mean of the conviction series (CAP5+SMA12M ranker).
+        "conviction_smooth12m": float(conv_smooth_today) if np.isfinite(conv_smooth_today) and conv_smooth_today > 0 else None,
         "explain": explain_lines,
         "outcomes": {h: h_summaries.get(h, {"n": 0}) for h in ["10D", "30D", "60D"]},
         "evidence_baseline": ev_base,
@@ -1479,6 +1499,7 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "prices": [json_float(v) for v in px.values],
             "wash": [json_float(v) for v in wash.values],
             "final": [json_float(v) for v in conv_win.values],
+            "final_smooth12m": [json_float(v) for v in conv_smooth_win.values],
             "final_raw": [json_float(v) for v in final_raw_win.values],
         },
         "stability_samples": stab_samples,
@@ -1512,6 +1533,9 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
         "quality": float(quality) if np.isfinite(quality) else None,
         "value_depth": float(vdepth_today) if np.isfinite(vdepth_today) else None,
         "conviction": float(quality * h_summaries.get("10D", {}).get("win", 0) * pullback_gate(wash_today)) if (np.isfinite(quality) and quality >= MIN_QUALITY_GATE and "10D" in h_summaries and np.isfinite(wash_today)) else None,
+        # Trailing 12-month mean of the conviction series. This is the CAP5+SMA12M
+        # ranking signal — what the webapp sorts picks by for stocks.
+        "conviction_smooth12m": float(conv_smooth_today) if np.isfinite(conv_smooth_today) and conv_smooth_today > 0 else None,
         "median_10d": h_summaries.get("10D", {}).get("median", None),
         "median_30d": h_summaries.get("30D", {}).get("median", None),
         "median_60d": h_summaries.get("60D", {}).get("median", None),
@@ -1636,7 +1660,8 @@ def main():
             pass
 
     # Embed lightweight backtest series for ALL tickers (dates, prices, scores)
-    # so the backtest never needs to load individual ticker files
+    # so the backtest never needs to load individual ticker files. The
+    # `final_smooth12m` series is the CAP5+SMA12M ranker adopted from step39.
     bt_series = {}
     for t in res["ticker"].tolist():
         try:
@@ -1648,6 +1673,7 @@ def main():
                     "dates": s["dates"],
                     "prices": s["prices"],
                     "final": s["final"],
+                    "final_smooth12m": s.get("final_smooth12m", []),
                 }
         except Exception:
             pass
@@ -1657,7 +1683,7 @@ def main():
     payload = {
         "as_of": as_of,
         "model": {
-            "version": "v9-max",
+            "version": "v10-max",
             "bench": BENCH,
             "interval": INTERVAL,
             "universe": "Curated 100-stock diversified universe + 100+ crypto assets",
@@ -1667,6 +1693,7 @@ def main():
                 "wash_floor": FINAL_WASH_FLOOR,
                 "wash_weight": FINAL_WASH_WEIGHT,
             },
+            "cap5_smoothing_months": CAP5_SMOOTH_MONTHS,
         },
         "items": res.to_dict(orient="records"),
         "details": details,
