@@ -1,8 +1,10 @@
-# Max/CAP5 Strategy — Research Summary (steps 25-37)
+# Max/CAP5 Strategy — Research Summary (steps 25-39)
 
 **Timeframe:** 2026-04 sessions.
 **Branch:** `claude/improve-max-strategy-J7Iwq`
 **Incumbent:** CAP5 = top_n=5, cap=5%, rank-weighted, hold-forever, entry_delay=1
+**Recommended update:** CAP5+SMA12M = CAP5 with `smoothing_months=12`
+(step 39 winner — +0.90pp CAGR, robust across all validation tests)
 
 ## Baseline (20Y, 97-ticker universe)
 
@@ -105,15 +107,59 @@ given the flatness of the parameter landscape observed in 25-31.
 But they're cheap to run once regen completes and may confirm the
 robustness of CAP5 from two untested angles.
 
+## Step 38 (2026-04-21): DCA drawdown-scaling — crisis alpha only
+
+- 3x@-20dd: +18.19% full-20Y CAGR (+0.78pp vs baseline)
+- BUT: loses 3/5 rolling 10Y windows — alpha concentrated in GFC
+- Calendar year win rate: 5/18 to 6/18 — fails most years
+- DECISION: **NOT adopted** as default. Optional crisis overlay only.
+
+## Step 39 (2026-04-21): Signal smoothing — ROBUST WINNER
+
+Applying a trailing N-month SMA to the `final` conviction score yields
+consistent, robust alpha.
+
+| Variant | 20Y CAGR | Sharpe | 10Y median excess | Annual wins | GFC CAGR |
+|---|---|---|---|---|---|
+| Baseline | +17.41% | 1.34 | +9.51pp vs SPY | 18/21 | +37.96% |
+| **SMA 12M** | **+18.31%** | 1.35 | **+10.92pp** | 16/21 | +38.78% |
+| SMA 24M | +18.60% | 1.36 | +11.57pp | 16/21 | +39.21% |
+| SMA 60M | +18.75% | 1.36 | — | — | — |
+| SMA 180M | +18.97% | 1.36 | — | — | — |
+
+**Validation (step 39 thru 39l):**
+- Wins 5/5 rolling 10Y windows vs SPY AND vs baseline
+- Monotonic CAGR improvement with window size through SMA 180M
+- Wins at every top_n × cap combination (3/5/7 × 3/5/7/10%)
+- Wins at every top_n 1-10
+- Wins at every tested start date 2006-2016 (approx ties at 2018)
+- Jackknife median delta 0.00pp (no single-ticker dependency)
+- Mechanism: shifts picks from "deep pullback" (median -19% prior return)
+  to "persistent quality" (median -0.3% prior return). Concentrates into
+  55/96 unique tickers (vs 91/96 baseline). Top picks shift to
+  AMAT/CAT/GE from NVDA/SMCI.
+- EMA loses to SMA — older history carries real ranking information
+- Stacks with 3x@-20dd crisis overlay: +2.04pp combined
+- No defensive gate (sector_cap, rebound, zombie) improves it
+- Caveat: edge ONLY at hold_days=5000 (hold-forever); rotation
+  strategies (hold ≤ 2520d) lose the alpha
+
+**Production recommendation: adopt SMA 12M as new CAP5 default.**
+Code change: single integer parameter `smoothing_months=12` in
+StrategyConfig. Already integrated into bt_core.simulate().
+
 ## Files
 
 - `step25-31_*` — parameter sweeps
 - `step29_*` — factor combinations
 - `step32_summary.md` — consolidated findings
-- `step33_walkforward.py`, `step33_walkforward_summary.md` — walk-forward
-- `step34_alt_ranking.py` — alt rank formulas (pending)
+- `step33_walkforward*` — walk-forward adaptive (NOT adopted)
+- `step34_alt_ranking.py` — alt rank formulas (pending 128-ticker regen)
 - `step35_universe_expansion.py` — 128-ticker test (pending)
-- `step36_validate_winner.py` — validation battery
+- `step36_validate_winner.py` — validation battery (supports --smoothing-months)
 - `step37_weight_curves.py` — weighting variants
+- `step38_*` — DCA drawdown-scaling (crisis alpha only)
+- `step39_*` — signal smoothing (WINNER — adopt SMA 12M)
+- `step39_FINAL_summary.md` — consolidated step 39 recommendation
 - `fetch_new_tickers.py` — universe expansion data fetch
 - `regen_scores_incremental.py` — incremental regen helper
