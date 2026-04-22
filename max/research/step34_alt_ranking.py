@@ -35,17 +35,19 @@ if not has_wash or not has_raw:
 
 
 # Baseline CAP5 config — everything else matches.
-def mk(rank_formula="final", alpha=0.5, label=None):
+def mk(rank_formula="final", alpha=0.5, label=None, smooth=0):
     return StrategyConfig(
         start_month_idx=start_m,
         top_n=5, max_ticker_frac=0.05, hold_days=5000,
         weighting="rank", entry_delay=1,
         rank_formula=rank_formula, rank_alpha=alpha,
+        smoothing_months=smooth,
         label=label or rank_formula,
     )
 
 
 VARIANTS = [
+    # No smoothing — direct ranking comparison
     ("CAP5 (final)          ", mk("final", label="final")),
     ("CAP5 (final_raw)      ", mk("final_raw", label="final_raw")),
     ("CAP5 (wash)           ", mk("wash", label="wash")),
@@ -55,6 +57,9 @@ VARIANTS = [
     ("CAP5 (final+0.50*wash)", mk("final+alpha_wash", 0.50, "alpha=0.50")),
     ("CAP5 (final+1.00*wash)", mk("final+alpha_wash", 1.00, "alpha=1.00")),
     ("CAP5 (final+2.00*wash)", mk("final+alpha_wash", 2.00, "alpha=2.00")),
+    # Step 39 integration: SMA 12M applied to final (smoothing applies to fv)
+    ("CAP5 (final) + SMA12M ", mk("final", smooth=12, label="final_sma12")),
+    ("CAP5 (final) + SMA24M ", mk("final", smooth=24, label="final_sma24")),
 ]
 
 
