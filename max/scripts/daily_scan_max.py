@@ -1584,6 +1584,10 @@ def score_one_ticker(t: str, O: pd.DataFrame, H: pd.DataFrame, L: pd.DataFrame, 
             "final": [json_float(v) for v in conv_win.values],
             "final_smooth12m": [json_float(v) for v in conv_smooth_win.values],
             "final_raw": [json_float(v) for v in final_raw_win.values],
+            # Per-bar ATR14 as % of price (scanner computes this in
+            # compute_core_features). Webapp uses this to size dynamic
+            # TP/SL during in-browser backtesting.
+            "atr14_pct": [json_float(v) for v in win["atr_pct"].reindex(px.index).values],
         },
         "stability_samples": stab_samples,
         "quality": float(quality) if np.isfinite(quality) else None,
@@ -1764,6 +1768,9 @@ def main():
                     "prices": s["prices"],
                     "final": s["final"],
                     "final_smooth12m": s.get("final_smooth12m", []),
+                    # ATR14 as % of price at each date. Used by the in-browser
+                    # TP strategy backtest to compute per-bar dynamic TP/SL.
+                    "atr14_pct": s.get("atr14_pct", []),
                 }
         except Exception:
             pass

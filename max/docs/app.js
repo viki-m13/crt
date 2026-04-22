@@ -169,9 +169,29 @@ function renderSectionListing(section, horizonId) {
   }
 }
 
-function buildRow(item, h) {
+function buildRow(item, h, section) {
   const div = document.createElement("div");
   div.className = "max-ticker-row";
+  // For the stocks listing we show the dynamic TP/SL signal (the whole
+  // raison d'être of the Max strategy). For crypto we keep the generic
+  // multi-horizon screener columns since crypto uses a different
+  // (per-pick edge) framework.
+  if (section === "stocks" && item.tp_price != null && item.sl_price != null) {
+    const tpPct = Number(item.tp_pct ?? 10);
+    const slPct = Number(item.sl_pct ?? 15);
+    const atr = item.atr14_pct != null ? Number(item.atr14_pct) * 100 : null;
+    div.innerHTML = `
+      <div class="row-ticker">${item.ticker}</div>
+      <div class="row-cell">${fmtPriceVal(item.last_price)}</div>
+      <div class="row-cell row-cell-tp">+${tpPct.toFixed(1)}% <span class="row-cell-muted">${fmtPriceVal(item.tp_price)}</span></div>
+      <div class="row-cell row-cell-sl">&minus;${slPct.toFixed(1)}% <span class="row-cell-muted">${fmtPriceVal(item.sl_price)}</span></div>
+      <div class="row-cell">${atr != null ? atr.toFixed(2) + "%" : "—"}</div>
+      <div class="row-cell">${fmtNum(item.washout_today)}</div>
+      <div class="row-cell">${fmtNum(item.quality)}</div>
+      <div class="row-cell max-col-cases">${fmtNum(item.n_analogs)}</div>
+    `;
+    return div;
+  }
   const prob = item[h.prob];
   const med = item[h.median];
   const down = h.downside ? item[h.downside] : null;
@@ -297,7 +317,7 @@ function renderTopPicksFor(section) {
     return;
   }
   for (const { it, best } of scored) {
-    container.appendChild(buildRow(it, best.horizon));
+    container.appendChild(buildRow(it, best.horizon, section));
   }
 }
 
@@ -315,6 +335,7 @@ function buildBT() {
   const priceLookup = {}; // ticker -> Map(date -> price)
   const scoreLookup = {}; // ticker -> Map(date -> final smoothed)
   const scoreRawLookup = {}; // ticker -> Map(date -> final raw)
+  const atrLookup = {};   // ticker -> Map(date -> ATR14 as fraction of price)
   // Find the freshest latest-date across all tickers. Series that end more than
   // a year before that are "stale" and their dates get excluded from the spine —
   // otherwise a single abandoned ticker (e.g. SPY bt_series ending 2020)
@@ -334,18 +355,23 @@ function buildBT() {
     const last = s.dates[s.dates.length - 1];
     // Always keep prices for lookups (benchmark forward-fill, etc) but only
     // contribute to the spine if the series is fresh.
-    const pm = new Map(), fm = new Map(), fmRaw = new Map();
+    const pm = new Map(), fm = new Map(), fmRaw = new Map(), am = new Map();
     const smooth = (s.final_smooth12m && s.final_smooth12m.length === s.dates.length)
       ? s.final_smooth12m
       : s.final;
+    const atrs = (s.atr14_pct && s.atr14_pct.length === s.dates.length) ? s.atr14_pct : null;
     for (let i = 0; i < s.dates.length; i++) {
       pm.set(s.dates[i], Number(s.prices[i]));
       fm.set(s.dates[i], Number(smooth[i]));
       fmRaw.set(s.dates[i], Number(s.final[i]));
+      if (atrs && atrs[i] != null && Number.isFinite(Number(atrs[i]))) {
+        am.set(s.dates[i], Number(atrs[i]));
+      }
     }
     priceLookup[tk] = pm;
     scoreLookup[tk] = fm;
     scoreRawLookup[tk] = fmRaw;
+    atrLookup[tk] = am;
     if (last >= staleCutoff) {
       for (const d of s.dates) dateSet.add(d);
     }
@@ -357,7 +383,7 @@ function buildBT() {
     const ym = allDates[i].substring(0, 7);
     if (ym !== prevYM) { monthFirstIdx.push(i); prevYM = ym; }
   }
-  BT = { allDates, priceLookup, scoreLookup, scoreRawLookup, monthFirstIdx };
+  BT = { allDates, priceLookup, scoreLookup, scoreRawLookup, atrLookup, monthFirstIdx };
   return BT;
 }
 
@@ -632,44 +658,65 @@ function simulateDCAMax(universe, topN, opts) {
   return { equity, totalInvested, positions };
 }
 
-/* Take-Profit strategy simulation (step41-44 research winner).
+/* Take-Profit strategy simulation (step45-47 dynamic ATR research winner).
 
-Each month the system ranks by CAP5+SMA12M (scoreLookup), picks top-1 not
-already held, enters at the next trading day's close, and places:
-  - Take-profit limit at entry × (1 + TP_PCT/100)  [default +10%]
-  - Stop-loss at entry × (1 - SL_PCT/100)          [default −15%]
-  - Time-stop at entry_idx + TP_TIME_STOP_BARS      [default 252 bars]
-Exit at first bar where close meets TP/SL, else at time-stop close.
+Each month:
+  1. Rank all tickers by CAP5+SMA12M (scoreLookup).
+  2. Pick the top-ranked stock not currently held.
+  3. Enter at next trading day's close.
+  4. Dynamic sizing from ATR14:
+       tp_price = entry × (1 + max(TP_FLOOR, min(TP_ATR_K × ATR14%, TP_CAP)))
+       sl_price = entry × (1 − max(SL_FLOOR, min(SL_ATR_K × ATR14%, SL_CAP)))
+  5. Time-stop at entry_idx + TS_BARS.
+  6. Exit at first bar where close meets TP/SL, else at time-stop close.
 
-Note: bt_series has close prices only (no high/low), so TP/SL are checked
-against close rather than intraday high/low. This understates TP hits
-slightly (intraday TP peaks that close back below the target are missed)
-but is conservative and matches what a retail investor with end-of-day
-data would experience. The Python research framework (step41-44) uses
-high/low; numbers here are a close-approximation. */
+Defaults match the production constants (step47 winner):
+  TP_ATR_K = SL_ATR_K = 7
+  TP_CAP = 0.25 (25%), TP_FLOOR = 0.05
+  SL_CAP = 0.12 (12%), SL_FLOOR = 0.05
+  TS_BARS = 252
+
+If a ticker's ATR14 series is missing or all-null, the fallback is the
+fixed-TP/SL values (TP_PCT_DEFAULT=10, SL_PCT_DEFAULT=15) — pre-v12 data. */
 const TP_PCT_DEFAULT = 10.0;
 const SL_PCT_DEFAULT = 15.0;
 const TP_TIME_STOP_DEFAULT = 252;
+const TP_ATR_K_DEFAULT = 7.0;
+const SL_ATR_K_DEFAULT = 7.0;
+const TP_CAP_DEFAULT = 0.25;
+const TP_FLOOR_DEFAULT = 0.05;
+const SL_CAP_DEFAULT = 0.12;
+const SL_FLOOR_DEFAULT = 0.05;
+
+function atrScaledFrac(atrPct, k, floor, cap) {
+  if (atrPct == null || !Number.isFinite(atrPct) || atrPct <= 0) return floor;
+  const d = k * atrPct;
+  return Math.max(floor, Math.min(d, cap));
+}
 
 function simulateTakeProfit(universe, opts) {
-  const { allDates, priceLookup, scoreLookup, monthFirstIdx } = buildBT();
+  const { allDates, priceLookup, scoreLookup, atrLookup, monthFirstIdx } = buildBT();
   const equity = new Float64Array(allDates.length);
   const positions = [];
   let cash = 0;
   let totalInvested = 0;
   const startMonthIdx = (opts && opts.startMonthIdx != null) ? opts.startMonthIdx : 0;
   const endMonthIdx = (opts && opts.endMonthIdx != null) ? opts.endMonthIdx : monthFirstIdx.length;
-  const tpPct = (opts && opts.tpPct != null) ? opts.tpPct : TP_PCT_DEFAULT;
-  const slPct = (opts && opts.slPct != null) ? opts.slPct : SL_PCT_DEFAULT;
+  const dynamic = !(opts && opts.dynamic === false);
+  const tpK = (opts && opts.tpAtrK != null) ? opts.tpAtrK : TP_ATR_K_DEFAULT;
+  const slK = (opts && opts.slAtrK != null) ? opts.slAtrK : SL_ATR_K_DEFAULT;
+  const tpCap = (opts && opts.tpCap != null) ? opts.tpCap : TP_CAP_DEFAULT;
+  const tpFloor = (opts && opts.tpFloor != null) ? opts.tpFloor : TP_FLOOR_DEFAULT;
+  const slCap = (opts && opts.slCap != null) ? opts.slCap : SL_CAP_DEFAULT;
+  const slFloor = (opts && opts.slFloor != null) ? opts.slFloor : SL_FLOOR_DEFAULT;
+  const fixedTpPct = (opts && opts.tpPct != null) ? opts.tpPct : TP_PCT_DEFAULT;
+  const fixedSlPct = (opts && opts.slPct != null) ? opts.slPct : SL_PCT_DEFAULT;
   const timeStop = (opts && opts.timeStop != null) ? opts.timeStop : TP_TIME_STOP_DEFAULT;
-  const tpMult = 1.0 + tpPct / 100.0;
-  const slMult = 1.0 - slPct / 100.0;
 
   let openPos = null; // single-slot
 
   for (let m = startMonthIdx; m < endMonthIdx; m++) {
     const dIdx = monthFirstIdx[m];
-    // Accrue monthly contribution regardless of open position
     totalInvested += DCA_MONTHLY;
     cash += DCA_MONTHLY;
 
@@ -679,7 +726,6 @@ function simulateTakeProfit(universe, opts) {
     const entryDate = allDates[entryIdx];
 
     if (!openPos) {
-      // Rank candidates by score on rank date
       let bestTk = null, bestScore = -Infinity;
       for (const tk of universe) {
         const s = scoreLookup[tk]?.get(rankDate);
@@ -692,14 +738,30 @@ function simulateTakeProfit(universe, opts) {
         const entryPx = priceLookup[bestTk]?.get(entryDate);
         if (entryPx && Number.isFinite(entryPx) && entryPx > 0 && cash > 0) {
           const shares = cash / entryPx;
+          // Decide TP/SL distance.
+          let tpFrac, slFrac, atrUsed = null;
+          if (dynamic) {
+            atrUsed = atrLookup[bestTk]?.get(rankDate);
+            if (atrUsed == null || !Number.isFinite(atrUsed)) {
+              atrUsed = atrLookup[bestTk]?.get(entryDate);
+            }
+            tpFrac = atrScaledFrac(atrUsed, tpK, tpFloor, tpCap);
+            slFrac = atrScaledFrac(atrUsed, slK, slFloor, slCap);
+          } else {
+            tpFrac = fixedTpPct / 100.0;
+            slFrac = fixedSlPct / 100.0;
+          }
           openPos = {
             tk: bestTk,
             entryIdx,
             entryPx,
             shares,
             cost: cash,
-            tpPx: entryPx * tpMult,
-            slPx: entryPx * slMult,
+            tpPx: entryPx * (1 + tpFrac),
+            slPx: entryPx * (1 - slFrac),
+            tpFrac,
+            slFrac,
+            atrPct: atrUsed ?? null,
             stopIdx: entryIdx + timeStop,
           };
           cash = 0;
@@ -732,6 +794,9 @@ function simulateTakeProfit(universe, opts) {
               hitSl: exitReason === "sl",
               timeStopped: exitReason === "time",
               daysHeld: d - openPos.entryIdx,
+              tpFrac: openPos.tpFrac,
+              slFrac: openPos.slFrac,
+              atrPct: openPos.atrPct,
             });
             openPos = null;
           }
@@ -1208,6 +1273,190 @@ function setupBacktestTriggers() {
   lazySection("crypto-backtest-section", "crypto");
   lazyTop("topstocks-backtest-section", "topstocks");
   lazyTop("topcrypto-backtest-section", "topcrypto");
+
+  // Dynamic TP backtest: runs simulateTakeProfit on top-1 CAP5+SMA12M monthly.
+  const detTp = byId("dynamictp-backtest-section");
+  if (detTp) {
+    let loaded = false;
+    detTp.addEventListener("toggle", () => {
+      if (detTp.open && !loaded) { loaded = true; runDynamicTPBacktest(); }
+    });
+  }
+}
+
+function runDynamicTPBacktest() {
+  const bodyId = "dynamictp-backtest-body";
+  const body = byId(bodyId);
+  if (!body) return;
+  body.innerHTML = `<div class="footnote">Running dynamic TP backtest&hellip;</div>`;
+  setTimeout(() => {
+    const universe = portfolioUniverse("topstocks");
+    const { monthFirstIdx, allDates } = buildBT();
+    if (!allDates || !allDates.length) {
+      body.innerHTML = `<div class="footnote">No backtest data available.</div>`;
+      return;
+    }
+    // Match simulateDCAMax / runTopBacktestMax: start at first month with ≥3
+    // eligible tickers so benchmark and strategy share the same entry date.
+    const firstValid = firstValidMonthIdx(universe, 3);
+    const sim = simulateTakeProfit(universe, { startMonthIdx: firstValid, endMonthIdx: monthFirstIdx.length });
+    const fromIdx = monthFirstIdx[firstValid] || 0;
+    const toIdx = allDates.length;
+    const metrics = computeMetrics(allDates, sim.equity, sim.totalInvested, { fromIdx, toIdx });
+
+    const benchSim = simulateBenchmarkDCAMax(["SPY"], { startMonthIdx: firstValid, endMonthIdx: monthFirstIdx.length, entryDelay: 1 });
+    const benchMetrics = computeMetrics(allDates, benchSim.equity, benchSim.totalInvested, { fromIdx, toIdx });
+
+    body.innerHTML = renderDynamicTPBacktest(sim, metrics, benchSim, benchMetrics, allDates, { fromIdx, toIdx });
+  }, 10);
+}
+
+function renderDynamicTPBacktest(sim, metrics, benchSim, benchMetrics, allDates, windowInfo) {
+  const { fromIdx, toIdx } = windowInfo;
+  const positions = sim.positions || [];
+  const nTrades = positions.length;
+  const tpHits = positions.filter(p => p.hitTp).length;
+  const slHits = positions.filter(p => p.hitSl).length;
+  const timeHits = positions.filter(p => p.timeStopped).length;
+  const rets = positions.map(p => p.proceeds / p.cost - 1);
+  const wins = rets.filter(r => r > 0);
+  const losers = rets.filter(r => r < 0);
+  const avgWinner = wins.length ? wins.reduce((a, b) => a + b, 0) / wins.length : 0;
+  const avgLoser = losers.length ? losers.reduce((a, b) => a + b, 0) / losers.length : 0;
+  const grossWR = nTrades ? wins.length / nTrades : 0;
+  const daysHeld = positions.map(p => p.daysHeld);
+  const avgDays = daysHeld.length ? daysHeld.reduce((a, b) => a + b, 0) / daysHeld.length : 0;
+  daysHeld.sort((a, b) => a - b);
+  const medDays = daysHeld.length ? daysHeld[Math.floor(daysHeld.length / 2)] : 0;
+
+  const fmtPct = (v) => (v == null || !Number.isFinite(v)) ? "—" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
+  const fmtMoney = (v) => "$" + (v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  // computeMetrics returns {final, totalInvested, totalReturn, cagr, maxDD, sharpe, nMonths}.
+  // Normalize field names for the render block.
+  const strategy = {
+    cagr: metrics?.cagr ?? 0,
+    maxdd: metrics?.maxDD ?? 0,
+    sharpe: metrics?.sharpe ?? 0,
+    calmar: metrics?.maxDD > 0 ? (metrics.cagr / metrics.maxDD) : 0,
+    finalEquity: metrics?.final ?? 0,
+    totalInvested: metrics?.totalInvested ?? 0,
+  };
+  const bench = {
+    cagr: benchMetrics?.cagr ?? 0,
+    maxdd: benchMetrics?.maxDD ?? 0,
+    sharpe: benchMetrics?.sharpe ?? 0,
+    calmar: benchMetrics?.maxDD > 0 ? (benchMetrics.cagr / benchMetrics.maxDD) : 0,
+  };
+
+  const curve = buildDynamicTPCurve(sim, benchSim, allDates, { fromIdx, toIdx });
+
+  const bestTrades = [...positions].sort((a, b) => (b.proceeds / b.cost - 1) - (a.proceeds / a.cost - 1)).slice(0, 5);
+  const worstTrades = [...positions].sort((a, b) => (a.proceeds / a.cost - 1) - (b.proceeds / b.cost - 1)).slice(0, 5);
+
+  const tradeRow = (p) => {
+    const r = p.proceeds / p.cost - 1;
+    const reason = p.hitTp ? "TP" : p.hitSl ? "SL" : "time";
+    const reasonClass = p.hitTp ? "tp" : p.hitSl ? "sl" : "time";
+    return `<tr><td>${p.tk}</td><td>${allDates[p.entryIdx]?.slice(0, 10) || ""}</td><td>$${p.entryPx.toFixed(2)}</td>` +
+           `<td>$${p.exitPx.toFixed(2)}</td><td class="bt-trade-${reasonClass}">${fmtPct(r)}</td>` +
+           `<td>${p.daysHeld}d</td><td>${reason}</td></tr>`;
+  };
+
+  return `
+    <div class="bt-metrics-row">
+      <div class="bt-metric">
+        <div class="bt-metric-label">CAGR</div>
+        <div class="bt-metric-val bt-metric-strong">${fmtPct(strategy.cagr)}</div>
+        <div class="bt-metric-sub">vs SPY DCA ${fmtPct(bench.cagr)}</div>
+      </div>
+      <div class="bt-metric">
+        <div class="bt-metric-label">Final Equity</div>
+        <div class="bt-metric-val">${fmtMoney(strategy.finalEquity)}</div>
+        <div class="bt-metric-sub">invested ${fmtMoney(strategy.totalInvested)}</div>
+      </div>
+      <div class="bt-metric">
+        <div class="bt-metric-label">MaxDD</div>
+        <div class="bt-metric-val">${fmtPct(-Math.abs(strategy.maxdd))}</div>
+        <div class="bt-metric-sub">vs SPY ${fmtPct(-Math.abs(bench.maxdd))}</div>
+      </div>
+      <div class="bt-metric">
+        <div class="bt-metric-label">Sharpe / Calmar</div>
+        <div class="bt-metric-val">${(strategy.sharpe || 0).toFixed(2)} / ${(strategy.calmar || 0).toFixed(2)}</div>
+        <div class="bt-metric-sub">SPY ${(bench.sharpe || 0).toFixed(2)} / ${(bench.calmar || 0).toFixed(2)}</div>
+      </div>
+      <div class="bt-metric">
+        <div class="bt-metric-label">Win Rate</div>
+        <div class="bt-metric-val">${(grossWR * 100).toFixed(1)}%</div>
+        <div class="bt-metric-sub">${wins.length}/${nTrades} trades profit&gt;0</div>
+      </div>
+      <div class="bt-metric">
+        <div class="bt-metric-label">Avg Winner / Loser</div>
+        <div class="bt-metric-val bt-metric-small">${fmtPct(avgWinner)} / ${fmtPct(avgLoser)}</div>
+        <div class="bt-metric-sub">TP ${tpHits} · SL ${slHits} · time ${timeHits}</div>
+      </div>
+    </div>
+
+    <div class="bt-chart-wrap">
+      ${curve}
+    </div>
+
+    <div class="bt-trade-log">
+      <h4>Best 5 trades</h4>
+      <table class="bt-trade-table">
+        <thead><tr><th>Ticker</th><th>Entry date</th><th>Entry $</th><th>Exit $</th><th>Return</th><th>Held</th><th>Exit</th></tr></thead>
+        <tbody>${bestTrades.map(tradeRow).join("")}</tbody>
+      </table>
+      <h4 style="margin-top: 16px;">Worst 5 trades</h4>
+      <table class="bt-trade-table">
+        <thead><tr><th>Ticker</th><th>Entry date</th><th>Entry $</th><th>Exit $</th><th>Return</th><th>Held</th><th>Exit</th></tr></thead>
+        <tbody>${worstTrades.map(tradeRow).join("")}</tbody>
+      </table>
+    </div>
+
+    <p class="footnote" style="margin-top: 12px;">
+      Strategy: monthly top-1 pick by CAP5+SMA12M, enter at next-day close, per-trade TP/SL sized to ATR14
+      (k=7, caps +25%/&minus;12%, floors 5%), 12-month time-stop. Simulated on embedded close-price spine
+      (vs the Python framework which uses intraday high/low). 60% TP hit rate / 40% SL per 20Y backtest;
+      some months skipped when no eligible ticker has ≥252 bars of CAP5 history. Idle cash between trades.
+      Median hold ${medDays} days, mean ${Math.round(avgDays)} days.
+    </p>
+  `;
+}
+
+function buildDynamicTPCurve(sim, benchSim, allDates, windowInfo) {
+  const { fromIdx, toIdx } = windowInfo;
+  const w = toIdx - fromIdx;
+  if (w <= 0) return "";
+  // Downsample to ~400 points for the SVG
+  const stride = Math.max(1, Math.floor(w / 400));
+  const W = 920, H = 280, PAD = 40;
+  const xs = [], strat = [], bench = [];
+  for (let i = fromIdx; i < toIdx; i += stride) {
+    xs.push(i);
+    strat.push(sim.equity[i] || 0);
+    bench.push(benchSim.equity[i] || 0);
+  }
+  const maxY = Math.max(...strat, ...bench, 1);
+  const minY = 0;
+  const scaleX = (x) => PAD + (W - 2 * PAD) * ((x - xs[0]) / (xs[xs.length - 1] - xs[0] || 1));
+  const scaleY = (y) => H - PAD - (H - 2 * PAD) * ((y - minY) / (maxY - minY));
+  const pathStrat = xs.map((x, i) => `${i === 0 ? "M" : "L"}${scaleX(x).toFixed(1)},${scaleY(strat[i]).toFixed(1)}`).join("");
+  const pathBench = xs.map((x, i) => `${i === 0 ? "M" : "L"}${scaleX(x).toFixed(1)},${scaleY(bench[i]).toFixed(1)}`).join("");
+  const fmtD = (i) => (allDates[i] || "").slice(0, 7);
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="bt-svg">
+      <line x1="${PAD}" y1="${H - PAD}" x2="${W - PAD}" y2="${H - PAD}" stroke="#ccc" stroke-width="1"/>
+      <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H - PAD}" stroke="#ccc" stroke-width="1"/>
+      <path d="${pathBench}" fill="none" stroke="#888" stroke-width="2" stroke-dasharray="3,3"/>
+      <path d="${pathStrat}" fill="none" stroke="#1a7a3e" stroke-width="2.5"/>
+      <text x="${PAD + 8}" y="${PAD + 14}" font-size="11" fill="#1a7a3e" font-weight="600">Dynamic TP Strategy</text>
+      <text x="${PAD + 8}" y="${PAD + 30}" font-size="11" fill="#888">SPY DCA (dashed)</text>
+      <text x="${PAD - 6}" y="${H - PAD + 4}" font-size="10" fill="#888" text-anchor="end">$0</text>
+      <text x="${PAD - 6}" y="${PAD + 4}" font-size="10" fill="#888" text-anchor="end">${"$" + Math.round(maxY).toLocaleString()}</text>
+      <text x="${PAD}" y="${H - PAD + 16}" font-size="10" fill="#888">${fmtD(xs[0])}</text>
+      <text x="${W - PAD}" y="${H - PAD + 16}" font-size="10" fill="#888" text-anchor="end">${fmtD(xs[xs.length - 1])}</text>
+    </svg>
+  `;
 }
 
 function currentHorizon(section) {

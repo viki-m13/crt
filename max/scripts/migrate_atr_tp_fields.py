@@ -98,15 +98,63 @@ def tp_sl_fields(last_price: float | None, prices: list | None) -> dict | None:
     }
 
 
+def atr14_series_from_prices(prices: list) -> list:
+    """Compute a per-bar ATR14 proxy (as fraction of price) from a close series.
+
+    True ATR needs High/Low/PrevClose per bar; webapp JSON payloads only carry
+    close prices. This close-to-close proxy (mean |log return| over last 14
+    bars) correlates tightly with true ATR for daily data and is sufficient
+    for the in-browser backtest's dynamic TP/SL sizing.
+    """
+    out: list = []
+    returns: list[float] = []
+    prev = None
+    for p in prices:
+        try:
+            x = float(p) if p is not None else None
+        except (TypeError, ValueError):
+            x = None
+        if x is not None and x > 0 and math.isfinite(x):
+            if prev is not None and prev > 0:
+                r = abs(math.log(x / prev))
+                returns.append(r)
+                if len(returns) > ATR_WINDOW:
+                    returns = returns[-ATR_WINDOW:]
+                if len(returns) >= ATR_WINDOW:
+                    out.append(sum(returns) / len(returns))
+                else:
+                    out.append(None)
+            else:
+                out.append(None)
+            prev = x
+        else:
+            out.append(None)
+    return out
+
+
 def migrate_full() -> tuple[int, int]:
     with open(FULL_PATH, "r") as f:
         d = json.load(f)
     bt = d.get("bt_series") or {}
 
+    # Strip crypto from items (Max strategy is stock-only)
+    items_before = len(d.get("items", []))
+    d["items"] = [it for it in d.get("items", []) if not it.get("is_crypto")]
+    items_after = len(d["items"])
+
+    # Strip crypto from bt_series too (match any -USD or _USD suffix)
+    crypto_keys = [k for k in bt.keys() if k.endswith("-USD") or k.endswith("_USD")]
+    for k in crypto_keys:
+        del bt[k]
+
+    # Strip crypto details
+    details = d.get("details") or {}
+    crypto_detail_keys = [k for k in details.keys() if k.endswith("-USD") or k.endswith("_USD")]
+    for k in crypto_detail_keys:
+        del details[k]
+
     items_patched = 0
     for it in d.get("items", []):
-        if it.get("is_crypto"):
-            continue
         tk = it.get("ticker")
         prices = (bt.get(tk) or {}).get("prices")
         f = tp_sl_fields(it.get("last_price"), prices)
@@ -115,7 +163,7 @@ def migrate_full() -> tuple[int, int]:
             items_patched += 1
 
     details_patched = 0
-    for tk, detail in d.get("details", {}).items():
+    for tk, detail in details.items():
         if not isinstance(detail, dict):
             continue
         series = detail.get("series") or {}
@@ -131,7 +179,17 @@ def migrate_full() -> tuple[int, int]:
         f = tp_sl_fields(lp, prices)
         if f:
             detail.update(f)
+            # Also add ATR14 series to the per-ticker detail so the webapp
+            # single-ticker page could use it in the future.
+            atr_series = atr14_series_from_prices(prices)
+            series["atr14_pct"] = atr_series
+            detail["series"] = series
             details_patched += 1
+
+    # Add atr14_pct series to each bt_series entry for in-browser backtest use
+    for tk, s in bt.items():
+        prices = s.get("prices") or []
+        s["atr14_pct"] = atr14_series_from_prices(prices)
 
     model = d.get("model") or {}
     model["take_profit"] = {
@@ -185,6 +243,9 @@ def migrate_tickers() -> tuple[int, int]:
         f = tp_sl_fields(lp, prices)
         if f:
             d.update(f)
+            # Add ATR14 series to the ticker file's series too
+            series["atr14_pct"] = atr14_series_from_prices(prices)
+            d["series"] = series
             with open(path, "w") as fh:
                 json.dump(d, fh, separators=(",", ":"))
             n_ok += 1
@@ -193,14 +254,34 @@ def migrate_tickers() -> tuple[int, int]:
     return n_ok, n_skip
 
 
+# Also delete crypto ticker files since Max is stock-only now.
+def delete_crypto_tickers() -> int:
+    if not os.path.isdir(TICKER_DIR):
+        return 0
+    n = 0
+    for name in list(os.listdir(TICKER_DIR)):
+        if not name.endswith(".json"):
+            continue
+        base = name.replace(".json", "")
+        if base.endswith("-USD") or base.endswith("_USD"):
+            try:
+                os.remove(os.path.join(TICKER_DIR, name))
+                n += 1
+            except Exception:
+                pass
+    return n
+
+
 def main():
     if not os.path.exists(FULL_PATH):
         print(f"[err] {FULL_PATH} not found", file=sys.stderr)
         return 1
     i, dt = migrate_full()
-    print(f"[full.json] patched {i} items, {dt} details")
+    print(f"[full.json] patched {i} items, {dt} details (crypto stripped)")
     ok, skip = migrate_tickers()
-    print(f"[tickers/] patched {ok} (stocks), skipped {skip} (crypto/no-prices)")
+    print(f"[tickers/] patched {ok} (stocks), skipped {skip} (no-prices)")
+    removed = delete_crypto_tickers()
+    print(f"[tickers/] deleted {removed} crypto ticker files")
     return 0
 
 
