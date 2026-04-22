@@ -1274,175 +1274,116 @@ function setupBacktestTriggers() {
   lazyTop("topstocks-backtest-section", "topstocks");
   lazyTop("topcrypto-backtest-section", "topcrypto");
 
-  // Dynamic TP backtest: runs simulateTakeProfit on top-1 CAP5+SMA12M monthly.
+  // Dynamic TP backtest: render precomputed results (server-side) on toggle.
+  // Results live in FULL.tp_backtest so there's no in-browser simulation.
   const detTp = byId("dynamictp-backtest-section");
   if (detTp) {
-    let loaded = false;
+    let rendered = false;
     detTp.addEventListener("toggle", () => {
-      if (detTp.open && !loaded) { loaded = true; runDynamicTPBacktest(); }
+      if (detTp.open && !rendered) { rendered = true; renderPrecomputedTPBacktest(); }
     });
   }
 }
 
-function runDynamicTPBacktest() {
+function renderPrecomputedTPBacktest() {
   const bodyId = "dynamictp-backtest-body";
   const body = byId(bodyId);
   if (!body) return;
-  body.innerHTML = `<div class="footnote">Running dynamic TP backtest&hellip;</div>`;
-  setTimeout(() => {
-    const universe = portfolioUniverse("topstocks");
-    const { monthFirstIdx, allDates } = buildBT();
-    if (!allDates || !allDates.length) {
-      body.innerHTML = `<div class="footnote">No backtest data available.</div>`;
-      return;
-    }
-    // Match simulateDCAMax / runTopBacktestMax: start at first month with ≥3
-    // eligible tickers so benchmark and strategy share the same entry date.
-    const firstValid = firstValidMonthIdx(universe, 3);
-    const sim = simulateTakeProfit(universe, { startMonthIdx: firstValid, endMonthIdx: monthFirstIdx.length });
-    const fromIdx = monthFirstIdx[firstValid] || 0;
-    const toIdx = allDates.length;
-    const metrics = computeMetrics(allDates, sim.equity, sim.totalInvested, { fromIdx, toIdx });
+  const tp = FULL.tp_backtest;
+  if (!tp || !tp.strategy) {
+    body.innerHTML = `<div class="footnote">No precomputed TP backtest available (data older than v12-max-tp-atr).</div>`;
+    return;
+  }
 
-    const benchSim = simulateBenchmarkDCAMax(["SPY"], { startMonthIdx: firstValid, endMonthIdx: monthFirstIdx.length, entryDelay: 1 });
-    const benchMetrics = computeMetrics(allDates, benchSim.equity, benchSim.totalInvested, { fromIdx, toIdx });
-
-    body.innerHTML = renderDynamicTPBacktest(sim, metrics, benchSim, benchMetrics, allDates, { fromIdx, toIdx });
-  }, 10);
-}
-
-function renderDynamicTPBacktest(sim, metrics, benchSim, benchMetrics, allDates, windowInfo) {
-  const { fromIdx, toIdx } = windowInfo;
-  const positions = sim.positions || [];
-  const nTrades = positions.length;
-  const tpHits = positions.filter(p => p.hitTp).length;
-  const slHits = positions.filter(p => p.hitSl).length;
-  const timeHits = positions.filter(p => p.timeStopped).length;
-  const rets = positions.map(p => p.proceeds / p.cost - 1);
-  const wins = rets.filter(r => r > 0);
-  const losers = rets.filter(r => r < 0);
-  const avgWinner = wins.length ? wins.reduce((a, b) => a + b, 0) / wins.length : 0;
-  const avgLoser = losers.length ? losers.reduce((a, b) => a + b, 0) / losers.length : 0;
-  const grossWR = nTrades ? wins.length / nTrades : 0;
-  const daysHeld = positions.map(p => p.daysHeld);
-  const avgDays = daysHeld.length ? daysHeld.reduce((a, b) => a + b, 0) / daysHeld.length : 0;
-  daysHeld.sort((a, b) => a - b);
-  const medDays = daysHeld.length ? daysHeld[Math.floor(daysHeld.length / 2)] : 0;
+  const sm = tp.strategy.metrics || {};
+  const counts = tp.strategy.trade_counts || {};
+  const bm = tp.spy_dca?.metrics || {};
+  const best = tp.strategy.best_trades || [];
+  const worst = tp.strategy.worst_trades || [];
 
   const fmtPct = (v) => (v == null || !Number.isFinite(v)) ? "—" : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%";
   const fmtMoney = (v) => "$" + (v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
-  // computeMetrics returns {final, totalInvested, totalReturn, cagr, maxDD, sharpe, nMonths}.
-  // Normalize field names for the render block.
-  const strategy = {
-    cagr: metrics?.cagr ?? 0,
-    maxdd: metrics?.maxDD ?? 0,
-    sharpe: metrics?.sharpe ?? 0,
-    calmar: metrics?.maxDD > 0 ? (metrics.cagr / metrics.maxDD) : 0,
-    finalEquity: metrics?.final ?? 0,
-    totalInvested: metrics?.totalInvested ?? 0,
-  };
-  const bench = {
-    cagr: benchMetrics?.cagr ?? 0,
-    maxdd: benchMetrics?.maxDD ?? 0,
-    sharpe: benchMetrics?.sharpe ?? 0,
-    calmar: benchMetrics?.maxDD > 0 ? (benchMetrics.cagr / benchMetrics.maxDD) : 0,
-  };
-
-  const curve = buildDynamicTPCurve(sim, benchSim, allDates, { fromIdx, toIdx });
-
-  const bestTrades = [...positions].sort((a, b) => (b.proceeds / b.cost - 1) - (a.proceeds / a.cost - 1)).slice(0, 5);
-  const worstTrades = [...positions].sort((a, b) => (a.proceeds / a.cost - 1) - (b.proceeds / b.cost - 1)).slice(0, 5);
 
   const tradeRow = (p) => {
-    const r = p.proceeds / p.cost - 1;
-    const reason = p.hitTp ? "TP" : p.hitSl ? "SL" : "time";
-    const reasonClass = p.hitTp ? "tp" : p.hitSl ? "sl" : "time";
-    return `<tr><td>${p.tk}</td><td>${allDates[p.entryIdx]?.slice(0, 10) || ""}</td><td>$${p.entryPx.toFixed(2)}</td>` +
-           `<td>$${p.exitPx.toFixed(2)}</td><td class="bt-trade-${reasonClass}">${fmtPct(r)}</td>` +
-           `<td>${p.daysHeld}d</td><td>${reason}</td></tr>`;
+    const reason = p.reason === "tp" ? "TP" : p.reason === "sl" ? "SL" : "time";
+    const reasonClass = p.reason;
+    return `<tr><td>${p.tk}</td><td>${(p.entry_date || "").slice(0, 10)}</td><td>$${Number(p.entry_px).toFixed(2)}</td>` +
+           `<td>$${Number(p.exit_px).toFixed(2)}</td><td class="bt-trade-${reasonClass}">${fmtPct(p.ret)}</td>` +
+           `<td>${p.days_held}d</td><td>${reason}</td></tr>`;
   };
 
-  return `
+  const curve = buildPrecomputedCurve(tp.strategy.equity_curve, tp.spy_dca.equity_curve);
+
+  body.innerHTML = `
     <div class="bt-metrics-row">
       <div class="bt-metric">
         <div class="bt-metric-label">CAGR</div>
-        <div class="bt-metric-val bt-metric-strong">${fmtPct(strategy.cagr)}</div>
-        <div class="bt-metric-sub">vs SPY DCA ${fmtPct(bench.cagr)}</div>
+        <div class="bt-metric-val bt-metric-strong">${fmtPct(sm.cagr)}</div>
+        <div class="bt-metric-sub">vs SPY DCA ${fmtPct(bm.cagr)}</div>
       </div>
       <div class="bt-metric">
         <div class="bt-metric-label">Final Equity</div>
-        <div class="bt-metric-val">${fmtMoney(strategy.finalEquity)}</div>
-        <div class="bt-metric-sub">invested ${fmtMoney(strategy.totalInvested)}</div>
+        <div class="bt-metric-val">${fmtMoney(sm.final_equity)}</div>
+        <div class="bt-metric-sub">invested ${fmtMoney(sm.total_invested)}</div>
       </div>
       <div class="bt-metric">
         <div class="bt-metric-label">MaxDD</div>
-        <div class="bt-metric-val">${fmtPct(-Math.abs(strategy.maxdd))}</div>
-        <div class="bt-metric-sub">vs SPY ${fmtPct(-Math.abs(bench.maxdd))}</div>
+        <div class="bt-metric-val">${fmtPct(-Math.abs(sm.maxdd || 0))}</div>
+        <div class="bt-metric-sub">vs SPY ${fmtPct(-Math.abs(bm.maxdd || 0))}</div>
       </div>
       <div class="bt-metric">
         <div class="bt-metric-label">Sharpe / Calmar</div>
-        <div class="bt-metric-val">${(strategy.sharpe || 0).toFixed(2)} / ${(strategy.calmar || 0).toFixed(2)}</div>
-        <div class="bt-metric-sub">SPY ${(bench.sharpe || 0).toFixed(2)} / ${(bench.calmar || 0).toFixed(2)}</div>
+        <div class="bt-metric-val">${(sm.sharpe || 0).toFixed(2)} / ${(sm.calmar || 0).toFixed(2)}</div>
+        <div class="bt-metric-sub">SPY ${(bm.sharpe || 0).toFixed(2)} / ${(bm.calmar || 0).toFixed(2)}</div>
       </div>
       <div class="bt-metric">
         <div class="bt-metric-label">Win Rate</div>
-        <div class="bt-metric-val">${(grossWR * 100).toFixed(1)}%</div>
-        <div class="bt-metric-sub">${wins.length}/${nTrades} trades profit&gt;0</div>
+        <div class="bt-metric-val">${((counts.gross_wr || 0) * 100).toFixed(1)}%</div>
+        <div class="bt-metric-sub">${counts.n_trades || 0} trades total</div>
       </div>
       <div class="bt-metric">
         <div class="bt-metric-label">Avg Winner / Loser</div>
-        <div class="bt-metric-val bt-metric-small">${fmtPct(avgWinner)} / ${fmtPct(avgLoser)}</div>
-        <div class="bt-metric-sub">TP ${tpHits} · SL ${slHits} · time ${timeHits}</div>
+        <div class="bt-metric-val bt-metric-small">${fmtPct(counts.avg_winner)} / ${fmtPct(counts.avg_loser)}</div>
+        <div class="bt-metric-sub">TP ${counts.tp_hits || 0} · SL ${counts.sl_hits || 0} · time ${counts.time_hits || 0}</div>
       </div>
     </div>
-
-    <div class="bt-chart-wrap">
-      ${curve}
-    </div>
-
+    <div class="bt-chart-wrap">${curve}</div>
     <div class="bt-trade-log">
-      <h4>Best 5 trades</h4>
+      <h4>Best ${best.length} trades</h4>
       <table class="bt-trade-table">
         <thead><tr><th>Ticker</th><th>Entry date</th><th>Entry $</th><th>Exit $</th><th>Return</th><th>Held</th><th>Exit</th></tr></thead>
-        <tbody>${bestTrades.map(tradeRow).join("")}</tbody>
+        <tbody>${best.map(tradeRow).join("")}</tbody>
       </table>
-      <h4 style="margin-top: 16px;">Worst 5 trades</h4>
+      <h4 style="margin-top: 16px;">Worst ${worst.length} trades</h4>
       <table class="bt-trade-table">
         <thead><tr><th>Ticker</th><th>Entry date</th><th>Entry $</th><th>Exit $</th><th>Return</th><th>Held</th><th>Exit</th></tr></thead>
-        <tbody>${worstTrades.map(tradeRow).join("")}</tbody>
+        <tbody>${worst.map(tradeRow).join("")}</tbody>
       </table>
     </div>
-
     <p class="footnote" style="margin-top: 12px;">
       Strategy: monthly top-1 pick by CAP5+SMA12M, enter at next-day close, per-trade TP/SL sized to ATR14
-      (k=7, caps +25%/&minus;12%, floors 5%), 12-month time-stop. Simulated on embedded close-price spine
-      (vs the Python framework which uses intraday high/low). 60% TP hit rate / 40% SL per 20Y backtest;
-      some months skipped when no eligible ticker has ≥252 bars of CAP5 history. Idle cash between trades.
-      Median hold ${medDays} days, mean ${Math.round(avgDays)} days.
+      (k=7, caps +25%/&minus;12%, floors 5%), 12-month time-stop. Backtest precomputed server-side on each
+      data refresh, covering the recent-5Y window (${tp.spine_start || "—"} to ${tp.spine_end || "—"}).
+      The full 20-year Python backtest (+29.3% CAGR) lives in the 20-Year Validation card above &mdash;
+      it uses intraday High/Low fills and deeper history than the webapp spine.
+      Median hold ${counts.median_days_held || 0} days.
     </p>
   `;
 }
 
-function buildDynamicTPCurve(sim, benchSim, allDates, windowInfo) {
-  const { fromIdx, toIdx } = windowInfo;
-  const w = toIdx - fromIdx;
-  if (w <= 0) return "";
-  // Downsample to ~400 points for the SVG
-  const stride = Math.max(1, Math.floor(w / 400));
+function buildPrecomputedCurve(strat, bench) {
+  if (!strat || !strat.dates || !strat.equity) return "";
   const W = 920, H = 280, PAD = 40;
-  const xs = [], strat = [], bench = [];
-  for (let i = fromIdx; i < toIdx; i += stride) {
-    xs.push(i);
-    strat.push(sim.equity[i] || 0);
-    bench.push(benchSim.equity[i] || 0);
-  }
-  const maxY = Math.max(...strat, ...bench, 1);
+  const n = strat.dates.length;
+  if (n < 2) return "";
+  const sEq = strat.equity.map(Number);
+  const bEq = (bench && bench.equity) ? bench.equity.map(Number) : new Array(n).fill(0);
+  const maxY = Math.max(...sEq, ...bEq, 1);
   const minY = 0;
-  const scaleX = (x) => PAD + (W - 2 * PAD) * ((x - xs[0]) / (xs[xs.length - 1] - xs[0] || 1));
+  const scaleX = (i) => PAD + (W - 2 * PAD) * (i / (n - 1));
   const scaleY = (y) => H - PAD - (H - 2 * PAD) * ((y - minY) / (maxY - minY));
-  const pathStrat = xs.map((x, i) => `${i === 0 ? "M" : "L"}${scaleX(x).toFixed(1)},${scaleY(strat[i]).toFixed(1)}`).join("");
-  const pathBench = xs.map((x, i) => `${i === 0 ? "M" : "L"}${scaleX(x).toFixed(1)},${scaleY(bench[i]).toFixed(1)}`).join("");
-  const fmtD = (i) => (allDates[i] || "").slice(0, 7);
+  const pathStrat = sEq.map((v, i) => `${i === 0 ? "M" : "L"}${scaleX(i).toFixed(1)},${scaleY(v).toFixed(1)}`).join("");
+  const pathBench = bEq.map((v, i) => `${i === 0 ? "M" : "L"}${scaleX(i).toFixed(1)},${scaleY(v).toFixed(1)}`).join("");
   return `
     <svg viewBox="0 0 ${W} ${H}" class="bt-svg">
       <line x1="${PAD}" y1="${H - PAD}" x2="${W - PAD}" y2="${H - PAD}" stroke="#ccc" stroke-width="1"/>
@@ -1453,8 +1394,8 @@ function buildDynamicTPCurve(sim, benchSim, allDates, windowInfo) {
       <text x="${PAD + 8}" y="${PAD + 30}" font-size="11" fill="#888">SPY DCA (dashed)</text>
       <text x="${PAD - 6}" y="${H - PAD + 4}" font-size="10" fill="#888" text-anchor="end">$0</text>
       <text x="${PAD - 6}" y="${PAD + 4}" font-size="10" fill="#888" text-anchor="end">${"$" + Math.round(maxY).toLocaleString()}</text>
-      <text x="${PAD}" y="${H - PAD + 16}" font-size="10" fill="#888">${fmtD(xs[0])}</text>
-      <text x="${W - PAD}" y="${H - PAD + 16}" font-size="10" fill="#888" text-anchor="end">${fmtD(xs[xs.length - 1])}</text>
+      <text x="${PAD}" y="${H - PAD + 16}" font-size="10" fill="#888">${(strat.dates[0] || "").slice(0, 7)}</text>
+      <text x="${W - PAD}" y="${H - PAD + 16}" font-size="10" fill="#888" text-anchor="end">${(strat.dates[n - 1] || "").slice(0, 7)}</text>
     </svg>
   `;
 }

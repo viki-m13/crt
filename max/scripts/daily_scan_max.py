@@ -1810,6 +1810,18 @@ def main():
     with open(os.path.join(OUT_DIR, "full.json"), "w") as f:
         json.dump(sanitize_for_json(payload), f)
 
+    # Pre-compute the Dynamic TP backtest so the webapp doesn't have to
+    # re-run it on every page load. The helper reads full.json, computes
+    # results, and writes them back into the same file under `tp_backtest`.
+    try:
+        import subprocess
+        subprocess.run(
+            ["python3", os.path.join("max", "scripts", "precompute_tp_backtest.py")],
+            check=True,
+        )
+    except Exception as e:
+        print(f"[warn] TP backtest precompute failed: {e}")
+
     mark_ran_today()
     print(f"[OK] Wrote {len(rows)} tickers -> max/docs/data (as_of={as_of})")
 

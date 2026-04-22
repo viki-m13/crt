@@ -464,7 +464,7 @@
               <span class="details-card-arrow">&darr;</span>
             </summary>
             <div class="details-card-body">
-              <p class="bt-intro">The production strategy: $1,000 every month into the top-1 stock by CAP5+SMA12M. Each trade gets a dynamic TP/SL sized to the stock&rsquo;s own ATR14: <code>TP = entry &times; (1 + max(5%, min(7 &times; ATR14%, 25%)))</code>, <code>SL = entry &times; (1 &minus; max(5%, min(7 &times; ATR14%, 12%)))</code>. Exit at first close &ge; TP or &le; SL, else close at market after 252 trading days. Entry at next trading day&rsquo;s close. Benchmark: SPY DCA on the same monthly cadence. <em>Note: this in-browser backtest runs on the embedded recent-5Y spine; the full 20-year backtest (+29.3% CAGR) is in the research repo — see the 20-Year Validation card above.</em></p>
+              <p class="bt-intro">The production strategy: $1,000 every month into the top-1 stock by CAP5+SMA12M. Each trade gets a dynamic TP/SL sized to the stock&rsquo;s own ATR14: <code>TP = entry &times; (1 + max(5%, min(7 &times; ATR14%, 25%)))</code>, <code>SL = entry &times; (1 &minus; max(5%, min(7 &times; ATR14%, 12%)))</code>. Exit at first close &ge; TP or &le; SL, else close at market after 252 trading days. Entry at next trading day&rsquo;s close. Benchmark: SPY DCA on the same monthly cadence. <em>Results below are precomputed server-side on each data refresh over the embedded recent-5Y spine. The full 20-year Python backtest (+29.3% CAGR, +22.6pp over SPY DCA) is summarised in the 20-Year Validation card above.</em></p>
               <div id="dynamictp-backtest-body">
                 <div class="footnote">Running backtest&hellip;</div>
               </div>
