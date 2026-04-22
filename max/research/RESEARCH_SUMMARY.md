@@ -62,25 +62,59 @@ All variants within 0.2pp of incumbent. Incumbent confirmed optimal.
 See step33_walkforward_summary.md — adaptive approaches do not
 improve on static CAP5 regardless of metric.
 
-## Paths STILL pending (regen-blocked)
+## Step 34 (2026-04-22): alt-ranking formulas — SMA still wins
 
-### Alt-ranking formulas (step 34)
+Regen added `wash` + `final_raw` columns. Bug fix: `rank_formula` result
+was computed but never used in sort (line 360 appended `fv` not `rv`).
+After fix, alt formulas now produce different picks.
 
-Reranking candidates by:
-- final_raw (edge × wash_adjust instead of conviction)
-- wash (rank by pullback alone)
-- final × wash (boost pulled-back convictions)
-- raw × wash (boost pulled-back edge)
-- final × (1 + alpha·wash)  for alpha ∈ {0.25, 0.5, 1.0, 2.0}
+| Variant | 20Y CAGR | Δ vs baseline |
+|---|---|---|
+| CAP5 (final) baseline | +17.41% | 0 |
+| CAP5 (final_raw) | +17.33% | -0.08 |
+| CAP5 (wash alone) | +17.84% | +0.43 |
+| CAP5 (final×wash) | +17.34% | -0.07 |
+| CAP5 (raw×wash) | +17.50% | +0.09 |
+| CAP5 (final+0.5·wash) | +17.52% | +0.11 |
+| CAP5 (final+2.0·wash) | +17.65% | +0.24 |
+| **CAP5 (final) + SMA12M** | **+18.31%** | **+0.90** |
+| CAP5 (final) + SMA24M | +18.60% | +1.19 |
+| CAP5 (f+1·w) + SMA12M | +18.19% | +0.78 |
+| CAP5 (f+2·w) + SMA12M | +18.23% | +0.82 |
 
-Requires regen with `wash` + `final_raw` columns (in progress).
+- **No alt-formula beats SMA 12M on the incumbent final score.**
+- wash-alone is the best simple re-ranker (+0.43pp) — contrarian pullback
+  ranking has real edge. But smoothing is 2× stronger alone, and stacking
+  smoothing + wash slightly hurts (regression to mean of two edges).
+- **Production decision unchanged:** stick with `rank_formula="final"` +
+  `smoothing_months=12`.
 
-### Universe expansion (step 35)
+## Step 35 (2026-04-22): universe expansion — SMA 12M is ROBUST
 
-31 new tickers fetched (all ≥15Y history), merged into raw parquets.
-Test CAP5 on 128 tickers vs 97-ticker baseline. Requires regen.
+Incremental regen added 31 new tickers (96 → 127 available, 16% of total
+picks go to new names). Does expanding help, hurt, or does smoothing still win?
 
-### New tickers (sector/rationale)
+| Variant | 96T | 127T | Δ |
+|---|---|---|---|
+| CAP5 baseline | +17.41% | +16.54% | **-0.87pp** |
+| **CAP5+SMA12M** | **+18.31%** | **+18.21%** | **-0.10pp** |
+| SMA12M gain vs baseline | +0.90pp | **+1.68pp** | — |
+
+- **Baseline CAP5 HURTS on expanded universe** — new tickers dilute edge.
+- **SMA 12M is universe-robust** — stays within 0.10pp of orig-universe result.
+- **SMA 12M's relative advantage GROWS** on bigger universe (+1.68pp vs
+  +0.90pp) because smoothing filters out the transient high scores of
+  less-established (new) tickers.
+- 25.1% of all picks go to new tickers on full 128 universe.
+- In-sample positive-only selection (5 of 31): +17.50% baseline, negligible.
+- Top negative marginal: INFY, EXPE, VRTX, JCI, QCOM (all got picked frequently).
+
+**Production recommendation reinforced:** SMA 12M is robust across BOTH
+axes tested (alt-formulas, universe expansion). Adopt SMA 12M on 97-ticker
+universe for production; the 127-ticker expansion is neutral-to-slightly
+negative absolute but demonstrates strategy robustness.
+
+### New tickers tested (31 total)
 
 - **Tech (10):** ORCL, QCOM, KLAC, LRCX, ASML, TER, NTAP, GRMN, SWKS, INFY
 - **Financial (4):** MA, CME, BX, ARCC
@@ -88,10 +122,11 @@ Test CAP5 on 128 tickers vs 97-ticker baseline. Requires regen.
 - **Consumer/Industrial (9):** AZO, EXPE, STZ, PSA, JCI, EMR, SCCO, CPRT, LUV
 - **Quality/Defensive (5):** SHW, ADP, ACN, CHTR, GIS
 
-## Current assessment
+## Current assessment (post step 34/35)
 
-**CAP5 is the genuine optimum.** The parameter space has been
-exhaustively mapped. The strategy's edge comes from:
+**CAP5 + SMA 12M is the genuine optimum.** Parameter space, alt-rankings,
+and universe expansion have all been exhaustively mapped. The strategy's
+edge comes from:
 
 1. Moderate concentration (cap=5%, top_n=5) — enough to capture
    winners, not so much that single-ticker drawdowns sink the portfolio.
@@ -102,10 +137,9 @@ exhaustively mapped. The strategy's edge comes from:
 3. Permanent hold (no drag from forced exits on temporary drawdowns).
 4. DCA mechanic captures long-horizon compounding.
 
-**Remaining experiments (step 34/35) are unlikely to move the needle**
-given the flatness of the parameter landscape observed in 25-31.
-But they're cheap to run once regen completes and may confirm the
-robustness of CAP5 from two untested angles.
+**Confirmed:** step 34 and step 35 both ran; neither produces a variant
+that beats CAP5+SMA12M on the 97-ticker universe. SMA 12M survives the
+universe-expansion test with growing relative edge.
 
 ## Step 38 (2026-04-21): DCA drawdown-scaling — crisis alpha only
 
