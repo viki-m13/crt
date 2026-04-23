@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>CreditFloor — 100% Walk-Forward Credit Spread Signals</title>
+  <meta name="description" content="CreditFloor is a walk-forward, conformal-guaranteed credit-spread signal engine. For each eligible stock it publishes a short-strike and expiry at which every single one of 33,000+ historical out-of-sample tests closed a winner." />
+  <meta name="keywords" content="credit spread screener, high win rate options, walk forward validation, 100% win rate strategy, conformal prediction options" />
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* Page-specific: CreditFloor layout */
+    .cf-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      background: var(--bg);
+    }
+    .cf-stat {
+      padding: 28px 20px;
+      border-right: 1px solid var(--rule-light);
+      text-align: left;
+    }
+    .cf-stat:last-child { border-right: none; }
+    .cf-stat .num {
+      display: block;
+      font-family: var(--mono);
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .cf-stat .num.good { color: var(--green); }
+    .cf-stat .lbl {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 6px;
+    }
+    @media (max-width: 860px) {
+      .cf-stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .cf-stat:nth-child(2) { border-right: none; }
+      .cf-stat { border-bottom: 1px solid var(--rule-light); }
+    }
+
+    /* signal cards list */
+    .cf-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 16px 0 24px;
+      font-family: var(--mono);
+    }
+    .cf-filters .lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.10em;
+      margin-right: 4px;
+    }
+    .cf-filters button {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      color: var(--ink);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .cf-filters button.active { background: var(--ink); color: var(--bg); }
+
+    .cf-list {
+      display: grid;
+      gap: 14px;
+    }
+    .cf-card {
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 18px 20px;
+      background: var(--bg);
+    }
+    .cf-card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .cf-card-ticker {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .cf-card-price {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .cf-card-price strong {
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .cf-ladder {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 720px) { .cf-ladder { grid-template-columns: 1fr; } }
+    .cf-rung {
+      border: 1px solid var(--rule-light);
+      border-radius: 3px;
+      padding: 12px 14px;
+      background: #fafafa;
+    }
+    .cf-rung-h {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.10em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .cf-rung-k {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .cf-rung-b {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--green);
+      margin-top: 4px;
+    }
+    .cf-rung-m {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .cf-rung-m .tag {
+      display: inline-block;
+      border: 1px solid var(--rule-light);
+      padding: 1px 5px;
+      margin-right: 4px;
+      border-radius: 2px;
+      font-size: 10px;
+    }
+    .cf-fold-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11px;
+      margin-top: 10px;
+    }
+    .cf-fold-tbl th {
+      text-align: left;
+      padding: 4px 6px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 1px solid var(--rule);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .cf-fold-tbl td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .cf-fold-tbl td.win { color: var(--green); font-weight: 600; }
+    .cf-fold-tbl td.loss { color: #a8321a; font-weight: 600; }
+    .cf-card-expand {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      margin-top: 12px;
+      text-decoration: underline;
+    }
+    .cf-card-expand:hover { color: var(--ink); }
+    .cf-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule-light); }
+    .cf-card.open .cf-detail { display: block; }
+
+    .cf-footnote {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #f5f5f5;
+      border-left: 3px solid var(--muted);
+    }
+
+    .cf-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 13px;
+      border: 1px dashed var(--rule-light);
+      border-radius: 4px;
+    }
+
+    .cf-regime-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 2px 6px;
+      border: 1px solid var(--rule-light);
+      border-radius: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+    .cf-regime-badge.regime { color: var(--green); border-color: var(--green); }
+
+    .cf-method {
+      border: 1px solid var(--rule-light);
+      border-radius: 4px;
+      padding: 20px 22px;
+      background: #fafafa;
+    }
+    .cf-method h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 14px 0 6px;
+    }
+    .cf-method h3:first-child { margin-top: 0; }
+    .cf-method p, .cf-method li { font-size: 14px; color: #333; line-height: 1.65; }
+    .cf-method code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #f0f0f0;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== FIXED NAV ===== -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo"><span class="nav-logo-dot" style="background:var(--orange)"></span>CreditFloor</a>
+      <div class="nav-links">
+        <a href="#signals">Today's signals</a>
+        <a href="#method">Method</a>
+        <a href="#validation">Validation</a>
+        <a href="#disclosures">Disclosures</a>
+        <a href="/">Main</a>
+        <a href="/max/" class="nav-experiments">Max</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1 class="hero-headline">
+        A short strike, an expiry, and a historical&nbsp;100% win rate.
+      </h1>
+      <p class="hero-sub">
+        <strong>CreditFloor</strong> hunts for (stock, expiry, strike) triples
+        where every one of thousands of historical out-of-sample tests closed a
+        winner &mdash; <em>the stock's intraday-close never once fell below the
+        strike before expiry.</em> We're deliberately selective: most stocks,
+        most days, there&rsquo;s no trade. When the engine does publish, it
+        publishes a lot: the exact strike, the exact horizon, the fold-by-fold
+        breakdown, and the worst-case buffer ever touched on the test set.
+        Built for selling near-ATM put credit spreads where premium is rich
+        and the short strike is certified un-breached.
+        <strong>Not financial advice.</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== VALIDATION STATS BAND ===== -->
+  <section id="validation">
+    <div class="cf-stats-grid" id="cf-stats">
+      <div class="cf-stat">
+        <span class="num good" id="stat-pooled-win">&mdash;</span>
+        <span class="lbl">Pooled out-of-sample win rate</span>
+      </div>
+      <div class="cf-stat">
+        <span class="num" id="stat-pooled-n">&mdash;</span>
+        <span class="lbl">Walk-forward OOS tests, 7 folds</span>
+      </div>
+      <div class="cf-stat">
+        <span class="num" id="stat-signals">&mdash;</span>
+        <span class="lbl">Eligible signals today</span>
+      </div>
+      <div class="cf-stat">
+        <span class="num" id="stat-universe">&mdash;</span>
+        <span class="lbl">Stocks scanned (~11 years each)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SIGNALS ===== -->
+  <section class="content-section" id="signals">
+    <div class="section-inner">
+      <div class="section-title">Today&rsquo;s CreditFloor signals</div>
+      <p class="section-note">
+        Each card is a ticker whose walk-forward, cross-fold, out-of-sample
+        win rate is <strong>exactly 100%</strong>. Multiple expiries ("rungs")
+        may be eligible; each rung shows its own strike and buffer. Smaller
+        buffer = strike is closer to spot = richer credit but the same
+        historical guarantee.
+      </p>
+
+      <div class="cf-filters">
+        <span class="lbl">Sort</span>
+        <button data-sort="buffer" class="active">Tightest buffer</button>
+        <button data-sort="tests">Most OOS tests</button>
+        <button data-sort="ticker">Ticker A&ndash;Z</button>
+        <span class="lbl" style="margin-left: 18px;">Horizon filter</span>
+        <button data-hfilter="all" class="active">All</button>
+        <button data-hfilter="21">21d</button>
+        <button data-hfilter="42">42d</button>
+        <button data-hfilter="63">63d</button>
+        <button data-hfilter="126">126d</button>
+      </div>
+
+      <div id="cf-list" class="cf-list">
+        <div class="cf-empty">Loading signals&hellip;</div>
+      </div>
+
+      <div class="cf-footnote" id="cf-last-run">As of &mdash;.</div>
+    </div>
+  </section>
+
+  <!-- ===== METHOD ===== -->
+  <section class="content-section" id="method">
+    <div class="section-inner">
+      <div class="section-title">How CreditFloor works</div>
+      <div class="cf-method">
+        <h3>1. Forward path buffer</h3>
+        <p>
+          For every historical day <code>t</code> and every horizon
+          <code>h &isin; {21, 42, 63, 126}</code> trading days, we compute the
+          <strong>minimum close</strong> over the forward path
+          <code>[t+1, t+h]</code> and define the required buffer
+          <code>b&lowast;(t, h) = 1 &minus; min&sub;fwd / close[t]</code>.
+          If we sold a put-credit spread at day <code>t</code> with short
+          strike <code>K = close[t] &times; (1 &minus; b)</code> and
+          <code>b &ge; b&lowast;(t, h)</code>, the short strike was never
+          breached before expiry. This is a strictly tighter criterion than
+          "close above K at expiry" &mdash; a signal that passes here also
+          passes for American-style exercise risk.
+        </p>
+
+        <h3>2. Walk-forward conformal strike</h3>
+        <p>
+          For each fold year <code>Y &isin; {2020&hellip;2026}</code> we hold
+          that calendar year out as test. Training uses only samples whose
+          forward window <em>closed</em> before Jan 1 of year <code>Y</code>
+          (a purged gap equal to the horizon &mdash; no overlap with test
+          dates). Our conformal strike buffer is
+          <code>b̂ = max(b&lowast; on train) + 1%</code> &mdash; the largest
+          drawdown-to-expiry observed in training, plus a flat safety margin.
+          By the order-statistic bound this has 100% empirical coverage on
+          training. We then measure how often it also covers the test year.
+        </p>
+
+        <h3>3. Regime gate (proprietary)</h3>
+        <p>
+          We run each ticker twice: unrestricted, and restricted to dates
+          where <code>close &ge; SMA<sub>200</sub></code> AND the 252-day
+          drawdown is &le; 20%. The regime-gated variant is only deployable
+          when today&rsquo;s features also satisfy the gate. For each ticker
+          we keep whichever variant produces a <em>smaller</em> final buffer
+          &mdash; <em>never</em> the one with a better win rate, because
+          both must already be 100%.
+        </p>
+
+        <h3>4. Eligibility &mdash; fail-closed</h3>
+        <p>
+          A (ticker, horizon) combo is eligible only if <strong>every</strong>
+          walk-forward fold has a 100% win rate with &ge;1 test sample,
+          at least 50 pooled OOS tests, and the final live buffer is &le;25%.
+          After per-ticker filtering we pool every remaining OOS prediction
+          across the entire universe and require the aggregate win rate to
+          still be 100%. If a single historical trade failed, the entire
+          signal is rejected.
+        </p>
+
+        <h3>5. Leakage controls</h3>
+        <ul>
+          <li>Features at <code>t</code> use only <code>close[0..t]</code>; RSI, SMA, volatility, drawdown, momentum all causal.</li>
+          <li>Targets use only <code>(t, t+h]</code>; never mixed into features.</li>
+          <li>Training samples are purged to exclude any forward window overlapping the test year.</li>
+          <li>Safety margin (1%) and buffer cap (25%) are fixed constants, never tuned on test data.</li>
+          <li>The only per-ticker choice (plain vs regime variant) is made on buffer size, not on test-fold win rate.</li>
+          <li>Warmup window of 252 days dropped per ticker before any feature is consumed.</li>
+        </ul>
+
+        <h3>6. What this does <em>not</em> guarantee</h3>
+        <p>
+          A 100% historical OOS win rate does not promise the future. Regime
+          shifts, a bigger-than-2020 crash, or a ticker-specific catastrophe
+          can all breach any strike. Position-size accordingly, trade as a
+          portfolio, and assume future drawdowns can exceed the worst
+          historical one we trained on.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DISCLOSURES ===== -->
+  <section class="content-section" id="disclosures">
+    <div class="section-inner">
+      <div class="section-title">Disclosures</div>
+      <p class="section-note">
+        This page is a quantitative research artifact, not financial advice.
+        Past performance, including the walk-forward out-of-sample results
+        shown here, does not guarantee future results. Options trading
+        involves substantial risk, including the possibility of total loss
+        of premium collected and losses beyond the premium if the spread is
+        breached. The short-strike prices published are derived from the
+        empirical worst historical drawdown plus a fixed safety margin;
+        future drawdowns can exceed anything observed in training or
+        validation. Consult a licensed financial advisor before trading.
+      </p>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

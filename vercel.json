@@ -4,7 +4,7 @@
     {
       "src": "api/analyze.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb", "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**}" }
+      "config": { "maxLambdaSize": "250mb", "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**}" }
     },
     {
       "src": "docs/**",
@@ -21,6 +21,10 @@
     {
       "src": "crypto/docs/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "spreads/docs/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -29,6 +33,8 @@
     { "src": "/short/(.*)", "status": 308, "headers": { "Location": "/max/$1" } },
     { "src": "/crypto$", "status": 308, "headers": { "Location": "/experiments/#crypto" } },
     { "src": "/crypto/(.*)", "status": 308, "headers": { "Location": "/experiments/#crypto" } },
+    { "src": "/spreads$", "dest": "/spreads/docs/index.html" },
+    { "src": "/spreads/(.*)", "dest": "/spreads/docs/$1" },
     { "src": "/max/(.*)", "dest": "/max/docs/$1" },
     { "src": "/experiments/(.*)", "dest": "/experiments/docs/$1" },
     { "src": "/(.*)", "dest": "/docs/$1" }
