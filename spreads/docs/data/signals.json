@@ -1,0 +1,5933 @@
+{
+  "generated_at": "2026-04-23T18:23:56Z",
+  "summary": {
+    "n_tickers_processed": 964,
+    "n_tickers_eligible": 35,
+    "pooled_wins": 33099,
+    "pooled_losses": 0,
+    "pooled_win_rate": 1.0,
+    "horizons": [
+      21,
+      42,
+      63,
+      126
+    ],
+    "fold_years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "safety_eps": 0.01,
+    "max_buffer": 0.25
+  },
+  "signals": [
+    {
+      "ticker": "TRV",
+      "today_close": 296.6000061035156,
+      "end_date": "2026-03-20",
+      "strike": 254.20633624431431,
+      "buffer_pct": 14.293212739990846,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 1129,
+      "n_folds": 7,
+      "pooled_wins": 1129,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 13.293212739990846,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 688,
+          "n_test": 61,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 61,
+          "losses": 0,
+          "worst_test_buf_pct": 13.055456204101146
+        },
+        {
+          "year": 2021,
+          "n_train": 728,
+          "n_test": 240,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 240,
+          "losses": 0,
+          "worst_test_buf_pct": 9.581911836646062
+        },
+        {
+          "year": 2022,
+          "n_train": 975,
+          "n_test": 188,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 188,
+          "losses": 0,
+          "worst_test_buf_pct": 10.368818169821747
+        },
+        {
+          "year": 2023,
+          "n_train": 1156,
+          "n_test": 111,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 111,
+          "losses": 0,
+          "worst_test_buf_pct": 11.497031887826648
+        },
+        {
+          "year": 2024,
+          "n_train": 1267,
+          "n_test": 252,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 11.11606961267304
+        },
+        {
+          "year": 2025,
+          "n_train": 1519,
+          "n_test": 246,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 246,
+          "losses": 0,
+          "worst_test_buf_pct": 11.805531276561144
+        },
+        {
+          "year": 2026,
+          "n_train": 1765,
+          "n_test": 31,
+          "b_hat_pct": 14.293212739990846,
+          "wins": 31,
+          "losses": 0,
+          "worst_test_buf_pct": 6.373368699248861
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 254.20633624431431,
+          "buffer_pct": 14.293212739990846,
+          "variant": "regime",
+          "n_test": 1129,
+          "n_folds": 7,
+          "pooled_wins": 1129,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 13.293212739990846,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 688,
+              "n_test": 61,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 61,
+              "losses": 0,
+              "worst_test_buf_pct": 13.055456204101146
+            },
+            {
+              "year": 2021,
+              "n_train": 728,
+              "n_test": 240,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 240,
+              "losses": 0,
+              "worst_test_buf_pct": 9.581911836646062
+            },
+            {
+              "year": 2022,
+              "n_train": 975,
+              "n_test": 188,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 10.368818169821747
+            },
+            {
+              "year": 2023,
+              "n_train": 1156,
+              "n_test": 111,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 111,
+              "losses": 0,
+              "worst_test_buf_pct": 11.497031887826648
+            },
+            {
+              "year": 2024,
+              "n_train": 1267,
+              "n_test": 252,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.11606961267304
+            },
+            {
+              "year": 2025,
+              "n_train": 1519,
+              "n_test": 246,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 246,
+              "losses": 0,
+              "worst_test_buf_pct": 11.805531276561144
+            },
+            {
+              "year": 2026,
+              "n_train": 1765,
+              "n_test": 31,
+              "b_hat_pct": 14.293212739990846,
+              "wins": 31,
+              "losses": 0,
+              "worst_test_buf_pct": 6.373368699248861
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 248.58401570186263,
+          "buffer_pct": 16.18880290410212,
+          "variant": "regime",
+          "n_test": 1108,
+          "n_folds": 7,
+          "pooled_wins": 1108,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 15.188802904102117,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 688,
+              "n_test": 61,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 61,
+              "losses": 0,
+              "worst_test_buf_pct": 13.456557040719153
+            },
+            {
+              "year": 2021,
+              "n_train": 707,
+              "n_test": 240,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 240,
+              "losses": 0,
+              "worst_test_buf_pct": 10.402149452021836
+            },
+            {
+              "year": 2022,
+              "n_train": 959,
+              "n_test": 188,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 13.009748479902438
+            },
+            {
+              "year": 2023,
+              "n_train": 1135,
+              "n_test": 111,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 111,
+              "losses": 0,
+              "worst_test_buf_pct": 14.762371397261088
+            },
+            {
+              "year": 2024,
+              "n_train": 1257,
+              "n_test": 252,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 12.471750900823753
+            },
+            {
+              "year": 2025,
+              "n_train": 1498,
+              "n_test": 246,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 246,
+              "losses": 0,
+              "worst_test_buf_pct": 11.805531276561144
+            },
+            {
+              "year": 2026,
+              "n_train": 1744,
+              "n_test": 10,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 10,
+              "losses": 0,
+              "worst_test_buf_pct": 6.373368699248861
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 246.54417045608295,
+          "buffer_pct": 16.876545723995307,
+          "variant": "regime",
+          "n_test": 1089,
+          "n_folds": 6,
+          "pooled_wins": 1089,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 15.876545723995307,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 674,
+              "n_test": 61,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 61,
+              "losses": 0,
+              "worst_test_buf_pct": 13.456557040719153
+            },
+            {
+              "year": 2021,
+              "n_train": 694,
+              "n_test": 240,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 240,
+              "losses": 0,
+              "worst_test_buf_pct": 10.402149452021836
+            },
+            {
+              "year": 2022,
+              "n_train": 938,
+              "n_test": 188,
+              "b_hat_pct": 16.18880290410212,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 15.876545723995307
+            },
+            {
+              "year": 2023,
+              "n_train": 1126,
+              "n_test": 111,
+              "b_hat_pct": 16.876545723995307,
+              "wins": 111,
+              "losses": 0,
+              "worst_test_buf_pct": 15.05685625047597
+            },
+            {
+              "year": 2024,
+              "n_train": 1257,
+              "n_test": 252,
+              "b_hat_pct": 16.876545723995307,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 12.471750900823753
+            },
+            {
+              "year": 2025,
+              "n_train": 1477,
+              "n_test": 237,
+              "b_hat_pct": 16.876545723995307,
+              "wins": 237,
+              "losses": 0,
+              "worst_test_buf_pct": 11.805531276561144
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "YUM",
+      "today_close": 156.41000366210938,
+      "end_date": "2026-03-20",
+      "strike": 132.2693141218523,
+      "buffer_pct": 15.434236286067682,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 1007,
+      "n_folds": 7,
+      "pooled_wins": 1007,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 14.43423628606768,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 878,
+          "n_test": 94,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 94,
+          "losses": 0,
+          "worst_test_buf_pct": 12.152902269727207
+        },
+        {
+          "year": 2021,
+          "n_train": 951,
+          "n_test": 252,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 13.711647766715974
+        },
+        {
+          "year": 2022,
+          "n_train": 1203,
+          "n_test": 70,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 70,
+          "losses": 0,
+          "worst_test_buf_pct": 13.365159306558173
+        },
+        {
+          "year": 2023,
+          "n_train": 1273,
+          "n_test": 167,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 167,
+          "losses": 0,
+          "worst_test_buf_pct": 11.724493813362248
+        },
+        {
+          "year": 2024,
+          "n_train": 1451,
+          "n_test": 188,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 188,
+          "losses": 0,
+          "worst_test_buf_pct": 11.381939995627267
+        },
+        {
+          "year": 2025,
+          "n_train": 1634,
+          "n_test": 203,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 203,
+          "losses": 0,
+          "worst_test_buf_pct": 12.969969681270921
+        },
+        {
+          "year": 2026,
+          "n_train": 1836,
+          "n_test": 33,
+          "b_hat_pct": 15.434236286067682,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 5.110215424258091
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 132.2693141218523,
+          "buffer_pct": 15.434236286067682,
+          "variant": "regime",
+          "n_test": 1007,
+          "n_folds": 7,
+          "pooled_wins": 1007,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 14.43423628606768,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 878,
+              "n_test": 94,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 94,
+              "losses": 0,
+              "worst_test_buf_pct": 12.152902269727207
+            },
+            {
+              "year": 2021,
+              "n_train": 951,
+              "n_test": 252,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 13.711647766715974
+            },
+            {
+              "year": 2022,
+              "n_train": 1203,
+              "n_test": 70,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 70,
+              "losses": 0,
+              "worst_test_buf_pct": 13.365159306558173
+            },
+            {
+              "year": 2023,
+              "n_train": 1273,
+              "n_test": 167,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 167,
+              "losses": 0,
+              "worst_test_buf_pct": 11.724493813362248
+            },
+            {
+              "year": 2024,
+              "n_train": 1451,
+              "n_test": 188,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 11.381939995627267
+            },
+            {
+              "year": 2025,
+              "n_train": 1634,
+              "n_test": 203,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 203,
+              "losses": 0,
+              "worst_test_buf_pct": 12.969969681270921
+            },
+            {
+              "year": 2026,
+              "n_train": 1836,
+              "n_test": 33,
+              "b_hat_pct": 15.434236286067682,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 5.110215424258091
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 126.92538826687627,
+          "buffer_pct": 18.850850140588427,
+          "variant": "regime",
+          "n_test": 986,
+          "n_folds": 7,
+          "pooled_wins": 986,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 17.850850140588427,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 878,
+              "n_test": 94,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 94,
+              "losses": 0,
+              "worst_test_buf_pct": 12.152902269727207
+            },
+            {
+              "year": 2021,
+              "n_train": 930,
+              "n_test": 252,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 13.711647766715974
+            },
+            {
+              "year": 2022,
+              "n_train": 1182,
+              "n_test": 70,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 70,
+              "losses": 0,
+              "worst_test_buf_pct": 17.072707731272562
+            },
+            {
+              "year": 2023,
+              "n_train": 1252,
+              "n_test": 167,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 167,
+              "losses": 0,
+              "worst_test_buf_pct": 13.350671769932454
+            },
+            {
+              "year": 2024,
+              "n_train": 1451,
+              "n_test": 188,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 11.381939995627267
+            },
+            {
+              "year": 2025,
+              "n_train": 1621,
+              "n_test": 203,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 203,
+              "losses": 0,
+              "worst_test_buf_pct": 13.548280295125059
+            },
+            {
+              "year": 2026,
+              "n_train": 1817,
+              "n_test": 12,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 5.110215424258091
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 126.64795368033789,
+          "buffer_pct": 19.028226638282085,
+          "variant": "regime",
+          "n_test": 965,
+          "n_folds": 6,
+          "pooled_wins": 965,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 18.028226638282085,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 858,
+              "n_test": 94,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 94,
+              "losses": 0,
+              "worst_test_buf_pct": 12.152902269727207
+            },
+            {
+              "year": 2021,
+              "n_train": 909,
+              "n_test": 252,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 18.028226638282085
+            },
+            {
+              "year": 2022,
+              "n_train": 1161,
+              "n_test": 70,
+              "b_hat_pct": 18.850850140588427,
+              "wins": 70,
+              "losses": 0,
+              "worst_test_buf_pct": 17.072707731272562
+            },
+            {
+              "year": 2023,
+              "n_train": 1250,
+              "n_test": 167,
+              "b_hat_pct": 19.028226638282085,
+              "wins": 167,
+              "losses": 0,
+              "worst_test_buf_pct": 15.329404238966848
+            },
+            {
+              "year": 2024,
+              "n_train": 1451,
+              "n_test": 188,
+              "b_hat_pct": 19.028226638282085,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 11.607679769722523
+            },
+            {
+              "year": 2025,
+              "n_train": 1609,
+              "n_test": 194,
+              "b_hat_pct": 19.028226638282085,
+              "wins": 194,
+              "losses": 0,
+              "worst_test_buf_pct": 13.881265483753946
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "DTM",
+      "today_close": 131.92999267578125,
+      "end_date": "2026-03-20",
+      "strike": 111.23283086768274,
+      "buffer_pct": 15.68798829464193,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 535,
+      "n_folds": 3,
+      "pooled_wins": 535,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 14.68798829464193,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2024,
+          "n_train": 356,
+          "n_test": 252,
+          "b_hat_pct": 15.00177294503059,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 11.466406310678789
+        },
+        {
+          "year": 2025,
+          "n_train": 608,
+          "n_test": 250,
+          "b_hat_pct": 15.00177294503059,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 14.68798829464193
+        },
+        {
+          "year": 2026,
+          "n_train": 858,
+          "n_test": 33,
+          "b_hat_pct": 15.68798829464193,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 3.272996844697129
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 111.23283086768274,
+          "buffer_pct": 15.68798829464193,
+          "variant": "plain",
+          "n_test": 535,
+          "n_folds": 3,
+          "pooled_wins": 535,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 14.68798829464193,
+          "folds": [
+            {
+              "year": 2024,
+              "n_train": 356,
+              "n_test": 252,
+              "b_hat_pct": 15.00177294503059,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.466406310678789
+            },
+            {
+              "year": 2025,
+              "n_train": 608,
+              "n_test": 250,
+              "b_hat_pct": 15.00177294503059,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 14.68798829464193
+            },
+            {
+              "year": 2026,
+              "n_train": 858,
+              "n_test": 33,
+              "b_hat_pct": 15.68798829464193,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 3.272996844697129
+            }
+          ]
+        },
+        {
+          "horizon": 126,
+          "strike": 99.52740945311001,
+          "buffer_pct": 24.56043736946214,
+          "variant": "plain",
+          "n_test": 430,
+          "n_folds": 2,
+          "pooled_wins": 430,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.56043736946214,
+          "folds": [
+            {
+              "year": 2024,
+              "n_train": 251,
+              "n_test": 252,
+              "b_hat_pct": 24.129425903582945,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 19.316669874089023
+            },
+            {
+              "year": 2025,
+              "n_train": 503,
+              "n_test": 178,
+              "b_hat_pct": 24.129425903582945,
+              "wins": 178,
+              "losses": 0,
+              "worst_test_buf_pct": 23.56043736946214
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "RPRX",
+      "today_close": 45.36000061035156,
+      "end_date": "2026-03-20",
+      "strike": 38.04393163062103,
+      "buffer_pct": 16.12889965010481,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 785,
+      "n_folds": 4,
+      "pooled_wins": 785,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 15.12889965010481,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 369,
+          "n_test": 250,
+          "b_hat_pct": 16.12889965010481,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 14.546040223934064
+        },
+        {
+          "year": 2024,
+          "n_train": 619,
+          "n_test": 252,
+          "b_hat_pct": 16.12889965010481,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 9.819370407662731
+        },
+        {
+          "year": 2025,
+          "n_train": 871,
+          "n_test": 250,
+          "b_hat_pct": 16.12889965010481,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 8.619650531259582
+        },
+        {
+          "year": 2026,
+          "n_train": 1121,
+          "n_test": 33,
+          "b_hat_pct": 16.12889965010481,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 5.556895853993693
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 38.04393163062103,
+          "buffer_pct": 16.12889965010481,
+          "variant": "plain",
+          "n_test": 785,
+          "n_folds": 4,
+          "pooled_wins": 785,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 15.12889965010481,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 369,
+              "n_test": 250,
+              "b_hat_pct": 16.12889965010481,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 14.546040223934064
+            },
+            {
+              "year": 2024,
+              "n_train": 619,
+              "n_test": 252,
+              "b_hat_pct": 16.12889965010481,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 9.819370407662731
+            },
+            {
+              "year": 2025,
+              "n_train": 871,
+              "n_test": 250,
+              "b_hat_pct": 16.12889965010481,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 8.619650531259582
+            },
+            {
+              "year": 2026,
+              "n_train": 1121,
+              "n_test": 33,
+              "b_hat_pct": 16.12889965010481,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 5.556895853993693
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 36.991782463692346,
+          "buffer_pct": 18.448452456037913,
+          "variant": "plain",
+          "n_test": 764,
+          "n_folds": 4,
+          "pooled_wins": 764,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 17.44845245603791,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 348,
+              "n_test": 250,
+              "b_hat_pct": 18.448452456037913,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.323619517369092
+            },
+            {
+              "year": 2024,
+              "n_train": 598,
+              "n_test": 252,
+              "b_hat_pct": 18.448452456037913,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 12.453344036802406
+            },
+            {
+              "year": 2025,
+              "n_train": 850,
+              "n_test": 250,
+              "b_hat_pct": 18.448452456037913,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 8.889539139833335
+            },
+            {
+              "year": 2026,
+              "n_train": 1100,
+              "n_test": 12,
+              "b_hat_pct": 18.448452456037913,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 5.556895853993693
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 34.847883970646016,
+          "buffer_pct": 23.174860004976683,
+          "variant": "regime",
+          "n_test": 236,
+          "n_folds": 1,
+          "pooled_wins": 236,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 22.174860004976683,
+          "folds": [
+            {
+              "year": 2025,
+              "n_train": 269,
+              "n_test": 236,
+              "b_hat_pct": 23.174860004976683,
+              "wins": 236,
+              "losses": 0,
+              "worst_test_buf_pct": 8.889539139833335
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "SEE",
+      "today_close": 41.88999938964844,
+      "end_date": "2026-03-20",
+      "strike": 35.09081139920123,
+      "buffer_pct": 16.231052970908788,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 693,
+      "n_folds": 7,
+      "pooled_wins": 693,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 15.231052970908788,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 404,
+          "n_test": 119,
+          "b_hat_pct": 16.152753520247398,
+          "wins": 119,
+          "losses": 0,
+          "worst_test_buf_pct": 10.422654309450685
+        },
+        {
+          "year": 2021,
+          "n_train": 502,
+          "n_test": 252,
+          "b_hat_pct": 16.152753520247398,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 11.228120378291006
+        },
+        {
+          "year": 2022,
+          "n_train": 754,
+          "n_test": 95,
+          "b_hat_pct": 16.152753520247398,
+          "wins": 95,
+          "losses": 0,
+          "worst_test_buf_pct": 13.48185924566463
+        },
+        {
+          "year": 2023,
+          "n_train": 870,
+          "n_test": 1,
+          "b_hat_pct": 16.152753520247398,
+          "wins": 1,
+          "losses": 0,
+          "worst_test_buf_pct": 14.318755035785246
+        },
+        {
+          "year": 2024,
+          "n_train": 871,
+          "n_test": 91,
+          "b_hat_pct": 16.152753520247398,
+          "wins": 91,
+          "losses": 0,
+          "worst_test_buf_pct": 15.231052970908788
+        },
+        {
+          "year": 2025,
+          "n_train": 950,
+          "n_test": 102,
+          "b_hat_pct": 16.231052970908788,
+          "wins": 102,
+          "losses": 0,
+          "worst_test_buf_pct": 13.333329009201433
+        },
+        {
+          "year": 2026,
+          "n_train": 1043,
+          "n_test": 33,
+          "b_hat_pct": 16.231052970908788,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 0.263028132223464
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 35.09081139920123,
+          "buffer_pct": 16.231052970908788,
+          "variant": "regime",
+          "n_test": 693,
+          "n_folds": 7,
+          "pooled_wins": 693,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 15.231052970908788,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 404,
+              "n_test": 119,
+              "b_hat_pct": 16.152753520247398,
+              "wins": 119,
+              "losses": 0,
+              "worst_test_buf_pct": 10.422654309450685
+            },
+            {
+              "year": 2021,
+              "n_train": 502,
+              "n_test": 252,
+              "b_hat_pct": 16.152753520247398,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.228120378291006
+            },
+            {
+              "year": 2022,
+              "n_train": 754,
+              "n_test": 95,
+              "b_hat_pct": 16.152753520247398,
+              "wins": 95,
+              "losses": 0,
+              "worst_test_buf_pct": 13.48185924566463
+            },
+            {
+              "year": 2023,
+              "n_train": 870,
+              "n_test": 1,
+              "b_hat_pct": 16.152753520247398,
+              "wins": 1,
+              "losses": 0,
+              "worst_test_buf_pct": 14.318755035785246
+            },
+            {
+              "year": 2024,
+              "n_train": 871,
+              "n_test": 91,
+              "b_hat_pct": 16.152753520247398,
+              "wins": 91,
+              "losses": 0,
+              "worst_test_buf_pct": 15.231052970908788
+            },
+            {
+              "year": 2025,
+              "n_train": 950,
+              "n_test": 102,
+              "b_hat_pct": 16.231052970908788,
+              "wins": 102,
+              "losses": 0,
+              "worst_test_buf_pct": 13.333329009201433
+            },
+            {
+              "year": 2026,
+              "n_train": 1043,
+              "n_test": 33,
+              "b_hat_pct": 16.231052970908788,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 0.263028132223464
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "FRT",
+      "today_close": 103.1500015258789,
+      "end_date": "2026-03-20",
+      "strike": 86.1323411578121,
+      "buffer_pct": 16.497973937302657,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 757,
+      "n_folds": 7,
+      "pooled_wins": 757,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 15.497973937302657,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 511,
+          "n_test": 3,
+          "b_hat_pct": 15.916998385659454,
+          "wins": 3,
+          "losses": 0,
+          "worst_test_buf_pct": 5.5161587242343995
+        },
+        {
+          "year": 2021,
+          "n_train": 516,
+          "n_test": 224,
+          "b_hat_pct": 15.916998385659454,
+          "wins": 224,
+          "losses": 0,
+          "worst_test_buf_pct": 10.0792363193958
+        },
+        {
+          "year": 2022,
+          "n_train": 719,
+          "n_test": 55,
+          "b_hat_pct": 15.916998385659454,
+          "wins": 55,
+          "losses": 0,
+          "worst_test_buf_pct": 13.96270061964845
+        },
+        {
+          "year": 2023,
+          "n_train": 791,
+          "n_test": 89,
+          "b_hat_pct": 15.916998385659454,
+          "wins": 89,
+          "losses": 0,
+          "worst_test_buf_pct": 15.497973937302657
+        },
+        {
+          "year": 2024,
+          "n_train": 863,
+          "n_test": 252,
+          "b_hat_pct": 16.497973937302657,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 10.28689629221713
+        },
+        {
+          "year": 2025,
+          "n_train": 1115,
+          "n_test": 101,
+          "b_hat_pct": 16.497973937302657,
+          "wins": 101,
+          "losses": 0,
+          "worst_test_buf_pct": 15.310326982115042
+        },
+        {
+          "year": 2026,
+          "n_train": 1216,
+          "n_test": 33,
+          "b_hat_pct": 16.497973937302657,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 3.7137055484914416
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 86.1323411578121,
+          "buffer_pct": 16.497973937302657,
+          "variant": "regime",
+          "n_test": 757,
+          "n_folds": 7,
+          "pooled_wins": 757,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 15.497973937302657,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 511,
+              "n_test": 3,
+              "b_hat_pct": 15.916998385659454,
+              "wins": 3,
+              "losses": 0,
+              "worst_test_buf_pct": 5.5161587242343995
+            },
+            {
+              "year": 2021,
+              "n_train": 516,
+              "n_test": 224,
+              "b_hat_pct": 15.916998385659454,
+              "wins": 224,
+              "losses": 0,
+              "worst_test_buf_pct": 10.0792363193958
+            },
+            {
+              "year": 2022,
+              "n_train": 719,
+              "n_test": 55,
+              "b_hat_pct": 15.916998385659454,
+              "wins": 55,
+              "losses": 0,
+              "worst_test_buf_pct": 13.96270061964845
+            },
+            {
+              "year": 2023,
+              "n_train": 791,
+              "n_test": 89,
+              "b_hat_pct": 15.916998385659454,
+              "wins": 89,
+              "losses": 0,
+              "worst_test_buf_pct": 15.497973937302657
+            },
+            {
+              "year": 2024,
+              "n_train": 863,
+              "n_test": 252,
+              "b_hat_pct": 16.497973937302657,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.28689629221713
+            },
+            {
+              "year": 2025,
+              "n_train": 1115,
+              "n_test": 101,
+              "b_hat_pct": 16.497973937302657,
+              "wins": 101,
+              "losses": 0,
+              "worst_test_buf_pct": 15.310326982115042
+            },
+            {
+              "year": 2026,
+              "n_train": 1216,
+              "n_test": 33,
+              "b_hat_pct": 16.497973937302657,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 3.7137055484914416
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "OTIS",
+      "today_close": 79.54000091552734,
+      "end_date": "2026-03-20",
+      "strike": 65.71177111203055,
+      "buffer_pct": 17.38525225588391,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 785,
+      "n_folds": 4,
+      "pooled_wins": 785,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 16.38525225588391,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 430,
+          "n_test": 250,
+          "b_hat_pct": 17.38525225588391,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 8.562409932204718
+        },
+        {
+          "year": 2024,
+          "n_train": 680,
+          "n_test": 252,
+          "b_hat_pct": 17.38525225588391,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 10.108768389339783
+        },
+        {
+          "year": 2025,
+          "n_train": 932,
+          "n_test": 250,
+          "b_hat_pct": 17.38525225588391,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 15.969134389057448
+        },
+        {
+          "year": 2026,
+          "n_train": 1182,
+          "n_test": 33,
+          "b_hat_pct": 17.38525225588391,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 15.595444962865335
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 65.71177111203055,
+          "buffer_pct": 17.38525225588391,
+          "variant": "plain",
+          "n_test": 785,
+          "n_folds": 4,
+          "pooled_wins": 785,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 16.38525225588391,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 430,
+              "n_test": 250,
+              "b_hat_pct": 17.38525225588391,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 8.562409932204718
+            },
+            {
+              "year": 2024,
+              "n_train": 680,
+              "n_test": 252,
+              "b_hat_pct": 17.38525225588391,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.108768389339783
+            },
+            {
+              "year": 2025,
+              "n_train": 932,
+              "n_test": 250,
+              "b_hat_pct": 17.38525225588391,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 15.969134389057448
+            },
+            {
+              "year": 2026,
+              "n_train": 1182,
+              "n_test": 33,
+              "b_hat_pct": 17.38525225588391,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 15.595444962865335
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 61.50407271587798,
+          "buffer_pct": 22.67529292437874,
+          "variant": "plain",
+          "n_test": 764,
+          "n_folds": 4,
+          "pooled_wins": 764,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.67529292437874,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 409,
+              "n_test": 250,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 12.480844396232593
+            },
+            {
+              "year": 2024,
+              "n_train": 659,
+              "n_test": 252,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.856679459130092
+            },
+            {
+              "year": 2025,
+              "n_train": 911,
+              "n_test": 250,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 15.969134389057448
+            },
+            {
+              "year": 2026,
+              "n_train": 1161,
+              "n_test": 12,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 12.682750339429994
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 61.50407271587798,
+          "buffer_pct": 22.67529292437874,
+          "variant": "plain",
+          "n_test": 743,
+          "n_folds": 3,
+          "pooled_wins": 743,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.67529292437874,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 388,
+              "n_test": 250,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.69730860472708
+            },
+            {
+              "year": 2024,
+              "n_train": 638,
+              "n_test": 252,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.039818298324791
+            },
+            {
+              "year": 2025,
+              "n_train": 890,
+              "n_test": 241,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 241,
+              "losses": 0,
+              "worst_test_buf_pct": 15.969134389057448
+            }
+          ]
+        },
+        {
+          "horizon": 126,
+          "strike": 61.50407271587798,
+          "buffer_pct": 22.67529292437874,
+          "variant": "plain",
+          "n_test": 680,
+          "n_folds": 3,
+          "pooled_wins": 680,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.67529292437874,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 325,
+              "n_test": 250,
+              "b_hat_pct": 22.486445858713488,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.69730860472708
+            },
+            {
+              "year": 2024,
+              "n_train": 575,
+              "n_test": 252,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.039818298324791
+            },
+            {
+              "year": 2025,
+              "n_train": 827,
+              "n_test": 178,
+              "b_hat_pct": 22.67529292437874,
+              "wins": 178,
+              "losses": 0,
+              "worst_test_buf_pct": 18.220444549874326
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "TIGO",
+      "today_close": 71.9800033569336,
+      "end_date": "2026-03-20",
+      "strike": 59.27631253342645,
+      "buffer_pct": 17.648916686641748,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 283,
+      "n_folds": 2,
+      "pooled_wins": 283,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 16.648916686641748,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2025,
+          "n_train": 399,
+          "n_test": 250,
+          "b_hat_pct": 17.648916686641748,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 11.295144406389834
+        },
+        {
+          "year": 2026,
+          "n_train": 645,
+          "n_test": 33,
+          "b_hat_pct": 17.648916686641748,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 11.052105050424132
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 59.27631253342645,
+          "buffer_pct": 17.648916686641748,
+          "variant": "regime",
+          "n_test": 283,
+          "n_folds": 2,
+          "pooled_wins": 283,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 16.648916686641748,
+          "folds": [
+            {
+              "year": 2025,
+              "n_train": 399,
+              "n_test": 250,
+              "b_hat_pct": 17.648916686641748,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 11.295144406389834
+            },
+            {
+              "year": 2026,
+              "n_train": 645,
+              "n_test": 33,
+              "b_hat_pct": 17.648916686641748,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 11.052105050424132
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 57.63555452415632,
+          "buffer_pct": 19.92838033314085,
+          "variant": "regime",
+          "n_test": 262,
+          "n_folds": 2,
+          "pooled_wins": 262,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 18.928380333140847,
+          "folds": [
+            {
+              "year": 2025,
+              "n_train": 378,
+              "n_test": 250,
+              "b_hat_pct": 19.92838033314085,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 11.295144406389834
+            },
+            {
+              "year": 2026,
+              "n_train": 624,
+              "n_test": 12,
+              "b_hat_pct": 19.92838033314085,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 11.052105050424132
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "ALSN",
+      "today_close": 110.69999694824219,
+      "end_date": "2026-03-20",
+      "strike": 89.53179438593322,
+      "buffer_pct": 19.12213472978338,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 966,
+      "n_folds": 7,
+      "pooled_wins": 966,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 18.12213472978338,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 723,
+          "n_test": 64,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 64,
+          "losses": 0,
+          "worst_test_buf_pct": 16.934107488289783
+        },
+        {
+          "year": 2021,
+          "n_train": 787,
+          "n_test": 107,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 107,
+          "losses": 0,
+          "worst_test_buf_pct": 16.40474848374681
+        },
+        {
+          "year": 2022,
+          "n_train": 915,
+          "n_test": 179,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 179,
+          "losses": 0,
+          "worst_test_buf_pct": 14.981767741370067
+        },
+        {
+          "year": 2023,
+          "n_train": 1073,
+          "n_test": 243,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 243,
+          "losses": 0,
+          "worst_test_buf_pct": 16.757495363575526
+        },
+        {
+          "year": 2024,
+          "n_train": 1316,
+          "n_test": 252,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 10.934852089037129
+        },
+        {
+          "year": 2025,
+          "n_train": 1568,
+          "n_test": 88,
+          "b_hat_pct": 18.68785819237395,
+          "wins": 88,
+          "losses": 0,
+          "worst_test_buf_pct": 18.12213472978338
+        },
+        {
+          "year": 2026,
+          "n_train": 1662,
+          "n_test": 33,
+          "b_hat_pct": 19.12213472978338,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 5.777545791465832
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 89.53179438593322,
+          "buffer_pct": 19.12213472978338,
+          "variant": "regime",
+          "n_test": 966,
+          "n_folds": 7,
+          "pooled_wins": 966,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 18.12213472978338,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 723,
+              "n_test": 64,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 64,
+              "losses": 0,
+              "worst_test_buf_pct": 16.934107488289783
+            },
+            {
+              "year": 2021,
+              "n_train": 787,
+              "n_test": 107,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 107,
+              "losses": 0,
+              "worst_test_buf_pct": 16.40474848374681
+            },
+            {
+              "year": 2022,
+              "n_train": 915,
+              "n_test": 179,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 179,
+              "losses": 0,
+              "worst_test_buf_pct": 14.981767741370067
+            },
+            {
+              "year": 2023,
+              "n_train": 1073,
+              "n_test": 243,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 243,
+              "losses": 0,
+              "worst_test_buf_pct": 16.757495363575526
+            },
+            {
+              "year": 2024,
+              "n_train": 1316,
+              "n_test": 252,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.934852089037129
+            },
+            {
+              "year": 2025,
+              "n_train": 1568,
+              "n_test": 88,
+              "b_hat_pct": 18.68785819237395,
+              "wins": 88,
+              "losses": 0,
+              "worst_test_buf_pct": 18.12213472978338
+            },
+            {
+              "year": 2026,
+              "n_train": 1662,
+              "n_test": 33,
+              "b_hat_pct": 19.12213472978338,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 5.777545791465832
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "LBTYK",
+      "today_close": 11.369999885559082,
+      "end_date": "2026-03-20",
+      "strike": 9.1793898586408,
+      "buffer_pct": 19.26657914658867,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 652,
+      "n_folds": 7,
+      "pooled_wins": 652,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 18.26657914658867,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 320,
+          "n_test": 98,
+          "b_hat_pct": 19.174390431780143,
+          "wins": 98,
+          "losses": 0,
+          "worst_test_buf_pct": 17.457472365762115
+        },
+        {
+          "year": 2021,
+          "n_train": 397,
+          "n_test": 243,
+          "b_hat_pct": 19.174390431780143,
+          "wins": 243,
+          "losses": 0,
+          "worst_test_buf_pct": 12.059431337675896
+        },
+        {
+          "year": 2022,
+          "n_train": 647,
+          "n_test": 16,
+          "b_hat_pct": 19.174390431780143,
+          "wins": 16,
+          "losses": 0,
+          "worst_test_buf_pct": 18.26657914658867
+        },
+        {
+          "year": 2023,
+          "n_train": 677,
+          "n_test": 21,
+          "b_hat_pct": 19.26657914658867,
+          "wins": 21,
+          "losses": 0,
+          "worst_test_buf_pct": 13.832428655105645
+        },
+        {
+          "year": 2024,
+          "n_train": 696,
+          "n_test": 172,
+          "b_hat_pct": 19.26657914658867,
+          "wins": 172,
+          "losses": 0,
+          "worst_test_buf_pct": 14.502365167741516
+        },
+        {
+          "year": 2025,
+          "n_train": 849,
+          "n_test": 86,
+          "b_hat_pct": 19.26657914658867,
+          "wins": 86,
+          "losses": 0,
+          "worst_test_buf_pct": 16.76445891734226
+        },
+        {
+          "year": 2026,
+          "n_train": 946,
+          "n_test": 16,
+          "b_hat_pct": 19.26657914658867,
+          "wins": 16,
+          "losses": 0,
+          "worst_test_buf_pct": 8.524071958979507
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 9.1793898586408,
+          "buffer_pct": 19.26657914658867,
+          "variant": "regime",
+          "n_test": 652,
+          "n_folds": 7,
+          "pooled_wins": 652,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 18.26657914658867,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 320,
+              "n_test": 98,
+              "b_hat_pct": 19.174390431780143,
+              "wins": 98,
+              "losses": 0,
+              "worst_test_buf_pct": 17.457472365762115
+            },
+            {
+              "year": 2021,
+              "n_train": 397,
+              "n_test": 243,
+              "b_hat_pct": 19.174390431780143,
+              "wins": 243,
+              "losses": 0,
+              "worst_test_buf_pct": 12.059431337675896
+            },
+            {
+              "year": 2022,
+              "n_train": 647,
+              "n_test": 16,
+              "b_hat_pct": 19.174390431780143,
+              "wins": 16,
+              "losses": 0,
+              "worst_test_buf_pct": 18.26657914658867
+            },
+            {
+              "year": 2023,
+              "n_train": 677,
+              "n_test": 21,
+              "b_hat_pct": 19.26657914658867,
+              "wins": 21,
+              "losses": 0,
+              "worst_test_buf_pct": 13.832428655105645
+            },
+            {
+              "year": 2024,
+              "n_train": 696,
+              "n_test": 172,
+              "b_hat_pct": 19.26657914658867,
+              "wins": 172,
+              "losses": 0,
+              "worst_test_buf_pct": 14.502365167741516
+            },
+            {
+              "year": 2025,
+              "n_train": 849,
+              "n_test": 86,
+              "b_hat_pct": 19.26657914658867,
+              "wins": 86,
+              "losses": 0,
+              "worst_test_buf_pct": 16.76445891734226
+            },
+            {
+              "year": 2026,
+              "n_train": 946,
+              "n_test": 16,
+              "b_hat_pct": 19.26657914658867,
+              "wins": 16,
+              "losses": 0,
+              "worst_test_buf_pct": 8.524071958979507
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "REYN",
+      "today_close": 20.799999237060547,
+      "end_date": "2026-03-20",
+      "strike": 16.747088900432214,
+      "buffer_pct": 19.485146563885593,
+      "horizon": 42,
+      "variant": "plain",
+      "n_test": 764,
+      "n_folds": 4,
+      "pooled_wins": 764,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 18.48514656388559,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 442,
+          "n_test": 250,
+          "b_hat_pct": 19.485146563885593,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 13.070769224729005
+        },
+        {
+          "year": 2024,
+          "n_train": 692,
+          "n_test": 252,
+          "b_hat_pct": 19.485146563885593,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 17.076919425903338
+        },
+        {
+          "year": 2025,
+          "n_train": 944,
+          "n_test": 250,
+          "b_hat_pct": 19.485146563885593,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 16.546123966181558
+        },
+        {
+          "year": 2026,
+          "n_train": 1194,
+          "n_test": 12,
+          "b_hat_pct": 19.485146563885593,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 12.976928794263486
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 16.747088900432214,
+          "buffer_pct": 19.485146563885593,
+          "variant": "plain",
+          "n_test": 764,
+          "n_folds": 4,
+          "pooled_wins": 764,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 18.48514656388559,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 442,
+              "n_test": 250,
+              "b_hat_pct": 19.485146563885593,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 13.070769224729005
+            },
+            {
+              "year": 2024,
+              "n_train": 692,
+              "n_test": 252,
+              "b_hat_pct": 19.485146563885593,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 17.076919425903338
+            },
+            {
+              "year": 2025,
+              "n_train": 944,
+              "n_test": 250,
+              "b_hat_pct": 19.485146563885593,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.546123966181558
+            },
+            {
+              "year": 2026,
+              "n_train": 1194,
+              "n_test": 12,
+              "b_hat_pct": 19.485146563885593,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 12.976928794263486
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "APG",
+      "today_close": 39.5,
+      "end_date": "2026-03-20",
+      "strike": 31.51692374797928,
+      "buffer_pct": 20.21031962536891,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 445,
+      "n_folds": 3,
+      "pooled_wins": 445,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.21031962536891,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2024,
+          "n_train": 407,
+          "n_test": 184,
+          "b_hat_pct": 20.21031962536891,
+          "wins": 184,
+          "losses": 0,
+          "worst_test_buf_pct": 15.845712644878896
+        },
+        {
+          "year": 2025,
+          "n_train": 594,
+          "n_test": 228,
+          "b_hat_pct": 20.21031962536891,
+          "wins": 228,
+          "losses": 0,
+          "worst_test_buf_pct": 16.145832596036303
+        },
+        {
+          "year": 2026,
+          "n_train": 819,
+          "n_test": 33,
+          "b_hat_pct": 20.21031962536891,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 11.26917830711729
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 31.51692374797928,
+          "buffer_pct": 20.21031962536891,
+          "variant": "regime",
+          "n_test": 445,
+          "n_folds": 3,
+          "pooled_wins": 445,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.21031962536891,
+          "folds": [
+            {
+              "year": 2024,
+              "n_train": 407,
+              "n_test": 184,
+              "b_hat_pct": 20.21031962536891,
+              "wins": 184,
+              "losses": 0,
+              "worst_test_buf_pct": 15.845712644878896
+            },
+            {
+              "year": 2025,
+              "n_train": 594,
+              "n_test": 228,
+              "b_hat_pct": 20.21031962536891,
+              "wins": 228,
+              "losses": 0,
+              "worst_test_buf_pct": 16.145832596036303
+            },
+            {
+              "year": 2026,
+              "n_train": 819,
+              "n_test": 33,
+              "b_hat_pct": 20.21031962536891,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 11.26917830711729
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "HLI",
+      "today_close": 139.50999450683594,
+      "end_date": "2026-03-20",
+      "strike": 111.02923789613759,
+      "buffer_pct": 20.414850356332572,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 1541,
+      "n_folds": 7,
+      "pooled_wins": 1541,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.41485035633257,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 831,
+          "n_test": 253,
+          "b_hat_pct": 19.55670864453153,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 19.41485035633257
+        },
+        {
+          "year": 2021,
+          "n_train": 1084,
+          "n_test": 252,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 16.059523148980592
+        },
+        {
+          "year": 2022,
+          "n_train": 1336,
+          "n_test": 251,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 17.0087493498006
+        },
+        {
+          "year": 2023,
+          "n_train": 1587,
+          "n_test": 250,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 13.446214476066398
+        },
+        {
+          "year": 2024,
+          "n_train": 1837,
+          "n_test": 252,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 9.996950579782048
+        },
+        {
+          "year": 2025,
+          "n_train": 2089,
+          "n_test": 250,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 17.321529359391707
+        },
+        {
+          "year": 2026,
+          "n_train": 2339,
+          "n_test": 33,
+          "b_hat_pct": 20.414850356332572,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 18.650805272293127
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 111.02923789613759,
+          "buffer_pct": 20.414850356332572,
+          "variant": "plain",
+          "n_test": 1541,
+          "n_folds": 7,
+          "pooled_wins": 1541,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.41485035633257,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 831,
+              "n_test": 253,
+              "b_hat_pct": 19.55670864453153,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 19.41485035633257
+            },
+            {
+              "year": 2021,
+              "n_train": 1084,
+              "n_test": 252,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 16.059523148980592
+            },
+            {
+              "year": 2022,
+              "n_train": 1336,
+              "n_test": 251,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 17.0087493498006
+            },
+            {
+              "year": 2023,
+              "n_train": 1587,
+              "n_test": 250,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 13.446214476066398
+            },
+            {
+              "year": 2024,
+              "n_train": 1837,
+              "n_test": 252,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 9.996950579782048
+            },
+            {
+              "year": 2025,
+              "n_train": 2089,
+              "n_test": 250,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 17.321529359391707
+            },
+            {
+              "year": 2026,
+              "n_train": 2339,
+              "n_test": 33,
+              "b_hat_pct": 20.414850356332572,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 18.650805272293127
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "CARR",
+      "today_close": 58.06999969482422,
+      "end_date": "2026-03-20",
+      "strike": 46.088211326883695,
+      "buffer_pct": 20.633353592058757,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 785,
+      "n_folds": 4,
+      "pooled_wins": 785,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.633353592058754,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 430,
+          "n_test": 250,
+          "b_hat_pct": 20.249269944057037,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 16.875076911293153
+        },
+        {
+          "year": 2024,
+          "n_train": 680,
+          "n_test": 252,
+          "b_hat_pct": 20.249269944057037,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 15.44312137730085
+        },
+        {
+          "year": 2025,
+          "n_train": 932,
+          "n_test": 250,
+          "b_hat_pct": 20.249269944057037,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 19.633353592058754
+        },
+        {
+          "year": 2026,
+          "n_train": 1182,
+          "n_test": 33,
+          "b_hat_pct": 20.633353592058757,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 17.03935598267122
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 46.088211326883695,
+          "buffer_pct": 20.633353592058757,
+          "variant": "plain",
+          "n_test": 785,
+          "n_folds": 4,
+          "pooled_wins": 785,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.633353592058754,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 430,
+              "n_test": 250,
+              "b_hat_pct": 20.249269944057037,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.875076911293153
+            },
+            {
+              "year": 2024,
+              "n_train": 680,
+              "n_test": 252,
+              "b_hat_pct": 20.249269944057037,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 15.44312137730085
+            },
+            {
+              "year": 2025,
+              "n_train": 932,
+              "n_test": 250,
+              "b_hat_pct": 20.249269944057037,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 19.633353592058754
+            },
+            {
+              "year": 2026,
+              "n_train": 1182,
+              "n_test": 33,
+              "b_hat_pct": 20.633353592058757,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 17.03935598267122
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "GILD",
+      "today_close": 137.2100067138672,
+      "end_date": "2026-03-20",
+      "strike": 108.80904778467843,
+      "buffer_pct": 20.698897703878917,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 1541,
+      "n_folds": 7,
+      "pooled_wins": 1541,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.698897703878913,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 931,
+          "n_test": 253,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 14.430797232804949
+        },
+        {
+          "year": 2021,
+          "n_train": 1184,
+          "n_test": 252,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 10.312575112133505
+        },
+        {
+          "year": 2022,
+          "n_train": 1436,
+          "n_test": 251,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 14.983293550757393
+        },
+        {
+          "year": 2023,
+          "n_train": 1687,
+          "n_test": 250,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 9.907735537702134
+        },
+        {
+          "year": 2024,
+          "n_train": 1937,
+          "n_test": 252,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 17.99748211987223
+        },
+        {
+          "year": 2025,
+          "n_train": 2189,
+          "n_test": 250,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 11.343546058705956
+        },
+        {
+          "year": 2026,
+          "n_train": 2439,
+          "n_test": 33,
+          "b_hat_pct": 20.698897703878917,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 8.688962581056847
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 108.80904778467843,
+          "buffer_pct": 20.698897703878917,
+          "variant": "plain",
+          "n_test": 1541,
+          "n_folds": 7,
+          "pooled_wins": 1541,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.698897703878913,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 931,
+              "n_test": 253,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 14.430797232804949
+            },
+            {
+              "year": 2021,
+              "n_train": 1184,
+              "n_test": 252,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.312575112133505
+            },
+            {
+              "year": 2022,
+              "n_train": 1436,
+              "n_test": 251,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 14.983293550757393
+            },
+            {
+              "year": 2023,
+              "n_train": 1687,
+              "n_test": 250,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 9.907735537702134
+            },
+            {
+              "year": 2024,
+              "n_train": 1937,
+              "n_test": 252,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 17.99748211987223
+            },
+            {
+              "year": 2025,
+              "n_train": 2189,
+              "n_test": 250,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 11.343546058705956
+            },
+            {
+              "year": 2026,
+              "n_train": 2439,
+              "n_test": 33,
+              "b_hat_pct": 20.698897703878917,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 8.688962581056847
+            }
+          ]
+        },
+        {
+          "horizon": 42,
+          "strike": 105.82717985734885,
+          "buffer_pct": 22.872112324841552,
+          "variant": "plain",
+          "n_test": 1520,
+          "n_folds": 7,
+          "pooled_wins": 1520,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.872112324841552,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 910,
+              "n_test": 253,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 18.327365925259333
+            },
+            {
+              "year": 2021,
+              "n_train": 1163,
+              "n_test": 252,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 18.169478761580514
+            },
+            {
+              "year": 2022,
+              "n_train": 1415,
+              "n_test": 251,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 19.96683427752137
+            },
+            {
+              "year": 2023,
+              "n_train": 1666,
+              "n_test": 250,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 12.24914025388728
+            },
+            {
+              "year": 2024,
+              "n_train": 1916,
+              "n_test": 252,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 17.99748211987223
+            },
+            {
+              "year": 2025,
+              "n_train": 2168,
+              "n_test": 250,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.048932631712308
+            },
+            {
+              "year": 2026,
+              "n_train": 2418,
+              "n_test": 12,
+              "b_hat_pct": 22.872112324841552,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 2.959393991298942
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 103.68921832325654,
+          "buffer_pct": 24.430279681068523,
+          "variant": "plain",
+          "n_test": 1499,
+          "n_folds": 6,
+          "pooled_wins": 1499,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.430279681068523,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 889,
+              "n_test": 253,
+              "b_hat_pct": 24.071257861181106,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 20.285684059179665
+            },
+            {
+              "year": 2021,
+              "n_train": 1142,
+              "n_test": 252,
+              "b_hat_pct": 24.071257861181106,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 21.347087496186234
+            },
+            {
+              "year": 2022,
+              "n_train": 1394,
+              "n_test": 251,
+              "b_hat_pct": 24.071257861181106,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 20.19840014387023
+            },
+            {
+              "year": 2023,
+              "n_train": 1645,
+              "n_test": 250,
+              "b_hat_pct": 24.071257861181106,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 13.335234300725707
+            },
+            {
+              "year": 2024,
+              "n_train": 1895,
+              "n_test": 252,
+              "b_hat_pct": 24.071257861181106,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 23.430279681068523
+            },
+            {
+              "year": 2025,
+              "n_train": 2147,
+              "n_test": 241,
+              "b_hat_pct": 24.430279681068523,
+              "wins": 241,
+              "losses": 0,
+              "worst_test_buf_pct": 16.880883299244488
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "PFE",
+      "today_close": 26.969999313354492,
+      "end_date": "2026-03-20",
+      "strike": 21.361583747168872,
+      "buffer_pct": 20.795015606131486,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 764,
+      "n_folds": 7,
+      "pooled_wins": 764,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.795015606131482,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 704,
+          "n_test": 160,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 160,
+          "losses": 0,
+          "worst_test_buf_pct": 16.10372931622467
+        },
+        {
+          "year": 2021,
+          "n_train": 854,
+          "n_test": 233,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 233,
+          "losses": 0,
+          "worst_test_buf_pct": 13.450878355964202
+        },
+        {
+          "year": 2022,
+          "n_train": 1087,
+          "n_test": 151,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 151,
+          "losses": 0,
+          "worst_test_buf_pct": 16.06043443413654
+        },
+        {
+          "year": 2023,
+          "n_train": 1238,
+          "n_test": 4,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 4,
+          "losses": 0,
+          "worst_test_buf_pct": 14.260988232828996
+        },
+        {
+          "year": 2024,
+          "n_train": 1263,
+          "n_test": 82,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 82,
+          "losses": 0,
+          "worst_test_buf_pct": 13.955568729099067
+        },
+        {
+          "year": 2025,
+          "n_train": 1345,
+          "n_test": 101,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 101,
+          "losses": 0,
+          "worst_test_buf_pct": 11.472417816426027
+        },
+        {
+          "year": 2026,
+          "n_train": 1425,
+          "n_test": 33,
+          "b_hat_pct": 20.795015606131486,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 4.147131761681699
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 21.361583747168872,
+          "buffer_pct": 20.795015606131486,
+          "variant": "regime",
+          "n_test": 764,
+          "n_folds": 7,
+          "pooled_wins": 764,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.795015606131482,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 704,
+              "n_test": 160,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 160,
+              "losses": 0,
+              "worst_test_buf_pct": 16.10372931622467
+            },
+            {
+              "year": 2021,
+              "n_train": 854,
+              "n_test": 233,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 233,
+              "losses": 0,
+              "worst_test_buf_pct": 13.450878355964202
+            },
+            {
+              "year": 2022,
+              "n_train": 1087,
+              "n_test": 151,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 151,
+              "losses": 0,
+              "worst_test_buf_pct": 16.06043443413654
+            },
+            {
+              "year": 2023,
+              "n_train": 1238,
+              "n_test": 4,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 4,
+              "losses": 0,
+              "worst_test_buf_pct": 14.260988232828996
+            },
+            {
+              "year": 2024,
+              "n_train": 1263,
+              "n_test": 82,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 82,
+              "losses": 0,
+              "worst_test_buf_pct": 13.955568729099067
+            },
+            {
+              "year": 2025,
+              "n_train": 1345,
+              "n_test": 101,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 101,
+              "losses": 0,
+              "worst_test_buf_pct": 11.472417816426027
+            },
+            {
+              "year": 2026,
+              "n_train": 1425,
+              "n_test": 33,
+              "b_hat_pct": 20.795015606131486,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 4.147131761681699
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "AMGN",
+      "today_close": 347.79998779296875,
+      "end_date": "2026-03-20",
+      "strike": 275.3174178085739,
+      "buffer_pct": 20.84030262460527,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 1541,
+      "n_folds": 7,
+      "pooled_wins": 1541,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.840302624605265,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 931,
+          "n_test": 253,
+          "b_hat_pct": 20.66012822939054,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 19.840302624605265
+        },
+        {
+          "year": 2021,
+          "n_train": 1184,
+          "n_test": 252,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 11.364391714961474
+        },
+        {
+          "year": 2022,
+          "n_train": 1436,
+          "n_test": 251,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 10.138656369190713
+        },
+        {
+          "year": 2023,
+          "n_train": 1687,
+          "n_test": 250,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 12.370391372518707
+        },
+        {
+          "year": 2024,
+          "n_train": 1937,
+          "n_test": 252,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 15.5312899259203
+        },
+        {
+          "year": 2025,
+          "n_train": 2189,
+          "n_test": 250,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 14.387828900496292
+        },
+        {
+          "year": 2026,
+          "n_train": 2439,
+          "n_test": 33,
+          "b_hat_pct": 20.84030262460527,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 7.850313827227906
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 275.3174178085739,
+          "buffer_pct": 20.84030262460527,
+          "variant": "plain",
+          "n_test": 1541,
+          "n_folds": 7,
+          "pooled_wins": 1541,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.840302624605265,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 931,
+              "n_test": 253,
+              "b_hat_pct": 20.66012822939054,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 19.840302624605265
+            },
+            {
+              "year": 2021,
+              "n_train": 1184,
+              "n_test": 252,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.364391714961474
+            },
+            {
+              "year": 2022,
+              "n_train": 1436,
+              "n_test": 251,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 10.138656369190713
+            },
+            {
+              "year": 2023,
+              "n_train": 1687,
+              "n_test": 250,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 12.370391372518707
+            },
+            {
+              "year": 2024,
+              "n_train": 1937,
+              "n_test": 252,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 15.5312899259203
+            },
+            {
+              "year": 2025,
+              "n_train": 2189,
+              "n_test": 250,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 14.387828900496292
+            },
+            {
+              "year": 2026,
+              "n_train": 2439,
+              "n_test": 33,
+              "b_hat_pct": 20.84030262460527,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 7.850313827227906
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "LBTYA",
+      "today_close": 11.6899995803833,
+      "end_date": "2026-03-20",
+      "strike": 9.250422781407302,
+      "buffer_pct": 20.868921185162336,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 669,
+      "n_folds": 7,
+      "pooled_wins": 669,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.868921185162336,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 302,
+          "n_test": 84,
+          "b_hat_pct": 20.095864108951535,
+          "wins": 84,
+          "losses": 0,
+          "worst_test_buf_pct": 17.15167648183463
+        },
+        {
+          "year": 2021,
+          "n_train": 365,
+          "n_test": 241,
+          "b_hat_pct": 20.095864108951535,
+          "wins": 241,
+          "losses": 0,
+          "worst_test_buf_pct": 11.752285389141438
+        },
+        {
+          "year": 2022,
+          "n_train": 615,
+          "n_test": 12,
+          "b_hat_pct": 20.095864108951535,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 19.868921185162336
+        },
+        {
+          "year": 2023,
+          "n_train": 639,
+          "n_test": 8,
+          "b_hat_pct": 20.868921185162336,
+          "wins": 8,
+          "losses": 0,
+          "worst_test_buf_pct": 14.426695244772525
+        },
+        {
+          "year": 2024,
+          "n_train": 644,
+          "n_test": 190,
+          "b_hat_pct": 20.868921185162336,
+          "wins": 190,
+          "losses": 0,
+          "worst_test_buf_pct": 13.876319814821091
+        },
+        {
+          "year": 2025,
+          "n_train": 816,
+          "n_test": 110,
+          "b_hat_pct": 20.868921185162336,
+          "wins": 110,
+          "losses": 0,
+          "worst_test_buf_pct": 16.24674064616198
+        },
+        {
+          "year": 2026,
+          "n_train": 928,
+          "n_test": 24,
+          "b_hat_pct": 20.868921185162336,
+          "wins": 24,
+          "losses": 0,
+          "worst_test_buf_pct": 8.902531628430033
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 9.250422781407302,
+          "buffer_pct": 20.868921185162336,
+          "variant": "regime",
+          "n_test": 669,
+          "n_folds": 7,
+          "pooled_wins": 669,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.868921185162336,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 302,
+              "n_test": 84,
+              "b_hat_pct": 20.095864108951535,
+              "wins": 84,
+              "losses": 0,
+              "worst_test_buf_pct": 17.15167648183463
+            },
+            {
+              "year": 2021,
+              "n_train": 365,
+              "n_test": 241,
+              "b_hat_pct": 20.095864108951535,
+              "wins": 241,
+              "losses": 0,
+              "worst_test_buf_pct": 11.752285389141438
+            },
+            {
+              "year": 2022,
+              "n_train": 615,
+              "n_test": 12,
+              "b_hat_pct": 20.095864108951535,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 19.868921185162336
+            },
+            {
+              "year": 2023,
+              "n_train": 639,
+              "n_test": 8,
+              "b_hat_pct": 20.868921185162336,
+              "wins": 8,
+              "losses": 0,
+              "worst_test_buf_pct": 14.426695244772525
+            },
+            {
+              "year": 2024,
+              "n_train": 644,
+              "n_test": 190,
+              "b_hat_pct": 20.868921185162336,
+              "wins": 190,
+              "losses": 0,
+              "worst_test_buf_pct": 13.876319814821091
+            },
+            {
+              "year": 2025,
+              "n_train": 816,
+              "n_test": 110,
+              "b_hat_pct": 20.868921185162336,
+              "wins": 110,
+              "losses": 0,
+              "worst_test_buf_pct": 16.24674064616198
+            },
+            {
+              "year": 2026,
+              "n_train": 928,
+              "n_test": 24,
+              "b_hat_pct": 20.868921185162336,
+              "wins": 24,
+              "losses": 0,
+              "worst_test_buf_pct": 8.902531628430033
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "LNG",
+      "today_close": 280.8900146484375,
+      "end_date": "2026-03-20",
+      "strike": 222.07271551159897,
+      "buffer_pct": 20.939619092709428,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 1045,
+      "n_folds": 7,
+      "pooled_wins": 1045,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 19.939619092709428,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 613,
+          "n_test": 46,
+          "b_hat_pct": 20.09714911333287,
+          "wins": 46,
+          "losses": 0,
+          "worst_test_buf_pct": 17.363624163257583
+        },
+        {
+          "year": 2021,
+          "n_train": 638,
+          "n_test": 252,
+          "b_hat_pct": 20.09714911333287,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 12.006486745034394
+        },
+        {
+          "year": 2022,
+          "n_train": 890,
+          "n_test": 248,
+          "b_hat_pct": 20.09714911333287,
+          "wins": 248,
+          "losses": 0,
+          "worst_test_buf_pct": 19.939619092709428
+        },
+        {
+          "year": 2023,
+          "n_train": 1141,
+          "n_test": 145,
+          "b_hat_pct": 20.09714911333287,
+          "wins": 145,
+          "losses": 0,
+          "worst_test_buf_pct": 12.477182760754445
+        },
+        {
+          "year": 2024,
+          "n_train": 1283,
+          "n_test": 161,
+          "b_hat_pct": 20.939619092709428,
+          "wins": 161,
+          "losses": 0,
+          "worst_test_buf_pct": 8.84383408775885
+        },
+        {
+          "year": 2025,
+          "n_train": 1444,
+          "n_test": 191,
+          "b_hat_pct": 20.939619092709428,
+          "wins": 191,
+          "losses": 0,
+          "worst_test_buf_pct": 17.2909392606877
+        },
+        {
+          "year": 2026,
+          "n_train": 1656,
+          "n_test": 2,
+          "b_hat_pct": 20.939619092709428,
+          "wins": 2,
+          "losses": 0,
+          "worst_test_buf_pct": 2.4360094195818194
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 222.07271551159897,
+          "buffer_pct": 20.939619092709428,
+          "variant": "regime",
+          "n_test": 1045,
+          "n_folds": 7,
+          "pooled_wins": 1045,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 19.939619092709428,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 613,
+              "n_test": 46,
+              "b_hat_pct": 20.09714911333287,
+              "wins": 46,
+              "losses": 0,
+              "worst_test_buf_pct": 17.363624163257583
+            },
+            {
+              "year": 2021,
+              "n_train": 638,
+              "n_test": 252,
+              "b_hat_pct": 20.09714911333287,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 12.006486745034394
+            },
+            {
+              "year": 2022,
+              "n_train": 890,
+              "n_test": 248,
+              "b_hat_pct": 20.09714911333287,
+              "wins": 248,
+              "losses": 0,
+              "worst_test_buf_pct": 19.939619092709428
+            },
+            {
+              "year": 2023,
+              "n_train": 1141,
+              "n_test": 145,
+              "b_hat_pct": 20.09714911333287,
+              "wins": 145,
+              "losses": 0,
+              "worst_test_buf_pct": 12.477182760754445
+            },
+            {
+              "year": 2024,
+              "n_train": 1283,
+              "n_test": 161,
+              "b_hat_pct": 20.939619092709428,
+              "wins": 161,
+              "losses": 0,
+              "worst_test_buf_pct": 8.84383408775885
+            },
+            {
+              "year": 2025,
+              "n_train": 1444,
+              "n_test": 191,
+              "b_hat_pct": 20.939619092709428,
+              "wins": 191,
+              "losses": 0,
+              "worst_test_buf_pct": 17.2909392606877
+            },
+            {
+              "year": 2026,
+              "n_train": 1656,
+              "n_test": 2,
+              "b_hat_pct": 20.939619092709428,
+              "wins": 2,
+              "losses": 0,
+              "worst_test_buf_pct": 2.4360094195818194
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "DD",
+      "today_close": 42.439998626708984,
+      "end_date": "2026-03-20",
+      "strike": 33.413709542340044,
+      "buffer_pct": 21.268353855903243,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 928,
+      "n_folds": 7,
+      "pooled_wins": 928,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 20.268353855903243,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 528,
+          "n_test": 74,
+          "b_hat_pct": 20.824032553356496,
+          "wins": 74,
+          "losses": 0,
+          "worst_test_buf_pct": 10.646702293415744
+        },
+        {
+          "year": 2021,
+          "n_train": 581,
+          "n_test": 194,
+          "b_hat_pct": 20.824032553356496,
+          "wins": 194,
+          "losses": 0,
+          "worst_test_buf_pct": 18.573399695338423
+        },
+        {
+          "year": 2022,
+          "n_train": 778,
+          "n_test": 81,
+          "b_hat_pct": 20.824032553356496,
+          "wins": 81,
+          "losses": 0,
+          "worst_test_buf_pct": 15.840478626441822
+        },
+        {
+          "year": 2023,
+          "n_train": 856,
+          "n_test": 218,
+          "b_hat_pct": 20.824032553356496,
+          "wins": 218,
+          "losses": 0,
+          "worst_test_buf_pct": 19.667237598951747
+        },
+        {
+          "year": 2024,
+          "n_train": 1079,
+          "n_test": 210,
+          "b_hat_pct": 20.824032553356496,
+          "wins": 210,
+          "losses": 0,
+          "worst_test_buf_pct": 20.268353855903243
+        },
+        {
+          "year": 2025,
+          "n_train": 1293,
+          "n_test": 118,
+          "b_hat_pct": 21.268353855903243,
+          "wins": 118,
+          "losses": 0,
+          "worst_test_buf_pct": 10.712171016332473
+        },
+        {
+          "year": 2026,
+          "n_train": 1402,
+          "n_test": 33,
+          "b_hat_pct": 21.268353855903243,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 15.186502709324357
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 33.413709542340044,
+          "buffer_pct": 21.268353855903243,
+          "variant": "regime",
+          "n_test": 928,
+          "n_folds": 7,
+          "pooled_wins": 928,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 20.268353855903243,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 528,
+              "n_test": 74,
+              "b_hat_pct": 20.824032553356496,
+              "wins": 74,
+              "losses": 0,
+              "worst_test_buf_pct": 10.646702293415744
+            },
+            {
+              "year": 2021,
+              "n_train": 581,
+              "n_test": 194,
+              "b_hat_pct": 20.824032553356496,
+              "wins": 194,
+              "losses": 0,
+              "worst_test_buf_pct": 18.573399695338423
+            },
+            {
+              "year": 2022,
+              "n_train": 778,
+              "n_test": 81,
+              "b_hat_pct": 20.824032553356496,
+              "wins": 81,
+              "losses": 0,
+              "worst_test_buf_pct": 15.840478626441822
+            },
+            {
+              "year": 2023,
+              "n_train": 856,
+              "n_test": 218,
+              "b_hat_pct": 20.824032553356496,
+              "wins": 218,
+              "losses": 0,
+              "worst_test_buf_pct": 19.667237598951747
+            },
+            {
+              "year": 2024,
+              "n_train": 1079,
+              "n_test": 210,
+              "b_hat_pct": 20.824032553356496,
+              "wins": 210,
+              "losses": 0,
+              "worst_test_buf_pct": 20.268353855903243
+            },
+            {
+              "year": 2025,
+              "n_train": 1293,
+              "n_test": 118,
+              "b_hat_pct": 21.268353855903243,
+              "wins": 118,
+              "losses": 0,
+              "worst_test_buf_pct": 10.712171016332473
+            },
+            {
+              "year": 2026,
+              "n_train": 1402,
+              "n_test": 33,
+              "b_hat_pct": 21.268353855903243,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 15.186502709324357
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "ACI",
+      "today_close": 17.290000915527344,
+      "end_date": "2026-03-20",
+      "strike": 13.608372101287978,
+      "buffer_pct": 21.293398607822322,
+      "horizon": 21,
+      "variant": "plain",
+      "n_test": 785,
+      "n_folds": 4,
+      "pooled_wins": 785,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 20.293398607822322,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 361,
+          "n_test": 250,
+          "b_hat_pct": 21.293398607822322,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 10.57290229539719
+        },
+        {
+          "year": 2024,
+          "n_train": 611,
+          "n_test": 252,
+          "b_hat_pct": 21.293398607822322,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 14.285722454915096
+        },
+        {
+          "year": 2025,
+          "n_train": 863,
+          "n_test": 250,
+          "b_hat_pct": 21.293398607822322,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 14.857546626805151
+        },
+        {
+          "year": 2026,
+          "n_train": 1113,
+          "n_test": 33,
+          "b_hat_pct": 21.293398607822322,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 11.470108754822805
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 13.608372101287978,
+          "buffer_pct": 21.293398607822322,
+          "variant": "plain",
+          "n_test": 785,
+          "n_folds": 4,
+          "pooled_wins": 785,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 20.293398607822322,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 361,
+              "n_test": 250,
+              "b_hat_pct": 21.293398607822322,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 10.57290229539719
+            },
+            {
+              "year": 2024,
+              "n_train": 611,
+              "n_test": 252,
+              "b_hat_pct": 21.293398607822322,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.285722454915096
+            },
+            {
+              "year": 2025,
+              "n_train": 863,
+              "n_test": 250,
+              "b_hat_pct": 21.293398607822322,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 14.857546626805151
+            },
+            {
+              "year": 2026,
+              "n_train": 1113,
+              "n_test": 33,
+              "b_hat_pct": 21.293398607822322,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 11.470108754822805
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "XOM",
+      "today_close": 159.6699981689453,
+      "end_date": "2026-03-20",
+      "strike": 125.32712711260284,
+      "buffer_pct": 21.50865625989712,
+      "horizon": 42,
+      "variant": "regime",
+      "n_test": 977,
+      "n_folds": 6,
+      "pooled_wins": 977,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 20.50865625989712,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2021,
+          "n_train": 468,
+          "n_test": 230,
+          "b_hat_pct": 21.300990574461775,
+          "wins": 230,
+          "losses": 0,
+          "worst_test_buf_pct": 17.216031338649916
+        },
+        {
+          "year": 2022,
+          "n_train": 656,
+          "n_test": 249,
+          "b_hat_pct": 21.300990574461775,
+          "wins": 249,
+          "losses": 0,
+          "worst_test_buf_pct": 20.50865625989712
+        },
+        {
+          "year": 2023,
+          "n_train": 905,
+          "n_test": 159,
+          "b_hat_pct": 21.50865625989712,
+          "wins": 159,
+          "losses": 0,
+          "worst_test_buf_pct": 15.575859443503825
+        },
+        {
+          "year": 2024,
+          "n_train": 1105,
+          "n_test": 198,
+          "b_hat_pct": 21.50865625989712,
+          "wins": 198,
+          "losses": 0,
+          "worst_test_buf_pct": 13.46674192797639
+        },
+        {
+          "year": 2025,
+          "n_train": 1280,
+          "n_test": 129,
+          "b_hat_pct": 21.50865625989712,
+          "wins": 129,
+          "losses": 0,
+          "worst_test_buf_pct": 16.053426433645413
+        },
+        {
+          "year": 2026,
+          "n_train": 1391,
+          "n_test": 12,
+          "b_hat_pct": 21.50865625989712,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 5.480220391730595
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 125.32712711260284,
+          "buffer_pct": 21.50865625989712,
+          "variant": "regime",
+          "n_test": 977,
+          "n_folds": 6,
+          "pooled_wins": 977,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 20.50865625989712,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 468,
+              "n_test": 230,
+              "b_hat_pct": 21.300990574461775,
+              "wins": 230,
+              "losses": 0,
+              "worst_test_buf_pct": 17.216031338649916
+            },
+            {
+              "year": 2022,
+              "n_train": 656,
+              "n_test": 249,
+              "b_hat_pct": 21.300990574461775,
+              "wins": 249,
+              "losses": 0,
+              "worst_test_buf_pct": 20.50865625989712
+            },
+            {
+              "year": 2023,
+              "n_train": 905,
+              "n_test": 159,
+              "b_hat_pct": 21.50865625989712,
+              "wins": 159,
+              "losses": 0,
+              "worst_test_buf_pct": 15.575859443503825
+            },
+            {
+              "year": 2024,
+              "n_train": 1105,
+              "n_test": 198,
+              "b_hat_pct": 21.50865625989712,
+              "wins": 198,
+              "losses": 0,
+              "worst_test_buf_pct": 13.46674192797639
+            },
+            {
+              "year": 2025,
+              "n_train": 1280,
+              "n_test": 129,
+              "b_hat_pct": 21.50865625989712,
+              "wins": 129,
+              "losses": 0,
+              "worst_test_buf_pct": 16.053426433645413
+            },
+            {
+              "year": 2026,
+              "n_train": 1391,
+              "n_test": 12,
+              "b_hat_pct": 21.50865625989712,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 5.480220391730595
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 120.41268089925016,
+          "buffer_pct": 24.58653329986098,
+          "variant": "regime",
+          "n_test": 956,
+          "n_folds": 5,
+          "pooled_wins": 956,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.586533299860978,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 468,
+              "n_test": 230,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 230,
+              "losses": 0,
+              "worst_test_buf_pct": 17.216031338649916
+            },
+            {
+              "year": 2022,
+              "n_train": 635,
+              "n_test": 249,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 249,
+              "losses": 0,
+              "worst_test_buf_pct": 20.50865625989712
+            },
+            {
+              "year": 2023,
+              "n_train": 884,
+              "n_test": 159,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 159,
+              "losses": 0,
+              "worst_test_buf_pct": 17.68170505933202
+            },
+            {
+              "year": 2024,
+              "n_train": 1092,
+              "n_test": 198,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 198,
+              "losses": 0,
+              "worst_test_buf_pct": 15.14956550903792
+            },
+            {
+              "year": 2025,
+              "n_train": 1259,
+              "n_test": 120,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 120,
+              "losses": 0,
+              "worst_test_buf_pct": 16.053426433645413
+            }
+          ]
+        },
+        {
+          "horizon": 126,
+          "strike": 120.41268089925016,
+          "buffer_pct": 24.58653329986098,
+          "variant": "regime",
+          "n_test": 893,
+          "n_folds": 5,
+          "pooled_wins": 893,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.586533299860978,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 468,
+              "n_test": 230,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 230,
+              "losses": 0,
+              "worst_test_buf_pct": 17.216031338649916
+            },
+            {
+              "year": 2022,
+              "n_train": 573,
+              "n_test": 249,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 249,
+              "losses": 0,
+              "worst_test_buf_pct": 20.50865625989712
+            },
+            {
+              "year": 2023,
+              "n_train": 823,
+              "n_test": 159,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 159,
+              "losses": 0,
+              "worst_test_buf_pct": 18.731150049031477
+            },
+            {
+              "year": 2024,
+              "n_train": 1056,
+              "n_test": 198,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 198,
+              "losses": 0,
+              "worst_test_buf_pct": 18.236582606748552
+            },
+            {
+              "year": 2025,
+              "n_train": 1196,
+              "n_test": 57,
+              "b_hat_pct": 24.58653329986098,
+              "wins": 57,
+              "losses": 0,
+              "worst_test_buf_pct": 16.053426433645413
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "KR",
+      "today_close": 73.19999694824219,
+      "end_date": "2026-03-20",
+      "strike": 57.39137665487535,
+      "buffer_pct": 21.596476710982238,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 1123,
+      "n_folds": 7,
+      "pooled_wins": 1123,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 20.596476710982238,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 324,
+          "n_test": 216,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 216,
+          "losses": 0,
+          "worst_test_buf_pct": 18.2562966502144
+        },
+        {
+          "year": 2021,
+          "n_train": 561,
+          "n_test": 239,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 239,
+          "losses": 0,
+          "worst_test_buf_pct": 17.269082260248048
+        },
+        {
+          "year": 2022,
+          "n_train": 779,
+          "n_test": 124,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 124,
+          "losses": 0,
+          "worst_test_buf_pct": 17.349846439384752
+        },
+        {
+          "year": 2023,
+          "n_train": 924,
+          "n_test": 98,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 98,
+          "losses": 0,
+          "worst_test_buf_pct": 10.644251682320194
+        },
+        {
+          "year": 2024,
+          "n_train": 1022,
+          "n_test": 241,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 241,
+          "losses": 0,
+          "worst_test_buf_pct": 9.243857906420116
+        },
+        {
+          "year": 2025,
+          "n_train": 1242,
+          "n_test": 196,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 196,
+          "losses": 0,
+          "worst_test_buf_pct": 9.66115929227228
+        },
+        {
+          "year": 2026,
+          "n_train": 1459,
+          "n_test": 9,
+          "b_hat_pct": 21.596476710982238,
+          "wins": 9,
+          "losses": 0,
+          "worst_test_buf_pct": 6.863157038103074
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 57.39137665487535,
+          "buffer_pct": 21.596476710982238,
+          "variant": "regime",
+          "n_test": 1123,
+          "n_folds": 7,
+          "pooled_wins": 1123,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 20.596476710982238,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 324,
+              "n_test": 216,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 216,
+              "losses": 0,
+              "worst_test_buf_pct": 18.2562966502144
+            },
+            {
+              "year": 2021,
+              "n_train": 561,
+              "n_test": 239,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 239,
+              "losses": 0,
+              "worst_test_buf_pct": 17.269082260248048
+            },
+            {
+              "year": 2022,
+              "n_train": 779,
+              "n_test": 124,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 124,
+              "losses": 0,
+              "worst_test_buf_pct": 17.349846439384752
+            },
+            {
+              "year": 2023,
+              "n_train": 924,
+              "n_test": 98,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 98,
+              "losses": 0,
+              "worst_test_buf_pct": 10.644251682320194
+            },
+            {
+              "year": 2024,
+              "n_train": 1022,
+              "n_test": 241,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 241,
+              "losses": 0,
+              "worst_test_buf_pct": 9.243857906420116
+            },
+            {
+              "year": 2025,
+              "n_train": 1242,
+              "n_test": 196,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 196,
+              "losses": 0,
+              "worst_test_buf_pct": 9.66115929227228
+            },
+            {
+              "year": 2026,
+              "n_train": 1459,
+              "n_test": 9,
+              "b_hat_pct": 21.596476710982238,
+              "wins": 9,
+              "losses": 0,
+              "worst_test_buf_pct": 6.863157038103074
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "INCY",
+      "today_close": 90.77999877929688,
+      "end_date": "2026-03-20",
+      "strike": 70.46966467685989,
+      "buffer_pct": 22.373137668590637,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 693,
+      "n_folds": 7,
+      "pooled_wins": 693,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 21.373137668590637,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 376,
+          "n_test": 129,
+          "b_hat_pct": 22.060245784907252,
+          "wins": 129,
+          "losses": 0,
+          "worst_test_buf_pct": 19.644793000239936
+        },
+        {
+          "year": 2021,
+          "n_train": 526,
+          "n_test": 10,
+          "b_hat_pct": 22.060245784907252,
+          "wins": 10,
+          "losses": 0,
+          "worst_test_buf_pct": 21.373137668590637
+        },
+        {
+          "year": 2022,
+          "n_train": 536,
+          "n_test": 147,
+          "b_hat_pct": 22.373137668590637,
+          "wins": 147,
+          "losses": 0,
+          "worst_test_buf_pct": 14.263507951807608
+        },
+        {
+          "year": 2023,
+          "n_train": 662,
+          "n_test": 42,
+          "b_hat_pct": 22.373137668590637,
+          "wins": 42,
+          "losses": 0,
+          "worst_test_buf_pct": 12.529634445648885
+        },
+        {
+          "year": 2024,
+          "n_train": 725,
+          "n_test": 146,
+          "b_hat_pct": 22.373137668590637,
+          "wins": 146,
+          "losses": 0,
+          "worst_test_buf_pct": 15.579273556808658
+        },
+        {
+          "year": 2025,
+          "n_train": 850,
+          "n_test": 186,
+          "b_hat_pct": 22.373137668590637,
+          "wins": 186,
+          "losses": 0,
+          "worst_test_buf_pct": 19.907207337948297
+        },
+        {
+          "year": 2026,
+          "n_train": 1036,
+          "n_test": 33,
+          "b_hat_pct": 22.373137668590637,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 13.179854423621384
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 70.46966467685989,
+          "buffer_pct": 22.373137668590637,
+          "variant": "regime",
+          "n_test": 693,
+          "n_folds": 7,
+          "pooled_wins": 693,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.373137668590637,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 376,
+              "n_test": 129,
+              "b_hat_pct": 22.060245784907252,
+              "wins": 129,
+              "losses": 0,
+              "worst_test_buf_pct": 19.644793000239936
+            },
+            {
+              "year": 2021,
+              "n_train": 526,
+              "n_test": 10,
+              "b_hat_pct": 22.060245784907252,
+              "wins": 10,
+              "losses": 0,
+              "worst_test_buf_pct": 21.373137668590637
+            },
+            {
+              "year": 2022,
+              "n_train": 536,
+              "n_test": 147,
+              "b_hat_pct": 22.373137668590637,
+              "wins": 147,
+              "losses": 0,
+              "worst_test_buf_pct": 14.263507951807608
+            },
+            {
+              "year": 2023,
+              "n_train": 662,
+              "n_test": 42,
+              "b_hat_pct": 22.373137668590637,
+              "wins": 42,
+              "losses": 0,
+              "worst_test_buf_pct": 12.529634445648885
+            },
+            {
+              "year": 2024,
+              "n_train": 725,
+              "n_test": 146,
+              "b_hat_pct": 22.373137668590637,
+              "wins": 146,
+              "losses": 0,
+              "worst_test_buf_pct": 15.579273556808658
+            },
+            {
+              "year": 2025,
+              "n_train": 850,
+              "n_test": 186,
+              "b_hat_pct": 22.373137668590637,
+              "wins": 186,
+              "losses": 0,
+              "worst_test_buf_pct": 19.907207337948297
+            },
+            {
+              "year": 2026,
+              "n_train": 1036,
+              "n_test": 33,
+              "b_hat_pct": 22.373137668590637,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 13.179854423621384
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "VTR",
+      "today_close": 82.5,
+      "end_date": "2026-03-20",
+      "strike": 63.986765543489575,
+      "buffer_pct": 22.4402841897096,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 892,
+      "n_folds": 7,
+      "pooled_wins": 892,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 21.4402841897096,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 584,
+          "n_test": 31,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 31,
+          "losses": 0,
+          "worst_test_buf_pct": 9.43975228147902
+        },
+        {
+          "year": 2021,
+          "n_train": 596,
+          "n_test": 200,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 200,
+          "losses": 0,
+          "worst_test_buf_pct": 16.987657496738784
+        },
+        {
+          "year": 2022,
+          "n_train": 815,
+          "n_test": 71,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 71,
+          "losses": 0,
+          "worst_test_buf_pct": 15.744600299032196
+        },
+        {
+          "year": 2023,
+          "n_train": 886,
+          "n_test": 119,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 119,
+          "losses": 0,
+          "worst_test_buf_pct": 17.445526104686138
+        },
+        {
+          "year": 2024,
+          "n_train": 984,
+          "n_test": 201,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 201,
+          "losses": 0,
+          "worst_test_buf_pct": 11.665617512330616
+        },
+        {
+          "year": 2025,
+          "n_train": 1185,
+          "n_test": 237,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 237,
+          "losses": 0,
+          "worst_test_buf_pct": 9.218051422267791
+        },
+        {
+          "year": 2026,
+          "n_train": 1422,
+          "n_test": 33,
+          "b_hat_pct": 22.4402841897096,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 3.4861993915584866
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 63.986765543489575,
+          "buffer_pct": 22.4402841897096,
+          "variant": "regime",
+          "n_test": 892,
+          "n_folds": 7,
+          "pooled_wins": 892,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.4402841897096,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 584,
+              "n_test": 31,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 31,
+              "losses": 0,
+              "worst_test_buf_pct": 9.43975228147902
+            },
+            {
+              "year": 2021,
+              "n_train": 596,
+              "n_test": 200,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 200,
+              "losses": 0,
+              "worst_test_buf_pct": 16.987657496738784
+            },
+            {
+              "year": 2022,
+              "n_train": 815,
+              "n_test": 71,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 71,
+              "losses": 0,
+              "worst_test_buf_pct": 15.744600299032196
+            },
+            {
+              "year": 2023,
+              "n_train": 886,
+              "n_test": 119,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 119,
+              "losses": 0,
+              "worst_test_buf_pct": 17.445526104686138
+            },
+            {
+              "year": 2024,
+              "n_train": 984,
+              "n_test": 201,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 201,
+              "losses": 0,
+              "worst_test_buf_pct": 11.665617512330616
+            },
+            {
+              "year": 2025,
+              "n_train": 1185,
+              "n_test": 237,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 237,
+              "losses": 0,
+              "worst_test_buf_pct": 9.218051422267791
+            },
+            {
+              "year": 2026,
+              "n_train": 1422,
+              "n_test": 33,
+              "b_hat_pct": 22.4402841897096,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 3.4861993915584866
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "NFG",
+      "today_close": 91.69999694824219,
+      "end_date": "2026-03-20",
+      "strike": 71.02073718097917,
+      "buffer_pct": 22.55099286310219,
+      "horizon": 63,
+      "variant": "regime",
+      "n_test": 965,
+      "n_folds": 6,
+      "pooled_wins": 965,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 21.55099286310219,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 592,
+          "n_test": 105,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 105,
+          "losses": 0,
+          "worst_test_buf_pct": 15.806221181248702
+        },
+        {
+          "year": 2021,
+          "n_train": 642,
+          "n_test": 245,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 245,
+          "losses": 0,
+          "worst_test_buf_pct": 9.07857075396431
+        },
+        {
+          "year": 2022,
+          "n_train": 879,
+          "n_test": 185,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 185,
+          "losses": 0,
+          "worst_test_buf_pct": 16.830599859220907
+        },
+        {
+          "year": 2023,
+          "n_train": 1124,
+          "n_test": 9,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 9,
+          "losses": 0,
+          "worst_test_buf_pct": 14.833592486543035
+        },
+        {
+          "year": 2024,
+          "n_train": 1127,
+          "n_test": 208,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 208,
+          "losses": 0,
+          "worst_test_buf_pct": 7.986921014938386
+        },
+        {
+          "year": 2025,
+          "n_train": 1281,
+          "n_test": 213,
+          "b_hat_pct": 22.55099286310219,
+          "wins": 213,
+          "losses": 0,
+          "worst_test_buf_pct": 16.302603206901402
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 63,
+          "strike": 71.02073718097917,
+          "buffer_pct": 22.55099286310219,
+          "variant": "regime",
+          "n_test": 965,
+          "n_folds": 6,
+          "pooled_wins": 965,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.55099286310219,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 592,
+              "n_test": 105,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 105,
+              "losses": 0,
+              "worst_test_buf_pct": 15.806221181248702
+            },
+            {
+              "year": 2021,
+              "n_train": 642,
+              "n_test": 245,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 245,
+              "losses": 0,
+              "worst_test_buf_pct": 9.07857075396431
+            },
+            {
+              "year": 2022,
+              "n_train": 879,
+              "n_test": 185,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 185,
+              "losses": 0,
+              "worst_test_buf_pct": 16.830599859220907
+            },
+            {
+              "year": 2023,
+              "n_train": 1124,
+              "n_test": 9,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 9,
+              "losses": 0,
+              "worst_test_buf_pct": 14.833592486543035
+            },
+            {
+              "year": 2024,
+              "n_train": 1127,
+              "n_test": 208,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 208,
+              "losses": 0,
+              "worst_test_buf_pct": 7.986921014938386
+            },
+            {
+              "year": 2025,
+              "n_train": 1281,
+              "n_test": 213,
+              "b_hat_pct": 22.55099286310219,
+              "wins": 213,
+              "losses": 0,
+              "worst_test_buf_pct": 16.302603206901402
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "REG",
+      "today_close": 74.87000274658203,
+      "end_date": "2026-03-20",
+      "strike": 57.97409672703851,
+      "buffer_pct": 22.566989982266104,
+      "horizon": 42,
+      "variant": "regime",
+      "n_test": 838,
+      "n_folds": 6,
+      "pooled_wins": 838,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 21.566989982266104,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2021,
+          "n_train": 535,
+          "n_test": 230,
+          "b_hat_pct": 22.017483447302112,
+          "wins": 230,
+          "losses": 0,
+          "worst_test_buf_pct": 13.934952638946307
+        },
+        {
+          "year": 2022,
+          "n_train": 723,
+          "n_test": 93,
+          "b_hat_pct": 22.017483447302112,
+          "wins": 93,
+          "losses": 0,
+          "worst_test_buf_pct": 21.566989982266104
+        },
+        {
+          "year": 2023,
+          "n_train": 822,
+          "n_test": 154,
+          "b_hat_pct": 22.566989982266104,
+          "wins": 154,
+          "losses": 0,
+          "worst_test_buf_pct": 15.68307216807493
+        },
+        {
+          "year": 2024,
+          "n_train": 974,
+          "n_test": 188,
+          "b_hat_pct": 22.566989982266104,
+          "wins": 188,
+          "losses": 0,
+          "worst_test_buf_pct": 11.132447833327586
+        },
+        {
+          "year": 2025,
+          "n_train": 1158,
+          "n_test": 164,
+          "b_hat_pct": 22.566989982266104,
+          "wins": 164,
+          "losses": 0,
+          "worst_test_buf_pct": 14.95711507913784
+        },
+        {
+          "year": 2026,
+          "n_train": 1356,
+          "n_test": 9,
+          "b_hat_pct": 22.566989982266104,
+          "wins": 9,
+          "losses": 0,
+          "worst_test_buf_pct": 1.427172149608924
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 57.97409672703851,
+          "buffer_pct": 22.566989982266104,
+          "variant": "regime",
+          "n_test": 838,
+          "n_folds": 6,
+          "pooled_wins": 838,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.566989982266104,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 535,
+              "n_test": 230,
+              "b_hat_pct": 22.017483447302112,
+              "wins": 230,
+              "losses": 0,
+              "worst_test_buf_pct": 13.934952638946307
+            },
+            {
+              "year": 2022,
+              "n_train": 723,
+              "n_test": 93,
+              "b_hat_pct": 22.017483447302112,
+              "wins": 93,
+              "losses": 0,
+              "worst_test_buf_pct": 21.566989982266104
+            },
+            {
+              "year": 2023,
+              "n_train": 822,
+              "n_test": 154,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 154,
+              "losses": 0,
+              "worst_test_buf_pct": 15.68307216807493
+            },
+            {
+              "year": 2024,
+              "n_train": 974,
+              "n_test": 188,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 11.132447833327586
+            },
+            {
+              "year": 2025,
+              "n_train": 1158,
+              "n_test": 164,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 164,
+              "losses": 0,
+              "worst_test_buf_pct": 14.95711507913784
+            },
+            {
+              "year": 2026,
+              "n_train": 1356,
+              "n_test": 9,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 9,
+              "losses": 0,
+              "worst_test_buf_pct": 1.427172149608924
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 57.97409672703851,
+          "buffer_pct": 22.566989982266104,
+          "variant": "regime",
+          "n_test": 828,
+          "n_folds": 5,
+          "pooled_wins": 828,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.566989982266104,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 535,
+              "n_test": 230,
+              "b_hat_pct": 22.017483447302112,
+              "wins": 230,
+              "losses": 0,
+              "worst_test_buf_pct": 13.934952638946307
+            },
+            {
+              "year": 2022,
+              "n_train": 702,
+              "n_test": 93,
+              "b_hat_pct": 22.017483447302112,
+              "wins": 93,
+              "losses": 0,
+              "worst_test_buf_pct": 21.566989982266104
+            },
+            {
+              "year": 2023,
+              "n_train": 822,
+              "n_test": 154,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 154,
+              "losses": 0,
+              "worst_test_buf_pct": 15.68307216807493
+            },
+            {
+              "year": 2024,
+              "n_train": 973,
+              "n_test": 188,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 188,
+              "losses": 0,
+              "worst_test_buf_pct": 12.071334176046166
+            },
+            {
+              "year": 2025,
+              "n_train": 1137,
+              "n_test": 163,
+              "b_hat_pct": 22.566989982266104,
+              "wins": 163,
+              "losses": 0,
+              "worst_test_buf_pct": 14.95711507913784
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "HRL",
+      "today_close": 22.139999389648438,
+      "end_date": "2026-03-20",
+      "strike": 17.09989815469814,
+      "buffer_pct": 22.764685518947214,
+      "horizon": 42,
+      "variant": "plain",
+      "n_test": 1520,
+      "n_folds": 7,
+      "pooled_wins": 1520,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 21.764685518947214,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 910,
+          "n_test": 253,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 17.496923778727535
+        },
+        {
+          "year": 2021,
+          "n_train": 1163,
+          "n_test": 252,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 14.803918089156099
+        },
+        {
+          "year": 2022,
+          "n_train": 1415,
+          "n_test": 251,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 18.463785993997018
+        },
+        {
+          "year": 2023,
+          "n_train": 1666,
+          "n_test": 250,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 21.570404149781652
+        },
+        {
+          "year": 2024,
+          "n_train": 1916,
+          "n_test": 252,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 18.302956898835866
+        },
+        {
+          "year": 2025,
+          "n_train": 2168,
+          "n_test": 250,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 19.878889116980258
+        },
+        {
+          "year": 2026,
+          "n_train": 2418,
+          "n_test": 12,
+          "b_hat_pct": 22.764685518947214,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 9.85342072034564
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 17.09989815469814,
+          "buffer_pct": 22.764685518947214,
+          "variant": "plain",
+          "n_test": 1520,
+          "n_folds": 7,
+          "pooled_wins": 1520,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 21.764685518947214,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 910,
+              "n_test": 253,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 17.496923778727535
+            },
+            {
+              "year": 2021,
+              "n_train": 1163,
+              "n_test": 252,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.803918089156099
+            },
+            {
+              "year": 2022,
+              "n_train": 1415,
+              "n_test": 251,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 18.463785993997018
+            },
+            {
+              "year": 2023,
+              "n_train": 1666,
+              "n_test": 250,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 21.570404149781652
+            },
+            {
+              "year": 2024,
+              "n_train": 1916,
+              "n_test": 252,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 18.302956898835866
+            },
+            {
+              "year": 2025,
+              "n_train": 2168,
+              "n_test": 250,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 19.878889116980258
+            },
+            {
+              "year": 2026,
+              "n_train": 2418,
+              "n_test": 12,
+              "b_hat_pct": 22.764685518947214,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 9.85342072034564
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "UPS",
+      "today_close": 95.86000061035156,
+      "end_date": "2026-03-20",
+      "strike": 73.78210962971234,
+      "buffer_pct": 23.031390402740225,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 633,
+      "n_folds": 7,
+      "pooled_wins": 633,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 22.031390402740225,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 614,
+          "n_test": 159,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 159,
+          "losses": 0,
+          "worst_test_buf_pct": 21.273206676202673
+        },
+        {
+          "year": 2021,
+          "n_train": 773,
+          "n_test": 242,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 242,
+          "losses": 0,
+          "worst_test_buf_pct": 11.126654131978707
+        },
+        {
+          "year": 2022,
+          "n_train": 1015,
+          "n_test": 87,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 87,
+          "losses": 0,
+          "worst_test_buf_pct": 21.097521867932933
+        },
+        {
+          "year": 2023,
+          "n_train": 1119,
+          "n_test": 100,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 100,
+          "losses": 0,
+          "worst_test_buf_pct": 14.191299799192493
+        },
+        {
+          "year": 2024,
+          "n_train": 1223,
+          "n_test": 5,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 5,
+          "losses": 0,
+          "worst_test_buf_pct": 16.32514603201807
+        },
+        {
+          "year": 2025,
+          "n_train": 1228,
+          "n_test": 8,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 8,
+          "losses": 0,
+          "worst_test_buf_pct": 18.325249779949004
+        },
+        {
+          "year": 2026,
+          "n_train": 1235,
+          "n_test": 32,
+          "b_hat_pct": 23.031390402740225,
+          "wins": 32,
+          "losses": 0,
+          "worst_test_buf_pct": 17.861960228752494
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 73.78210962971234,
+          "buffer_pct": 23.031390402740225,
+          "variant": "regime",
+          "n_test": 633,
+          "n_folds": 7,
+          "pooled_wins": 633,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 22.031390402740225,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 614,
+              "n_test": 159,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 159,
+              "losses": 0,
+              "worst_test_buf_pct": 21.273206676202673
+            },
+            {
+              "year": 2021,
+              "n_train": 773,
+              "n_test": 242,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 242,
+              "losses": 0,
+              "worst_test_buf_pct": 11.126654131978707
+            },
+            {
+              "year": 2022,
+              "n_train": 1015,
+              "n_test": 87,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 87,
+              "losses": 0,
+              "worst_test_buf_pct": 21.097521867932933
+            },
+            {
+              "year": 2023,
+              "n_train": 1119,
+              "n_test": 100,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 100,
+              "losses": 0,
+              "worst_test_buf_pct": 14.191299799192493
+            },
+            {
+              "year": 2024,
+              "n_train": 1223,
+              "n_test": 5,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 5,
+              "losses": 0,
+              "worst_test_buf_pct": 16.32514603201807
+            },
+            {
+              "year": 2025,
+              "n_train": 1228,
+              "n_test": 8,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 8,
+              "losses": 0,
+              "worst_test_buf_pct": 18.325249779949004
+            },
+            {
+              "year": 2026,
+              "n_train": 1235,
+              "n_test": 32,
+              "b_hat_pct": 23.031390402740225,
+              "wins": 32,
+              "losses": 0,
+              "worst_test_buf_pct": 17.861960228752494
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "PGR",
+      "today_close": 206.0,
+      "end_date": "2026-03-20",
+      "strike": 157.97836889281987,
+      "buffer_pct": 23.311471411252484,
+      "horizon": 42,
+      "variant": "plain",
+      "n_test": 1520,
+      "n_folds": 7,
+      "pooled_wins": 1520,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 22.31147141125248,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 910,
+          "n_test": 253,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 20.641555375905295
+        },
+        {
+          "year": 2021,
+          "n_train": 1163,
+          "n_test": 252,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 14.248348765242858
+        },
+        {
+          "year": 2022,
+          "n_train": 1415,
+          "n_test": 251,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 10.524559085686914
+        },
+        {
+          "year": 2023,
+          "n_train": 1666,
+          "n_test": 250,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 16.073835606894406
+        },
+        {
+          "year": 2024,
+          "n_train": 1916,
+          "n_test": 252,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 10.893337681329452
+        },
+        {
+          "year": 2025,
+          "n_train": 2168,
+          "n_test": 250,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 18.162850776896356
+        },
+        {
+          "year": 2026,
+          "n_train": 2418,
+          "n_test": 12,
+          "b_hat_pct": 23.311471411252484,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 7.145497099631926
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 157.97836889281987,
+          "buffer_pct": 23.311471411252484,
+          "variant": "plain",
+          "n_test": 1520,
+          "n_folds": 7,
+          "pooled_wins": 1520,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 22.31147141125248,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 910,
+              "n_test": 253,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 20.641555375905295
+            },
+            {
+              "year": 2021,
+              "n_train": 1163,
+              "n_test": 252,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.248348765242858
+            },
+            {
+              "year": 2022,
+              "n_train": 1415,
+              "n_test": 251,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 10.524559085686914
+            },
+            {
+              "year": 2023,
+              "n_train": 1666,
+              "n_test": 250,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 16.073835606894406
+            },
+            {
+              "year": 2024,
+              "n_train": 1916,
+              "n_test": 252,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.893337681329452
+            },
+            {
+              "year": 2025,
+              "n_train": 2168,
+              "n_test": 250,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 18.162850776896356
+            },
+            {
+              "year": 2026,
+              "n_train": 2418,
+              "n_test": 12,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 7.145497099631926
+            }
+          ]
+        },
+        {
+          "horizon": 63,
+          "strike": 157.66113011415078,
+          "buffer_pct": 23.4654708183734,
+          "variant": "plain",
+          "n_test": 1499,
+          "n_folds": 6,
+          "pooled_wins": 1499,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 22.4654708183734,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 889,
+              "n_test": 253,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 20.641555375905295
+            },
+            {
+              "year": 2021,
+              "n_train": 1142,
+              "n_test": 252,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 14.248348765242858
+            },
+            {
+              "year": 2022,
+              "n_train": 1394,
+              "n_test": 251,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 10.524559085686914
+            },
+            {
+              "year": 2023,
+              "n_train": 1645,
+              "n_test": 250,
+              "b_hat_pct": 23.311471411252484,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 22.4654708183734
+            },
+            {
+              "year": 2024,
+              "n_train": 1895,
+              "n_test": 252,
+              "b_hat_pct": 23.4654708183734,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 10.893337681329452
+            },
+            {
+              "year": 2025,
+              "n_train": 2147,
+              "n_test": 241,
+              "b_hat_pct": 23.4654708183734,
+              "wins": 241,
+              "losses": 0,
+              "worst_test_buf_pct": 19.351477634510072
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "WMB",
+      "today_close": 72.41000366210938,
+      "end_date": "2026-03-20",
+      "strike": 55.12634098279238,
+      "buffer_pct": 23.869164211023474,
+      "horizon": 42,
+      "variant": "regime",
+      "n_test": 1224,
+      "n_folds": 7,
+      "pooled_wins": 1224,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 22.869164211023474,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 444,
+          "n_test": 105,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 105,
+          "losses": 0,
+          "worst_test_buf_pct": 14.752555275419754
+        },
+        {
+          "year": 2021,
+          "n_train": 508,
+          "n_test": 252,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 11.756887141660044
+        },
+        {
+          "year": 2022,
+          "n_train": 759,
+          "n_test": 223,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 223,
+          "losses": 0,
+          "worst_test_buf_pct": 20.516182124488715
+        },
+        {
+          "year": 2023,
+          "n_train": 984,
+          "n_test": 146,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 146,
+          "losses": 0,
+          "worst_test_buf_pct": 12.35318640884685
+        },
+        {
+          "year": 2024,
+          "n_train": 1128,
+          "n_test": 251,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 12.183597922482715
+        },
+        {
+          "year": 2025,
+          "n_train": 1379,
+          "n_test": 235,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 235,
+          "losses": 0,
+          "worst_test_buf_pct": 12.360428465662832
+        },
+        {
+          "year": 2026,
+          "n_train": 1619,
+          "n_test": 12,
+          "b_hat_pct": 23.869164211023474,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 2.714188592983724
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 55.12634098279238,
+          "buffer_pct": 23.869164211023474,
+          "variant": "regime",
+          "n_test": 1224,
+          "n_folds": 7,
+          "pooled_wins": 1224,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 22.869164211023474,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 444,
+              "n_test": 105,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 105,
+              "losses": 0,
+              "worst_test_buf_pct": 14.752555275419754
+            },
+            {
+              "year": 2021,
+              "n_train": 508,
+              "n_test": 252,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 11.756887141660044
+            },
+            {
+              "year": 2022,
+              "n_train": 759,
+              "n_test": 223,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 223,
+              "losses": 0,
+              "worst_test_buf_pct": 20.516182124488715
+            },
+            {
+              "year": 2023,
+              "n_train": 984,
+              "n_test": 146,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 146,
+              "losses": 0,
+              "worst_test_buf_pct": 12.35318640884685
+            },
+            {
+              "year": 2024,
+              "n_train": 1128,
+              "n_test": 251,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 12.183597922482715
+            },
+            {
+              "year": 2025,
+              "n_train": 1379,
+              "n_test": 235,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 235,
+              "losses": 0,
+              "worst_test_buf_pct": 12.360428465662832
+            },
+            {
+              "year": 2026,
+              "n_train": 1619,
+              "n_test": 12,
+              "b_hat_pct": 23.869164211023474,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 2.714188592983724
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "AVT",
+      "today_close": 58.45000076293945,
+      "end_date": "2026-03-20",
+      "strike": 44.252592016586775,
+      "buffer_pct": 24.289835006049522,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 950,
+      "n_folds": 7,
+      "pooled_wins": 950,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 23.28983500604952,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 520,
+          "n_test": 11,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 11,
+          "losses": 0,
+          "worst_test_buf_pct": 14.583354297219264
+        },
+        {
+          "year": 2021,
+          "n_train": 522,
+          "n_test": 177,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 177,
+          "losses": 0,
+          "worst_test_buf_pct": 13.0016075056419
+        },
+        {
+          "year": 2022,
+          "n_train": 703,
+          "n_test": 181,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 181,
+          "losses": 0,
+          "worst_test_buf_pct": 21.84303591659087
+        },
+        {
+          "year": 2023,
+          "n_train": 877,
+          "n_test": 220,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 220,
+          "losses": 0,
+          "worst_test_buf_pct": 10.575232857528395
+        },
+        {
+          "year": 2024,
+          "n_train": 1089,
+          "n_test": 222,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 222,
+          "losses": 0,
+          "worst_test_buf_pct": 10.463654270653356
+        },
+        {
+          "year": 2025,
+          "n_train": 1311,
+          "n_test": 116,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 116,
+          "losses": 0,
+          "worst_test_buf_pct": 15.225172824694233
+        },
+        {
+          "year": 2026,
+          "n_train": 1446,
+          "n_test": 23,
+          "b_hat_pct": 24.289835006049522,
+          "wins": 23,
+          "losses": 0,
+          "worst_test_buf_pct": 10.991104755179482
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 44.252592016586775,
+          "buffer_pct": 24.289835006049522,
+          "variant": "regime",
+          "n_test": 950,
+          "n_folds": 7,
+          "pooled_wins": 950,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.28983500604952,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 520,
+              "n_test": 11,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 11,
+              "losses": 0,
+              "worst_test_buf_pct": 14.583354297219264
+            },
+            {
+              "year": 2021,
+              "n_train": 522,
+              "n_test": 177,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 177,
+              "losses": 0,
+              "worst_test_buf_pct": 13.0016075056419
+            },
+            {
+              "year": 2022,
+              "n_train": 703,
+              "n_test": 181,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 181,
+              "losses": 0,
+              "worst_test_buf_pct": 21.84303591659087
+            },
+            {
+              "year": 2023,
+              "n_train": 877,
+              "n_test": 220,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 220,
+              "losses": 0,
+              "worst_test_buf_pct": 10.575232857528395
+            },
+            {
+              "year": 2024,
+              "n_train": 1089,
+              "n_test": 222,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 222,
+              "losses": 0,
+              "worst_test_buf_pct": 10.463654270653356
+            },
+            {
+              "year": 2025,
+              "n_train": 1311,
+              "n_test": 116,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 116,
+              "losses": 0,
+              "worst_test_buf_pct": 15.225172824694233
+            },
+            {
+              "year": 2026,
+              "n_train": 1446,
+              "n_test": 23,
+              "b_hat_pct": 24.289835006049522,
+              "wins": 23,
+              "losses": 0,
+              "worst_test_buf_pct": 10.991104755179482
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "REGN",
+      "today_close": 732.8699951171875,
+      "end_date": "2026-03-20",
+      "strike": 554.3293802793485,
+      "buffer_pct": 24.36183989348479,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 1017,
+      "n_folds": 7,
+      "pooled_wins": 1017,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 23.36183989348479,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 282,
+          "n_test": 214,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 214,
+          "losses": 0,
+          "worst_test_buf_pct": 16.36521417342425
+        },
+        {
+          "year": 2021,
+          "n_train": 517,
+          "n_test": 139,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 139,
+          "losses": 0,
+          "worst_test_buf_pct": 18.934039775531353
+        },
+        {
+          "year": 2022,
+          "n_train": 635,
+          "n_test": 183,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 183,
+          "losses": 0,
+          "worst_test_buf_pct": 20.85017492311082
+        },
+        {
+          "year": 2023,
+          "n_train": 818,
+          "n_test": 217,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 217,
+          "losses": 0,
+          "worst_test_buf_pct": 11.72007619244585
+        },
+        {
+          "year": 2024,
+          "n_train": 1035,
+          "n_test": 196,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 196,
+          "losses": 0,
+          "worst_test_buf_pct": 20.874932078797727
+        },
+        {
+          "year": 2025,
+          "n_train": 1252,
+          "n_test": 35,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 35,
+          "losses": 0,
+          "worst_test_buf_pct": 12.03322458565318
+        },
+        {
+          "year": 2026,
+          "n_train": 1266,
+          "n_test": 33,
+          "b_hat_pct": 24.36183989348479,
+          "wins": 33,
+          "losses": 0,
+          "worst_test_buf_pct": 9.754155111368334
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 554.3293802793485,
+          "buffer_pct": 24.36183989348479,
+          "variant": "regime",
+          "n_test": 1017,
+          "n_folds": 7,
+          "pooled_wins": 1017,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.36183989348479,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 282,
+              "n_test": 214,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 214,
+              "losses": 0,
+              "worst_test_buf_pct": 16.36521417342425
+            },
+            {
+              "year": 2021,
+              "n_train": 517,
+              "n_test": 139,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 139,
+              "losses": 0,
+              "worst_test_buf_pct": 18.934039775531353
+            },
+            {
+              "year": 2022,
+              "n_train": 635,
+              "n_test": 183,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 183,
+              "losses": 0,
+              "worst_test_buf_pct": 20.85017492311082
+            },
+            {
+              "year": 2023,
+              "n_train": 818,
+              "n_test": 217,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 217,
+              "losses": 0,
+              "worst_test_buf_pct": 11.72007619244585
+            },
+            {
+              "year": 2024,
+              "n_train": 1035,
+              "n_test": 196,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 196,
+              "losses": 0,
+              "worst_test_buf_pct": 20.874932078797727
+            },
+            {
+              "year": 2025,
+              "n_train": 1252,
+              "n_test": 35,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 35,
+              "losses": 0,
+              "worst_test_buf_pct": 12.03322458565318
+            },
+            {
+              "year": 2026,
+              "n_train": 1266,
+              "n_test": 33,
+              "b_hat_pct": 24.36183989348479,
+              "wins": 33,
+              "losses": 0,
+              "worst_test_buf_pct": 9.754155111368334
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "CPB",
+      "today_close": 21.06999969482422,
+      "end_date": "2026-03-20",
+      "strike": 15.911356098072982,
+      "buffer_pct": 24.483358668573885,
+      "horizon": 42,
+      "variant": "plain",
+      "n_test": 1520,
+      "n_folds": 7,
+      "pooled_wins": 1520,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 23.483358668573885,
+      "regime_ok_today": false,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 910,
+          "n_test": 253,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 253,
+          "losses": 0,
+          "worst_test_buf_pct": 23.0869240611171
+        },
+        {
+          "year": 2021,
+          "n_train": 1163,
+          "n_test": 252,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 13.918632019567468
+        },
+        {
+          "year": 2022,
+          "n_train": 1415,
+          "n_test": 251,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 251,
+          "losses": 0,
+          "worst_test_buf_pct": 12.08404104563865
+        },
+        {
+          "year": 2023,
+          "n_train": 1666,
+          "n_test": 250,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 17.570038863251813
+        },
+        {
+          "year": 2024,
+          "n_train": 1916,
+          "n_test": 252,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 252,
+          "losses": 0,
+          "worst_test_buf_pct": 18.251604889459472
+        },
+        {
+          "year": 2025,
+          "n_train": 2168,
+          "n_test": 250,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 250,
+          "losses": 0,
+          "worst_test_buf_pct": 17.05622121912341
+        },
+        {
+          "year": 2026,
+          "n_train": 2418,
+          "n_test": 12,
+          "b_hat_pct": 24.483358668573885,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 21.63568690467589
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 42,
+          "strike": 15.911356098072982,
+          "buffer_pct": 24.483358668573885,
+          "variant": "plain",
+          "n_test": 1520,
+          "n_folds": 7,
+          "pooled_wins": 1520,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.483358668573885,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 910,
+              "n_test": 253,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 253,
+              "losses": 0,
+              "worst_test_buf_pct": 23.0869240611171
+            },
+            {
+              "year": 2021,
+              "n_train": 1163,
+              "n_test": 252,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 13.918632019567468
+            },
+            {
+              "year": 2022,
+              "n_train": 1415,
+              "n_test": 251,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 251,
+              "losses": 0,
+              "worst_test_buf_pct": 12.08404104563865
+            },
+            {
+              "year": 2023,
+              "n_train": 1666,
+              "n_test": 250,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 17.570038863251813
+            },
+            {
+              "year": 2024,
+              "n_train": 1916,
+              "n_test": 252,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 252,
+              "losses": 0,
+              "worst_test_buf_pct": 18.251604889459472
+            },
+            {
+              "year": 2025,
+              "n_train": 2168,
+              "n_test": 250,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 250,
+              "losses": 0,
+              "worst_test_buf_pct": 17.05622121912341
+            },
+            {
+              "year": 2026,
+              "n_train": 2418,
+              "n_test": 12,
+              "b_hat_pct": 24.483358668573885,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 21.63568690467589
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ticker": "CF",
+      "today_close": 124.9000015258789,
+      "end_date": "2026-03-20",
+      "strike": 94.11193123057461,
+      "buffer_pct": 24.650176076198925,
+      "horizon": 21,
+      "variant": "regime",
+      "n_test": 827,
+      "n_folds": 7,
+      "pooled_wins": 827,
+      "pooled_losses": 0,
+      "history_worst_buffer_pct": 23.650176076198925,
+      "regime_ok_today": true,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 519,
+          "n_test": 29,
+          "b_hat_pct": 24.08558226101467,
+          "wins": 29,
+          "losses": 0,
+          "worst_test_buf_pct": 16.6945875153218
+        },
+        {
+          "year": 2021,
+          "n_train": 544,
+          "n_test": 239,
+          "b_hat_pct": 24.08558226101467,
+          "wins": 239,
+          "losses": 0,
+          "worst_test_buf_pct": 15.213859293034936
+        },
+        {
+          "year": 2022,
+          "n_train": 781,
+          "n_test": 214,
+          "b_hat_pct": 24.08558226101467,
+          "wins": 214,
+          "losses": 0,
+          "worst_test_buf_pct": 23.650176076198925
+        },
+        {
+          "year": 2023,
+          "n_train": 1008,
+          "n_test": 12,
+          "b_hat_pct": 24.650176076198925,
+          "wins": 12,
+          "losses": 0,
+          "worst_test_buf_pct": 9.324111056880401
+        },
+        {
+          "year": 2024,
+          "n_train": 1017,
+          "n_test": 178,
+          "b_hat_pct": 24.650176076198925,
+          "wins": 178,
+          "losses": 0,
+          "worst_test_buf_pct": 14.284055730070255
+        },
+        {
+          "year": 2025,
+          "n_train": 1185,
+          "n_test": 130,
+          "b_hat_pct": 24.650176076198925,
+          "wins": 130,
+          "losses": 0,
+          "worst_test_buf_pct": 19.497366750495647
+        },
+        {
+          "year": 2026,
+          "n_train": 1336,
+          "n_test": 25,
+          "b_hat_pct": 24.650176076198925,
+          "wins": 25,
+          "losses": 0,
+          "worst_test_buf_pct": 4.4560215491089465
+        }
+      ],
+      "ladder": [
+        {
+          "horizon": 21,
+          "strike": 94.11193123057461,
+          "buffer_pct": 24.650176076198925,
+          "variant": "regime",
+          "n_test": 827,
+          "n_folds": 7,
+          "pooled_wins": 827,
+          "pooled_losses": 0,
+          "history_worst_buffer_pct": 23.650176076198925,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 519,
+              "n_test": 29,
+              "b_hat_pct": 24.08558226101467,
+              "wins": 29,
+              "losses": 0,
+              "worst_test_buf_pct": 16.6945875153218
+            },
+            {
+              "year": 2021,
+              "n_train": 544,
+              "n_test": 239,
+              "b_hat_pct": 24.08558226101467,
+              "wins": 239,
+              "losses": 0,
+              "worst_test_buf_pct": 15.213859293034936
+            },
+            {
+              "year": 2022,
+              "n_train": 781,
+              "n_test": 214,
+              "b_hat_pct": 24.08558226101467,
+              "wins": 214,
+              "losses": 0,
+              "worst_test_buf_pct": 23.650176076198925
+            },
+            {
+              "year": 2023,
+              "n_train": 1008,
+              "n_test": 12,
+              "b_hat_pct": 24.650176076198925,
+              "wins": 12,
+              "losses": 0,
+              "worst_test_buf_pct": 9.324111056880401
+            },
+            {
+              "year": 2024,
+              "n_train": 1017,
+              "n_test": 178,
+              "b_hat_pct": 24.650176076198925,
+              "wins": 178,
+              "losses": 0,
+              "worst_test_buf_pct": 14.284055730070255
+            },
+            {
+              "year": 2025,
+              "n_train": 1185,
+              "n_test": 130,
+              "b_hat_pct": 24.650176076198925,
+              "wins": 130,
+              "losses": 0,
+              "worst_test_buf_pct": 19.497366750495647
+            },
+            {
+              "year": 2026,
+              "n_train": 1336,
+              "n_test": 25,
+              "b_hat_pct": 24.650176076198925,
+              "wins": 25,
+              "losses": 0,
+              "worst_test_buf_pct": 4.4560215491089465
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
