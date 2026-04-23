@@ -134,13 +134,25 @@ jobs:
             strategies/credit_spread/results/signals.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
+            # Discard the backfill's in-place ticker mutations so the
+            # working tree is clean for the next job.
+            git checkout -- docs/data/tickers 2>/dev/null || true
             exit 0
           fi
           TS=$(date -u '+%Y-%m-%d %H:%M UTC')
           git commit -m "CreditFloor daily scan ${TS}"
+          # Before pushing: discard the backfill's unstaged in-place
+          # ticker mutations so `git pull --rebase` can run without
+          # complaining about unstaged changes. We intentionally do NOT
+          # commit those — tickers are regenerated from yfinance each
+          # run anyway.
+          git checkout -- docs/data/tickers 2>/dev/null || true
           # Retry push with exponential backoff on transient failures.
+          # --autostash is a belt-and-suspenders: catches anything else
+          # the runner leaves dirty (e.g. cached files in results/).
           for attempt in 1 2 3 4; do
-            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin HEAD:"${GITHUB_REF_NAME}"; then
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+               && git push origin HEAD:"${GITHUB_REF_NAME}"; then
               echo "Pushed on attempt ${attempt}."
               exit 0
             fi
