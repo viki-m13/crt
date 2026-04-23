@@ -82,9 +82,12 @@
 
   function rungHTML(l) {
     const tag = l.variant === "regime" ? "uptrend-only" : "all-regime";
+    const expLine = l.expiry_date
+      ? `Expires <strong>${l.expiry_date}</strong> &middot; ${l.horizon} trading days`
+      : `Expiry in ${l.horizon} trading days`;
     return `
       <div class="cf-rung">
-        <div class="cf-rung-h">Expiry in ${l.horizon} trading days</div>
+        <div class="cf-rung-h">${expLine}</div>
         <div class="cf-rung-k">${fmt$(l.strike)}</div>
         <div class="cf-rung-b">Buffer ${fmtPct(l.buffer_pct, 2)} below spot</div>
         <div class="cf-rung-m">

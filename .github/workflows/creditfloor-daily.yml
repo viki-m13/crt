@@ -1,0 +1,150 @@
+name: creditfloor-daily
+
+# CreditFloor daily cron.
+#
+# Runs hourly from 21:00 to 23:55 UTC Mon-Fri. The underlying
+# scripts/daily_scan.py gate requires >= 5pm America/New_York and
+# will only run once per day; the hourly cadence gives ~3-4 retry
+# windows per weekday if a run fails. This covers:
+#   - 5pm EST  = 22:00 UTC  (winter)
+#   - 5pm EDT  = 21:00 UTC  (summer)
+# and a 2-hour buffer after close in both.
+#
+# Backfill semantics: daily_scan.py fetches yfinance with period="max"
+# every run, so if the workflow missed a day (weekend, holiday, action
+# failure) the next successful run reconstructs the series through the
+# latest trading day automatically. The CreditFloor scan then re-runs
+# on the refreshed series.
+
+on:
+  schedule:
+    # Minute 15 past each hour 21-23 UTC, Mon-Fri.
+    - cron: "15 21,22,23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the 5pm-NY gate and run immediately"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: creditfloor-daily
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r strategies/credit_spread/requirements.txt
+
+      - name: Gate — only run after 5pm America/New_York
+        id: gate
+        run: |
+          set -e
+          python - <<'PY'
+          import os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          forced = os.environ.get("FORCE_RUN") == "1"
+          ny = datetime.now(ZoneInfo("America/New_York"))
+          skip = (not forced) and ny.hour < 17
+          # Saturday/Sunday: no new data, skip unless forced
+          is_weekend = ny.weekday() >= 5
+          skip = skip or (is_weekend and not forced)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"skip={'true' if skip else 'false'}\n")
+          print(f"NY time: {ny.isoformat()}  weekday={ny.weekday()}  forced={forced}  skip={skip}")
+          PY
+        env:
+          FORCE_RUN: ${{ github.event.inputs.force == 'true' && '1' || '' }}
+
+      - name: Backfill price series
+        # Lightweight batched yfinance fetch that appends any missing
+        # trading days (weekend/holiday/failed-run coverage) to every
+        # ticker's price series. Idempotent — no-op if already current.
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          python strategies/credit_spread/backfill_prices.py
+
+      - name: Run CreditFloor walk-forward scan
+        # Reads docs/data/tickers/*.json (just refreshed above) and
+        # emits spreads/docs/data/signals.json + the audit dump.
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          python strategies/credit_spread/scan.py
+
+      - name: Summarize results
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          python - <<'PY'
+          import json, os
+          p = 'spreads/docs/data/signals.json'
+          if not os.path.exists(p):
+              print('no signals.json; nothing produced')
+              raise SystemExit(0)
+          d = json.load(open(p))
+          s = d.get('summary', {})
+          wins = s.get('pooled_wins', 0); losses = s.get('pooled_losses', 0)
+          print(f"signals:       {s.get('n_tickers_eligible')}")
+          print(f"pooled tests:  {wins + losses}")
+          print(f"pooled losses: {losses}")
+          print(f"win rate:      {s.get('pooled_win_rate')}")
+          print(f"generated_at:  {d.get('generated_at')}")
+          if losses != 0:
+              raise SystemExit("FAIL: pooled losses > 0 — fail-closed invariant broken")
+          PY
+
+      - name: Commit & push updates
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Commit ONLY CreditFloor outputs. The backfill mutates
+          # docs/data/tickers/*.json in-place but those are the main
+          # scanner's artifacts and are separately maintained — we
+          # leave them uncommitted so our workflow never collides with
+          # the main scanner's commit cadence. The backfill re-runs
+          # from whatever state is in git each invocation, which only
+          # costs ~40s over 964 tickers.
+          git add \
+            spreads/docs/data/signals.json \
+            spreads/docs/data/last_run.txt \
+            strategies/credit_spread/results/signals.json || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          TS=$(date -u '+%Y-%m-%d %H:%M UTC')
+          git commit -m "CreditFloor daily scan ${TS}"
+          # Retry push with exponential backoff on transient failures.
+          for attempt in 1 2 3 4; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin HEAD:"${GITHUB_REF_NAME}"; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+            sleep $((2 ** attempt))
+          done
+          echo "Push failed after 4 attempts." >&2
+          exit 1

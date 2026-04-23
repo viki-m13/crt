@@ -51,6 +51,36 @@ FOLD_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026]
 WARMUP_DAYS = 252
 
 
+def expiry_date(last_trading_day: str | np.datetime64, horizon_days: int) -> str:
+    """Project the expiration date N trading days forward from `last_trading_day`.
+
+    Uses the NYSE calendar from `pandas_market_calendars`, which
+    natively tracks weekends, federal holidays, exchange closures, and
+    any special closures (e.g. 2012 Hurricane Sandy, 2018 Bush mourning
+    day). `horizon_days` counts *actual NYSE sessions* after the last
+    trading day — so if horizon=21 and the last session is 2026-04-23,
+    the return is the 21st subsequent session date.
+
+    Returns an ISO date string (YYYY-MM-DD).
+    """
+    import pandas as pd
+    import pandas_market_calendars as mcal
+
+    d = pd.Timestamp(str(last_trading_day)[:10])
+    # Fetch the next N sessions strictly after `d`. We ask for a
+    # generously wide window (up to ~2 calendar years) so this works
+    # for any horizon up to ~500 sessions.
+    start = (d + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    end = (d + pd.Timedelta(days=int(horizon_days * 2) + 60)).strftime("%Y-%m-%d")
+    nyse = mcal.get_calendar("NYSE")
+    sessions = nyse.valid_days(start_date=start, end_date=end)
+    if len(sessions) < horizon_days:
+        # Extremely wide horizon; widen the window.
+        end = (d + pd.Timedelta(days=int(horizon_days * 3) + 120)).strftime("%Y-%m-%d")
+        sessions = nyse.valid_days(start_date=start, end_date=end)
+    return sessions[horizon_days - 1].strftime("%Y-%m-%d")
+
+
 def list_tickers() -> list[str]:
     return sorted(
         f[:-5]

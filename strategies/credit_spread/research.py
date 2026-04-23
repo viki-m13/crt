@@ -84,6 +84,7 @@ from common import (
     Features,
     TickerSeries,
     compute_features,
+    expiry_date,
     fold_mask,
     list_tickers,
     load_series,
@@ -426,6 +427,7 @@ def main() -> int:
                 "strike": r.best["strike"],
                 "buffer_pct": r.best["buffer_pct"],
                 "horizon": r.best["horizon"],
+                "expiry_date": expiry_date(r.end_date, r.best["horizon"]),
                 "variant": r.best["variant"],
                 "n_test": r.best["n_test"],
                 "n_folds": r.best["n_folds"],
@@ -449,6 +451,7 @@ def main() -> int:
                 "ladder": [
                     {
                         "horizon": e["horizon"],
+                        "expiry_date": expiry_date(r.end_date, e["horizon"]),
                         "strike": e["strike"],
                         "buffer_pct": e["buffer_pct"],
                         "variant": e["variant"],
