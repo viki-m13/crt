@@ -64,10 +64,14 @@ from pricing import bs_call, bs_put
 # For puts: K_short = spot*(1 - k_short_frac); K_long  = spot*(1 - k_long_frac)
 # For calls: K_short = spot*(1 + k_short_frac); K_long = spot*(1 + k_long_frac)
 # We grid-search over these.
-K_SHORT_GRID = [0.01, 0.02, 0.03, 0.05]   # 1, 2, 3, 5% OTM
+K_SHORT_GRID = [0.01, 0.02, 0.03, 0.05, 0.07, 0.10]   # 1, 2, 3, 5, 7, 10% OTM
 SPREAD_WIDTH = 0.03                       # long leg k_long = k_short + 3%
 
-HORIZONS = [5, 7, 10, 14, 21]             # short-dated, matches weekly/monthly
+# Horizons span short-dated weeklies to monthly/quarterly. Longer
+# tenors give mean-reversion more time to play out, lifting win rate
+# (sometimes to 100%). Shorter tenors have cheaper premium and faster
+# theta, keeping capital velocity high.
+HORIZONS = [5, 7, 10, 14, 21, 30, 45, 60, 90]
 
 IV_MULT = 1.15                            # IV = realized × this
 HAIRCUT = 0.80                            # keep 80% of BS credit after slippage

@@ -479,21 +479,36 @@
     } catch (e) { return null; }
   }
 
+  // Human-readable names for regime codes.
+  const REGIME_LABELS = {
+    plain:             "All stocks (unconditional)",
+    connors_tps:       "Connors TPS setup",
+    multi_stack:       "Multi-indicator mean-reversion",
+    panic_day:         "Panic-drop day",
+    spy_rel_weak:      "Underperforming S&P 500",
+    deep_oversold:     "Deep oversold",
+    dip_in_uptrend:    "Dip in uptrend",
+    overbought:        "Overbought",
+    deep_overbought:   "Deep overbought",
+    parabolic:         "Parabolic move",
+  };
+  const regimeLabel = (rg) => REGIME_LABELS[rg] || rg;
+
   function ocCardHTML(rule) {
     const sideBadge = rule.side === "put"
       ? `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e">SHORT PUT</span>`
       : `<span class="cf-regime-badge" style="color:#b35900;border-color:#b35900">SHORT CALL</span>`;
     const fires = rule.live_fires || [];
+    const sideWord = rule.side === "put" ? "below" : "above";
     const liveBlock = fires.length
       ? `<div class="cf-ladder">` + fires.slice(0, 8).map((fi) => {
-          const bufWord = rule.side === "put" ? "below" : "above";
           return `<div class="cf-rung">
-            <div class="cf-rung-h">${fi.ticker} &middot; Expires <strong>${fi.expiry || "-"}</strong> <span class="tag tag-expiry">${fi.expiry_type || ""}</span> &middot; ${rule.horizon}d</div>
-            <div class="cf-rung-k">${fmt$(fi.strike_short)} / ${fmt$(fi.strike_long)}</div>
-            <div class="cf-rung-b">Short ${(rule.k_short_frac*100).toFixed(1)}% ${bufWord}, long ${(rule.k_long_frac*100).toFixed(1)}% ${bufWord}</div>
+            <div class="cf-rung-h">${fi.ticker} &middot; spot ${fmt$(fi.spot)} &middot; Expires <strong>${fi.expiry || "-"}</strong> <span class="tag tag-expiry">${fi.expiry_type || ""}</span> &middot; ${rule.horizon}d</div>
+            <div class="cf-rung-k">Sell ${rule.side === "put" ? "put" : "call"} at ${fmt$(fi.strike_short)}</div>
+            <div class="cf-rung-b">${(rule.k_short_frac*100).toFixed(1)}% ${sideWord} spot &middot; protection (long leg) at ${fmt$(fi.strike_long)}</div>
             <div class="cf-rung-profit">
               <span class="cf-rung-profit-main">Est. <strong>${fmtPct(fi.est_roi*100, 1)}</strong> on max-loss</span>
-              <span class="cf-rung-profit-sub">credit $${fi.est_credit.toFixed(2)} &middot; max loss $${fi.est_max_loss.toFixed(2)} &middot; spot ${fmt$(fi.spot)} &middot; σ ${fmtPct(fi.realized_vol*100, 0)}</span>
+              <span class="cf-rung-profit-sub">credit $${fi.est_credit.toFixed(2)} &middot; max loss $${fi.est_max_loss.toFixed(2)} &middot; σ ${fmtPct(fi.realized_vol*100, 0)}</span>
             </div>
           </div>`;
         }).join("") + `</div>`
@@ -505,7 +520,7 @@
       <div class="cf-card">
         <div class="cf-card-head">
           <div>
-            <span class="cf-card-ticker">${rule.regime}</span>
+            <span class="cf-card-ticker">${regimeLabel(rule.regime)}</span>
             ${sideBadge}
             <span class="cf-regime-badge">${rule.horizon}-day</span>
           </div>
