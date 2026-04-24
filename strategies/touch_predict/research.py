@@ -209,12 +209,14 @@ class RuleResult:
 
 def _evaluate(ts: TickerSeries, feats: Features,
               side: Side, regime: str, horizon: int,
-              target_touch_rate: float) -> RuleResult:
+              target_touch_rate: float,
+              buf: np.ndarray | None = None) -> RuleResult:
     rr = RuleResult(side=side.value, regime=regime, horizon=horizon,
                     target_touch_rate=target_touch_rate)
     close = ts.close
     dates = ts.dates
-    buf = buffer_up(close, horizon) if side == Side.CALL else buffer_down(close, horizon)
+    if buf is None:
+        buf = buffer_up(close, horizon) if side == Side.CALL else buffer_down(close, horizon)
     rmask = regime_mask_for(side, regime, feats)
     warmup = np.zeros(len(dates), dtype=bool)
     warmup[WARMUP_DAYS:] = True
@@ -386,10 +388,17 @@ def process_ticker_side(
         today_close=float(ts.close[-1]),
         realized_vol=realized_vol(ts.close),
     )
+    # Pre-compute forward buffers per horizon (depends only on side+h,
+    # not regime/target), so we don't recompute inside _evaluate.
+    buf_by_h = {
+        h: (buffer_up(ts.close, h) if side == Side.CALL else buffer_down(ts.close, h))
+        for h in HORIZONS
+    }
     for regime in regimes:
         for h in HORIZONS:
+            buf = buf_by_h[h]
             for target in TARGET_GRID:
-                rule = _evaluate(ts, feats, side, regime, h, target)
+                rule = _evaluate(ts, feats, side, regime, h, target, buf=buf)
                 if not rule.eligible:
                     continue
                 sig = _rule_to_signal(tr, rule, side, feats)
