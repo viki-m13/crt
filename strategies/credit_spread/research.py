@@ -83,6 +83,7 @@ from common import (
     WARMUP_DAYS,
     Features,
     TickerSeries,
+    actual_options_expiry,
     compute_features,
     expiry_date,
     fold_mask,
@@ -94,6 +95,7 @@ from common import (
     worst_buffer_path,
     worst_buffer_path_up,
 )
+from pricing import estimate_profit, realized_vol
 
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
@@ -153,6 +155,10 @@ class TickerResult:
     today_close: float
     put: SideResult = field(default_factory=lambda: SideResult(side=Side.PUT.value))
     call: SideResult = field(default_factory=lambda: SideResult(side=Side.CALL.value))
+    # Annualized stdev of daily log returns from the last 60 sessions.
+    # None if insufficient data. Used only for profit estimates; the
+    # walk-forward is independent of this.
+    realized_vol: float | None = None
 
 
 # ----------------------------- side-aware primitives -----------------------------
@@ -350,32 +356,34 @@ def process_ticker(ticker: str) -> TickerResult | None:
     )
     tr.put = process_ticker_side(ts, feats, Side.PUT)
     tr.call = process_ticker_side(ts, feats, Side.CALL)
+    # Stash realized vol on the ticker result so the serializer can use
+    # it for profit estimates without re-computing.
+    tr.realized_vol = realized_vol(ts.close)
     return tr
 
 
 # ----------------------------- serialization -----------------------------
 
 
-def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any]:
-    assert sr.best is not None
-    best = sr.best
-    variant_map = sr.variants
-    return {
-        "ticker": r.ticker,
-        "today_close": r.today_close,
-        "end_date": r.end_date,
-        "side": sr.side,
-        "strike": best["strike"],
-        "buffer_pct": best["buffer_pct"],
-        "horizon": best["horizon"],
-        "expiry_date": expiry_date(r.end_date, best["horizon"]),
-        "variant": best["variant"],
-        "n_test": best["n_test"],
-        "n_folds": best["n_folds"],
-        "pooled_wins": best["pooled_wins"],
-        "pooled_losses": best["pooled_losses"],
-        "history_worst_buffer_pct": best["history_worst_buffer"] * 100.0,
-        "regime_ok_today": best["regime_ok_today"],
+def _rung_dict(
+    r: TickerResult, sr: SideResult, e: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a full rung record: walk-forward stats + actual options
+    expiry + profit estimate (BS)."""
+    exp_iso, kind, cal_days = actual_options_expiry(r.end_date, e["horizon"])
+    base = {
+        "horizon": e["horizon"],
+        "expiry_date": exp_iso,
+        "expiry_type": kind,
+        "calendar_days_to_expiry": cal_days,
+        "strike": e["strike"],
+        "buffer_pct": e["buffer_pct"],
+        "variant": e["variant"],
+        "n_test": e["n_test"],
+        "n_folds": e["n_folds"],
+        "pooled_wins": e["pooled_wins"],
+        "pooled_losses": e["pooled_losses"],
+        "history_worst_buffer_pct": e["history_worst_buffer"] * 100.0,
         "folds": [
             {
                 "year": f.year,
@@ -386,35 +394,63 @@ def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any]:
                 "losses": f.losses,
                 "worst_test_buf_pct": f.worst_test_buf * 100.0,
             }
-            for f in variant_map[best["variant"]][best["horizon"]].folds
+            for f in sr.variants[e["variant"]][e["horizon"]].folds
         ],
-        "ladder": [
-            {
-                "horizon": e["horizon"],
-                "expiry_date": expiry_date(r.end_date, e["horizon"]),
-                "strike": e["strike"],
-                "buffer_pct": e["buffer_pct"],
-                "variant": e["variant"],
-                "n_test": e["n_test"],
-                "n_folds": e["n_folds"],
-                "pooled_wins": e["pooled_wins"],
-                "pooled_losses": e["pooled_losses"],
-                "history_worst_buffer_pct": e["history_worst_buffer"] * 100.0,
-                "folds": [
-                    {
-                        "year": f.year,
-                        "n_train": f.n_train,
-                        "n_test": f.n_test,
-                        "b_hat_pct": f.b_hat * 100.0,
-                        "wins": f.wins,
-                        "losses": f.losses,
-                        "worst_test_buf_pct": f.worst_test_buf * 100.0,
-                    }
-                    for f in variant_map[e["variant"]][e["horizon"]].folds
-                ],
-            }
-            for e in sr.all_eligible
-        ],
+    }
+    # Profit estimate (may be None if vol unavailable or long leg invalid)
+    prof = estimate_profit(
+        side=sr.side,
+        spot=r.today_close,
+        buffer=e["buffer"],
+        horizon_sessions=e["horizon"],
+        realized_sigma=r.realized_vol,
+        calendar_days_to_expiry=cal_days,
+    )
+    if prof is not None:
+        base["profit"] = {
+            "realized_vol_pct":     prof.realized_vol * 100.0,
+            "implied_vol_pct":      prof.implied_vol  * 100.0,
+            "short_strike":         prof.short_strike,
+            "long_strike":          prof.long_strike,
+            "spread_width":         prof.width,
+            "est_credit_per_share": prof.credit,
+            "est_max_loss_per_share": prof.max_loss,
+            "return_on_risk_pct":      prof.return_on_risk * 100.0,
+            "annualized_ror_pct":      prof.annualized_ror * 100.0,
+        }
+    else:
+        base["profit"] = None
+    return base
+
+
+def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any]:
+    assert sr.best is not None
+    best = sr.best
+    primary_rung = _rung_dict(r, sr, best)
+    ladder = [_rung_dict(r, sr, e) for e in sr.all_eligible]
+    return {
+        "ticker": r.ticker,
+        "today_close": r.today_close,
+        "end_date": r.end_date,
+        "side": sr.side,
+        "realized_vol_pct": (r.realized_vol * 100.0) if r.realized_vol else None,
+        # primary (tightest-buffer) pick
+        "strike": primary_rung["strike"],
+        "buffer_pct": primary_rung["buffer_pct"],
+        "horizon": primary_rung["horizon"],
+        "expiry_date": primary_rung["expiry_date"],
+        "expiry_type": primary_rung["expiry_type"],
+        "calendar_days_to_expiry": primary_rung["calendar_days_to_expiry"],
+        "variant": primary_rung["variant"],
+        "n_test": primary_rung["n_test"],
+        "n_folds": primary_rung["n_folds"],
+        "pooled_wins": primary_rung["pooled_wins"],
+        "pooled_losses": primary_rung["pooled_losses"],
+        "history_worst_buffer_pct": primary_rung["history_worst_buffer_pct"],
+        "regime_ok_today": best["regime_ok_today"],
+        "profit": primary_rung["profit"],
+        "folds": primary_rung["folds"],
+        "ladder": ladder,
     }
 
 
@@ -528,7 +564,9 @@ def main() -> int:
                 "today_close": r.today_close,
                 "end_date": r.end_date,
                 "rungs": [
-                    {**e, "expiry_date": expiry_date(r.end_date, e["horizon"])}
+                    {**e,
+                     "expiry_date": actual_options_expiry(r.end_date, e["horizon"])[0],
+                     "expiry_type": actual_options_expiry(r.end_date, e["horizon"])[1]}
                     for e in sr.watchlist
                 ],
             }
@@ -540,7 +578,9 @@ def main() -> int:
                 "today_close": r.today_close,
                 "end_date": r.end_date,
                 "rungs": [
-                    {**e, "expiry_date": expiry_date(r.end_date, e["horizon"])}
+                    {**e,
+                     "expiry_date": actual_options_expiry(r.end_date, e["horizon"])[0],
+                     "expiry_type": actual_options_expiry(r.end_date, e["horizon"])[1]}
                     for e in sr.watchlist
                 ],
             }

@@ -3,11 +3,12 @@
   "use strict";
 
   // state.filters[side] = { sort, hfilter }
+  // Default sort is annualized ROR (profitability) highest-first.
   const state = {
     data: null,
     filters: {
-      put:  { sort: "buffer", hfilter: "all" },
-      call: { sort: "buffer", hfilter: "all" },
+      put:  { sort: "profit", hfilter: "all" },
+      call: { sort: "profit", hfilter: "all" },
     },
   };
 
@@ -86,6 +87,11 @@
       return { ...s, ladderView: rungs };
     }).filter((s) => s.ladderView.length > 0);
 
+    const rorOf = (s) => Math.max(
+      ...s.ladderView.map((l) => (l.profit && l.profit.annualized_ror_pct) || 0),
+      0,
+    );
+
     filtered.sort((a, b) => {
       if (f.sort === "ticker") return a.ticker.localeCompare(b.ticker);
       if (f.sort === "tests") {
@@ -93,9 +99,13 @@
         const tb = Math.max(...b.ladderView.map((l) => l.n_test));
         return tb - ta;
       }
-      const ba = Math.min(...a.ladderView.map((l) => l.buffer_pct));
-      const bb = Math.min(...b.ladderView.map((l) => l.buffer_pct));
-      return ba - bb;
+      if (f.sort === "buffer") {
+        const ba = Math.min(...a.ladderView.map((l) => l.buffer_pct));
+        const bb = Math.min(...b.ladderView.map((l) => l.buffer_pct));
+        return ba - bb;
+      }
+      // default: profitability (annualized ROR) descending
+      return rorOf(b) - rorOf(a);
     });
     return filtered;
   }
@@ -104,19 +114,36 @@
     const tag = l.variant === "regime"
       ? (side === "put" ? "uptrend-only" : "bearish-only")
       : "all-regime";
+    const exType = l.expiry_type || "";
     const expLine = l.expiry_date
-      ? `Expires <strong>${l.expiry_date}</strong> &middot; ${l.horizon} trading days`
+      ? `Expires <strong>${l.expiry_date}</strong>${exType ? ` <span class="tag tag-expiry">${exType}</span>` : ""} &middot; ${l.horizon}-session backtest${l.calendar_days_to_expiry ? ` &middot; ${l.calendar_days_to_expiry} cal days` : ""}`
       : `Expiry in ${l.horizon} trading days`;
     const bufLine = side === "put"
       ? `Buffer ${fmtPct(l.buffer_pct, 2)} <em>below</em> spot`
       : `Buffer ${fmtPct(l.buffer_pct, 2)} <em>above</em> spot`;
     const worst = l.folds.reduce((m, f) => Math.max(m, f.worst_test_buf_pct), 0);
     const worstLabel = side === "put" ? "drawdown" : "rally";
+
+    let profBlock = "";
+    if (l.profit) {
+      const p = l.profit;
+      profBlock = `
+        <div class="cf-rung-profit">
+          <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.annualized_ror_pct, 1)}</strong>/yr</span>
+          <span class="cf-rung-profit-sub">
+            ~$${p.est_credit_per_share.toFixed(2)} credit on $${p.spread_width.toFixed(2)} spread
+            &middot; ${fmtPct(p.return_on_risk_pct, 2)}/trade
+            &middot; IV ${fmtPct(p.implied_vol_pct, 1)}
+          </span>
+        </div>`;
+    }
+
     return `
       <div class="cf-rung">
         <div class="cf-rung-h">${expLine}</div>
         <div class="cf-rung-k">${fmt$(l.strike)}</div>
         <div class="cf-rung-b">${bufLine}</div>
+        ${profBlock}
         <div class="cf-rung-m">
           <span class="tag">${tag}</span>
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
