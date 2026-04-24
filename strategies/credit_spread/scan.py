@@ -33,6 +33,16 @@ def main() -> int:
     shutil.copyfile(src, dst)
     print(f"Published {dst}")
 
+    # Update the live signal log — append any new signal rungs (dedup
+    # on publish_date+ticker+side+horizon) and resolve any whose expiry
+    # date has now been reached.
+    # Import lazily so the scan.py module can be imported without numpy
+    # when used just for summary printing.
+    sys.path.insert(0, HERE)
+    from live_log import update_live_log  # noqa: E402
+    log_path = os.path.join(WEB_DATA, "live_log.json")
+    update_live_log(dst, log_path)
+
     # Also drop a last_run marker for the webapp banner.
     with open(os.path.join(WEB_DATA, "last_run.txt"), "w") as fh:
         fh.write(time.strftime("%Y-%m-%dT%H:%M:%SZ\n", time.gmtime()))

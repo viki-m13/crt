@@ -289,6 +289,106 @@
     .cf-section-body { padding: 14px 18px 20px; }
     .cf-section-body[hidden] { display: none; }
 
+    /* live track record panel */
+    .section-title-sub {
+      font-weight: 400;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0;
+      margin-left: 8px;
+    }
+    .cf-live-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      margin: 16px 0 10px;
+      background: var(--bg);
+    }
+    @media (max-width: 860px) { .cf-live-grid { grid-template-columns: repeat(2, 1fr); } }
+    .cf-live-stat {
+      padding: 22px 18px;
+      border-right: 1px solid var(--rule-light);
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .cf-live-stat:nth-child(4n) { border-right: none; }
+    .cf-live-stat:nth-last-child(-n+2) { border-bottom: none; }
+    @media (max-width: 860px) {
+      .cf-live-stat { border-right: 1px solid var(--rule-light) !important; }
+      .cf-live-stat:nth-child(2n) { border-right: none !important; }
+    }
+    .cf-live-stat .num {
+      display: block;
+      font-family: var(--mono);
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .cf-live-stat .num.good { color: var(--green); }
+    .cf-live-stat .num.bad  { color: #a8321a; }
+    .cf-live-stat .lbl {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 6px;
+    }
+    .cf-live-sub {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      margin: 6px 0 14px;
+    }
+    .cf-live-sub strong { color: var(--ink); }
+
+    .cf-live-log-details {
+      margin-top: 16px;
+      border: 1px solid var(--rule-light);
+      border-radius: 4px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .cf-live-log-details summary {
+      cursor: pointer;
+      padding: 12px 16px;
+      background: #fafafa;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .cf-live-log-details[open] summary { border-bottom: 1px solid var(--rule-light); }
+    #cf-live-log { padding: 10px 0; }
+    .cf-live-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .cf-live-tbl th {
+      text-align: left;
+      padding: 6px 12px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 1px solid var(--rule);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: #fafafa;
+    }
+    .cf-live-tbl td {
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .cf-live-tbl td.win { color: var(--green); font-weight: 600; }
+    .cf-live-tbl td.loss { color: #a8321a; font-weight: 600; }
+    .cf-live-tbl td.pending { color: var(--muted); }
+
     .cf-method {
       border: 1px solid var(--rule-light);
       border-radius: 4px;
@@ -369,6 +469,54 @@
         <span class="num" id="stat-universe">&mdash;</span>
         <span class="lbl">Stocks scanned (~11 years each)</span>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== LIVE TRACK RECORD ===== -->
+  <section id="live-track" class="content-section">
+    <div class="section-inner">
+      <div class="section-title">Live track record <span class="section-title-sub">&mdash; every signal ever published, resolved at expiry</span></div>
+      <p class="section-note">
+        Every cron run appends every (ticker, side, horizon) signal it
+        publishes to an immutable log. When a signal's expiry date
+        arrives, we look up the actual close on that day and mark the
+        outcome &mdash; <strong>win if the close is on the safe side of
+        the strike, loss otherwise</strong>. Signals for tickers that
+        later drop off today&rsquo;s list <em>stay in the log</em> and
+        still resolve at their expiry: this is the anti-survivorship
+        machinery. A signal published on the day a ticker dropped off
+        is still held through its full horizon and graded honestly.
+      </p>
+
+      <div class="cf-live-grid">
+        <div class="cf-live-stat">
+          <span class="num good" id="live-win-rate">&mdash;</span>
+          <span class="lbl">Live win rate (resolved signals)</span>
+        </div>
+        <div class="cf-live-stat">
+          <span class="num" id="live-resolved">&mdash;</span>
+          <span class="lbl">Signals resolved at expiry</span>
+        </div>
+        <div class="cf-live-stat">
+          <span class="num" id="live-pending">&mdash;</span>
+          <span class="lbl">Pending (awaiting expiry)</span>
+        </div>
+        <div class="cf-live-stat">
+          <span class="num" id="live-losses">&mdash;</span>
+          <span class="lbl">Confirmed losses</span>
+        </div>
+      </div>
+
+      <div class="cf-live-sub">
+        <div>Puts: <span id="live-put-summary">&mdash;</span></div>
+        <div>Calls: <span id="live-call-summary">&mdash;</span></div>
+        <div>First signal logged: <span id="live-first">&mdash;</span></div>
+      </div>
+
+      <details class="cf-live-log-details">
+        <summary>Show recent resolutions &amp; open positions</summary>
+        <div id="cf-live-log"></div>
+      </details>
     </div>
   </section>
 
