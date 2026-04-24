@@ -21,9 +21,12 @@ TICKERS_DIR = os.path.join(
     "tickers",
 )
 
-# Horizons in trading days. 21 ~ 1 month, 42 ~ 2 months, 63 ~ 3 months,
-# 126 ~ 6 months. Chosen to cover typical credit-spread tenors.
-HORIZONS = [21, 42, 63, 126]
+# Horizons in trading days. 7 ~ 1 week, 10 ~ bi-weekly, 14 ~ 2 weeks,
+# 21 ~ 1 month, 42 ~ 2 months, 63 ~ 3 months, 126 ~ 6 months. The short
+# end lets higher-vol names (AAPL, NVDA, DIS, BA, etc.) qualify — in
+# shorter windows their worst historical move is much smaller than in
+# 21d+ windows, so they can often fit inside the 25% buffer cap.
+HORIZONS = [7, 10, 14, 21, 42, 63, 126]
 
 # Minimum training samples per (ticker, horizon) before a fold is usable.
 # Keeps us from "learning" a 100% buffer on a handful of rows.

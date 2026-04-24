@@ -199,23 +199,73 @@
     `;
   }
 
+  function watchHTML(entries, side) {
+    if (!entries || !entries.length) return "";
+    const gateLabel = side === "put"
+      ? "close &ge; SMA<sub>200</sub> AND dd<sub>252</sub> &le; 20%"
+      : "close &le; SMA<sub>200</sub> AND up<sub>252</sub> &le; 20%";
+    const rows = entries.flatMap((e) =>
+      (e.rungs || []).map((r) => {
+        const strikeWord = side === "put" ? "below" : "above";
+        return `<tr>
+          <td class="tkr">${e.ticker}</td>
+          <td>${fmt$(e.today_close)}</td>
+          <td>${r.horizon}d</td>
+          <td>${fmtPct(r.buffer_pct, 2)} ${strikeWord}</td>
+          <td>${fmt$(r.strike)}</td>
+          <td>${fmtInt(r.n_test)} OOS / ${r.n_folds} folds</td>
+        </tr>`;
+      })
+    ).join("");
+    return `
+      <div class="cf-watch-head" data-toggle="watch-${side}">
+        <span class="arrow">&#9654;</span>
+        <span>Regime watchlist &middot; ${entries.length} ticker${entries.length === 1 ? "" : "s"} waiting for regime to match</span>
+      </div>
+      <div class="cf-watch-body">
+        <div class="cf-watch-note">
+          These names' walk-forward backtest <strong>passes at 100%</strong> — but today's features don't match
+          the ${side} regime gate (${gateLabel}), so the rule can't be deployed. They will auto-join the live list
+          the moment their regime gate flips.
+        </div>
+        <table class="cf-watch-tbl">
+          <thead><tr>
+            <th>Ticker</th><th>Spot</th><th>H</th><th>Buffer</th><th>Strike</th><th>Backtest</th>
+          </tr></thead><tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderWatch(side) {
+    const container = document.getElementById(`cf-watch-${side}`);
+    if (!container) return;
+    const entries = state.data?.[side === "put" ? "put_watchlist" : "call_watchlist"] || [];
+    container.innerHTML = watchHTML(entries, side);
+    const head = container.querySelector(".cf-watch-head");
+    if (head) {
+      head.addEventListener("click", () => container.classList.toggle("cf-watch-open"));
+    }
+  }
+
   function renderSide(side) {
     const list = $(`#cf-list-${side}`);
     const items = filteredSorted(side);
     if (!items.length) {
       list.innerHTML = `<div class="cf-empty">No ${side} signals match the current filter. The engine is fail-closed — most stocks, most days, there is no eligible trade.</div>`;
-      return;
-    }
-    list.innerHTML = items.map((s) => cardHTML(s, side)).join("");
-    list.querySelectorAll(".cf-card-expand").forEach((el) => {
-      el.addEventListener("click", (e) => {
-        const card = e.currentTarget.closest(".cf-card");
-        card.classList.toggle("open");
-        e.currentTarget.textContent = card.classList.contains("open")
-          ? "Hide fold-by-fold walk-forward breakdown"
-          : "Show fold-by-fold walk-forward breakdown";
+    } else {
+      list.innerHTML = items.map((s) => cardHTML(s, side)).join("");
+      list.querySelectorAll(".cf-card-expand").forEach((el) => {
+        el.addEventListener("click", (e) => {
+          const card = e.currentTarget.closest(".cf-card");
+          card.classList.toggle("open");
+          e.currentTarget.textContent = card.classList.contains("open")
+            ? "Hide fold-by-fold walk-forward breakdown"
+            : "Show fold-by-fold walk-forward breakdown";
+        });
       });
-    });
+    }
+    renderWatch(side);
   }
 
   function render() {
