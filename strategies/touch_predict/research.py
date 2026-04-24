@@ -99,7 +99,7 @@ MIN_SLACK = 0.05
 # can dip below this without skipping the fold; we only require the
 # full-history-fit final buffer to clear this floor for live use.
 MIN_CERT_BUFFER = 0.02                # 2% minimum live certified touch
-MIN_EV_REPORT = 0.50                  # 50% expected-value cut for display
+MIN_EV_REPORT = 0.20                  # 20% expected-value cut for display
 
 
 class Side(str, Enum):

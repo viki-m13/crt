@@ -28,10 +28,13 @@ import numpy as np
 
 
 VOL_WINDOW = 60              # trading-day lookback for realized vol
-IV_MULT = 1.30               # IV = realized * this (skew uplift)
+IV_MULT = 1.15               # IV = realized * this (mild skew uplift for
+                             #   liquid names; retail bid-ask on monthly
+                             #   3rd-Friday expiries is usually tight)
 HAIRCUT = 0.80               # credit-side haircut NOT used here; long-side
                              # slippage is modeled by inflating premium:
-PREMIUM_SLIPPAGE = 1.15      # pay 15% more than BS mid (conservative)
+PREMIUM_SLIPPAGE = 1.05      # pay 5% more than BS mid for normal-priced
+                             #   contracts (tightest bid-ask on $>0.50)
 CALENDAR_DAYS_PER_YEAR = 365.0
 
 # Grid for strike-placement fraction k/b ∈ (0, 1). We sweep in [0.05, 0.95]
@@ -121,15 +124,14 @@ def _play_at(
     if bs <= 0:
         return None
     # Slippage scales with how cheap the option is — penny options have
-    # wider relative bid-ask. Apply 1.15× for normal-priced, up to 1.50×
-    # for <$0.20 options. The grid search still finds the ROI-optimal
-    # placement after this adjustment.
-    if bs < 0.20:
-        slip = 1.50
-    elif bs < 0.50:
+    # wider relative bid-ask. Normal-priced liquid-option pricing is
+    # close to BS mid; very cheap options get penalized more.
+    if bs < 0.10:
         slip = 1.30
+    elif bs < 0.25:
+        slip = 1.15
     else:
-        slip = PREMIUM_SLIPPAGE
+        slip = PREMIUM_SLIPPAGE   # 1.05 by default
     premium = bs * slip
     if premium < MIN_PREMIUM_PER_SHARE:
         return None
