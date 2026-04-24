@@ -275,6 +275,60 @@
     }
   }
 
+  function renderTopSignals() {
+    const MIN_ROR = 5.0;
+    const all = [];
+    for (const sideKey of ['put_signals', 'call_signals']) {
+      for (const s of (state.data?.[sideKey] || [])) {
+        const side = sideKey === 'put_signals' ? 'put' : 'call';
+        for (const r of (s.ladder || [])) {
+          if (!r.profit) continue;
+          if (r.profit.return_on_risk_pct < MIN_ROR) continue;
+          all.push({ side, ticker: s.ticker, spot: s.today_close, rung: r });
+        }
+      }
+    }
+    all.sort((a, b) => b.rung.profit.return_on_risk_pct - a.rung.profit.return_on_risk_pct);
+
+    const badge = document.getElementById("cf-top-badge");
+    if (badge) {
+      badge.textContent = `${fmtInt(all.length)} rung${all.length === 1 ? "" : "s"} ≥ ${MIN_ROR}% ROR`;
+    }
+    const container = document.getElementById("cf-top-list");
+    if (!container) return;
+    if (all.length === 0) {
+      container.innerHTML = `<div class="cf-empty">No rungs with &ge;${MIN_ROR}% estimated per-trade ROR today.</div>`;
+      return;
+    }
+    const rows = all.map((x) => {
+      const r = x.rung;
+      const p = r.profit;
+      const bufWord = x.side === 'put' ? 'below' : 'above';
+      return `<tr>
+        <td class="tkr">${x.ticker}</td>
+        <td class="side-${x.side}">${x.side.toUpperCase()}</td>
+        <td>${r.horizon}d</td>
+        <td>${r.expiry_date}<span class="cf-top-exptype">${r.expiry_type || ""}</span></td>
+        <td>${fmt$(x.spot)}</td>
+        <td>${fmt$(r.strike)}</td>
+        <td>${fmtPct(r.buffer_pct, 2)} ${bufWord}</td>
+        <td>$${p.est_credit_per_share.toFixed(2)}</td>
+        <td>$${p.est_max_loss_per_share.toFixed(2)}</td>
+        <td class="good"><strong>${fmtPct(p.return_on_risk_pct, 2)}</strong></td>
+      </tr>`;
+    }).join("");
+    container.innerHTML = `
+      <table class="cf-top-tbl">
+        <thead><tr>
+          <th>Ticker</th><th>Side</th><th>H</th><th>Expires</th>
+          <th>Spot</th><th>Strike</th><th>Buffer</th>
+          <th>Credit</th><th>Max loss</th><th>ROR</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
   function renderSide(side) {
     const list = $(`#cf-list-${side}`);
     const items = filteredSorted(side);
@@ -424,6 +478,7 @@
       renderLastRun(state.data);
       wireCollapsibles();
       wireFilters();
+      renderTopSignals();
       renderSide("put");
       renderSide("call");
     } catch (err) {

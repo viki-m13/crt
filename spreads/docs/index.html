@@ -472,6 +472,47 @@
     }
     .cf-watch-tbl td.tkr { font-weight: 600; }
 
+    /* Top signals table */
+    .cf-top-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .cf-top-tbl th {
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 1px solid var(--rule);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: #fafafa;
+      white-space: nowrap;
+    }
+    .cf-top-tbl td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--rule-light);
+      white-space: nowrap;
+    }
+    .cf-top-tbl td.tkr { font-weight: 600; font-size: 13px; }
+    .cf-top-tbl td.good { color: var(--green); font-size: 13px; }
+    .cf-top-tbl td.side-put  { color: #1a7a3e; font-size: 10px; letter-spacing: 0.06em; }
+    .cf-top-tbl td.side-call { color: #b35900; font-size: 10px; letter-spacing: 0.06em; }
+    .cf-top-exptype {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 9px;
+      padding: 1px 5px;
+      border: 1px solid var(--rule-light);
+      border-radius: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
     .cf-method {
       border: 1px solid var(--rule-light);
       border-radius: 4px;
@@ -615,6 +656,29 @@
         historical guarantee. Sections below start collapsed &mdash; tap
         to expand.
       </p>
+
+      <!-- ===== TOP SIGNALS (>=5% ROR) ===== -->
+      <div class="cf-section" id="cf-section-top">
+        <button type="button" class="cf-section-head" data-target="top" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Top signals today <span class="cf-section-subtitle">&mdash; &ge;5% per-trade ROR, across both sides</span>
+          </span>
+          <span class="cf-section-badge" id="cf-top-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="top" hidden>
+          <p class="cf-watch-note">
+            The highest-conviction opportunities from today&rsquo;s scan &mdash; pulled
+            from both the put and call sides, filtered to rungs with estimated
+            per-trade return-on-risk at <strong>5% or higher</strong>, and sorted
+            biggest to smallest. Every one of these rungs has a 100% walk-forward
+            out-of-sample win rate. Credit, max loss, and ROR are Black-Scholes
+            estimates (r=0, IV = realized &times; 1.30, 20% haircut for bid-ask,
+            5%-of-spot spread width) &mdash; real market fills will differ.
+          </p>
+          <div id="cf-top-list"></div>
+        </div>
+      </div>
 
       <!-- ===== PUT-SIDE SECTION (below spot) ===== -->
       <div class="cf-section" id="cf-section-put">
