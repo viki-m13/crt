@@ -28,6 +28,16 @@
     return r.json();
   }
 
+  async function loadLiveLog() {
+    try {
+      const r = await fetch("data/live_log.json?v=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return null;
+      return r.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
   function renderStats(d) {
     const s = d.summary || {};
     const combined = s.combined || {};
@@ -259,6 +269,77 @@
     });
   }
 
+  function renderLiveLog(log) {
+    if (!log || !log.summary) return;
+    const s = log.summary;
+    const wr = s.win_rate == null ? "—" : fmtPct(100 * s.win_rate, 2);
+    const wrEl = document.getElementById("live-win-rate");
+    wrEl.textContent = wr;
+    wrEl.className = "num " + (s.losses > 0 ? "bad" : "good");
+    document.getElementById("live-resolved").textContent = fmtInt(s.resolved || 0);
+    document.getElementById("live-pending").textContent  = fmtInt(s.pending  || 0);
+    document.getElementById("live-losses").textContent   = fmtInt(s.losses   || 0);
+
+    const put = s.put || {};
+    const call = s.call || {};
+    const sub = (name, x) => {
+      const wr = x.win_rate == null ? "—" : fmtPct(100 * x.win_rate, 2);
+      return `${name} <strong>${wr}</strong> &middot; ${fmtInt(x.resolved || 0)} resolved / ${fmtInt(x.pending || 0)} pending &middot; ${fmtInt(x.wins || 0)}W / ${fmtInt(x.losses || 0)}L`;
+    };
+    document.getElementById("live-put-summary").innerHTML  = sub("win rate", put);
+    document.getElementById("live-call-summary").innerHTML = sub("win rate", call);
+    document.getElementById("live-first").textContent = s.first_publish_date || "—";
+
+    // Detail table: show recent losses (always, prominently), then recent resolutions,
+    // then open positions (most recent first). Cap at 100 rows total.
+    const signals = (log.signals || []).slice();
+    const losses = signals.filter((x) => x.status === "loss").reverse();
+    const resolved = signals.filter((x) => x.status !== "pending").reverse();
+    const pending = signals.filter((x) => x.status === "pending").reverse();
+    const rows = [];
+    const header = `
+      <table class="cf-live-tbl">
+        <thead><tr>
+          <th>Published</th><th>Ticker</th><th>Side</th><th>H</th>
+          <th>Expires</th><th>Strike</th><th>Spot@pub</th>
+          <th>Close@exp</th><th>Status</th>
+        </tr></thead><tbody>`;
+    const row = (x) => {
+      const close = x.close_at_expiry != null
+        ? fmt$(x.close_at_expiry)
+        : (x.side === "put"
+            ? (x.forward_close_min != null ? `min ${fmt$(x.forward_close_min)}` : "—")
+            : (x.forward_close_max != null ? `max ${fmt$(x.forward_close_max)}` : "—"));
+      return `<tr>
+        <td>${x.publish_date}</td>
+        <td><strong>${x.ticker}</strong></td>
+        <td>${x.side}</td>
+        <td>${x.horizon}d</td>
+        <td>${x.expiry_date}</td>
+        <td>${fmt$(x.strike)}</td>
+        <td>${fmt$(x.spot_at_publish)}</td>
+        <td>${close}</td>
+        <td class="${x.status}">${x.status.toUpperCase()}</td>
+      </tr>`;
+    };
+    const picked = [];
+    for (const x of losses) { if (picked.length >= 25) break; picked.push(x); }
+    const loss_ids = new Set(picked.map((x) => x.id));
+    for (const x of resolved) {
+      if (picked.length >= 60) break;
+      if (loss_ids.has(x.id)) continue;
+      picked.push(x);
+    }
+    for (const x of pending) {
+      if (picked.length >= 100) break;
+      picked.push(x);
+    }
+    rows.push(header);
+    for (const x of picked) rows.push(row(x));
+    rows.push(`</tbody></table>`);
+    document.getElementById("cf-live-log").innerHTML = rows.join("");
+  }
+
   async function main() {
     try {
       state.data = await load();
@@ -266,9 +347,6 @@
       renderLastRun(state.data);
       wireCollapsibles();
       wireFilters();
-      // Both sections start collapsed by default — do NOT auto-render
-      // into them until the user opens them. (We still render into
-      // hidden DOM so the first-open animation is snappy.)
       renderSide("put");
       renderSide("call");
     } catch (err) {
@@ -279,6 +357,9 @@
       fail("cf-list-put");
       fail("cf-list-call");
     }
+    // Live log is best-effort — not all deployments will have one yet.
+    const liveLog = await loadLiveLog();
+    if (liveLog) renderLiveLog(liveLog);
   }
 
   main();

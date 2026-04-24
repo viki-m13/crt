@@ -59,12 +59,35 @@ Strike arithmetic:
   (both must already be 100%).
 - 252-day warmup dropped per ticker before any feature is consumed.
 
+## Live signal log — survivorship-bias-free scoreboard
+
+`live_log.py` maintains an **append-only, close-at-expiry** record of
+every `(ticker, side, horizon)` rung we've ever published. Every cron
+run:
+
+1. Reads the published signals from `spreads/docs/data/signals.json`.
+2. Appends any new (publish_date, ticker, side, horizon) combos to
+   `spreads/docs/data/live_log.json` (deduped on the 4-tuple ID).
+3. Tries to resolve each pending signal: if the series contains data
+   through its `expiry_date`, looks up the close on that date and
+   marks WIN (close on safe side of strike) or LOSS (close on wrong
+   side). No intraday or interim-close resolution — strike just needs
+   to be on the right side **at expiry**.
+
+Signals for tickers that later drop off today's scan stay in the log
+and still resolve at expiry. This closes the survivorship-bias loop:
+the webapp shows both the backtest OOS win rate (monotone by
+construction; depends on current universe) and the **live win rate
+over all published signals ever** (honest — a loss that happens stays
+a loss forever).
+
 ## Running
 
 ```bash
 cd strategies/credit_spread
 python3 research.py          # ~60s for ~964 tickers; writes results/
-python3 scan.py              # same + publishes into spreads/docs/data/
+python3 scan.py              # research + publish + update live_log
+python3 live_log.py          # update live_log only (no scan)
 ```
 
 Env knobs:

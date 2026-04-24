@@ -112,9 +112,20 @@ jobs:
           print(f"call:      elig={call.get('n_eligible')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses',0)}")
           print(f"combined:  elig={combined.get('n_eligible')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses',0)} win_rate={combined.get('pooled_win_rate')}")
           print(f"generated_at:  {d.get('generated_at')}")
-          # Fail-closed on either side
+          # Fail-closed on backtest
           if put.get('pooled_losses', 0) or call.get('pooled_losses', 0):
-              raise SystemExit("FAIL: pooled losses > 0 on some side — fail-closed invariant broken")
+              raise SystemExit("FAIL: pooled losses > 0 on some side — backtest fail-closed invariant broken")
+
+          # Report the live log too (does NOT fail the workflow on a
+          # live loss — those are real and must be surfaced, not hidden
+          # behind a red CI badge).
+          lp = 'spreads/docs/data/live_log.json'
+          if os.path.exists(lp):
+              live = json.load(open(lp))
+              ls = live.get('summary', {})
+              print(f"live:      total={ls.get('total')} resolved={ls.get('resolved')} pending={ls.get('pending')} wins={ls.get('wins')} losses={ls.get('losses')} win_rate={ls.get('win_rate')}")
+              if (ls.get('losses') or 0) > 0:
+                  print(f"LIVE LOSS ALERT: {ls.get('losses')} confirmed loss(es) in live log — visible in webapp.")
           PY
 
       - name: Commit & push updates
@@ -132,6 +143,7 @@ jobs:
           # costs ~40s over 964 tickers.
           git add \
             spreads/docs/data/signals.json \
+            spreads/docs/data/live_log.json \
             spreads/docs/data/last_run.txt \
             strategies/credit_spread/results/signals.json || true
           if git diff --cached --quiet; then
