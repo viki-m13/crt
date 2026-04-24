@@ -84,8 +84,22 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Touch-prediction config
 HORIZONS = [5, 7, 10, 14, 21]         # short = cheap premium
 SAFETY_EPS = 0.005                    # 0.5%; subtracted from cert_buffer
-MIN_CERT_BUFFER = 0.01                # 1% minimum certified touch
-MIN_ROI_REPORT = 0.20                 # 20% min ROI for display (signals)
+
+# Target touch rate: the cert_buffer is set at the (1 - TARGET)th quantile
+# of training buffers, so TARGET of training samples historically touched.
+# Lower target = bigger certified buffer. The sweet spot depends on per-
+# ticker vol; we search a grid of target rates per ticker below.
+TARGET_GRID = [0.85, 0.75, 0.65, 0.55]
+
+# A rule is ELIGIBLE if its pooled out-of-sample touch rate is at least
+# 5 percentage points below the target (allows some conformal slack).
+MIN_SLACK = 0.05
+
+# Minimum buffer for the FINAL live-deployed signal. Per-fold buffers
+# can dip below this without skipping the fold; we only require the
+# full-history-fit final buffer to clear this floor for live use.
+MIN_CERT_BUFFER = 0.02                # 2% minimum live certified touch
+MIN_EV_REPORT = 0.50                  # 50% expected-value cut for display
 
 
 class Side(str, Enum):
@@ -182,9 +196,11 @@ class RuleResult:
     side: str
     regime: str
     horizon: int
+    target_touch_rate: float = 0.0   # quantile target used
     folds: list[FoldResult] = field(default_factory=list)
     pooled_wins: int = 0
     pooled_losses: int = 0
+    touch_rate: float = 0.0          # pooled_wins / pooled_total
     final_cert_buffer: float = 0.0
     final_history_min: float = 0.0
     n_regime_days: int = 0
@@ -192,8 +208,10 @@ class RuleResult:
 
 
 def _evaluate(ts: TickerSeries, feats: Features,
-              side: Side, regime: str, horizon: int) -> RuleResult:
-    rr = RuleResult(side=side.value, regime=regime, horizon=horizon)
+              side: Side, regime: str, horizon: int,
+              target_touch_rate: float) -> RuleResult:
+    rr = RuleResult(side=side.value, regime=regime, horizon=horizon,
+                    target_touch_rate=target_touch_rate)
     close = ts.close
     dates = ts.dates
     buf = buffer_up(close, horizon) if side == Side.CALL else buffer_down(close, horizon)
@@ -207,6 +225,11 @@ def _evaluate(ts: TickerSeries, feats: Features,
     test_ok = np.zeros(n, dtype=bool)
     test_ok[: n - horizon] = True
 
+    # Quantile level: pick the buffer at the (1 − target)th percentile of
+    # training buffers. E.g. target=0.80 → use the 20th percentile, so
+    # ~80% of training samples had buffer >= cert_buffer.
+    q_pct = (1.0 - target_touch_rate) * 100.0
+
     for year in FOLD_YEARS:
         tr = base & train_mask_for_fold(dates, year, horizon)
         te = base & fold_mask(dates, year) & test_ok
@@ -214,15 +237,16 @@ def _evaluate(ts: TickerSeries, feats: Features,
             continue
         if te.sum() == 0:
             continue
-        # cert_buffer: min historical UP (or DOWN) excursion seen in training
-        # minus safety margin (we promise the stock touches at LEAST this).
-        train_min = float(buf[tr].min())
-        cert = max(train_min - SAFETY_EPS, 0.0)
-        if cert < MIN_CERT_BUFFER:
-            # Nothing meaningful to promise — skip this fold for this rule.
-            continue
+        # cert_buffer: the (1-target)-quantile of training buffers,
+        # less a small safety margin. The rule promises the stock
+        # touches at least cert_buffer with ~target probability.
+        train_q = float(np.percentile(buf[tr], q_pct))
+        cert = max(train_q - SAFETY_EPS, 0.0)
+        # No per-fold cert_buffer skip — we only require the FINAL
+        # full-history cert_buffer to meet MIN_CERT_BUFFER for live
+        # deployability. Per-fold low buffers just mean that fold's
+        # training data was less favorable.
         test_buf = buf[te]
-        # Win iff test-set forward actually touches the certified threshold.
         wins = int((test_buf >= cert).sum())
         losses = int((test_buf < cert).sum())
         rr.folds.append(FoldResult(
@@ -238,21 +262,25 @@ def _evaluate(ts: TickerSeries, feats: Features,
     rr.pooled_wins = sum(f.wins for f in rr.folds)
     rr.pooled_losses = sum(f.losses for f in rr.folds)
 
-    # Final live cert_buffer uses ALL history (conservative).
+    # Final live cert_buffer uses ALL history with the same quantile.
+    # We also record the absolute minimum (worst-ever move) for context.
     if rr.n_regime_days >= MIN_TRAIN_SAMPLES:
         rr.final_history_min = float(buf[base].min())
-        rr.final_cert_buffer = max(rr.final_history_min - SAFETY_EPS, 0.0)
+        full_q = float(np.percentile(buf[base], q_pct))
+        rr.final_cert_buffer = max(full_q - SAFETY_EPS, 0.0)
     else:
         rr.final_history_min = float("nan")
         rr.final_cert_buffer = 0.0
 
     total = rr.pooled_wins + rr.pooled_losses
+    rr.touch_rate = (rr.pooled_wins / total) if total > 0 else 0.0
+    # Eligible if empirical OOS touch rate is within MIN_SLACK of target.
+    min_touch = max(target_touch_rate - MIN_SLACK, 0.50)
     rr.eligible = bool(
         rr.folds
-        and rr.pooled_losses == 0
         and total >= MIN_TEST_SAMPLES
+        and rr.touch_rate >= min_touch
         and rr.final_cert_buffer >= MIN_CERT_BUFFER
-        and all(f.losses == 0 for f in rr.folds)
         and all(f.wins > 0 for f in rr.folds)
     )
     return rr
@@ -292,6 +320,11 @@ def _rule_to_signal(
     if play is None:
         return None
     today_ok = today_in_regime(feats, side, rule.regime)
+    # Expected value per $1 of premium paid:
+    #   touch_rate * (profit/premium) + (1 - touch_rate) * (-1)
+    # = touch_rate * ROI - (1 - touch_rate)
+    # Expressed as % of premium.
+    ev = rule.touch_rate * play.roi - (1.0 - rule.touch_rate)
     return {
         "side": side.value,
         "regime": rule.regime,
@@ -301,6 +334,8 @@ def _rule_to_signal(
         "calendar_days_to_expiry": cal_days,
         "cert_buffer_pct":     rule.final_cert_buffer * 100.0,
         "history_worst_pct":   rule.final_history_min * 100.0,
+        "target_touch_rate_pct": rule.target_touch_rate * 100.0,
+        "touch_rate_pct":      rule.touch_rate * 100.0,
         "target_price":        play.target_price,
         "strike":              play.strike,
         "k_frac":              play.k_frac,
@@ -310,7 +345,8 @@ def _rule_to_signal(
         "est_premium":         play.premium,
         "est_profit":          play.profit,
         "est_max_loss":        play.max_loss,
-        "roi_pct":             play.roi * 100.0,
+        "roi_pct":             play.roi * 100.0,           # ROI on a winning trade
+        "ev_pct":              ev * 100.0,                 # expected value per $ premium
         "implied_vol_pct":     play.implied_vol * 100.0,
         "realized_vol_pct":    play.realized_vol * 100.0,
         "n_test":              rule.pooled_wins + rule.pooled_losses,
@@ -352,21 +388,22 @@ def process_ticker_side(
     )
     for regime in regimes:
         for h in HORIZONS:
-            rule = _evaluate(ts, feats, side, regime, h)
-            if not rule.eligible:
-                continue
-            sig = _rule_to_signal(tr, rule, side, feats)
-            if sig is None:
-                continue
-            if not sig["regime_ok_today"]:
-                watch.append(sig)
-                continue
-            if sig["roi_pct"] <= 0:
-                continue
-            if best_signal is None or sig["roi_pct"] > best_signal["roi_pct"]:
-                best_signal = sig
-    # Sort watchlist by ROI descending too
-    watch.sort(key=lambda x: -x["roi_pct"])
+            for target in TARGET_GRID:
+                rule = _evaluate(ts, feats, side, regime, h, target)
+                if not rule.eligible:
+                    continue
+                sig = _rule_to_signal(tr, rule, side, feats)
+                if sig is None:
+                    continue
+                if not sig["regime_ok_today"]:
+                    watch.append(sig)
+                    continue
+                if sig["ev_pct"] <= 0:
+                    continue
+                if best_signal is None or sig["ev_pct"] > best_signal["ev_pct"]:
+                    best_signal = sig
+    # Sort watchlist by EV descending
+    watch.sort(key=lambda x: -x["ev_pct"])
     return best_signal, watch
 
 
@@ -416,7 +453,7 @@ def main() -> int:
         if r is None:
             continue
         results.append(r)
-        if r.call_best is not None and r.call_best.get("roi_pct", 0) >= MIN_ROI_REPORT * 100:
+        if r.call_best is not None and r.call_best.get("ev_pct", 0) >= MIN_EV_REPORT * 100:
             call_signals.append({"ticker": r.ticker, "today_close": r.today_close,
                                  "end_date": r.end_date,
                                  "realized_vol_pct": (r.realized_vol or 0) * 100.0,
@@ -426,7 +463,7 @@ def main() -> int:
                                "end_date": r.end_date,
                                "realized_vol_pct": (r.realized_vol or 0) * 100.0,
                                "rungs": r.call_watch[:3]})
-        if r.put_best is not None and r.put_best.get("roi_pct", 0) >= MIN_ROI_REPORT * 100:
+        if r.put_best is not None and r.put_best.get("ev_pct", 0) >= MIN_EV_REPORT * 100:
             put_signals.append({"ticker": r.ticker, "today_close": r.today_close,
                                 "end_date": r.end_date,
                                 "realized_vol_pct": (r.realized_vol or 0) * 100.0,
@@ -448,21 +485,23 @@ def main() -> int:
     call_l = sum(s["pooled_losses"] for s in call_signals)
     put_w  = sum(s["pooled_wins"] for s in put_signals)
     put_l  = sum(s["pooled_losses"] for s in put_signals)
-    print()
-    print(f"Tickers processed:       {len(results)}")
-    print(f"CALL signals (>={int(MIN_ROI_REPORT*100)}% ROI):  {len(call_signals)}  "
-          f"pooled OOS: {call_w}/{call_w+call_l}  losses={call_l}")
-    print(f"PUT  signals (>={int(MIN_ROI_REPORT*100)}% ROI):  {len(put_signals)}   "
-          f"pooled OOS: {put_w}/{put_w+put_l}  losses={put_l}")
     pool_total = call_w + call_l + put_w + put_l
     pool_w = call_w + put_w
+    print()
+    print(f"Tickers processed:       {len(results)}")
+    print(f"CALL signals (EV >= {int(MIN_EV_REPORT*100)}%): {len(call_signals)}  "
+          f"pooled OOS: {call_w}/{call_w+call_l} (touch rate {(call_w/(call_w+call_l)*100) if call_w+call_l else 0:.2f}%)")
+    print(f"PUT  signals (EV >= {int(MIN_EV_REPORT*100)}%): {len(put_signals)}   "
+          f"pooled OOS: {put_w}/{put_w+put_l} (touch rate {(put_w/(put_w+put_l)*100) if put_w+put_l else 0:.2f}%)")
     print(f"Combined OOS tests:      {pool_total}")
     if pool_total:
-        print(f"Combined OOS win rate:   {pool_w/pool_total*100:.3f}%")
+        print(f"Combined touch rate:     {pool_w/pool_total*100:.3f}%")
+    print(f"Target touch grid:       {[int(t*100) for t in TARGET_GRID]}%  "
+          f"(eligibility: empirical >= target - {int(MIN_SLACK*100)}pp)")
 
-    # Sort by ROI desc
-    call_signals.sort(key=lambda s: -s["roi_pct"])
-    put_signals.sort(key=lambda s: -s["roi_pct"])
+    # Sort by EV desc
+    call_signals.sort(key=lambda s: -s["ev_pct"])
+    put_signals.sort(key=lambda s: -s["ev_pct"])
 
     lean = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -472,7 +511,9 @@ def main() -> int:
             "fold_years": FOLD_YEARS,
             "safety_eps": SAFETY_EPS,
             "min_cert_buffer": MIN_CERT_BUFFER,
-            "min_roi_report_pct": MIN_ROI_REPORT * 100,
+            "target_touch_grid": TARGET_GRID,
+            "min_slack_pp": MIN_SLACK * 100,
+            "min_ev_report_pct": MIN_EV_REPORT * 100,
             "call": {
                 "n_eligible": len(call_signals),
                 "pooled_wins": call_w,

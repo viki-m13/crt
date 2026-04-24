@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-24T18:49:05Z",
+  "generated_at": "2026-04-24T19:02:03Z",
   "summary": {
-    "n_tickers_processed": 964,
+    "n_tickers_processed": 100,
     "horizons": [
       5,
       7,
@@ -19,8 +19,10 @@
       2026
     ],
     "safety_eps": 0.005,
-    "min_cert_buffer": 0.01,
-    "min_roi_report_pct": 20.0,
+    "min_cert_buffer": 0.02,
+    "target_touch_rate": 0.8,
+    "min_touch_rate_eligibility": 0.75,
+    "min_ev_report_pct": 50.0,
     "call": {
       "n_eligible": 0,
       "pooled_wins": 0,
@@ -42,6 +44,90 @@
   },
   "call_signals": [],
   "put_signals": [],
-  "call_watchlist": [],
+  "call_watchlist": [
+    {
+      "ticker": "AL",
+      "today_close": 64.61000061035156,
+      "end_date": "2026-03-20",
+      "realized_vol_pct": 1.8871677861181504,
+      "rungs": [
+        {
+          "side": "call",
+          "regime": "deep_oversold",
+          "horizon": 21,
+          "expiry_date": "2026-05-15",
+          "expiry_type": "monthly",
+          "calendar_days_to_expiry": 56,
+          "cert_buffer_pct": 2.7345692609776426,
+          "history_worst_pct": -13.520144270024959,
+          "touch_rate_pct": 88.88888888888889,
+          "target_price": 66.3768058265597,
+          "strike": 65.58174347926604,
+          "k_frac": 0.5499999999999999,
+          "otm_pct": 1.5040130935376927,
+          "est_premium": 0.024314950360534215,
+          "est_profit": 0.7707473969331294,
+          "est_max_loss": 0.024314950360534215,
+          "roi_pct": 3169.84976528735,
+          "ev_pct": 2806.533124699866,
+          "implied_vol_pct": 2.4533181219535956,
+          "realized_vol_pct": 1.8871677861181504,
+          "n_test": 216,
+          "n_folds": 5,
+          "pooled_wins": 192,
+          "pooled_losses": 24,
+          "n_regime_days": 608,
+          "regime_ok_today": false,
+          "folds": [
+            {
+              "year": 2021,
+              "n_train": 391,
+              "n_test": 50,
+              "cert_buffer_pct": 2.161108119723975,
+              "wins": 45,
+              "losses": 5,
+              "worst_test_buf_pct": -1.6953112477711696
+            },
+            {
+              "year": 2022,
+              "n_train": 440,
+              "n_test": 148,
+              "cert_buffer_pct": 2.354047243869404,
+              "wins": 129,
+              "losses": 19,
+              "worst_test_buf_pct": -6.234546585715184
+            },
+            {
+              "year": 2023,
+              "n_train": 590,
+              "n_test": 13,
+              "cert_buffer_pct": 2.6156463907119427,
+              "wins": 13,
+              "losses": 0,
+              "worst_test_buf_pct": 4.532726585670477
+            },
+            {
+              "year": 2024,
+              "n_train": 603,
+              "n_test": 2,
+              "cert_buffer_pct": 2.680088799765034,
+              "wins": 2,
+              "losses": 0,
+              "worst_test_buf_pct": 12.551702854211321
+            },
+            {
+              "year": 2025,
+              "n_train": 605,
+              "n_test": 3,
+              "cert_buffer_pct": 2.6985583177042574,
+              "wins": 3,
+              "losses": 0,
+              "worst_test_buf_pct": 32.92139102246894
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "put_watchlist": []
 }

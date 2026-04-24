@@ -39,11 +39,11 @@ CALENDAR_DAYS_PER_YEAR = 365.0
 # would expire worthless even on a hit at exactly target).
 STRIKE_GRID = np.linspace(0.05, 0.95, 19)  # 0.05, 0.10, ..., 0.95
 
-# Minimum tradable premium per share. Options quoted at $0.01 are
-# effectively unpriced; the bid-ask spread dominates at this level.
-# Skip any play whose modeled premium falls below this floor — those
-# "lottery ticket" strikes aren't realistically fillable.
-MIN_PREMIUM_PER_SHARE = 0.05
+# Minimum tradable premium per share. Very cheap options DO fill in
+# practice, just with wider relative slippage. The user's whole thesis
+# is "super cheap OTM" so we keep this floor low and let the slippage
+# multiplier do the work.
+MIN_PREMIUM_PER_SHARE = 0.02
 
 
 def _ncdf(x: float) -> float:
@@ -120,7 +120,17 @@ def _play_at(
         bs = bs_put(spot, strike, T_years, sigma)
     if bs <= 0:
         return None
-    premium = bs * PREMIUM_SLIPPAGE
+    # Slippage scales with how cheap the option is — penny options have
+    # wider relative bid-ask. Apply 1.15× for normal-priced, up to 1.50×
+    # for <$0.20 options. The grid search still finds the ROI-optimal
+    # placement after this adjustment.
+    if bs < 0.20:
+        slip = 1.50
+    elif bs < 0.50:
+        slip = 1.30
+    else:
+        slip = PREMIUM_SLIPPAGE
+    premium = bs * slip
     if premium < MIN_PREMIUM_PER_SHARE:
         return None
     intrinsic_at_touch = (buffer - k) * spot
