@@ -94,6 +94,15 @@ jobs:
           set -e
           python strategies/credit_spread/scan.py
 
+      - name: Run Option C event-triggered spread scan
+        # Separate engine: triggered by touch-prediction regimes.
+        # Fetches fresh OHLCV for liquid universe + publishes
+        # spreads/docs/data/option_c_signals.json.
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          python strategies/touch_predict/option_c_scan.py
+
       - name: Summarize results
         if: steps.gate.outputs.skip != 'true'
         run: |
@@ -145,7 +154,9 @@ jobs:
             spreads/docs/data/signals.json \
             spreads/docs/data/live_log.json \
             spreads/docs/data/last_run.txt \
-            strategies/credit_spread/results/signals.json || true
+            spreads/docs/data/option_c_signals.json \
+            strategies/credit_spread/results/signals.json \
+            strategies/touch_predict/results/option_c_signals.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             # Discard the backfill's in-place ticker mutations so the

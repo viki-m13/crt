@@ -750,6 +750,74 @@
     </div>
   </section>
 
+  <!-- ===== OPTION C — EVENT-TRIGGERED CONDITIONAL SPREADS ===== -->
+  <section class="content-section" id="option-c">
+    <div class="section-inner">
+      <div class="section-title">
+        Event-triggered spreads <span class="section-title-sub">&mdash; conditional on touch-prediction regimes (Option C)</span>
+      </div>
+      <p class="section-note">
+        A <em>separate strategy</em> from the credit floors/ceilings above. These
+        spreads fire only when a stock enters a specific oversold/overbought
+        regime (SPY-relative weakness, multi-stack mean-reversion, etc.),
+        targeting <strong>short-dated (5-21 day)</strong> credit spreads with a
+        fixed 3% spread-width. Win condition: stock's close at expiry stays on
+        the safe side of the short strike. Historical accuracy 83-91% per rule,
+        tested on 94 liquid-options names. All three sections below start
+        collapsed; tap to expand.
+      </p>
+
+      <div class="cf-stats-grid" id="cf-oc-stats">
+        <div class="cf-stat"><span class="num good" id="oc-winrate">&mdash;</span><span class="lbl">Pooled win rate across rules</span></div>
+        <div class="cf-stat"><span class="num" id="oc-roi">&mdash;</span><span class="lbl">ROI per trade on max-loss</span></div>
+        <div class="cf-stat"><span class="num" id="oc-rules">&mdash;</span><span class="lbl">Eligible rules</span></div>
+        <div class="cf-stat"><span class="num" id="oc-live">&mdash;</span><span class="lbl">Live fires today</span></div>
+      </div>
+
+      <!-- Recommended (top picks across both sides) -->
+      <div class="cf-section" id="oc-section-rec">
+        <button type="button" class="cf-section-head" data-target="oc-rec" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Top recommended <span class="cf-section-subtitle">&mdash; best combined ROI across puts + calls</span>
+          </span>
+          <span class="cf-section-badge" id="oc-rec-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="oc-rec" hidden>
+          <div class="cf-list" id="oc-list-rec"></div>
+        </div>
+      </div>
+
+      <!-- Short puts -->
+      <div class="cf-section" id="oc-section-puts">
+        <button type="button" class="cf-section-head" data-target="oc-puts" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Short puts <span class="cf-section-subtitle">&mdash; sell put credit spread when stock is oversold</span>
+          </span>
+          <span class="cf-section-badge" id="oc-puts-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="oc-puts" hidden>
+          <div class="cf-list" id="oc-list-puts"></div>
+        </div>
+      </div>
+
+      <!-- Short calls -->
+      <div class="cf-section" id="oc-section-calls">
+        <button type="button" class="cf-section-head" data-target="oc-calls" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Short calls <span class="cf-section-subtitle">&mdash; sell call credit spread when stock is overbought</span>
+          </span>
+          <span class="cf-section-badge" id="oc-calls-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="oc-calls" hidden>
+          <div class="cf-list" id="oc-list-calls"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== METHOD ===== -->
   <section class="content-section" id="method">
     <div class="section-inner">
