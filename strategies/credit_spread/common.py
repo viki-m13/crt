@@ -84,6 +84,114 @@ def expiry_date(last_trading_day: str | np.datetime64, horizon_days: int) -> str
     return sessions[horizon_days - 1].strftime("%Y-%m-%d")
 
 
+def actual_options_expiry(
+    last_trading_day: str | np.datetime64,
+    horizon_sessions: int,
+) -> tuple[str, str, int]:
+    """Snap a session-count horizon to the nearest STANDARD options expiry
+    on the NYSE calendar.
+
+    Rules:
+      - Horizons <= 20 sessions  → weekly expiry: next Friday (that's a
+        trading day) on-or-after the session-projected date.
+      - Horizons >= 21 sessions  → monthly expiry: the 3rd-Friday-of-a-
+        month trading day on-or-after the session-projected date.
+      - If the canonical Friday is a market holiday (rare — Good Friday
+        is the only consistent case), fall back to the trading day
+        immediately before it (which is how the exchange actually
+        handles Good Friday expiry — settles on Thursday).
+
+    Returns (expiry_iso, kind, calendar_days_to_expiry) where:
+      - expiry_iso: 'YYYY-MM-DD' of the real Friday options expiry
+      - kind: 'weekly' | 'monthly'
+      - calendar_days_to_expiry: integer calendar days from
+        last_trading_day to expiry (used for BS time-to-expiry).
+
+    NOTE: the walk-forward backtest uses session-count horizons; the
+    actual options-expiry displayed here can be 0-4 sessions later
+    than the session projection. This small slop is absorbed by the
+    1% conformal safety margin.
+    """
+    import pandas as pd
+    import pandas_market_calendars as mcal
+
+    nyse = mcal.get_calendar("NYSE")
+    d = pd.Timestamp(str(last_trading_day)[:10])
+    # Session-projected target
+    target_iso = expiry_date(last_trading_day, horizon_sessions)
+    target = pd.Timestamp(target_iso)
+
+    # Helper: strip tz from a pandas timestamp so we can compare safely.
+    def _naive(t):
+        t = pd.Timestamp(t)
+        if t.tzinfo is not None:
+            t = t.tz_localize(None)
+        return t
+
+    target = _naive(target)
+
+    if horizon_sessions <= 20:
+        kind = "weekly"
+        # Find first Friday session on-or-after target. Weeklies expire
+        # every Friday; widen to ~8 weeks past target for safety.
+        start = target.strftime("%Y-%m-%d")
+        end = (target + pd.Timedelta(days=60)).strftime("%Y-%m-%d")
+        sess = nyse.valid_days(start_date=start, end_date=end)
+        exp = None
+        for s in sess:
+            s_n = _naive(s)
+            if s_n.weekday() == 4:  # Friday
+                exp = s_n
+                break
+        if exp is None:
+            # No trading Friday in window: fall back to last session in window
+            # (e.g. week-of-Good-Friday: takes Thursday).
+            exp = _naive(sess[-1]) if len(sess) else target
+    else:
+        kind = "monthly"
+        # Find the 3rd-Friday trading day on-or-after target. Iterate
+        # months starting from target's month.
+        y, m = target.year, target.month
+        exp = None
+        for _ in range(8):  # cap at 8 months ahead
+            month_end = (pd.Timestamp(f"{y}-{m:02d}-01") + pd.offsets.MonthEnd(1)).strftime("%Y-%m-%d")
+            month_sess = nyse.valid_days(
+                start_date=f"{y}-{m:02d}-01",
+                end_date=month_end,
+            )
+            month_sess_naive = [_naive(s) for s in month_sess]
+            # 3rd Friday = fridays[2] if there are at least 3 (always
+            # true in a month). If 3rd Friday isn't a trading day (Good
+            # Friday), NYSE treats the Thursday before it as the expiry.
+            all_fridays = pd.date_range(f"{y}-{m:02d}-01", month_end, freq="W-FRI")
+            if len(all_fridays) >= 3:
+                third_friday_cal = _naive(all_fridays[2])
+                # Is third_friday_cal a trading day?
+                if third_friday_cal in month_sess_naive:
+                    cand = third_friday_cal
+                else:
+                    # Good Friday case: previous trading day is the expiry.
+                    prior = nyse.valid_days(
+                        start_date=(third_friday_cal - pd.Timedelta(days=5)).strftime("%Y-%m-%d"),
+                        end_date=(third_friday_cal - pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
+                    )
+                    cand = _naive(prior[-1]) if len(prior) else third_friday_cal
+                if cand >= target:
+                    exp = cand
+                    break
+            m += 1
+            if m > 12:
+                m = 1
+                y += 1
+        if exp is None:
+            exp = target
+
+    # Strip any timezone so we can subtract from `d` which is tz-naive.
+    exp_naive = pd.Timestamp(exp.strftime("%Y-%m-%d"))
+    cal_days = (exp_naive.normalize() - d.normalize()).days
+    return exp_naive.strftime("%Y-%m-%d"), kind, int(cal_days)
+
+
 def list_tickers() -> list[str]:
     return sorted(
         f[:-5]

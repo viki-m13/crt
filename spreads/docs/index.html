@@ -163,6 +163,38 @@
       border-radius: 2px;
       font-size: 10px;
     }
+    .cf-rung-h .tag.tag-expiry {
+      display: inline-block;
+      border: 1px solid var(--rule-light);
+      padding: 1px 5px;
+      margin-left: 4px;
+      border-radius: 2px;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .cf-rung-profit {
+      margin: 8px 0 2px;
+      padding: 6px 8px;
+      background: #f2f8f5;
+      border-left: 2px solid var(--green);
+      border-radius: 2px;
+    }
+    .cf-rung-profit-main {
+      display: block;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--green);
+    }
+    .cf-rung-profit-main strong { font-weight: 600; }
+    .cf-rung-profit-sub {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
     .cf-fold-tbl {
       width: 100%;
       border-collapse: collapse;
@@ -596,7 +628,8 @@
         <div class="cf-section-body" data-body="put" hidden>
           <div class="cf-filters">
             <span class="lbl">Sort</span>
-            <button data-side="put" data-sort="buffer" class="active">Tightest buffer</button>
+            <button data-side="put" data-sort="profit" class="active">Most profitable</button>
+            <button data-side="put" data-sort="buffer">Tightest buffer</button>
             <button data-side="put" data-sort="tests">Most OOS tests</button>
             <button data-side="put" data-sort="ticker">Ticker A&ndash;Z</button>
             <span class="lbl" style="margin-left: 18px;">Horizon</span>
@@ -628,7 +661,8 @@
         <div class="cf-section-body" data-body="call" hidden>
           <div class="cf-filters">
             <span class="lbl">Sort</span>
-            <button data-side="call" data-sort="buffer" class="active">Tightest buffer</button>
+            <button data-side="call" data-sort="profit" class="active">Most profitable</button>
+            <button data-side="call" data-sort="buffer">Tightest buffer</button>
             <button data-side="call" data-sort="tests">Most OOS tests</button>
             <button data-side="call" data-sort="ticker">Ticker A&ndash;Z</button>
             <span class="lbl" style="margin-left: 18px;">Horizon</span>
