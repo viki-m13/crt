@@ -232,6 +232,63 @@
     }
     .cf-regime-badge.regime { color: var(--green); border-color: var(--green); }
 
+    /* collapsible sections */
+    .cf-section {
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      margin: 18px 0;
+      background: var(--bg);
+    }
+    .cf-section-head {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      background: var(--bg);
+      border: none;
+      border-bottom: 1px solid transparent;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--sans);
+      transition: background 0.15s ease;
+    }
+    .cf-section-head:hover { background: #fafafa; }
+    .cf-section-head[aria-expanded="true"] { border-bottom: 1px solid var(--rule-light); }
+    .cf-section-arrow {
+      display: inline-block;
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.18s ease;
+      width: 12px;
+    }
+    .cf-section-head[aria-expanded="true"] .cf-section-arrow { transform: rotate(90deg); }
+    .cf-section-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .cf-section-subtitle {
+      font-weight: 400;
+      font-size: 13px;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .cf-section-subtitle strong { color: var(--ink); font-weight: 600; }
+    .cf-section-badge {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 3px 10px;
+      border: 1px solid var(--rule-light);
+      border-radius: 2px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .cf-section-body { padding: 14px 18px 20px; }
+    .cf-section-body[hidden] { display: none; }
+
     .cf-method {
       border: 1px solid var(--rule-light);
       border-radius: 4px;
@@ -280,13 +337,14 @@
       <p class="hero-sub">
         <strong>CreditFloor</strong> hunts for (stock, expiry, strike) triples
         where every one of thousands of historical out-of-sample tests closed a
-        winner &mdash; <em>the stock's intraday-close never once fell below the
-        strike before expiry.</em> We're deliberately selective: most stocks,
-        most days, there&rsquo;s no trade. When the engine does publish, it
-        publishes a lot: the exact strike, the exact horizon, the fold-by-fold
-        breakdown, and the worst-case buffer ever touched on the test set.
-        Built for selling near-ATM put credit spreads where premium is rich
-        and the short strike is certified un-breached.
+        winner. The engine runs in both directions: a <strong>put-credit floor</strong>
+        below spot where the stock's close never once fell below the strike
+        before expiry, and a <strong>call-credit ceiling</strong> above spot
+        where the close never once rose above it. We're deliberately selective:
+        most stocks, most days, there&rsquo;s no trade. When the engine does
+        publish, it publishes a lot: the exact strike, the exact expiry, the
+        fold-by-fold walk-forward breakdown, and the worst-case buffer ever
+        touched on the test set.
         <strong>Not financial advice.</strong>
       </p>
     </div>
@@ -322,25 +380,65 @@
         Each card is a ticker whose walk-forward, cross-fold, out-of-sample
         win rate is <strong>exactly 100%</strong>. Multiple expiries ("rungs")
         may be eligible; each rung shows its own strike and buffer. Smaller
-        buffer = strike is closer to spot = richer credit but the same
-        historical guarantee.
+        buffer = strike closer to spot = richer credit with the same
+        historical guarantee. Sections below start collapsed &mdash; tap
+        to expand.
       </p>
 
-      <div class="cf-filters">
-        <span class="lbl">Sort</span>
-        <button data-sort="buffer" class="active">Tightest buffer</button>
-        <button data-sort="tests">Most OOS tests</button>
-        <button data-sort="ticker">Ticker A&ndash;Z</button>
-        <span class="lbl" style="margin-left: 18px;">Horizon filter</span>
-        <button data-hfilter="all" class="active">All</button>
-        <button data-hfilter="21">21d</button>
-        <button data-hfilter="42">42d</button>
-        <button data-hfilter="63">63d</button>
-        <button data-hfilter="126">126d</button>
+      <!-- ===== PUT-SIDE SECTION (below spot) ===== -->
+      <div class="cf-section" id="cf-section-put">
+        <button type="button" class="cf-section-head" data-target="put" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Put credit floors <span class="cf-section-subtitle">&mdash; short strike <strong>below</strong> spot (bullish-bounded)</span>
+          </span>
+          <span class="cf-section-badge" id="cf-put-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="put" hidden>
+          <div class="cf-filters">
+            <span class="lbl">Sort</span>
+            <button data-side="put" data-sort="buffer" class="active">Tightest buffer</button>
+            <button data-side="put" data-sort="tests">Most OOS tests</button>
+            <button data-side="put" data-sort="ticker">Ticker A&ndash;Z</button>
+            <span class="lbl" style="margin-left: 18px;">Horizon</span>
+            <button data-side="put" data-hfilter="all" class="active">All</button>
+            <button data-side="put" data-hfilter="21">21d</button>
+            <button data-side="put" data-hfilter="42">42d</button>
+            <button data-side="put" data-hfilter="63">63d</button>
+            <button data-side="put" data-hfilter="126">126d</button>
+          </div>
+          <div class="cf-list" id="cf-list-put">
+            <div class="cf-empty">Loading signals&hellip;</div>
+          </div>
+        </div>
       </div>
 
-      <div id="cf-list" class="cf-list">
-        <div class="cf-empty">Loading signals&hellip;</div>
+      <!-- ===== CALL-SIDE SECTION (above spot) ===== -->
+      <div class="cf-section" id="cf-section-call">
+        <button type="button" class="cf-section-head" data-target="call" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Call credit ceilings <span class="cf-section-subtitle">&mdash; short strike <strong>above</strong> spot (bearish-bounded)</span>
+          </span>
+          <span class="cf-section-badge" id="cf-call-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="call" hidden>
+          <div class="cf-filters">
+            <span class="lbl">Sort</span>
+            <button data-side="call" data-sort="buffer" class="active">Tightest buffer</button>
+            <button data-side="call" data-sort="tests">Most OOS tests</button>
+            <button data-side="call" data-sort="ticker">Ticker A&ndash;Z</button>
+            <span class="lbl" style="margin-left: 18px;">Horizon</span>
+            <button data-side="call" data-hfilter="all" class="active">All</button>
+            <button data-side="call" data-hfilter="21">21d</button>
+            <button data-side="call" data-hfilter="42">42d</button>
+            <button data-side="call" data-hfilter="63">63d</button>
+            <button data-side="call" data-hfilter="126">126d</button>
+          </div>
+          <div class="cf-list" id="cf-list-call">
+            <div class="cf-empty">Loading signals&hellip;</div>
+          </div>
+        </div>
       </div>
 
       <div class="cf-footnote" id="cf-last-run">As of &mdash;.</div>
@@ -352,19 +450,23 @@
     <div class="section-inner">
       <div class="section-title">How CreditFloor works</div>
       <div class="cf-method">
-        <h3>1. Forward path buffer</h3>
+        <h3>1. Forward path buffer &mdash; both directions</h3>
         <p>
           For every historical day <code>t</code> and every horizon
-          <code>h &isin; {21, 42, 63, 126}</code> trading days, we compute the
-          <strong>minimum close</strong> over the forward path
-          <code>[t+1, t+h]</code> and define the required buffer
-          <code>b&lowast;(t, h) = 1 &minus; min&sub;fwd / close[t]</code>.
-          If we sold a put-credit spread at day <code>t</code> with short
-          strike <code>K = close[t] &times; (1 &minus; b)</code> and
-          <code>b &ge; b&lowast;(t, h)</code>, the short strike was never
-          breached before expiry. This is a strictly tighter criterion than
-          "close above K at expiry" &mdash; a signal that passes here also
-          passes for American-style exercise risk.
+          <code>h &isin; {21, 42, 63, 126}</code> trading days we compute two
+          path statistics:
+        </p>
+        <ul>
+          <li><strong>Put side</strong> (floor, below spot): <code>b&lowast;&sub;put(t, h) = 1 &minus; min(close[t+1..t+h]) / close[t]</code> &mdash; how far <em>below</em> the entry price the stock ever traveled.</li>
+          <li><strong>Call side</strong> (ceiling, above spot): <code>b&lowast;&sub;call(t, h) = max(close[t+1..t+h]) / close[t] &minus; 1</code> &mdash; how far <em>above</em> the entry price it ever traveled.</li>
+        </ul>
+        <p>
+          A put-credit spread with short strike <code>K = close[t] &times; (1 &minus; b)</code>
+          is safe iff <code>b &ge; b&lowast;&sub;put</code>; a call-credit spread with
+          short strike <code>K = close[t] &times; (1 + b)</code> is safe iff
+          <code>b &ge; b&lowast;&sub;call</code>. Both are strictly tighter than
+          "close inside the strike at expiry" &mdash; a passing signal also
+          covers American-style early-exercise risk.
         </p>
 
         <h3>2. Walk-forward conformal strike</h3>
@@ -375,20 +477,26 @@
           (a purged gap equal to the horizon &mdash; no overlap with test
           dates). Our conformal strike buffer is
           <code>b̂ = max(b&lowast; on train) + 1%</code> &mdash; the largest
-          drawdown-to-expiry observed in training, plus a flat safety margin.
+          buffer ever needed in training, plus a flat safety margin.
           By the order-statistic bound this has 100% empirical coverage on
-          training. We then measure how often it also covers the test year.
+          training; we then measure how often it also covers the test year.
+          The method and the 1% safety margin are identical for both sides.
         </p>
 
-        <h3>3. Regime gate (proprietary)</h3>
+        <h3>3. Regime gate (proprietary, symmetric)</h3>
         <p>
-          We run each ticker twice: unrestricted, and restricted to dates
-          where <code>close &ge; SMA<sub>200</sub></code> AND the 252-day
-          drawdown is &le; 20%. The regime-gated variant is only deployable
-          when today&rsquo;s features also satisfy the gate. For each ticker
-          we keep whichever variant produces a <em>smaller</em> final buffer
-          &mdash; <em>never</em> the one with a better win rate, because
-          both must already be 100%.
+          We run each ticker twice on each side: unrestricted, and restricted
+          to a side-specific regime.
+        </p>
+        <ul>
+          <li><strong>Put regime</strong> (uptrend): <code>close &ge; SMA<sub>200</sub></code> AND 252-day drawdown &le; 20%.</li>
+          <li><strong>Call regime</strong> (below-trend, no post-bottom rally): <code>close &le; SMA<sub>200</sub></code> AND &le; 20% rally off the 252-day low.</li>
+        </ul>
+        <p>
+          The regime-gated variant is only deployable when today&rsquo;s features
+          also satisfy the gate. Per ticker we keep whichever variant produces
+          a <em>smaller</em> final buffer &mdash; <em>never</em> the one with a
+          better win rate, because both must already be 100%.
         </p>
 
         <h3>4. Eligibility &mdash; fail-closed</h3>

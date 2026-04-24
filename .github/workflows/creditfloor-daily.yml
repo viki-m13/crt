@@ -105,14 +105,16 @@ jobs:
               raise SystemExit(0)
           d = json.load(open(p))
           s = d.get('summary', {})
-          wins = s.get('pooled_wins', 0); losses = s.get('pooled_losses', 0)
-          print(f"signals:       {s.get('n_tickers_eligible')}")
-          print(f"pooled tests:  {wins + losses}")
-          print(f"pooled losses: {losses}")
-          print(f"win rate:      {s.get('pooled_win_rate')}")
+          combined = s.get('combined', {})
+          put  = s.get('put', {})
+          call = s.get('call', {})
+          print(f"put:       elig={put.get('n_eligible')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} losses={put.get('pooled_losses',0)}")
+          print(f"call:      elig={call.get('n_eligible')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses',0)}")
+          print(f"combined:  elig={combined.get('n_eligible')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses',0)} win_rate={combined.get('pooled_win_rate')}")
           print(f"generated_at:  {d.get('generated_at')}")
-          if losses != 0:
-              raise SystemExit("FAIL: pooled losses > 0 — fail-closed invariant broken")
+          # Fail-closed on either side
+          if put.get('pooled_losses', 0) or call.get('pooled_losses', 0):
+              raise SystemExit("FAIL: pooled losses > 0 on some side — fail-closed invariant broken")
           PY
 
       - name: Commit & push updates

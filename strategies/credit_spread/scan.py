@@ -41,10 +41,20 @@ def main() -> int:
     with open(dst, "r") as fh:
         blob = json.load(fh)
     s = blob.get("summary", {})
+    combined = s.get("combined", {})
+    put = s.get("put", {})
+    call = s.get("call", {})
     print(
-        f"  signals={s.get('n_tickers_eligible')}  "
-        f"pooled_tests={s.get('pooled_wins', 0) + s.get('pooled_losses', 0)}  "
-        f"pooled_win_rate={s.get('pooled_win_rate')}"
+        f"  put:      elig={put.get('n_eligible')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} "
+        f"losses={put.get('pooled_losses')}"
+    )
+    print(
+        f"  call:     elig={call.get('n_eligible')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} "
+        f"losses={call.get('pooled_losses')}"
+    )
+    print(
+        f"  combined: elig={combined.get('n_eligible')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} "
+        f"losses={combined.get('pooled_losses')} win_rate={combined.get('pooled_win_rate')}"
     )
     return 0
 
