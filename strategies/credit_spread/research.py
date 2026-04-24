@@ -135,6 +135,12 @@ class SideResult:
     side: str
     best: dict[str, Any] | None = None
     all_eligible: list[dict[str, Any]] = field(default_factory=list)
+    # Watchlist: (variant, horizon) combos whose backtest PASSES
+    # (every fold 100%, final buf <= cap, enough samples) but whose
+    # regime gate doesn't match TODAY, so we can't deploy. Sorted by
+    # tightest buffer. Useful to surface "about to be dynamic" names
+    # like AAPL waiting to break below SMA200.
+    watchlist: list[dict[str, Any]] = field(default_factory=list)
     variants: dict[str, dict[int, VariantResult]] = field(default_factory=dict)
 
 
@@ -289,6 +295,10 @@ def process_ticker_side(
 
     best: tuple[float, VariantResult] | None = None
     per_horizon_best: dict[int, VariantResult] = {}
+    # Watch: per horizon, track the tightest backtest-eligible combo
+    # that was blocked only because today's regime gate doesn't match.
+    # Keyed by horizon so each horizon contributes at most one watch.
+    per_horizon_watch: dict[int, VariantResult] = {}
     for regime in (False, True):
         key = "regime" if regime else "plain"
         sr.variants[key] = {}
@@ -298,6 +308,11 @@ def process_ticker_side(
             if not vr.eligible:
                 continue
             if regime and not today_ok:
+                # Backtest passes, but regime gate blocks deployment
+                # today. Record for watchlist.
+                prev = per_horizon_watch.get(h)
+                if prev is None or vr.b_final < prev.b_final:
+                    per_horizon_watch[h] = vr
                 continue
             prev = per_horizon_best.get(h)
             if prev is None or vr.b_final < prev.b_final:
@@ -308,6 +323,13 @@ def process_ticker_side(
     sr.all_eligible = [
         _vr_payload(per_horizon_best[h], spot, side, today_ok)
         for h in sorted(per_horizon_best.keys())
+    ]
+    # Only keep watch items when there's no deployable combo for that
+    # horizon — avoid double-surfacing on the webapp.
+    sr.watchlist = [
+        _vr_payload(per_horizon_watch[h], spot, side, today_ok)
+        for h in sorted(per_horizon_watch.keys())
+        if h not in per_horizon_best
     ]
     if best is not None:
         sr.best = _vr_payload(best[1], spot, side, today_ok)
@@ -420,6 +442,8 @@ def main() -> int:
     results: list[TickerResult] = []
     put_elig: list[tuple[TickerResult, SideResult]] = []
     call_elig: list[tuple[TickerResult, SideResult]] = []
+    put_watch: list[tuple[TickerResult, SideResult]] = []
+    call_watch: list[tuple[TickerResult, SideResult]] = []
     for i, t in enumerate(tickers, 1):
         try:
             r = process_ticker(t)
@@ -431,12 +455,18 @@ def main() -> int:
         results.append(r)
         if r.put.best is not None:
             put_elig.append((r, r.put))
+        elif r.put.watchlist:
+            put_watch.append((r, r.put))
         if r.call.best is not None:
             call_elig.append((r, r.call))
+        elif r.call.watchlist:
+            call_watch.append((r, r.call))
         if i % 100 == 0:
             print(
                 f"  {i}/{len(tickers)}  puts={len(put_elig)}  "
-                f"calls={len(call_elig)}  elapsed={time.time()-t0:.1f}s"
+                f"calls={len(call_elig)}  "
+                f"watch(put/call)={len(put_watch)}/{len(call_watch)}  "
+                f"elapsed={time.time()-t0:.1f}s"
             )
 
     put_wins, put_losses = _pool_validate(put_elig)
@@ -457,6 +487,9 @@ def main() -> int:
     # Sort: tightest buffer first, tie-break on larger test sample count.
     put_elig.sort(key=lambda x: (x[1].best["buffer"], -x[1].best["n_test"]))
     call_elig.sort(key=lambda x: (x[1].best["buffer"], -x[1].best["n_test"]))
+    # Watchlists sort by tightest buffer too.
+    put_watch.sort(key=lambda x: x[1].watchlist[0]["buffer"])
+    call_watch.sort(key=lambda x: x[1].watchlist[0]["buffer"])
 
     lean = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -487,6 +520,32 @@ def main() -> int:
         },
         "put_signals":  [_signal_payload(r, sr) for r, sr in put_elig],
         "call_signals": [_signal_payload(r, sr) for r, sr in call_elig],
+        # Watchlist: tickers whose backtest passes but today's regime
+        # gate fails. Surface so users can see what's about to turn on.
+        "put_watchlist": [
+            {
+                "ticker": r.ticker,
+                "today_close": r.today_close,
+                "end_date": r.end_date,
+                "rungs": [
+                    {**e, "expiry_date": expiry_date(r.end_date, e["horizon"])}
+                    for e in sr.watchlist
+                ],
+            }
+            for r, sr in put_watch
+        ],
+        "call_watchlist": [
+            {
+                "ticker": r.ticker,
+                "today_close": r.today_close,
+                "end_date": r.end_date,
+                "rungs": [
+                    {**e, "expiry_date": expiry_date(r.end_date, e["horizon"])}
+                    for e in sr.watchlist
+                ],
+            }
+            for r, sr in call_watch
+        ],
     }
     lean_path = os.path.join(OUTPUT_DIR, "signals.json")
     with open(lean_path, "w") as fh:

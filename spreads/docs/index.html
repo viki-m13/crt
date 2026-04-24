@@ -389,6 +389,57 @@
     .cf-live-tbl td.loss { color: #a8321a; font-weight: 600; }
     .cf-live-tbl td.pending { color: var(--muted); }
 
+    /* regime watchlist */
+    .cf-watch { margin-top: 18px; }
+    .cf-watch-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.10em;
+      color: var(--muted);
+      padding: 10px 0 8px;
+      border-top: 1px solid var(--rule-light);
+      cursor: pointer;
+    }
+    .cf-watch-head:hover { color: var(--ink); }
+    .cf-watch-head .arrow {
+      display: inline-block;
+      font-size: 9px;
+      margin-right: 6px;
+      transition: transform 0.18s;
+    }
+    .cf-watch-open .cf-watch-head .arrow { transform: rotate(90deg); }
+    .cf-watch-body { display: none; padding: 8px 0 6px; }
+    .cf-watch-open .cf-watch-body { display: block; }
+    .cf-watch-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 4px 0 10px;
+      line-height: 1.5;
+    }
+    .cf-watch-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .cf-watch-tbl th {
+      text-align: left;
+      padding: 6px 10px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 1px solid var(--rule);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: #fafafa;
+    }
+    .cf-watch-tbl td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .cf-watch-tbl td.tkr { font-weight: 600; }
+
     .cf-method {
       border: 1px solid var(--rule-light);
       border-radius: 4px;
@@ -550,6 +601,9 @@
             <button data-side="put" data-sort="ticker">Ticker A&ndash;Z</button>
             <span class="lbl" style="margin-left: 18px;">Horizon</span>
             <button data-side="put" data-hfilter="all" class="active">All</button>
+            <button data-side="put" data-hfilter="7">7d</button>
+            <button data-side="put" data-hfilter="10">10d</button>
+            <button data-side="put" data-hfilter="14">14d</button>
             <button data-side="put" data-hfilter="21">21d</button>
             <button data-side="put" data-hfilter="42">42d</button>
             <button data-side="put" data-hfilter="63">63d</button>
@@ -558,6 +612,7 @@
           <div class="cf-list" id="cf-list-put">
             <div class="cf-empty">Loading signals&hellip;</div>
           </div>
+          <div class="cf-watch" id="cf-watch-put"></div>
         </div>
       </div>
 
@@ -578,6 +633,9 @@
             <button data-side="call" data-sort="ticker">Ticker A&ndash;Z</button>
             <span class="lbl" style="margin-left: 18px;">Horizon</span>
             <button data-side="call" data-hfilter="all" class="active">All</button>
+            <button data-side="call" data-hfilter="7">7d</button>
+            <button data-side="call" data-hfilter="10">10d</button>
+            <button data-side="call" data-hfilter="14">14d</button>
             <button data-side="call" data-hfilter="21">21d</button>
             <button data-side="call" data-hfilter="42">42d</button>
             <button data-side="call" data-hfilter="63">63d</button>
@@ -586,6 +644,7 @@
           <div class="cf-list" id="cf-list-call">
             <div class="cf-empty">Loading signals&hellip;</div>
           </div>
+          <div class="cf-watch" id="cf-watch-call"></div>
         </div>
       </div>
 
