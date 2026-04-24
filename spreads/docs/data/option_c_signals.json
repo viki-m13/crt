@@ -1,0 +1,797 @@
+{
+  "generated_at": "2026-04-24T21:30:33Z",
+  "config": {
+    "horizons": [
+      5,
+      7,
+      10,
+      14,
+      21
+    ],
+    "k_short_grid": [
+      0.01,
+      0.02,
+      0.03,
+      0.05
+    ],
+    "spread_width_pct": 3.0,
+    "iv_mult": 1.15,
+    "haircut": 0.8,
+    "min_win_rate": 0.83,
+    "min_agg_roi_pct": 3.0,
+    "max_losing_folds": 1,
+    "min_total_folds": 5
+  },
+  "summary": {
+    "n_eligible_rules": 4,
+    "n_short_puts": 3,
+    "n_short_calls": 1,
+    "n_live_fires": 3,
+    "overall_win_rate_pct": 88.77206158467892,
+    "overall_roi_on_max_loss_pct": 5.461166508080547
+  },
+  "short_puts": [
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 7,
+      "k_short_frac": 0.03,
+      "k_long_frac": 0.06,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 702,
+      "pooled_losses": 138,
+      "win_rate_pct": 83.57142857142857,
+      "avg_credit_per_share": 0.9524962178916528,
+      "avg_max_loss_per_share": 3.939322155209451,
+      "avg_roi_on_max_loss_pct": 6.195451270752765,
+      "pooled_pnl": 205.0093790001341,
+      "pooled_premium": 3309.0306103759385,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 97,
+          "losses": 10,
+          "pnl": 63.895110868953104,
+          "max_loss_sum": 272.6863494066975,
+          "credit_sum": 82.49048606350263
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 130,
+          "losses": 31,
+          "pnl": 32.36651169699701,
+          "max_loss_sum": 524.4071141822916,
+          "credit_sum": 126.87619884413739
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 86,
+          "losses": 23,
+          "pnl": 2.258137516583116,
+          "max_loss_sum": 358.86656895199974,
+          "credit_sum": 88.22740320643294
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 70,
+          "losses": 12,
+          "pnl": 21.57418209064101,
+          "max_loss_sum": 236.03182558071555,
+          "credit_sum": 45.90276267993542
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 116,
+          "losses": 19,
+          "pnl": 3.8670763093826195,
+          "max_loss_sum": 638.1807837312824,
+          "credit_sum": 140.73696198290554
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 133,
+          "losses": 19,
+          "pnl": 104.7292834587401,
+          "max_loss_sum": 773.875362365693,
+          "credit_sum": 208.32730336383068
+        },
+        {
+          "year": 2026,
+          "n_fires": 94,
+          "wins": 70,
+          "losses": 24,
+          "pnl": -23.68092294116289,
+          "max_loss_sum": 504.9826061572586,
+          "credit_sum": 107.53570688824378
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-08",
+          "expiry_type": "weekly",
+          "cal_days": 14,
+          "k_short_frac": 0.03,
+          "k_long_frac": 0.06,
+          "strike_short": 206.77489822387696,
+          "strike_long": 200.37979827880858,
+          "est_credit": 1.0772029589034873,
+          "est_max_loss": 5.317896986164894,
+          "est_roi": 0.2025618325638785
+        }
+      ]
+    },
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 7,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 765,
+      "pooled_losses": 75,
+      "win_rate_pct": 91.07142857142857,
+      "avg_credit_per_share": 0.6320102692605871,
+      "avg_max_loss_per_share": 4.259808103840498,
+      "avg_roi_on_max_loss_pct": 5.599721032491516,
+      "pooled_pnl": 200.3713910810089,
+      "pooled_premium": 3578.2388072260183,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 101,
+          "losses": 6,
+          "pnl": 47.738258491041655,
+          "max_loss_sum": 295.1760564560856,
+          "credit_sum": 60.00077901411292
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 148,
+          "losses": 13,
+          "pnl": 36.310290395566284,
+          "max_loss_sum": 566.2010162622232,
+          "credit_sum": 85.08229676420324
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 94,
+          "losses": 15,
+          "pnl": 4.709762620855157,
+          "max_loss_sum": 388.09416259772576,
+          "credit_sum": 58.99980956070491
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 78,
+          "losses": 4,
+          "pnl": 16.090187570703446,
+          "max_loss_sum": 254.9380026415457,
+          "credit_sum": 26.99658561910429
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 125,
+          "losses": 10,
+          "pnl": 23.866594014649277,
+          "max_loss_sum": 690.3406769604617,
+          "credit_sum": 88.57706875372371
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 138,
+          "losses": 14,
+          "pnl": 70.11063088054988,
+          "max_loss_sum": 837.0164130342425,
+          "credit_sum": 145.18625269527743
+        },
+        {
+          "year": 2026,
+          "n_fires": 94,
+          "wins": 81,
+          "losses": 13,
+          "pnl": 1.5456671076432358,
+          "max_loss_sum": 546.4724792737335,
+          "credit_sum": 66.04583377176672
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-08",
+          "expiry_type": "weekly",
+          "cal_days": 14,
+          "k_short_frac": 0.05,
+          "k_long_frac": 0.08,
+          "strike_short": 202.51149826049803,
+          "strike_long": 196.1163983154297,
+          "est_credit": 0.6029885899534548,
+          "est_max_loss": 5.792111355114869,
+          "est_roi": 0.10410514456372988
+        }
+      ]
+    },
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 5,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 774,
+      "pooled_losses": 72,
+      "win_rate_pct": 91.48936170212765,
+      "avg_credit_per_share": 0.4976923527221862,
+      "avg_max_loss_per_share": 4.4339411383542755,
+      "avg_roi_on_max_loss_pct": 4.71767196781681,
+      "pooled_pnl": 176.96526323797707,
+      "pooled_premium": 3751.1142030477167,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 103,
+          "losses": 4,
+          "pnl": 41.320084916860345,
+          "max_loss_sum": 306.100062225549,
+          "credit_sum": 49.07677324464961
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 146,
+          "losses": 15,
+          "pnl": 20.854218581287554,
+          "max_loss_sum": 584.2301719159184,
+          "credit_sum": 67.05314111050801
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 92,
+          "losses": 17,
+          "pnl": 5.868427994012946,
+          "max_loss_sum": 400.8335706689344,
+          "credit_sum": 46.260401489496296
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 77,
+          "losses": 5,
+          "pnl": 11.777540896653019,
+          "max_loss_sum": 262.303530289412,
+          "credit_sum": 19.631057971237947
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 128,
+          "losses": 7,
+          "pnl": 32.45929700525306,
+          "max_loss_sum": 712.2047003492519,
+          "credit_sum": 66.71304536493308
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 142,
+          "losses": 10,
+          "pnl": 79.68182779760825,
+          "max_loss_sum": 865.4546452095907,
+          "credit_sum": 116.74802051992867
+        },
+        {
+          "year": 2026,
+          "n_fires": 100,
+          "wins": 86,
+          "losses": 14,
+          "pnl": -14.996133953698113,
+          "max_loss_sum": 619.9875223890606,
+          "credit_sum": 55.56529070221592
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-01",
+          "expiry_type": "weekly",
+          "cal_days": 7,
+          "k_short_frac": 0.05,
+          "k_long_frac": 0.08,
+          "strike_short": 202.51149826049803,
+          "strike_long": 196.1163983154297,
+          "est_credit": 0.24135050616199508,
+          "est_max_loss": 6.153749438906329,
+          "est_roi": 0.03922007364097179
+        }
+      ]
+    }
+  ],
+  "short_calls": [
+    {
+      "side": "call",
+      "regime": "multi_stack",
+      "horizon": 5,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 123,
+      "pooled_losses": 14,
+      "win_rate_pct": 89.78102189781022,
+      "avg_credit_per_share": 0.45774441109772157,
+      "avg_max_loss_per_share": 3.5160892160461974,
+      "avg_roi_on_max_loss_pct": 5.177550553936715,
+      "pooled_pnl": 24.940479645476337,
+      "pooled_premium": 481.70422259832907,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 30,
+          "wins": 28,
+          "losses": 2,
+          "pnl": 5.519250658365141,
+          "max_loss_sum": 56.228110896734414,
+          "credit_sum": 16.09485078653899
+        },
+        {
+          "year": 2021,
+          "n_fires": 3,
+          "wins": 3,
+          "losses": 0,
+          "pnl": 0.152736686563254,
+          "max_loss_sum": 3.693860946798556,
+          "credit_sum": 0.152736686563254
+        },
+        {
+          "year": 2022,
+          "n_fires": 34,
+          "wins": 30,
+          "losses": 4,
+          "pnl": 6.59216120215667,
+          "max_loss_sum": 122.09265847710365,
+          "credit_sum": 12.870369066918025
+        },
+        {
+          "year": 2023,
+          "n_fires": 28,
+          "wins": 26,
+          "losses": 2,
+          "pnl": 1.5322847118273628,
+          "max_loss_sum": 111.21965675927272,
+          "credit_sum": 8.000128721226742
+        },
+        {
+          "year": 2024,
+          "n_fires": 12,
+          "wins": 10,
+          "losses": 2,
+          "pnl": 2.8362056935043536,
+          "max_loss_sum": 31.180062731483417,
+          "credit_sum": 4.619780389091509
+        },
+        {
+          "year": 2025,
+          "n_fires": 23,
+          "wins": 21,
+          "losses": 2,
+          "pnl": 10.709543356711086,
+          "max_loss_sum": 105.00391248244617,
+          "credit_sum": 13.390521406943012
+        },
+        {
+          "year": 2026,
+          "n_fires": 7,
+          "wins": 5,
+          "losses": 2,
+          "pnl": -2.4017026636515264,
+          "max_loss_sum": 52.285960304490196,
+          "credit_sum": 7.582597263106315
+        }
+      ],
+      "live_fires": []
+    }
+  ],
+  "recommended": [
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 7,
+      "k_short_frac": 0.03,
+      "k_long_frac": 0.06,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 702,
+      "pooled_losses": 138,
+      "win_rate_pct": 83.57142857142857,
+      "avg_credit_per_share": 0.9524962178916528,
+      "avg_max_loss_per_share": 3.939322155209451,
+      "avg_roi_on_max_loss_pct": 6.195451270752765,
+      "pooled_pnl": 205.0093790001341,
+      "pooled_premium": 3309.0306103759385,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 97,
+          "losses": 10,
+          "pnl": 63.895110868953104,
+          "max_loss_sum": 272.6863494066975,
+          "credit_sum": 82.49048606350263
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 130,
+          "losses": 31,
+          "pnl": 32.36651169699701,
+          "max_loss_sum": 524.4071141822916,
+          "credit_sum": 126.87619884413739
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 86,
+          "losses": 23,
+          "pnl": 2.258137516583116,
+          "max_loss_sum": 358.86656895199974,
+          "credit_sum": 88.22740320643294
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 70,
+          "losses": 12,
+          "pnl": 21.57418209064101,
+          "max_loss_sum": 236.03182558071555,
+          "credit_sum": 45.90276267993542
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 116,
+          "losses": 19,
+          "pnl": 3.8670763093826195,
+          "max_loss_sum": 638.1807837312824,
+          "credit_sum": 140.73696198290554
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 133,
+          "losses": 19,
+          "pnl": 104.7292834587401,
+          "max_loss_sum": 773.875362365693,
+          "credit_sum": 208.32730336383068
+        },
+        {
+          "year": 2026,
+          "n_fires": 94,
+          "wins": 70,
+          "losses": 24,
+          "pnl": -23.68092294116289,
+          "max_loss_sum": 504.9826061572586,
+          "credit_sum": 107.53570688824378
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-08",
+          "expiry_type": "weekly",
+          "cal_days": 14,
+          "k_short_frac": 0.03,
+          "k_long_frac": 0.06,
+          "strike_short": 206.77489822387696,
+          "strike_long": 200.37979827880858,
+          "est_credit": 1.0772029589034873,
+          "est_max_loss": 5.317896986164894,
+          "est_roi": 0.2025618325638785
+        }
+      ]
+    },
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 7,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 765,
+      "pooled_losses": 75,
+      "win_rate_pct": 91.07142857142857,
+      "avg_credit_per_share": 0.6320102692605871,
+      "avg_max_loss_per_share": 4.259808103840498,
+      "avg_roi_on_max_loss_pct": 5.599721032491516,
+      "pooled_pnl": 200.3713910810089,
+      "pooled_premium": 3578.2388072260183,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 101,
+          "losses": 6,
+          "pnl": 47.738258491041655,
+          "max_loss_sum": 295.1760564560856,
+          "credit_sum": 60.00077901411292
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 148,
+          "losses": 13,
+          "pnl": 36.310290395566284,
+          "max_loss_sum": 566.2010162622232,
+          "credit_sum": 85.08229676420324
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 94,
+          "losses": 15,
+          "pnl": 4.709762620855157,
+          "max_loss_sum": 388.09416259772576,
+          "credit_sum": 58.99980956070491
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 78,
+          "losses": 4,
+          "pnl": 16.090187570703446,
+          "max_loss_sum": 254.9380026415457,
+          "credit_sum": 26.99658561910429
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 125,
+          "losses": 10,
+          "pnl": 23.866594014649277,
+          "max_loss_sum": 690.3406769604617,
+          "credit_sum": 88.57706875372371
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 138,
+          "losses": 14,
+          "pnl": 70.11063088054988,
+          "max_loss_sum": 837.0164130342425,
+          "credit_sum": 145.18625269527743
+        },
+        {
+          "year": 2026,
+          "n_fires": 94,
+          "wins": 81,
+          "losses": 13,
+          "pnl": 1.5456671076432358,
+          "max_loss_sum": 546.4724792737335,
+          "credit_sum": 66.04583377176672
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-08",
+          "expiry_type": "weekly",
+          "cal_days": 14,
+          "k_short_frac": 0.05,
+          "k_long_frac": 0.08,
+          "strike_short": 202.51149826049803,
+          "strike_long": 196.1163983154297,
+          "est_credit": 0.6029885899534548,
+          "est_max_loss": 5.792111355114869,
+          "est_roi": 0.10410514456372988
+        }
+      ]
+    },
+    {
+      "side": "call",
+      "regime": "multi_stack",
+      "horizon": 5,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 123,
+      "pooled_losses": 14,
+      "win_rate_pct": 89.78102189781022,
+      "avg_credit_per_share": 0.45774441109772157,
+      "avg_max_loss_per_share": 3.5160892160461974,
+      "avg_roi_on_max_loss_pct": 5.177550553936715,
+      "pooled_pnl": 24.940479645476337,
+      "pooled_premium": 481.70422259832907,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 30,
+          "wins": 28,
+          "losses": 2,
+          "pnl": 5.519250658365141,
+          "max_loss_sum": 56.228110896734414,
+          "credit_sum": 16.09485078653899
+        },
+        {
+          "year": 2021,
+          "n_fires": 3,
+          "wins": 3,
+          "losses": 0,
+          "pnl": 0.152736686563254,
+          "max_loss_sum": 3.693860946798556,
+          "credit_sum": 0.152736686563254
+        },
+        {
+          "year": 2022,
+          "n_fires": 34,
+          "wins": 30,
+          "losses": 4,
+          "pnl": 6.59216120215667,
+          "max_loss_sum": 122.09265847710365,
+          "credit_sum": 12.870369066918025
+        },
+        {
+          "year": 2023,
+          "n_fires": 28,
+          "wins": 26,
+          "losses": 2,
+          "pnl": 1.5322847118273628,
+          "max_loss_sum": 111.21965675927272,
+          "credit_sum": 8.000128721226742
+        },
+        {
+          "year": 2024,
+          "n_fires": 12,
+          "wins": 10,
+          "losses": 2,
+          "pnl": 2.8362056935043536,
+          "max_loss_sum": 31.180062731483417,
+          "credit_sum": 4.619780389091509
+        },
+        {
+          "year": 2025,
+          "n_fires": 23,
+          "wins": 21,
+          "losses": 2,
+          "pnl": 10.709543356711086,
+          "max_loss_sum": 105.00391248244617,
+          "credit_sum": 13.390521406943012
+        },
+        {
+          "year": 2026,
+          "n_fires": 7,
+          "wins": 5,
+          "losses": 2,
+          "pnl": -2.4017026636515264,
+          "max_loss_sum": 52.285960304490196,
+          "credit_sum": 7.582597263106315
+        }
+      ],
+      "live_fires": []
+    },
+    {
+      "side": "put",
+      "regime": "spy_rel_weak",
+      "horizon": 5,
+      "k_short_frac": 0.05,
+      "k_long_frac": 0.08,
+      "spread_width_pct": 3.0,
+      "pooled_wins": 774,
+      "pooled_losses": 72,
+      "win_rate_pct": 91.48936170212765,
+      "avg_credit_per_share": 0.4976923527221862,
+      "avg_max_loss_per_share": 4.4339411383542755,
+      "avg_roi_on_max_loss_pct": 4.71767196781681,
+      "pooled_pnl": 176.96526323797707,
+      "pooled_premium": 3751.1142030477167,
+      "folds": [
+        {
+          "year": 2020,
+          "n_fires": 107,
+          "wins": 103,
+          "losses": 4,
+          "pnl": 41.320084916860345,
+          "max_loss_sum": 306.100062225549,
+          "credit_sum": 49.07677324464961
+        },
+        {
+          "year": 2021,
+          "n_fires": 161,
+          "wins": 146,
+          "losses": 15,
+          "pnl": 20.854218581287554,
+          "max_loss_sum": 584.2301719159184,
+          "credit_sum": 67.05314111050801
+        },
+        {
+          "year": 2022,
+          "n_fires": 109,
+          "wins": 92,
+          "losses": 17,
+          "pnl": 5.868427994012946,
+          "max_loss_sum": 400.8335706689344,
+          "credit_sum": 46.260401489496296
+        },
+        {
+          "year": 2023,
+          "n_fires": 82,
+          "wins": 77,
+          "losses": 5,
+          "pnl": 11.777540896653019,
+          "max_loss_sum": 262.303530289412,
+          "credit_sum": 19.631057971237947
+        },
+        {
+          "year": 2024,
+          "n_fires": 135,
+          "wins": 128,
+          "losses": 7,
+          "pnl": 32.45929700525306,
+          "max_loss_sum": 712.2047003492519,
+          "credit_sum": 66.71304536493308
+        },
+        {
+          "year": 2025,
+          "n_fires": 152,
+          "wins": 142,
+          "losses": 10,
+          "pnl": 79.68182779760825,
+          "max_loss_sum": 865.4546452095907,
+          "credit_sum": 116.74802051992867
+        },
+        {
+          "year": 2026,
+          "n_fires": 100,
+          "wins": 86,
+          "losses": 14,
+          "pnl": -14.996133953698113,
+          "max_loss_sum": 619.9875223890606,
+          "credit_sum": 55.56529070221592
+        }
+      ],
+      "live_fires": [
+        {
+          "ticker": "HON",
+          "spot": 213.1699981689453,
+          "as_of": "2026-04-24",
+          "realized_vol": 0.24275293143779555,
+          "expiry": "2026-05-01",
+          "expiry_type": "weekly",
+          "cal_days": 7,
+          "k_short_frac": 0.05,
+          "k_long_frac": 0.08,
+          "strike_short": 202.51149826049803,
+          "strike_long": 196.1163983154297,
+          "est_credit": 0.24135050616199508,
+          "est_max_loss": 6.153749438906329,
+          "est_roi": 0.03922007364097179
+        }
+      ]
+    }
+  ]
+}

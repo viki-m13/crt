@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-04-24T20:22:20Z",
+  "config": {
+    "horizons": [
+      5,
+      7,
+      10,
+      14,
+      21
+    ],
+    "target_grid": [
+      0.9,
+      0.85,
+      0.75,
+      0.65
+    ],
+    "min_touch_rate": 0.8,
+    "min_cert_buffer": 0.015,
+    "min_premium": 0.5,
+    "min_roi_per_win": 0.3,
+    "require_profitable_every_fold": true
+  },
+  "summary": {
+    "n_tickers_scanned": 94,
+    "n_rules_found": 5,
+    "n_unique_ticker_side": 3,
+    "pooled_touch_rate": 0.8679245283018868,
+    "pooled_roi": 0.12487141080917437,
+    "total_dollar_pnl": 222.02368350773722,
+    "total_dollar_premium": 1778.0185397843284
+  },
+  "rules": [
+    {
+      "ticker": "IWM",
+      "side": "call",
+      "regime": "deep_oversold",
+      "horizon": 14,
+      "target_rate": 0.65,
+      "spot": 276.6400146484375,
+      "expiry": "2026-05-15",
+      "expiry_type": "weekly",
+      "cal_days": 21,
+      "cert_buffer": 0.039822797198220065,
+      "target_price": 287.65659384869485,
+      "strike": 277.1908436084504,
+      "k_frac": 0.05,
+      "premium": 6.641432506894322,
+      "profit": 3.8243177333501635,
+      "max_loss": 6.641432506894322,
+      "roi_win": 0.5758272374792975,
+      "ev": 0.3507090606965407,
+      "touch_rate": 0.8571428571428571,
+      "pooled_wins": 12,
+      "pooled_losses": 2,
+      "n_folds": 1,
+      "folds": [
+        {
+          "year": 2025,
+          "n_train": 251,
+          "n_test": 14,
+          "cert_buffer": 0.03931281127438791,
+          "wins": 12,
+          "losses": 2,
+          "pnl": 32.60894778641332
+        }
+      ],
+      "realized_vol": 0.21651510277406535,
+      "iv_used": 0.24899236819017515
+    },
+    {
+      "ticker": "PLD",
+      "side": "call",
+      "regime": "deep_oversold",
+      "horizon": 14,
+      "target_rate": 0.65,
+      "spot": 142.10499572753906,
+      "expiry": "2026-05-15",
+      "expiry_type": "weekly",
+      "cal_days": 21,
+      "cert_buffer": 0.03417173147936728,
+      "target_price": 146.96096948341716,
+      "strike": 142.34779441533297,
+      "k_frac": 0.05,
+      "premium": 3.3851350103657327,
+      "profit": 1.2280400577184616,
+      "max_loss": 3.3851350103657327,
+      "roi_win": 0.3627743218388749,
+      "ev": 0.253752376091765,
+      "touch_rate": 0.92,
+      "pooled_wins": 46,
+      "pooled_losses": 4,
+      "n_folds": 2,
+      "folds": [
+        {
+          "year": 2024,
+          "n_train": 279,
+          "n_test": 30,
+          "cert_buffer": 0.03122984955238244,
+          "wins": 27,
+          "losses": 3,
+          "pnl": 23.001676527301264
+        },
+        {
+          "year": 2025,
+          "n_train": 304,
+          "n_test": 20,
+          "cert_buffer": 0.0323057786780281,
+          "wins": 19,
+          "losses": 1,
+          "pnl": 19.947626086285037
+        }
+      ],
+      "realized_vol": 0.2136827324789428,
+      "iv_used": 0.2457351423507842
+    },
+    {
+      "ticker": "CAT",
+      "side": "call",
+      "regime": "deep_oversold",
+      "horizon": 14,
+      "target_rate": 0.65,
+      "spot": 830.3300170898438,
+      "expiry": "2026-05-15",
+      "expiry_type": "weekly",
+      "cal_days": 21,
+      "cert_buffer": 0.061978682617288484,
+      "target_price": 881.7927776866629,
+      "strike": 832.9031551196848,
+      "k_frac": 0.05,
+      "premium": 36.0900412897505,
+      "profit": 12.799581277227695,
+      "max_loss": 36.0900412897505,
+      "roi_win": 0.3546568754096369,
+      "ev": 0.09662699437922989,
+      "touch_rate": 0.8095238095238095,
+      "pooled_wins": 34,
+      "pooled_losses": 8,
+      "n_folds": 2,
+      "folds": [
+        {
+          "year": 2023,
+          "n_train": 285,
+          "n_test": 11,
+          "cert_buffer": 0.058874760319694346,
+          "wins": 9,
+          "losses": 2,
+          "pnl": 43.01614891554826
+        },
+        {
+          "year": 2025,
+          "n_train": 296,
+          "n_test": 31,
+          "cert_buffer": 0.05905351873830634,
+          "wins": 25,
+          "losses": 6,
+          "pnl": 103.44928419218934
+        }
+      ],
+      "realized_vol": 0.3896659641367419,
+      "iv_used": 0.4481158587572532
+    }
+  ]
+}

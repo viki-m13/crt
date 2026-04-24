@@ -471,6 +471,103 @@
     document.getElementById("cf-live-log").innerHTML = rows.join("");
   }
 
+  async function loadOptionC() {
+    try {
+      const r = await fetch("data/option_c_signals.json?v=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return null;
+      return r.json();
+    } catch (e) { return null; }
+  }
+
+  function ocCardHTML(rule) {
+    const sideBadge = rule.side === "put"
+      ? `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e">SHORT PUT</span>`
+      : `<span class="cf-regime-badge" style="color:#b35900;border-color:#b35900">SHORT CALL</span>`;
+    const fires = rule.live_fires || [];
+    const liveBlock = fires.length
+      ? `<div class="cf-ladder">` + fires.slice(0, 8).map((fi) => {
+          const bufWord = rule.side === "put" ? "below" : "above";
+          return `<div class="cf-rung">
+            <div class="cf-rung-h">${fi.ticker} &middot; Expires <strong>${fi.expiry || "-"}</strong> <span class="tag tag-expiry">${fi.expiry_type || ""}</span> &middot; ${rule.horizon}d</div>
+            <div class="cf-rung-k">${fmt$(fi.strike_short)} / ${fmt$(fi.strike_long)}</div>
+            <div class="cf-rung-b">Short ${(rule.k_short_frac*100).toFixed(1)}% ${bufWord}, long ${(rule.k_long_frac*100).toFixed(1)}% ${bufWord}</div>
+            <div class="cf-rung-profit">
+              <span class="cf-rung-profit-main">Est. <strong>${fmtPct(fi.est_roi*100, 1)}</strong> on max-loss</span>
+              <span class="cf-rung-profit-sub">credit $${fi.est_credit.toFixed(2)} &middot; max loss $${fi.est_max_loss.toFixed(2)} &middot; spot ${fmt$(fi.spot)} &middot; σ ${fmtPct(fi.realized_vol*100, 0)}</span>
+            </div>
+          </div>`;
+        }).join("") + `</div>`
+      : `<div class="cf-empty" style="margin-top:10px">No live fires for this rule today.</div>`;
+    const foldStr = rule.folds
+      .map(f => `${f.year}: W${f.wins}/L${f.losses} $${f.pnl.toFixed(0)}`)
+      .join(" · ");
+    return `
+      <div class="cf-card">
+        <div class="cf-card-head">
+          <div>
+            <span class="cf-card-ticker">${rule.regime}</span>
+            ${sideBadge}
+            <span class="cf-regime-badge">${rule.horizon}-day</span>
+          </div>
+          <div class="cf-card-price">
+            <strong>${fmtPct(rule.win_rate_pct, 1)} win</strong> &middot;
+            ${fmtPct(rule.avg_roi_on_max_loss_pct, 2)} ROI/trade &middot;
+            ${fmtInt(rule.pooled_wins + rule.pooled_losses)} OOS tests
+          </div>
+        </div>
+        ${liveBlock}
+        <div class="cf-card-expand">Show walk-forward detail</div>
+        <div class="cf-detail">
+          <div class="cf-footnote" style="margin:0 0 8px">
+            Avg credit $${rule.avg_credit_per_share.toFixed(2)} / avg max-loss $${rule.avg_max_loss_per_share.toFixed(2)} per share
+            &middot; cumulative P&amp;L $${rule.pooled_pnl.toFixed(0)} on $${rule.pooled_premium.toFixed(0)} capital at risk.
+          </div>
+          <div class="cf-footnote" style="margin:0;font-family:var(--mono);font-size:11px">
+            Per fold: ${foldStr}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderOptionC(oc) {
+    if (!oc || !oc.summary) {
+      ["oc-list-rec", "oc-list-puts", "oc-list-calls"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<div class="cf-empty">Option C data not available.</div>`;
+      });
+      return;
+    }
+    const s = oc.summary;
+    document.getElementById("oc-winrate").textContent = fmtPct(s.overall_win_rate_pct || 0, 1);
+    document.getElementById("oc-roi").textContent = fmtPct(s.overall_roi_on_max_loss_pct || 0, 2);
+    document.getElementById("oc-rules").textContent = fmtInt(s.n_eligible_rules || 0);
+    document.getElementById("oc-live").textContent = fmtInt(s.n_live_fires || 0);
+
+    const fill = (id, badgeId, list, label) => {
+      const el = document.getElementById(id);
+      const b = document.getElementById(badgeId);
+      if (b) b.textContent = `${list.length} ${label}${list.length === 1 ? "" : "s"}`;
+      if (!el) return;
+      if (!list.length) {
+        el.innerHTML = `<div class="cf-empty">No ${label} rules match the filters.</div>`;
+        return;
+      }
+      el.innerHTML = list.map(ocCardHTML).join("");
+      el.querySelectorAll(".cf-card-expand").forEach((ex) => {
+        ex.addEventListener("click", (e) => {
+          const card = e.currentTarget.closest(".cf-card");
+          card.classList.toggle("open");
+          e.currentTarget.textContent = card.classList.contains("open")
+            ? "Hide walk-forward detail" : "Show walk-forward detail";
+        });
+      });
+    };
+
+    fill("oc-list-rec",   "oc-rec-badge",   oc.recommended || [], "rule");
+    fill("oc-list-puts",  "oc-puts-badge",  oc.short_puts  || [], "put rule");
+    fill("oc-list-calls", "oc-calls-badge", oc.short_calls || [], "call rule");
+  }
+
   async function main() {
     try {
       state.data = await load();
@@ -492,6 +589,9 @@
     // Live log is best-effort — not all deployments will have one yet.
     const liveLog = await loadLiveLog();
     if (liveLog) renderLiveLog(liveLog);
+    // Option C
+    const oc = await loadOptionC();
+    renderOptionC(oc);
   }
 
   main();

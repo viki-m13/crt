@@ -84,6 +84,25 @@ def expiry_date(last_trading_day: str | np.datetime64, horizon_days: int) -> str
     return sessions[horizon_days - 1].strftime("%Y-%m-%d")
 
 
+import functools
+
+
+@functools.lru_cache(maxsize=1)
+def _nyse_valid_days_big():
+    """Cache a big window of NYSE trading days once per process (covers
+    2014-01-01 through 2028-12-31, ~15 years). Individual call sites then
+    filter in-memory instead of rebuilding holidays on every call.
+    """
+    import pandas as pd
+    import pandas_market_calendars as mcal
+    nyse = mcal.get_calendar("NYSE")
+    sessions = nyse.valid_days(start_date="2014-01-01", end_date="2028-12-31")
+    # Strip tz → naive Timestamps (cheaper comparisons downstream)
+    return pd.DatetimeIndex([pd.Timestamp(s.tz_localize(None) if s.tzinfo else s)
+                             for s in sessions])
+
+
+@functools.lru_cache(maxsize=4096)
 def actual_options_expiry(
     last_trading_day: str | np.datetime64,
     horizon_sessions: int,
@@ -113,69 +132,48 @@ def actual_options_expiry(
     1% conformal safety margin.
     """
     import pandas as pd
-    import pandas_market_calendars as mcal
 
-    nyse = mcal.get_calendar("NYSE")
+    sessions = _nyse_valid_days_big()
     d = pd.Timestamp(str(last_trading_day)[:10])
-    # Session-projected target
-    target_iso = expiry_date(last_trading_day, horizon_sessions)
-    target = pd.Timestamp(target_iso)
-
-    # Helper: strip tz from a pandas timestamp so we can compare safely.
-    def _naive(t):
-        t = pd.Timestamp(t)
-        if t.tzinfo is not None:
-            t = t.tz_localize(None)
-        return t
-
-    target = _naive(target)
+    # Find session index of `d` (or the session on-or-after it)
+    idx = int(sessions.searchsorted(d, side="left"))
+    # Session-projected target: horizon_sessions forward from `d`
+    # (counting d as session 0)
+    tgt_idx = min(idx + horizon_sessions, len(sessions) - 1)
+    target = sessions[tgt_idx]
 
     if horizon_sessions <= 20:
         kind = "weekly"
-        # Find first Friday session on-or-after target. Weeklies expire
-        # every Friday; widen to ~8 weeks past target for safety.
-        start = target.strftime("%Y-%m-%d")
-        end = (target + pd.Timedelta(days=60)).strftime("%Y-%m-%d")
-        sess = nyse.valid_days(start_date=start, end_date=end)
+        # First trading-day Friday on-or-after target. Walk forward in
+        # the cached sessions index.
         exp = None
-        for s in sess:
-            s_n = _naive(s)
-            if s_n.weekday() == 4:  # Friday
-                exp = s_n
+        for j in range(tgt_idx, min(tgt_idx + 40, len(sessions))):
+            s = sessions[j]
+            if s.weekday() == 4:  # Friday
+                exp = s
                 break
         if exp is None:
-            # No trading Friday in window: fall back to last session in window
-            # (e.g. week-of-Good-Friday: takes Thursday).
-            exp = _naive(sess[-1]) if len(sess) else target
+            exp = target
     else:
         kind = "monthly"
-        # Find the 3rd-Friday trading day on-or-after target. Iterate
-        # months starting from target's month.
-        y, m = target.year, target.month
+        # 3rd-Friday (trading day) on-or-after target. Generate candidate
+        # 3rd Fridays in upcoming months; match against the cached
+        # sessions to detect Good-Friday displacement.
         exp = None
-        for _ in range(8):  # cap at 8 months ahead
-            month_end = (pd.Timestamp(f"{y}-{m:02d}-01") + pd.offsets.MonthEnd(1)).strftime("%Y-%m-%d")
-            month_sess = nyse.valid_days(
-                start_date=f"{y}-{m:02d}-01",
-                end_date=month_end,
-            )
-            month_sess_naive = [_naive(s) for s in month_sess]
-            # 3rd Friday = fridays[2] if there are at least 3 (always
-            # true in a month). If 3rd Friday isn't a trading day (Good
-            # Friday), NYSE treats the Thursday before it as the expiry.
-            all_fridays = pd.date_range(f"{y}-{m:02d}-01", month_end, freq="W-FRI")
+        y, m = target.year, target.month
+        for _ in range(8):
+            all_fridays = pd.date_range(f"{y}-{m:02d}-01",
+                                         (pd.Timestamp(f"{y}-{m:02d}-01") + pd.offsets.MonthEnd(1)),
+                                         freq="W-FRI")
             if len(all_fridays) >= 3:
-                third_friday_cal = _naive(all_fridays[2])
-                # Is third_friday_cal a trading day?
-                if third_friday_cal in month_sess_naive:
+                third_friday_cal = all_fridays[2]
+                # Binary-search the cached session index
+                sidx = sessions.searchsorted(third_friday_cal)
+                if sidx < len(sessions) and sessions[sidx] == third_friday_cal:
                     cand = third_friday_cal
                 else:
-                    # Good Friday case: previous trading day is the expiry.
-                    prior = nyse.valid_days(
-                        start_date=(third_friday_cal - pd.Timedelta(days=5)).strftime("%Y-%m-%d"),
-                        end_date=(third_friday_cal - pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
-                    )
-                    cand = _naive(prior[-1]) if len(prior) else third_friday_cal
+                    # Good Friday: expiry rolls to Thursday before
+                    cand = sessions[max(sidx - 1, 0)]
                 if cand >= target:
                     exp = cand
                     break
@@ -186,8 +184,7 @@ def actual_options_expiry(
         if exp is None:
             exp = target
 
-    # Strip any timezone so we can subtract from `d` which is tz-naive.
-    exp_naive = pd.Timestamp(exp.strftime("%Y-%m-%d"))
+    exp_naive = pd.Timestamp(exp)
     cal_days = (exp_naive.normalize() - d.normalize()).days
     return exp_naive.strftime("%Y-%m-%d"), kind, int(cal_days)
 
@@ -351,20 +348,33 @@ def compute_features(close: np.ndarray) -> Features:
 
 
 def forward_min_close(close: np.ndarray, h: int) -> np.ndarray:
-    """min(close[t+1..t+h]). NaN where the window runs off the end."""
+    """min(close[t+1..t+h]). NaN where the window runs off the end.
+    Vectorized via a sliding-window trick: rolling min over the NEXT h
+    values. ~100× faster than the per-t Python loop."""
     n = len(close)
     out = np.full(n, np.nan, dtype="float64")
-    for t in range(0, n - h):
-        out[t] = np.min(close[t + 1 : t + h + 1])
+    if n <= h:
+        return out
+    # Build a (n-h, h) view of close[t+1..t+h] via stride tricks, then
+    # reduce along axis=1. np.lib.stride_tricks.sliding_window_view
+    # is O(1) for the view and O((n-h)*h) for the min reduction.
+    tail = close[1:]                                 # length n-1
+    view = np.lib.stride_tricks.sliding_window_view(tail, window_shape=h)
+    # view shape: (n-h, h), where view[t] = close[t+1..t+h]
+    out[: n - h] = view.min(axis=1)
     return out
 
 
 def forward_max_close(close: np.ndarray, h: int) -> np.ndarray:
-    """max(close[t+1..t+h]). NaN where the window runs off the end."""
+    """max(close[t+1..t+h]). NaN where the window runs off the end.
+    Vectorized. See forward_min_close."""
     n = len(close)
     out = np.full(n, np.nan, dtype="float64")
-    for t in range(0, n - h):
-        out[t] = np.max(close[t + 1 : t + h + 1])
+    if n <= h:
+        return out
+    tail = close[1:]
+    view = np.lib.stride_tricks.sliding_window_view(tail, window_shape=h)
+    out[: n - h] = view.max(axis=1)
     return out
 
 
