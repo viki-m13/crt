@@ -173,8 +173,11 @@ class V2Features:
     ret_5d:     np.ndarray
     # range
     tr_pct:     np.ndarray       # (high-low)/close
-    # realized volatility (for profit estimation)
-    realized_vol: float          # annualized stdev of last 60-day log rets
+    # realized volatility — time-varying (annualized σ at each day, using
+    # last 60 days of log returns). NaN for days without enough history.
+    rv60:       np.ndarray
+    # scalar alias for today's rv60
+    realized_vol: float
 
 
 def compute_features(s: OhlcvSeries) -> V2Features:
@@ -208,12 +211,15 @@ def compute_features(s: OhlcvSeries) -> V2Features:
     ret_5d[5:] = close[5:] / close[:-5] - 1.0
     tr_pct = (high - low) / close
 
-    # Realized vol: annualized stdev of last 60-day log returns.
-    logret = np.diff(np.log(np.maximum(close, 1e-9)))
-    if len(logret) >= 60:
-        rv = float(np.std(logret[-60:], ddof=1)) * math.sqrt(252.0)
-    else:
-        rv = float("nan")
+    # Time-varying realized vol: rv60[t] = annualized stdev of log
+    # returns over (t-60, t]. Uses cumulative moments for O(n) speed.
+    n = len(close)
+    logret = np.concatenate(([0.0], np.diff(np.log(np.maximum(close, 1e-9)))))
+    m_logret = _rolling_mean(logret, 60)
+    m2_logret = _rolling_mean(logret * logret, 60)
+    var60 = np.maximum(m2_logret - m_logret * m_logret, 0.0)
+    rv60 = np.sqrt(var60) * math.sqrt(252.0)
+    rv_today = float(rv60[-1]) if n > 60 and np.isfinite(rv60[-1]) else float("nan")
 
     return V2Features(
         sma5=sma5, sma20=sma20, sma200=sma200, trend=trend,
@@ -221,7 +227,7 @@ def compute_features(s: OhlcvSeries) -> V2Features:
         boll_mid=boll_mid, boll_lower=boll_lower, boll_upper=boll_upper,
         vol20=vol20, vol50=vol50, vol_z20=vol_z20, vol_z50=vol_z50,
         ret_1d=ret_1d, ret_5d=ret_5d, tr_pct=tr_pct,
-        realized_vol=rv,
+        rv60=rv60, realized_vol=rv_today,
     )
 
 
