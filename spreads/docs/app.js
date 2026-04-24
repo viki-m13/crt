@@ -1,14 +1,18 @@
-/* CreditFloor page: render precomputed walk-forward signals. */
+/* CreditFloor page: render precomputed walk-forward signals, two-sided. */
 (function () {
   "use strict";
 
+  // state.filters[side] = { sort, hfilter }
   const state = {
     data: null,
-    sort: "buffer",
-    hfilter: "all",
+    filters: {
+      put:  { sort: "buffer", hfilter: "all" },
+      call: { sort: "buffer", hfilter: "all" },
+    },
   };
 
   const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const fmt$ = (x) =>
     "$" + Number(x).toLocaleString(undefined, {
       minimumFractionDigits: 2,
@@ -26,53 +30,59 @@
 
   function renderStats(d) {
     const s = d.summary || {};
-    const win = s.pooled_win_rate == null ? "—" : fmtPct(100 * s.pooled_win_rate, 2);
+    const combined = s.combined || {};
+    const win = combined.pooled_win_rate == null
+      ? "—"
+      : fmtPct(100 * combined.pooled_win_rate, 2);
     $("#stat-pooled-win").textContent = win;
-    $("#stat-pooled-n").textContent = fmtInt(
-      (s.pooled_wins || 0) + (s.pooled_losses || 0)
-    );
-    $("#stat-signals").textContent = fmtInt(s.n_tickers_eligible || 0);
+    const tests = (combined.pooled_wins || 0) + (combined.pooled_losses || 0);
+    $("#stat-pooled-n").textContent = fmtInt(tests);
+    $("#stat-signals").textContent = fmtInt(combined.n_eligible || 0);
     $("#stat-universe").textContent = fmtInt(s.n_tickers_processed || 0);
+    // section badges
+    const put = s.put || {};
+    const call = s.call || {};
+    $("#cf-put-badge").textContent =
+      `${fmtInt(put.n_eligible || 0)} signal${put.n_eligible === 1 ? "" : "s"} · ${fmtInt((put.pooled_wins || 0) + (put.pooled_losses || 0))} OOS tests · 100% win`;
+    $("#cf-call-badge").textContent =
+      `${fmtInt(call.n_eligible || 0)} signal${call.n_eligible === 1 ? "" : "s"} · ${fmtInt((call.pooled_wins || 0) + (call.pooled_losses || 0))} OOS tests · 100% win`;
   }
 
   function renderLastRun(d) {
     const gen = d.generated_at;
-    const signals = (d.signals || []).length;
-    let asof = "";
-    if (signals) {
-      // all signals share end_date
-      asof = d.signals[0].end_date || "";
-    }
+    const allSignals = (d.put_signals || []).concat(d.call_signals || []);
+    const asof = allSignals.length ? allSignals[0].end_date || "" : "";
     const el = $("#cf-last-run");
     const bits = [];
     if (asof) bits.push(`As of market close ${asof}.`);
     if (gen) bits.push(`Research generated ${gen}.`);
+    const fy = d.summary?.fold_years || [];
     bits.push(
-      `Out-of-sample window covers ${d.summary?.fold_years?.[0]}–${d.summary?.fold_years?.slice(-1)?.[0]}, 7 walk-forward folds. ` +
-        `Safety margin: ${((d.summary?.safety_eps || 0) * 100).toFixed(1)}% added to worst historical drawdown-to-expiry. ` +
+      `Walk-forward out-of-sample window covers ${fy[0]}–${fy[fy.length - 1]}, ${fy.length} annual folds per side. ` +
+        `Safety margin: ${((d.summary?.safety_eps || 0) * 100).toFixed(1)}% added to worst historical path buffer. ` +
         `Buffer cap: ${((d.summary?.max_buffer || 0) * 100).toFixed(0)}%.`
     );
     el.innerHTML = bits.join(" ");
   }
 
-  function filteredSorted() {
-    const items = (state.data?.signals || []).slice();
-    const hf = state.hfilter;
+  function filteredSorted(side) {
+    const key = side === "put" ? "put_signals" : "call_signals";
+    const items = (state.data?.[key] || []).slice();
+    const f = state.filters[side];
     const filtered = items.map((s) => {
       const rungs = (s.ladder || []).filter(
-        (l) => hf === "all" || String(l.horizon) === String(hf)
+        (l) => f.hfilter === "all" || String(l.horizon) === String(f.hfilter)
       );
       return { ...s, ladderView: rungs };
     }).filter((s) => s.ladderView.length > 0);
 
     filtered.sort((a, b) => {
-      if (state.sort === "ticker") return a.ticker.localeCompare(b.ticker);
-      if (state.sort === "tests") {
+      if (f.sort === "ticker") return a.ticker.localeCompare(b.ticker);
+      if (f.sort === "tests") {
         const ta = Math.max(...a.ladderView.map((l) => l.n_test));
         const tb = Math.max(...b.ladderView.map((l) => l.n_test));
         return tb - ta;
       }
-      // default: tightest buffer
       const ba = Math.min(...a.ladderView.map((l) => l.buffer_pct));
       const bb = Math.min(...b.ladderView.map((l) => l.buffer_pct));
       return ba - bb;
@@ -80,23 +90,30 @@
     return filtered;
   }
 
-  function rungHTML(l) {
-    const tag = l.variant === "regime" ? "uptrend-only" : "all-regime";
+  function rungHTML(l, side) {
+    const tag = l.variant === "regime"
+      ? (side === "put" ? "uptrend-only" : "bearish-only")
+      : "all-regime";
     const expLine = l.expiry_date
       ? `Expires <strong>${l.expiry_date}</strong> &middot; ${l.horizon} trading days`
       : `Expiry in ${l.horizon} trading days`;
+    const bufLine = side === "put"
+      ? `Buffer ${fmtPct(l.buffer_pct, 2)} <em>below</em> spot`
+      : `Buffer ${fmtPct(l.buffer_pct, 2)} <em>above</em> spot`;
+    const worst = l.folds.reduce((m, f) => Math.max(m, f.worst_test_buf_pct), 0);
+    const worstLabel = side === "put" ? "drawdown" : "rally";
     return `
       <div class="cf-rung">
         <div class="cf-rung-h">${expLine}</div>
         <div class="cf-rung-k">${fmt$(l.strike)}</div>
-        <div class="cf-rung-b">Buffer ${fmtPct(l.buffer_pct, 2)} below spot</div>
+        <div class="cf-rung-b">${bufLine}</div>
         <div class="cf-rung-m">
           <span class="tag">${tag}</span>
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
           <span class="tag">${l.n_folds} folds</span>
           <br/>
-          Worst test-set drawdown ever touched:
-          <strong>${fmtPct(l.folds.reduce((m, f) => Math.max(m, f.worst_test_buf_pct), 0), 2)}</strong>.
+          Worst test-set ${worstLabel} ever touched:
+          <strong>${fmtPct(worst, 2)}</strong>.
           All folds 100% win rate.
         </div>
       </div>
@@ -105,7 +122,6 @@
 
   function foldTableHTML(ladder) {
     const horizons = ladder.map((l) => l.horizon);
-    // collect unique fold years across all ladder entries
     const years = Array.from(
       new Set(ladder.flatMap((l) => l.folds.map((f) => f.year)))
     ).sort();
@@ -113,18 +129,13 @@
       <tr>
         <th>Fold</th>
         ${horizons
-          .map(
-            (h) => `<th colspan="4" style="border-left:1px solid var(--rule-light)">${h}d</th>`
-          )
+          .map((h) => `<th colspan="4" style="border-left:1px solid var(--rule-light)">${h}d</th>`)
           .join("")}
       </tr>
       <tr>
         <th></th>
         ${horizons
-          .map(
-            () =>
-              `<th>Train</th><th>Test</th><th>Wins</th><th>Worst</th>`
-          )
+          .map(() => `<th>Train</th><th>Test</th><th>Wins</th><th>Worst</th>`)
           .join("")}
       </tr>
     `;
@@ -143,10 +154,11 @@
     return `<table class="cf-fold-tbl"><thead>${head}</thead><tbody>${rows.join("")}</tbody></table>`;
   }
 
-  function cardHTML(s) {
+  function cardHTML(s, side) {
     const anyRegime = s.ladderView.some((l) => l.variant === "regime");
+    const regimeLbl = side === "put" ? "uptrend gate" : "bearish gate";
     const regimeBadge = anyRegime
-      ? `<span class="cf-regime-badge regime">uptrend gate</span>`
+      ? `<span class="cf-regime-badge regime">${regimeLbl}</span>`
       : `<span class="cf-regime-badge">all-regime</span>`;
     return `
       <div class="cf-card" data-ticker="${s.ticker}">
@@ -161,15 +173,15 @@
           </div>
         </div>
         <div class="cf-ladder">
-          ${s.ladderView.map(rungHTML).join("")}
+          ${s.ladderView.map((r) => rungHTML(r, side)).join("")}
         </div>
         <div class="cf-card-expand">Show fold-by-fold walk-forward breakdown</div>
         <div class="cf-detail">
           ${foldTableHTML(s.ladderView)}
           <div class="cf-footnote" style="margin-top:12px">
             Each cell is the walk-forward test outcome for that calendar year
-            and horizon. "Worst" is the largest drawdown-to-expiry
-            <em>on the held-out test set</em> — always strictly below our
+            and horizon. "Worst" is the largest ${side === "put" ? "drawdown" : "rally"}-to-expiry
+            <em>on the held-out test set</em> — always strictly inside our
             conformal strike buffer, which is why every fold is a 100% win.
           </div>
         </div>
@@ -177,14 +189,14 @@
     `;
   }
 
-  function render() {
-    const items = filteredSorted();
-    const list = $("#cf-list");
+  function renderSide(side) {
+    const list = $(`#cf-list-${side}`);
+    const items = filteredSorted(side);
     if (!items.length) {
-      list.innerHTML = `<div class="cf-empty">No signals match the current filter today. The engine is fail-closed — most stocks, most days, there is no eligible trade.</div>`;
+      list.innerHTML = `<div class="cf-empty">No ${side} signals match the current filter. The engine is fail-closed — most stocks, most days, there is no eligible trade.</div>`;
       return;
     }
-    list.innerHTML = items.map(cardHTML).join("");
+    list.innerHTML = items.map((s) => cardHTML(s, side)).join("");
     list.querySelectorAll(".cf-card-expand").forEach((el) => {
       el.addEventListener("click", (e) => {
         const card = e.currentTarget.closest(".cf-card");
@@ -196,25 +208,53 @@
     });
   }
 
-  function wireFilters() {
-    document.querySelectorAll(".cf-filters button[data-sort]").forEach((b) => {
-      b.addEventListener("click", (e) => {
-        document
-          .querySelectorAll(".cf-filters button[data-sort]")
-          .forEach((bb) => bb.classList.remove("active"));
-        e.currentTarget.classList.add("active");
-        state.sort = e.currentTarget.dataset.sort;
-        render();
+  function render() {
+    renderSide("put");
+    renderSide("call");
+  }
+
+  function wireCollapsibles() {
+    $$(".cf-section-head").forEach((head) => {
+      head.addEventListener("click", () => {
+        const target = head.dataset.target;
+        const body = document.querySelector(`.cf-section-body[data-body="${target}"]`);
+        const expanded = head.getAttribute("aria-expanded") === "true";
+        head.setAttribute("aria-expanded", expanded ? "false" : "true");
+        if (expanded) {
+          body.setAttribute("hidden", "");
+        } else {
+          body.removeAttribute("hidden");
+          // On first expand, ensure content is rendered.
+          renderSide(target);
+        }
       });
     });
-    document.querySelectorAll(".cf-filters button[data-hfilter]").forEach((b) => {
+  }
+
+  function wireFilters() {
+    $$(".cf-filters button[data-sort]").forEach((b) => {
       b.addEventListener("click", (e) => {
-        document
-          .querySelectorAll(".cf-filters button[data-hfilter]")
+        const btn = e.currentTarget;
+        const side = btn.dataset.side;
+        const sort = btn.dataset.sort;
+        // clear .active within the same side's sort group
+        btn.parentNode.querySelectorAll(`button[data-side="${side}"][data-sort]`)
           .forEach((bb) => bb.classList.remove("active"));
-        e.currentTarget.classList.add("active");
-        state.hfilter = e.currentTarget.dataset.hfilter;
-        render();
+        btn.classList.add("active");
+        state.filters[side].sort = sort;
+        renderSide(side);
+      });
+    });
+    $$(".cf-filters button[data-hfilter]").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        const btn = e.currentTarget;
+        const side = btn.dataset.side;
+        const hfilter = btn.dataset.hfilter;
+        btn.parentNode.querySelectorAll(`button[data-side="${side}"][data-hfilter]`)
+          .forEach((bb) => bb.classList.remove("active"));
+        btn.classList.add("active");
+        state.filters[side].hfilter = hfilter;
+        renderSide(side);
       });
     });
   }
@@ -224,11 +264,20 @@
       state.data = await load();
       renderStats(state.data);
       renderLastRun(state.data);
+      wireCollapsibles();
       wireFilters();
-      render();
+      // Both sections start collapsed by default — do NOT auto-render
+      // into them until the user opens them. (We still render into
+      // hidden DOM so the first-open animation is snappy.)
+      renderSide("put");
+      renderSide("call");
     } catch (err) {
-      const list = $("#cf-list");
-      list.innerHTML = `<div class="cf-empty">Failed to load signals: ${err.message}</div>`;
+      const fail = (id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<div class="cf-empty">Failed to load signals: ${err.message}</div>`;
+      };
+      fail("cf-list-put");
+      fail("cf-list-call");
     }
   }
 

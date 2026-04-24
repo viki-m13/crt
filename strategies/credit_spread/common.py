@@ -194,8 +194,10 @@ class Features:
     trend: np.ndarray      # close/SMA200
     vol20: np.ndarray      # stdev of log returns, 20d, annualized-ish
     rsi14: np.ndarray      # RSI(14)
-    dd252: np.ndarray      # 1 - close/max(close[t-252..t])
+    dd252: np.ndarray      # 1 - close/max(close[t-252..t])   (down from 252d high)
+    up252: np.ndarray      # close/min(close[t-252..t]) - 1   (up from 252d low)
     mom_126: np.ndarray    # close[t]/close[t-126] - 1
+    mom_252: np.ndarray    # close[t]/close[t-252] - 1
 
 
 def compute_features(close: np.ndarray) -> Features:
@@ -205,10 +207,18 @@ def compute_features(close: np.ndarray) -> Features:
     vol20 = _rolling_std(logret, 20)
     rsi14 = _rsi(close, 14)
     hi252 = _rolling_max(close, 252)
+    lo252 = _rolling_min(close, 252)
     dd252 = 1.0 - close / hi252
+    up252 = close / lo252 - 1.0
     mom_126 = np.full_like(close, np.nan)
     mom_126[126:] = close[126:] / close[:-126] - 1.0
-    return Features(trend=trend, vol20=vol20, rsi14=rsi14, dd252=dd252, mom_126=mom_126)
+    mom_252 = np.full_like(close, np.nan)
+    mom_252[252:] = close[252:] / close[:-252] - 1.0
+    return Features(
+        trend=trend, vol20=vol20, rsi14=rsi14,
+        dd252=dd252, up252=up252,
+        mom_126=mom_126, mom_252=mom_252,
+    )
 
 
 # -------------------------- forward targets --------------------------
@@ -238,6 +248,15 @@ def forward_min_close(close: np.ndarray, h: int) -> np.ndarray:
     return out
 
 
+def forward_max_close(close: np.ndarray, h: int) -> np.ndarray:
+    """max(close[t+1..t+h]). NaN where the window runs off the end."""
+    n = len(close)
+    out = np.full(n, np.nan, dtype="float64")
+    for t in range(0, n - h):
+        out[t] = np.max(close[t + 1 : t + h + 1])
+    return out
+
+
 def forward_close(close: np.ndarray, h: int) -> np.ndarray:
     """close[t+h]. NaN where the window runs off the end."""
     n = len(close)
@@ -248,17 +267,36 @@ def forward_close(close: np.ndarray, h: int) -> np.ndarray:
 
 
 def worst_buffer_path(close: np.ndarray, h: int) -> np.ndarray:
-    """Fractional buffer required so that min_fwd(t,h) >= close[t] * (1-buf).
+    """PUT side — how far *below* today's price the stock went.
 
-        buf(t, h) = max(0, 1 - min_fwd(t,h)/close[t])
+    Fractional buffer required so that min_fwd(t,h) >= close[t] * (1-buf):
 
-    In words: what fraction below today's price did the stock touch in
-    the next h trading days? Always >= 0 (since if it never went below,
-    buf = 0).
+        buf_down(t, h) = max(0, 1 - min_fwd(t,h)/close[t])
+
+    Used when selling put credit spreads (short strike below spot).
     """
     m = forward_min_close(close, h)
     with np.errstate(invalid="ignore", divide="ignore"):
         buf = 1.0 - m / close
+    buf = np.where(np.isnan(buf), np.nan, np.maximum(buf, 0.0))
+    return buf
+
+
+def worst_buffer_path_up(close: np.ndarray, h: int) -> np.ndarray:
+    """CALL side — how far *above* today's price the stock went.
+
+    Fractional buffer required so that max_fwd(t,h) <= close[t] * (1+buf):
+
+        buf_up(t, h) = max(0, max_fwd(t,h)/close[t] - 1)
+
+    Used when selling call credit spreads (short strike above spot).
+    Symmetric to worst_buffer_path: every construction, purge, and
+    walk-forward fold semantic is identical, just mirrored along the
+    price axis.
+    """
+    m = forward_max_close(close, h)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        buf = m / close - 1.0
     buf = np.where(np.isnan(buf), np.nan, np.maximum(buf, 0.0))
     return buf
 
@@ -284,6 +322,7 @@ def worst_buffer_expiry(close: np.ndarray, h: int) -> np.ndarray:
 
 
 def regime_mask(f: Features, require_uptrend: bool) -> np.ndarray:
+    """PUT-side regime: uptrend + not deeply drawn-down."""
     if not require_uptrend:
         return np.isfinite(f.trend) & np.isfinite(f.dd252) & np.isfinite(f.vol20)
     mask = (
@@ -292,6 +331,29 @@ def regime_mask(f: Features, require_uptrend: bool) -> np.ndarray:
         & np.isfinite(f.vol20)
         & (f.trend >= 1.00)
         & (f.dd252 <= 0.20)
+    )
+    return mask
+
+
+def regime_mask_call(f: Features, require_bearish: bool) -> np.ndarray:
+    """CALL-side regime: below-SMA200 + hasn't rallied hard off 1-year low.
+
+    Symmetric to the put gate:
+        put gate  = (close >= SMA200) & (<=20% off 52w high)
+        call gate = (close <= SMA200) & (<=20% up from 52w low)
+
+    Intuition: for a short call strike to stay safe, the stock needs to
+    not rally sharply. Stocks below their 200-SMA that haven't already
+    started a recovery are the lowest-rally-probability population.
+    """
+    if not require_bearish:
+        return np.isfinite(f.trend) & np.isfinite(f.up252) & np.isfinite(f.vol20)
+    mask = (
+        np.isfinite(f.trend)
+        & np.isfinite(f.up252)
+        & np.isfinite(f.vol20)
+        & (f.trend <= 1.00)
+        & (f.up252 <= 0.20)
     )
     return mask
 
