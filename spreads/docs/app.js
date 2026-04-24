@@ -88,7 +88,7 @@
     }).filter((s) => s.ladderView.length > 0);
 
     const rorOf = (s) => Math.max(
-      ...s.ladderView.map((l) => (l.profit && l.profit.annualized_ror_pct) || 0),
+      ...s.ladderView.map((l) => (l.profit && l.profit.return_on_risk_pct) || 0),
       0,
     );
 
@@ -129,10 +129,10 @@
       const p = l.profit;
       profBlock = `
         <div class="cf-rung-profit">
-          <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.annualized_ror_pct, 1)}</strong>/yr</span>
+          <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.return_on_risk_pct, 2)}</strong> return on risk</span>
           <span class="cf-rung-profit-sub">
             ~$${p.est_credit_per_share.toFixed(2)} credit on $${p.spread_width.toFixed(2)} spread
-            &middot; ${fmtPct(p.return_on_risk_pct, 2)}/trade
+            &middot; max loss $${p.est_max_loss_per_share.toFixed(2)}
             &middot; IV ${fmtPct(p.implied_vol_pct, 1)}
           </span>
         </div>`;
