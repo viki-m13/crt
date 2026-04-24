@@ -1,0 +1,521 @@
+{
+  "generated_at": "2026-04-24T20:24:14Z",
+  "config": {
+    "horizons": [
+      5,
+      7,
+      10,
+      14,
+      21
+    ],
+    "target_grid": [
+      0.9,
+      0.85,
+      0.75,
+      0.65
+    ],
+    "min_touch_rate": 0.75,
+    "min_cert_buffer": 0.015,
+    "min_pooled_test": 20
+  },
+  "pooled_rules": [
+    {
+      "side": "put",
+      "regime": "parabolic",
+      "horizon": 14,
+      "target_rate": 0.65,
+      "cert_buffer": 0.023930842920542292,
+      "touch_rate": 0.7932584269662921,
+      "pooled_wins": 353,
+      "pooled_losses": 92,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 129,
+          "n_test": 150,
+          "cert_buffer": 0.004371673032587053,
+          "wins": 132,
+          "losses": 18
+        },
+        {
+          "year": 2021,
+          "n_train": 279,
+          "n_test": 37,
+          "cert_buffer": 0.018438788563326862,
+          "wins": 27,
+          "losses": 10
+        },
+        {
+          "year": 2022,
+          "n_train": 316,
+          "n_test": 85,
+          "cert_buffer": 0.018695958598115545,
+          "wins": 66,
+          "losses": 19
+        },
+        {
+          "year": 2023,
+          "n_train": 401,
+          "n_test": 43,
+          "cert_buffer": 0.02086214303874057,
+          "wins": 28,
+          "losses": 15
+        },
+        {
+          "year": 2024,
+          "n_train": 444,
+          "n_test": 47,
+          "cert_buffer": 0.020491357420646856,
+          "wins": 43,
+          "losses": 4
+        },
+        {
+          "year": 2025,
+          "n_train": 491,
+          "n_test": 54,
+          "cert_buffer": 0.02378813018643561,
+          "wins": 37,
+          "losses": 17
+        },
+        {
+          "year": 2026,
+          "n_train": 545,
+          "n_test": 29,
+          "cert_buffer": 0.02385193854945034,
+          "wins": 20,
+          "losses": 9
+        }
+      ],
+      "pooled_total": 445,
+      "live_fires": []
+    },
+    {
+      "side": "put",
+      "regime": "parabolic",
+      "horizon": 21,
+      "target_rate": 0.65,
+      "cert_buffer": 0.028718159678343683,
+      "touch_rate": 0.786036036036036,
+      "pooled_wins": 349,
+      "pooled_losses": 95,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 129,
+          "n_test": 150,
+          "cert_buffer": 0.009030156260823933,
+          "wins": 130,
+          "losses": 20
+        },
+        {
+          "year": 2021,
+          "n_train": 279,
+          "n_test": 37,
+          "cert_buffer": 0.023792937574509544,
+          "wins": 26,
+          "losses": 11
+        },
+        {
+          "year": 2022,
+          "n_train": 316,
+          "n_test": 85,
+          "cert_buffer": 0.023507829149409246,
+          "wins": 62,
+          "losses": 23
+        },
+        {
+          "year": 2023,
+          "n_train": 401,
+          "n_test": 43,
+          "cert_buffer": 0.023963032275603483,
+          "wins": 29,
+          "losses": 14
+        },
+        {
+          "year": 2024,
+          "n_train": 444,
+          "n_test": 47,
+          "cert_buffer": 0.023895076970474303,
+          "wins": 43,
+          "losses": 4
+        },
+        {
+          "year": 2025,
+          "n_train": 491,
+          "n_test": 54,
+          "cert_buffer": 0.02836773042783997,
+          "wins": 38,
+          "losses": 16
+        },
+        {
+          "year": 2026,
+          "n_train": 545,
+          "n_test": 28,
+          "cert_buffer": 0.028136440719139757,
+          "wins": 21,
+          "losses": 7
+        }
+      ],
+      "pooled_total": 444,
+      "live_fires": []
+    },
+    {
+      "side": "put",
+      "regime": "parabolic",
+      "horizon": 10,
+      "target_rate": 0.65,
+      "cert_buffer": 0.018107845624701156,
+      "touch_rate": 0.7849223946784922,
+      "pooled_wins": 354,
+      "pooled_losses": 97,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 129,
+          "n_test": 150,
+          "cert_buffer": 0.004371673032587053,
+          "wins": 131,
+          "losses": 19
+        },
+        {
+          "year": 2021,
+          "n_train": 279,
+          "n_test": 37,
+          "cert_buffer": 0.014321644561761174,
+          "wins": 28,
+          "losses": 9
+        },
+        {
+          "year": 2022,
+          "n_train": 316,
+          "n_test": 85,
+          "cert_buffer": 0.014433970580743725,
+          "wins": 67,
+          "losses": 18
+        },
+        {
+          "year": 2023,
+          "n_train": 401,
+          "n_test": 43,
+          "cert_buffer": 0.015337243925295455,
+          "wins": 29,
+          "losses": 14
+        },
+        {
+          "year": 2024,
+          "n_train": 444,
+          "n_test": 47,
+          "cert_buffer": 0.015244136120320408,
+          "wins": 41,
+          "losses": 6
+        },
+        {
+          "year": 2025,
+          "n_train": 491,
+          "n_test": 54,
+          "cert_buffer": 0.018502189669493466,
+          "wins": 38,
+          "losses": 16
+        },
+        {
+          "year": 2026,
+          "n_train": 545,
+          "n_test": 35,
+          "cert_buffer": 0.018864197901897327,
+          "wins": 20,
+          "losses": 15
+        }
+      ],
+      "pooled_total": 451,
+      "live_fires": []
+    },
+    {
+      "side": "call",
+      "regime": "spy_rel_weak",
+      "horizon": 21,
+      "target_rate": 0.75,
+      "cert_buffer": 0.017950277086264402,
+      "touch_rate": 0.7793017456359103,
+      "pooled_wins": 625,
+      "pooled_losses": 177,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 251,
+          "n_test": 107,
+          "cert_buffer": 0.01842100360360111,
+          "wins": 90,
+          "losses": 17
+        },
+        {
+          "year": 2021,
+          "n_train": 358,
+          "n_test": 161,
+          "cert_buffer": 0.021170331372750543,
+          "wins": 118,
+          "losses": 43
+        },
+        {
+          "year": 2022,
+          "n_train": 519,
+          "n_test": 109,
+          "cert_buffer": 0.0188161610903862,
+          "wins": 91,
+          "losses": 18
+        },
+        {
+          "year": 2023,
+          "n_train": 628,
+          "n_test": 82,
+          "cert_buffer": 0.020707613439452103,
+          "wins": 61,
+          "losses": 21
+        },
+        {
+          "year": 2024,
+          "n_train": 710,
+          "n_test": 135,
+          "cert_buffer": 0.019517977454433236,
+          "wins": 106,
+          "losses": 29
+        },
+        {
+          "year": 2025,
+          "n_train": 845,
+          "n_test": 152,
+          "cert_buffer": 0.019474460829762678,
+          "wins": 120,
+          "losses": 32
+        },
+        {
+          "year": 2026,
+          "n_train": 997,
+          "n_test": 56,
+          "cert_buffer": 0.01891840653803956,
+          "wins": 39,
+          "losses": 17
+        }
+      ],
+      "pooled_total": 802,
+      "live_fires": []
+    },
+    {
+      "side": "call",
+      "regime": "panic_day",
+      "horizon": 21,
+      "target_rate": 0.75,
+      "cert_buffer": 0.016554961658712012,
+      "touch_rate": 0.7777777777777778,
+      "pooled_wins": 287,
+      "pooled_losses": 82,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 151,
+          "n_test": 81,
+          "cert_buffer": 0.014222534875581675,
+          "wins": 63,
+          "losses": 18
+        },
+        {
+          "year": 2021,
+          "n_train": 232,
+          "n_test": 64,
+          "cert_buffer": 0.014747236610607398,
+          "wins": 53,
+          "losses": 11
+        },
+        {
+          "year": 2022,
+          "n_train": 296,
+          "n_test": 36,
+          "cert_buffer": 0.017772278175758608,
+          "wins": 26,
+          "losses": 10
+        },
+        {
+          "year": 2023,
+          "n_train": 332,
+          "n_test": 27,
+          "cert_buffer": 0.01687822396952055,
+          "wins": 22,
+          "losses": 5
+        },
+        {
+          "year": 2024,
+          "n_train": 359,
+          "n_test": 75,
+          "cert_buffer": 0.017478396458647575,
+          "wins": 59,
+          "losses": 16
+        },
+        {
+          "year": 2025,
+          "n_train": 434,
+          "n_test": 65,
+          "cert_buffer": 0.01741216711063415,
+          "wins": 51,
+          "losses": 14
+        },
+        {
+          "year": 2026,
+          "n_train": 499,
+          "n_test": 21,
+          "cert_buffer": 0.017630976797411105,
+          "wins": 13,
+          "losses": 8
+        }
+      ],
+      "pooled_total": 369,
+      "live_fires": []
+    },
+    {
+      "side": "call",
+      "regime": "deep_oversold",
+      "horizon": 21,
+      "target_rate": 0.75,
+      "cert_buffer": 0.021738438173666833,
+      "touch_rate": 0.7669706180344478,
+      "pooled_wins": 22710,
+      "pooled_losses": 6900,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 10087,
+          "n_test": 5912,
+          "cert_buffer": 0.02122246242398285,
+          "wins": 5025,
+          "losses": 887
+        },
+        {
+          "year": 2021,
+          "n_train": 15999,
+          "n_test": 1117,
+          "cert_buffer": 0.026244536003647737,
+          "wins": 985,
+          "losses": 132
+        },
+        {
+          "year": 2022,
+          "n_train": 17116,
+          "n_test": 9988,
+          "cert_buffer": 0.02726302204865461,
+          "wins": 7307,
+          "losses": 2681
+        },
+        {
+          "year": 2023,
+          "n_train": 27104,
+          "n_test": 4404,
+          "cert_buffer": 0.024062786817250496,
+          "wins": 3229,
+          "losses": 1175
+        },
+        {
+          "year": 2024,
+          "n_train": 31508,
+          "n_test": 2785,
+          "cert_buffer": 0.022864616235289018,
+          "wins": 1990,
+          "losses": 795
+        },
+        {
+          "year": 2025,
+          "n_train": 34293,
+          "n_test": 4607,
+          "cert_buffer": 0.022065321546662967,
+          "wins": 3598,
+          "losses": 1009
+        },
+        {
+          "year": 2026,
+          "n_train": 38900,
+          "n_test": 797,
+          "cert_buffer": 0.021876265914529073,
+          "wins": 576,
+          "losses": 221
+        }
+      ],
+      "pooled_total": 29610,
+      "live_fires": []
+    },
+    {
+      "side": "put",
+      "regime": "multi_stack",
+      "horizon": 14,
+      "target_rate": 0.65,
+      "cert_buffer": 0.015229213326146265,
+      "touch_rate": 0.7651515151515151,
+      "pooled_wins": 101,
+      "pooled_losses": 31,
+      "n_folds": 7,
+      "folds": [
+        {
+          "year": 2020,
+          "n_train": 53,
+          "n_test": 30,
+          "cert_buffer": 0.006385402973228762,
+          "wins": 27,
+          "losses": 3
+        },
+        {
+          "year": 2021,
+          "n_train": 83,
+          "n_test": 3,
+          "cert_buffer": 0.014118160731999799,
+          "wins": 3,
+          "losses": 0
+        },
+        {
+          "year": 2022,
+          "n_train": 86,
+          "n_test": 34,
+          "cert_buffer": 0.014156150079029012,
+          "wins": 25,
+          "losses": 9
+        },
+        {
+          "year": 2023,
+          "n_train": 120,
+          "n_test": 28,
+          "cert_buffer": 0.01531029884426113,
+          "wins": 19,
+          "losses": 9
+        },
+        {
+          "year": 2024,
+          "n_train": 148,
+          "n_test": 12,
+          "cert_buffer": 0.014707393533961399,
+          "wins": 9,
+          "losses": 3
+        },
+        {
+          "year": 2025,
+          "n_train": 160,
+          "n_test": 23,
+          "cert_buffer": 0.014849969156943612,
+          "wins": 17,
+          "losses": 6
+        },
+        {
+          "year": 2026,
+          "n_train": 183,
+          "n_test": 2,
+          "cert_buffer": 0.015326515947884103,
+          "wins": 1,
+          "losses": 1
+        }
+      ],
+      "pooled_total": 132,
+      "live_fires": []
+    }
+  ],
+  "live_count": 0
+}
