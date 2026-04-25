@@ -490,9 +490,25 @@
   };
 
   function ocFilteredSorted(side) {
-    const key = side === "rec" ? "recommended"
-              : side === "put" ? "put_signals" : "call_signals";
-    const items = (ocState.data?.[key] || []).slice();
+    let items = [];
+    const data = ocState.data;
+    if (!data) return [];
+    if (side === "put")  items = (data.put_signals  || []).slice();
+    else if (side === "call") items = (data.call_signals || []).slice();
+    else if (side === "rec") {
+      // Resolve recommended refs from put_signals + call_signals
+      const lookup = {};
+      (data.put_signals  || []).forEach((s) => { lookup[`put|${s.ticker}`]  = s; });
+      (data.call_signals || []).forEach((s) => { lookup[`call|${s.ticker}`] = s; });
+      const refs = data.recommended || [];
+      // Fallback: if recommended is the old fully-inline format, just use it
+      const isInline = refs.length && refs[0] && refs[0].ladder;
+      if (isInline) {
+        items = refs.slice();
+      } else {
+        items = refs.map((r) => lookup[`${r.side}|${r.ticker}`]).filter(Boolean);
+      }
+    }
     const f = ocState.filters[side];
     const tierOk = (t) => (
       f.tier === "all" ? true :
@@ -763,9 +779,23 @@
     setBadge("oc-calls-badge", oc.call_signals || [], "ticker");
 
     ocWireFilters();
-    ocRenderSide("rec");
-    ocRenderSide("put");
-    ocRenderSide("call");
+    // Lazy-render: only build the section's rung HTML the first time
+    // the user expands it. Initial page-load doesn't pay the cost of
+    // 100s of rungs that may never be viewed.
+    const lazy = {rec: false, put: false, call: false};
+    document.querySelectorAll('.cf-section-head[data-target^="oc-"]').forEach((h) => {
+      h.addEventListener("click", () => {
+        const t = h.dataset.target;            // oc-rec / oc-puts / oc-calls
+        const side = t === "oc-rec" ? "rec"
+                   : t === "oc-puts" ? "put"
+                   : t === "oc-calls" ? "call" : null;
+        if (!side) return;
+        if (!lazy[side]) {
+          ocRenderSide(side);
+          lazy[side] = true;
+        }
+      });
+    });
   }
 
   async function main() {
