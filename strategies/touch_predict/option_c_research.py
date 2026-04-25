@@ -594,7 +594,8 @@ def main() -> int:
     out_path = os.path.join(_HERE, "results", "option_c_signals.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as fh:
-        json.dump(out, fh, indent=2)
+        # No indent — keeps the published JSON small for the webapp.
+        json.dump(out, fh, separators=(",", ":"))
     print(f"\nWrote {out_path}")
     return 0
 
