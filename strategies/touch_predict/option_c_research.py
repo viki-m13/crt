@@ -487,6 +487,8 @@ def main() -> int:
     # K_long) — they're testing the same instrument with different
     # backtest windows. Keep the one with the highest empirical win
     # rate as the canonical rung.
+    LADDER_CAP_PER_TICKER = 12   # cap to keep payload small for the webapp
+
     put_signals_grouped = []
     call_signals_grouped = []
     for tk_key, entry in by_ticker.items():
@@ -501,9 +503,28 @@ def main() -> int:
                 or (r["win_rate_pct"] == prev["win_rate_pct"]
                     and r["n_test"] > prev["n_test"])):
                 per_trade[key] = r
-        # Sort the ladder: nearest expiry first, then by strike
+        # Stratified cap: keep the highest-ROI rung in each
+        # (horizon, tier) bucket. This guarantees that whatever
+        # filter combination the user picks (e.g., 90d + 98%-tier)
+        # will surface a result if one exists in the data — no rule
+        # gets dropped just because its ROI didn't make a flat top-N.
+        per_bucket: dict[tuple, dict] = {}
+        for r in per_trade.values():
+            bkey = (r["horizon"], r["tier"])
+            prev = per_bucket.get(bkey)
+            if (prev is None
+                or r["profit"]["return_on_risk_pct"] > prev["profit"]["return_on_risk_pct"]):
+                per_bucket[bkey] = r
+        # Trim each fold dict to the keys the UI actually renders.
+        for r in per_bucket.values():
+            r["folds"] = [
+                {"year": f["year"], "n_test": f["n_test"],
+                 "wins": f["wins"], "losses": f["losses"], "pnl": f["pnl"]}
+                for f in r["folds"]
+            ]
+        # Final ladder display order: nearest expiry first, then richer credit
         entry["ladder"] = sorted(
-            per_trade.values(),
+            per_bucket.values(),
             key=lambda x: (x["expiry_date"], -x["strike_short"]),
         )
         if not entry["ladder"]:
@@ -573,7 +594,8 @@ def main() -> int:
     out_path = os.path.join(_HERE, "results", "option_c_signals.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as fh:
-        json.dump(out, fh, indent=2)
+        # No indent — keeps the published JSON small for the webapp.
+        json.dump(out, fh, separators=(",", ":"))
     print(f"\nWrote {out_path}")
     return 0
 
