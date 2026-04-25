@@ -541,15 +541,18 @@
       (l.calendar_days_to_expiry ? ` &middot; ${l.calendar_days_to_expiry} cal days` : "");
     const sideAction = side === "put" ? "Sell put at" : "Sell call at";
     const sideWord   = side === "put" ? "below" : "above";
+    const poolNote = (l.pool_win_rate_pct !== undefined)
+      ? ` &middot; rule's pool win ${fmtPct(l.pool_win_rate_pct, 1)} across ${fmtInt(l.pool_n_test || 0)} tests`
+      : "";
     const profBlock = l.profit ? `
       <div class="cf-rung-profit">
         <span class="cf-rung-profit-main">Est. <strong>${fmtPct(l.profit.return_on_risk_pct, 2)}</strong> on max-loss
-          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> historical win</span>
+          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> ${l.ticker || ""} historical win</span>
         <span class="cf-rung-profit-sub">
           credit ~$${l.profit.est_credit_per_share.toFixed(2)} on $${l.profit.spread_width.toFixed(2)} spread
           &middot; max loss $${l.profit.est_max_loss_per_share.toFixed(2)}
           &middot; protection (long leg) at ${fmt$(l.strike_long)}
-          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}
+          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}${poolNote}
         </span>
       </div>` : "";
     return `
