@@ -202,17 +202,23 @@ class RuleResult:
 
 def _evaluate(side: str, regime_name: str, horizon: int,
               k_short: float, k_long: float,
-              fires: list[Fire]) -> RuleResult | None:
+              fires: list[Fire]) -> tuple[RuleResult, dict[str, list[dict]]] | None:
+    """Returns (pooled_rule, per_ticker_folds) so each ticker can be
+    shown its OWN historical performance on this rule (rather than the
+    universe-pooled aggregate)."""
     rr = RuleResult(side=side, regime=regime_name, horizon=horizon,
                     k_short=k_short, k_long=k_long)
     if not fires:
         return None
 
-    # Per-year fold buckets
+    # Per-year × per-ticker bucket
     by_year: dict[int, list[Fire]] = {}
     for fi in fires:
         y = int(str(fi.date)[:4])
         by_year.setdefault(y, []).append(fi)
+
+    # Collect per-ticker fold rows alongside the pooled folds.
+    per_ticker: dict[str, list[dict]] = {}
 
     for year in FOLD_YEARS:
         fold_fires = by_year.get(year, [])
@@ -223,6 +229,8 @@ def _evaluate(side: str, regime_name: str, horizon: int,
         mxloss_sum = 0.0
         credit_sum = 0.0
         T = horizon * 1.4 / 365.0   # session→calendar rough conversion
+        # per-ticker tally for this year
+        tk_year: dict[str, dict] = {}
         for fi in fold_fires:
             credit, max_loss = _credit_and_maxloss(
                 side, fi.spot, fi.sigma * IV_MULT, k_short, k_long, T
@@ -236,6 +244,15 @@ def _evaluate(side: str, regime_name: str, horizon: int,
                 wins += 1
             else:
                 losses += 1
+            tk = tk_year.setdefault(fi.ticker, {
+                "year": year, "n_test": 0, "wins": 0, "losses": 0, "pnl": 0.0,
+            })
+            tk["n_test"] += 1
+            if pnl > 0:
+                tk["wins"] += 1
+            else:
+                tk["losses"] += 1
+            tk["pnl"] += pnl
         rr.folds.append({
             "year": year,
             "n_fires": len(fold_fires),
@@ -245,6 +262,8 @@ def _evaluate(side: str, regime_name: str, horizon: int,
             "max_loss_sum": mxloss_sum,
             "credit_sum": credit_sum,
         })
+        for tkr, row in tk_year.items():
+            per_ticker.setdefault(tkr, []).append(row)
 
     rr.pooled_wins = sum(f["wins"] for f in rr.folds)
     rr.pooled_losses = sum(f["losses"] for f in rr.folds)
@@ -266,7 +285,7 @@ def _evaluate(side: str, regime_name: str, horizon: int,
         and len(rr.folds) >= MIN_TOTAL_FOLDS
         and losing_folds <= MAX_LOSING_FOLDS
     )
-    return rr
+    return rr, per_ticker
 
 
 # -------- live signal lookup ---------------------------------------------
@@ -325,6 +344,10 @@ def main() -> int:
     results: list[RuleResult] = []
     live_by_rule: dict[str, list[dict]] = {}
 
+    # Per-ticker folds keyed by rule_id, so each ticker card can show
+    # its OWN historical track record on the rule (not the universe pool).
+    per_ticker_folds_by_rule: dict[str, dict[str, list[dict]]] = {}
+
     for side, regime_map in (("put", CALL_REGIMES),    # puts triggered by touch-UP signals (call regimes)
                              ("call", PUT_REGIMES)):    # calls triggered by touch-DOWN signals (put regimes)
         for rname, rfn in regime_map.items():
@@ -334,14 +357,16 @@ def main() -> int:
                     continue
                 for k_short in K_SHORT_GRID:
                     k_long = k_short + SPREAD_WIDTH
-                    r = _evaluate(side, rname, h, k_short, k_long, fires)
-                    if r is None:
+                    res = _evaluate(side, rname, h, k_short, k_long, fires)
+                    if res is None:
                         continue
+                    r, per_ticker = res
                     if not r.eligible:
                         continue
                     results.append(r)
                     rule_key = f"{side}|{rname}|{h}|{k_short:.3f}"
                     live_by_rule[rule_key] = _find_live(side, rfn, h, k_short, k_long)
+                    per_ticker_folds_by_rule[rule_key] = per_ticker
         print(f"  {side} side: {sum(1 for r in results if r.side==side)} rules so far  "
               f"elapsed={time.time()-t0:.1f}s")
 
@@ -432,9 +457,21 @@ def main() -> int:
                 "realized_vol_pct": fi["realized_vol"] * 100.0,
                 "ladder":      [],
             })
-            tier = ("certified"   if r.win_rate >= 0.999 else
-                    "near"        if r.win_rate >= 0.95  else
-                    "high")
+            # Per-ticker fold breakdown for THIS ticker's track record on
+            # this rule (rather than the pool-wide aggregate). May be
+            # empty if the ticker had no fires under this rule (rare).
+            tk_folds = per_ticker_folds_by_rule.get(rule_id, {}).get(fi["ticker"], [])
+            tk_wins = sum(f["wins"] for f in tk_folds)
+            tk_losses = sum(f["losses"] for f in tk_folds)
+            tk_total = tk_wins + tk_losses
+            tk_win_rate = (tk_wins / tk_total) if tk_total > 0 else 0.0
+            # Tier badge classifies the ticker's OWN historical accuracy
+            # on this specific rule. (The rule's overall pooled win rate
+            # is reported separately as `pool_win_rate_pct`.)
+            tier = ("certified" if tk_win_rate >= 0.999 else
+                    "near"      if tk_win_rate >= 0.98  else
+                    "high"      if tk_win_rate >= 0.95  else
+                    "standard")
             entry["ladder"].append({
                 "regime":         r.regime,
                 "regime_label":   REGIME_LABELS.get(r.regime, r.regime),
@@ -448,16 +485,16 @@ def main() -> int:
                 "calendar_days_to_expiry": fi["cal_days"],
                 "strike_short":   fi["strike_short"],
                 "strike_long":    fi["strike_long"],
-                "buffer_pct":     r.k_short * 100.0,        # OTM distance shown as "buffer"
-                "win_rate_pct":   r.win_rate * 100.0,
-                "n_test":         r.pooled_wins + r.pooled_losses,
-                "n_folds":        len(r.folds),
-                "pooled_wins":    r.pooled_wins,
-                "pooled_losses":  r.pooled_losses,
-                "history_worst_buffer_pct": (
-                    1.0 - min((f["pnl"] / max(f["max_loss_sum"], 1e-9))
-                              for f in r.folds) * 100.0
-                ) if r.folds else 0.0,
+                "buffer_pct":     r.k_short * 100.0,           # OTM distance shown as "buffer"
+                # Per-ticker stats (what THIS ticker actually did on this rule)
+                "win_rate_pct":   tk_win_rate * 100.0,
+                "n_test":         tk_total,
+                "n_folds":        len(tk_folds),
+                "pooled_wins":    tk_wins,
+                "pooled_losses":  tk_losses,
+                # Rule-level pooled stats (the rule's universe-wide accuracy)
+                "pool_win_rate_pct": r.win_rate * 100.0,
+                "pool_n_test":       r.pooled_wins + r.pooled_losses,
                 "profit": {
                     "est_credit_per_share":   fi["est_credit"],
                     "est_max_loss_per_share": fi["est_max_loss"],
@@ -466,19 +503,7 @@ def main() -> int:
                     "implied_vol_pct":        fi["realized_vol"] * 100.0 * IV_MULT,
                     "spread_width":           fi["est_credit"] + fi["est_max_loss"],
                 },
-                "folds": [
-                    {
-                        "year": f["year"],
-                        "n_train": 0,            # not tracked separately for OC
-                        "n_test":  f["n_fires"],
-                        "wins":    f["wins"],
-                        "losses":  f["losses"],
-                        "pnl":     f["pnl"],
-                        "credit_sum":   f["credit_sum"],
-                        "max_loss_sum": f["max_loss_sum"],
-                    }
-                    for f in r.folds
-                ],
+                "folds": tk_folds,    # this ticker's per-year breakdown
             })
 
     # Per ticker: dedupe rungs that resolve to the SAME real options
@@ -508,20 +533,19 @@ def main() -> int:
         # filter combination the user picks (e.g., 90d + 98%-tier)
         # will surface a result if one exists in the data — no rule
         # gets dropped just because its ROI didn't make a flat top-N.
+        # Skip rungs with no per-ticker history (tk_total == 0).
         per_bucket: dict[tuple, dict] = {}
         for r in per_trade.values():
+            if r["n_test"] < 5:
+                # Too-thin per-ticker sample (< 5 historical fires) —
+                # the ticker hasn't been in this regime often enough
+                # to make a personal track-record claim.
+                continue
             bkey = (r["horizon"], r["tier"])
             prev = per_bucket.get(bkey)
             if (prev is None
                 or r["profit"]["return_on_risk_pct"] > prev["profit"]["return_on_risk_pct"]):
                 per_bucket[bkey] = r
-        # Trim each fold dict to the keys the UI actually renders.
-        for r in per_bucket.values():
-            r["folds"] = [
-                {"year": f["year"], "n_test": f["n_test"],
-                 "wins": f["wins"], "losses": f["losses"], "pnl": f["pnl"]}
-                for f in r["folds"]
-            ]
         # Final ladder display order: nearest expiry first, then richer credit
         entry["ladder"] = sorted(
             per_bucket.values(),
