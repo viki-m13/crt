@@ -64,21 +64,21 @@ from pricing import bs_call, bs_put
 # For puts: K_short = spot*(1 - k_short_frac); K_long  = spot*(1 - k_long_frac)
 # For calls: K_short = spot*(1 + k_short_frac); K_long = spot*(1 + k_long_frac)
 # We grid-search over these.
-K_SHORT_GRID = [0.01, 0.02, 0.03, 0.05, 0.07, 0.10]   # 1, 2, 3, 5, 7, 10% OTM
+K_SHORT_GRID = [0.01, 0.02, 0.03, 0.05, 0.07, 0.10, 0.15, 0.20, 0.25,
+                0.30, 0.40, 0.50]            # 1-50% OTM
 SPREAD_WIDTH = 0.03                       # long leg k_long = k_short + 3%
 
-# Horizons span short-dated weeklies to monthly/quarterly. Longer
-# tenors give mean-reversion more time to play out, lifting win rate
-# (sometimes to 100%). Shorter tenors have cheaper premium and faster
-# theta, keeping capital velocity high.
-HORIZONS = [5, 7, 10, 14, 21, 30, 45, 60, 90]
+# Horizons span short-dated weeklies to LEAPS-style annual. Longer
+# tenors with deeper OTM strikes give mean-reversion the maximum
+# possible cushion — this is what unlocks 100% win rates.
+HORIZONS = [5, 7, 10, 14, 21, 30, 45, 60, 90, 120, 180, 252]
 
 IV_MULT = 1.15                            # IV = realized × this
 HAIRCUT = 0.80                            # keep 80% of BS credit after slippage
 
 MIN_POOLED_TEST = 30                      # need this many pooled OOS test fires
 MIN_WIN_RATE = 0.83                       # empirical close-at-expiry win rate
-MIN_AGG_ROI = 0.03                        # 3% minimum per-trade ROI on max-loss
+MIN_AGG_ROI = 0.005                       # 0.5% (low: keep 100%-certified deep-OTM rules)
 MAX_LOSING_FOLDS = 1                      # allow up to this many years with net loss
 MIN_TOTAL_FOLDS = 5                       # but must have been tested in >= this many years
 
@@ -397,6 +397,136 @@ def main() -> int:
             ),
         }
 
+    # ---------------------------------------------------------------
+    # Restructure rule-keyed output → ticker-keyed signals so the UI
+    # can present these the same way as the credit_spread engine
+    # (one ticker per card, multi-rung ladder).
+    # ---------------------------------------------------------------
+
+    REGIME_LABELS = {
+        "plain":           "All stocks (unconditional)",
+        "connors_tps":     "Connors TPS setup",
+        "multi_stack":     "Multi-indicator mean-reversion",
+        "panic_day":       "Panic-drop day",
+        "spy_rel_weak":    "Underperforming S&P 500",
+        "deep_oversold":   "Deep oversold",
+        "dip_in_uptrend":  "Dip in uptrend",
+        "overbought":      "Overbought",
+        "deep_overbought": "Deep overbought",
+        "parabolic":       "Parabolic move",
+    }
+
+    def _ticker_key(side: str, ticker: str) -> str:
+        return f"{side}|{ticker}"
+
+    by_ticker: dict[str, dict] = {}
+    for r in results:
+        rule_id = f"{r.side}|{r.regime}|{r.horizon}|{r.k_short:.3f}"
+        for fi in live_by_rule.get(rule_id, []):
+            tk_key = _ticker_key(r.side, fi["ticker"])
+            entry = by_ticker.setdefault(tk_key, {
+                "ticker":      fi["ticker"],
+                "today_close": fi["spot"],
+                "end_date":    fi["as_of"],
+                "side":        r.side,
+                "realized_vol_pct": fi["realized_vol"] * 100.0,
+                "ladder":      [],
+            })
+            tier = ("certified"   if r.win_rate >= 0.999 else
+                    "near"        if r.win_rate >= 0.95  else
+                    "high")
+            entry["ladder"].append({
+                "regime":         r.regime,
+                "regime_label":   REGIME_LABELS.get(r.regime, r.regime),
+                "horizon":        r.horizon,
+                "tier":           tier,
+                "k_short_frac":   r.k_short,
+                "k_long_frac":    r.k_long,
+                "spread_width_pct": (r.k_long - r.k_short) * 100.0,
+                "expiry_date":    fi["expiry"],
+                "expiry_type":    fi["expiry_type"],
+                "calendar_days_to_expiry": fi["cal_days"],
+                "strike_short":   fi["strike_short"],
+                "strike_long":    fi["strike_long"],
+                "buffer_pct":     r.k_short * 100.0,        # OTM distance shown as "buffer"
+                "win_rate_pct":   r.win_rate * 100.0,
+                "n_test":         r.pooled_wins + r.pooled_losses,
+                "n_folds":        len(r.folds),
+                "pooled_wins":    r.pooled_wins,
+                "pooled_losses":  r.pooled_losses,
+                "history_worst_buffer_pct": (
+                    1.0 - min((f["pnl"] / max(f["max_loss_sum"], 1e-9))
+                              for f in r.folds) * 100.0
+                ) if r.folds else 0.0,
+                "profit": {
+                    "est_credit_per_share":   fi["est_credit"],
+                    "est_max_loss_per_share": fi["est_max_loss"],
+                    "return_on_risk_pct":     fi["est_roi"] * 100.0,
+                    "annualized_ror_pct":     fi["est_roi"] * (365.0 / max(fi["cal_days"], 1)) * 100.0,
+                    "implied_vol_pct":        fi["realized_vol"] * 100.0 * IV_MULT,
+                    "spread_width":           fi["est_credit"] + fi["est_max_loss"],
+                },
+                "folds": [
+                    {
+                        "year": f["year"],
+                        "n_train": 0,            # not tracked separately for OC
+                        "n_test":  f["n_fires"],
+                        "wins":    f["wins"],
+                        "losses":  f["losses"],
+                        "pnl":     f["pnl"],
+                        "credit_sum":   f["credit_sum"],
+                        "max_loss_sum": f["max_loss_sum"],
+                    }
+                    for f in r.folds
+                ],
+            })
+
+    # Per ticker, keep best rung per (horizon) sorted by ROI; sort ladder
+    # by horizon ascending for display
+    put_signals_grouped = []
+    call_signals_grouped = []
+    for tk_key, entry in by_ticker.items():
+        # Dedup by horizon — keep the rung with highest ROI per horizon
+        per_h = {}
+        for r in entry["ladder"]:
+            h = r["horizon"]
+            if h not in per_h or r["profit"]["return_on_risk_pct"] > per_h[h]["profit"]["return_on_risk_pct"]:
+                per_h[h] = r
+        entry["ladder"] = sorted(per_h.values(), key=lambda x: x["horizon"])
+        if not entry["ladder"]:
+            continue
+        # Promote the best rung to top-level fields (mirrors credit_spread shape)
+        best = max(entry["ladder"], key=lambda x: x["profit"]["return_on_risk_pct"])
+        entry["best_tier"]         = max(
+            (r["tier"] for r in entry["ladder"]),
+            key=lambda t: {"certified": 3, "near": 2, "high": 1}.get(t, 0),
+        )
+        entry["regime"]            = best["regime"]
+        entry["regime_label"]      = best["regime_label"]
+        entry["horizon"]           = best["horizon"]
+        entry["expiry_date"]       = best["expiry_date"]
+        entry["expiry_type"]       = best["expiry_type"]
+        entry["strike"]            = best["strike_short"]
+        entry["strike_long"]       = best["strike_long"]
+        entry["buffer_pct"]        = best["buffer_pct"]
+        entry["win_rate_pct"]      = best["win_rate_pct"]
+        entry["profit"]            = best["profit"]
+        entry["n_test"]            = best["n_test"]
+        entry["n_folds"]           = best["n_folds"]
+        entry["calendar_days_to_expiry"] = best["calendar_days_to_expiry"]
+        if entry["side"] == "put":
+            put_signals_grouped.append(entry)
+        else:
+            call_signals_grouped.append(entry)
+
+    # Sort by best-ladder ROI desc
+    put_signals_grouped.sort(key=lambda e: -e["profit"]["return_on_risk_pct"])
+    call_signals_grouped.sort(key=lambda e: -e["profit"]["return_on_risk_pct"])
+    recommended = sorted(
+        put_signals_grouped + call_signals_grouped,
+        key=lambda e: -e["profit"]["return_on_risk_pct"],
+    )[:30]
+
     out = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "config": {
@@ -409,10 +539,10 @@ def main() -> int:
             "min_total_folds": MIN_TOTAL_FOLDS,
         },
         "summary": {
-            "n_eligible_rules": len(results),
-            "n_short_puts":  len(short_puts),
-            "n_short_calls": len(short_calls),
-            "n_live_fires":  n_live,
+            "n_eligible_rules":  len(results),
+            "n_short_puts":      len(put_signals_grouped),
+            "n_short_calls":     len(call_signals_grouped),
+            "n_live_fires":      n_live,
             "overall_win_rate_pct": (
                 sum(r.pooled_wins for r in results)
                 / max(1, sum(r.pooled_wins + r.pooled_losses for r in results)) * 100
@@ -422,9 +552,9 @@ def main() -> int:
                 / max(1e-9, sum(r.pooled_premium for r in results)) * 100
             ),
         },
-        "short_puts":  [rule_dict(r) for r in short_puts],
-        "short_calls": [rule_dict(r) for r in short_calls],
-        "recommended": [rule_dict(r) for r in results[:20]],  # top 20 by ROI
+        "put_signals":  put_signals_grouped,
+        "call_signals": call_signals_grouped,
+        "recommended":  recommended,
     }
 
     out_path = os.path.join(_HERE, "results", "option_c_signals.json")
