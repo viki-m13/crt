@@ -479,69 +479,247 @@
     } catch (e) { return null; }
   }
 
-  // Human-readable names for regime codes.
-  const REGIME_LABELS = {
-    plain:             "All stocks (unconditional)",
-    connors_tps:       "Connors TPS setup",
-    multi_stack:       "Multi-indicator mean-reversion",
-    panic_day:         "Panic-drop day",
-    spy_rel_weak:      "Underperforming S&P 500",
-    deep_oversold:     "Deep oversold",
-    dip_in_uptrend:    "Dip in uptrend",
-    overbought:        "Overbought",
-    deep_overbought:   "Deep overbought",
-    parabolic:         "Parabolic move",
+  // ---- Option C state + render --------------------------------------
+  const ocState = {
+    data: null,
+    filters: {
+      put:  { sort: "profit", hfilter: "all", tier: "all" },
+      call: { sort: "profit", hfilter: "all", tier: "all" },
+      rec:  { sort: "profit", hfilter: "all", tier: "all" },
+    },
   };
-  const regimeLabel = (rg) => REGIME_LABELS[rg] || rg;
 
-  function ocCardHTML(rule) {
-    const sideBadge = rule.side === "put"
-      ? `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e">SHORT PUT</span>`
-      : `<span class="cf-regime-badge" style="color:#b35900;border-color:#b35900">SHORT CALL</span>`;
-    const fires = rule.live_fires || [];
-    const sideWord = rule.side === "put" ? "below" : "above";
-    const liveBlock = fires.length
-      ? `<div class="cf-ladder">` + fires.slice(0, 8).map((fi) => {
-          return `<div class="cf-rung">
-            <div class="cf-rung-h">${fi.ticker} &middot; spot ${fmt$(fi.spot)} &middot; Expires <strong>${fi.expiry || "-"}</strong> <span class="tag tag-expiry">${fi.expiry_type || ""}</span> &middot; ${rule.horizon}d</div>
-            <div class="cf-rung-k">Sell ${rule.side === "put" ? "put" : "call"} at ${fmt$(fi.strike_short)}</div>
-            <div class="cf-rung-b">${(rule.k_short_frac*100).toFixed(1)}% ${sideWord} spot &middot; protection (long leg) at ${fmt$(fi.strike_long)}</div>
-            <div class="cf-rung-profit">
-              <span class="cf-rung-profit-main">Est. <strong>${fmtPct(fi.est_roi*100, 1)}</strong> on max-loss</span>
-              <span class="cf-rung-profit-sub">credit $${fi.est_credit.toFixed(2)} &middot; max loss $${fi.est_max_loss.toFixed(2)} &middot; σ ${fmtPct(fi.realized_vol*100, 0)}</span>
-            </div>
-          </div>`;
-        }).join("") + `</div>`
-      : `<div class="cf-empty" style="margin-top:10px">No live fires for this rule today.</div>`;
-    const foldStr = rule.folds
-      .map(f => `${f.year}: W${f.wins}/L${f.losses} $${f.pnl.toFixed(0)}`)
-      .join(" · ");
+  function ocFilteredSorted(side) {
+    const key = side === "rec" ? "recommended"
+              : side === "put" ? "put_signals" : "call_signals";
+    const items = (ocState.data?.[key] || []).slice();
+    const f = ocState.filters[side];
+    const tierOk = (t) => (
+      f.tier === "all" ? true :
+      f.tier === "100" ? t === "certified" :
+      f.tier === "98"  ? (t === "certified" || t === "near") :
+      f.tier === "95"  ? (t === "certified" || t === "near" || t === "high")
+                        : true
+    );
+    const filtered = items.map((s) => {
+      const rungs = (s.ladder || []).filter((l) =>
+        (f.hfilter === "all" || String(l.horizon) === String(f.hfilter))
+        && tierOk(l.tier)
+      );
+      return { ...s, ladderView: rungs };
+    }).filter((s) => s.ladderView.length > 0);
+
+    const winOf = (s) => Math.max(...s.ladderView.map((l) => l.win_rate_pct));
+    const roiOf = (s) => Math.max(
+      ...s.ladderView.map((l) => (l.profit && l.profit.return_on_risk_pct) || 0), 0,
+    );
+    const bufOf = (s) => Math.min(...s.ladderView.map((l) => l.buffer_pct));
+    const tstOf = (s) => Math.max(...s.ladderView.map((l) => l.n_test));
+
+    filtered.sort((a, b) => {
+      if (f.sort === "ticker") return a.ticker.localeCompare(b.ticker);
+      if (f.sort === "win")    return winOf(b) - winOf(a);
+      if (f.sort === "buffer") return bufOf(a) - bufOf(b);
+      if (f.sort === "tests")  return tstOf(b) - tstOf(a);
+      return roiOf(b) - roiOf(a);  // default
+    });
+    return filtered;
+  }
+
+  function ocTierBadge(t) {
+    if (t === "certified") return `<span class="cf-regime-badge regime" style="color:#1a7a3e;border-color:#1a7a3e">100% certified</span>`;
+    if (t === "near")      return `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e">98%+ near-certified</span>`;
+    if (t === "high")      return `<span class="cf-regime-badge">95%+ high-accuracy</span>`;
+    return `<span class="cf-regime-badge">standard</span>`;
+  }
+
+  function ocRungHTML(l, side) {
+    const exType = l.expiry_type || "";
+    const expLine = `Expires <strong>${l.expiry_date}</strong>` +
+      (exType ? ` <span class="tag tag-expiry">${exType}</span>` : "") +
+      ` &middot; ${l.horizon}-session backtest` +
+      (l.calendar_days_to_expiry ? ` &middot; ${l.calendar_days_to_expiry} cal days` : "");
+    const sideAction = side === "put" ? "Sell put at" : "Sell call at";
+    const sideWord   = side === "put" ? "below" : "above";
+    const profBlock = l.profit ? `
+      <div class="cf-rung-profit">
+        <span class="cf-rung-profit-main">Est. <strong>${fmtPct(l.profit.return_on_risk_pct, 2)}</strong> on max-loss
+          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> historical win</span>
+        <span class="cf-rung-profit-sub">
+          credit ~$${l.profit.est_credit_per_share.toFixed(2)} on $${l.profit.spread_width.toFixed(2)} spread
+          &middot; max loss $${l.profit.est_max_loss_per_share.toFixed(2)}
+          &middot; protection (long leg) at ${fmt$(l.strike_long)}
+          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}
+        </span>
+      </div>` : "";
     return `
-      <div class="cf-card">
+      <div class="cf-rung">
+        <div class="cf-rung-h">${expLine}</div>
+        <div class="cf-rung-k">${sideAction} ${fmt$(l.strike_short)}</div>
+        <div class="cf-rung-b">${(l.k_short_frac*100).toFixed(1)}% ${sideWord} spot</div>
+        ${profBlock}
+        <div class="cf-rung-m">
+          ${ocTierBadge(l.tier)}
+          <span class="tag">${l.regime_label || l.regime}</span>
+          <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
+          <span class="tag">${l.n_folds} folds</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function ocFoldTableHTML(ladder) {
+    const horizons = ladder.map((l) => l.horizon);
+    const years = Array.from(
+      new Set(ladder.flatMap((l) => l.folds.map((f) => f.year)))
+    ).sort();
+    const head = `
+      <tr><th>Fold</th>
+        ${horizons.map((h) => `<th colspan="3" style="border-left:1px solid var(--rule-light)">${h}d</th>`).join("")}
+      </tr>
+      <tr><th></th>
+        ${horizons.map(() => `<th>Tests</th><th>Wins</th><th>$ P&amp;L</th>`).join("")}
+      </tr>`;
+    const rows = years.map((y) => {
+      const cells = ladder.map((l) => {
+        const f = l.folds.find((ff) => ff.year === y);
+        if (!f) return `<td>-</td><td>-</td><td>-</td>`;
+        const winCls = f.losses === 0 && f.wins > 0 ? "win" : (f.pnl > 0 ? "win" : "loss");
+        return `<td>${fmtInt(f.n_test)}</td>
+          <td class="${winCls}">${fmtInt(f.wins)}/${fmtInt(f.n_test)}</td>
+          <td class="${f.pnl > 0 ? 'win' : 'loss'}">$${(f.pnl || 0).toFixed(0)}</td>`;
+      });
+      return `<tr><td>${y}</td>${cells.join("")}</tr>`;
+    });
+    return `<table class="cf-fold-tbl"><thead>${head}</thead><tbody>${rows.join("")}</tbody></table>`;
+  }
+
+  function ocCardHTML2(s, side) {
+    const tiers = new Set(s.ladderView.map((l) => l.tier));
+    const headerTier = tiers.has("certified") ? "certified"
+                     : tiers.has("near")      ? "near"
+                     : tiers.has("high")      ? "high"
+                     : "standard";
+    return `
+      <div class="cf-card" data-ticker="${s.ticker}">
         <div class="cf-card-head">
           <div>
-            <span class="cf-card-ticker">${regimeLabel(rule.regime)}</span>
-            ${sideBadge}
-            <span class="cf-regime-badge">${rule.horizon}-day</span>
+            <span class="cf-card-ticker">${s.ticker}</span>
+            ${ocTierBadge(headerTier)}
+            <span class="cf-regime-badge" style="color:${side==='put'?'#1a7a3e':'#b35900'};border-color:${side==='put'?'#1a7a3e':'#b35900'}">
+              ${side === "put" ? "BULLISH (short put)" : "BEARISH (short call)"}
+            </span>
           </div>
           <div class="cf-card-price">
-            <strong>${fmtPct(rule.win_rate_pct, 1)} win</strong> &middot;
-            ${fmtPct(rule.avg_roi_on_max_loss_pct, 2)} ROI/trade &middot;
-            ${fmtInt(rule.pooled_wins + rule.pooled_losses)} OOS tests
+            Spot <strong>${fmt$(s.today_close)}</strong>
+            &middot; σ ${fmtPct(s.realized_vol_pct, 0)}
+            &middot; as-of ${s.end_date}
           </div>
         </div>
-        ${liveBlock}
-        <div class="cf-card-expand">Show walk-forward detail</div>
+        <div class="cf-ladder">
+          ${s.ladderView.map((r) => ocRungHTML(r, side)).join("")}
+        </div>
+        <div class="cf-card-expand">Show walk-forward detail by year</div>
         <div class="cf-detail">
-          <div class="cf-footnote" style="margin:0 0 8px">
-            Avg credit $${rule.avg_credit_per_share.toFixed(2)} / avg max-loss $${rule.avg_max_loss_per_share.toFixed(2)} per share
-            &middot; cumulative P&amp;L $${rule.pooled_pnl.toFixed(0)} on $${rule.pooled_premium.toFixed(0)} capital at risk.
-          </div>
-          <div class="cf-footnote" style="margin:0;font-family:var(--mono);font-size:11px">
-            Per fold: ${foldStr}
+          ${ocFoldTableHTML(s.ladderView)}
+          <div class="cf-footnote" style="margin-top:12px">
+            Each cell is the walk-forward test outcome for that calendar year and horizon
+            (tests / wins / $ P&amp;L). Win condition: stock's close at expiry stays on the
+            ${side === "put" ? "above" : "below"} side of the short strike. Max loss is
+            capped at the spread width minus credit.
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  function ocRenderSide(side) {
+    const listId = side === "rec" ? "oc-list-rec"
+                 : side === "put" ? "oc-list-puts" : "oc-list-calls";
+    const list = document.getElementById(listId);
+    if (!list) return;
+    const items = ocFilteredSorted(side);
+    if (!items.length) {
+      list.innerHTML = `<div class="cf-empty">No ${side} signals match the current filters today.</div>`;
+      return;
+    }
+    list.innerHTML = items.map((s) => ocCardHTML2(s, s.side)).join("");
+    list.querySelectorAll(".cf-card-expand").forEach((ex) => {
+      ex.addEventListener("click", (e) => {
+        const card = e.currentTarget.closest(".cf-card");
+        card.classList.toggle("open");
+        e.currentTarget.textContent = card.classList.contains("open")
+          ? "Hide walk-forward detail by year"
+          : "Show walk-forward detail by year";
+      });
+    });
+  }
+
+  function ocBuildFilterRow(side, label) {
+    return `
+      <div class="cf-filters">
+        <span class="lbl">Sort</span>
+        <button data-oc-side="${side}" data-oc-sort="profit" class="active">Most profitable</button>
+        <button data-oc-side="${side}" data-oc-sort="win">Highest accuracy</button>
+        <button data-oc-side="${side}" data-oc-sort="buffer">Tightest buffer</button>
+        <button data-oc-side="${side}" data-oc-sort="tests">Most OOS tests</button>
+        <button data-oc-side="${side}" data-oc-sort="ticker">Ticker A&ndash;Z</button>
+        <span class="lbl" style="margin-left:18px">Accuracy</span>
+        <button data-oc-side="${side}" data-oc-tier="all" class="active">All</button>
+        <button data-oc-side="${side}" data-oc-tier="100">100%</button>
+        <button data-oc-side="${side}" data-oc-tier="98">98%+</button>
+        <button data-oc-side="${side}" data-oc-tier="95">95%+</button>
+        <span class="lbl" style="margin-left:18px">Horizon</span>
+        <button data-oc-side="${side}" data-oc-hfilter="all" class="active">All</button>
+        <button data-oc-side="${side}" data-oc-hfilter="5">5d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="7">7d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="10">10d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="14">14d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="21">21d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="30">30d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="45">45d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="60">60d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="90">90d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="120">120d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="180">180d</button>
+        <button data-oc-side="${side}" data-oc-hfilter="252">252d</button>
       </div>`;
+  }
+
+  function ocWireFilters() {
+    document.querySelectorAll('button[data-oc-sort]').forEach((b) => {
+      b.addEventListener("click", (e) => {
+        const btn = e.currentTarget;
+        const side = btn.dataset.ocSide;
+        btn.parentNode.querySelectorAll(`button[data-oc-side="${side}"][data-oc-sort]`)
+          .forEach((bb) => bb.classList.remove("active"));
+        btn.classList.add("active");
+        ocState.filters[side].sort = btn.dataset.ocSort;
+        ocRenderSide(side);
+      });
+    });
+    document.querySelectorAll('button[data-oc-tier]').forEach((b) => {
+      b.addEventListener("click", (e) => {
+        const btn = e.currentTarget;
+        const side = btn.dataset.ocSide;
+        btn.parentNode.querySelectorAll(`button[data-oc-side="${side}"][data-oc-tier]`)
+          .forEach((bb) => bb.classList.remove("active"));
+        btn.classList.add("active");
+        ocState.filters[side].tier = btn.dataset.ocTier;
+        ocRenderSide(side);
+      });
+    });
+    document.querySelectorAll('button[data-oc-hfilter]').forEach((b) => {
+      b.addEventListener("click", (e) => {
+        const btn = e.currentTarget;
+        const side = btn.dataset.ocSide;
+        btn.parentNode.querySelectorAll(`button[data-oc-side="${side}"][data-oc-hfilter]`)
+          .forEach((bb) => bb.classList.remove("active"));
+        btn.classList.add("active");
+        ocState.filters[side].hfilter = btn.dataset.ocHfilter;
+        ocRenderSide(side);
+      });
+    });
   }
 
   function renderOptionC(oc) {
@@ -552,35 +730,39 @@
       });
       return;
     }
+    ocState.data = oc;
     const s = oc.summary;
     document.getElementById("oc-winrate").textContent = fmtPct(s.overall_win_rate_pct || 0, 1);
     document.getElementById("oc-roi").textContent = fmtPct(s.overall_roi_on_max_loss_pct || 0, 2);
     document.getElementById("oc-rules").textContent = fmtInt(s.n_eligible_rules || 0);
     document.getElementById("oc-live").textContent = fmtInt(s.n_live_fires || 0);
 
-    const fill = (id, badgeId, list, label) => {
-      const el = document.getElementById(id);
-      const b = document.getElementById(badgeId);
-      if (b) b.textContent = `${list.length} ${label}${list.length === 1 ? "" : "s"}`;
-      if (!el) return;
-      if (!list.length) {
-        el.innerHTML = `<div class="cf-empty">No ${label} rules match the filters.</div>`;
-        return;
-      }
-      el.innerHTML = list.map(ocCardHTML).join("");
-      el.querySelectorAll(".cf-card-expand").forEach((ex) => {
-        ex.addEventListener("click", (e) => {
-          const card = e.currentTarget.closest(".cf-card");
-          card.classList.toggle("open");
-          e.currentTarget.textContent = card.classList.contains("open")
-            ? "Hide walk-forward detail" : "Show walk-forward detail";
-        });
-      });
+    // Inject filter rows above each list (idempotent)
+    const ensureFilters = (sectionBodyId, side) => {
+      const body = document.querySelector(`.cf-section-body[data-body="${sectionBodyId}"]`);
+      if (!body || body.querySelector(".cf-filters")) return;
+      const list = body.querySelector(".cf-list");
+      const filtersDiv = document.createElement("div");
+      filtersDiv.innerHTML = ocBuildFilterRow(side);
+      body.insertBefore(filtersDiv.firstElementChild, list);
     };
+    ensureFilters("oc-rec", "rec");
+    ensureFilters("oc-puts", "put");
+    ensureFilters("oc-calls", "call");
 
-    fill("oc-list-rec",   "oc-rec-badge",   oc.recommended || [], "rule");
-    fill("oc-list-puts",  "oc-puts-badge",  oc.short_puts  || [], "put rule");
-    fill("oc-list-calls", "oc-calls-badge", oc.short_calls || [], "call rule");
+    // Update badges
+    const setBadge = (id, list, label) => {
+      const b = document.getElementById(id);
+      if (b) b.textContent = `${list.length} ${label}${list.length === 1 ? "" : "s"}`;
+    };
+    setBadge("oc-rec-badge",   oc.recommended  || [], "rule");
+    setBadge("oc-puts-badge",  oc.put_signals  || [], "ticker");
+    setBadge("oc-calls-badge", oc.call_signals || [], "ticker");
+
+    ocWireFilters();
+    ocRenderSide("rec");
+    ocRenderSide("put");
+    ocRenderSide("call");
   }
 
   async function main() {
