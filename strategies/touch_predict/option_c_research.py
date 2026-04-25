@@ -481,18 +481,31 @@ def main() -> int:
                 ],
             })
 
-    # Per ticker, keep best rung per (horizon) sorted by ROI; sort ladder
-    # by horizon ascending for display
+    # Per ticker: dedupe rungs that resolve to the SAME real options
+    # trade. Two rungs with different session-horizons can snap to the
+    # same monthly Friday expiry and produce identical (expiry, K_short,
+    # K_long) — they're testing the same instrument with different
+    # backtest windows. Keep the one with the highest empirical win
+    # rate as the canonical rung.
     put_signals_grouped = []
     call_signals_grouped = []
     for tk_key, entry in by_ticker.items():
-        # Dedup by horizon — keep the rung with highest ROI per horizon
-        per_h = {}
+        per_trade: dict[tuple, dict] = {}
         for r in entry["ladder"]:
-            h = r["horizon"]
-            if h not in per_h or r["profit"]["return_on_risk_pct"] > per_h[h]["profit"]["return_on_risk_pct"]:
-                per_h[h] = r
-        entry["ladder"] = sorted(per_h.values(), key=lambda x: x["horizon"])
+            key = (r["expiry_date"],
+                   round(r["strike_short"], 4),
+                   round(r["strike_long"], 4))
+            prev = per_trade.get(key)
+            if (prev is None
+                or r["win_rate_pct"] > prev["win_rate_pct"]
+                or (r["win_rate_pct"] == prev["win_rate_pct"]
+                    and r["n_test"] > prev["n_test"])):
+                per_trade[key] = r
+        # Sort the ladder: nearest expiry first, then by strike
+        entry["ladder"] = sorted(
+            per_trade.values(),
+            key=lambda x: (x["expiry_date"], -x["strike_short"]),
+        )
         if not entry["ladder"]:
             continue
         # Promote the best rung to top-level fields (mirrors credit_spread shape)
