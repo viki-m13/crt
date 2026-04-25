@@ -529,26 +529,28 @@ def main() -> int:
                     and r["n_test"] > prev["n_test"])):
                 per_trade[key] = r
         # Stratified cap: keep the highest-ROI rung in each
-        # (horizon, tier) bucket. This guarantees that whatever
-        # filter combination the user picks (e.g., 90d + 98%-tier)
-        # will surface a result if one exists in the data — no rule
-        # gets dropped just because its ROI didn't make a flat top-N.
-        # Skip rungs with no per-ticker history (tk_total == 0).
+        # (horizon, tier) bucket, then take the overall top-N to keep
+        # the payload small. ~6 rungs/ticker × 100 tickers = ~600 rungs
+        # total — a comfortable size for the browser to render.
+        TOP_N_RUNGS = 6
         per_bucket: dict[tuple, dict] = {}
         for r in per_trade.values():
             if r["n_test"] < 5:
-                # Too-thin per-ticker sample (< 5 historical fires) —
-                # the ticker hasn't been in this regime often enough
-                # to make a personal track-record claim.
+                # Too-thin per-ticker sample — exclude.
                 continue
             bkey = (r["horizon"], r["tier"])
             prev = per_bucket.get(bkey)
             if (prev is None
                 or r["profit"]["return_on_risk_pct"] > prev["profit"]["return_on_risk_pct"]):
                 per_bucket[bkey] = r
+        # Take top N by ROI (after the per-bucket dedup), tiebreak on win rate
+        ranked = sorted(
+            per_bucket.values(),
+            key=lambda x: (-x["profit"]["return_on_risk_pct"], -x["win_rate_pct"]),
+        )[:TOP_N_RUNGS]
         # Final ladder display order: nearest expiry first, then richer credit
         entry["ladder"] = sorted(
-            per_bucket.values(),
+            ranked,
             key=lambda x: (x["expiry_date"], -x["strike_short"]),
         )
         if not entry["ladder"]:
@@ -580,10 +582,14 @@ def main() -> int:
     # Sort by best-ladder ROI desc
     put_signals_grouped.sort(key=lambda e: -e["profit"]["return_on_risk_pct"])
     call_signals_grouped.sort(key=lambda e: -e["profit"]["return_on_risk_pct"])
-    recommended = sorted(
+    # `recommended` used to be a duplicate copy of the top picks; the
+    # client now derives it from put_signals + call_signals. Keep just
+    # a list of (ticker, side) references for the UI to look up.
+    rec_refs = sorted(
         put_signals_grouped + call_signals_grouped,
         key=lambda e: -e["profit"]["return_on_risk_pct"],
     )[:30]
+    recommended = [{"ticker": e["ticker"], "side": e["side"]} for e in rec_refs]
 
     out = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
