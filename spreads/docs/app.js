@@ -512,8 +512,8 @@
     const f = ocState.filters[side];
     const tierOk = (t) => (
       f.tier === "all" ? true :
-      f.tier === "100" ? t === "certified" :
-      f.tier === "98"  ? (t === "certified" || t === "near") :
+      f.tier === "cert" ? t === "certified" :
+      f.tier === "99"  ? (t === "certified" || t === "near") :
       f.tier === "95"  ? (t === "certified" || t === "near" || t === "high")
                         : true
     );
@@ -543,9 +543,9 @@
   }
 
   function ocTierBadge(t) {
-    if (t === "certified") return `<span class="cf-regime-badge regime" style="color:#1a7a3e;border-color:#1a7a3e">100% certified</span>`;
-    if (t === "near")      return `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e">98%+ near-certified</span>`;
-    if (t === "high")      return `<span class="cf-regime-badge">95%+ high-accuracy</span>`;
+    if (t === "certified") return `<span class="cf-regime-badge regime" style="color:#1a7a3e;border-color:#1a7a3e" title="Walk-forward validated 2022-2026: this (side, strike-distance, horizon, ticker) combination delivered ≥98% accuracy on truly-unseen test data with no single year below 95%.">Certified ✓</span>`;
+    if (t === "near")      return `<span class="cf-regime-badge" style="color:#1a7a3e;border-color:#1a7a3e" title="Ticker's in-sample win rate ≥99% (not walk-forward verified).">99%+ near-certified</span>`;
+    if (t === "high")      return `<span class="cf-regime-badge" title="Ticker's in-sample win rate ≥95% (not walk-forward verified).">95%+ high-accuracy</span>`;
     return `<span class="cf-regime-badge">standard</span>`;
   }
 
@@ -685,8 +685,8 @@
         <button data-oc-side="${side}" data-oc-sort="ticker">Ticker A&ndash;Z</button>
         <span class="lbl" style="margin-left:18px">Accuracy</span>
         <button data-oc-side="${side}" data-oc-tier="all" class="active">All</button>
-        <button data-oc-side="${side}" data-oc-tier="100">100%</button>
-        <button data-oc-side="${side}" data-oc-tier="98">98%+</button>
+        <button data-oc-side="${side}" data-oc-tier="cert" title="Walk-forward validated 2022-2026">Certified ✓</button>
+        <button data-oc-side="${side}" data-oc-tier="99">99%+</button>
         <button data-oc-side="${side}" data-oc-tier="95">95%+</button>
         <span class="lbl" style="margin-left:18px">Horizon</span>
         <button data-oc-side="${side}" data-oc-hfilter="all" class="active">All</button>

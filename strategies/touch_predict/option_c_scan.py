@@ -39,6 +39,16 @@ def main() -> int:
     shutil.copyfile(src, dst)
     print(f"Published {dst}")
 
+    # Publish the walk-forward certification record alongside, so the
+    # webapp can link to its provenance (which (side, k_short, h, ticker)
+    # combinations were validated, with what OOS sample size and worst-
+    # year metrics).
+    cert_src = os.path.join(HERE, "results", "option_c_certified_cells.json")
+    if os.path.exists(cert_src):
+        cert_dst = os.path.join(WEB_DATA, "option_c_certified_cells.json")
+        shutil.copyfile(cert_src, cert_dst)
+        print(f"Published {cert_dst}")
+
     # Summary
     with open(dst, "r") as fh:
         blob = json.load(fh)

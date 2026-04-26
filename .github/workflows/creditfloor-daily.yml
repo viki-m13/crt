@@ -155,8 +155,10 @@ jobs:
             spreads/docs/data/live_log.json \
             spreads/docs/data/last_run.txt \
             spreads/docs/data/option_c_signals.json \
+            spreads/docs/data/option_c_certified_cells.json \
             strategies/credit_spread/results/signals.json \
-            strategies/touch_predict/results/option_c_signals.json || true
+            strategies/touch_predict/results/option_c_signals.json \
+            strategies/touch_predict/results/option_c_certified_cells.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             # Discard the backfill's in-place ticker mutations so the

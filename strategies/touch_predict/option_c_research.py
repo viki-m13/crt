@@ -82,6 +82,33 @@ MIN_AGG_ROI = 0.005                       # 0.5% (low: keep 100%-certified deep-
 MAX_LOSING_FOLDS = 1                      # allow up to this many years with net loss
 MIN_TOTAL_FOLDS = 5                       # but must have been tested in >= this many years
 
+def _load_certified() -> tuple[set[tuple[str, float, int]],
+                                set[tuple[str, float, int, str]]]:
+    """Load walk-forward verdicts.
+
+    Returns:
+      cells:  {(side, k_short, h)} — cells whose 2022-2026 OOS win rate
+              ≥ 98% with worst-year ≥ 95%.
+      trades: {(side, k_short, h, ticker)} — at the latest walk-forward
+              cutoff, the specific (cell, ticker) combinations that pass
+              the per-ticker L1 conditions (≥30 fires, ≥2 fold years,
+              99.9%+ in-sample win rate, k_short ≥ ticker_worst+1%).
+              These are the production-eligible Certified trades.
+    """
+    path = os.path.join(_HERE, "results", "option_c_certified_cells.json")
+    if not os.path.exists(path):
+        return set(), set()
+    with open(path) as fh:
+        data = json.load(fh)
+    cells = {(c["side"], float(c["k_short"]), int(c["horizon"]))
+             for c in data.get("certified_cells", [])}
+    trades = {(t["side"], float(t["k_short"]), int(t["horizon"]), t["ticker"])
+              for t in data.get("certified_trades", [])}
+    return cells, trades
+
+
+CERTIFIED_CELLS, CERTIFIED_TRADES = _load_certified()
+
 
 # -------- helpers --------------------------------------------------------
 
@@ -465,13 +492,21 @@ def main() -> int:
             tk_losses = sum(f["losses"] for f in tk_folds)
             tk_total = tk_wins + tk_losses
             tk_win_rate = (tk_wins / tk_total) if tk_total > 0 else 0.0
-            # Tier badge classifies the ticker's OWN historical accuracy
-            # on this specific rule. (The rule's overall pooled win rate
-            # is reported separately as `pool_win_rate_pct`.)
-            tier = ("certified" if tk_win_rate >= 0.999 else
-                    "near"      if tk_win_rate >= 0.98  else
-                    "high"      if tk_win_rate >= 0.95  else
-                    "standard")
+            # Walk-forward-validated Certified tier. A trade qualifies iff
+            # its exact (side, k_short, h, ticker) tuple passed the
+            # walk-forward at the latest cutoff: the cell calibrated at
+            # ≥98% with worst-year ≥95%, AND this specific ticker met the
+            # L1 conditions (≥30 fires, ≥2 fold years, 99.9%+ in-sample
+            # win rate, k_short ≥ ticker_worst+1%).
+            trade_key = (r.side, r.k_short, r.horizon, fi["ticker"])
+            if trade_key in CERTIFIED_TRADES:
+                tier = "certified"
+            elif tk_win_rate >= 0.99 and tk_total >= 30:
+                tier = "near"
+            elif tk_win_rate >= 0.95 and tk_total >= 20:
+                tier = "high"
+            else:
+                tier = "standard"
             entry["ladder"].append({
                 "regime":         r.regime,
                 "regime_label":   REGIME_LABELS.get(r.regime, r.regime),
@@ -543,11 +578,20 @@ def main() -> int:
             if (prev is None
                 or r["profit"]["return_on_risk_pct"] > prev["profit"]["return_on_risk_pct"]):
                 per_bucket[bkey] = r
-        # Take top N by ROI (after the per-bucket dedup), tiebreak on win rate
-        ranked = sorted(
-            per_bucket.values(),
-            key=lambda x: (-x["profit"]["return_on_risk_pct"], -x["win_rate_pct"]),
-        )[:TOP_N_RUNGS]
+        # Tier-protected cap: ALWAYS keep the top-2 certified rungs (by
+        # ROI) so the walk-forward-validated picks survive against
+        # higher-credit but uncertified rungs. Then fill remaining slots
+        # by ROI across all other tiers.
+        all_rungs = list(per_bucket.values())
+        cert_rungs = [r for r in all_rungs if r["tier"] == "certified"]
+        cert_rungs.sort(key=lambda x: (-x["profit"]["return_on_risk_pct"],
+                                        -x["win_rate_pct"]))
+        cert_kept = cert_rungs[:2]
+        cert_kept_ids = {id(r) for r in cert_kept}
+        other_rungs = [r for r in all_rungs if id(r) not in cert_kept_ids]
+        other_rungs.sort(key=lambda x: (-x["profit"]["return_on_risk_pct"],
+                                         -x["win_rate_pct"]))
+        ranked = cert_kept + other_rungs[:max(0, TOP_N_RUNGS - len(cert_kept))]
         # Final ladder display order: nearest expiry first, then richer credit
         entry["ladder"] = sorted(
             ranked,
