@@ -1,407 +1,290 @@
-"""Walk-forward calibration harness for Option C "Certified-Core" rules.
+"""Walk-forward calibration v4 — fully numpy-vectorized.
 
 Goal
 ----
 A "Certified" rule should deliver ≥98% real-future win rate when it
-claims ≥98%. To verify, we walk-forward test multiple LAYER COMBOS
-(ablations) and measure which combos actually calibrate.
+claims ≥98%. Walk-forward across cutoff years 2022-2026 measures
+whether layer combos calibrate on truly-unseen data.
 
-Method
-------
-For each cutoff year Y in {2022, 2023, 2024, 2025, 2026}:
-
-    1. Take only historical fires with date < Y as the "training set"
-       and fires in year Y as the "held-out test set."
-    2. For each (ticker, side, regime, horizon, k_short):
-        a. From the training set: compute per-ticker win rate, n_fires,
-           n_folds, every_fold_perfect, worst-historical-move.
-        b. Apply each LAYER COMBO to determine if the rule is
-           "certified" / "near" / "fail" using TRAINING data only.
-    3. For each "certified" rule, look at the held-out test set fires:
-       count actual wins/losses → empirical Y-year win rate.
-    4. Aggregate across all 5 cutoff years per layer combo.
-    5. Calibration metric: do "certified ≥98%" claims actually
-       deliver ≥98% on held-out fires?
-
-The 8 layer combos we ablate are subsets of:
-    L1: worst-historical-drawdown floor (K_short ≥ worst + 1%)
-    L2: per-ticker fold coverage (≥200 fires, ≥5 folds, every fold perfect)
-    L3: macro regime conformity gate (SPY > SMA200, etc.) — applied at
-        publish time per fire date in held-out set
-    L4: multi-rule consensus (≥2 distinct families)
-
-We run combos:
-    {none, L1, L2, L4, L1+L2, L1+L4, L2+L4, L1+L2+L3+L4}
-and compare to the baseline (existing engine: empirical training
-win-rate quantile only).
+Vectorization
+-------------
+For each (side, regime, h) cache entry we have arrays of length N
+(spots, closes, years, ticker_codes, moves). For every (k_short,
+cutoff_year) iteration we use only numpy primitives:
+  - boolean masks for train/test split
+  - np.bincount for per-ticker counts
+  - np.maximum.reduceat for per-ticker max-move
 """
 from __future__ import annotations
 
-import itertools
 import json
-import math
 import os
 import sys
 import time
-from dataclasses import dataclass, field
-from typing import Any
+from collections import defaultdict
 
 import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
-from v2_common import (
-    FOLD_YEARS, WARMUP_DAYS,
-    OhlcvSeries, V2Features,
-    actual_options_expiry, compute_features, fold_mask, list_tickers,
-    load_series, spy_context, train_mask_for_fold,
-)
+from v2_common import spy_context
 from v2_regimes import CALL_REGIMES, PUT_REGIMES
-from option_c_research import (
-    K_SHORT_GRID, SPREAD_WIDTH, IV_MULT, HAIRCUT,
-    HORIZONS, _credit_and_maxloss, _trade_pnl, _gather_fires, Fire,
-)
+from option_c_research import K_SHORT_GRID, SPREAD_WIDTH, HORIZONS, _gather_fires
 from option_c_certified import (
-    WORST_BUFFER_SAFETY, MIN_TICKER_FIRES, MIN_TICKER_FOLDS,
-    SPY_5D_FLOOR_PCT, STOCK_5D_FLOOR_PCT,
-    REGIME_FAMILY, CONSENSUS_FAMILIES_REQUIRED,
+    WORST_BUFFER_SAFETY, REGIME_FAMILY,
+    SPY_5D_FLOOR_PCT, CONSENSUS_FAMILIES_REQUIRED,
 )
 
 
-# ------------- helpers ----------------------------------------------
+# Tunable thresholds
+MIN_TICKER_FIRES = 30
+MIN_TICKER_FOLDS = 2
+TRAIN_WIN_RATE_FLOOR = 0.999  # rule must claim ~100% historically
 
 
-def fire_year(fi: Fire) -> int:
-    return int(str(fi.date)[:4])
+def _print(*a, **k):
+    print(*a, **k)
+    sys.stdout.flush()
 
 
-def split_train_test(fires: list[Fire], cutoff_year: int) -> tuple[list[Fire], list[Fire]]:
-    train = [fi for fi in fires if fire_year(fi) < cutoff_year]
-    test = [fi for fi in fires if fire_year(fi) == cutoff_year]
-    return train, test
-
-
-def fire_outcome(fi: Fire, side: str, k_short: float, k_long: float) -> int:
-    """Return +1 if the spread won at expiry, -1 otherwise."""
+def vectorize_set(fires_list, side: str):
+    n = len(fires_list)
+    spots = np.empty(n, dtype="float64")
+    closes = np.empty(n, dtype="float64")
+    years = np.empty(n, dtype="int32")
+    tcodes = np.empty(n, dtype="int32")
+    book = {}
+    for i, fi in enumerate(fires_list):
+        spots[i] = fi.spot
+        closes[i] = fi.close_at_expiry
+        years[i] = int(str(fi.date)[:4])
+        if fi.ticker not in book:
+            book[fi.ticker] = len(book)
+        tcodes[i] = book[fi.ticker]
     if side == "put":
-        Ks = fi.spot * (1.0 - k_short)
-        return +1 if fi.close_at_expiry >= Ks else -1
+        moves = (spots - closes) / spots
     else:
-        Ks = fi.spot * (1.0 + k_short)
-        return +1 if fi.close_at_expiry <= Ks else -1
-
-
-def fire_pnl(fi: Fire, side: str, k_short: float, k_long: float, sigma: float) -> float:
-    """Realized $/share P&L for one fire (uses fire-date σ for credit)."""
-    T = max(1, int(round(7))) / 365.0  # tiny T proxy; we just need pnl direction
-    # We'll compute credit using actual horizon (in calendar days
-    # approximation) and the fire-time sigma.
-    # For walk-forward, we just need win/loss for the calibration metric;
-    # exact $ P&L isn't strictly needed to answer "did 98% claim hold?"
-    side_win = fire_outcome(fi, side, k_short, k_long)
-    return 1.0 if side_win > 0 else 0.0
-
-
-def per_ticker_train_stats(side: str, train_fires: list[Fire],
-                            k_short: float, k_long: float) -> dict[str, dict]:
-    """Per-ticker train-set summary: n_fires, n_folds (distinct years),
-    every_fold_perfect, worst-historical-move."""
-    out: dict[str, dict] = {}
-    for fi in train_fires:
-        tk = out.setdefault(fi.ticker, {
-            "fires": [],
-            "folds": {},
-        })
-        tk["fires"].append(fi)
-        y = fire_year(fi)
-        f = tk["folds"].setdefault(y, {"wins": 0, "losses": 0})
-        if fire_outcome(fi, side, k_short, k_long) > 0:
-            f["wins"] += 1
-        else:
-            f["losses"] += 1
-
-    summarized: dict[str, dict] = {}
-    for tkr, info in out.items():
-        n_fires = sum(f["wins"] + f["losses"] for f in info["folds"].values())
-        n_folds = len(info["folds"])
-        every_perfect = all(
-            f["losses"] == 0 and f["wins"] > 0 for f in info["folds"].values()
-        )
-        # Worst-historical-move on training set
-        worst = 0.0
-        for fi in info["fires"]:
-            if side == "put":
-                m = max(0.0, (fi.spot - fi.close_at_expiry) / fi.spot)
-            else:
-                m = max(0.0, (fi.close_at_expiry - fi.spot) / fi.spot)
-            if m > worst:
-                worst = m
-        # Win rate on training set
-        total = n_fires
-        wins = sum(f["wins"] for f in info["folds"].values())
-        train_win_rate = (wins / total) if total > 0 else 0.0
-        summarized[tkr] = {
-            "n_fires": n_fires,
-            "n_folds": n_folds,
-            "every_fold_perfect": every_perfect,
-            "worst_historical_move": worst,
-            "train_win_rate": train_win_rate,
-        }
-    return summarized
-
-
-# ------------- layer combo predicates -----------------------------
-
-
-def passes_layer_1(stats: dict, k_short: float) -> bool:
-    """Worst-historical-drawdown floor: K_short ≥ worst + safety."""
-    if stats["worst_historical_move"] <= 0:
-        return False
-    return k_short >= stats["worst_historical_move"] + WORST_BUFFER_SAFETY
-
-
-def passes_layer_2(stats: dict) -> bool:
-    """Per-ticker fold coverage."""
-    return (
-        stats["n_fires"] >= MIN_TICKER_FIRES
-        and stats["n_folds"] >= MIN_TICKER_FOLDS
-        and stats["every_fold_perfect"]
-    )
-
-
-def evaluate_combo(layers: set[str], stats: dict, k_short: float) -> bool:
-    """Do layers 1 and/or 2 pass for this rule? (L3 macro applied
-    later, L4 consensus applied later.)"""
-    if "L1" in layers and not passes_layer_1(stats, k_short):
-        return False
-    if "L2" in layers and not passes_layer_2(stats):
-        return False
-    return True
-
-
-# ------------- walk-forward driver ------------------------------------
-
-
-def run_walkforward(layer_combos: list[set[str]],
-                    cutoff_years: list[int],
-                    use_macro: dict[frozenset, bool],
-                    use_consensus: dict[frozenset, bool]) -> dict:
-    """Walk-forward across cutoff years, ablating layer combinations.
-
-    Returns a dict mapping combo_name → list of {year, claimed_n,
-    actual_wins, actual_total, claim_lower_bound}.
-    """
-    results: dict[str, dict] = {
-        "_".join(sorted(c)) if c else "none": {
-            "by_year": {},
-            "all_predictions": [],
-        }
-        for c in layer_combos
-    }
-
-    # Pre-fetch everything once. For each (regime, horizon, k_short),
-    # gather the full fire set and split per cutoff year.
-    print(f"Walk-forward: cutoff years = {cutoff_years}")
-    print(f"Combos: {[' & '.join(sorted(c)) if c else 'none' for c in layer_combos]}")
-    t0 = time.time()
-    n_combos_done = 0
-
-    # We iterate (side, regime, horizon, k_short) combos to gather
-    # predictions for every layer combo at every cutoff year.
-    for side, regime_map in (("put", CALL_REGIMES), ("call", PUT_REGIMES)):
-        for rname, rfn in regime_map.items():
-            for h in HORIZONS:
-                fires = _gather_fires(side, rname, rfn, h)
-                if not fires:
-                    continue
-                for k_short in K_SHORT_GRID:
-                    k_long = k_short + SPREAD_WIDTH
-                    family = REGIME_FAMILY.get(rname, rname)
-                    for cy in cutoff_years:
-                        train_fires, test_fires = split_train_test(fires, cy)
-                        if not test_fires:
-                            continue
-                        # Train stats per ticker
-                        stats = per_ticker_train_stats(side, train_fires, k_short, k_long)
-                        # Per ticker decide eligibility per combo
-                        # and accumulate test outcomes.
-                        for fi in test_fires:
-                            tkr = fi.ticker
-                            tk_stats = stats.get(tkr)
-                            if tk_stats is None:
-                                continue   # ticker had no training history yet
-                            # If "every_fold_perfect" required (in L2)
-                            # but train win rate < 1.0, then L2 fails.
-                            outcome = fire_outcome(fi, side, k_short, k_long)
-                            for layers in layer_combos:
-                                cname = "_".join(sorted(layers)) if layers else "none"
-                                if not evaluate_combo(layers, tk_stats, k_short):
-                                    continue
-                                # Record prediction (we'll later
-                                # consolidate consensus across rules
-                                # at the same (ticker, year, horizon)).
-                                results[cname]["all_predictions"].append({
-                                    "year": cy,
-                                    "ticker": tkr,
-                                    "side": side,
-                                    "regime": rname,
-                                    "family": family,
-                                    "horizon": h,
-                                    "k_short": k_short,
-                                    "fire_date": str(fi.date),
-                                    "outcome": outcome,
-                                })
-                    n_combos_done += 1
-                    if n_combos_done % 50 == 0:
-                        print(f"  scanned {n_combos_done} (regime, h, k) combos  "
-                              f"elapsed={time.time()-t0:.1f}s")
-
-    return results
-
-
-# ------------- consensus + macro post-processing ---------------------
-
-
-def _spy_macro_at(spy_dates, spy_close, spy_ret_5d, fire_date_str: str) -> bool:
-    """Was the SPY-macro gate satisfied on this date?"""
-    when = np.datetime64(fire_date_str)
-    idx = int(np.searchsorted(spy_dates, when))
-    if idx >= len(spy_dates) or idx < 200:
-        return False
-    today = float(spy_close[idx])
-    sma200 = float(np.mean(spy_close[idx - 200 : idx]))
-    if today < sma200:
-        return False
-    r5 = float(spy_ret_5d[idx]) if np.isfinite(spy_ret_5d[idx]) else float("nan")
-    if not np.isfinite(r5) or r5 < SPY_5D_FLOOR_PCT:
-        return False
-    return True
-
-
-def apply_macro_filter(predictions: list[dict]) -> list[dict]:
-    """Filter predictions whose fire_date doesn't pass the SPY macro gate."""
-    ctx = spy_context()
-    if ctx is None:
-        return predictions
-    spy_dates, spy_close, spy_ret_5d = ctx
-    return [
-        p for p in predictions
-        if _spy_macro_at(spy_dates, spy_close, spy_ret_5d, p["fire_date"])
-    ]
-
-
-def apply_consensus_filter(predictions: list[dict]) -> list[dict]:
-    """Keep only predictions where ≥CONSENSUS_FAMILIES_REQUIRED distinct
-    regime families fire on the same (ticker, year, side) — proxy for
-    'multiple rules agree'."""
-    by_key: dict[tuple, set[str]] = {}
-    for p in predictions:
-        k = (p["ticker"], p["year"], p["side"])
-        by_key.setdefault(k, set()).add(p["family"])
-    qualifying = {k for k, families in by_key.items()
-                  if len(families) >= CONSENSUS_FAMILIES_REQUIRED}
-    return [p for p in predictions
-            if (p["ticker"], p["year"], p["side"]) in qualifying]
-
-
-# ------------- summarize ---------------------------------------------
-
-
-def summarize_calibration(name: str, predictions: list[dict]) -> dict:
-    """Compute: total predictions, total wins, empirical win rate."""
-    n = len(predictions)
-    if n == 0:
-        return {"name": name, "n": 0, "wins": 0, "win_rate": None}
-    wins = sum(1 for p in predictions if p["outcome"] > 0)
+        moves = (closes - spots) / spots
+    moves = np.clip(moves, 0.0, None)
     return {
-        "name": name,
-        "n": n,
-        "wins": wins,
-        "win_rate": wins / n,
+        "spots": spots, "closes": closes, "years": years,
+        "tickers": tcodes, "moves": moves,
+        "ticker_names": list(book.keys()),
+        "n_tickers": len(book),
+        "side": side,
     }
 
 
-def by_year(predictions: list[dict]) -> dict[int, dict]:
-    out: dict[int, dict] = {}
-    for p in predictions:
-        d = out.setdefault(p["year"], {"n": 0, "wins": 0})
-        d["n"] += 1
-        if p["outcome"] > 0:
-            d["wins"] += 1
-    for y, d in out.items():
-        d["win_rate"] = (d["wins"] / d["n"]) if d["n"] else None
-    return out
+def _per_ticker_stats(years_train: np.ndarray,
+                       tcodes_train: np.ndarray,
+                       moves_train: np.ndarray,
+                       wins_train: np.ndarray,
+                       n_tickers: int):
+    """Compute per-ticker: total_fires, total_wins, n_folds, every_perfect,
+    worst_move (all fully vectorized)."""
+    # total fires + total wins per ticker
+    total = np.bincount(tcodes_train, minlength=n_tickers).astype(np.int64)
+    wins = np.bincount(tcodes_train, weights=wins_train, minlength=n_tickers).astype(np.int64)
 
+    # n_folds = distinct (ticker, year) pairs per ticker
+    # Encode (ticker, year) into a single int — assume year fits in int32
+    if len(tcodes_train) > 0:
+        ty_keys = tcodes_train.astype(np.int64) * 10000 + years_train.astype(np.int64)
+        unique_keys = np.unique(ty_keys)
+        # n_folds[t] = count of unique keys whose ticker == t
+        unique_tickers = (unique_keys // 10000).astype(np.int64)
+        n_folds = np.bincount(unique_tickers, minlength=n_tickers)
+        # every_perfect: for each (ticker, year) bucket, count losses;
+        # ticker is "every perfect" iff every bucket has 0 losses AND ≥1 win.
+        # Compute per-(ticker, year) loss count via bincount on ty_keys.
+        # Use a continuous index for each unique key.
+        idx_in_unique = np.searchsorted(unique_keys, ty_keys)
+        bucket_loss = np.bincount(idx_in_unique, weights=(1 - wins_train),
+                                   minlength=len(unique_keys))
+        bucket_total = np.bincount(idx_in_unique, minlength=len(unique_keys))
+        bucket_has_loss = (bucket_loss > 0)
+        # Aggregate: for each ticker, are all of its buckets loss-free?
+        # Loop tickers to compute this; n_tickers is small (~94).
+        every_perfect = np.ones(n_tickers, dtype=bool)
+        any_loss_per_ticker = np.zeros(n_tickers, dtype=bool)
+        for ui, has_loss in enumerate(bucket_has_loss):
+            t = int(unique_tickers[ui])
+            if has_loss:
+                any_loss_per_ticker[t] = True
+        every_perfect = ~any_loss_per_ticker
+    else:
+        n_folds = np.zeros(n_tickers, dtype=np.int64)
+        every_perfect = np.zeros(n_tickers, dtype=bool)
 
-# ------------- main --------------------------------------------------
+    # worst_move per ticker — use np.maximum.at (in-place, vectorized)
+    worst = np.zeros(n_tickers, dtype=np.float64)
+    np.maximum.at(worst, tcodes_train, moves_train)
+    return total, wins, n_folds, every_perfect, worst
 
 
 def main() -> int:
     cutoff_years = [2022, 2023, 2024, 2025, 2026]
-    base_layer_combos = [
-        set(),                  # none — pure empirical (no extra layers)
-        {"L1"},                 # worst-historical floor only
-        {"L2"},                 # per-ticker fold coverage only
-        {"L1", "L2"},           # both structural layers
-    ]
 
-    results = run_walkforward(base_layer_combos, cutoff_years, {}, {})
+    _print("Gathering fires (vectorized)...")
+    t0 = time.time()
+    cache: dict[tuple, dict] = {}
+    for side, regime_map in (("put", CALL_REGIMES), ("call", PUT_REGIMES)):
+        for rname, rfn in regime_map.items():
+            for h in HORIZONS:
+                fires = _gather_fires(side, rname, rfn, h)
+                if fires:
+                    cache[(side, rname, h)] = vectorize_set(fires, side)
+    total = sum(v["n_tickers"] * 0 + len(v["spots"]) for v in cache.values())
+    _print(f"  {len(cache)} sets, {total:,} fires, "
+           f"elapsed={time.time()-t0:.1f}s")
 
-    # For each base combo, also compute +L3 (macro) and +L4 (consensus)
-    # variants by post-processing the predictions list.
-    print("\n\n" + "=" * 72)
-    print("WALK-FORWARD CALIBRATION RESULTS")
-    print("=" * 72)
-    print(f"{'combo':<24} {'n':>7} {'wins':>7} {'win_rate':>10} {'by year':<28}")
-    print("-" * 72)
-    expanded: dict[str, dict] = {}
-    for combo_name, info in results.items():
-        preds = info["all_predictions"]
-        for variants in [
-            (combo_name, preds),
-            (combo_name + "+L3", apply_macro_filter(preds)),
-            (combo_name + "+L4", apply_consensus_filter(preds)),
-            (combo_name + "+L3+L4", apply_consensus_filter(apply_macro_filter(preds))),
+    COMBO_NAMES = ["base", "L1", "L2", "L1_L2"]
+    pred_by_combo: dict[str, list[dict]] = {c: [] for c in COMBO_NAMES}
+
+    _print("\nWalk-forward (vectorized)...")
+    t0 = time.time()
+    iters = 0
+    n_iter_total = len(cache) * len(K_SHORT_GRID) * len(cutoff_years)
+
+    for (side, rname, h), bag in cache.items():
+        moves = bag["moves"]
+        years = bag["years"]
+        tcodes = bag["tickers"]
+        names = bag["ticker_names"]
+        n_tk = bag["n_tickers"]
+        family = REGIME_FAMILY.get(rname, rname)
+
+        for k_short in K_SHORT_GRID:
+            wins_arr = (moves <= k_short).astype(np.int8)
+
+            for cy in cutoff_years:
+                train_mask = years < cy
+                test_mask = years == cy
+
+                if not train_mask.any() or not test_mask.any():
+                    iters += 1
+                    continue
+
+                t_total, t_wins, t_folds, t_every, t_worst = _per_ticker_stats(
+                    years[train_mask], tcodes[train_mask],
+                    moves[train_mask], wins_arr[train_mask],
+                    n_tk,
+                )
+                t_wr = np.where(t_total > 0, t_wins / np.maximum(t_total, 1), 0.0)
+                claim_100 = (
+                    (t_wr >= TRAIN_WIN_RATE_FLOOR)
+                    & (t_total >= MIN_TICKER_FIRES)
+                    & (t_folds >= MIN_TICKER_FOLDS)
+                )
+                passes_L1 = (t_worst > 0) & (k_short >= t_worst + WORST_BUFFER_SAFETY)
+                passes_L2 = t_every
+
+                # Vectorize test loop too: for each test fire, look up
+                # ticker flags and emit prediction record.
+                test_tk = tcodes[test_mask]
+                test_w = wins_arr[test_mask]
+                test_y = years[test_mask]
+                # Mask test fires whose ticker passes claim_100
+                claims_per_test = claim_100[test_tk]
+                if not claims_per_test.any():
+                    iters += 1
+                    continue
+                base_mask = claims_per_test
+                l1_mask = base_mask & passes_L1[test_tk]
+                l2_mask = base_mask & passes_L2[test_tk]
+                l12_mask = l1_mask & passes_L2[test_tk]
+
+                for combo, mask in zip(COMBO_NAMES, [base_mask, l1_mask, l2_mask, l12_mask]):
+                    if not mask.any():
+                        continue
+                    # Extract eligible test fires for this combo
+                    idx = np.where(mask)[0]
+                    for i in idx:
+                        pred_by_combo[combo].append({
+                            "year": int(test_y[i]),
+                            "ticker": names[int(test_tk[i])],
+                            "side": side, "regime": rname, "family": family,
+                            "horizon": h, "k_short": k_short,
+                            "outcome": int(test_w[i]) * 2 - 1,
+                        })
+
+                iters += 1
+            if iters and iters % 500 == 0:
+                _print(f"  iter {iters}/{n_iter_total}, "
+                       f"elapsed={time.time()-t0:.1f}s, "
+                       f"preds (base={len(pred_by_combo['base'])}, "
+                       f"L1+L2={len(pred_by_combo['L1_L2'])})")
+    _print(f"  predictions complete. elapsed={time.time()-t0:.1f}s")
+    _print(f"  prediction counts: " + ", ".join(
+        f"{c}={len(pred_by_combo[c])}" for c in COMBO_NAMES))
+
+    # Apply L4 (consensus) post-hoc
+    def consensus_filter(preds):
+        by_key = defaultdict(set)
+        for p in preds:
+            k = (p["ticker"], p["year"], p["side"])
+            by_key[k].add(p["family"])
+        keep = {k for k, fams in by_key.items()
+                if len(fams) >= CONSENSUS_FAMILIES_REQUIRED}
+        return [p for p in preds if (p["ticker"], p["year"], p["side"]) in keep]
+
+    _print("\n" + "=" * 95)
+    _print("CALIBRATION RESULTS — walk-forward, vectorized")
+    _print("=" * 95)
+    _print(f"{'combo':<14} {'n':>8} {'wins':>8} {'win%':>8}  {'by year':<55}")
+    _print("-" * 95)
+
+    summary = {}
+    for cname, preds in pred_by_combo.items():
+        for variant, postfn in [
+            ("", lambda x: x),
+            ("+L4", consensus_filter),
         ]:
-            vname, vpreds = variants
-            stats = summarize_calibration(vname, vpreds)
-            yearly = by_year(vpreds)
-            year_str = " ".join(
-                f"{y}={d['wins']}/{d['n']}={(d['win_rate'] or 0)*100:.1f}%"
+            sub = postfn(preds)
+            n = len(sub)
+            wins = sum(1 for p in sub if p["outcome"] > 0)
+            wr = (wins / n) if n else None
+            yearly = defaultdict(lambda: {"n": 0, "w": 0})
+            for p in sub:
+                yearly[p["year"]]["n"] += 1
+                if p["outcome"] > 0:
+                    yearly[p["year"]]["w"] += 1
+            yr_str = " ".join(
+                f"{y}={d['w']}/{d['n']}={d['w']/d['n']*100:.1f}%" if d["n"] else ""
                 for y, d in sorted(yearly.items())
             )
-            wr_pct = (stats['win_rate'] or 0) * 100
-            print(f"{vname:<24} {stats['n']:>7} {stats['wins']:>7} "
-                  f"{wr_pct:>9.2f}%  {year_str}")
-            expanded[vname] = stats
+            label = cname + variant
+            wr_str = f"{wr*100:.2f}%" if wr is not None else "—"
+            _print(f"{label:<14} {n:>8} {wins:>8} {wr_str:>8}  {yr_str:<55}")
+            summary[label] = {
+                "n": n, "wins": wins, "win_rate": wr,
+                "by_year": {str(y): dict(d) for y, d in yearly.items()},
+            }
 
-    # Find combos that meet the "Certified ≥98% claim → ≥98% delivery" bar
-    print("\nCALIBRATION VERDICT")
-    print("-" * 72)
-    print("(combo qualifies as 'Certified-grade' if win rate ≥ 98% AND n ≥ 100)")
-    print()
-    qualifying = []
-    for vname, s in expanded.items():
-        if s["n"] is None or s["n"] < 100:
-            continue
-        wr = s["win_rate"] or 0
-        if wr >= 0.98:
-            qualifying.append((vname, s))
-            print(f"  ✓ {vname:<24} n={s['n']:>5}  win_rate={wr*100:.2f}%")
-    if not qualifying:
-        print("  ❌ NO COMBO meets the ≥98% calibration bar with sufficient n.")
-        print("  (Weighted average pulled below by edge cases or insufficient samples.)")
+    _print("\nVERDICT (Certified-grade requires ≥ 98% win and n ≥ 100):")
+    qual = sorted(((k, v) for k, v in summary.items()
+                   if (v["win_rate"] or 0) >= 0.98 and v["n"] >= 100),
+                  key=lambda x: -x[1]["win_rate"])
+    if qual:
+        for k, v in qual[:5]:
+            _print(f"  ✓ {k:<14}  n={v['n']:>5}  win_rate={v['win_rate']*100:.2f}%")
+    else:
+        _print("  ❌ No combo meets the 98% bar with sufficient sample.")
+        top = sorted(((k, v) for k, v in summary.items() if v["n"] >= 50),
+                      key=lambda x: -(x[1]["win_rate"] or 0))[:8]
+        _print("  Top combos by win rate (n ≥ 50):")
+        for k, v in top:
+            _print(f"    {k:<14}  n={v['n']:>5}  win_rate={(v['win_rate'] or 0)*100:.2f}%")
 
-    # Save full results
     out_path = os.path.join(_HERE, "results", "option_c_walkforward.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as fh:
-        json.dump({
-            "cutoff_years": cutoff_years,
-            "summary": expanded,
-            "qualifying_combos": [name for name, _ in qualifying],
-        }, fh, indent=2)
-    print(f"\nDetail written to {out_path}")
+        json.dump({"cutoff_years": cutoff_years, "summary": summary,
+                   "tunable": {"min_fires": MIN_TICKER_FIRES,
+                               "min_folds": MIN_TICKER_FOLDS,
+                               "train_win_rate_floor": TRAIN_WIN_RATE_FLOOR}},
+                  fh, indent=2)
+    _print(f"\nDetail saved to {out_path}")
     return 0
 
 
