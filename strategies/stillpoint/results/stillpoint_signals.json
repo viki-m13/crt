@@ -1,0 +1,564 @@
+{
+  "generated_at": "2026-05-05T13:08:22Z",
+  "method": "Stillpoint",
+  "summary": {
+    "n_tickers_processed": 945,
+    "n_in_regime_today": 189,
+    "horizons": [
+      5,
+      7,
+      10,
+      14,
+      21
+    ],
+    "fold_years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "max_buffer_pct": 5.0,
+    "conformal_q": 0.97,
+    "safety_eps_pct": 0.5,
+    "target_pooled_win_pct": 95.0,
+    "target_per_fold_win_pct": 85.0,
+    "n_put_signals": 3,
+    "n_call_signals": 2,
+    "n_pin_signals": 0,
+    "pooled_wins": 9390,
+    "pooled_losses": 319,
+    "pooled_win_rate": 0.9671438871150478,
+    "put": {
+      "pooled_wins": 3807,
+      "pooled_losses": 125,
+      "pooled_win_rate": 0.9682095625635809
+    },
+    "call": {
+      "pooled_wins": 5583,
+      "pooled_losses": 194,
+      "pooled_win_rate": 0.9664185563441232
+    }
+  },
+  "put_signals": [
+    {
+      "ticker": "WM",
+      "today_close": 231.24000549316406,
+      "end_date": "2026-03-20",
+      "realized_vol_pct": 19.230131675345106,
+      "side": "put",
+      "ladder": [
+        {
+          "side": "put",
+          "horizon": 5,
+          "expiry_date": "2026-03-27",
+          "expiry_type": "weekly",
+          "calendar_days_to_expiry": 7,
+          "strike": 220.59812283823592,
+          "buffer_pct": 4.602094102286614,
+          "pooled_wins": 824,
+          "pooled_losses": 31,
+          "n_test": 855,
+          "win_rate_pct": 96.37426900584796,
+          "n_folds": 7,
+          "n_history_fires": 1456,
+          "today_in_regime": true,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 596,
+              "n_test": 105,
+              "b_hat_pct": 4.057340934510427,
+              "wins": 102,
+              "losses": 3,
+              "worst_test_buf_pct": 10.629871193593765
+            },
+            {
+              "year": 2021,
+              "n_train": 703,
+              "n_test": 136,
+              "b_hat_pct": 4.044058600869194,
+              "wins": 136,
+              "losses": 0,
+              "worst_test_buf_pct": 3.814170924871907
+            },
+            {
+              "year": 2022,
+              "n_train": 837,
+              "n_test": 140,
+              "b_hat_pct": 4.031572515190029,
+              "wins": 127,
+              "losses": 13,
+              "worst_test_buf_pct": 8.873578919475767
+            },
+            {
+              "year": 2023,
+              "n_train": 978,
+              "n_test": 153,
+              "b_hat_pct": 4.4009163216963545,
+              "wins": 153,
+              "losses": 0,
+              "worst_test_buf_pct": 3.5176324886713295
+            },
+            {
+              "year": 2024,
+              "n_train": 1130,
+              "n_test": 131,
+              "b_hat_pct": 4.321619589348963,
+              "wins": 129,
+              "losses": 2,
+              "worst_test_buf_pct": 9.393678499092594
+            },
+            {
+              "year": 2025,
+              "n_train": 1266,
+              "n_test": 166,
+              "b_hat_pct": 4.369776506160983,
+              "wins": 153,
+              "losses": 13,
+              "worst_test_buf_pct": 8.745266625256109
+            },
+            {
+              "year": 2026,
+              "n_train": 1427,
+              "n_test": 24,
+              "b_hat_pct": 4.7129883752854,
+              "wins": 24,
+              "losses": 0,
+              "worst_test_buf_pct": 3.049336644541456
+            }
+          ],
+          "profit": {
+            "realized_vol_pct": 19.230131675345106,
+            "implied_vol_pct": 24.999171177948636,
+            "short_strike": 220.59812283823592,
+            "long_strike": 209.03612256357772,
+            "spread_width": 11.562000274658203,
+            "est_credit_per_share": 0.24671885493666454,
+            "est_max_loss_per_share": 11.315281419721538,
+            "return_on_risk_pct": 2.1804040552332644,
+            "annualized_ror_pct": 113.69249716573451
+          }
+        }
+      ],
+      "strike": 220.59812283823592,
+      "buffer_pct": 4.602094102286614,
+      "horizon": 5,
+      "expiry_date": "2026-03-27",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 7,
+      "win_rate_pct": 96.37426900584796,
+      "n_test": 855,
+      "n_folds": 7
+    },
+    {
+      "ticker": "JNJ",
+      "today_close": 235.3699951171875,
+      "end_date": "2026-03-20",
+      "realized_vol_pct": 16.01523663088516,
+      "side": "put",
+      "ladder": [
+        {
+          "side": "put",
+          "horizon": 5,
+          "expiry_date": "2026-03-27",
+          "expiry_type": "weekly",
+          "calendar_days_to_expiry": 7,
+          "strike": 223.8766557604464,
+          "buffer_pct": 4.883094529962808,
+          "pooled_wins": 469,
+          "pooled_losses": 10,
+          "n_test": 479,
+          "win_rate_pct": 97.91231732776617,
+          "n_folds": 4,
+          "n_history_fires": 1538,
+          "today_in_regime": true,
+          "folds": [
+            {
+              "year": 2023,
+              "n_train": 1054,
+              "n_test": 162,
+              "b_hat_pct": 4.837420482021377,
+              "wins": 161,
+              "losses": 1,
+              "worst_test_buf_pct": 5.447971682949381
+            },
+            {
+              "year": 2024,
+              "n_train": 1219,
+              "n_test": 165,
+              "b_hat_pct": 4.791847695834554,
+              "wins": 164,
+              "losses": 1,
+              "worst_test_buf_pct": 5.941392910066878
+            },
+            {
+              "year": 2025,
+              "n_train": 1381,
+              "n_test": 139,
+              "b_hat_pct": 4.7524541701896075,
+              "wins": 131,
+              "losses": 8,
+              "worst_test_buf_pct": 6.954870069171804
+            },
+            {
+              "year": 2026,
+              "n_train": 1520,
+              "n_test": 13,
+              "b_hat_pct": 4.904696144444912,
+              "wins": 13,
+              "losses": 0,
+              "worst_test_buf_pct": 3.5926910055895656
+            }
+          ],
+          "profit": {
+            "realized_vol_pct": 16.01523663088516,
+            "implied_vol_pct": 20.81980762015071,
+            "short_strike": 223.8766557604464,
+            "long_strike": 212.10815600458702,
+            "spread_width": 11.768499755859375,
+            "est_credit_per_share": 0.08837020796249642,
+            "est_max_loss_per_share": 11.680129547896879,
+            "return_on_risk_pct": 0.7565858546355622,
+            "annualized_ror_pct": 39.4505481345686
+          }
+        }
+      ],
+      "strike": 223.8766557604464,
+      "buffer_pct": 4.883094529962808,
+      "horizon": 5,
+      "expiry_date": "2026-03-27",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 7,
+      "win_rate_pct": 97.91231732776617,
+      "n_test": 479,
+      "n_folds": 4
+    },
+    {
+      "ticker": "RSG",
+      "today_close": 219.3000030517578,
+      "end_date": "2026-03-20",
+      "realized_vol_pct": 16.610148435585632,
+      "side": "put",
+      "ladder": [
+        {
+          "side": "put",
+          "horizon": 5,
+          "expiry_date": "2026-03-27",
+          "expiry_type": "weekly",
+          "calendar_days_to_expiry": 7,
+          "strike": 208.42843970786754,
+          "buffer_pct": 4.957393156681544,
+          "pooled_wins": 830,
+          "pooled_losses": 28,
+          "n_test": 858,
+          "win_rate_pct": 96.73659673659674,
+          "n_folds": 7,
+          "n_history_fires": 1496,
+          "today_in_regime": true,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 633,
+              "n_test": 95,
+              "b_hat_pct": 4.585710774462062,
+              "wins": 90,
+              "losses": 5,
+              "worst_test_buf_pct": 8.763751165207179
+            },
+            {
+              "year": 2021,
+              "n_train": 728,
+              "n_test": 134,
+              "b_hat_pct": 4.771363935950614,
+              "wins": 134,
+              "losses": 0,
+              "worst_test_buf_pct": 4.667950785847442
+            },
+            {
+              "year": 2022,
+              "n_train": 862,
+              "n_test": 136,
+              "b_hat_pct": 4.7607803226559176,
+              "wins": 125,
+              "losses": 11,
+              "worst_test_buf_pct": 9.093599702284816
+            },
+            {
+              "year": 2023,
+              "n_train": 1000,
+              "n_test": 151,
+              "b_hat_pct": 4.973089282365637,
+              "wins": 151,
+              "losses": 0,
+              "worst_test_buf_pct": 4.200046504656507
+            },
+            {
+              "year": 2024,
+              "n_train": 1149,
+              "n_test": 159,
+              "b_hat_pct": 4.887396996855028,
+              "wins": 159,
+              "losses": 0,
+              "worst_test_buf_pct": 3.905766545682321
+            },
+            {
+              "year": 2025,
+              "n_train": 1308,
+              "n_test": 156,
+              "b_hat_pct": 4.755296065525281,
+              "wins": 144,
+              "losses": 12,
+              "worst_test_buf_pct": 7.129928312372257
+            },
+            {
+              "year": 2026,
+              "n_train": 1464,
+              "n_test": 27,
+              "b_hat_pct": 4.960147807778965,
+              "wins": 27,
+              "losses": 0,
+              "worst_test_buf_pct": 3.5136182733995325
+            }
+          ],
+          "profit": {
+            "realized_vol_pct": 16.610148435585632,
+            "implied_vol_pct": 21.59319296626132,
+            "short_strike": 208.42843970786754,
+            "long_strike": 197.46343955527965,
+            "spread_width": 10.96500015258789,
+            "est_credit_per_share": 0.09317294598098247,
+            "est_max_loss_per_share": 10.871827206606909,
+            "return_on_risk_pct": 0.8570127560927423,
+            "annualized_ror_pct": 44.68709371055014
+          }
+        }
+      ],
+      "strike": 208.42843970786754,
+      "buffer_pct": 4.957393156681544,
+      "horizon": 5,
+      "expiry_date": "2026-03-27",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 7,
+      "win_rate_pct": 96.73659673659674,
+      "n_test": 858,
+      "n_folds": 7
+    }
+  ],
+  "call_signals": [
+    {
+      "ticker": "SPY",
+      "today_close": 659.9423217773438,
+      "end_date": "2025-09-19",
+      "realized_vol_pct": 8.844811872038951,
+      "side": "call",
+      "ladder": [
+        {
+          "side": "call",
+          "horizon": 5,
+          "expiry_date": "2025-09-26",
+          "expiry_type": "weekly",
+          "calendar_days_to_expiry": 7,
+          "strike": 689.1897521501858,
+          "buffer_pct": 4.431816146307049,
+          "pooled_wins": 888,
+          "pooled_losses": 30,
+          "n_test": 918,
+          "win_rate_pct": 96.73202614379085,
+          "n_folds": 6,
+          "n_history_fires": 1646,
+          "today_in_regime": true,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 726,
+              "n_test": 135,
+              "b_hat_pct": 3.895106190599667,
+              "wins": 129,
+              "losses": 6,
+              "worst_test_buf_pct": 5.665707806162934
+            },
+            {
+              "year": 2021,
+              "n_train": 858,
+              "n_test": 168,
+              "b_hat_pct": 4.133794909015134,
+              "wins": 167,
+              "losses": 1,
+              "worst_test_buf_pct": 4.896914491726134
+            },
+            {
+              "year": 2022,
+              "n_train": 1026,
+              "n_test": 146,
+              "b_hat_pct": 4.133540586971273,
+              "wins": 128,
+              "losses": 18,
+              "worst_test_buf_pct": 6.930685695458383
+            },
+            {
+              "year": 2023,
+              "n_train": 1173,
+              "n_test": 181,
+              "b_hat_pct": 4.517011884064933,
+              "wins": 179,
+              "losses": 2,
+              "worst_test_buf_pct": 5.846414009841716
+            },
+            {
+              "year": 2024,
+              "n_train": 1356,
+              "n_test": 170,
+              "b_hat_pct": 4.514932537463973,
+              "wins": 169,
+              "losses": 1,
+              "worst_test_buf_pct": 4.939330008270382
+            },
+            {
+              "year": 2025,
+              "n_train": 1524,
+              "n_test": 118,
+              "b_hat_pct": 4.442828378711438,
+              "wins": 116,
+              "losses": 2,
+              "worst_test_buf_pct": 5.291130253665899
+            }
+          ],
+          "profit": {
+            "realized_vol_pct": 8.844811872038951,
+            "implied_vol_pct": 11.498255433650638,
+            "short_strike": 689.1897521501858,
+            "long_strike": 722.186868239053,
+            "spread_width": 32.99711608886719,
+            "est_credit_per_share": 0.008436784087257695,
+            "est_max_loss_per_share": 32.98867930477993,
+            "return_on_risk_pct": 0.025574785850960815,
+            "annualized_ror_pct": 1.333542405085814
+          }
+        }
+      ],
+      "strike": 689.1897521501858,
+      "buffer_pct": 4.431816146307049,
+      "horizon": 5,
+      "expiry_date": "2025-09-26",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 7,
+      "win_rate_pct": 96.73202614379085,
+      "n_test": 918,
+      "n_folds": 6
+    },
+    {
+      "ticker": "DOX",
+      "today_close": 64.83000183105469,
+      "end_date": "2026-03-20",
+      "realized_vol_pct": 31.376711325064573,
+      "side": "call",
+      "ladder": [
+        {
+          "side": "call",
+          "horizon": 5,
+          "expiry_date": "2026-03-27",
+          "expiry_type": "weekly",
+          "calendar_days_to_expiry": 7,
+          "strike": 68.05900808402752,
+          "buffer_pct": 4.980728307531987,
+          "pooled_wins": 889,
+          "pooled_losses": 41,
+          "n_test": 930,
+          "win_rate_pct": 95.59139784946237,
+          "n_folds": 7,
+          "n_history_fires": 1548,
+          "today_in_regime": true,
+          "folds": [
+            {
+              "year": 2020,
+              "n_train": 617,
+              "n_test": 119,
+              "b_hat_pct": 4.084988711813894,
+              "wins": 112,
+              "losses": 7,
+              "worst_test_buf_pct": 10.833907319664583
+            },
+            {
+              "year": 2021,
+              "n_train": 734,
+              "n_test": 129,
+              "b_hat_pct": 4.2816909757069315,
+              "wins": 125,
+              "losses": 4,
+              "worst_test_buf_pct": 5.06739253447086
+            },
+            {
+              "year": 2022,
+              "n_train": 864,
+              "n_test": 154,
+              "b_hat_pct": 4.4029118818663555,
+              "wins": 141,
+              "losses": 13,
+              "worst_test_buf_pct": 6.086743803825767
+            },
+            {
+              "year": 2023,
+              "n_train": 1017,
+              "n_test": 170,
+              "b_hat_pct": 4.793482745435007,
+              "wins": 163,
+              "losses": 7,
+              "worst_test_buf_pct": 7.37995929530102
+            },
+            {
+              "year": 2024,
+              "n_train": 1185,
+              "n_test": 178,
+              "b_hat_pct": 4.926927093722487,
+              "wins": 171,
+              "losses": 7,
+              "worst_test_buf_pct": 7.332042343652145
+            },
+            {
+              "year": 2025,
+              "n_train": 1364,
+              "n_test": 162,
+              "b_hat_pct": 4.984414079512044,
+              "wins": 159,
+              "losses": 3,
+              "worst_test_buf_pct": 5.7230767768464474
+            },
+            {
+              "year": 2026,
+              "n_train": 1527,
+              "n_test": 18,
+              "b_hat_pct": 4.97745811188175,
+              "wins": 18,
+              "losses": 0,
+              "worst_test_buf_pct": 4.877739338930498
+            }
+          ],
+          "profit": {
+            "realized_vol_pct": 31.376711325064573,
+            "implied_vol_pct": 40.78972472258394,
+            "short_strike": 68.05900808402752,
+            "long_strike": 71.30050817558026,
+            "spread_width": 3.2415000915527346,
+            "est_credit_per_share": 0.26548201949865596,
+            "est_max_loss_per_share": 2.9760180720540785,
+            "return_on_risk_pct": 8.920712612320177,
+            "annualized_ror_pct": 465.1514433566949
+          }
+        }
+      ],
+      "strike": 68.05900808402752,
+      "buffer_pct": 4.980728307531987,
+      "horizon": 5,
+      "expiry_date": "2026-03-27",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 7,
+      "win_rate_pct": 95.59139784946237,
+      "n_test": 930,
+      "n_folds": 7
+    }
+  ],
+  "pin_signals": []
+}

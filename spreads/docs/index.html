@@ -547,6 +547,7 @@
       <a href="/" class="nav-logo"><span class="nav-logo-dot" style="background:var(--orange)"></span>CreditFloor</a>
       <div class="nav-links">
         <a href="#signals">Today's signals</a>
+        <a href="#stillpoint">Stillpoint</a>
         <a href="#method">Method</a>
         <a href="#validation">Validation</a>
         <a href="#disclosures">Disclosures</a>
@@ -817,6 +818,162 @@
         </button>
         <div class="cf-section-body" data-body="oc-calls" hidden>
           <div class="cf-list" id="oc-list-calls"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STILLPOINT — TIGHT-STRIKE SHORT-DTE ===== -->
+  <section class="content-section" id="stillpoint">
+    <div class="section-inner">
+      <div class="section-title">
+        Stillpoint <span class="section-title-sub">&mdash; tight strikes, &lt;21 day expiries, compression-conditioned (proprietary)</span>
+      </div>
+      <p class="section-note">
+        A <em>third, separate strategy</em>. Stillpoint hunts for stocks
+        currently in a <strong>volatility-compression "stillness" regime</strong>
+        &mdash; 20-day annualized realized vol below threshold, 5-day vol
+        compressing inside 20-day vol, tight 20-day range, price near its
+        short-term mean, and no momentum lean. In that conditional
+        distribution the next 5-21 trading days are tightly bounded, so
+        we can publish strikes as close as <strong>1-5% from spot</strong>
+        on a sub-3-week tenor and still hit
+        <strong>&ge;95% historical out-of-sample accuracy</strong> via a
+        walk-forward 97th-percentile conformal buffer. Sections below
+        start collapsed; tap to expand.
+      </p>
+
+      <div class="cf-stats-grid" id="sp-stats">
+        <div class="cf-stat"><span class="num good" id="sp-winrate">&mdash;</span><span class="lbl">Pooled OOS win rate</span></div>
+        <div class="cf-stat"><span class="num" id="sp-tests">&mdash;</span><span class="lbl">Walk-forward OOS tests</span></div>
+        <div class="cf-stat"><span class="num" id="sp-signals">&mdash;</span><span class="lbl">Eligible signals today</span></div>
+        <div class="cf-stat"><span class="num" id="sp-inreg">&mdash;</span><span class="lbl">Tickers in stillness regime</span></div>
+      </div>
+
+      <!-- Pin (both sides) -->
+      <div class="cf-section" id="sp-section-pin">
+        <button type="button" class="cf-section-head" data-target="sp-pin" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Pinpoint &mdash; both-sides eligible <span class="cf-section-subtitle">&mdash; iron-condor candidates: tight short put AND tight short call simultaneously</span>
+          </span>
+          <span class="cf-section-badge" id="sp-pin-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-pin" hidden>
+          <div class="cf-list" id="sp-list-pin"></div>
+        </div>
+      </div>
+
+      <!-- Short puts -->
+      <div class="cf-section" id="sp-section-puts">
+        <button type="button" class="cf-section-head" data-target="sp-puts" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Tight put credit spreads <span class="cf-section-subtitle">&mdash; sell put just below spot under stillness regime</span>
+          </span>
+          <span class="cf-section-badge" id="sp-puts-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-puts" hidden>
+          <div class="cf-list" id="sp-list-puts"></div>
+        </div>
+      </div>
+
+      <!-- Short calls -->
+      <div class="cf-section" id="sp-section-calls">
+        <button type="button" class="cf-section-head" data-target="sp-calls" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Tight call credit spreads <span class="cf-section-subtitle">&mdash; sell call just above spot under stillness regime</span>
+          </span>
+          <span class="cf-section-badge" id="sp-calls-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-calls" hidden>
+          <div class="cf-list" id="sp-list-calls"></div>
+        </div>
+      </div>
+
+      <!-- Method blurb -->
+      <div class="cf-section" id="sp-section-method">
+        <button type="button" class="cf-section-head" data-target="sp-method" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            How Stillpoint works <span class="cf-section-subtitle">&mdash; the proprietary novel method</span>
+          </span>
+        </button>
+        <div class="cf-section-body" data-body="sp-method" hidden>
+          <div class="cf-method">
+            <h3>1. Stillness regime gate (proprietary, conjunctive)</h3>
+            <p>
+              At time <code>t</code>, the stock is <em>in regime</em> iff every
+              one of these causal features clears its threshold:
+            </p>
+            <ul>
+              <li><strong>Absolute calm:</strong> <code>vol<sub>20</sub> &lt; 40%</code> (annualized stdev of log returns).</li>
+              <li><strong>Vol compression:</strong> <code>vol<sub>5</sub> / vol<sub>20</sub> &lt; 1.05</code> &mdash; recent vol at or below trailing vol.</li>
+              <li><strong>Tight range:</strong> 20-day high/low spread <code>&lt; 15%</code> of spot.</li>
+              <li><strong>Trend-flat:</strong> <code>|close / SMA<sub>20</sub> &minus; 1| &lt; 4%</code>.</li>
+              <li><strong>Momentum-neutral:</strong> <code>RSI<sub>14</sub> &isin; [25, 75]</code>.</li>
+              <li><strong>No surprise:</strong> <code>|5d return| &lt; 8%</code>.</li>
+            </ul>
+            <p>
+              Conditioned on this regime, the empirical distribution of next
+              <code>h</code>-day path moves (for <code>h &isin; {5, 7, 10, 14, 21}</code>)
+              has a 97th-percentile materially smaller than the unconditional
+              distribution. That is the entire edge.
+            </p>
+
+            <h3>2. Conformal q-quantile strike (per ticker, per side, per horizon)</h3>
+            <p>
+              For each (ticker, side, horizon), we restrict to in-regime training
+              days and compute the path buffer <code>b&lowast;(t,h)</code>
+              (signed by side). The strike buffer is set to:
+            </p>
+            <p style="text-align:center"><code>b&#770; = quantile<sub>0.97</sub>(b&lowast; on training) + 0.5%</code></p>
+            <p>
+              By the order-statistic interpretation, this targets ~97% in-sample
+              coverage. We then validate it on walk-forward test years.
+            </p>
+
+            <h3>3. Walk-forward fold validation (purged)</h3>
+            <ul>
+              <li>Test years 2020-2026; one annual fold each.</li>
+              <li>Training set: <em>only</em> in-regime days whose forward
+                  window <code>(t, t+h]</code> closes strictly before Jan 1 of
+                  the test year &mdash; purged gap, no overlap.</li>
+              <li>Test set: in-regime days within the calendar year.</li>
+              <li>Win iff <code>b&lowast;(t,h) &le; b&#770;</code>.</li>
+            </ul>
+
+            <h3>4. Eligibility (fail-closed)</h3>
+            <ul>
+              <li>Pooled OOS win rate <strong>&ge; 95%</strong>.</li>
+              <li>Every individual fold &ge; 85% win rate.</li>
+              <li>&ge; 4 distinct fold years tested, &ge; 40 pooled tests.</li>
+              <li>Final live buffer <code>b&#770;</code> &le; 5%.</li>
+              <li>Today's features must satisfy the regime gate &mdash; we
+                  publish only when the live state matches the conditional
+                  distribution we trained on.</li>
+            </ul>
+
+            <h3>5. Pinpoint &mdash; the iron-condor</h3>
+            <p>
+              When BOTH sides clear all gates simultaneously, the resulting
+              short-put + short-call combination forms a tight
+              <strong>iron-condor-equivalent pin trade</strong>: spot is
+              expected to "pin" within a narrow band through expiry. Both
+              sides each carry their own &ge;95% historical win rate; the
+              combined credit can offset two-way risk.
+            </p>
+
+            <h3>6. What this does <em>not</em> guarantee</h3>
+            <p>
+              Walk-forward 95%+ OOS accuracy is empirical; future paths can
+              break the conditional bound. The regime gate is the entire
+              defense &mdash; if a stock is no longer in stillness today, we
+              do not publish. Position-size as you would any short-vol
+              strategy.
+            </p>
+          </div>
         </div>
       </div>
     </div>
