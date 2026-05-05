@@ -103,6 +103,16 @@ jobs:
           set -e
           python strategies/touch_predict/option_c_scan.py
 
+      - name: Run Stillpoint compression-conditioned scan
+        # Third engine: tight strikes (<=5%), short DTE (<21d),
+        # conformal q-quantile under stillness regime gate.
+        # Reuses docs/data/tickers/*.json refreshed by the backfill
+        # step; publishes spreads/docs/data/stillpoint_signals.json.
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          python strategies/stillpoint/scan.py
+
       - name: Summarize results
         if: steps.gate.outputs.skip != 'true'
         run: |
@@ -156,9 +166,11 @@ jobs:
             spreads/docs/data/last_run.txt \
             spreads/docs/data/option_c_signals.json \
             spreads/docs/data/option_c_certified_cells.json \
+            spreads/docs/data/stillpoint_signals.json \
             strategies/credit_spread/results/signals.json \
             strategies/touch_predict/results/option_c_signals.json \
-            strategies/touch_predict/results/option_c_certified_cells.json || true
+            strategies/touch_predict/results/option_c_certified_cells.json \
+            strategies/stillpoint/results/stillpoint_signals.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             # Discard the backfill's in-place ticker mutations so the
