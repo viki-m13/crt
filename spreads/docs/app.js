@@ -822,6 +822,203 @@
     // Option C
     const oc = await loadOptionC();
     renderOptionC(oc);
+    // Stillpoint
+    const sp = await loadStillpoint();
+    renderStillpoint(sp);
+  }
+
+  // ---- Stillpoint ----------------------------------------------------
+  async function loadStillpoint() {
+    try {
+      const r = await fetch("data/stillpoint_signals.json?v=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return null;
+      return r.json();
+    } catch (e) { return null; }
+  }
+
+  function spRungHTML(l, side) {
+    const exType = l.expiry_type || "";
+    const expLine = `Expires <strong>${l.expiry_date}</strong>` +
+      (exType ? ` <span class="tag tag-expiry">${exType}</span>` : "") +
+      ` &middot; ${l.horizon}-session backtest` +
+      (l.calendar_days_to_expiry ? ` &middot; ${l.calendar_days_to_expiry} cal days` : "");
+    const sideAction = side === "put" ? "Sell put at" : "Sell call at";
+    const sideWord = side === "put" ? "below" : "above";
+    const profBlock = l.profit ? `
+      <div class="cf-rung-profit">
+        <span class="cf-rung-profit-main">Est. <strong>${fmtPct(l.profit.return_on_risk_pct, 2)}</strong> return on risk
+          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> walk-forward OOS win</span>
+        <span class="cf-rung-profit-sub">
+          credit ~$${l.profit.est_credit_per_share.toFixed(2)} on $${l.profit.spread_width.toFixed(2)} spread
+          &middot; max loss $${l.profit.est_max_loss_per_share.toFixed(2)}
+          &middot; long leg ${fmt$(l.profit.long_strike)}
+          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}
+        </span>
+      </div>` : "";
+    return `
+      <div class="cf-rung">
+        <div class="cf-rung-h">${expLine}</div>
+        <div class="cf-rung-k">${sideAction} ${fmt$(l.strike)}</div>
+        <div class="cf-rung-b">${fmtPct(l.buffer_pct, 2)} ${sideWord} spot</div>
+        ${profBlock}
+        <div class="cf-rung-m">
+          <span class="tag">stillness gate</span>
+          <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
+          <span class="tag">${l.n_folds} folds</span>
+          <span class="tag">${fmtInt(l.n_history_fires)} regime fires</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function spFoldTableHTML(ladder) {
+    const horizons = ladder.map((l) => l.horizon);
+    const years = Array.from(new Set(ladder.flatMap((l) => l.folds.map((f) => f.year)))).sort();
+    const head = `
+      <tr>
+        <th>Fold</th>
+        ${horizons.map((h) => `<th colspan="4" style="border-left:1px solid var(--rule-light)">${h}d</th>`).join("")}
+      </tr>
+      <tr>
+        <th></th>
+        ${horizons.map(() => `<th>Train</th><th>Test</th><th>Wins</th><th>b̂%</th>`).join("")}
+      </tr>`;
+    const rows = years.map((y) => {
+      const cells = ladder.map((l) => {
+        const f = l.folds.find((ff) => ff.year === y);
+        if (!f) return `<td>-</td><td>-</td><td>-</td><td>-</td>`;
+        const total = f.wins + f.losses;
+        const cls = f.losses === 0 ? "win" : (f.wins / Math.max(total, 1) >= 0.9 ? "win" : "loss");
+        return `<td>${fmtInt(f.n_train)}</td>
+          <td>${fmtInt(f.n_test)}</td>
+          <td class="${cls}">${fmtInt(f.wins)}/${fmtInt(total)}</td>
+          <td>${fmtPct(f.b_hat_pct, 2)}</td>`;
+      });
+      return `<tr><td>${y}</td>${cells.join("")}</tr>`;
+    });
+    return `<table class="cf-fold-tbl"><thead>${head}</thead><tbody>${rows.join("")}</tbody></table>`;
+  }
+
+  function spCardHTML(s, side) {
+    return `
+      <div class="cf-card" data-ticker="${s.ticker}">
+        <div class="cf-card-head">
+          <div>
+            <span class="cf-card-ticker">${s.ticker}</span>
+            <span class="cf-regime-badge regime">stillness</span>
+            <span class="cf-regime-badge" style="color:${side==='put'?'#1a7a3e':'#b35900'};border-color:${side==='put'?'#1a7a3e':'#b35900'}">
+              ${side === "put" ? "BULLISH (short put)" : "BEARISH (short call)"}
+            </span>
+          </div>
+          <div class="cf-card-price">
+            Spot <strong>${fmt$(s.today_close)}</strong>
+            ${s.realized_vol_pct != null ? `&middot; σ ${fmtPct(s.realized_vol_pct, 0)}` : ""}
+            &middot; as-of ${s.end_date}
+          </div>
+        </div>
+        <div class="cf-ladder">
+          ${s.ladder.map((r) => spRungHTML(r, side)).join("")}
+        </div>
+        <div class="cf-card-expand">Show fold-by-fold walk-forward breakdown</div>
+        <div class="cf-detail">
+          ${spFoldTableHTML(s.ladder)}
+          <div class="cf-footnote" style="margin-top:12px">
+            Each cell is the walk-forward test outcome for that calendar year and horizon.
+            <em>b̂%</em> is the conformal strike buffer set on training data; <em>Wins</em>
+            is the test-set win rate. Stillpoint tolerates a small miss rate (target ≤5%
+            pooled, ≤10% any fold) — published only after walk-forward verification clears.
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function spPinCardHTML(p) {
+    const subSection = (s, side) => `
+      <div style="margin-top: 10px; padding: 12px; border: 1px solid var(--rule-light); border-radius: 3px; background: ${side==='put'?'#f5fbf7':'#fdf6f0'}">
+        <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px">
+          ${side === 'put' ? 'BULLISH leg — short put' : 'BEARISH leg — short call'}
+        </div>
+        <div class="cf-ladder" style="margin-top: 0">
+          ${s.ladder.map((r) => spRungHTML(r, side)).join("")}
+        </div>
+      </div>`;
+    return `
+      <div class="cf-card" data-ticker="${p.ticker}">
+        <div class="cf-card-head">
+          <div>
+            <span class="cf-card-ticker">${p.ticker}</span>
+            <span class="cf-regime-badge regime">stillness</span>
+            <span class="cf-regime-badge" style="color:#a06b00;border-color:#a06b00">PIN (iron-condor)</span>
+          </div>
+          <div class="cf-card-price">
+            Spot <strong>${fmt$(p.today_close)}</strong>
+            &middot; as-of ${p.end_date}
+          </div>
+        </div>
+        ${subSection(p.put, "put")}
+        ${subSection(p.call, "call")}
+      </div>`;
+  }
+
+  function spRenderList(containerId, items, side) {
+    const list = document.getElementById(containerId);
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = `<div class="cf-empty">No ${side} Stillpoint signals today. The stillness gate is conservative — most stocks, most days, are not eligible.</div>`;
+      return;
+    }
+    list.innerHTML = items.map((s) => (side === "pin" ? spPinCardHTML(s) : spCardHTML(s, side))).join("");
+    list.querySelectorAll(".cf-card-expand").forEach((ex) => {
+      ex.addEventListener("click", (e) => {
+        const card = e.currentTarget.closest(".cf-card");
+        card.classList.toggle("open");
+        e.currentTarget.textContent = card.classList.contains("open")
+          ? "Hide fold-by-fold walk-forward breakdown"
+          : "Show fold-by-fold walk-forward breakdown";
+      });
+    });
+  }
+
+  function renderStillpoint(sp) {
+    if (!sp || !sp.summary) {
+      ["sp-list-pin", "sp-list-puts", "sp-list-calls"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<div class="cf-empty">Stillpoint data not available.</div>`;
+      });
+      return;
+    }
+    const s = sp.summary;
+    const wr = s.pooled_win_rate == null ? "—" : fmtPct(100 * s.pooled_win_rate, 2);
+    const wrEl = document.getElementById("sp-winrate");
+    if (wrEl) wrEl.textContent = wr;
+    const tests = (s.pooled_wins || 0) + (s.pooled_losses || 0);
+    document.getElementById("sp-tests").textContent = fmtInt(tests);
+    document.getElementById("sp-signals").textContent = fmtInt((s.n_put_signals || 0) + (s.n_call_signals || 0));
+    document.getElementById("sp-inreg").textContent = fmtInt(s.n_in_regime_today || 0);
+    const setBadge = (id, n, label) => {
+      const b = document.getElementById(id);
+      if (b) b.textContent = `${fmtInt(n)} ${label}${n === 1 ? "" : "s"}`;
+    };
+    setBadge("sp-pin-badge", (sp.pin_signals || []).length, "ticker");
+    setBadge("sp-puts-badge", (sp.put_signals || []).length, "ticker");
+    setBadge("sp-calls-badge", (sp.call_signals || []).length, "ticker");
+
+    const lazy = { pin: false, put: false, call: false };
+    document.querySelectorAll('.cf-section-head[data-target^="sp-"]').forEach((h) => {
+      const target = h.dataset.target;
+      h.addEventListener("click", () => {
+        if (target === "sp-pin" && !lazy.pin) {
+          spRenderList("sp-list-pin", sp.pin_signals || [], "pin");
+          lazy.pin = true;
+        } else if (target === "sp-puts" && !lazy.put) {
+          spRenderList("sp-list-puts", sp.put_signals || [], "put");
+          lazy.put = true;
+        } else if (target === "sp-calls" && !lazy.call) {
+          spRenderList("sp-list-calls", sp.call_signals || [], "call");
+          lazy.call = true;
+        }
+      });
+    });
   }
 
   main();
