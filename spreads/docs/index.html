@@ -641,11 +641,6 @@
         <div>Calls: <span id="live-call-summary">&mdash;</span></div>
         <div>First signal logged: <span id="live-first">&mdash;</span></div>
       </div>
-
-      <details class="cf-live-log-details">
-        <summary>Show recent resolutions &amp; open positions</summary>
-        <div id="cf-live-log"></div>
-      </details>
     </div>
   </section>
 
@@ -830,31 +825,70 @@
         Stillpoint <span class="section-title-sub">&mdash; tight strikes, &lt;21 day expiries, compression-conditioned (proprietary)</span>
       </div>
       <p class="section-note">
-        A <em>third, separate strategy</em>. Stillpoint hunts for stocks
-        currently in a <strong>volatility-compression "stillness" regime</strong>
-        and emits <strong>three tiers</strong>:
-        <em>Atomic Iron Condor</em> (joint put+call, 50%+ per-trade ROR
-        target at &ge;95% joint OOS WR, 21-126 day expiries), <em>Tight</em>
-        (sub-3% buffer single-side, 2-5 day expiries, vol-adaptive
-        conformal), and <em>Core</em> (sub-5% buffer single-side, 5-21
-        day expiries, static conformal). All three target
-        <strong>&ge;95% historical OOS accuracy</strong>. Sections below
-        start collapsed; tap to expand.
+        Iron-condor credit spreads with proprietary 6-layer robustness
+        (two-stage walk-forward, stress-pricing eligibility, regime σ
+        envelope, immutable live log) covering all four corners of
+        the {WR, ROR, liquidity, frequency} Pareto. Pick the tier that
+        matches your tradeoff. Each section starts collapsed; tap to
+        expand. Live track record below shows live vs backtest WR
+        per tier.
       </p>
 
       <div class="cf-stats-grid" id="sp-stats">
-        <div class="cf-stat"><span class="num good" id="sp-uic-winrate">&mdash;</span><span class="lbl">Universal IC joint OOS WR</span></div>
-        <div class="cf-stat"><span class="num" id="sp-uic-signals">&mdash;</span><span class="lbl">UIC signals today (50%+ ROR)</span></div>
-        <div class="cf-stat"><span class="num" id="sp-ic-winrate">&mdash;</span><span class="lbl">Atomic IC joint OOS WR</span></div>
-        <div class="cf-stat"><span class="num" id="sp-tight-winrate">&mdash;</span><span class="lbl">Tight tier OOS WR</span></div>
+        <div class="cf-stat"><span class="num good" id="sp-lfic-winrate">&mdash;</span><span class="lbl">Liquid + 95% WR (LFIC)</span></div>
+        <div class="cf-stat"><span class="num good" id="sp-laic-winrate">&mdash;</span><span class="lbl">Liquid + 50%+ ROR (LAIC)</span></div>
+        <div class="cf-stat"><span class="num" id="sp-uic-winrate">&mdash;</span><span class="lbl">Universal 95% + 50%+ (UIC)</span></div>
+        <div class="cf-stat"><span class="num" id="sp-ruic-winrate">&mdash;</span><span class="lbl">Strict liquid (RUIC)</span></div>
       </div>
 
-      <!-- ====== UNIVERSAL IRON CONDOR (no regime gate, broad universe) ====== -->
+      <!-- ====== STILLPOINT LIVE LOG ====== -->
+      <div class="cf-section" id="sp-section-livelog">
+        <button type="button" class="cf-section-head" data-target="sp-livelog" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Live track record <span class="cf-section-subtitle">&mdash; live WR vs backtest WR per tier (immutable, survivorship-bias-free)</span>
+          </span>
+          <span class="cf-section-badge" id="sp-livelog-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-livelog" hidden>
+          <div id="sp-livelog-table"></div>
+        </div>
+      </div>
+
+      <!-- ====== TIER 1: LFIC — Liquid + 95% WR + frequent (sacrifice 50% ROR) ====== -->
+      <div class="cf-section" id="sp-section-lfic">
+        <button type="button" class="cf-section-head" data-target="sp-lfic" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Liquid Frequent IC (LFIC) <span class="cf-section-subtitle">&mdash; SPY/AAPL/etc. at 95%+ backtest WR, 10-50% ROR, frequent</span>
+          </span>
+          <span class="cf-section-badge" id="sp-lfic-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-lfic" hidden>
+          <div class="cf-list" id="sp-list-lfic"></div>
+        </div>
+      </div>
+
+      <!-- ====== TIER 2: LAIC — Liquid + 50% ROR + frequent (sacrifice 95% WR) ====== -->
+      <div class="cf-section" id="sp-section-laic">
+        <button type="button" class="cf-section-head" data-target="sp-laic" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Liquid Active IC (LAIC) <span class="cf-section-subtitle">&mdash; liquid universe + 50%+ ROR + ~85% backtest WR (~80% live target)</span>
+          </span>
+          <span class="cf-section-badge" id="sp-laic-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-laic" hidden>
+          <div class="cf-list" id="sp-list-laic"></div>
+        </div>
+      </div>
+
+      <!-- ====== TIER 3: UIC — Universal 95% + 50% ROR + frequent (sacrifice liquid) ====== -->
       <div class="cf-section" id="sp-section-uic">
         <button type="button" class="cf-section-head" data-target="sp-uic" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
           <span class="cf-section-title">
-            Universal Iron Condor <span class="cf-section-subtitle">&mdash; 50%+ ROR + 95%+ joint OOS WR, no regime gate, close-at-expiry</span>
+            Universal IC (UIC) <span class="cf-section-subtitle">&mdash; mid-cap universe + 95%+ WR + 50%+ ROR (sacrifice liquidity)</span>
           </span>
           <span class="cf-section-badge" id="sp-uic-badge">&mdash;</span>
         </button>
@@ -863,12 +897,26 @@
         </div>
       </div>
 
-      <!-- ====== ATOMIC IRON CONDOR (50%+ ROR target, regime-gated, path-strict) ====== -->
+      <!-- ====== TIER 4: RUIC — Liquid + 95% + 50% (sacrifice frequency) ====== -->
+      <div class="cf-section" id="sp-section-ruic">
+        <button type="button" class="cf-section-head" data-target="sp-ruic" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Robust UIC (RUIC) <span class="cf-section-subtitle">&mdash; liquid + 95%+ WR + 50%+ ROR, full 6-layer defense (rare)</span>
+          </span>
+          <span class="cf-section-badge" id="sp-ruic-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-ruic" hidden>
+          <div class="cf-list" id="sp-list-ruic"></div>
+        </div>
+      </div>
+
+      <!-- ====== LEGACY: ATOMIC IRON CONDOR (regime-gated, path-strict, original) ====== -->
       <div class="cf-section" id="sp-section-ic">
         <button type="button" class="cf-section-head" data-target="sp-ic" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
           <span class="cf-section-title">
-            Atomic Iron Condor <span class="cf-section-subtitle">&mdash; 50%+ ROR per trade at &ge;95% joint OOS WR (proprietary novel)</span>
+            Atomic Iron Condor (AIC) <span class="cf-section-subtitle">&mdash; legacy regime-gated path-strict variant</span>
           </span>
           <span class="cf-section-badge" id="sp-ic-badge">&mdash;</span>
         </button>

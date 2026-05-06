@@ -468,7 +468,8 @@
     rows.push(header);
     for (const x of picked) rows.push(row(x));
     rows.push(`</tbody></table>`);
-    document.getElementById("cf-live-log").innerHTML = rows.join("");
+    const cflog = document.getElementById("cf-live-log");
+    if (cflog) cflog.innerHTML = rows.join("");
   }
 
   async function loadOptionC() {
@@ -1045,10 +1046,73 @@
       </div>`;
   }
 
+  async function loadStillpointLiveLog() {
+    try {
+      const r = await fetch("data/stillpoint_live_log.json?v=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return null;
+      return r.json();
+    } catch (e) { return null; }
+  }
+
+  function spLiveLogTableHTML(spLive, sp) {
+    if (!spLive || !spLive.summary) return `<div class="cf-empty">Live log not available.</div>`;
+    const tiers = [
+      { id: "lfic", label: "LFIC (Liquid Frequent)" },
+      { id: "laic", label: "LAIC (Liquid Active)" },
+      { id: "uic",  label: "UIC (Universal)" },
+      { id: "ruic", label: "RUIC (Robust)" },
+      { id: "ic",   label: "AIC (Atomic, legacy)" },
+    ];
+    const sBT = sp.summary || {};
+    const btKey = {
+      lfic: sBT.lfic_joint_pooled_win_rate,
+      laic: sBT.laic_joint_pooled_win_rate,
+      uic:  sBT.uic_joint_pooled_win_rate,
+      ruic: sBT.ruic_joint_pooled_win_rate,
+      ic:   sBT.ic_joint_pooled_win_rate,
+    };
+    const rows = tiers.map(t => {
+      const stats = (spLive.summary.by_tier || {})[t.id] || {};
+      const live = stats.live_win_rate_pct;
+      const liveStr = live != null ? fmtPct(live, 2) : `<span style="color:var(--muted)">— (${stats.pending || 0} pending)</span>`;
+      const bt = btKey[t.id];
+      const btStr = bt != null ? fmtPct(100 * bt, 2) : "—";
+      const total = stats.total || 0;
+      const wins = stats.wins || 0;
+      const losses = stats.losses || 0;
+      const pending = stats.pending || 0;
+      return `<tr>
+        <td><strong>${t.label}</strong></td>
+        <td>${btStr}</td>
+        <td>${liveStr}</td>
+        <td>${wins}W / ${losses}L</td>
+        <td>${pending}</td>
+        <td>${total}</td>
+      </tr>`;
+    }).join("");
+    return `
+      <p class="cf-watch-note">
+        Every Stillpoint signal published is appended to an immutable
+        log and resolved at expiry against the actual close. This is
+        the survivorship-bias-free live scoreboard: a loss that
+        happens stays in the log forever; tickers that drop off the
+        eligible list still resolve at their published expiry. First
+        resolutions for the 7-day expiries arrive ~1 week after first
+        publish; longer-DTE signals roll in over weeks.
+      </p>
+      <table class="cf-live-tbl">
+        <thead><tr>
+          <th>Tier</th><th>Backtest WR</th><th>Live WR</th>
+          <th>Resolved</th><th>Pending</th><th>Total</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
   function renderStillpoint(sp) {
     if (!sp || !sp.summary) {
-      ["sp-list-ic", "sp-list-pin", "sp-list-puts", "sp-list-calls",
-       "sp-list-tight-pin", "sp-list-tight-puts", "sp-list-tight-calls"].forEach((id) => {
+      ["sp-list-ic", "sp-list-uic", "sp-list-laic", "sp-list-lfic",
+       "sp-list-ruic"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = `<div class="cf-empty">Stillpoint data not available.</div>`;
       });
@@ -1056,85 +1120,90 @@
     }
     const s = sp.summary;
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const fmtWR = (v) => v == null ? "—" : fmtPct(100 * v, 2);
 
-    // Core tier stats
-    const wr = s.pooled_win_rate == null ? "—" : fmtPct(100 * s.pooled_win_rate, 2);
-    setText("sp-winrate", wr);
-    setText("sp-signals", fmtInt((s.n_put_signals || 0) + (s.n_call_signals || 0)));
-
-    // Tight tier stats
-    const twr = s.tight_pooled_win_rate == null ? "—" : fmtPct(100 * s.tight_pooled_win_rate, 2);
-    setText("sp-tight-winrate", twr);
-    setText("sp-tight-signals", fmtInt((s.n_tight_put_signals || 0) + (s.n_tight_call_signals || 0)));
-
-    // Iron Condor headline stats
-    const icwr = s.ic_joint_pooled_win_rate == null ? "—" : fmtPct(100 * s.ic_joint_pooled_win_rate, 2);
-    setText("sp-ic-winrate", icwr);
-    setText("sp-ic-signals", fmtInt(s.n_ic_signals || 0));
-
-    // Universal IC headline stats
-    const uicwr = s.uic_joint_pooled_win_rate == null ? "—" : fmtPct(100 * s.uic_joint_pooled_win_rate, 2);
-    setText("sp-uic-winrate", uicwr);
-    setText("sp-uic-signals", fmtInt(s.n_uic_signals || 0));
+    // Headline stats — 4 active tiers
+    setText("sp-lfic-winrate", fmtWR(s.lfic_joint_pooled_win_rate));
+    setText("sp-laic-winrate", fmtWR(s.laic_joint_pooled_win_rate));
+    setText("sp-uic-winrate",  fmtWR(s.uic_joint_pooled_win_rate));
+    setText("sp-ruic-winrate", fmtWR(s.ruic_joint_pooled_win_rate));
 
     const setBadge = (id, n, label) => {
       const b = document.getElementById(id);
       if (b) b.textContent = `${fmtInt(n)} ${label}${n === 1 ? "" : "s"}`;
     };
-    setBadge("sp-ic-badge", (sp.ic_signals || []).length, "ticker");
-    setBadge("sp-uic-badge", (sp.uic_signals || []).length, "ticker");
-    setBadge("sp-pin-badge", (sp.pin_signals || []).length, "ticker");
-    setBadge("sp-puts-badge", (sp.put_signals || []).length, "ticker");
-    setBadge("sp-calls-badge", (sp.call_signals || []).length, "ticker");
-    setBadge("sp-tight-pin-badge", (sp.tight_pin_signals || []).length, "ticker");
-    setBadge("sp-tight-puts-badge", (sp.tight_put_signals || []).length, "ticker");
-    setBadge("sp-tight-calls-badge", (sp.tight_call_signals || []).length, "ticker");
+    // 4 active tier badges
+    setBadge("sp-lfic-badge", (sp.lfic_signals || []).length, "ticker");
+    setBadge("sp-laic-badge", (sp.laic_signals || []).length, "ticker");
+    setBadge("sp-uic-badge",  (sp.uic_signals  || []).length, "ticker");
+    setBadge("sp-ruic-badge", (sp.ruic_signals || []).length, "ticker");
+    // Legacy
+    setBadge("sp-ic-badge",   (sp.ic_signals   || []).length, "ticker");
 
-    const lazy = { uic: false, ic: false, pin: false, put: false, call: false,
-                    tightPin: false, tightPut: false, tightCall: false };
+    // Lazy render flags
+    const lazy = { livelog: false, lfic: false, laic: false, uic: false,
+                    ruic: false, ic: false };
+
+    // Empty-state message helper (when 0 deployable today)
+    const emptyMsg = (n_pooled, wr, label) => {
+      const wrPct = wr != null ? fmtPct(100 * wr, 2) : "—";
+      return `<div class="cf-empty">No ${label} signals today meet the eligibility thresholds. Backtest validation across the full universe: ${wrPct} joint OOS WR over ${fmtInt(n_pooled || 0)} walk-forward tests. Framework is fail-closed; signals appear only when a ticker clears every robustness layer.</div>`;
+    };
+
+    // Live log: lazy-load + render mini-table
+    document.querySelectorAll('.cf-section-head[data-target="sp-livelog"]').forEach((h) => {
+      h.addEventListener("click", async () => {
+        if (lazy.livelog) return;
+        lazy.livelog = true;
+        const live = await loadStillpointLiveLog();
+        const tbl = document.getElementById("sp-livelog-table");
+        if (tbl) tbl.innerHTML = spLiveLogTableHTML(live, sp);
+        // Update badge with total signals logged
+        if (live && live.summary) {
+          const b = document.getElementById("sp-livelog-badge");
+          if (b) b.textContent = `${fmtInt(live.summary.total || 0)} signals logged · ${fmtInt(live.summary.resolved || 0)} resolved`;
+        }
+      });
+    });
+    // Pre-load live log badge on first paint (without expanding the section)
+    loadStillpointLiveLog().then((live) => {
+      if (live && live.summary) {
+        const b = document.getElementById("sp-livelog-badge");
+        if (b) b.textContent = `${fmtInt(live.summary.total || 0)} signals · ${fmtInt(live.summary.resolved || 0)} resolved`;
+      }
+    });
+
+    // Per-tier section click handlers
     document.querySelectorAll('.cf-section-head[data-target^="sp-"]').forEach((h) => {
       const target = h.dataset.target;
       h.addEventListener("click", () => {
-        if (target === "sp-uic" && !lazy.uic) {
-          const list = document.getElementById("sp-list-uic");
-          const items = sp.uic_signals || [];
+        const renderTier = (lazyKey, listId, items, sN, swr, label) => {
+          if (lazy[lazyKey]) return;
+          const list = document.getElementById(listId);
           if (list) {
             if (!items.length) {
-              list.innerHTML = `<div class="cf-empty">No Universal Iron Condor signals today meet the 95% joint OOS WR + 50% ROR thresholds. Backtest validation: ${uicwr} joint WR over ${fmtInt((s.uic_pooled_wins || 0) + (s.uic_pooled_losses || 0))} historical OOS tests across the full universe (no regime gate, close-at-expiry win condition).</div>`;
+              list.innerHTML = emptyMsg(sN, swr, label);
             } else {
               list.innerHTML = items.map(spIcCardHTML).join("");
             }
           }
-          lazy.uic = true;
-        } else if (target === "sp-ic" && !lazy.ic) {
-          const list = document.getElementById("sp-list-ic");
-          const items = sp.ic_signals || [];
-          if (list) {
-            if (!items.length) {
-              list.innerHTML = `<div class="cf-empty">No iron condor signals today meet the 95% joint OOS WR + 50% ROR thresholds. Backtest validation: ${icwr} joint WR over ${fmtInt((s.ic_pooled_wins || 0) + (s.ic_pooled_losses || 0))} historical OOS tests across the universe.</div>`;
-            } else {
-              list.innerHTML = items.map(spIcCardHTML).join("");
-            }
-          }
-          lazy.ic = true;
-        } else if (target === "sp-pin" && !lazy.pin) {
-          spRenderList("sp-list-pin", sp.pin_signals || [], "pin");
-          lazy.pin = true;
-        } else if (target === "sp-puts" && !lazy.put) {
-          spRenderList("sp-list-puts", sp.put_signals || [], "put");
-          lazy.put = true;
-        } else if (target === "sp-calls" && !lazy.call) {
-          spRenderList("sp-list-calls", sp.call_signals || [], "call");
-          lazy.call = true;
-        } else if (target === "sp-tight-pin" && !lazy.tightPin) {
-          spRenderList("sp-list-tight-pin", sp.tight_pin_signals || [], "pin");
-          lazy.tightPin = true;
-        } else if (target === "sp-tight-puts" && !lazy.tightPut) {
-          spRenderList("sp-list-tight-puts", sp.tight_put_signals || [], "put");
-          lazy.tightPut = true;
-        } else if (target === "sp-tight-calls" && !lazy.tightCall) {
-          spRenderList("sp-list-tight-calls", sp.tight_call_signals || [], "call");
-          lazy.tightCall = true;
+          lazy[lazyKey] = true;
+        };
+        if (target === "sp-lfic") {
+          const sN = (s.lfic_pooled_wins || 0) + (s.lfic_pooled_losses || 0);
+          renderTier("lfic", "sp-list-lfic", sp.lfic_signals || [], sN, s.lfic_joint_pooled_win_rate, "LFIC");
+        } else if (target === "sp-laic") {
+          const sN = (s.laic_pooled_wins || 0) + (s.laic_pooled_losses || 0);
+          renderTier("laic", "sp-list-laic", sp.laic_signals || [], sN, s.laic_joint_pooled_win_rate, "LAIC");
+        } else if (target === "sp-uic") {
+          const sN = (s.uic_pooled_wins || 0) + (s.uic_pooled_losses || 0);
+          renderTier("uic", "sp-list-uic", sp.uic_signals || [], sN, s.uic_joint_pooled_win_rate, "UIC");
+        } else if (target === "sp-ruic") {
+          const sN = (s.ruic_pooled_wins || 0) + (s.ruic_pooled_losses || 0);
+          renderTier("ruic", "sp-list-ruic", sp.ruic_signals || [], sN, s.ruic_joint_pooled_win_rate, "RUIC");
+        } else if (target === "sp-ic") {
+          const sN = (s.ic_pooled_wins || 0) + (s.ic_pooled_losses || 0);
+          renderTier("ic", "sp-list-ic", sp.ic_signals || [], sN, s.ic_joint_pooled_win_rate, "AIC");
         }
       });
     });
