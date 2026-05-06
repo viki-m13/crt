@@ -88,6 +88,14 @@ from sp_common import (  # noqa: E402
     SP_UIC_HORIZONS, SP_UIC_CONFORMAL_QS, SP_UIC_MAX_BUFFER,
     SP_UIC_PER_FOLD_WIN, SP_UIC_POOLED_WIN, SP_UIC_TARGET_ROR,
     SP_UIC_WIDTHS, SP_UIC_MAX_COMBINED_CREDIT_RATIO,
+    SP_RUIC_HORIZONS, SP_RUIC_CONFORMAL_QS, SP_RUIC_WIDTHS,
+    SP_RUIC_MAX_BUFFER, SP_RUIC_PER_FOLD_WIN,
+    SP_RUIC_SELECTION_POOLED_WIN, SP_RUIC_CONFIRMATION_POOLED_WIN,
+    SP_RUIC_TARGET_ROR_STRESS, SP_RUIC_STRESS_HAIRCUT,
+    SP_RUIC_STRESS_IV_MULT, SP_RUIC_MAX_COMBINED_CREDIT_RATIO,
+    SP_RUIC_REGIME_SIGMA_LO_PCTILE, SP_RUIC_REGIME_SIGMA_HI_PCTILE,
+    SP_LIQUID_UNIVERSE,
+    selection_and_confirmation_folds,
     close_buffer_arrays,
     actual_options_expiry, buffer_array, compute_features,
     fold_mask, list_tickers, load_series, stillpoint_mask,
@@ -650,6 +658,227 @@ def evaluate_universal_ic(close: np.ndarray, dates: np.ndarray,
 
 
 @dataclass
+class RUICVariant:
+    """Robust Universal IC variant — six-layer defense suite for live."""
+    ticker: str
+    horizon: int
+    eligible: bool = False
+    # Stage results
+    selection_wr: float = 0.0
+    selection_n: int = 0
+    confirmation_wr: float = 0.0
+    confirmation_n: int = 0
+    selection_min_fold_wr: float = 0.0
+    confirmation_min_fold_wr: float = 0.0
+    pooled_wr: float = 0.0          # pooled across both stages (display)
+    pooled_n: int = 0
+    # Live config
+    q_chosen: float = 0.0
+    width_pct_chosen: float = 0.0
+    z_put_q: float = 0.0
+    z_call_q: float = 0.0
+    sigma_today: float = 0.0
+    b_put_final: float = 0.0
+    b_call_final: float = 0.0
+    width: float = 0.0
+    # Profit metrics (display: normal pricing; eligibility: stress pricing)
+    combined_credit_display: float = 0.0
+    combined_max_loss_display: float = 0.0
+    combined_ror_display: float = 0.0
+    combined_credit_stress: float = 0.0
+    combined_ror_stress: float = 0.0
+    K_put_short: float = 0.0
+    K_put_long: float = 0.0
+    K_call_short: float = 0.0
+    K_call_long: float = 0.0
+    sigma_today_pctile: float = 0.0  # today's σ percentile in historical
+    n_history: int = 0
+
+
+def _ruic_run_q(close, dates, sigma, h, q, fold_years_subset):
+    """Joint walk-forward at one q over a SUBSET of fold years.
+    Returns (pooled_w, pooled_l, fold_wrs) or None."""
+    bP, bC = close_buffer_arrays(close, h)
+    n = len(dates)
+    warmup = np.zeros(n, dtype=bool); warmup[WARMUP_DAYS:] = True
+    base = (warmup & np.isfinite(bP) & np.isfinite(bC)
+            & np.isfinite(sigma) & (sigma > 0))
+    if int(base.sum()) < SP_MIN_TRAIN_FIRES:
+        return None
+    sqrtT = math.sqrt(h / 252.0)
+    pw = pl = 0; fold_wrs = []; fold_count = 0
+    for y in fold_years_subset:
+        tr = base & train_mask_for_fold(dates, y, h)
+        te = base & fold_mask(dates, y)
+        ok = np.zeros(n, dtype=bool); ok[: n - h] = True
+        te = te & ok
+        if tr.sum() < 60 or te.sum() == 0:
+            continue
+        z_p = bP[tr] / (sigma[tr] * sqrtT)
+        z_c = bC[tr] / (sigma[tr] * sqrtT)
+        if not (np.isfinite(z_p).all() and np.isfinite(z_c).all()):
+            continue
+        zp_q = float(np.quantile(z_p, q))
+        zc_q = float(np.quantile(z_c, q))
+        fold_count += 1
+        thresh_p = zp_q * sigma[te] * sqrtT + SP_SAFETY_EPS
+        thresh_c = zc_q * sigma[te] * sqrtT + SP_SAFETY_EPS
+        joint = (bP[te] <= thresh_p) & (bC[te] <= thresh_c)
+        w = int(joint.sum()); l = int((~joint).sum())
+        pw += w; pl += l; fold_wrs.append(w / max(w + l, 1))
+    return pw, pl, fold_wrs, fold_count
+
+
+def evaluate_robust_uic(close, dates, sigma, horizon, ticker, spot, rv,
+                         cal_days):
+    """Robust UIC evaluator. Implements the 6-layer defense suite."""
+    vr = RUICVariant(ticker=ticker, horizon=horizon)
+    sigma_today = (float(sigma[-1]) if (len(sigma) and np.isfinite(sigma[-1])
+                                          and sigma[-1] > 0) else float("nan"))
+    vr.sigma_today = sigma_today
+    if not np.isfinite(sigma_today):
+        return vr
+
+    # L5: regime σ distance check
+    n = len(dates)
+    warmup = np.zeros(n, dtype=bool); warmup[WARMUP_DAYS:] = True
+    sigma_hist = sigma[warmup & np.isfinite(sigma) & (sigma > 0)]
+    if len(sigma_hist) < SP_MIN_TRAIN_FIRES:
+        return vr
+    p_lo = float(np.percentile(sigma_hist, SP_RUIC_REGIME_SIGMA_LO_PCTILE))
+    p_hi = float(np.percentile(sigma_hist, SP_RUIC_REGIME_SIGMA_HI_PCTILE))
+    if not (p_lo <= sigma_today <= p_hi):
+        # today's σ is in the tail of historical distribution
+        return vr
+    # Compute today's percentile for display
+    vr.sigma_today_pctile = float(
+        (sigma_hist <= sigma_today).sum() / len(sigma_hist) * 100.0
+    )
+
+    # L1: split into selection / confirmation folds
+    sel_years, conf_years = selection_and_confirmation_folds()
+    if len(sel_years) < SP_MIN_FOLDS or len(conf_years) < 2:
+        return vr  # need at least 4 selection + 2 confirmation folds
+
+    sqrtT = math.sqrt(horizon / 252.0)
+    iv_normal = rv * 1.30  # display
+    iv_stress = rv * SP_RUIC_STRESS_IV_MULT  # eligibility gate
+    T_cal = max(cal_days, 1) / 365.0
+
+    # Find best (q, width) on SELECTION folds only
+    bP, bC = close_buffer_arrays(close, horizon)
+    base = (warmup & np.isfinite(bP) & np.isfinite(bC)
+            & np.isfinite(sigma) & (sigma > 0))
+    if int(base.sum()) < SP_MIN_TRAIN_FIRES:
+        return vr
+
+    best = None
+    for q in SP_RUIC_CONFORMAL_QS:
+        sel = _ruic_run_q(close, dates, sigma, horizon, q, sel_years)
+        if sel is None: continue
+        sel_pw, sel_pl, sel_fold_wrs, sel_fold_count = sel
+        sel_pooled = sel_pw + sel_pl
+        if sel_pooled < SP_MIN_POOLED_TEST or sel_fold_count < SP_MIN_FOLDS:
+            continue
+        sel_wr = sel_pw / sel_pooled
+        # L3: stricter selection pooled WR
+        if sel_wr < SP_RUIC_SELECTION_POOLED_WIN:
+            continue
+        # L2: stricter per-fold floor
+        if any(w < SP_RUIC_PER_FOLD_WIN for w in sel_fold_wrs):
+            continue
+        # Live buffer at this q
+        z_p_full = bP[base] / (sigma[base] * sqrtT)
+        z_c_full = bC[base] / (sigma[base] * sqrtT)
+        zp_q_f = float(np.quantile(z_p_full, q))
+        zc_q_f = float(np.quantile(z_c_full, q))
+        bp_now = zp_q_f * sigma_today * sqrtT + SP_SAFETY_EPS
+        bc_now = zc_q_f * sigma_today * sqrtT + SP_SAFETY_EPS
+        if bp_now > SP_RUIC_MAX_BUFFER or bc_now > SP_RUIC_MAX_BUFFER:
+            continue
+        K_ps = spot * (1 - bp_now); K_cs = spot * (1 + bc_now)
+
+        # Sweep widths under STRESS pricing
+        for w_pct in SP_RUIC_WIDTHS:
+            width = spot * w_pct
+            K_pl = K_ps - width; K_cl = K_cs + width
+            if K_pl <= 0: continue
+            # L4: stress pricing
+            cp_s = max(bs_put(spot, K_ps, T_cal, iv_stress)
+                        - bs_put(spot, K_pl, T_cal, iv_stress), 0) * SP_RUIC_STRESS_HAIRCUT
+            cc_s = max(bs_call(spot, K_cs, T_cal, iv_stress)
+                        - bs_call(spot, K_cl, T_cal, iv_stress), 0) * SP_RUIC_STRESS_HAIRCUT
+            cred_s = min(cp_s + cc_s, SP_RUIC_MAX_COMBINED_CREDIT_RATIO * width)
+            ml_s = max(width - cred_s, 0.01)
+            ror_s = cred_s / ml_s
+            if ror_s < SP_RUIC_TARGET_ROR_STRESS:
+                continue
+            # Display pricing
+            cp_d = max(bs_put(spot, K_ps, T_cal, iv_normal)
+                        - bs_put(spot, K_pl, T_cal, iv_normal), 0) * 0.80
+            cc_d = max(bs_call(spot, K_cs, T_cal, iv_normal)
+                        - bs_call(spot, K_cl, T_cal, iv_normal), 0) * 0.80
+            cred_d = min(cp_d + cc_d, SP_RUIC_MAX_COMBINED_CREDIT_RATIO * width)
+            ml_d = max(width - cred_d, 0.01)
+            ror_d = cred_d / ml_d
+
+            cand = {
+                "q": q, "w_pct": w_pct, "width": width,
+                "K_ps": K_ps, "K_pl": K_pl, "K_cs": K_cs, "K_cl": K_cl,
+                "bp": bp_now, "bc": bc_now,
+                "zp": zp_q_f, "zc": zc_q_f,
+                "sel_pw": sel_pw, "sel_pl": sel_pl, "sel_wr": sel_wr,
+                "sel_min_fold_wr": min(sel_fold_wrs),
+                "cred_d": cred_d, "ml_d": ml_d, "ror_d": ror_d,
+                "cred_s": cred_s, "ror_s": ror_s,
+            }
+            if best is None or cand["ror_s"] > best["ror_s"]:
+                best = cand
+    if best is None:
+        return vr
+
+    # L1 stage 2: CONFIRM the chosen config on held-out folds
+    conf = _ruic_run_q(close, dates, sigma, horizon, best["q"], conf_years)
+    if conf is None:
+        return vr
+    conf_pw, conf_pl, conf_fold_wrs, conf_fold_count = conf
+    conf_pooled = conf_pw + conf_pl
+    if conf_pooled < 5 or conf_fold_count < 1:
+        return vr
+    conf_wr = conf_pw / conf_pooled
+    # L3: confirmation must clear 0.95 threshold (slightly looser than 0.97 selection)
+    if conf_wr < SP_RUIC_CONFIRMATION_POOLED_WIN:
+        return vr
+    if conf_fold_wrs and min(conf_fold_wrs) < SP_RUIC_PER_FOLD_WIN:
+        return vr
+
+    # Passed all 6 layers
+    vr.q_chosen = best["q"]
+    vr.width_pct_chosen = best["w_pct"] * 100
+    vr.width = best["width"]
+    vr.z_put_q = best["zp"]; vr.z_call_q = best["zc"]
+    vr.b_put_final = best["bp"]; vr.b_call_final = best["bc"]
+    vr.K_put_short = best["K_ps"]; vr.K_put_long = best["K_pl"]
+    vr.K_call_short = best["K_cs"]; vr.K_call_long = best["K_cl"]
+    vr.combined_credit_display = best["cred_d"]
+    vr.combined_max_loss_display = best["ml_d"]
+    vr.combined_ror_display = best["ror_d"]
+    vr.combined_credit_stress = best["cred_s"]
+    vr.combined_ror_stress = best["ror_s"]
+    vr.selection_wr = best["sel_wr"]
+    vr.selection_n = best["sel_pw"] + best["sel_pl"]
+    vr.selection_min_fold_wr = best["sel_min_fold_wr"]
+    vr.confirmation_wr = conf_wr
+    vr.confirmation_n = conf_pooled
+    vr.confirmation_min_fold_wr = (min(conf_fold_wrs) if conf_fold_wrs else 0.0)
+    vr.pooled_wr = (best["sel_pw"] + conf_pw) / (best["sel_pw"] + best["sel_pl"] + conf_pooled)
+    vr.pooled_n = best["sel_pw"] + best["sel_pl"] + conf_pooled
+    vr.n_history = int(base.sum())
+    vr.eligible = True
+    return vr
+
+
+@dataclass
 class TickerOut:
     ticker: str
     today_close: float
@@ -663,6 +892,7 @@ class TickerOut:
     tight_call_variants: list[TightVariant] = field(default_factory=list)
     ic_variants: list[ICVariant] = field(default_factory=list)
     uic_variants: list[UICVariant] = field(default_factory=list)
+    ruic_variants: list[RUICVariant] = field(default_factory=list)
 
 
 def process_ticker(ticker: str) -> TickerOut | None:
@@ -749,6 +979,21 @@ def process_ticker(ticker: str) -> TickerOut | None:
             )
             if uic.eligible:
                 out.uic_variants.append(uic)
+    # Robust UIC tier — six-layer defense suite + liquid-universe gate.
+    # Restrict to tickers known a priori to have liquid options chains
+    # (objectively defined market structure, not historical-perf
+    # selection). This addresses the "frequent trades on liquid names"
+    # constraint while keeping the universe filter unbiased.
+    if rv is not None and rv > 0 and ticker in SP_LIQUID_UNIVERSE:
+        spot_now = float(ts.close[-1])
+        for h in SP_RUIC_HORIZONS:
+            _, _, cal_days = actual_options_expiry(str(ts.dates[-1]), h)
+            ruic = evaluate_robust_uic(
+                ts.close, ts.dates, feats.vol20, h, ticker,
+                spot=spot_now, rv=rv, cal_days=int(cal_days),
+            )
+            if ruic.eligible:
+                out.ruic_variants.append(ruic)
     return out
 
 
@@ -987,6 +1232,75 @@ def _uic_rung_payload(spot: float, vr: UICVariant, end_date: str) -> dict[str, A
     }
 
 
+def _ruic_rung_payload(spot: float, vr: RUICVariant, end_date: str) -> dict[str, Any]:
+    exp_iso, kind, cal_days = actual_options_expiry(end_date, vr.horizon)
+    return {
+        "horizon": vr.horizon,
+        "expiry_date": exp_iso,
+        "expiry_type": kind,
+        "calendar_days_to_expiry": cal_days,
+        "K_put_short": vr.K_put_short,
+        "K_put_long": vr.K_put_long,
+        "K_call_short": vr.K_call_short,
+        "K_call_long": vr.K_call_long,
+        "buf_put_pct": vr.b_put_final * 100.0,
+        "buf_call_pct": vr.b_call_final * 100.0,
+        "z_put_q": vr.z_put_q,
+        "z_call_q": vr.z_call_q,
+        "sigma_today_pct": vr.sigma_today * 100.0,
+        "sigma_today_pctile": vr.sigma_today_pctile,
+        "q_chosen": vr.q_chosen,
+        "width": vr.width,
+        "width_pct": vr.width_pct_chosen,
+        "combined_credit": vr.combined_credit_display,
+        "combined_max_loss": vr.combined_max_loss_display,
+        "combined_ror_pct": vr.combined_ror_display * 100.0,
+        "stress_credit": vr.combined_credit_stress,
+        "stress_ror_pct": vr.combined_ror_stress * 100.0,
+        "selection_wr_pct": vr.selection_wr * 100.0,
+        "selection_n": vr.selection_n,
+        "selection_min_fold_wr_pct": vr.selection_min_fold_wr * 100.0,
+        "confirmation_wr_pct": vr.confirmation_wr * 100.0,
+        "confirmation_n": vr.confirmation_n,
+        "confirmation_min_fold_wr_pct": vr.confirmation_min_fold_wr * 100.0,
+        "pooled_wr_pct": vr.pooled_wr * 100.0,
+        "n_test": vr.pooled_n,
+        "n_history": vr.n_history,
+        "win_condition": "close-at-expiry",
+        "robustness_layers_passed": [
+            "two_stage_walk_forward",
+            "stricter_per_fold",
+            "stricter_pooled",
+            "stress_pricing_eligibility",
+            "regime_sigma_envelope",
+        ],
+    }
+
+
+def _ruic_signal(t: TickerOut) -> dict[str, Any] | None:
+    elig = [v for v in t.ruic_variants if v.eligible]
+    if not elig:
+        return None
+    ladder = [_ruic_rung_payload(t.today_close, v, t.end_date) for v in elig]
+    ladder.sort(key=lambda r: -r["combined_ror_pct"])
+    return {
+        "ticker": t.ticker,
+        "today_close": t.today_close,
+        "end_date": t.end_date,
+        "realized_vol_pct": t.realized_vol_pct,
+        "ladder": ladder,
+        "K_put_short": ladder[0]["K_put_short"],
+        "K_call_short": ladder[0]["K_call_short"],
+        "horizon": ladder[0]["horizon"],
+        "expiry_date": ladder[0]["expiry_date"],
+        "combined_ror_pct": ladder[0]["combined_ror_pct"],
+        "selection_wr_pct": ladder[0]["selection_wr_pct"],
+        "confirmation_wr_pct": ladder[0]["confirmation_wr_pct"],
+        "pooled_wr_pct": ladder[0]["pooled_wr_pct"],
+        "n_test": ladder[0]["n_test"],
+    }
+
+
 def _uic_signal(t: TickerOut) -> dict[str, Any] | None:
     elig = [v for v in t.uic_variants if v.eligible]
     if not elig:
@@ -1077,6 +1391,7 @@ def main() -> int:
     tight_pin_outs: list[dict[str, Any]] = []
     ic_outs: list[dict[str, Any]] = []
     uic_outs: list[dict[str, Any]] = []
+    ruic_outs: list[dict[str, Any]] = []
     n_processed = 0
     n_in_regime = 0
     n_in_tight_regime = 0
@@ -1086,6 +1401,7 @@ def main() -> int:
     tight_pooled_w = tight_pooled_l = 0
     ic_pooled_w = ic_pooled_l = 0
     uic_pooled_w = uic_pooled_l = 0
+    ruic_pooled_w = ruic_pooled_l = 0
 
     for i, t in enumerate(tickers, 1):
         try:
@@ -1127,6 +1443,10 @@ def main() -> int:
             if v.eligible:
                 uic_pooled_w += v.pooled_wins
                 uic_pooled_l += v.pooled_losses
+        for v in r.ruic_variants:
+            if v.eligible:
+                ruic_pooled_w += int(v.pooled_n * v.pooled_wr + 0.5)
+                ruic_pooled_l += v.pooled_n - int(v.pooled_n * v.pooled_wr + 0.5)
 
         ps = _signal_for_side(r, "put")
         cs = _signal_for_side(r, "call")
@@ -1166,6 +1486,10 @@ def main() -> int:
         if uic_sig:
             uic_outs.append(uic_sig)
 
+        ruic_sig = _ruic_signal(r)
+        if ruic_sig:
+            ruic_outs.append(ruic_sig)
+
         if i % 100 == 0:
             print(f"  {i}/{len(tickers)}  in-reg={n_in_regime}/{n_in_tight_regime}  "
                   f"core(p/c/pin)={len(put_outs)}/{len(call_outs)}/{len(pin_outs)}  "
@@ -1183,6 +1507,8 @@ def main() -> int:
     ic_wr = (ic_pooled_w / ic_total) if ic_total else None
     uic_total = uic_pooled_w + uic_pooled_l
     uic_wr = (uic_pooled_w / uic_total) if uic_total else None
+    ruic_total = ruic_pooled_w + ruic_pooled_l
+    ruic_wr = (ruic_pooled_w / ruic_total) if ruic_total else None
 
     print()
     print(f"Tickers processed:                {n_processed}")
@@ -1192,6 +1518,7 @@ def main() -> int:
     print(f"Tight tier deployable (p/c/pin):  {len(tight_put_outs)}/{len(tight_call_outs)}/{len(tight_pin_outs)}")
     print(f"IC (Atomic) tier deployable:      {len(ic_outs)}")
     print(f"UIC (Universal) tier deployable:  {len(uic_outs)}")
+    print(f"RUIC (Robust) tier deployable:    {len(ruic_outs)}")
     if pooled_total:
         print(f"Core pooled OOS win rate:         {pooled_wr*100:.3f}% "
               f"({pooled_w}/{pooled_total})")
@@ -1215,6 +1542,7 @@ def main() -> int:
     tight_pin_outs.sort(key=lambda s: s["put"]["buffer_pct"] + s["call"]["buffer_pct"])
     ic_outs.sort(key=lambda s: -s["combined_ror_pct"])  # highest ROR first
     uic_outs.sort(key=lambda s: -s["combined_ror_pct"])
+    ruic_outs.sort(key=lambda s: -s["combined_ror_pct"])
 
     payload = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -1256,6 +1584,10 @@ def main() -> int:
             "uic_pooled_wins": uic_pooled_w,
             "uic_pooled_losses": uic_pooled_l,
             "uic_joint_pooled_win_rate": uic_wr,
+            "n_ruic_signals": len(ruic_outs),
+            "ruic_pooled_wins": ruic_pooled_w,
+            "ruic_pooled_losses": ruic_pooled_l,
+            "ruic_joint_pooled_win_rate": ruic_wr,
             "uic_horizons": SP_UIC_HORIZONS,
             "uic_target_ror_pct": SP_UIC_TARGET_ROR * 100.0,
             "put": {
@@ -1275,6 +1607,7 @@ def main() -> int:
         "tight_pin_signals": tight_pin_outs,
         "ic_signals": ic_outs,
         "uic_signals": uic_outs,
+        "ruic_signals": ruic_outs,
     }
     out_path = os.path.join(OUTPUT_DIR, "stillpoint_signals.json")
     with open(out_path, "w") as fh:

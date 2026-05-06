@@ -113,6 +113,16 @@ jobs:
           set -e
           python strategies/stillpoint/scan.py
 
+      - name: Update Stillpoint live log
+        # Append every newly-published Stillpoint signal (Atomic IC,
+        # Universal IC, Robust UIC) to the immutable live log AND
+        # resolve any pending signals whose expiry has now passed.
+        # This is the survivorship-bias-free scoreboard for live WR.
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -e
+          python strategies/stillpoint/live_log.py
+
       - name: Summarize results
         if: steps.gate.outputs.skip != 'true'
         run: |
@@ -167,6 +177,7 @@ jobs:
             spreads/docs/data/option_c_signals.json \
             spreads/docs/data/option_c_certified_cells.json \
             spreads/docs/data/stillpoint_signals.json \
+            spreads/docs/data/stillpoint_live_log.json \
             strategies/credit_spread/results/signals.json \
             strategies/touch_predict/results/option_c_signals.json \
             strategies/touch_predict/results/option_c_certified_cells.json \

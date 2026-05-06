@@ -185,8 +185,107 @@ SP_UIC_PER_FOLD_WIN = 0.80
 SP_UIC_POOLED_WIN = 0.95
 SP_UIC_TARGET_ROR = 0.50
 SP_UIC_MAX_COMBINED_CREDIT_RATIO = 0.50
-SP_IC_POOLED_WIN = 0.95             # joint pooled WR floor
-SP_IC_TARGET_ROR = 0.50             # min combined per-trade ROR
+
+
+# -------------------- Robust Universal IC tier ----------------------
+#
+# Robust variant of UIC that defends against the 7 known
+# backtest-to-live gaps.  Applies these proprietary layers on top
+# of the same vol-adaptive joint conformal:
+#
+#  L1. Two-stage walk-forward:
+#        Selection folds = 2020 .. (current_year - 2)
+#        Confirmation folds = (current_year - 1), current_year
+#      Pick (q, width) on selection folds ONLY. Then test the chosen
+#      config on confirmation folds. Eligible iff BOTH stages pass.
+#      Eliminates the multi-config peeking bias that plagues a single-
+#      pass walk-forward.
+#
+#  L2. Stricter per-fold floor (0.90 instead of 0.80).
+#
+#  L3. Stricter pooled WR gate (0.97 selection, 0.95 confirmation).
+#      Bonferroni-style deflation against the ~230k-configuration
+#      hypothesis space.
+#
+#  L4. Conservative-pricing eligibility gate. Require combined ROR
+#      >= 50% under STRESS pricing (haircut 0.65, IV mult 1.10).
+#      Display normal pricing on the webapp; only signals that clear
+#      50% even under worse-case fill assumptions get through.
+#
+#  L5. Regime σ distance check. Today's σ20 must fall within
+#      [P05, P95] of the historical σ20 distribution. Rejects days
+#      where current vol is in unprecedented territory relative to
+#      what we trained on.
+#
+#  L6. Live log compatibility (handled outside the eligibility check
+#      but the published signal carries the q+width+thresholds so
+#      the live log knows exactly what to grade).
+
+SP_RUIC_HORIZONS = [21, 30, 42, 63, 90, 126]
+SP_RUIC_CONFORMAL_QS = [0.97, 0.975, 0.98, 0.985]
+SP_RUIC_WIDTHS = [0.01, 0.02, 0.03, 0.05]
+SP_RUIC_MAX_BUFFER = 0.30
+SP_RUIC_PER_FOLD_WIN = 0.90              # was 0.80
+SP_RUIC_SELECTION_POOLED_WIN = 0.97      # was 0.95
+SP_RUIC_CONFIRMATION_POOLED_WIN = 0.95   # held-out years
+SP_RUIC_TARGET_ROR_STRESS = 0.50         # ROR under stress pricing
+SP_RUIC_STRESS_HAIRCUT = 0.65            # was 0.80
+SP_RUIC_STRESS_IV_MULT = 1.10            # was 1.30
+SP_RUIC_MAX_COMBINED_CREDIT_RATIO = 0.50
+SP_RUIC_REGIME_SIGMA_LO_PCTILE = 5.0     # today's σ must be in [P05, P95]
+SP_RUIC_REGIME_SIGMA_HI_PCTILE = 95.0
+
+
+def selection_and_confirmation_folds():
+    """Split FOLD_YEARS into selection and confirmation halves."""
+    cur = max(FOLD_YEARS)
+    if len(FOLD_YEARS) < 4:
+        return list(FOLD_YEARS), []
+    selection = [y for y in FOLD_YEARS if y <= cur - 2]
+    confirmation = [y for y in FOLD_YEARS if y > cur - 2]
+    return selection, confirmation
+
+
+# -------------------- Liquid options universe ----------------------
+#
+# A priori curated list of tickers KNOWN to have liquid weekly +
+# monthly options chains. Selection criterion is market structure
+# (options open interest / daily option volume), NOT historical
+# backtest performance — this avoids the cherry-picking critique.
+# Source: standard "actively-traded options" lists from CBOE / OCC
+# 2024 reports + every name in the S&P 100 + top sector ETFs.
+SP_LIQUID_UNIVERSE = {
+    # Major index ETFs
+    "SPY", "QQQ", "IWM", "DIA", "EEM", "EFA", "VTI", "VOO", "VTV",
+    "VUG", "VWO", "MDY",
+    # Sector ETFs (popular options)
+    "XLF", "XLE", "XLK", "XLV", "XLI", "XLY", "XLP", "XLB", "XLU",
+    "XLRE", "XLC", "XBI", "XOP", "XME", "XRT", "XHB", "SMH", "IBB",
+    "KRE", "KBE", "GDX", "GDXJ",
+    # Commodity / bond ETFs
+    "GLD", "SLV", "USO", "UNG", "TLT", "TBT", "HYG", "LQD",
+    # Volatility products (used as proxy for liquidity tier)
+    "VXX", "UVXY", "SVXY",
+    # Mega-cap tech (highest options volume)
+    "AAPL", "MSFT", "NVDA", "GOOGL", "GOOG", "AMZN", "META", "TSLA",
+    "AVGO", "ORCL", "CRM", "ADBE", "AMD", "INTC", "NFLX", "PYPL",
+    # Mega-cap finance
+    "JPM", "BAC", "WFC", "GS", "MS", "C", "V", "MA", "AXP", "BLK",
+    # Mega-cap health/consumer
+    "JNJ", "UNH", "PFE", "MRK", "LLY", "ABBV", "TMO", "ABT",
+    "PG", "KO", "PEP", "WMT", "COST", "MCD", "DIS", "NKE", "HD", "LOW",
+    # Mega-cap industrial / energy
+    "XOM", "CVX", "COP", "SLB", "BA", "CAT", "GE", "HON", "RTX",
+    # Crypto-adjacent (very active options)
+    "COIN", "MSTR", "RIOT", "MARA", "HOOD",
+    # Other widely-traded options names
+    "BABA", "F", "GM", "T", "VZ", "DAL", "AAL", "UAL",
+    "GME", "AMC", "PLTR", "SOFI", "NIO", "BIDU",
+    # Berkshire (BRK-A available; B class typically used in retail)
+    "BRK-A", "BRK-B",
+}
+SP_IC_POOLED_WIN = 0.95             # joint pooled WR floor (Atomic IC)
+SP_IC_TARGET_ROR = 0.50             # min combined per-trade ROR (Atomic IC)
 
 
 # ----------------------- causal feature builder ----------------------

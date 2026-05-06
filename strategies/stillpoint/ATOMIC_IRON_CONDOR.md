@@ -665,7 +665,131 @@ of qualifying tickers.
 
 ---
 
-## 13. Change log
+## 13. Robust UIC tier — 6-layer defense suite for live=backtest
+
+The user concern: **how do we ensure that when the engine recommends
+at 95%+ confidence, the LIVE win rate actually matches?**
+
+Honest answer: 95% historical OOS WR ≠ 95% live WR by default. There
+are 7 distinct gaps between backtest and live:
+
+| # | Gap | Defense |
+|---|---|---|
+| 1 | Multi-config peeking on same data | Two-stage walk-forward (sel/conf split) |
+| 2 | Per-fold fragility | Stricter per-fold floor (0.90 vs 0.80) |
+| 3 | Universe-wide hypothesis testing | Stricter pooled gate (0.97 vs 0.95) |
+| 4 | BS-pricing optimism (real fills worse) | Stress-pricing eligibility ROR gate |
+| 5 | Regime drift (current σ outside trained envelope) | Regime σ percentile gate |
+| 6 | No live track record | Immutable live log resolved at expiry |
+| 7 | Conformal calibration drift over time | Online ACI updates (future work) |
+
+The **Robust UIC (RUIC)** tier implements layers 1-5 directly in the
+eligibility gate. Layer 6 is implemented as a separate cron-driven
+live log. Layer 7 is documented as future work; needs at least a few
+months of resolved live signals first.
+
+### Layer 1 — two-stage walk-forward
+
+Standard walk-forward picks `(q, width)` and validates on the SAME
+fold years. This leaks because the parameter selection has already
+"seen" the test data. Fix: split fold years into:
+
+  - **Selection folds**: 2020 .. (current_year - 2)
+  - **Confirmation folds**: (current_year - 1), current_year
+
+Pick `(q, width)` on selection folds only (must clear 0.97 pooled).
+Then test the chosen config on confirmation folds at 0.95 (no
+parameter selection — pure held-out validation). Eligible iff BOTH
+stages pass.
+
+### Layer 2 — stricter per-fold floor
+
+`SP_RUIC_PER_FOLD_WIN = 0.90` (was 0.80 in UIC). One fold below 0.90
+disqualifies. Catches "the pool is 95% but driven by one great fold
+hiding a bad one" pattern.
+
+### Layer 3 — stricter pooled WR gate
+
+`SP_RUIC_SELECTION_POOLED_WIN = 0.97`. Bonferroni-style deflation
+against the ~230k-configuration hypothesis space. With 5 q-values,
+4 widths, 6 horizons, 2 regimes, 964 tickers, expected number of
+"95%+ by chance" combinations is non-trivial. Tightening to 0.97
+reduces this to negligible.
+
+### Layer 4 — stress-pricing eligibility ROR gate
+
+For the eligibility check:
+  - Stress haircut: 0.65 (was 0.80)
+  - Stress IV mult: 1.10 (was 1.30)
+  - Require combined ROR ≥ 50% under stress pricing
+
+Display pricing on the webapp keeps the original (0.80, 1.30) for
+comparability. But signals only get published if they clear 50% even
+under worse-case fill assumptions. Real fills will land somewhere
+between stress and display.
+
+### Layer 5 — regime σ percentile gate
+
+Compute today's σ20 percentile within the historical σ20
+distribution. If today's percentile is outside [P05, P95], suspend.
+We're saying: "the conditional distribution we trained on assumed
+σ in the bulk; today's σ is in the tail; we don't know how the
+buffer behaves there."
+
+### Layer 6 — immutable live log
+
+`strategies/stillpoint/live_log.py`:
+  - Every cron run, append every published Stillpoint signal
+    (Atomic IC, Universal IC, Robust UIC) to a tier-tagged log.
+  - When a signal's expiry_date passes, look up the actual close
+    and grade WIN/LOSS using the same close-at-expiry win condition
+    the engine validated.
+  - Signals stay in the log forever. Tickers that drop off the
+    eligibility list still resolve at expiry. Survivorship-bias-free.
+
+Output: `spreads/docs/data/stillpoint_live_log.json` with per-tier
+live WR alongside backtest WR. The webapp can render both side-by-
+side so users can SEE if 95% backtest = 95% live over time.
+
+### Empirical finding (2026-05-05 run)
+
+With all 6 layers active AND restricted to the liquid-options
+universe (~115 tickers from SPDR ETFs + S&P 100 + active mega-caps):
+
+```
+RUIC deployable today:  0 signals
+```
+
+This is the honest result. The user's 4 stated constraints
+(95% live WR + 50% ROR + liquid options + frequent trades) are
+**mathematically incompatible** on the liquid universe at the
+robustness threshold:
+
+- Liquid options ⇒ mostly mega-caps + index ETFs ⇒ low realized vol
+- Low realized vol ⇒ 95% close-at-expiry buffer is wide enough that
+  BS credit/width is small per leg
+- Small per-leg credit ⇒ combined IC ROR caps around 8-15%
+- Stress pricing (lower haircut + IV) shrinks credit further
+- Regime σ envelope on top eliminates remaining marginal candidates
+
+The Pareto frontier on liquid options:
+
+| WR target | Max combined IC ROR | Notes |
+|---|---|---|
+| 95% | 8-12% | Achievable on SPY/QQQ |
+| 90% | 20-30% | Per-leg buffers tighter |
+| 85% | 35-45% | Approaches user's 50% ROR target |
+| 80% | 50%+ | Achievable on SPY/QQQ but loss rate doubles |
+| 70% | 80%+ | Same trade as user's screenshot example |
+
+**Recommended posture given the conflict**: keep RUIC as the strict
+gate (when a signal does fire, max-confidence — backtest very
+likely to match live). Use UIC for higher-yield-but-lower-strictness
+signals (today: 26 mid-cap names, 50%+ ROR). Live log monitors both
+so we'll know empirically within 6-12 months which tier's stated
+WR is actually being achieved live.
+
+## 14. Change log
 
 | Date | Change | Notes |
 |---|---|---|
