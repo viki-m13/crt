@@ -46,7 +46,19 @@ HORIZONS = [5, 7, 10, 14, 21]
 # Walk-forward fold years. Same convention as the credit_spread engine:
 # train on samples whose forward window closes strictly before Jan 1 of Y,
 # test on samples whose date is in Y.
-FOLD_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026]
+# Walk-forward fold years. Test years are 2020 through the current
+# calendar year (computed at import time, NOT hardcoded). This makes
+# the fold set auto-extend with the wall clock — so the engine always
+# tests on every available calendar year as OOS, never freezing the
+# OOS test set in the past.
+def _fold_years_through_now():
+    from datetime import datetime, timezone
+    cur = datetime.now(timezone.utc).year
+    # Always include at least 2020-2026 (legacy minimum); extend
+    # forward through the current year.
+    return list(range(2020, max(2026, cur) + 1))
+
+FOLD_YEARS = _fold_years_through_now()
 
 # Drop the first 252 days of each ticker before consuming features.
 WARMUP_DAYS = 252
