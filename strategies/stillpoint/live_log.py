@@ -199,6 +199,42 @@ def main():
             existing_ids.add(sig["id"])
             new_count += 1
 
+    # Liquid Active IC signals
+    for s in pub.get("laic_signals", []):
+        for r in s["ladder"]:
+            sig = _make_signal(
+                "laic", s["ticker"], r["horizon"], publish_date,
+                spot=s["today_close"], expiry_date=r["expiry_date"],
+                K_put_short=r["K_put_short"], K_call_short=r["K_call_short"],
+                ror_pct=r["combined_ror_pct"],
+                claimed_wr_pct=r["pooled_wr_pct"],
+                q=r.get("q_chosen"), width=r.get("width"),
+                n_oos=r.get("n_test"),
+            )
+            if sig["id"] in existing_ids:
+                continue
+            log["signals"].append(sig)
+            existing_ids.add(sig["id"])
+            new_count += 1
+
+    # Liquid Frequent IC signals
+    for s in pub.get("lfic_signals", []):
+        for r in s["ladder"]:
+            sig = _make_signal(
+                "lfic", s["ticker"], r["horizon"], publish_date,
+                spot=s["today_close"], expiry_date=r["expiry_date"],
+                K_put_short=r["K_put_short"], K_call_short=r["K_call_short"],
+                ror_pct=r["combined_ror_pct"],
+                claimed_wr_pct=r["pooled_wr_pct"],
+                q=r.get("q_chosen"), width=r.get("width"),
+                n_oos=r.get("n_test"),
+            )
+            if sig["id"] in existing_ids:
+                continue
+            log["signals"].append(sig)
+            existing_ids.add(sig["id"])
+            new_count += 1
+
     # Atomic IC signals
     for s in pub.get("ic_signals", []):
         for r in s["ladder"]:

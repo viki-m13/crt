@@ -94,6 +94,16 @@ from sp_common import (  # noqa: E402
     SP_RUIC_TARGET_ROR_STRESS, SP_RUIC_STRESS_HAIRCUT,
     SP_RUIC_STRESS_IV_MULT, SP_RUIC_MAX_COMBINED_CREDIT_RATIO,
     SP_RUIC_REGIME_SIGMA_LO_PCTILE, SP_RUIC_REGIME_SIGMA_HI_PCTILE,
+    SP_LAIC_HORIZONS, SP_LAIC_CONFORMAL_QS, SP_LAIC_WIDTHS,
+    SP_LAIC_MAX_BUFFER, SP_LAIC_PER_FOLD_WIN,
+    SP_LAIC_SELECTION_POOLED_WIN, SP_LAIC_CONFIRMATION_POOLED_WIN,
+    SP_LAIC_TARGET_ROR_STRESS, SP_LAIC_STRESS_HAIRCUT,
+    SP_LAIC_STRESS_IV_MULT, SP_LAIC_MAX_COMBINED_CREDIT_RATIO,
+    SP_LFIC_HORIZONS, SP_LFIC_CONFORMAL_QS, SP_LFIC_WIDTHS,
+    SP_LFIC_MAX_BUFFER, SP_LFIC_PER_FOLD_WIN,
+    SP_LFIC_SELECTION_POOLED_WIN, SP_LFIC_CONFIRMATION_POOLED_WIN,
+    SP_LFIC_TARGET_ROR_STRESS, SP_LFIC_STRESS_HAIRCUT,
+    SP_LFIC_STRESS_IV_MULT, SP_LFIC_MAX_COMBINED_CREDIT_RATIO,
     SP_LIQUID_UNIVERSE,
     selection_and_confirmation_folds,
     close_buffer_arrays,
@@ -729,6 +739,185 @@ def _ruic_run_q(close, dates, sigma, h, q, fold_years_subset):
     return pw, pl, fold_wrs, fold_count
 
 
+def _evaluate_liquid_tier(close, dates, sigma, horizon, ticker, spot, rv,
+                            cal_days, cfg):
+    """Generic two-stage walk-forward IC evaluator for liquid tiers.
+
+    cfg dict keys: conformal_qs, widths, max_buf, per_fold_win,
+    sel_pooled_win, conf_pooled_win, target_ror_stress, stress_haircut,
+    stress_iv_mult, max_combined_credit_ratio.
+
+    Implements all 6 robustness layers: two-stage walk-forward, strict
+    per-fold + pooled gates, stress-pricing eligibility, regime σ
+    envelope. Returns RUICVariant (reused for all liquid tiers since
+    the data shape is identical).
+    """
+    vr = RUICVariant(ticker=ticker, horizon=horizon)
+    sigma_today = (float(sigma[-1]) if (len(sigma) and np.isfinite(sigma[-1])
+                                          and sigma[-1] > 0) else float("nan"))
+    vr.sigma_today = sigma_today
+    if not np.isfinite(sigma_today):
+        return vr
+
+    n = len(dates)
+    warmup = np.zeros(n, dtype=bool); warmup[WARMUP_DAYS:] = True
+    sigma_hist = sigma[warmup & np.isfinite(sigma) & (sigma > 0)]
+    if len(sigma_hist) < SP_MIN_TRAIN_FIRES:
+        return vr
+    p_lo = float(np.percentile(sigma_hist, SP_RUIC_REGIME_SIGMA_LO_PCTILE))
+    p_hi = float(np.percentile(sigma_hist, SP_RUIC_REGIME_SIGMA_HI_PCTILE))
+    if not (p_lo <= sigma_today <= p_hi):
+        return vr
+    vr.sigma_today_pctile = float(
+        (sigma_hist <= sigma_today).sum() / len(sigma_hist) * 100.0
+    )
+
+    sel_years, conf_years = selection_and_confirmation_folds()
+    if len(sel_years) < SP_MIN_FOLDS or len(conf_years) < 2:
+        return vr
+
+    sqrtT = math.sqrt(horizon / 252.0)
+    iv_normal = rv * 1.30
+    iv_stress = rv * cfg["stress_iv_mult"]
+    T_cal = max(cal_days, 1) / 365.0
+
+    bP, bC = close_buffer_arrays(close, horizon)
+    base = (warmup & np.isfinite(bP) & np.isfinite(bC)
+            & np.isfinite(sigma) & (sigma > 0))
+    if int(base.sum()) < SP_MIN_TRAIN_FIRES:
+        return vr
+
+    best = None
+    for q in cfg["conformal_qs"]:
+        sel = _ruic_run_q(close, dates, sigma, horizon, q, sel_years)
+        if sel is None: continue
+        sel_pw, sel_pl, sel_fold_wrs, sel_fold_count = sel
+        sel_pooled = sel_pw + sel_pl
+        if sel_pooled < SP_MIN_POOLED_TEST or sel_fold_count < SP_MIN_FOLDS:
+            continue
+        sel_wr = sel_pw / sel_pooled
+        if sel_wr < cfg["sel_pooled_win"]:
+            continue
+        if any(w < cfg["per_fold_win"] for w in sel_fold_wrs):
+            continue
+        z_p_full = bP[base] / (sigma[base] * sqrtT)
+        z_c_full = bC[base] / (sigma[base] * sqrtT)
+        zp_q_f = float(np.quantile(z_p_full, q))
+        zc_q_f = float(np.quantile(z_c_full, q))
+        bp_now = zp_q_f * sigma_today * sqrtT + SP_SAFETY_EPS
+        bc_now = zc_q_f * sigma_today * sqrtT + SP_SAFETY_EPS
+        if bp_now > cfg["max_buf"] or bc_now > cfg["max_buf"]:
+            continue
+        K_ps = spot * (1 - bp_now); K_cs = spot * (1 + bc_now)
+
+        for w_pct in cfg["widths"]:
+            width = spot * w_pct
+            K_pl = K_ps - width; K_cl = K_cs + width
+            if K_pl <= 0: continue
+            cp_s = max(bs_put(spot, K_ps, T_cal, iv_stress)
+                        - bs_put(spot, K_pl, T_cal, iv_stress), 0) * cfg["stress_haircut"]
+            cc_s = max(bs_call(spot, K_cs, T_cal, iv_stress)
+                        - bs_call(spot, K_cl, T_cal, iv_stress), 0) * cfg["stress_haircut"]
+            cred_s = min(cp_s + cc_s, cfg["max_combined_credit_ratio"] * width)
+            ml_s = max(width - cred_s, 0.01)
+            ror_s = cred_s / ml_s
+            if ror_s < cfg["target_ror_stress"]:
+                continue
+            cp_d = max(bs_put(spot, K_ps, T_cal, iv_normal)
+                        - bs_put(spot, K_pl, T_cal, iv_normal), 0) * 0.80
+            cc_d = max(bs_call(spot, K_cs, T_cal, iv_normal)
+                        - bs_call(spot, K_cl, T_cal, iv_normal), 0) * 0.80
+            cred_d = min(cp_d + cc_d, cfg["max_combined_credit_ratio"] * width)
+            ml_d = max(width - cred_d, 0.01)
+            ror_d = cred_d / ml_d
+
+            cand = {
+                "q": q, "w_pct": w_pct, "width": width,
+                "K_ps": K_ps, "K_pl": K_pl, "K_cs": K_cs, "K_cl": K_cl,
+                "bp": bp_now, "bc": bc_now,
+                "zp": zp_q_f, "zc": zc_q_f,
+                "sel_pw": sel_pw, "sel_pl": sel_pl, "sel_wr": sel_wr,
+                "sel_min_fold_wr": min(sel_fold_wrs),
+                "cred_d": cred_d, "ml_d": ml_d, "ror_d": ror_d,
+                "cred_s": cred_s, "ror_s": ror_s,
+            }
+            if best is None or cand["ror_s"] > best["ror_s"]:
+                best = cand
+    if best is None:
+        return vr
+
+    conf = _ruic_run_q(close, dates, sigma, horizon, best["q"], conf_years)
+    if conf is None:
+        return vr
+    conf_pw, conf_pl, conf_fold_wrs, conf_fold_count = conf
+    conf_pooled = conf_pw + conf_pl
+    if conf_pooled < 5 or conf_fold_count < 1:
+        return vr
+    conf_wr = conf_pw / conf_pooled
+    if conf_wr < cfg["conf_pooled_win"]:
+        return vr
+    if conf_fold_wrs and min(conf_fold_wrs) < cfg["per_fold_win"]:
+        return vr
+
+    vr.q_chosen = best["q"]
+    vr.width_pct_chosen = best["w_pct"] * 100
+    vr.width = best["width"]
+    vr.z_put_q = best["zp"]; vr.z_call_q = best["zc"]
+    vr.b_put_final = best["bp"]; vr.b_call_final = best["bc"]
+    vr.K_put_short = best["K_ps"]; vr.K_put_long = best["K_pl"]
+    vr.K_call_short = best["K_cs"]; vr.K_call_long = best["K_cl"]
+    vr.combined_credit_display = best["cred_d"]
+    vr.combined_max_loss_display = best["ml_d"]
+    vr.combined_ror_display = best["ror_d"]
+    vr.combined_credit_stress = best["cred_s"]
+    vr.combined_ror_stress = best["ror_s"]
+    vr.selection_wr = best["sel_wr"]
+    vr.selection_n = best["sel_pw"] + best["sel_pl"]
+    vr.selection_min_fold_wr = best["sel_min_fold_wr"]
+    vr.confirmation_wr = conf_wr
+    vr.confirmation_n = conf_pooled
+    vr.confirmation_min_fold_wr = (min(conf_fold_wrs) if conf_fold_wrs else 0.0)
+    vr.pooled_wr = (best["sel_pw"] + conf_pw) / (best["sel_pw"] + best["sel_pl"] + conf_pooled)
+    vr.pooled_n = best["sel_pw"] + best["sel_pl"] + conf_pooled
+    vr.n_history = int(base.sum())
+    vr.eligible = True
+    return vr
+
+
+def evaluate_laic(close, dates, sigma, horizon, ticker, spot, rv, cal_days):
+    """Liquid Active IC: 85% backtest WR + 50%+ ROR + liquid + frequent."""
+    return _evaluate_liquid_tier(close, dates, sigma, horizon, ticker, spot, rv,
+                                   cal_days, cfg=dict(
+        conformal_qs=SP_LAIC_CONFORMAL_QS,
+        widths=SP_LAIC_WIDTHS,
+        max_buf=SP_LAIC_MAX_BUFFER,
+        per_fold_win=SP_LAIC_PER_FOLD_WIN,
+        sel_pooled_win=SP_LAIC_SELECTION_POOLED_WIN,
+        conf_pooled_win=SP_LAIC_CONFIRMATION_POOLED_WIN,
+        target_ror_stress=SP_LAIC_TARGET_ROR_STRESS,
+        stress_haircut=SP_LAIC_STRESS_HAIRCUT,
+        stress_iv_mult=SP_LAIC_STRESS_IV_MULT,
+        max_combined_credit_ratio=SP_LAIC_MAX_COMBINED_CREDIT_RATIO,
+    ))
+
+
+def evaluate_lfic(close, dates, sigma, horizon, ticker, spot, rv, cal_days):
+    """Liquid Frequent IC: 95% backtest WR + 10%+ ROR + liquid + frequent."""
+    return _evaluate_liquid_tier(close, dates, sigma, horizon, ticker, spot, rv,
+                                   cal_days, cfg=dict(
+        conformal_qs=SP_LFIC_CONFORMAL_QS,
+        widths=SP_LFIC_WIDTHS,
+        max_buf=SP_LFIC_MAX_BUFFER,
+        per_fold_win=SP_LFIC_PER_FOLD_WIN,
+        sel_pooled_win=SP_LFIC_SELECTION_POOLED_WIN,
+        conf_pooled_win=SP_LFIC_CONFIRMATION_POOLED_WIN,
+        target_ror_stress=SP_LFIC_TARGET_ROR_STRESS,
+        stress_haircut=SP_LFIC_STRESS_HAIRCUT,
+        stress_iv_mult=SP_LFIC_STRESS_IV_MULT,
+        max_combined_credit_ratio=SP_LFIC_MAX_COMBINED_CREDIT_RATIO,
+    ))
+
+
 def evaluate_robust_uic(close, dates, sigma, horizon, ticker, spot, rv,
                          cal_days):
     """Robust UIC evaluator. Implements the 6-layer defense suite."""
@@ -893,6 +1082,8 @@ class TickerOut:
     ic_variants: list[ICVariant] = field(default_factory=list)
     uic_variants: list[UICVariant] = field(default_factory=list)
     ruic_variants: list[RUICVariant] = field(default_factory=list)
+    laic_variants: list[RUICVariant] = field(default_factory=list)
+    lfic_variants: list[RUICVariant] = field(default_factory=list)
 
 
 def process_ticker(ticker: str) -> TickerOut | None:
@@ -994,6 +1185,24 @@ def process_ticker(ticker: str) -> TickerOut | None:
             )
             if ruic.eligible:
                 out.ruic_variants.append(ruic)
+        # LAIC: liquid + 50% ROR + frequent + ~80% live WR
+        for h in SP_LAIC_HORIZONS:
+            _, _, cal_days = actual_options_expiry(str(ts.dates[-1]), h)
+            laic = evaluate_laic(
+                ts.close, ts.dates, feats.vol20, h, ticker,
+                spot=spot_now, rv=rv, cal_days=int(cal_days),
+            )
+            if laic.eligible:
+                out.laic_variants.append(laic)
+        # LFIC: liquid + 95% WR + frequent + 10%+ ROR
+        for h in SP_LFIC_HORIZONS:
+            _, _, cal_days = actual_options_expiry(str(ts.dates[-1]), h)
+            lfic = evaluate_lfic(
+                ts.close, ts.dates, feats.vol20, h, ticker,
+                spot=spot_now, rv=rv, cal_days=int(cal_days),
+            )
+            if lfic.eligible:
+                out.lfic_variants.append(lfic)
     return out
 
 
@@ -1277,6 +1486,50 @@ def _ruic_rung_payload(spot: float, vr: RUICVariant, end_date: str) -> dict[str,
     }
 
 
+def _laic_signal(t: TickerOut) -> dict[str, Any] | None:
+    elig = [v for v in t.laic_variants if v.eligible]
+    if not elig:
+        return None
+    ladder = [_ruic_rung_payload(t.today_close, v, t.end_date) for v in elig]
+    ladder.sort(key=lambda r: -r["combined_ror_pct"])
+    return {
+        "ticker": t.ticker, "today_close": t.today_close,
+        "end_date": t.end_date, "realized_vol_pct": t.realized_vol_pct,
+        "ladder": ladder,
+        "K_put_short": ladder[0]["K_put_short"],
+        "K_call_short": ladder[0]["K_call_short"],
+        "horizon": ladder[0]["horizon"],
+        "expiry_date": ladder[0]["expiry_date"],
+        "combined_ror_pct": ladder[0]["combined_ror_pct"],
+        "selection_wr_pct": ladder[0]["selection_wr_pct"],
+        "confirmation_wr_pct": ladder[0]["confirmation_wr_pct"],
+        "pooled_wr_pct": ladder[0]["pooled_wr_pct"],
+        "n_test": ladder[0]["n_test"],
+    }
+
+
+def _lfic_signal(t: TickerOut) -> dict[str, Any] | None:
+    elig = [v for v in t.lfic_variants if v.eligible]
+    if not elig:
+        return None
+    ladder = [_ruic_rung_payload(t.today_close, v, t.end_date) for v in elig]
+    ladder.sort(key=lambda r: -r["combined_ror_pct"])
+    return {
+        "ticker": t.ticker, "today_close": t.today_close,
+        "end_date": t.end_date, "realized_vol_pct": t.realized_vol_pct,
+        "ladder": ladder,
+        "K_put_short": ladder[0]["K_put_short"],
+        "K_call_short": ladder[0]["K_call_short"],
+        "horizon": ladder[0]["horizon"],
+        "expiry_date": ladder[0]["expiry_date"],
+        "combined_ror_pct": ladder[0]["combined_ror_pct"],
+        "selection_wr_pct": ladder[0]["selection_wr_pct"],
+        "confirmation_wr_pct": ladder[0]["confirmation_wr_pct"],
+        "pooled_wr_pct": ladder[0]["pooled_wr_pct"],
+        "n_test": ladder[0]["n_test"],
+    }
+
+
 def _ruic_signal(t: TickerOut) -> dict[str, Any] | None:
     elig = [v for v in t.ruic_variants if v.eligible]
     if not elig:
@@ -1392,6 +1645,8 @@ def main() -> int:
     ic_outs: list[dict[str, Any]] = []
     uic_outs: list[dict[str, Any]] = []
     ruic_outs: list[dict[str, Any]] = []
+    laic_outs: list[dict[str, Any]] = []
+    lfic_outs: list[dict[str, Any]] = []
     n_processed = 0
     n_in_regime = 0
     n_in_tight_regime = 0
@@ -1402,6 +1657,8 @@ def main() -> int:
     ic_pooled_w = ic_pooled_l = 0
     uic_pooled_w = uic_pooled_l = 0
     ruic_pooled_w = ruic_pooled_l = 0
+    laic_pooled_w = laic_pooled_l = 0
+    lfic_pooled_w = lfic_pooled_l = 0
 
     for i, t in enumerate(tickers, 1):
         try:
@@ -1447,6 +1704,14 @@ def main() -> int:
             if v.eligible:
                 ruic_pooled_w += int(v.pooled_n * v.pooled_wr + 0.5)
                 ruic_pooled_l += v.pooled_n - int(v.pooled_n * v.pooled_wr + 0.5)
+        for v in r.laic_variants:
+            if v.eligible:
+                laic_pooled_w += int(v.pooled_n * v.pooled_wr + 0.5)
+                laic_pooled_l += v.pooled_n - int(v.pooled_n * v.pooled_wr + 0.5)
+        for v in r.lfic_variants:
+            if v.eligible:
+                lfic_pooled_w += int(v.pooled_n * v.pooled_wr + 0.5)
+                lfic_pooled_l += v.pooled_n - int(v.pooled_n * v.pooled_wr + 0.5)
 
         ps = _signal_for_side(r, "put")
         cs = _signal_for_side(r, "call")
@@ -1490,6 +1755,14 @@ def main() -> int:
         if ruic_sig:
             ruic_outs.append(ruic_sig)
 
+        laic_sig = _laic_signal(r)
+        if laic_sig:
+            laic_outs.append(laic_sig)
+
+        lfic_sig = _lfic_signal(r)
+        if lfic_sig:
+            lfic_outs.append(lfic_sig)
+
         if i % 100 == 0:
             print(f"  {i}/{len(tickers)}  in-reg={n_in_regime}/{n_in_tight_regime}  "
                   f"core(p/c/pin)={len(put_outs)}/{len(call_outs)}/{len(pin_outs)}  "
@@ -1509,6 +1782,10 @@ def main() -> int:
     uic_wr = (uic_pooled_w / uic_total) if uic_total else None
     ruic_total = ruic_pooled_w + ruic_pooled_l
     ruic_wr = (ruic_pooled_w / ruic_total) if ruic_total else None
+    laic_total = laic_pooled_w + laic_pooled_l
+    laic_wr = (laic_pooled_w / laic_total) if laic_total else None
+    lfic_total = lfic_pooled_w + lfic_pooled_l
+    lfic_wr = (lfic_pooled_w / lfic_total) if lfic_total else None
 
     print()
     print(f"Tickers processed:                {n_processed}")
@@ -1519,6 +1796,8 @@ def main() -> int:
     print(f"IC (Atomic) tier deployable:      {len(ic_outs)}")
     print(f"UIC (Universal) tier deployable:  {len(uic_outs)}")
     print(f"RUIC (Robust) tier deployable:    {len(ruic_outs)}")
+    print(f"LAIC (Liquid Active) deployable:  {len(laic_outs)}")
+    print(f"LFIC (Liquid Frequent) deployable:{len(lfic_outs)}")
     if pooled_total:
         print(f"Core pooled OOS win rate:         {pooled_wr*100:.3f}% "
               f"({pooled_w}/{pooled_total})")
@@ -1543,6 +1822,8 @@ def main() -> int:
     ic_outs.sort(key=lambda s: -s["combined_ror_pct"])  # highest ROR first
     uic_outs.sort(key=lambda s: -s["combined_ror_pct"])
     ruic_outs.sort(key=lambda s: -s["combined_ror_pct"])
+    laic_outs.sort(key=lambda s: -s["combined_ror_pct"])
+    lfic_outs.sort(key=lambda s: -s["combined_ror_pct"])
 
     payload = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -1588,6 +1869,14 @@ def main() -> int:
             "ruic_pooled_wins": ruic_pooled_w,
             "ruic_pooled_losses": ruic_pooled_l,
             "ruic_joint_pooled_win_rate": ruic_wr,
+            "n_laic_signals": len(laic_outs),
+            "laic_pooled_wins": laic_pooled_w,
+            "laic_pooled_losses": laic_pooled_l,
+            "laic_joint_pooled_win_rate": laic_wr,
+            "n_lfic_signals": len(lfic_outs),
+            "lfic_pooled_wins": lfic_pooled_w,
+            "lfic_pooled_losses": lfic_pooled_l,
+            "lfic_joint_pooled_win_rate": lfic_wr,
             "uic_horizons": SP_UIC_HORIZONS,
             "uic_target_ror_pct": SP_UIC_TARGET_ROR * 100.0,
             "put": {
@@ -1608,6 +1897,8 @@ def main() -> int:
         "ic_signals": ic_outs,
         "uic_signals": uic_outs,
         "ruic_signals": ruic_outs,
+        "laic_signals": laic_outs,
+        "lfic_signals": lfic_outs,
     }
     out_path = os.path.join(OUTPUT_DIR, "stillpoint_signals.json")
     with open(out_path, "w") as fh:

@@ -236,6 +236,44 @@ SP_RUIC_REGIME_SIGMA_LO_PCTILE = 5.0     # today's σ must be in [P05, P95]
 SP_RUIC_REGIME_SIGMA_HI_PCTILE = 95.0
 
 
+# -------------------- Liquid Active IC (LAIC) -----------------------
+#
+# 4-corners-of-the-pareto tier: liquid universe + 50% ROR + frequent
+# trades, sacrificing some win rate. Targets 85% backtest WR
+# (deflating to ~80% live with the same robustness defenses) on the
+# liquid universe with broad horizons. Same 6 robustness layers as
+# RUIC; only the WR thresholds and the ROR scoring differ.
+SP_LAIC_HORIZONS = [7, 10, 14, 21, 30, 42, 63, 90]
+SP_LAIC_CONFORMAL_QS = [0.85, 0.88, 0.90, 0.92, 0.94]
+SP_LAIC_WIDTHS = [0.005, 0.01, 0.02, 0.03, 0.05]
+SP_LAIC_MAX_BUFFER = 0.30
+SP_LAIC_PER_FOLD_WIN = 0.75
+SP_LAIC_SELECTION_POOLED_WIN = 0.85
+SP_LAIC_CONFIRMATION_POOLED_WIN = 0.83
+SP_LAIC_TARGET_ROR_STRESS = 0.50
+SP_LAIC_STRESS_HAIRCUT = 0.65
+SP_LAIC_STRESS_IV_MULT = 1.10
+SP_LAIC_MAX_COMBINED_CREDIT_RATIO = 0.50
+
+# -------------------- Liquid Frequent IC (LFIC) ---------------------
+#
+# Other corner: liquid universe + 95% backtest WR + frequent trades,
+# sacrificing ROR (target 10%+ rather than 50%+). For users who
+# prioritize accuracy over per-trade payout. Backtest 95% with
+# stress-pricing eligibility deflates to ~92-93% live.
+SP_LFIC_HORIZONS = [7, 10, 14, 21, 30, 42, 63, 90, 126]
+SP_LFIC_CONFORMAL_QS = [0.97, 0.975, 0.98, 0.985]
+SP_LFIC_WIDTHS = [0.005, 0.01, 0.02, 0.03, 0.05]
+SP_LFIC_MAX_BUFFER = 0.30
+SP_LFIC_PER_FOLD_WIN = 0.90
+SP_LFIC_SELECTION_POOLED_WIN = 0.97
+SP_LFIC_CONFIRMATION_POOLED_WIN = 0.95
+SP_LFIC_TARGET_ROR_STRESS = 0.10        # only 10% — high-WR, low-ROR tier
+SP_LFIC_STRESS_HAIRCUT = 0.65
+SP_LFIC_STRESS_IV_MULT = 1.10
+SP_LFIC_MAX_COMBINED_CREDIT_RATIO = 0.50
+
+
 def selection_and_confirmation_folds():
     """Split FOLD_YEARS into selection and confirmation halves."""
     cur = max(FOLD_YEARS)
