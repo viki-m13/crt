@@ -1086,25 +1086,136 @@
       ruic: sBT.ruic_joint_pooled_win_rate,
       ic:   sBT.ic_joint_pooled_win_rate,
     };
-    const rows = tiers.map(t => {
+
+    // ---- Per-tier stats table ----
+    const tierRows = tiers.map(t => {
       const stats = (spLive.summary.by_tier || {})[t.id] || {};
       const live = stats.live_win_rate_pct;
       const liveStr = live != null ? fmtPct(live, 2) : `<span style="color:var(--muted)">— (${stats.pending || 0} pending)</span>`;
       const bt = btKey[t.id];
       const btStr = bt != null ? fmtPct(100 * bt, 2) : "—";
-      const total = stats.total || 0;
       const wins = stats.wins || 0;
       const losses = stats.losses || 0;
       const pending = stats.pending || 0;
+      const total = stats.total || 0;
+      // Color the live cell red if any losses, green if all wins
+      const liveCellStyle = losses > 0 ? "color:#a8321a;font-weight:600"
+                          : wins > 0   ? "color:var(--green);font-weight:600"
+                          : "";
       return `<tr>
         <td><strong>${t.label}</strong></td>
         <td>${btStr}</td>
-        <td>${liveStr}</td>
-        <td>${wins}W / ${losses}L</td>
+        <td style="${liveCellStyle}">${liveStr}</td>
+        <td><span class="${wins>0?'win':''}">${wins}W</span> / <span class="${losses>0?'loss':''}">${losses}L</span></td>
         <td>${pending}</td>
         <td>${total}</td>
       </tr>`;
     }).join("");
+
+    // ---- Loss alerts ----
+    const allSignals = spLive.signals || [];
+    const losses = allSignals.filter(x => x.status === "loss");
+    let lossesBlock = "";
+    if (losses.length > 0) {
+      const lossRows = losses.slice(-10).reverse().map(x => {
+        const dropPct = ((x.close_at_expiry / x.spot_at_publish) - 1) * 100;
+        return `<tr style="background:#fdebe6">
+          <td><strong style="color:#a8321a">${x.ticker}</strong> <span class="tag">${(x.tier || "").toUpperCase()}</span></td>
+          <td>${x.publish_date}</td>
+          <td>${x.expiry_date}</td>
+          <td>${fmt$(x.spot_at_publish)}</td>
+          <td>${fmt$(x.K_put_short)} – ${fmt$(x.K_call_short)}</td>
+          <td><strong>${fmt$(x.close_at_expiry)}</strong> (${dropPct >= 0 ? "+" : ""}${dropPct.toFixed(2)}%)</td>
+        </tr>`;
+      }).join("");
+      lossesBlock = `
+        <h3 style="color:#a8321a;margin-top:18px">⚠ Confirmed losses (${losses.length})</h3>
+        <table class="cf-live-tbl">
+          <thead><tr>
+            <th>Ticker</th><th>Published</th><th>Expiry</th>
+            <th>Spot @ pub</th><th>Win zone</th><th>Close @ exp</th>
+          </tr></thead>
+          <tbody>${lossRows}</tbody>
+        </table>`;
+    }
+
+    // ---- Recent resolutions ----
+    const resolved = allSignals
+      .filter(x => x.status !== "pending")
+      .sort((a, b) => (b.resolution_date || "").localeCompare(a.resolution_date || ""))
+      .slice(0, 25);
+    let resolvedBlock = "";
+    if (resolved.length > 0) {
+      const rows = resolved.map(x => {
+        const win = x.status === "win";
+        const dropPct = ((x.close_at_expiry / x.spot_at_publish) - 1) * 100;
+        return `<tr>
+          <td class="${win?'win':'loss'}"><strong>${win?'✓ WIN':'✗ LOSS'}</strong></td>
+          <td><strong>${x.ticker}</strong></td>
+          <td><span class="tag">${(x.tier || "").toUpperCase()}</span></td>
+          <td>${x.horizon}d</td>
+          <td>${x.publish_date}</td>
+          <td>${x.expiry_date}</td>
+          <td>${fmt$(x.K_put_short)} – ${fmt$(x.K_call_short)}</td>
+          <td>${fmt$(x.close_at_expiry)} (${dropPct >= 0 ? "+" : ""}${dropPct.toFixed(2)}%)</td>
+        </tr>`;
+      }).join("");
+      resolvedBlock = `
+        <h3 style="margin-top:18px">Recent resolutions (last ${resolved.length})</h3>
+        <table class="cf-live-tbl">
+          <thead><tr>
+            <th>Outcome</th><th>Ticker</th><th>Tier</th><th>H</th>
+            <th>Published</th><th>Expiry</th>
+            <th>Win zone</th><th>Close @ exp</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    // ---- Open positions ----
+    const today = new Date().toISOString().slice(0, 10);
+    const pending = allSignals
+      .filter(x => x.status === "pending")
+      .map(x => ({
+        ...x,
+        days_to_expiry: Math.round((new Date(x.expiry_date) - new Date(today)) / 86400000),
+      }))
+      .sort((a, b) => a.days_to_expiry - b.days_to_expiry);
+    let pendingBlock = "";
+    if (pending.length > 0) {
+      const showRows = pending.slice(0, 50);  // cap at 50
+      const rows = showRows.map(x => {
+        const dte = x.days_to_expiry;
+        const dteStr = dte < 0 ? `<span style="color:var(--muted)">stale</span>`
+                      : dte === 0 ? `<strong>today</strong>`
+                      : `${dte}d`;
+        return `<tr>
+          <td><strong>${x.ticker}</strong></td>
+          <td><span class="tag">${(x.tier || "").toUpperCase()}</span></td>
+          <td>${x.horizon}d</td>
+          <td>${x.publish_date}</td>
+          <td>${x.expiry_date}</td>
+          <td>${dteStr}</td>
+          <td>${fmt$(x.spot_at_publish)}</td>
+          <td>${fmt$(x.K_put_short)} – ${fmt$(x.K_call_short)}</td>
+          <td>${fmtPct(x.claimed_ror_pct, 1)}</td>
+          <td>${fmtPct(x.claimed_wr_pct, 1)}</td>
+        </tr>`;
+      }).join("");
+      const more = pending.length > 50 ? ` (showing first 50 of ${pending.length})` : "";
+      pendingBlock = `
+        <h3 style="margin-top:18px">Open positions (${pending.length} pending${more})</h3>
+        <table class="cf-live-tbl">
+          <thead><tr>
+            <th>Ticker</th><th>Tier</th><th>H</th>
+            <th>Published</th><th>Expiry</th><th>Days to expiry</th>
+            <th>Spot @ pub</th><th>Win zone</th>
+            <th>Claimed ROR</th><th>Claimed WR</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
     return `
       <p class="cf-watch-note">
         Every Stillpoint signal published is appended to an immutable
@@ -1115,13 +1226,17 @@
         resolutions for the 7-day expiries arrive ~1 week after first
         publish; longer-DTE signals roll in over weeks.
       </p>
+      <h3>Per-tier backtest vs live WR</h3>
       <table class="cf-live-tbl">
         <thead><tr>
           <th>Tier</th><th>Backtest WR</th><th>Live WR</th>
           <th>Resolved</th><th>Pending</th><th>Total</th>
         </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
+        <tbody>${tierRows}</tbody>
+      </table>
+      ${lossesBlock}
+      ${resolvedBlock}
+      ${pendingBlock}`;
   }
 
   function renderStillpoint(sp) {

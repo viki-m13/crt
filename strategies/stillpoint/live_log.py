@@ -52,13 +52,14 @@ def _signal_id(tier, ticker, horizon, publish_date):
 
 def _make_signal(tier, ticker, horizon, publish_date, spot, expiry_date,
                   K_put_short, K_call_short, ror_pct, claimed_wr_pct,
-                  q=None, width=None, n_oos=None):
+                  q=None, width=None, n_oos=None, end_date=None):
     return {
         "id": _signal_id(tier, ticker, horizon, publish_date),
         "tier": tier,
         "ticker": ticker,
         "horizon": horizon,
         "publish_date": publish_date,
+        "data_end_date": end_date,        # underlying data's last close
         "expiry_date": expiry_date,
         "spot_at_publish": spot,
         "K_put_short": K_put_short,
@@ -174,6 +175,7 @@ def main():
                 claimed_wr_pct=r["joint_win_rate_pct"],
                 q=r.get("z_put_q"), width=r.get("width"),
                 n_oos=r.get("n_test"),
+                end_date=s.get("end_date"),
             )
             if sig["id"] in existing_ids:
                 continue
@@ -192,6 +194,7 @@ def main():
                 claimed_wr_pct=r["pooled_wr_pct"],
                 q=r.get("q_chosen"), width=r.get("width"),
                 n_oos=r.get("n_test"),
+                end_date=s.get("end_date"),
             )
             if sig["id"] in existing_ids:
                 continue
@@ -210,6 +213,7 @@ def main():
                 claimed_wr_pct=r["pooled_wr_pct"],
                 q=r.get("q_chosen"), width=r.get("width"),
                 n_oos=r.get("n_test"),
+                end_date=s.get("end_date"),
             )
             if sig["id"] in existing_ids:
                 continue
@@ -228,6 +232,7 @@ def main():
                 claimed_wr_pct=r["pooled_wr_pct"],
                 q=r.get("q_chosen"), width=r.get("width"),
                 n_oos=r.get("n_test"),
+                end_date=s.get("end_date"),
             )
             if sig["id"] in existing_ids:
                 continue
@@ -246,6 +251,7 @@ def main():
                 claimed_wr_pct=r["joint_win_rate_pct"],
                 q=r.get("q_chosen"), width=r.get("width"),
                 n_oos=r.get("n_test"),
+                end_date=s.get("end_date"),
             )
             if sig["id"] in existing_ids:
                 continue
