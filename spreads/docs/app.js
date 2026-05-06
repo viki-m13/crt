@@ -994,33 +994,48 @@
       (exType ? ` <span class="tag tag-expiry">${exType}</span>` : "") +
       ` &middot; ${r.horizon}-session backtest` +
       (r.calendar_days_to_expiry ? ` &middot; ${r.calendar_days_to_expiry} cal days` : "");
+    // Field-tolerance: old IC tiers use joint_win_rate_pct + n_history_fires +
+    // n_folds + combined_annualized_ror_pct. New tiers (LFIC/LAIC/RUIC) use
+    // pooled_wr_pct + n_history (no folds at the rung level). Compute
+    // annualized ROR on the fly when the field isn't pre-baked.
+    const wrPct = r.joint_win_rate_pct != null ? r.joint_win_rate_pct
+                : r.pooled_wr_pct != null ? r.pooled_wr_pct
+                : null;
+    const annRorPct = r.combined_annualized_ror_pct != null
+                ? r.combined_annualized_ror_pct
+                : (r.combined_ror_pct != null && r.calendar_days_to_expiry)
+                    ? r.combined_ror_pct * 365 / r.calendar_days_to_expiry
+                    : null;
+    const fires = r.n_history_fires != null ? r.n_history_fires
+                : r.n_history != null ? r.n_history
+                : null;
+    const credit = r.combined_credit != null ? r.combined_credit : 0;
+    const maxLoss = r.combined_max_loss != null ? r.combined_max_loss : 0;
+    const width = r.width != null ? r.width : 0;
     return `
       <div class="cf-rung" style="grid-column: 1 / -1">
         <div class="cf-rung-h">${expLine}</div>
         <div class="cf-rung-k" style="font-size:16px">
-          Sell put @ ${fmt$(r.K_put_short)} / buy put @ ${fmt$(r.K_put_long)}
-          &middot; Sell call @ ${fmt$(r.K_call_short)} / buy call @ ${fmt$(r.K_call_long)}
+          Stock must close between ${fmt$(r.K_put_short)} and ${fmt$(r.K_call_short)}
         </div>
         <div class="cf-rung-b">
-          Put leg ${fmtPct(r.buf_put_pct, 2)} below spot &middot; Call leg ${fmtPct(r.buf_call_pct, 2)} above spot
-          &middot; Width $${r.width.toFixed(2)} per leg
+          ${fmtPct(r.buf_put_pct, 2)} below spot &middot; ${fmtPct(r.buf_call_pct, 2)} above spot
         </div>
         <div class="cf-rung-profit">
           <span class="cf-rung-profit-main">
             <strong>${fmtPct(r.combined_ror_pct, 2)}</strong> combined ROR per trade
-            &middot; <strong>${fmtPct(r.joint_win_rate_pct, 2)}</strong> joint OOS win rate
+            ${wrPct != null ? `&middot; <strong>${fmtPct(wrPct, 2)}</strong> joint OOS win rate` : ""}
           </span>
           <span class="cf-rung-profit-sub">
-            credit ~$${r.combined_credit.toFixed(2)} (put $${(r.combined_credit/2).toFixed(2)} + call $${(r.combined_credit/2).toFixed(2)} approx)
-            &middot; max loss $${r.combined_max_loss.toFixed(2)}
-            &middot; annualized ${fmtPct(r.combined_annualized_ror_pct, 0)}
+            credit ~$${credit.toFixed(2)} &middot; max loss $${maxLoss.toFixed(2)}
+            ${annRorPct != null ? `&middot; annualized ${fmtPct(annRorPct, 0)}` : ""}
           </span>
         </div>
         <div class="cf-rung-m">
           <span class="tag">iron condor</span>
           <span class="tag">${fmtInt(r.n_test)} OOS tests</span>
-          <span class="tag">${r.n_folds} folds</span>
-          <span class="tag">${fmtInt(r.n_history_fires)} regime fires</span>
+          ${r.q_chosen != null ? `<span class="tag">q=${r.q_chosen}</span>` : ""}
+          ${r.sigma_today_pct != null ? `<span class="tag">σ ${fmtPct(r.sigma_today_pct, 0)}</span>` : ""}
         </div>
       </div>`;
   }
