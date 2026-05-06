@@ -85,6 +85,10 @@ from sp_common import (  # noqa: E402
     SP_IC_HORIZONS, SP_IC_CONFORMAL_QS, SP_IC_MAX_BUFFER,
     SP_IC_PER_FOLD_WIN, SP_IC_POOLED_WIN, SP_IC_TARGET_ROR,
     SP_IC_WIDTHS,
+    SP_UIC_HORIZONS, SP_UIC_CONFORMAL_QS, SP_UIC_MAX_BUFFER,
+    SP_UIC_PER_FOLD_WIN, SP_UIC_POOLED_WIN, SP_UIC_TARGET_ROR,
+    SP_UIC_WIDTHS, SP_UIC_MAX_COMBINED_CREDIT_RATIO,
+    close_buffer_arrays,
     actual_options_expiry, buffer_array, compute_features,
     fold_mask, list_tickers, load_series, stillpoint_mask,
     strike_from_buffer, tight_mask, today_in_regime,
@@ -486,6 +490,166 @@ def evaluate_ic(close: np.ndarray, dates: np.ndarray, regime: np.ndarray,
 
 
 @dataclass
+class UICFold:
+    year: int
+    n_train: int
+    n_test: int
+    z_put_q: float
+    z_call_q: float
+    wins: int
+    losses: int
+
+
+@dataclass
+class UICVariant:
+    """Universal IC variant — no regime gate, vol-adaptive joint
+    conformal, close-at-expiry win condition."""
+    ticker: str
+    horizon: int
+    folds: list[UICFold] = field(default_factory=list)
+    pooled_wins: int = 0
+    pooled_losses: int = 0
+    z_put_final: float = 0.0
+    z_call_final: float = 0.0
+    sigma_today: float = 0.0
+    b_put_final: float = 0.0
+    b_call_final: float = 0.0
+    n_history: int = 0
+    eligible: bool = False
+    width: float = 0.0
+    width_pct: float = 0.0
+    combined_credit: float = 0.0
+    combined_max_loss: float = 0.0
+    combined_ror: float = 0.0
+    combined_ann_ror: float = 0.0
+    K_put_short: float = 0.0
+    K_put_long: float = 0.0
+    K_call_short: float = 0.0
+    K_call_long: float = 0.0
+
+
+def _evaluate_uic_at_q(close, dates, sigma, h, q):
+    """One-quantile UIC evaluation. Returns (folds, zp_full, zc_full,
+    pooled_w, pooled_l, n_history) or None."""
+    bP, bC = close_buffer_arrays(close, h)
+    n = len(dates)
+    warmup = np.zeros(n, dtype=bool); warmup[WARMUP_DAYS:] = True
+    base = (warmup & np.isfinite(bP) & np.isfinite(bC)
+            & np.isfinite(sigma) & (sigma > 0))
+    if int(base.sum()) < SP_MIN_TRAIN_FIRES:
+        return None
+    sqrtT = math.sqrt(h / 252.0)
+    folds = []
+    for y in FOLD_YEARS:
+        tr = base & train_mask_for_fold(dates, y, h)
+        te = base & fold_mask(dates, y)
+        ok = np.zeros(n, dtype=bool); ok[: n - h] = True
+        te = te & ok
+        if tr.sum() < 60 or te.sum() == 0:
+            continue
+        z_put_train = bP[tr] / (sigma[tr] * sqrtT)
+        z_call_train = bC[tr] / (sigma[tr] * sqrtT)
+        if not (np.isfinite(z_put_train).all() and np.isfinite(z_call_train).all()):
+            continue
+        zp_q = float(np.quantile(z_put_train, q))
+        zc_q = float(np.quantile(z_call_train, q))
+        thresh_p = zp_q * sigma[te] * sqrtT + SP_SAFETY_EPS
+        thresh_c = zc_q * sigma[te] * sqrtT + SP_SAFETY_EPS
+        joint = (bP[te] <= thresh_p) & (bC[te] <= thresh_c)
+        w = int(joint.sum()); l = int((~joint).sum())
+        folds.append(UICFold(
+            year=y, n_train=int(tr.sum()), n_test=int(te.sum()),
+            z_put_q=zp_q, z_call_q=zc_q, wins=w, losses=l,
+        ))
+    pooled_w = sum(f.wins for f in folds)
+    pooled_l = sum(f.losses for f in folds)
+    z_put_full = float(np.quantile(bP[base] / (sigma[base] * sqrtT), q))
+    z_call_full = float(np.quantile(bC[base] / (sigma[base] * sqrtT), q))
+    return folds, z_put_full, z_call_full, pooled_w, pooled_l, int(base.sum())
+
+
+def evaluate_universal_ic(close: np.ndarray, dates: np.ndarray,
+                           sigma: np.ndarray, horizon: int, ticker: str,
+                           spot: float, rv: float, cal_days: int) -> UICVariant:
+    """Universal IC evaluator (no regime gate, vol-adaptive,
+    close-at-expiry, joint walk-forward)."""
+    vr = UICVariant(ticker=ticker, horizon=horizon)
+    sigma_today = float(sigma[-1]) if (len(sigma) and np.isfinite(sigma[-1]) and sigma[-1] > 0) else float("nan")
+    vr.sigma_today = sigma_today
+    if not np.isfinite(sigma_today):
+        return vr
+    sqrtT = math.sqrt(horizon / 252.0)
+    iv = rv * 1.30
+    T_cal = max(cal_days, 1) / 365.0
+
+    best = None  # tuple of (q, folds, zp, zc, pw, pl, n_h, ror, cred, ml, ann, K_ps, K_pl, K_cs, K_cl, width, width_pct)
+    for q in SP_UIC_CONFORMAL_QS:
+        res = _evaluate_uic_at_q(close, dates, sigma, horizon, q)
+        if res is None: continue
+        folds, zp, zc, pw, pl, n_h = res
+        if not folds or len(folds) < SP_MIN_FOLDS:
+            continue
+        pooled = pw + pl
+        if pooled < SP_MIN_POOLED_TEST:
+            continue
+        wr = pw / pooled
+        if wr < SP_UIC_POOLED_WIN:
+            continue
+        if any((f.wins / max(f.wins + f.losses, 1)) < SP_UIC_PER_FOLD_WIN
+               for f in folds):
+            continue
+        bp_now = zp * sigma_today * sqrtT + SP_SAFETY_EPS
+        bc_now = zc * sigma_today * sqrtT + SP_SAFETY_EPS
+        if bp_now > SP_UIC_MAX_BUFFER or bc_now > SP_UIC_MAX_BUFFER:
+            continue
+        # Sweep widths
+        K_ps = spot * (1 - bp_now); K_cs = spot * (1 + bc_now)
+        for w_pct in SP_UIC_WIDTHS:
+            width = spot * w_pct
+            K_pl = K_ps - width; K_cl = K_cs + width
+            if K_pl <= 0: continue
+            cp = max(bs_put(spot, K_ps, T_cal, iv) - bs_put(spot, K_pl, T_cal, iv), 0.0) * 0.80
+            cc = max(bs_call(spot, K_cs, T_cal, iv) - bs_call(spot, K_cl, T_cal, iv), 0.0) * 0.80
+            cred = cp + cc
+            # Realistic credit ceiling
+            cred_capped = min(cred, SP_UIC_MAX_COMBINED_CREDIT_RATIO * width)
+            ml = max(width - cred_capped, 0.01)
+            ror = cred_capped / ml
+            ann = ror * (365.0 / max(cal_days, 1))
+            if ror < SP_UIC_TARGET_ROR:
+                continue
+            cand = (q, folds, zp, zc, pw, pl, n_h, ror, cred_capped, ml, ann,
+                    K_ps, K_pl, K_cs, K_cl, width, w_pct)
+            if best is None or cand[7] > best[7]:
+                best = cand
+
+    if best is None:
+        return vr
+    (q, folds, zp, zc, pw, pl, n_h, ror, cred, ml, ann,
+     K_ps, K_pl, K_cs, K_cl, width, w_pct) = best
+    vr.folds = folds
+    vr.pooled_wins = pw
+    vr.pooled_losses = pl
+    vr.n_history = n_h
+    vr.z_put_final = zp
+    vr.z_call_final = zc
+    vr.b_put_final = zp * sigma_today * sqrtT + SP_SAFETY_EPS
+    vr.b_call_final = zc * sigma_today * sqrtT + SP_SAFETY_EPS
+    vr.width = width
+    vr.width_pct = w_pct
+    vr.combined_credit = cred
+    vr.combined_max_loss = ml
+    vr.combined_ror = ror
+    vr.combined_ann_ror = ann
+    vr.K_put_short = K_ps
+    vr.K_put_long = K_pl
+    vr.K_call_short = K_cs
+    vr.K_call_long = K_cl
+    vr.eligible = True
+    return vr
+
+
+@dataclass
 class TickerOut:
     ticker: str
     today_close: float
@@ -498,6 +662,7 @@ class TickerOut:
     tight_put_variants: list[TightVariant] = field(default_factory=list)
     tight_call_variants: list[TightVariant] = field(default_factory=list)
     ic_variants: list[ICVariant] = field(default_factory=list)
+    uic_variants: list[UICVariant] = field(default_factory=list)
 
 
 def process_ticker(ticker: str) -> TickerOut | None:
@@ -572,6 +737,18 @@ def process_ticker(ticker: str) -> TickerOut | None:
                     best = (key, ic)
             if best is not None:
                 out.ic_variants.append(best[1])
+    # Universal IC tier — no regime gate, close-at-expiry, vol-adaptive.
+    # Always evaluated when we have realized vol data.
+    if rv is not None and rv > 0:
+        spot_now = float(ts.close[-1])
+        for h in SP_UIC_HORIZONS:
+            _, _, cal_days = actual_options_expiry(str(ts.dates[-1]), h)
+            uic = evaluate_universal_ic(
+                ts.close, ts.dates, feats.vol20, h, ticker,
+                spot=spot_now, rv=rv, cal_days=int(cal_days),
+            )
+            if uic.eligible:
+                out.uic_variants.append(uic)
     return out
 
 
@@ -764,6 +941,75 @@ def _ic_rung_payload(spot: float, vr: ICVariant, end_date: str) -> dict[str, Any
     }
 
 
+def _uic_rung_payload(spot: float, vr: UICVariant, end_date: str) -> dict[str, Any]:
+    exp_iso, kind, cal_days = actual_options_expiry(end_date, vr.horizon)
+    pooled = vr.pooled_wins + vr.pooled_losses
+    pooled_wr = (vr.pooled_wins / pooled) if pooled else 0.0
+    return {
+        "horizon": vr.horizon,
+        "expiry_date": exp_iso,
+        "expiry_type": kind,
+        "calendar_days_to_expiry": cal_days,
+        "K_put_short": vr.K_put_short,
+        "K_put_long": vr.K_put_long,
+        "K_call_short": vr.K_call_short,
+        "K_call_long": vr.K_call_long,
+        "buf_put_pct": vr.b_put_final * 100.0,
+        "buf_call_pct": vr.b_call_final * 100.0,
+        "z_put_q": vr.z_put_final,
+        "z_call_q": vr.z_call_final,
+        "sigma_today_pct": vr.sigma_today * 100.0,
+        "width": vr.width,
+        "width_pct": vr.width_pct * 100.0,
+        "combined_credit": vr.combined_credit,
+        "combined_max_loss": vr.combined_max_loss,
+        "combined_ror_pct": vr.combined_ror * 100.0,
+        "combined_annualized_ror_pct": vr.combined_ann_ror * 100.0,
+        "joint_pooled_wins": vr.pooled_wins,
+        "joint_pooled_losses": vr.pooled_losses,
+        "n_test": pooled,
+        "joint_win_rate_pct": pooled_wr * 100.0,
+        "n_folds": len(vr.folds),
+        "n_history": vr.n_history,
+        "win_condition": "close-at-expiry",
+        "folds": [
+            {
+                "year": f.year,
+                "n_train": f.n_train,
+                "n_test": f.n_test,
+                "z_put_q": f.z_put_q,
+                "z_call_q": f.z_call_q,
+                "wins": f.wins,
+                "losses": f.losses,
+            }
+            for f in vr.folds
+        ],
+    }
+
+
+def _uic_signal(t: TickerOut) -> dict[str, Any] | None:
+    elig = [v for v in t.uic_variants if v.eligible]
+    if not elig:
+        return None
+    ladder = [_uic_rung_payload(t.today_close, v, t.end_date) for v in elig]
+    ladder.sort(key=lambda r: -r["combined_ror_pct"])
+    return {
+        "ticker": t.ticker,
+        "today_close": t.today_close,
+        "end_date": t.end_date,
+        "realized_vol_pct": t.realized_vol_pct,
+        "ladder": ladder,
+        "K_put_short": ladder[0]["K_put_short"],
+        "K_call_short": ladder[0]["K_call_short"],
+        "horizon": ladder[0]["horizon"],
+        "expiry_date": ladder[0]["expiry_date"],
+        "combined_ror_pct": ladder[0]["combined_ror_pct"],
+        "joint_win_rate_pct": ladder[0]["joint_win_rate_pct"],
+        "n_test": ladder[0]["n_test"],
+        "n_folds": ladder[0]["n_folds"],
+    }
+
+
 def _ic_signal(t: TickerOut) -> dict[str, Any] | None:
     elig = [v for v in t.ic_variants if v.eligible and v.today_in_regime]
     if not elig:
@@ -830,6 +1076,7 @@ def main() -> int:
     tight_call_outs: list[dict[str, Any]] = []
     tight_pin_outs: list[dict[str, Any]] = []
     ic_outs: list[dict[str, Any]] = []
+    uic_outs: list[dict[str, Any]] = []
     n_processed = 0
     n_in_regime = 0
     n_in_tight_regime = 0
@@ -838,6 +1085,7 @@ def main() -> int:
     call_w = call_l = 0
     tight_pooled_w = tight_pooled_l = 0
     ic_pooled_w = ic_pooled_l = 0
+    uic_pooled_w = uic_pooled_l = 0
 
     for i, t in enumerate(tickers, 1):
         try:
@@ -875,6 +1123,10 @@ def main() -> int:
             if v.eligible:
                 ic_pooled_w += v.pooled_wins
                 ic_pooled_l += v.pooled_losses
+        for v in r.uic_variants:
+            if v.eligible:
+                uic_pooled_w += v.pooled_wins
+                uic_pooled_l += v.pooled_losses
 
         ps = _signal_for_side(r, "put")
         cs = _signal_for_side(r, "call")
@@ -910,6 +1162,10 @@ def main() -> int:
         if ic_sig:
             ic_outs.append(ic_sig)
 
+        uic_sig = _uic_signal(r)
+        if uic_sig:
+            uic_outs.append(uic_sig)
+
         if i % 100 == 0:
             print(f"  {i}/{len(tickers)}  in-reg={n_in_regime}/{n_in_tight_regime}  "
                   f"core(p/c/pin)={len(put_outs)}/{len(call_outs)}/{len(pin_outs)}  "
@@ -925,6 +1181,8 @@ def main() -> int:
     tight_wr = (tight_pooled_w / tight_total) if tight_total else None
     ic_total = ic_pooled_w + ic_pooled_l
     ic_wr = (ic_pooled_w / ic_total) if ic_total else None
+    uic_total = uic_pooled_w + uic_pooled_l
+    uic_wr = (uic_pooled_w / uic_total) if uic_total else None
 
     print()
     print(f"Tickers processed:                {n_processed}")
@@ -933,6 +1191,7 @@ def main() -> int:
     print(f"Core tier deployable (p/c/pin):   {len(put_outs)}/{len(call_outs)}/{len(pin_outs)}")
     print(f"Tight tier deployable (p/c/pin):  {len(tight_put_outs)}/{len(tight_call_outs)}/{len(tight_pin_outs)}")
     print(f"IC (Atomic) tier deployable:      {len(ic_outs)}")
+    print(f"UIC (Universal) tier deployable:  {len(uic_outs)}")
     if pooled_total:
         print(f"Core pooled OOS win rate:         {pooled_wr*100:.3f}% "
               f"({pooled_w}/{pooled_total})")
@@ -942,6 +1201,9 @@ def main() -> int:
     if ic_total:
         print(f"IC joint pooled OOS win rate:     {ic_wr*100:.3f}% "
               f"({ic_pooled_w}/{ic_total})")
+    if uic_total:
+        print(f"UIC joint pooled OOS win rate:    {uic_wr*100:.3f}% "
+              f"({uic_pooled_w}/{uic_total})")
     print(f"Elapsed:                          {time.time()-t0:.1f}s")
 
     # Sort signals: tightest buffer first.
@@ -952,6 +1214,7 @@ def main() -> int:
     tight_call_outs.sort(key=lambda s: s["buffer_pct"])
     tight_pin_outs.sort(key=lambda s: s["put"]["buffer_pct"] + s["call"]["buffer_pct"])
     ic_outs.sort(key=lambda s: -s["combined_ror_pct"])  # highest ROR first
+    uic_outs.sort(key=lambda s: -s["combined_ror_pct"])
 
     payload = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -989,6 +1252,12 @@ def main() -> int:
             "ic_pooled_wins": ic_pooled_w,
             "ic_pooled_losses": ic_pooled_l,
             "ic_joint_pooled_win_rate": ic_wr,
+            "n_uic_signals": len(uic_outs),
+            "uic_pooled_wins": uic_pooled_w,
+            "uic_pooled_losses": uic_pooled_l,
+            "uic_joint_pooled_win_rate": uic_wr,
+            "uic_horizons": SP_UIC_HORIZONS,
+            "uic_target_ror_pct": SP_UIC_TARGET_ROR * 100.0,
             "put": {
                 "pooled_wins": put_w, "pooled_losses": put_l,
                 "pooled_win_rate": (put_w / put_total) if put_total else None,
@@ -1005,6 +1274,7 @@ def main() -> int:
         "tight_call_signals": tight_call_outs,
         "tight_pin_signals": tight_pin_outs,
         "ic_signals": ic_outs,
+        "uic_signals": uic_outs,
     }
     out_path = os.path.join(OUTPUT_DIR, "stillpoint_signals.json")
     with open(out_path, "w") as fh:

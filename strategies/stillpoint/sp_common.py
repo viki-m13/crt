@@ -131,6 +131,48 @@ SP_IC_PER_FOLD_WIN = 0.75           # joint per-fold WR floor — single
 # Spread widths (per leg, fraction of spot) — engine evaluates each and
 # keeps the width that maximizes combined ROR.
 SP_IC_WIDTHS = [0.01, 0.02, 0.03, 0.05]
+
+
+# -------------------- Universal Iron Condor tier ---------------------
+#
+# Same 50%+ ROR + 95%+ joint OOS WR target as the Atomic IC tier, but
+# with TWO key differences that broaden the eligible-ticker universe:
+#
+#   1. NO REGIME GATE. Backtest runs across ALL trading days after the
+#      252-day warmup, not just stillness-regime days. The regime
+#      conditioning that helped LSTR/FLO/CE/IPGP/TER/HUN/FMC pass also
+#      excluded the entire universe of high-vol names. Removing the
+#      gate lets any ticker compete on its OWN walk-forward statistics.
+#
+#   2. CLOSE-AT-EXPIRY WIN CONDITION. The Atomic IC tier uses the
+#      strict path-min/max criterion (American-exercise-safe). For
+#      European cash-settled options (SPX, NDX, RUT) the only thing
+#      that matters at settlement is close[t+h]. For OTM American
+#      verticals, early exercise on the LONG leg is essentially never
+#      optimal in practice, so close-at-expiry is the realistic win
+#      condition. Switching from path to close-at-expiry produces a
+#      tighter conditional distribution (paths can touch and recover)
+#      and roughly triples the eligible-ticker count.
+#
+# Vol-adaptive joint conformal: identical to the Atomic IC method —
+# z = b* / (σ × √T) buffers, conformal q-quantile of training z's, then
+# rescale by today's σ at publish. Joint walk-forward validation (BOTH
+# legs must survive). Width sweep keeps the highest-ROR width.
+#
+# Realistic-credit ceiling: BS pricing at very narrow widths can
+# produce combined_credit > width (an arbitrage artifact). We cap
+# combined_credit / width at 0.50 — beyond that, real markets won't
+# fill the spread because of bid-ask. This caps ROR at 100% per trade,
+# which is already aggressive.
+
+SP_UIC_HORIZONS = [21, 30, 42, 63, 90, 126]
+SP_UIC_CONFORMAL_QS = [0.96, 0.97, 0.975, 0.98, 0.985]
+SP_UIC_WIDTHS = [0.01, 0.02, 0.03, 0.05]
+SP_UIC_MAX_BUFFER = 0.30
+SP_UIC_PER_FOLD_WIN = 0.80
+SP_UIC_POOLED_WIN = 0.95
+SP_UIC_TARGET_ROR = 0.50
+SP_UIC_MAX_COMBINED_CREDIT_RATIO = 0.50
 SP_IC_POOLED_WIN = 0.95             # joint pooled WR floor
 SP_IC_TARGET_ROR = 0.50             # min combined per-trade ROR
 
@@ -301,3 +343,24 @@ def strike_from_buffer(spot: float, buffer: float, side: str) -> float:
     if side == "put":
         return spot * (1.0 - buffer)
     return spot * (1.0 + buffer)
+
+
+def close_buffer_arrays(close: np.ndarray, h: int):
+    """Close-at-expiry buffer arrays.
+
+    For each historical day t with t+h within data:
+      drop(t)  = max(0, 1 − close[t+h] / close[t])
+      rise(t)  = max(0, close[t+h] / close[t] − 1)
+
+    Used by the Universal IC tier whose win condition is
+    'close[t+h] inside [K_put_short, K_call_short]'. Strictly looser
+    than the path-criterion (path can touch and recover).
+    """
+    n = len(close)
+    fwd = np.full(n, np.nan, dtype="float64")
+    if n > h:
+        fwd[: n - h] = close[h:]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        drop = np.where(np.isnan(fwd), np.nan, np.maximum(1.0 - fwd / close, 0.0))
+        rise = np.where(np.isnan(fwd), np.nan, np.maximum(fwd / close - 1.0, 0.0))
+    return drop, rise

@@ -558,11 +558,119 @@ or the universe changes).
 
 ---
 
-## 12. Change log
+## 12. Universal Iron Condor (UIC) — broader-universe sibling tier
+
+After the Atomic IC produced only 7 unique qualifying tickers and went
+~3 months without firing (last fire 2026-01-30), we built a **Universal
+IC** sibling tier addressing the two structural limits that were
+restricting eligibility:
+
+### What changed
+
+1. **Removed the stillness regime gate.** The Atomic IC requires the
+   stillness regime to be active both for backtest and for today's
+   publish — which excludes the entire universe of high-vol names from
+   eligibility. The UIC backtests on the FULL post-warmup history with
+   no regime gate.
+
+2. **Switched from path-min/max to close-at-expiry win condition.**
+   The Atomic IC's path-strict criterion (American-exercise-safe)
+   counts as a loss any case where the path TOUCHED a short strike
+   even if the stock recovered before expiry. For European cash-settled
+   options (SPX/NDX/RUT) only the close matters. For OTM American
+   verticals held to expiry, early exercise is essentially never
+   optimal — so close-at-expiry is the realistic settlement criterion.
+
+3. **Added BS-arbitrage safety cap.** At very narrow widths,
+   BS pricing can produce `combined_credit > width`, which is a
+   theoretical artifact (real markets won't fill at that price). We
+   cap `combined_credit / width ≤ 0.50`, equivalent to capping ROR at
+   100% per trade.
+
+### Engine integration
+
+- Constants: `SP_UIC_*` in `sp_common.py`
+- Helper: `close_buffer_arrays(close, h)` returns `(drop, rise)` arrays
+  (close-at-expiry vs close-at-entry, never path extrema).
+- Evaluator: `evaluate_universal_ic()` in `research.py`, joint
+  walk-forward, vol-adaptive z-score conformal.
+- Output JSON: new `uic_signals` array; new summary fields
+  `n_uic_signals`, `uic_pooled_wins/losses`, `uic_joint_pooled_win_rate`.
+- UI: new "Universal Iron Condor" section above Atomic IC with its own
+  WR + signal-count stats.
+
+### Validation results (run 2026-05-05/06)
+
+```
+UIC joint pooled OOS WR: 95.77% (64,351 / 67,192 walk-forward tests)
+UIC deployable today:    26 signals across 26 unique tickers
+```
+
+Initial bare sweep (path-criterion, no regime) produced only 2
+qualifying tickers (MASI, PEN). Switching to close-at-expiry expanded
+to 9 qualifying tickers in the sweep (MASI, PEN, RARE, SON, COLM,
+SWKS, QRVO, NBIX, LBTYA), and the production engine — which sweeps
+more `q` values and widths inside `evaluate_universal_ic` — pushed
+that to 26 deployable today.
+
+### Today's UIC signals (deployable, 2026-05-05)
+
+```
+tk      h    bufP   bufC width     WR     ROR
+MASI    21d  5.28%  6.47% 1.0% 95.65% 100.00%
+PEN     21d  5.40%  6.55% 1.0% 95.59% 100.00%
+RARE    21d 28.25% 27.24% 1.0% 95.07% 100.00%
+SON    126d 15.97% 17.06% 1.0% 95.89%  81.63%
+COLM    21d 13.57% 12.34% 1.0% 95.39%  75.06%
+SWKS    63d 18.72% 17.60% 1.0% 96.66%  68.70%
+QRVO    63d 13.21% 17.05% 1.0% 97.53%  65.44%
+OMC     21d 16.96% 15.78% 1.0% 95.98%  64.09%
+LBTYA   63d 22.17% 21.44% 1.0% 95.60%  62.17%
+LEA     21d 11.75% 11.94% 1.0% 97.01%  60.10%
+MUSA    42d 14.79% 25.83% 1.0% 96.58%  58.60%
+NBIX    90d 15.95% 25.58% 1.0% 97.21%  57.74%
+MAT     21d 25.29% 21.78% 1.0% 95.20%  57.46%
+LBTYK   21d 14.63% 15.86% 1.0% 95.20%  56.46%
+REYN    63d 17.54% 16.20% 1.0% 95.98%  56.29%
+UA      21d 27.48% 20.82% 1.0% 95.72%  55.32%
+MTG     21d 10.53% 11.52% 1.0% 95.20%  55.23%
+PAG     21d  9.28% 10.80% 1.0% 95.52%  54.84%
+ITW    126d 13.63% 23.91% 1.0% 96.52%  53.37%
+OSK     21d 13.90% 17.36% 1.0% 95.13%  53.18%
+JLL     21d 16.98% 19.87% 1.0% 95.13%  52.78%
+SSD     21d  9.22% 14.12% 1.0% 95.72%  52.48%
+PNR     21d 12.71% 13.53% 1.0% 96.11%  52.01%
+CBRE    21d 15.97% 18.40% 1.0% 95.85%  52.00%
+DE      42d 13.26% 27.28% 1.0% 95.46%  51.74%
+MLI     21d 12.04% 17.69% 1.0% 96.95%  50.59%
+```
+
+Note all winning widths are 1% of spot (the smallest tested) — narrow
+widths maximize credit/width ratio which is what drives ROR. None of
+SPY/QQQ/AAPL/NVDA/etc. qualified — those names have crash exposure
+that busts 95% close-at-expiry WR even on the relaxed criterion.
+
+### Atomic vs Universal — when to use which
+
+- **Atomic IC**: stricter — path-touching counts as loss, requires
+  stillness regime to be active. Use when: you can't hold to expiry,
+  early exercise is possible, or you want maximum margin of safety.
+- **Universal IC**: relaxed — close-at-expiry only, no regime gate.
+  Use when: you can hold to expiry, the underlying is European-style
+  or held without early exercise on OTM legs.
+
+Both are validated to ≥95% joint OOS WR + ≥50% per-trade ROR; they
+differ in their definition of "win" and consequently in the breadth
+of qualifying tickers.
+
+---
+
+## 13. Change log
 
 | Date | Change | Notes |
 |---|---|---|
 | 2026-05-05 | Initial implementation | Atomic IC tier added with q ∈ {0.97,0.975,0.98}, per-fold ≥0.85, ROR ≥50%, WR ≥95% |
 | 2026-05-06 | Broader q sweep, lower per-fold | q ∈ {0.96,0.97,0.975,0.98,0.985}, per-fold ≥0.80; width sweep added; both regime gates considered |
 | 2026-05-06 | Historical fire log | `build_ic_history.py` + `atomic_ic_history.json` |
-| 2026-05-06 | This design doc | `ATOMIC_IRON_CONDOR.md` |
+| 2026-05-06 | Discovery narrative section | added Section 0 covering full journey |
+| 2026-05-06 | Universal IC tier | added Section 12; new tier in engine + UI; close-at-expiry, no regime gate, vol-adaptive joint conformal; 26 deployable today across 26 unique tickers, 95.77% pooled OOS WR / 67,192 tests |

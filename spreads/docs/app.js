@@ -1072,11 +1072,17 @@
     setText("sp-ic-winrate", icwr);
     setText("sp-ic-signals", fmtInt(s.n_ic_signals || 0));
 
+    // Universal IC headline stats
+    const uicwr = s.uic_joint_pooled_win_rate == null ? "—" : fmtPct(100 * s.uic_joint_pooled_win_rate, 2);
+    setText("sp-uic-winrate", uicwr);
+    setText("sp-uic-signals", fmtInt(s.n_uic_signals || 0));
+
     const setBadge = (id, n, label) => {
       const b = document.getElementById(id);
       if (b) b.textContent = `${fmtInt(n)} ${label}${n === 1 ? "" : "s"}`;
     };
     setBadge("sp-ic-badge", (sp.ic_signals || []).length, "ticker");
+    setBadge("sp-uic-badge", (sp.uic_signals || []).length, "ticker");
     setBadge("sp-pin-badge", (sp.pin_signals || []).length, "ticker");
     setBadge("sp-puts-badge", (sp.put_signals || []).length, "ticker");
     setBadge("sp-calls-badge", (sp.call_signals || []).length, "ticker");
@@ -1084,12 +1090,23 @@
     setBadge("sp-tight-puts-badge", (sp.tight_put_signals || []).length, "ticker");
     setBadge("sp-tight-calls-badge", (sp.tight_call_signals || []).length, "ticker");
 
-    const lazy = { ic: false, pin: false, put: false, call: false,
+    const lazy = { uic: false, ic: false, pin: false, put: false, call: false,
                     tightPin: false, tightPut: false, tightCall: false };
     document.querySelectorAll('.cf-section-head[data-target^="sp-"]').forEach((h) => {
       const target = h.dataset.target;
       h.addEventListener("click", () => {
-        if (target === "sp-ic" && !lazy.ic) {
+        if (target === "sp-uic" && !lazy.uic) {
+          const list = document.getElementById("sp-list-uic");
+          const items = sp.uic_signals || [];
+          if (list) {
+            if (!items.length) {
+              list.innerHTML = `<div class="cf-empty">No Universal Iron Condor signals today meet the 95% joint OOS WR + 50% ROR thresholds. Backtest validation: ${uicwr} joint WR over ${fmtInt((s.uic_pooled_wins || 0) + (s.uic_pooled_losses || 0))} historical OOS tests across the full universe (no regime gate, close-at-expiry win condition).</div>`;
+            } else {
+              list.innerHTML = items.map(spIcCardHTML).join("");
+            }
+          }
+          lazy.uic = true;
+        } else if (target === "sp-ic" && !lazy.ic) {
           const list = document.getElementById("sp-list-ic");
           const items = sp.ic_signals || [];
           if (list) {

@@ -843,13 +843,27 @@
       </p>
 
       <div class="cf-stats-grid" id="sp-stats">
-        <div class="cf-stat"><span class="num good" id="sp-ic-winrate">&mdash;</span><span class="lbl">Iron Condor joint OOS WR</span></div>
-        <div class="cf-stat"><span class="num" id="sp-ic-signals">&mdash;</span><span class="lbl">IC signals today (50%+ ROR)</span></div>
+        <div class="cf-stat"><span class="num good" id="sp-uic-winrate">&mdash;</span><span class="lbl">Universal IC joint OOS WR</span></div>
+        <div class="cf-stat"><span class="num" id="sp-uic-signals">&mdash;</span><span class="lbl">UIC signals today (50%+ ROR)</span></div>
+        <div class="cf-stat"><span class="num" id="sp-ic-winrate">&mdash;</span><span class="lbl">Atomic IC joint OOS WR</span></div>
         <div class="cf-stat"><span class="num" id="sp-tight-winrate">&mdash;</span><span class="lbl">Tight tier OOS WR</span></div>
-        <div class="cf-stat"><span class="num" id="sp-winrate">&mdash;</span><span class="lbl">Core tier OOS WR</span></div>
       </div>
 
-      <!-- ====== ATOMIC IRON CONDOR (50%+ ROR target) ====== -->
+      <!-- ====== UNIVERSAL IRON CONDOR (no regime gate, broad universe) ====== -->
+      <div class="cf-section" id="sp-section-uic">
+        <button type="button" class="cf-section-head" data-target="sp-uic" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Universal Iron Condor <span class="cf-section-subtitle">&mdash; 50%+ ROR + 95%+ joint OOS WR, no regime gate, close-at-expiry</span>
+          </span>
+          <span class="cf-section-badge" id="sp-uic-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-uic" hidden>
+          <div class="cf-list" id="sp-list-uic"></div>
+        </div>
+      </div>
+
+      <!-- ====== ATOMIC IRON CONDOR (50%+ ROR target, regime-gated, path-strict) ====== -->
       <div class="cf-section" id="sp-section-ic">
         <button type="button" class="cf-section-head" data-target="sp-ic" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
