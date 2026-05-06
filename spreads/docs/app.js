@@ -855,6 +855,10 @@
           &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}
         </span>
       </div>` : "";
+    const isTight = l.method === "voladapt";
+    const tierTag = isTight ? "tight (vol-adaptive)" : "core (static)";
+    const sigmaTag = isTight && l.sigma_today_pct != null
+      ? `<span class="tag" title="20d annualized realized vol — buffer scales with this">σ ${fmtPct(l.sigma_today_pct, 0)}</span>` : "";
     return `
       <div class="cf-rung">
         <div class="cf-rung-h">${expLine}</div>
@@ -862,7 +866,8 @@
         <div class="cf-rung-b">${fmtPct(l.buffer_pct, 2)} ${sideWord} spot</div>
         ${profBlock}
         <div class="cf-rung-m">
-          <span class="tag">stillness gate</span>
+          <span class="tag">${tierTag}</span>
+          ${sigmaTag}
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
           <span class="tag">${l.n_folds} folds</span>
           <span class="tag">${fmtInt(l.n_history_fires)} regime fires</span>
@@ -889,10 +894,13 @@
         if (!f) return `<td>-</td><td>-</td><td>-</td><td>-</td>`;
         const total = f.wins + f.losses;
         const cls = f.losses === 0 ? "win" : (f.wins / Math.max(total, 1) >= 0.9 ? "win" : "loss");
+        // Tight-tier folds use median_b_hat_pct (per-row, vol-adaptive);
+        // core-tier folds use b_hat_pct (single quantile).
+        const bHat = f.b_hat_pct != null ? f.b_hat_pct : f.median_b_hat_pct;
         return `<td>${fmtInt(f.n_train)}</td>
           <td>${fmtInt(f.n_test)}</td>
           <td class="${cls}">${fmtInt(f.wins)}/${fmtInt(total)}</td>
-          <td>${fmtPct(f.b_hat_pct, 2)}</td>`;
+          <td>${bHat != null ? fmtPct(bHat, 2) : "-"}</td>`;
       });
       return `<tr><td>${y}</td>${cells.join("")}</tr>`;
     });
@@ -981,29 +989,41 @@
 
   function renderStillpoint(sp) {
     if (!sp || !sp.summary) {
-      ["sp-list-pin", "sp-list-puts", "sp-list-calls"].forEach((id) => {
+      ["sp-list-pin", "sp-list-puts", "sp-list-calls",
+       "sp-list-tight-pin", "sp-list-tight-puts", "sp-list-tight-calls"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = `<div class="cf-empty">Stillpoint data not available.</div>`;
       });
       return;
     }
     const s = sp.summary;
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+    // Core tier stats
     const wr = s.pooled_win_rate == null ? "—" : fmtPct(100 * s.pooled_win_rate, 2);
-    const wrEl = document.getElementById("sp-winrate");
-    if (wrEl) wrEl.textContent = wr;
-    const tests = (s.pooled_wins || 0) + (s.pooled_losses || 0);
-    document.getElementById("sp-tests").textContent = fmtInt(tests);
-    document.getElementById("sp-signals").textContent = fmtInt((s.n_put_signals || 0) + (s.n_call_signals || 0));
-    document.getElementById("sp-inreg").textContent = fmtInt(s.n_in_regime_today || 0);
+    setText("sp-winrate", wr);
+    setText("sp-signals", fmtInt((s.n_put_signals || 0) + (s.n_call_signals || 0)));
+
+    // Tight tier stats (headline)
+    const twr = s.tight_pooled_win_rate == null ? "—" : fmtPct(100 * s.tight_pooled_win_rate, 2);
+    setText("sp-tight-winrate", twr);
+    setText("sp-tight-signals", fmtInt((s.n_tight_put_signals || 0) + (s.n_tight_call_signals || 0)));
+
     const setBadge = (id, n, label) => {
       const b = document.getElementById(id);
       if (b) b.textContent = `${fmtInt(n)} ${label}${n === 1 ? "" : "s"}`;
     };
+    // Core tier badges
     setBadge("sp-pin-badge", (sp.pin_signals || []).length, "ticker");
     setBadge("sp-puts-badge", (sp.put_signals || []).length, "ticker");
     setBadge("sp-calls-badge", (sp.call_signals || []).length, "ticker");
+    // Tight tier badges
+    setBadge("sp-tight-pin-badge", (sp.tight_pin_signals || []).length, "ticker");
+    setBadge("sp-tight-puts-badge", (sp.tight_put_signals || []).length, "ticker");
+    setBadge("sp-tight-calls-badge", (sp.tight_call_signals || []).length, "ticker");
 
-    const lazy = { pin: false, put: false, call: false };
+    const lazy = { pin: false, put: false, call: false,
+                    tightPin: false, tightPut: false, tightCall: false };
     document.querySelectorAll('.cf-section-head[data-target^="sp-"]').forEach((h) => {
       const target = h.dataset.target;
       h.addEventListener("click", () => {
@@ -1016,6 +1036,15 @@
         } else if (target === "sp-calls" && !lazy.call) {
           spRenderList("sp-list-calls", sp.call_signals || [], "call");
           lazy.call = true;
+        } else if (target === "sp-tight-pin" && !lazy.tightPin) {
+          spRenderList("sp-list-tight-pin", sp.tight_pin_signals || [], "pin");
+          lazy.tightPin = true;
+        } else if (target === "sp-tight-puts" && !lazy.tightPut) {
+          spRenderList("sp-list-tight-puts", sp.tight_put_signals || [], "put");
+          lazy.tightPut = true;
+        } else if (target === "sp-tight-calls" && !lazy.tightCall) {
+          spRenderList("sp-list-tight-calls", sp.tight_call_signals || [], "call");
+          lazy.tightCall = true;
         }
       });
     });

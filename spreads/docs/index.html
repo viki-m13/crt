@@ -834,28 +834,67 @@
         currently in a <strong>volatility-compression "stillness" regime</strong>
         &mdash; 20-day annualized realized vol below threshold, 5-day vol
         compressing inside 20-day vol, tight 20-day range, price near its
-        short-term mean, and no momentum lean. In that conditional
-        distribution the next 5-21 trading days are tightly bounded, so
-        we can publish strikes as close as <strong>1-5% from spot</strong>
-        on a sub-3-week tenor and still hit
-        <strong>&ge;95% historical out-of-sample accuracy</strong> via a
-        walk-forward 97th-percentile conformal buffer. Sections below
-        start collapsed; tap to expand.
+        short-term mean, and no momentum lean. The engine emits
+        <strong>two tiers</strong>: a <em>Tight tier</em> (sub-3% buffer,
+        2-5 day expiries, vol-adaptive conformal) and a <em>Core tier</em>
+        (sub-5% buffer, 5-21 day expiries, static conformal). Both target
+        <strong>&ge;95% historical OOS accuracy</strong> via walk-forward
+        validation. Sections below start collapsed; tap to expand.
       </p>
 
       <div class="cf-stats-grid" id="sp-stats">
-        <div class="cf-stat"><span class="num good" id="sp-winrate">&mdash;</span><span class="lbl">Pooled OOS win rate</span></div>
-        <div class="cf-stat"><span class="num" id="sp-tests">&mdash;</span><span class="lbl">Walk-forward OOS tests</span></div>
-        <div class="cf-stat"><span class="num" id="sp-signals">&mdash;</span><span class="lbl">Eligible signals today</span></div>
-        <div class="cf-stat"><span class="num" id="sp-inreg">&mdash;</span><span class="lbl">Tickers in stillness regime</span></div>
+        <div class="cf-stat"><span class="num good" id="sp-tight-winrate">&mdash;</span><span class="lbl">Tight tier OOS win rate</span></div>
+        <div class="cf-stat"><span class="num" id="sp-tight-signals">&mdash;</span><span class="lbl">Tight signals today (tight regime)</span></div>
+        <div class="cf-stat"><span class="num" id="sp-winrate">&mdash;</span><span class="lbl">Core tier OOS win rate</span></div>
+        <div class="cf-stat"><span class="num" id="sp-signals">&mdash;</span><span class="lbl">Core signals today</span></div>
       </div>
 
-      <!-- Pin (both sides) -->
+      <!-- ====== TIGHT TIER (vol-adaptive, sub-3% buffer) ====== -->
+      <div class="cf-section" id="sp-section-tight-pin">
+        <button type="button" class="cf-section-head" data-target="sp-tight-pin" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Tight Pinpoint <span class="cf-section-subtitle">&mdash; both-sides eligible, sub-3% buffer iron-condor at 95%+ OOS</span>
+          </span>
+          <span class="cf-section-badge" id="sp-tight-pin-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-tight-pin" hidden>
+          <div class="cf-list" id="sp-list-tight-pin"></div>
+        </div>
+      </div>
+
+      <div class="cf-section" id="sp-section-tight-puts">
+        <button type="button" class="cf-section-head" data-target="sp-tight-puts" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Tight put credit spreads <span class="cf-section-subtitle">&mdash; sub-3% buffer, vol-adaptive, 2-5 day expiry</span>
+          </span>
+          <span class="cf-section-badge" id="sp-tight-puts-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-tight-puts" hidden>
+          <div class="cf-list" id="sp-list-tight-puts"></div>
+        </div>
+      </div>
+
+      <div class="cf-section" id="sp-section-tight-calls">
+        <button type="button" class="cf-section-head" data-target="sp-tight-calls" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Tight call credit spreads <span class="cf-section-subtitle">&mdash; sub-3% buffer, vol-adaptive, 2-5 day expiry</span>
+          </span>
+          <span class="cf-section-badge" id="sp-tight-calls-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-tight-calls" hidden>
+          <div class="cf-list" id="sp-list-tight-calls"></div>
+        </div>
+      </div>
+
+      <!-- ====== CORE TIER (static conformal, sub-5% buffer) ====== -->
       <div class="cf-section" id="sp-section-pin">
         <button type="button" class="cf-section-head" data-target="sp-pin" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
           <span class="cf-section-title">
-            Pinpoint &mdash; both-sides eligible <span class="cf-section-subtitle">&mdash; iron-condor candidates: tight short put AND tight short call simultaneously</span>
+            Core Pinpoint <span class="cf-section-subtitle">&mdash; both-sides eligible, sub-5% buffer iron-condor</span>
           </span>
           <span class="cf-section-badge" id="sp-pin-badge">&mdash;</span>
         </button>
@@ -864,12 +903,11 @@
         </div>
       </div>
 
-      <!-- Short puts -->
       <div class="cf-section" id="sp-section-puts">
         <button type="button" class="cf-section-head" data-target="sp-puts" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
           <span class="cf-section-title">
-            Tight put credit spreads <span class="cf-section-subtitle">&mdash; sell put just below spot under stillness regime</span>
+            Core put credit spreads <span class="cf-section-subtitle">&mdash; sub-5% buffer, static conformal, 5-21 day expiry</span>
           </span>
           <span class="cf-section-badge" id="sp-puts-badge">&mdash;</span>
         </button>
@@ -878,12 +916,11 @@
         </div>
       </div>
 
-      <!-- Short calls -->
       <div class="cf-section" id="sp-section-calls">
         <button type="button" class="cf-section-head" data-target="sp-calls" aria-expanded="false">
           <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
           <span class="cf-section-title">
-            Tight call credit spreads <span class="cf-section-subtitle">&mdash; sell call just above spot under stillness regime</span>
+            Core call credit spreads <span class="cf-section-subtitle">&mdash; sub-5% buffer, static conformal, 5-21 day expiry</span>
           </span>
           <span class="cf-section-badge" id="sp-calls-badge">&mdash;</span>
         </button>
@@ -922,16 +959,28 @@
               distribution. That is the entire edge.
             </p>
 
-            <h3>2. Conformal q-quantile strike (per ticker, per side, per horizon)</h3>
-            <p>
-              For each (ticker, side, horizon), we restrict to in-regime training
-              days and compute the path buffer <code>b&lowast;(t,h)</code>
-              (signed by side). The strike buffer is set to:
-            </p>
-            <p style="text-align:center"><code>b&#770; = quantile<sub>0.97</sub>(b&lowast; on training) + 0.5%</code></p>
+            <h3>2. Two strike-setting methods</h3>
+            <p><strong>Core tier (static conformal)</strong> &mdash; for each (ticker, side, horizon &isin; {5,7,10,14,21}):</p>
+            <p style="text-align:center"><code>b&#770;<sub>core</sub> = quantile<sub>0.97</sub>(b&lowast; on training) + 0.5%</code></p>
             <p>
               By the order-statistic interpretation, this targets ~97% in-sample
-              coverage. We then validate it on walk-forward test years.
+              coverage. Capped at 5% buffer.
+            </p>
+            <p><strong>Tight tier (vol-adaptive conformal, novel)</strong> &mdash; for each (ticker, side, horizon &isin; {2,3,5}):</p>
+            <p style="text-align:center"><code>b&#770;<sub>tight</sub> = z<sub>0.95</sub> &times; &sigma;<sub>today</sub> &times; &radic;(h/252) + 0.5%</code></p>
+            <p>
+              where <code>z = b&lowast; / (&sigma; &times; &radic;(h/252))</code>
+              is the path buffer normalized by an instantaneous vol estimate
+              (<code>vol<sub>20</sub></code>) at each historical day. The
+              quantile is taken on these normalized values, then re-scaled by
+              <em>today's</em> &sigma; at publish time. When current vol is below
+              regime-historical levels, this collapses the buffer to a fraction
+              of the static-quantile floor &mdash; producing strikes
+              <strong>as tight as 0.86% from spot</strong> on 2-day expiries
+              while preserving 95%+ accuracy. Capped at 3% buffer; uses a
+              stricter "tight" gate (<code>vol<sub>20</sub> &lt; 30%</code>,
+              compression &lt; 0.95, range &lt; 10%, flat &lt; 2.5%, RSI in
+              [35, 65], |5d ret| &lt; 5%).
             </p>
 
             <h3>3. Walk-forward fold validation (purged)</h3>
@@ -944,13 +993,13 @@
               <li>Win iff <code>b&lowast;(t,h) &le; b&#770;</code>.</li>
             </ul>
 
-            <h3>4. Eligibility (fail-closed)</h3>
+            <h3>4. Eligibility (fail-closed, both tiers)</h3>
             <ul>
               <li>Pooled OOS win rate <strong>&ge; 95%</strong>.</li>
               <li>Every individual fold &ge; 85% win rate.</li>
               <li>&ge; 4 distinct fold years tested, &ge; 40 pooled tests.</li>
-              <li>Final live buffer <code>b&#770;</code> &le; 5%.</li>
-              <li>Today's features must satisfy the regime gate &mdash; we
+              <li>Final live buffer <code>b&#770;</code> &le; 5% (core) / 3% (tight).</li>
+              <li>Today's features must satisfy the relevant regime gate &mdash; we
                   publish only when the live state matches the conditional
                   distribution we trained on.</li>
             </ul>

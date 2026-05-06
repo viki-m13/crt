@@ -84,6 +84,28 @@ SP_TARGET_POOLED_WIN = 0.95  # pooled OOS win rate ≥ 95%
 SP_TARGET_PER_FOLD_WIN = 0.85  # every fold ≥ 85% (no fold may break worse)
 
 
+# -------------------- Tight-tier configuration ----------------------
+#
+# A second, NEW preset that targets strikes much closer to spot
+# (sub-3% buffer) on ultra-short horizons (2-3 sessions). Trades a
+# stricter regime gate + vol-adaptive conformal buffer for tighter
+# strikes at the same 95%+ accuracy threshold.
+
+# Tight regime gate — restrictive subset of base
+SP_TIGHT_VOL20_MAX = 0.30
+SP_TIGHT_COMPRESSION_MAX = 0.95
+SP_TIGHT_RANGE_MAX = 0.10
+SP_TIGHT_TREND_FLAT_MAX = 0.025
+SP_TIGHT_RSI_BAND = (35.0, 65.0)
+SP_TIGHT_RECENT_MOVE_MAX = 0.05
+
+SP_TIGHT_HORIZONS = [2, 3, 5]   # ultra-short
+SP_TIGHT_CONFORMAL_Q = 0.95     # 95th-percentile of vol-normalized buffers
+SP_TIGHT_MAX_BUFFER = 0.03      # 3% cap (was 5% for core)
+SP_TIGHT_PER_FOLD_WIN = 0.85
+SP_TIGHT_POOLED_WIN = 0.95
+
+
 # ----------------------- causal feature builder ----------------------
 
 
@@ -216,6 +238,26 @@ def stillpoint_mask(f: StillpointFeatures) -> np.ndarray:
 
 def today_in_regime(f: StillpointFeatures) -> bool:
     return bool(stillpoint_mask(f)[-1])
+
+
+def tight_mask(f: StillpointFeatures) -> np.ndarray:
+    """Stricter Stillpoint variant — used for the tight (<3% buffer) tier."""
+    return (
+        np.isfinite(f.vol20) & np.isfinite(f.vol5) & np.isfinite(f.compression)
+        & np.isfinite(f.rsi14) & np.isfinite(f.range20)
+        & np.isfinite(f.trend_flat) & np.isfinite(f.move5d)
+        & (f.vol20 < SP_TIGHT_VOL20_MAX)
+        & (f.compression < SP_TIGHT_COMPRESSION_MAX)
+        & (f.range20 < SP_TIGHT_RANGE_MAX)
+        & (f.trend_flat < SP_TIGHT_TREND_FLAT_MAX)
+        & (f.rsi14 >= SP_TIGHT_RSI_BAND[0])
+        & (f.rsi14 <= SP_TIGHT_RSI_BAND[1])
+        & (np.abs(f.move5d) < SP_TIGHT_RECENT_MOVE_MAX)
+    )
+
+
+def today_in_tight_regime(f: StillpointFeatures) -> bool:
+    return bool(tight_mask(f)[-1])
 
 
 # ----------------------- buffer helpers ------------------------------
