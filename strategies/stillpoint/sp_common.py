@@ -106,6 +106,35 @@ SP_TIGHT_PER_FOLD_WIN = 0.85
 SP_TIGHT_POOLED_WIN = 0.95
 
 
+# -------------------- Iron Condor (Atomic) Profit tier ---------------
+#
+# Joint put+call credit spread on the same ticker, sized for combined
+# per-trade ROR >= 50% at joint OOS WR >= 95%. The "Atomic" framing:
+# treat the iron condor as a single indivisible trade — both legs win
+# or it loses. Joint backtest counts a fold-day as a win iff
+#   path_min(t..t+h) >= K_put_short AND path_max(t..t+h) <= K_call_short
+# Combined credit / max-loss / ROR come from summing both legs' credits
+# and recognizing that max-loss = width - combined_credit (because at
+# expiry the stock can be inside either bound or outside one but never
+# both, so only one side's loss is realized while the other side keeps
+# its full credit).
+
+SP_IC_HORIZONS = [21, 30, 42, 63, 90, 126]
+# Per-leg conformal quantile candidates — engine picks the q that yields
+# the highest combined ROR while still validating at the joint pooled WR
+# target. Smaller q ⇒ closer-to-spot strikes; we want the balance.
+SP_IC_CONFORMAL_QS = [0.96, 0.97, 0.975, 0.98, 0.985]
+SP_IC_MAX_BUFFER = 0.30             # per-leg max buffer
+SP_IC_PER_FOLD_WIN = 0.75           # joint per-fold WR floor — single
+                                     # fold can dip; the >=95% pooled
+                                     # gate is the actual user spec
+# Spread widths (per leg, fraction of spot) — engine evaluates each and
+# keeps the width that maximizes combined ROR.
+SP_IC_WIDTHS = [0.01, 0.02, 0.03, 0.05]
+SP_IC_POOLED_WIN = 0.95             # joint pooled WR floor
+SP_IC_TARGET_ROR = 0.50             # min combined per-trade ROR
+
+
 # ----------------------- causal feature builder ----------------------
 
 

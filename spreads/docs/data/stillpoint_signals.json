@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-06T00:23:10Z",
+  "generated_at": "2026-05-06T01:10:25Z",
   "method": "Stillpoint",
   "summary": {
     "n_tickers_processed": 946,
@@ -39,12 +39,32 @@
     "n_tight_put_signals": 5,
     "n_tight_call_signals": 5,
     "n_tight_pin_signals": 3,
+    "n_ic_signals": 0,
+    "ic_horizons": [
+      21,
+      30,
+      42,
+      63,
+      90,
+      126
+    ],
+    "ic_conformal_qs": [
+      0.96,
+      0.97,
+      0.975,
+      0.98,
+      0.985
+    ],
+    "ic_target_ror_pct": 50.0,
     "pooled_wins": 9670,
     "pooled_losses": 330,
     "pooled_win_rate": 0.967,
     "tight_pooled_wins": 16992,
     "tight_pooled_losses": 485,
     "tight_pooled_win_rate": 0.9722492418607313,
+    "ic_pooled_wins": 7904,
+    "ic_pooled_losses": 327,
+    "ic_joint_pooled_win_rate": 0.9602721419025635,
     "put": {
       "pooled_wins": 3904,
       "pooled_losses": 129,
@@ -4124,5 +4144,6 @@
         "n_folds": 7
       }
     }
-  ]
+  ],
+  "ic_signals": []
 }

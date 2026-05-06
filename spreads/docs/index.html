@@ -832,21 +832,35 @@
       <p class="section-note">
         A <em>third, separate strategy</em>. Stillpoint hunts for stocks
         currently in a <strong>volatility-compression "stillness" regime</strong>
-        &mdash; 20-day annualized realized vol below threshold, 5-day vol
-        compressing inside 20-day vol, tight 20-day range, price near its
-        short-term mean, and no momentum lean. The engine emits
-        <strong>two tiers</strong>: a <em>Tight tier</em> (sub-3% buffer,
-        2-5 day expiries, vol-adaptive conformal) and a <em>Core tier</em>
-        (sub-5% buffer, 5-21 day expiries, static conformal). Both target
-        <strong>&ge;95% historical OOS accuracy</strong> via walk-forward
-        validation. Sections below start collapsed; tap to expand.
+        and emits <strong>three tiers</strong>:
+        <em>Atomic Iron Condor</em> (joint put+call, 50%+ per-trade ROR
+        target at &ge;95% joint OOS WR, 21-126 day expiries), <em>Tight</em>
+        (sub-3% buffer single-side, 2-5 day expiries, vol-adaptive
+        conformal), and <em>Core</em> (sub-5% buffer single-side, 5-21
+        day expiries, static conformal). All three target
+        <strong>&ge;95% historical OOS accuracy</strong>. Sections below
+        start collapsed; tap to expand.
       </p>
 
       <div class="cf-stats-grid" id="sp-stats">
-        <div class="cf-stat"><span class="num good" id="sp-tight-winrate">&mdash;</span><span class="lbl">Tight tier OOS win rate</span></div>
-        <div class="cf-stat"><span class="num" id="sp-tight-signals">&mdash;</span><span class="lbl">Tight signals today (tight regime)</span></div>
-        <div class="cf-stat"><span class="num" id="sp-winrate">&mdash;</span><span class="lbl">Core tier OOS win rate</span></div>
-        <div class="cf-stat"><span class="num" id="sp-signals">&mdash;</span><span class="lbl">Core signals today</span></div>
+        <div class="cf-stat"><span class="num good" id="sp-ic-winrate">&mdash;</span><span class="lbl">Iron Condor joint OOS WR</span></div>
+        <div class="cf-stat"><span class="num" id="sp-ic-signals">&mdash;</span><span class="lbl">IC signals today (50%+ ROR)</span></div>
+        <div class="cf-stat"><span class="num" id="sp-tight-winrate">&mdash;</span><span class="lbl">Tight tier OOS WR</span></div>
+        <div class="cf-stat"><span class="num" id="sp-winrate">&mdash;</span><span class="lbl">Core tier OOS WR</span></div>
+      </div>
+
+      <!-- ====== ATOMIC IRON CONDOR (50%+ ROR target) ====== -->
+      <div class="cf-section" id="sp-section-ic">
+        <button type="button" class="cf-section-head" data-target="sp-ic" aria-expanded="false">
+          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
+          <span class="cf-section-title">
+            Atomic Iron Condor <span class="cf-section-subtitle">&mdash; 50%+ ROR per trade at &ge;95% joint OOS WR (proprietary novel)</span>
+          </span>
+          <span class="cf-section-badge" id="sp-ic-badge">&mdash;</span>
+        </button>
+        <div class="cf-section-body" data-body="sp-ic" hidden>
+          <div class="cf-list" id="sp-list-ic"></div>
+        </div>
       </div>
 
       <!-- ====== TIGHT TIER (vol-adaptive, sub-3% buffer) ====== -->
@@ -1004,7 +1018,7 @@
                   distribution we trained on.</li>
             </ul>
 
-            <h3>5. Pinpoint &mdash; the iron-condor</h3>
+            <h3>5. Pinpoint &mdash; tight iron-condor</h3>
             <p>
               When BOTH sides clear all gates simultaneously, the resulting
               short-put + short-call combination forms a tight
@@ -1014,7 +1028,37 @@
               combined credit can offset two-way risk.
             </p>
 
-            <h3>6. What this does <em>not</em> guarantee</h3>
+            <h3>6. Atomic Iron Condor &mdash; 50%+ ROR target (proprietary novel)</h3>
+            <p>
+              The two single-side tiers max out at ~15% per-trade ROR
+              because credit-spread math constrains it: short-strike
+              delta is essentially <code>1 &minus; WR</code>, so 95% WR
+              implies ~5% delta which means thin credit. <strong>Iron
+              condors break this constraint by stacking credits</strong>:
+              put-breach and call-breach are mutually exclusive at expiry,
+              so combined credit is <em>both</em> legs while max-loss is
+              still bounded by one width minus combined credit. Per-leg
+              ROR of 20% becomes combined ROR of 50%+.
+            </p>
+            <p>
+              Joint walk-forward validation: a fold-day counts as a win
+              <strong>only</strong> if BOTH the put-side path-min stays
+              above <code>K<sub>put,short</sub></code> AND the call-side
+              path-max stays below <code>K<sub>call,short</sub></code>.
+              Per-leg conformal at quantile <code>q &isin; {0.97, 0.975, 0.98}</code>
+              — the engine picks the smallest passing <code>q</code> per
+              ticker (tightest strikes that still validate). Spread width
+              is also swept across <code>{1%, 2%, 3%, 5%}</code> of spot
+              and the engine keeps the width that maximizes combined ROR.
+            </p>
+            <ul>
+              <li>Joint pooled OOS WR &ge; 95%, every individual fold &ge; 80%.</li>
+              <li>Combined per-trade ROR &ge; 50%.</li>
+              <li>Per-leg buffer &le; 30%; horizons in {21, 30, 42, 63, 90, 126}.</li>
+              <li>Today's stillness gate must be active.</li>
+            </ul>
+
+            <h3>7. What this does <em>not</em> guarantee</h3>
             <p>
               Walk-forward 95%+ OOS accuracy is empirical; future paths can
               break the conditional bound. The regime gate is the entire

@@ -987,9 +987,67 @@
     });
   }
 
+  function spIcRungHTML(r) {
+    const exType = r.expiry_type || "";
+    const expLine = `Expires <strong>${r.expiry_date}</strong>` +
+      (exType ? ` <span class="tag tag-expiry">${exType}</span>` : "") +
+      ` &middot; ${r.horizon}-session backtest` +
+      (r.calendar_days_to_expiry ? ` &middot; ${r.calendar_days_to_expiry} cal days` : "");
+    return `
+      <div class="cf-rung" style="grid-column: 1 / -1">
+        <div class="cf-rung-h">${expLine}</div>
+        <div class="cf-rung-k" style="font-size:16px">
+          Sell put @ ${fmt$(r.K_put_short)} / buy put @ ${fmt$(r.K_put_long)}
+          &middot; Sell call @ ${fmt$(r.K_call_short)} / buy call @ ${fmt$(r.K_call_long)}
+        </div>
+        <div class="cf-rung-b">
+          Put leg ${fmtPct(r.buf_put_pct, 2)} below spot &middot; Call leg ${fmtPct(r.buf_call_pct, 2)} above spot
+          &middot; Width $${r.width.toFixed(2)} per leg
+        </div>
+        <div class="cf-rung-profit">
+          <span class="cf-rung-profit-main">
+            <strong>${fmtPct(r.combined_ror_pct, 2)}</strong> combined ROR per trade
+            &middot; <strong>${fmtPct(r.joint_win_rate_pct, 2)}</strong> joint OOS win rate
+          </span>
+          <span class="cf-rung-profit-sub">
+            credit ~$${r.combined_credit.toFixed(2)} (put $${(r.combined_credit/2).toFixed(2)} + call $${(r.combined_credit/2).toFixed(2)} approx)
+            &middot; max loss $${r.combined_max_loss.toFixed(2)}
+            &middot; annualized ${fmtPct(r.combined_annualized_ror_pct, 0)}
+          </span>
+        </div>
+        <div class="cf-rung-m">
+          <span class="tag">iron condor</span>
+          <span class="tag">${fmtInt(r.n_test)} OOS tests</span>
+          <span class="tag">${r.n_folds} folds</span>
+          <span class="tag">${fmtInt(r.n_history_fires)} regime fires</span>
+        </div>
+      </div>`;
+  }
+
+  function spIcCardHTML(s) {
+    return `
+      <div class="cf-card" data-ticker="${s.ticker}">
+        <div class="cf-card-head">
+          <div>
+            <span class="cf-card-ticker">${s.ticker}</span>
+            <span class="cf-regime-badge regime">stillness</span>
+            <span class="cf-regime-badge" style="color:#a06b00;border-color:#a06b00">IRON CONDOR</span>
+          </div>
+          <div class="cf-card-price">
+            Spot <strong>${fmt$(s.today_close)}</strong>
+            ${s.realized_vol_pct != null ? `&middot; σ ${fmtPct(s.realized_vol_pct, 0)}` : ""}
+            &middot; as-of ${s.end_date}
+          </div>
+        </div>
+        <div class="cf-ladder" style="grid-template-columns: 1fr">
+          ${s.ladder.map(spIcRungHTML).join("")}
+        </div>
+      </div>`;
+  }
+
   function renderStillpoint(sp) {
     if (!sp || !sp.summary) {
-      ["sp-list-pin", "sp-list-puts", "sp-list-calls",
+      ["sp-list-ic", "sp-list-pin", "sp-list-puts", "sp-list-calls",
        "sp-list-tight-pin", "sp-list-tight-puts", "sp-list-tight-calls"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = `<div class="cf-empty">Stillpoint data not available.</div>`;
@@ -1004,30 +1062,45 @@
     setText("sp-winrate", wr);
     setText("sp-signals", fmtInt((s.n_put_signals || 0) + (s.n_call_signals || 0)));
 
-    // Tight tier stats (headline)
+    // Tight tier stats
     const twr = s.tight_pooled_win_rate == null ? "—" : fmtPct(100 * s.tight_pooled_win_rate, 2);
     setText("sp-tight-winrate", twr);
     setText("sp-tight-signals", fmtInt((s.n_tight_put_signals || 0) + (s.n_tight_call_signals || 0)));
+
+    // Iron Condor headline stats
+    const icwr = s.ic_joint_pooled_win_rate == null ? "—" : fmtPct(100 * s.ic_joint_pooled_win_rate, 2);
+    setText("sp-ic-winrate", icwr);
+    setText("sp-ic-signals", fmtInt(s.n_ic_signals || 0));
 
     const setBadge = (id, n, label) => {
       const b = document.getElementById(id);
       if (b) b.textContent = `${fmtInt(n)} ${label}${n === 1 ? "" : "s"}`;
     };
-    // Core tier badges
+    setBadge("sp-ic-badge", (sp.ic_signals || []).length, "ticker");
     setBadge("sp-pin-badge", (sp.pin_signals || []).length, "ticker");
     setBadge("sp-puts-badge", (sp.put_signals || []).length, "ticker");
     setBadge("sp-calls-badge", (sp.call_signals || []).length, "ticker");
-    // Tight tier badges
     setBadge("sp-tight-pin-badge", (sp.tight_pin_signals || []).length, "ticker");
     setBadge("sp-tight-puts-badge", (sp.tight_put_signals || []).length, "ticker");
     setBadge("sp-tight-calls-badge", (sp.tight_call_signals || []).length, "ticker");
 
-    const lazy = { pin: false, put: false, call: false,
+    const lazy = { ic: false, pin: false, put: false, call: false,
                     tightPin: false, tightPut: false, tightCall: false };
     document.querySelectorAll('.cf-section-head[data-target^="sp-"]').forEach((h) => {
       const target = h.dataset.target;
       h.addEventListener("click", () => {
-        if (target === "sp-pin" && !lazy.pin) {
+        if (target === "sp-ic" && !lazy.ic) {
+          const list = document.getElementById("sp-list-ic");
+          const items = sp.ic_signals || [];
+          if (list) {
+            if (!items.length) {
+              list.innerHTML = `<div class="cf-empty">No iron condor signals today meet the 95% joint OOS WR + 50% ROR thresholds. Backtest validation: ${icwr} joint WR over ${fmtInt((s.ic_pooled_wins || 0) + (s.ic_pooled_losses || 0))} historical OOS tests across the universe.</div>`;
+            } else {
+              list.innerHTML = items.map(spIcCardHTML).join("");
+            }
+          }
+          lazy.ic = true;
+        } else if (target === "sp-pin" && !lazy.pin) {
           spRenderList("sp-list-pin", sp.pin_signals || [], "pin");
           lazy.pin = true;
         } else if (target === "sp-puts" && !lazy.put) {
