@@ -408,15 +408,21 @@ def _rung_dict(
     )
     if prof is not None:
         base["profit"] = {
-            "realized_vol_pct":     prof.realized_vol * 100.0,
-            "implied_vol_pct":      prof.implied_vol  * 100.0,
-            "short_strike":         prof.short_strike,
-            "long_strike":          prof.long_strike,
-            "spread_width":         prof.width,
-            "est_credit_per_share": prof.credit,
+            "realized_vol_pct":       prof.realized_vol * 100.0,
+            "implied_vol_pct":        prof.implied_vol  * 100.0,
+            "short_iv_pct":           prof.short_iv * 100.0,
+            "long_iv_pct":            prof.long_iv  * 100.0,
+            "short_strike":           prof.short_strike,
+            "long_strike":            prof.long_strike,
+            "spread_width":           prof.width,
+            "mid_credit_per_share":   prof.mid_credit,
+            "est_credit_per_share":   prof.credit,
+            "bid_ask_per_share":      prof.bid_ask_estimate,
             "est_max_loss_per_share": prof.max_loss,
-            "return_on_risk_pct":      prof.return_on_risk * 100.0,
-            "annualized_ror_pct":      prof.annualized_ror * 100.0,
+            "return_on_risk_pct":     prof.return_on_risk * 100.0,
+            "annualized_ror_pct":     prof.annualized_ror * 100.0,
+            "credit_quality":         prof.quality,
+            "tradeable":              prof.tradeable,
         }
     else:
         base["profit"] = None

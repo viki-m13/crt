@@ -127,13 +127,19 @@
     let profBlock = "";
     if (l.profit) {
       const p = l.profit;
+      const ivLine = (p.short_iv_pct != null && p.long_iv_pct != null)
+        ? `IV ${fmtPct(p.short_iv_pct, 0)} short / ${fmtPct(p.long_iv_pct, 0)} long`
+        : `IV ${fmtPct(p.implied_vol_pct, 1)}`;
+      const midNote = (p.mid_credit_per_share != null && p.mid_credit_per_share > p.est_credit_per_share + 0.01)
+        ? ` (BS-mid $${p.mid_credit_per_share.toFixed(2)} − ~$${(p.bid_ask_per_share||0).toFixed(2)} bid-ask slippage)`
+        : "";
       profBlock = `
         <div class="cf-rung-profit">
           <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.return_on_risk_pct, 2)}</strong> return on risk</span>
           <span class="cf-rung-profit-sub">
-            ~$${p.est_credit_per_share.toFixed(2)} credit on $${p.spread_width.toFixed(2)} spread
+            ~$${p.est_credit_per_share.toFixed(2)} credit on $${p.spread_width.toFixed(2)} spread${midNote}
             &middot; max loss $${p.est_max_loss_per_share.toFixed(2)}
-            &middot; IV ${fmtPct(p.implied_vol_pct, 1)}
+            &middot; ${ivLine}
           </span>
         </div>`;
     }
@@ -146,6 +152,7 @@
         ${profBlock}
         <div class="cf-rung-m">
           <span class="tag">${tag}</span>
+          ${creditQualityBadge(l.profit)}
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
           <span class="tag">${l.n_folds} folds</span>
           <br/>
@@ -550,6 +557,23 @@
     return `<span class="cf-regime-badge">standard</span>`;
   }
 
+  // Credit-quality chip — flags rungs whose estimated fill is small
+  // relative to the bid-ask spread, so users know broker fills are
+  // unreliable on those rungs even though the model says they're
+  // technically profitable.
+  function creditQualityBadge(profit) {
+    if (!profit || !profit.credit_quality) return "";
+    const tradeable = profit.tradeable !== false;
+    if (profit.credit_quality === "thin") {
+      const tip = `Estimated fill ≈ $${(profit.est_credit_per_share||0).toFixed(2)}/share, with a ~$${(profit.bid_ask_per_share||0).toFixed(2)} bid-ask spread. Real broker fills will eat most of the credit and may not execute at all. ${tradeable ? "" : "Marked untradeable by the pricing model."}`;
+      return `<span class="cf-regime-badge" style="color:#a35900;border-color:#a35900" title="${tip}">⚠ thin credit</span>`;
+    }
+    if (profit.credit_quality === "modest") {
+      return `<span class="cf-regime-badge" style="color:#7a6800;border-color:#caa800" title="Estimated fill is moderate; bid-ask slippage is a meaningful fraction of credit.">modest credit</span>`;
+    }
+    return ""; // 'rich' — no badge needed
+  }
+
   function ocRungHTML(l, side) {
     const exType = l.expiry_type || "";
     const expLine = `Expires <strong>${l.expiry_date}</strong>` +
@@ -561,17 +585,26 @@
     const poolNote = (l.pool_win_rate_pct !== undefined)
       ? ` &middot; rule's pool win ${fmtPct(l.pool_win_rate_pct, 1)} across ${fmtInt(l.pool_n_test || 0)} tests`
       : "";
-    const profBlock = l.profit ? `
-      <div class="cf-rung-profit">
-        <span class="cf-rung-profit-main">Est. <strong>${fmtPct(l.profit.return_on_risk_pct, 2)}</strong> on max-loss
-          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> ${l.ticker || ""} historical win</span>
-        <span class="cf-rung-profit-sub">
-          credit ~$${l.profit.est_credit_per_share.toFixed(2)} on $${l.profit.spread_width.toFixed(2)} spread
-          &middot; max loss $${l.profit.est_max_loss_per_share.toFixed(2)}
-          &middot; protection (long leg) at ${fmt$(l.strike_long)}
-          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}${poolNote}
-        </span>
-      </div>` : "";
+    const profBlock = l.profit ? (() => {
+      const p = l.profit;
+      const ivLine = (p.short_iv_pct != null && p.long_iv_pct != null)
+        ? `IV ${fmtPct(p.short_iv_pct, 0)} short / ${fmtPct(p.long_iv_pct, 0)} long`
+        : `IV ${fmtPct(p.implied_vol_pct, 1)}`;
+      const midNote = (p.mid_credit_per_share != null && p.mid_credit_per_share > p.est_credit_per_share + 0.01)
+        ? ` (BS-mid $${p.mid_credit_per_share.toFixed(2)} − ~$${(p.bid_ask_per_share||0).toFixed(2)} bid-ask slippage)`
+        : "";
+      return `
+        <div class="cf-rung-profit">
+          <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.return_on_risk_pct, 2)}</strong> on max-loss
+            &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> ${l.ticker || ""} historical win</span>
+          <span class="cf-rung-profit-sub">
+            credit ~$${p.est_credit_per_share.toFixed(2)} on $${p.spread_width.toFixed(2)} spread${midNote}
+            &middot; max loss $${p.est_max_loss_per_share.toFixed(2)}
+            &middot; protection (long leg) at ${fmt$(l.strike_long)}
+            &middot; ${ivLine}${poolNote}
+          </span>
+        </div>`;
+    })() : "";
     return `
       <div class="cf-rung">
         <div class="cf-rung-h">${expLine}</div>
@@ -580,6 +613,7 @@
         ${profBlock}
         <div class="cf-rung-m">
           ${ocTierBadge(l.tier)}
+          ${creditQualityBadge(l.profit)}
           <span class="tag">${l.regime_label || l.regime}</span>
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
           <span class="tag">${l.n_folds} folds</span>
@@ -845,17 +879,26 @@
       (l.calendar_days_to_expiry ? ` &middot; ${l.calendar_days_to_expiry} cal days` : "");
     const sideAction = side === "put" ? "Sell put at" : "Sell call at";
     const sideWord = side === "put" ? "below" : "above";
-    const profBlock = l.profit ? `
-      <div class="cf-rung-profit">
-        <span class="cf-rung-profit-main">Est. <strong>${fmtPct(l.profit.return_on_risk_pct, 2)}</strong> return on risk
-          &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> walk-forward OOS win</span>
-        <span class="cf-rung-profit-sub">
-          credit ~$${l.profit.est_credit_per_share.toFixed(2)} on $${l.profit.spread_width.toFixed(2)} spread
-          &middot; max loss $${l.profit.est_max_loss_per_share.toFixed(2)}
-          &middot; long leg ${fmt$(l.profit.long_strike)}
-          &middot; IV ${fmtPct(l.profit.implied_vol_pct, 1)}
-        </span>
-      </div>` : "";
+    const profBlock = l.profit ? (() => {
+      const p = l.profit;
+      const ivLine = (p.short_iv_pct != null && p.long_iv_pct != null)
+        ? `IV ${fmtPct(p.short_iv_pct, 0)} short / ${fmtPct(p.long_iv_pct, 0)} long`
+        : `IV ${fmtPct(p.implied_vol_pct, 1)}`;
+      const midNote = (p.mid_credit_per_share != null && p.mid_credit_per_share > p.est_credit_per_share + 0.01)
+        ? ` (BS-mid $${p.mid_credit_per_share.toFixed(2)} − ~$${(p.bid_ask_per_share||0).toFixed(2)} bid-ask slippage)`
+        : "";
+      return `
+        <div class="cf-rung-profit">
+          <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.return_on_risk_pct, 2)}</strong> return on risk
+            &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> walk-forward OOS win</span>
+          <span class="cf-rung-profit-sub">
+            credit ~$${p.est_credit_per_share.toFixed(2)} on $${p.spread_width.toFixed(2)} spread${midNote}
+            &middot; max loss $${p.est_max_loss_per_share.toFixed(2)}
+            &middot; long leg ${fmt$(p.long_strike)}
+            &middot; ${ivLine}
+          </span>
+        </div>`;
+    })() : "";
     const isTight = l.method === "voladapt";
     const tierTag = isTight ? "tight (vol-adaptive)" : "core (static)";
     const sigmaTag = isTight && l.sigma_today_pct != null
@@ -868,6 +911,7 @@
         ${profBlock}
         <div class="cf-rung-m">
           <span class="tag">${tierTag}</span>
+          ${creditQualityBadge(l.profit)}
           ${sigmaTag}
           <span class="tag">${fmtInt(l.n_test)} OOS tests</span>
           <span class="tag">${l.n_folds} folds</span>
