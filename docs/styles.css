@@ -873,3 +873,87 @@ strong{font-weight:600}
   .fade-target{opacity:1;transform:none}
   *{transition-duration:0s !important}
 }
+
+/* ============================================================
+   MONTHLY-DCA CALLOUT (links to /experiments/monthly-dca/)
+   ============================================================ */
+.dca-callout{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  padding:24px 28px;
+  margin:24px 0;
+  background:var(--bg);
+  border:1px solid var(--rule);
+  border-radius:0;
+  text-decoration:none;
+  color:var(--ink);
+  transition:background .15s ease, transform .15s ease;
+}
+.dca-callout:hover{
+  background:#fafafa;
+  text-decoration:none;
+  transform:translateY(-1px);
+}
+.dca-callout-left{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.dca-callout-eyebrow{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  color:var(--green);
+  font-weight:600;
+}
+.dca-callout-title{
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  margin-top:2px;
+}
+.dca-callout-sub{
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.45;
+  margin-top:4px;
+  max-width:640px;
+}
+.dca-callout-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:2px;
+  flex-shrink:0;
+}
+.dca-callout-stat-num{
+  font-family:var(--mono);
+  font-size:28px;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  color:var(--green);
+  line-height:1;
+}
+.dca-callout-stat-lbl{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-top:6px;
+}
+.dca-callout-arrow{
+  margin-top:10px;
+  font-size:18px;
+  color:var(--ink);
+  font-weight:400;
+}
+
+@media (max-width:680px){
+  .dca-callout{flex-direction:column;align-items:flex-start;gap:14px;padding:18px 20px}
+  .dca-callout-right{flex-direction:row;align-items:baseline;gap:10px}
+  .dca-callout-stat-num{font-size:22px}
+  .dca-callout-stat-lbl{margin-top:0}
+  .dca-callout-arrow{margin-top:0}
+}

@@ -132,8 +132,10 @@ def main(start: str = "2017-12-31", end: str = "2025-12-31") -> None:
         if not feat_path.exists():
             continue
         existing = pd.read_parquet(feat_path)
-        # Skip if extras already merged
-        if "mom_3y" in existing.columns and "trend_r2_12m" in existing.columns:
+        # Skip if extras already merged. Use trend_r2_12m as the marker since
+        # it requires only 252 days of history (mom_3y needs 756 and is absent
+        # from early-cohort month-ends, which would otherwise loop forever).
+        if "trend_r2_12m" in existing.columns:
             continue
         extras = compute_extras(panel, asof)
         merged = existing.join(extras, how="left")

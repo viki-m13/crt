@@ -105,8 +105,8 @@ def merge_yf_into_local(local: pd.DataFrame, yf_df: pd.DataFrame) -> pd.DataFram
     return out.sort_index()
 
 
-def main() -> pd.DataFrame:
-    if PRICE_PARQUET.exists():
+def main(force: bool = False) -> pd.DataFrame:
+    if PRICE_PARQUET.exists() and not force:
         print(f"Loading cached panel: {PRICE_PARQUET}")
         return pd.read_parquet(PRICE_PARQUET)
 
