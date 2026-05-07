@@ -202,6 +202,8 @@ jobs:
             experiments/docs/monthly-dca/data.json \
             experiments/monthly_dca/cache/prices.parquet \
             experiments/monthly_dca/cache/meta.parquet \
+            experiments/monthly_dca/cache/survivorship_summary.json \
+            experiments/monthly_dca/cache/delisted_panel.parquet \
             "experiments/monthly_dca/cache/features/" || true
           if git diff --cached --quiet; then
             echo "No changes to commit."

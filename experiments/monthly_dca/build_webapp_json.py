@@ -83,6 +83,72 @@ def live_picks(panel: pd.DataFrame, asof: pd.Timestamp, fn, top_k: int) -> list[
     return out
 
 
+def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str = "ticker",
+                 asof_col: str = "asof", entry_col: str = "price") -> list[dict]:
+    """Monthly snapshot of (cumulative invested, strategy value, SPY DCA value).
+
+    For every month-end T from the first pick date through eval, sum:
+      - strategy value = sum over picks made at asof <= T of (price[ticker, T] / entry_price)
+      - spy value     = sum over picks made at asof <= T of (price[SPY, T] / price[SPY, asof])
+      - invested      = count of picks made at asof <= T
+
+    Each pick contributes $1 at its asof. We treat the basket as held forever.
+    """
+    picks = picks_csv.copy()
+    picks[asof_col] = pd.to_datetime(picks[asof_col])
+    me = month_end_dates(panel.index)
+    me = me[me >= picks[asof_col].min()]
+    spy = panel["SPY"]
+
+    # Pre-extract entry prices for SPY at each pick's asof
+    spy_at_pick = []
+    for asof_t in picks[asof_col]:
+        pos = panel.index.searchsorted(asof_t)
+        spy_at_pick.append(float(spy.iloc[pos]) if pos < len(spy) else float("nan"))
+    picks["_spy_entry"] = spy_at_pick
+
+    out: list[dict] = []
+    for d in me:
+        # Picks made on or before d
+        sub = picks[picks[asof_col] <= d]
+        if sub.empty:
+            continue
+        # Strategy value
+        strat_val = 0.0
+        for _, p in sub.iterrows():
+            t = p[ticker_col]
+            entry = float(p[entry_col])
+            if t not in panel.columns or entry == 0 or not np.isfinite(entry):
+                strat_val += 1.0  # neutral
+                continue
+            # Price at d (or last available before d)
+            s = panel[t].loc[panel.index <= d].dropna()
+            if s.empty:
+                strat_val += 0.0
+                continue
+            cur = float(s.iloc[-1])
+            strat_val += cur / entry
+        # SPY DCA value (same dates, $1 each)
+        spy_val = 0.0
+        for _, p in sub.iterrows():
+            entry = p["_spy_entry"]
+            if not np.isfinite(entry) or entry == 0:
+                continue
+            cur = float(spy.loc[spy.index <= d].dropna().iloc[-1])
+            spy_val += cur / entry
+        invested = float(len(sub))
+        out.append({
+            "date": str(d.date()),
+            "invested": invested,
+            "strat_value": float(strat_val),
+            "spy_value": float(spy_val),
+        })
+    return out
+
+
+from experiments.monthly_dca.backtester import month_end_dates
+
+
 def main() -> None:
     panel = load_panel()
     cache = Path(__file__).resolve().parent / "cache"
@@ -161,6 +227,37 @@ def main() -> None:
     sweep = pd.read_csv(cache / "sweep_v1.csv")
     sweep_top = sweep.sort_values("cagr_dca_portfolio", ascending=False).head(40)
 
+    # Single "pick of the month" — top-1 from pullback_in_winner with full feature snapshot
+    pick_of_month = picks_pin_5[0] if picks_pin_5 else None
+
+    # Growth curve over the full backtest window (k=1 hold_forever, the recommended config)
+    pick_log_full = pd.read_csv(cache / "picks_full_pullback_in_winner_k1.csv")
+    growth = growth_curve(panel, pick_log_full)
+
+    # Headline backtest stats from k=1 hold_forever (full window)
+    pin_summary_path = cache / "summary_pullback_in_winner_k1.json"
+    headline = {}
+    if pin_summary_path.exists():
+        with open(pin_summary_path) as f:
+            ps = json.load(f)
+        s = ps.get("stats", {})
+        headline = {
+            "n_picks": int(s.get("n", 0)),
+            "win_rate_raw": float(s.get("win_rate", 0)),
+            "win_rate_bias_corr": float(s.get("win_rate_bias_corr_median") or 0),
+            "cagr_raw": float(s.get("cagr_dca", 0)),
+            "cagr_bias_corr": float(s.get("cagr_dca_bias_corr_median") or 0),
+            "cagr_spy_dca": float(s.get("cagr_spy_dca", 0)),
+            "edge": float(s.get("edge", 0)),
+        }
+
+    # Survivorship-bias study (random baseline, sensitivity, etc.)
+    surv_path = cache / "survivorship_summary.json"
+    survivorship = None
+    if surv_path.exists():
+        with open(surv_path) as f:
+            survivorship = json.load(f)
+
     out = {
         "as_of": str(latest.date()),
         "panel": {
@@ -169,6 +266,10 @@ def main() -> None:
             "last_date": str(panel.index.max().date()),
         },
         "spy_dca_cagr": float(yb_pin_k1["cagr_dca_spy"].mean()),
+        "headline": headline,
+        "pick_of_month": pick_of_month,
+        "growth": growth,
+        "survivorship": survivorship,
         "live_picks": {
             "pullback_in_winner_top5": picks_pin_5,
             "pullback_in_winner_top10": picks_pin_10,

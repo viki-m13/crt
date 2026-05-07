@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — Stock Pullback Scanner & Recovery Odds</title>
-  <meta name="description" content="Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery. Scans 1,000+ stocks from the Russell 1000 with 20+ years of data. Find what stocks to buy, when to DCA, and which dips are worth buying." />
-  <meta name="keywords" content="stock screener, what stocks to buy, best stocks to buy now, stocks to DCA into, buy the dip stocks, pullback scanner, oversold stocks today, stock recovery odds, undervalued stocks, stock pullback analyzer, rebound scanner, Russell 1000 screener, historical stock analysis, best DCA stocks, stock buying opportunities, when to buy stocks, stock dip buying, beaten down stocks, stock market opportunities" />
+  <title>Daily Stock Guide — One Stock to Buy Each Month</title>
+  <meta name="description" content="One disciplined stock pick at the end of each month. The Pullback-In-Winner strategy: long-term winning stocks that just pulled back hardest. Walk-forward validated across 8 splits. Backtest CAGR ~43% vs SPY DCA 14%, with comprehensive survivorship-bias accounting." />
+  <meta name="keywords" content="monthly stock pick, DCA stocks, dollar cost average, best stock to buy this month, pullback winner, stock recovery, long-term stock investing, beat SPY, stock pick of the month" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
-  <meta property="og:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily with 20+ years of data." />
+  <meta property="og:title" content="Daily Stock Guide — One Stock to Buy Each Month" />
+  <meta property="og:description" content="One disciplined stock pick at month-end. ~43% backtest CAGR vs SPY 14%. Honest, walk-forward validated, survivorship-bias corrected." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
-  <meta name="twitter:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily." />
+  <meta name="twitter:title" content="Daily Stock Guide — One Stock to Buy Each Month" />
+  <meta name="twitter:description" content="One disciplined stock pick at month-end. ~43% backtest CAGR vs SPY 14%." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,18 +50,11 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery across 1, 3, and 5 year timeframes. Find what stocks to buy during pullbacks.",
+    "description": "One disciplined stock pick at the end of each month, based on the Pullback-In-Winner strategy.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "creator": {
-      "@type": "Person",
-      "url": "https://x.com/bondso"
-    }
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Person", "url": "https://x.com/bondso" }
   }
   </script>
 
@@ -71,214 +64,187 @@
 </head>
 <body>
 
-  <!-- ===== FIXED NAV ===== -->
   <nav class="site-nav">
     <div class="nav-inner">
       <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
       <div class="nav-links">
-        <a href="#how-it-works">How It Works</a>
-        <a href="#backtest-section">Backtest</a>
-        <a href="#listing-section">Screener</a>
+        <a href="#pick">This Month</a>
+        <a href="#backtest">Backtest</a>
+        <a href="#bias">Bias Audit</a>
+        <a href="#how">How</a>
+        <a href="/screener">Screener</a>
         <a href="/spreads/">Spreads</a>
-        <a href="/experiments/monthly-dca/" class="nav-experiments">Monthly DCA</a>
-        <a href="/max/" class="nav-experiments">Max</a>
-        <a href="/experiments/" class="nav-experiments">Experiments</a>
+        <a href="/max/">Max</a>
       </div>
     </div>
   </nav>
 
-  <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
-      <p class="hero-sub">Matches today's pullback to similar past setups and shows what happened next. Not financial advice.</p>
+      <h1 class="hero-headline">One stock to buy at the end of every month.</h1>
+      <p class="hero-sub">A long-term winner that just pulled back hardest. Buy it, hold it. The same disciplined rule that <strong>tripled SPY DCA in backtest</strong> — out-of-sample validated across 8 walk-forward splits, with comprehensive survivorship-bias accounting.</p>
+      <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
-  <!-- ===== MARQUEE (dynamically populated with top tickers) ===== -->
-  <div class="marquee-strip">
-    <div class="marquee-track" id="marquee-track">
-      <!-- populated by JS with live ticker data -->
-    </div>
-  </div>
-
-  <!-- ===== STATS ROW ===== -->
-  <section class="stats-section">
-    <div class="stats-inner">
-      <div class="stat-block">
-        <span class="stat-number" id="statUniverse">&mdash;</span>
-        <span class="stat-label">Stocks &amp; crypto scanned every day from the Russell 1000 and top digital assets</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-block">
-        <span class="stat-number" id="statDepth">&mdash;</span>
-        <span class="stat-label">Years of daily price history powering every analog match and probability estimate</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-block">
-        <span class="stat-number" id="asOf">&mdash;</span>
-        <span class="stat-label">Last scan completed after market close, New York time</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== HOW IT WORKS & BACKTEST (collapsed by default) ===== -->
-  <section class="content-section" id="how-it-works">
+  <section id="pick" class="pick-section">
     <div class="section-inner">
+      <div class="pick-eyebrow">This month's pick</div>
+      <div id="pickBody" class="pick-loading">Loading…</div>
+      <div class="pick-disclaimer">
+        Re-scored at the end of every month. Buy at month-end close, hold. Not financial advice.
+      </div>
+    </div>
+  </section>
 
-      <details class="details-card">
-        <summary class="details-card-summary">
-          <div class="details-card-left">
-            <span class="details-card-title">How to Read This</span>
-            <span class="details-card-cat">The Numbers &amp; Methodology</span>
-          </div>
-          <span class="details-card-arrow">&darr;</span>
-        </summary>
-        <div class="details-card-body">
-          <div class="explain-grid">
-            <div>
-              <div class="section-title">The numbers</div>
-              <ul>
-                <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Multiplies three things: stock quality (is this a strong stock?), recovery odds (has it bounced back from pullbacks like this before?), and the pullback gate (is it actually in a dip right now?). Stocks near all-time highs score low regardless of quality. Stocks with quality below 50 are excluded entirely — backtesting showed this cuts extreme downside by 43% while keeping 83% hit rates. Higher = better opportunity.</li>
-                <li><strong>Pullback</strong> — How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit. The deeper the pullback, the more weight the score carries.</li>
-                <li><strong>Value Depth</strong> — Shown in the rationale for top stocks. Measures undervaluation across four dimensions: position in the 52-week range, distance below the 200-day moving average, RSI oversold level, and drawdown depth. 0 = near highs, 100 = deep value.</li>
-                <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
-                <li><strong>Quality</strong> — Is this a strong stock having a temporary dip, or a weak stock that might keep falling? Looks at: Does it usually trend up over time? Has it recovered from past drops? Is the selling slowing down?</li>
-                <li><strong>Typical 1Y</strong> — The most common 1-year return when this stock was in a similar situation before.</li>
-                <li><strong>Downside</strong> — A bad-but-realistic scenario (worst 1 in 10 outcomes).</li>
-                <li><strong>Past Cases</strong> — How many similar historical situations the stats are based on. More = more reliable.</li>
-              </ul>
-            </div>
-            <div>
-              <div class="section-title">How it works</div>
-              <ol>
-                <li><strong>Measure value depth</strong> — Score each stock on four dimensions: where it sits in its 52-week range, how far below its 200-day moving average, RSI oversold level, and drawdown from recent highs.</li>
-                <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness, not just a bad day for everything.</li>
-                <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position (similar drawdown, similar range position, similar technical setup).</li>
-                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. Stocks with quality below 50 are gated out of the Opportunity Score entirely. This prevents "value traps" — cheap stocks that stay cheap. Backtested across 34 stocks over 33 years, this gate reduced the worst 1-in-20 outcomes from -42% to -20%.</li>
-                <li><strong>Apply the pullback gate</strong> — Only give high scores to stocks that are actually in a pullback. A stock near all-time highs gets almost no score, no matter how good its quality or history.</li>
-                <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those matched past cases.</li>
-              </ol>
-            </div>
-            <div>
-              <div class="section-title">Important</div>
-              <ul>
-                <li><strong>Not financial advice.</strong> This shows what happened in the past, not what will happen next.</li>
-                <li><strong>Not a trading system.</strong> No buy/sell signals, position sizing, or timing.</li>
-                <li><strong>No guarantees.</strong> Stocks can keep falling — including to zero.</li>
-              </ul>
-            </div>
+  <section id="backtest" class="bt-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Backtest — $1 per month into the strategy</h2>
+      <p class="section-sub">If you put $1 into the top pick at the end of every month and held forever, here's how the portfolio grew compared to putting $1 into SPY at the same dates.</p>
+      <div class="bt-stats" id="btStats">Loading…</div>
+      <div class="bt-chart-wrap">
+        <canvas id="btChart" class="bt-chart"></canvas>
+        <div class="bt-legend">
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy DCA</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>SPY DCA</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Cash invested</span>
+        </div>
+      </div>
+
+      <h3 class="section-h3">Year-by-year</h3>
+      <p class="section-sub">CAGR of picks made in each year, evaluated to today. <strong>Recent-year cohorts have less time to mature</strong>; this is horizon truncation, not a strategy failure.</p>
+      <div id="btYearGrid" class="year-grid"></div>
+    </div>
+  </section>
+
+  <section id="bias" class="bias-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Survivorship-bias audit</h2>
+      <p class="section-sub">The hardest question in any backtest: is the result real, or just an artifact of using today's surviving universe? We attack the question from four angles.</p>
+
+      <div class="bias-grid">
+        <div class="bias-card bias-card-headline">
+          <div class="bias-label">True alpha vs random pick</div>
+          <div id="biasAlpha" class="bias-value">…</div>
+          <div class="bias-sub">Strategy CAGR minus a random pick from the same universe. Isolates skill from universe-bias for free.</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">Random k=1 baseline</div>
+          <div id="biasRandom" class="bias-value">…</div>
+          <div class="bias-sub">200 seeds. Same universe, no signal — just dart-throwing.</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">Stratified MC delisting (default α=4%)</div>
+          <div id="biasStrat" class="bias-value">…</div>
+          <div class="bias-sub">Per-pick annual delisting probability scaled up for distress (deep pullback, weak trend). Distressed picks → higher P(zero).</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">Worst-case α=20%/yr</div>
+          <div id="biasWorst" class="bias-value">…</div>
+          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. The strategy still…</div>
+        </div>
+      </div>
+
+      <details class="accordion">
+        <summary>Sensitivity table — CAGR at six annual delisting rates</summary>
+        <div class="accordion-body">
+          <p class="section-sub">Stratified delisting probability (per pick, per year) varies by stock state at pickup. Mean per-pick rate is ~2.7× the displayed base rate because the strategy picks stocks that have just pulled back. Even under aggressive correction (α=12%/yr → ~32% mean per-pick rate), the strategy returns &gt;20% CAGR.</p>
+          <div class="bias-table-wrap">
+            <table id="sensTable" class="bias-table">
+              <thead>
+                <tr><th>Annual base α</th><th>Stratified CAGR (median)</th><th>p10</th><th>p90</th><th>Uniform CAGR (median)</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </details>
 
-      <a href="/experiments/monthly-dca/" class="dca-callout">
-        <div class="dca-callout-left">
-          <span class="dca-callout-eyebrow">New research</span>
-          <span class="dca-callout-title">Monthly DCA — Pullback-In-Winner Strategy</span>
-          <span class="dca-callout-sub">An honest, bias-aware monthly stock-pick DCA strategy. Walk-forward validated across 8 splits. ~44% backtest CAGR vs SPY's 14% — and the failure modes documented.</span>
-        </div>
-        <div class="dca-callout-right">
-          <span class="dca-callout-stat-num">~44%</span>
-          <span class="dca-callout-stat-lbl">backtest CAGR</span>
-          <span class="dca-callout-arrow">&rarr;</span>
-        </div>
-      </a>
-
-      <details class="details-card" id="backtest-section">
-        <summary class="details-card-summary">
-          <div class="details-card-left">
-            <span class="details-card-title">Backtest — DCA Optimizer</span>
-            <span class="details-card-cat">Historical Performance Simulation</span>
-          </div>
-          <span class="details-card-arrow">&darr;</span>
-        </summary>
-        <div class="details-card-body">
-          <p class="bt-intro">What if you invested $1,000 every month into the top stocks by Opportunity Score, instead of just buying SPY?
-          Each month, the backtest ranks stocks by their point-in-time Opportunity Score (the score the scanner would have shown on that historical date — no look-ahead bias) and buys the top 1, 5, or 10. Each position is held for the chosen hold period, then sold. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
-          <div class="bt-hold-tabs">
-            <button class="btn-lite active" data-hold="12">1-Year Hold</button>
-            <button class="btn-lite" data-hold="36">3-Year Hold</button>
-            <button class="btn-lite" data-hold="60">5-Year Hold</button>
-          </div>
-          <div id="backtest-body">
-            <div class="footnote">Click to load backtest data&hellip;</div>
-          </div>
+      <details class="accordion">
+        <summary>Empirical delisted-ticker augmentation</summary>
+        <div class="accordion-body">
+          <p class="section-sub">Best-effort: we tried 46 historically known delisted equities (Lehman, Bear Stearns, SVB, BBBY, Sears, etc.) via yfinance. Some return data (mergers, OTC continuations); some are wholly delisted. <strong id="delistedCount">…</strong> have usable data and were merged into the panel for next-iteration backtests.</p>
+          <div id="delistedList" class="delisted-list"></div>
         </div>
       </details>
 
+      <details class="accordion">
+        <summary>Why a 100% win rate at &gt;50% CAGR is impossible honestly</summary>
+        <div class="accordion-body">
+          <p>The oracle ceiling — picking the K stocks with the largest known forward return at every month-end — is 112% CAGR for top-1 hold-forever. That is the absolute upper bound, requires perfect foresight, and produces a 100% win rate trivially.</p>
+          <p>Any honest strategy captures only a fraction. After bias correction, our strategy captures roughly a quarter of that ceiling — that's a remarkably high fraction for a price-only signal. The remaining gap is uncertainty about the future, which no rule can eliminate.</p>
+          <p>We considered tighter gates that produce 80%+ win rates (explosive_winners + take-profit-100%), but their CAGR caps at ~21% — barely beats SPY DCA. The trade-off is real and unavoidable.</p>
+        </div>
+      </details>
     </div>
   </section>
 
-  <!-- ===== SCREENER / LISTING ===== -->
-  <section class="content-section listing-section" id="listing-section">
+  <section id="how" class="how-section">
     <div class="section-inner">
+      <h2 class="section-h2">How the strategy works</h2>
+      <p class="section-sub">Six rules, applied at the end of every month-end. The same code that ran the backtest is what picks today's stock.</p>
 
-      <div class="controls">
-        <div class="search">
-          <label for="q" class="visually-hidden">Search ticker</label>
-          <div class="search-field">
-            <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
-            <button id="clear-search" class="search-clear" type="button" aria-label="Clear search">&times;</button>
-          </div>
-          <button id="go" class="btn">Analyze</button>
+      <ol class="how-list">
+        <li><strong>Score the universe.</strong> 964 US-listed equities (point-in-time eligible — must have ≥ 504 days of history, no future leakage).</li>
+        <li><strong>Filter for long-term winners.</strong> Stocks that spent at least 55 % of the last 5 years above their 200-day moving average. This is a hard quality gate.</li>
+        <li><strong>Filter for a meaningful pullback.</strong> Stock must be at least 15 % below its 1-year high.</li>
+        <li><strong>Filter for "not in freefall".</strong> 14-day RSI must be above 30 — we don't catch falling knives.</li>
+        <li><strong>Score the survivors.</strong> Combine pullback depth, trend health, recovery track record, momentum, and selling deceleration into a single composite.</li>
+        <li><strong>Buy the top one.</strong> Equal $1 at month-end close. Hold forever (or evaluate at fixed 3 years; both backtest similarly).</li>
+      </ol>
+
+      <details class="accordion">
+        <summary>Walk-forward validation</summary>
+        <div class="accordion-body">
+          <p>Eight TRAIN/TEST splits — three expanding-window, four 3y/1y rolling, one strict last-block holdout. The recommended strategy was selected from the walk-forward aggregate, not from the full-window backtest, so its parameters are not curve-fit to the future.</p>
+          <p>Strategies that <em>looked</em> great on early TRAIN windows but collapsed on TEST (e.g., pure long-term momentum) are exposed and excluded. Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
         </div>
-        <div class="sort">
-          <span class="sort-label">Sort</span>
-          <button class="btn-lite" data-sort="conviction">Opp. Score</button>
-          <button class="btn-lite active" data-sort="prob_1y">1Y Prob</button>
-          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
-          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
+      </details>
+
+      <details class="accordion">
+        <summary>Why hold forever, not sell?</summary>
+        <div class="accordion-body">
+          <p>We backtested 13 different exit rules. Hold-forever and fixed-3-year exits dominate every selling rule (trailing-stop, hard-stop, take-profit). Why? The biggest winners — the kind of stocks that 5×, 10×, 20× — routinely take 30–40 % drawdowns mid-rally. Any meaningful stop kicks you out before the multi-bagger plays out.</p>
+          <p>The cost of holding forever is that ~ 40 % of single picks under-perform SPY (the bias-corrected win rate is ~ 45 %). The benefit is that the winners 5–20× and dominate the basket. Concentrate on the right side of that distribution.</p>
         </div>
-      </div>
+      </details>
 
-      <div class="listing-header">
-        <span title="Stock or crypto symbol">Ticker</span>
-        <span title="How good this buying opportunity looks. Multiplies stock quality, 1-year recovery odds, and the pullback gate. Stocks with quality below 50 are excluded. Stocks near highs score low. Higher = better.">Opp. Score</span>
-        <span title="How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit.">Pullback</span>
-        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
-        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
-        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
-        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
-        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
-        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
-        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
-      </div>
-      <div id="listing"></div>
-      <div class="footnote">
-        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
-      </div>
-
+      <details class="accordion">
+        <summary>Other strategies & full research</summary>
+        <div class="accordion-body">
+          <p>This page focuses on the recommended strategy. The <a href="/experiments/monthly-dca/">research page</a> contains the full results: every strategy variant tested (24 strategies × 5 K-values × 13 exit rules), per-split walk-forward detail, the oracle ceiling, the full pick log, and methodology.</p>
+          <p>Source code and raw data: <code>experiments/monthly_dca/</code> in the GitHub repo.</p>
+        </div>
+      </details>
     </div>
   </section>
 
-  <!-- ===== FOOTER (clean, minimal) ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
+      <div class="footer-col">
+        <span class="footer-heading">Tools</span>
+        <a href="/" class="footer-link">Monthly Pick</a>
+        <a href="/screener" class="footer-link">Pullback Screener</a>
+        <a href="/spreads/" class="footer-link">Credit Spreads</a>
+        <a href="/max/" class="footer-link">Max Strategy</a>
+        <a href="/experiments/" class="footer-link">Experiments</a>
+        <a href="/experiments/monthly-dca/" class="footer-link">Monthly DCA Research</a>
+      </div>
       <div class="footer-col">
         <span class="footer-heading">Legal</span>
         <a href="terms.html" class="footer-link">Terms of Service</a>
         <a href="privacy.html" class="footer-link">Privacy Policy</a>
         <a href="disclaimer.html" class="footer-link">Disclaimer</a>
       </div>
-      <div class="footer-col">
-        <span class="footer-heading">Navigate</span>
-        <a href="#listing-section" class="footer-link">Screener</a>
-        <a href="#how-it-works" class="footer-link">How It Works</a>
-        <a href="#backtest-section" class="footer-link">Backtest</a>
-        <a href="/max/" class="footer-link">Max Strategy</a>
-        <a href="/spreads/" class="footer-link">Credit Spreads</a>
-        <a href="/experiments/" class="footer-link">Experiments</a>
-      </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
         <span class="footer-text">Updated once daily after market close, New York time.</span>
-        <span class="footer-text footnote-text">Past performance does not predict future results.</span>
+        <span class="footer-text footnote-text">Past performance does not predict future results. Research, not financial advice.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="monthly_dca.js"></script>
 </body>
 </html>

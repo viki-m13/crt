@@ -72,7 +72,11 @@ def main() -> int:
         # Always re-run the most recent 3 month-ends (they may have grown intra-month)
         refresh_recent_months(panel, lookback_months=3)
 
-        # 3. Rebuild webapp data.json
+        # 3. Rebuild webapp data.json. The expensive survivorship analysis
+        # (random baseline, sensitivity sweep) is stable across daily updates
+        # — we keep the existing survivorship_summary.json from the last
+        # full run. Re-run it manually via experiments/monthly_dca/survivorship.py
+        # whenever the strategy logic or universe materially changes.
         print("\n=== Step 3: Rebuilding webapp data.json ===")
         load_features_long.cache_clear()  # reset lru cache
         from experiments.monthly_dca.build_webapp_json import main as build_json

@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WQQ9QE0FW6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-WQQ9QE0FW6');
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Site password gate (client-side). See /gate.js -->
+  <style id="cf-gate-init">html{visibility:hidden!important}</style>
+  <script src="/gate.js"></script>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>Pullback Screener — Daily Stock Guide</title>
+  <meta name="description" content="Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery. Scans 1,000+ stocks from the Russell 1000 with 20+ years of data." />
+  <meta name="keywords" content="stock screener, pullback scanner, oversold stocks today, stock recovery odds, undervalued stocks, stock pullback analyzer, rebound scanner, Russell 1000 screener" />
+  <link rel="canonical" href="https://dailystockguide.com/screener" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Daily Stock Guide" />
+  <meta property="og:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
+  <meta property="og:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily with 20+ years of data." />
+  <meta property="og:url" content="https://dailystockguide.com/" />
+  <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@bondso" />
+  <meta name="twitter:creator" content="@bondso" />
+  <meta name="twitter:title" content="Daily Stock Guide — Stock Pullback Scanner & Recovery Odds" />
+  <meta name="twitter:description" content="Daily screener that finds stocks pulled back hard and shows historical recovery odds. 1,000+ stocks scanned daily." />
+  <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Daily Stock Guide",
+    "url": "https://dailystockguide.com",
+    "description": "Daily stock screener that finds stocks pulled back hard and shows the historical odds of recovery across 1, 3, and 5 year timeframes. Find what stocks to buy during pullbacks.",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "creator": {
+      "@type": "Person",
+      "url": "https://x.com/bondso"
+    }
+  }
+  </script>
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== FIXED NAV ===== -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
+      <div class="nav-links">
+        <a href="/">Monthly Pick</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#backtest-section">Backtest</a>
+        <a href="#listing-section">Screener</a>
+        <a href="/spreads/">Spreads</a>
+        <a href="/max/" class="nav-experiments">Max</a>
+        <a href="/experiments/" class="nav-experiments">Experiments</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1 class="hero-headline">Finds stocks that have pulled back hard and shows the historical odds of recovery.</h1>
+      <p class="hero-sub">Matches today's pullback to similar past setups and shows what happened next. Not financial advice.</p>
+    </div>
+  </section>
+
+  <!-- ===== MARQUEE (dynamically populated with top tickers) ===== -->
+  <div class="marquee-strip">
+    <div class="marquee-track" id="marquee-track">
+      <!-- populated by JS with live ticker data -->
+    </div>
+  </div>
+
+  <!-- ===== STATS ROW ===== -->
+  <section class="stats-section">
+    <div class="stats-inner">
+      <div class="stat-block">
+        <span class="stat-number" id="statUniverse">&mdash;</span>
+        <span class="stat-label">Stocks &amp; crypto scanned every day from the Russell 1000 and top digital assets</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number" id="statDepth">&mdash;</span>
+        <span class="stat-label">Years of daily price history powering every analog match and probability estimate</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-number" id="asOf">&mdash;</span>
+        <span class="stat-label">Last scan completed after market close, New York time</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS & BACKTEST (collapsed by default) ===== -->
+  <section class="content-section" id="how-it-works">
+    <div class="section-inner">
+
+      <details class="details-card">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">How to Read This</span>
+            <span class="details-card-cat">The Numbers &amp; Methodology</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <div class="explain-grid">
+            <div>
+              <div class="section-title">The numbers</div>
+              <ul>
+                <li><strong>Opportunity Score</strong> — How good this buying opportunity looks right now. Multiplies three things: stock quality (is this a strong stock?), recovery odds (has it bounced back from pullbacks like this before?), and the pullback gate (is it actually in a dip right now?). Stocks near all-time highs score low regardless of quality. Stocks with quality below 50 are excluded entirely — backtesting showed this cuts extreme downside by 43% while keeping 83% hit rates. Higher = better opportunity.</li>
+                <li><strong>Pullback</strong> — How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit. The deeper the pullback, the more weight the score carries.</li>
+                <li><strong>Value Depth</strong> — Shown in the rationale for top stocks. Measures undervaluation across four dimensions: position in the 52-week range, distance below the 200-day moving average, RSI oversold level, and drawdown depth. 0 = near highs, 100 = deep value.</li>
+                <li><strong>1Y / 3Y / 5Y Prob</strong> — The chance this stock was higher after 1, 3, or 5 years when it was in a similar pullback. For example, "92%" means it was higher 92 out of 100 times.</li>
+                <li><strong>Quality</strong> — Is this a strong stock having a temporary dip, or a weak stock that might keep falling? Looks at: Does it usually trend up over time? Has it recovered from past drops? Is the selling slowing down?</li>
+                <li><strong>Typical 1Y</strong> — The most common 1-year return when this stock was in a similar situation before.</li>
+                <li><strong>Downside</strong> — A bad-but-realistic scenario (worst 1 in 10 outcomes).</li>
+                <li><strong>Past Cases</strong> — How many similar historical situations the stats are based on. More = more reliable.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="section-title">How it works</div>
+              <ol>
+                <li><strong>Measure value depth</strong> — Score each stock on four dimensions: where it sits in its 52-week range, how far below its 200-day moving average, RSI oversold level, and drawdown from recent highs.</li>
+                <li><strong>Strip out the market</strong> — Remove broad market moves so we only see the stock's own weakness, not just a bad day for everything.</li>
+                <li><strong>Find matching history</strong> — Look for every past day this stock was in a similar position (similar drawdown, similar range position, similar technical setup).</li>
+                <li><strong>Check quality</strong> — Filter for stocks with strong long-term trends and a history of bouncing back. Stocks with quality below 50 are gated out of the Opportunity Score entirely. This prevents "value traps" — cheap stocks that stay cheap. Backtested across 34 stocks over 33 years, this gate reduced the worst 1-in-20 outcomes from -42% to -20%.</li>
+                <li><strong>Apply the pullback gate</strong> — Only give high scores to stocks that are actually in a pullback. A stock near all-time highs gets almost no score, no matter how good its quality or history.</li>
+                <li><strong>Show the odds</strong> — Report what happened next across 1, 3, and 5 years in those matched past cases.</li>
+              </ol>
+            </div>
+            <div>
+              <div class="section-title">Important</div>
+              <ul>
+                <li><strong>Not financial advice.</strong> This shows what happened in the past, not what will happen next.</li>
+                <li><strong>Not a trading system.</strong> No buy/sell signals, position sizing, or timing.</li>
+                <li><strong>No guarantees.</strong> Stocks can keep falling — including to zero.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <a href="/" class="dca-callout">
+        <div class="dca-callout-left">
+          <span class="dca-callout-eyebrow">Main strategy</span>
+          <span class="dca-callout-title">One stock to buy this month</span>
+          <span class="dca-callout-sub">The Pullback-In-Winner strategy: ~43% backtest CAGR vs SPY 14%. Walk-forward validated, survivorship-bias corrected.</span>
+        </div>
+        <div class="dca-callout-right">
+          <span class="dca-callout-stat-num">~43%</span>
+          <span class="dca-callout-stat-lbl">backtest CAGR</span>
+          <span class="dca-callout-arrow">&rarr;</span>
+        </div>
+      </a>
+
+      <details class="details-card" id="backtest-section">
+        <summary class="details-card-summary">
+          <div class="details-card-left">
+            <span class="details-card-title">Backtest — DCA Optimizer</span>
+            <span class="details-card-cat">Historical Performance Simulation</span>
+          </div>
+          <span class="details-card-arrow">&darr;</span>
+        </summary>
+        <div class="details-card-body">
+          <p class="bt-intro">What if you invested $1,000 every month into the top stocks by Opportunity Score, instead of just buying SPY?
+          Each month, the backtest ranks stocks by their point-in-time Opportunity Score (the score the scanner would have shown on that historical date — no look-ahead bias) and buys the top 1, 5, or 10. Each position is held for the chosen hold period, then sold. All proceeds stay as cash — no reinvestment. Stocks only — crypto (BTC &amp; ETH) is excluded.</p>
+          <div class="bt-hold-tabs">
+            <button class="btn-lite active" data-hold="12">1-Year Hold</button>
+            <button class="btn-lite" data-hold="36">3-Year Hold</button>
+            <button class="btn-lite" data-hold="60">5-Year Hold</button>
+          </div>
+          <div id="backtest-body">
+            <div class="footnote">Click to load backtest data&hellip;</div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ===== SCREENER / LISTING ===== -->
+  <section class="content-section listing-section" id="listing-section">
+    <div class="section-inner">
+
+      <div class="controls">
+        <div class="search">
+          <label for="q" class="visually-hidden">Search ticker</label>
+          <div class="search-field">
+            <input id="q" class="search-input" type="text" placeholder="Search any ticker (e.g., AAPL, UBER, TSM)" autocomplete="off" />
+            <button id="clear-search" class="search-clear" type="button" aria-label="Clear search">&times;</button>
+          </div>
+          <button id="go" class="btn">Analyze</button>
+        </div>
+        <div class="sort">
+          <span class="sort-label">Sort</span>
+          <button class="btn-lite" data-sort="conviction">Opp. Score</button>
+          <button class="btn-lite active" data-sort="prob_1y">1Y Prob</button>
+          <button class="btn-lite" data-sort="prob_3y">3Y Prob</button>
+          <button class="btn-lite" data-sort="prob_5y">5Y Prob</button>
+        </div>
+      </div>
+
+      <div class="listing-header">
+        <span title="Stock or crypto symbol">Ticker</span>
+        <span title="How good this buying opportunity looks. Multiplies stock quality, 1-year recovery odds, and the pullback gate. Stocks with quality below 50 are excluded. Stocks near highs score low. Higher = better.">Opp. Score</span>
+        <span title="How washed-out this stock is right now. 0 = no pullback, 100 = extreme selloff. This is the gate: stocks need a meaningful pullback before the Opportunity Score gives them credit.">Pullback</span>
+        <span title="Chance this stock was higher after 1 year in similar past pullbacks.">1Y Prob</span>
+        <span title="Chance this stock was higher after 3 years in similar past pullbacks.">3Y Prob</span>
+        <span title="Chance this stock was higher after 5 years in similar past pullbacks.">5Y Prob</span>
+        <span title="The most common 1-year return when this stock was in a similar pullback before.">Typical 1Y</span>
+        <span title="Bad-but-realistic 1-year scenario (worst 1 in 10 outcomes from similar past pullbacks).">Downside</span>
+        <span title="How many similar historical pullbacks the stats are based on. More = more reliable.">Cases</span>
+        <span title="Is this a strong stock having a temporary dip, or a weak stock breaking down? Based on trend, recovery history, and momentum.">Quality</span>
+      </div>
+      <div id="listing"></div>
+      <div class="footnote">
+        Past performance does not predict future results. This scan shows historical patterns, not investment advice.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== FOOTER (clean, minimal) ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <span class="footer-heading">Legal</span>
+        <a href="terms.html" class="footer-link">Terms of Service</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="disclaimer.html" class="footer-link">Disclaimer</a>
+      </div>
+      <div class="footer-col">
+        <span class="footer-heading">Navigate</span>
+        <a href="/" class="footer-link">Monthly Pick</a>
+        <a href="#listing-section" class="footer-link">Screener</a>
+        <a href="#how-it-works" class="footer-link">How It Works</a>
+        <a href="#backtest-section" class="footer-link">Backtest</a>
+        <a href="/max/" class="footer-link">Max Strategy</a>
+        <a href="/spreads/" class="footer-link">Credit Spreads</a>
+        <a href="/experiments/" class="footer-link">Experiments</a>
+      </div>
+      <div class="footer-col footer-col-logo">
+        <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
+        <span class="footer-text">Updated once daily after market close, New York time.</span>
+        <span class="footer-text footnote-text">Past performance does not predict future results.</span>
+        <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
