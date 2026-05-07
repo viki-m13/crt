@@ -49,6 +49,7 @@ sys.modules["credit_spread_pricing"] = _pricing
 _pr_spec.loader.exec_module(_pricing)
 bs_put = _pricing.bs_put
 bs_call = _pricing.bs_call
+credit_spread_mid = _pricing.credit_spread_mid  # smile-aware leg pricing
 realized_vol = _pricing.realized_vol
 
 
@@ -165,8 +166,8 @@ def main():
                     K_pl = K_ps - width
                     K_cl = K_cs + width
                     if K_pl <= 0: continue
-                    cp = max(bs_put(spot_now, K_ps, T_cal, iv) - bs_put(spot_now, K_pl, T_cal, iv), 0) * 0.80
-                    cc = max(bs_call(spot_now, K_cs, T_cal, iv) - bs_call(spot_now, K_cl, T_cal, iv), 0) * 0.80
+                    cp = credit_spread_mid("put",  spot_now, K_ps, K_pl, T_cal, iv) * 0.80
+                    cc = credit_spread_mid("call", spot_now, K_cs, K_cl, T_cal, iv) * 0.80
                     cred = cp + cc
                     # Realistic ceiling on combined credit/width
                     if cred > MAX_COMBINED_CREDIT_RATIO * width:

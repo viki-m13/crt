@@ -50,6 +50,7 @@ sys.modules["credit_spread_pricing"] = _pricing
 _pr_spec.loader.exec_module(_pricing)
 bs_put = _pricing.bs_put
 bs_call = _pricing.bs_call
+credit_spread_mid = _pricing.credit_spread_mid  # smile-aware leg pricing
 realized_vol = _pricing.realized_vol
 
 
@@ -107,8 +108,8 @@ def best_ic_config(close, dates, regime, h, spot_today, sigma):
             K_pl = K_ps - width; K_cl = K_cs + width
             if K_pl <= 0:
                 continue
-            cp = max(bs_put(spot_today, K_ps, T, iv) - bs_put(spot_today, K_pl, T, iv), 0) * 0.80
-            cc = max(bs_call(spot_today, K_cs, T, iv) - bs_call(spot_today, K_cl, T, iv), 0) * 0.80
+            cp = credit_spread_mid("put",  spot_today, K_ps, K_pl, T, iv) * 0.80
+            cc = credit_spread_mid("call", spot_today, K_cs, K_cl, T, iv) * 0.80
             cred = cp + cc
             ml = max(width - cred, 0.01)
             ror = cred / ml
@@ -183,8 +184,8 @@ def main():
                         iv_fire = sigma_at * 1.30
                         cal_days = max(int(h * 1.45), 1)
                         T_fire = cal_days / 365.0
-                        cp = max(bs_put(spot_at, K_ps_fire, T_fire, iv_fire) - bs_put(spot_at, K_pl_fire, T_fire, iv_fire), 0) * 0.80
-                        cc = max(bs_call(spot_at, K_cs_fire, T_fire, iv_fire) - bs_call(spot_at, K_cl_fire, T_fire, iv_fire), 0) * 0.80
+                        cp = credit_spread_mid("put",  spot_at, K_ps_fire, K_pl_fire, T_fire, iv_fire) * 0.80
+                        cc = credit_spread_mid("call", spot_at, K_cs_fire, K_cl_fire, T_fire, iv_fire) * 0.80
                         cred_fire = cp + cc
                         ml_fire = max(width - cred_fire, 0.01)
                         ror_fire = cred_fire / ml_fire

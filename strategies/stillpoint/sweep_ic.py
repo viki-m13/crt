@@ -44,6 +44,7 @@ estimate_profit = _pricing.estimate_profit
 realized_vol = _pricing.realized_vol
 bs_put = _pricing.bs_put
 bs_call = _pricing.bs_call
+credit_spread_mid = _pricing.credit_spread_mid  # smile-aware leg pricing
 
 
 def _mask(f, **kw):
@@ -71,15 +72,11 @@ def ic_credit_estimate(spot, buf_put, buf_call, h, sigma, width_pct=0.05,
     K_p_short = spot * (1 - buf_put)
     K_p_long = K_p_short - width
     if K_p_long <= 0: return None
-    p_short_put = bs_put(spot, K_p_short, T, iv)
-    p_long_put = bs_put(spot, K_p_long, T, iv)
-    credit_put = max(p_short_put - p_long_put, 0) * haircut
+    credit_put = credit_spread_mid("put", spot, K_p_short, K_p_long, T, iv) * haircut
     # Call leg
     K_c_short = spot * (1 + buf_call)
     K_c_long = K_c_short + width
-    p_short_call = bs_call(spot, K_c_short, T, iv)
-    p_long_call = bs_call(spot, K_c_long, T, iv)
-    credit_call = max(p_short_call - p_long_call, 0) * haircut
+    credit_call = credit_spread_mid("call", spot, K_c_short, K_c_long, T, iv) * haircut
     combined_credit = credit_put + credit_call
     # Max loss for IC: width - combined credit (one side breaches; other keeps full credit)
     max_loss = max(width - combined_credit, 0.01)

@@ -55,7 +55,13 @@ from v2_common import (
     load_series, spy_context,
 )
 from v2_regimes import CALL_REGIMES, PUT_REGIMES
-from pricing import bs_call, bs_put
+from pricing import (
+    bs_call, bs_put,
+    credit_spread_price, credit_quality,
+    SKEW_ALPHA_PUT, SKEW_ALPHA_CALL,
+    NET_BID_ASK_FLOOR, NET_BID_ASK_FRAC,
+    MIN_TRADEABLE_FILL,
+)
 
 
 # -------- config ---------------------------------------------------------
@@ -73,8 +79,14 @@ SPREAD_WIDTH = 0.03                       # long leg k_long = k_short + 3%
 # possible cushion — this is what unlocks 100% win rates.
 HORIZONS = [5, 7, 10, 14, 21, 30, 45, 60, 90, 120, 180, 252]
 
-IV_MULT = 1.15                            # IV = realized × this
-HAIRCUT = 0.80                            # keep 80% of BS credit after slippage
+IV_MULT = 1.15                            # ATM IV anchor = realized × this.
+                                          # Per-leg smile (SKEW_ALPHA_PUT/CALL)
+                                          # uplifts each leg's IV from this
+                                          # anchor based on its log-moneyness.
+                                          # Bid-ask slippage + tenor-aware
+                                          # haircut are applied to the spread
+                                          # net credit downstream — no static
+                                          # HAIRCUT constant any more.
 
 MIN_POOLED_TEST = 30                      # need this many pooled OOS test fires
 MIN_WIN_RATE = 0.83                       # empirical close-at-expiry win rate
@@ -112,27 +124,52 @@ CERTIFIED_CELLS, CERTIFIED_TRADES = _load_certified()
 
 # -------- helpers --------------------------------------------------------
 
-def _credit_and_maxloss(side: str, spot: float, sigma: float,
+def _credit_and_maxloss(side: str, spot: float, atm_iv: float,
                         k_short: float, k_long: float,
                         T_years: float) -> tuple[float, float]:
     """Return (credit, max_loss) per share for a credit spread with the
-    given short/long strike OFFSETS (fractions of spot)."""
-    if sigma <= 0 or T_years <= 0:
+    given short/long strike OFFSETS (fractions of spot).
+
+    `atm_iv` is the ATM IV anchor (already includes IV_MULT). The per-leg
+    smile and bid-ask/tenor slippage are applied inside
+    ``credit_spread_price``. The returned credit is the expected limit-
+    order fill — what we'd realistically collect.
+    """
+    if atm_iv <= 0 or T_years <= 0:
         return 0.0, 0.0
     if side == "put":
         Ks = spot * (1.0 - k_short)
         Kl = spot * (1.0 - k_long)
-        cs = bs_put(spot, Ks, T_years, sigma)
-        cl = bs_put(spot, Kl, T_years, sigma)
-    else:  # call
+    else:
         Ks = spot * (1.0 + k_short)
         Kl = spot * (1.0 + k_long)
-        cs = bs_call(spot, Ks, T_years, sigma)
-        cl = bs_call(spot, Kl, T_years, sigma)
-    credit = max(cs - cl, 0.0) * HAIRCUT
-    width = abs(Kl - Ks)
-    max_loss = max(width - credit, 0.01)
-    return credit, max_loss
+    _mid, fill, _ba, max_loss, _ss, _sl = credit_spread_price(
+        side, spot, Ks, Kl, T_years, atm_iv,
+    )
+    return fill, max_loss
+
+
+def _spread_pricing_bundle(side: str, spot: float, atm_iv: float,
+                           k_short: float, k_long: float,
+                           T_years: float) -> dict:
+    """Live-signal bundle: every per-leg + spread-level number we want
+    to publish for one rung. Mirrors `_credit_and_maxloss` plus the
+    transparency fields (mid, bid-ask, per-leg IV, quality)."""
+    if side == "put":
+        Ks = spot * (1.0 - k_short); Kl = spot * (1.0 - k_long)
+    else:
+        Ks = spot * (1.0 + k_short); Kl = spot * (1.0 + k_long)
+    mid, fill, bid_ask, max_loss, sigma_s, sigma_l = credit_spread_price(
+        side, spot, Ks, Kl, T_years, atm_iv,
+    )
+    return {
+        "Ks": Ks, "Kl": Kl,
+        "mid_credit": mid, "fill_credit": fill,
+        "bid_ask": bid_ask, "max_loss": max_loss,
+        "sigma_short": sigma_s, "sigma_long": sigma_l,
+        "quality": credit_quality(fill),
+        "tradeable": fill >= MIN_TRADEABLE_FILL,
+    }
 
 
 def _trade_pnl(side: str, spot: float, close_at_expiry: float,
@@ -339,12 +376,8 @@ def _find_live(side: str, regime_fn, horizon: int,
             continue
         exp_iso, exp_type, cal_days = actual_options_expiry(str(s.dates[-1]), horizon)
         T = cal_days / 365.0
-        credit, max_loss = _credit_and_maxloss(side, spot, sigma * IV_MULT,
-                                               k_short, k_long, T)
-        if side == "put":
-            Ks = spot * (1 - k_short); Kl = spot * (1 - k_long)
-        else:
-            Ks = spot * (1 + k_short); Kl = spot * (1 + k_long)
+        atm_iv = sigma * IV_MULT
+        b = _spread_pricing_bundle(side, spot, atm_iv, k_short, k_long, T)
         out.append({
             "ticker": t,
             "spot": spot,
@@ -355,11 +388,17 @@ def _find_live(side: str, regime_fn, horizon: int,
             "cal_days": cal_days,
             "k_short_frac": k_short,
             "k_long_frac":  k_long,
-            "strike_short": Ks,
-            "strike_long":  Kl,
-            "est_credit":   credit,
-            "est_max_loss": max_loss,
-            "est_roi":      credit / max_loss if max_loss > 0 else 0.0,
+            "strike_short": b["Ks"],
+            "strike_long":  b["Kl"],
+            "est_credit":   b["fill_credit"],
+            "mid_credit":   b["mid_credit"],
+            "bid_ask":      b["bid_ask"],
+            "est_max_loss": b["max_loss"],
+            "est_roi":      b["fill_credit"] / b["max_loss"] if b["max_loss"] > 0 else 0.0,
+            "sigma_short":  b["sigma_short"],
+            "sigma_long":   b["sigma_long"],
+            "credit_quality": b["quality"],
+            "tradeable":    b["tradeable"],
         })
     return out
 
@@ -532,11 +571,17 @@ def main() -> int:
                 "pool_n_test":       r.pooled_wins + r.pooled_losses,
                 "profit": {
                     "est_credit_per_share":   fi["est_credit"],
+                    "mid_credit_per_share":   fi["mid_credit"],
+                    "bid_ask_per_share":      fi["bid_ask"],
                     "est_max_loss_per_share": fi["est_max_loss"],
                     "return_on_risk_pct":     fi["est_roi"] * 100.0,
                     "annualized_ror_pct":     fi["est_roi"] * (365.0 / max(fi["cal_days"], 1)) * 100.0,
                     "implied_vol_pct":        fi["realized_vol"] * 100.0 * IV_MULT,
+                    "short_iv_pct":           fi["sigma_short"] * 100.0,
+                    "long_iv_pct":            fi["sigma_long"]  * 100.0,
                     "spread_width":           fi["est_credit"] + fi["est_max_loss"],
+                    "credit_quality":         fi["credit_quality"],
+                    "tradeable":              fi["tradeable"],
                 },
                 "folds": tk_folds,    # this ticker's per-year breakdown
             })
@@ -640,7 +685,12 @@ def main() -> int:
         "config": {
             "horizons": HORIZONS, "k_short_grid": K_SHORT_GRID,
             "spread_width_pct": SPREAD_WIDTH * 100,
-            "iv_mult": IV_MULT, "haircut": HAIRCUT,
+            "iv_mult": IV_MULT,
+            "skew_alpha_put": SKEW_ALPHA_PUT,
+            "skew_alpha_call": SKEW_ALPHA_CALL,
+            "net_bid_ask_floor": NET_BID_ASK_FLOOR,
+            "net_bid_ask_frac": NET_BID_ASK_FRAC,
+            "min_tradeable_fill": MIN_TRADEABLE_FILL,
             "min_win_rate": MIN_WIN_RATE,
             "min_agg_roi_pct": MIN_AGG_ROI * 100,
             "max_losing_folds": MAX_LOSING_FOLDS,

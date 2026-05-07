@@ -112,9 +112,14 @@ from sp_common import (  # noqa: E402
     strike_from_buffer, tight_mask, today_in_regime,
     today_in_tight_regime, train_mask_for_fold,
 )
-# BS pricers (from credit_spread/pricing.py loaded above)
+# BS pricers (from credit_spread/pricing.py loaded above). credit_spread_mid
+# applies the per-leg IV smile and returns the BS-mid net credit per share —
+# all Stillpoint pricing flows through this so the smile is consistent with
+# CreditFloor and Option C. Each call site keeps its own haircut (normal vs
+# stress) on top of the smile-adjusted mid.
 bs_put = _pricing.bs_put
 bs_call = _pricing.bs_call
+credit_spread_mid = _pricing.credit_spread_mid
 
 
 OUTPUT_DIR = os.path.join(_HERE, "results")
@@ -469,8 +474,8 @@ def evaluate_ic(close: np.ndarray, dates: np.ndarray, regime: np.ndarray,
             K_cl = K_cs + width
             if K_pl <= 0:
                 continue
-            cp = max(bs_put(spot, K_ps, T, iv) - bs_put(spot, K_pl, T, iv), 0.0) * 0.80
-            cc = max(bs_call(spot, K_cs, T, iv) - bs_call(spot, K_cl, T, iv), 0.0) * 0.80
+            cp = credit_spread_mid("put",  spot, K_ps, K_pl, T, iv) * 0.80
+            cc = credit_spread_mid("call", spot, K_cs, K_cl, T, iv) * 0.80
             cred = cp + cc
             ml = max(width - cred, 0.01)
             ror = cred / ml
@@ -626,8 +631,8 @@ def evaluate_universal_ic(close: np.ndarray, dates: np.ndarray,
             width = spot * w_pct
             K_pl = K_ps - width; K_cl = K_cs + width
             if K_pl <= 0: continue
-            cp = max(bs_put(spot, K_ps, T_cal, iv) - bs_put(spot, K_pl, T_cal, iv), 0.0) * 0.80
-            cc = max(bs_call(spot, K_cs, T_cal, iv) - bs_call(spot, K_cl, T_cal, iv), 0.0) * 0.80
+            cp = credit_spread_mid("put",  spot, K_ps, K_pl, T_cal, iv) * 0.80
+            cc = credit_spread_mid("call", spot, K_cs, K_cl, T_cal, iv) * 0.80
             cred = cp + cc
             # Realistic credit ceiling
             cred_capped = min(cred, SP_UIC_MAX_COMBINED_CREDIT_RATIO * width)
@@ -814,19 +819,15 @@ def _evaluate_liquid_tier(close, dates, sigma, horizon, ticker, spot, rv,
             width = spot * w_pct
             K_pl = K_ps - width; K_cl = K_cs + width
             if K_pl <= 0: continue
-            cp_s = max(bs_put(spot, K_ps, T_cal, iv_stress)
-                        - bs_put(spot, K_pl, T_cal, iv_stress), 0) * cfg["stress_haircut"]
-            cc_s = max(bs_call(spot, K_cs, T_cal, iv_stress)
-                        - bs_call(spot, K_cl, T_cal, iv_stress), 0) * cfg["stress_haircut"]
+            cp_s = credit_spread_mid("put",  spot, K_ps, K_pl, T_cal, iv_stress) * cfg["stress_haircut"]
+            cc_s = credit_spread_mid("call", spot, K_cs, K_cl, T_cal, iv_stress) * cfg["stress_haircut"]
             cred_s = min(cp_s + cc_s, cfg["max_combined_credit_ratio"] * width)
             ml_s = max(width - cred_s, 0.01)
             ror_s = cred_s / ml_s
             if ror_s < cfg["target_ror_stress"]:
                 continue
-            cp_d = max(bs_put(spot, K_ps, T_cal, iv_normal)
-                        - bs_put(spot, K_pl, T_cal, iv_normal), 0) * 0.80
-            cc_d = max(bs_call(spot, K_cs, T_cal, iv_normal)
-                        - bs_call(spot, K_cl, T_cal, iv_normal), 0) * 0.80
+            cp_d = credit_spread_mid("put",  spot, K_ps, K_pl, T_cal, iv_normal) * 0.80
+            cc_d = credit_spread_mid("call", spot, K_cs, K_cl, T_cal, iv_normal) * 0.80
             cred_d = min(cp_d + cc_d, cfg["max_combined_credit_ratio"] * width)
             ml_d = max(width - cred_d, 0.01)
             ror_d = cred_d / ml_d
@@ -993,20 +994,16 @@ def evaluate_robust_uic(close, dates, sigma, horizon, ticker, spot, rv,
             K_pl = K_ps - width; K_cl = K_cs + width
             if K_pl <= 0: continue
             # L4: stress pricing
-            cp_s = max(bs_put(spot, K_ps, T_cal, iv_stress)
-                        - bs_put(spot, K_pl, T_cal, iv_stress), 0) * SP_RUIC_STRESS_HAIRCUT
-            cc_s = max(bs_call(spot, K_cs, T_cal, iv_stress)
-                        - bs_call(spot, K_cl, T_cal, iv_stress), 0) * SP_RUIC_STRESS_HAIRCUT
+            cp_s = credit_spread_mid("put",  spot, K_ps, K_pl, T_cal, iv_stress) * SP_RUIC_STRESS_HAIRCUT
+            cc_s = credit_spread_mid("call", spot, K_cs, K_cl, T_cal, iv_stress) * SP_RUIC_STRESS_HAIRCUT
             cred_s = min(cp_s + cc_s, SP_RUIC_MAX_COMBINED_CREDIT_RATIO * width)
             ml_s = max(width - cred_s, 0.01)
             ror_s = cred_s / ml_s
             if ror_s < SP_RUIC_TARGET_ROR_STRESS:
                 continue
             # Display pricing
-            cp_d = max(bs_put(spot, K_ps, T_cal, iv_normal)
-                        - bs_put(spot, K_pl, T_cal, iv_normal), 0) * 0.80
-            cc_d = max(bs_call(spot, K_cs, T_cal, iv_normal)
-                        - bs_call(spot, K_cl, T_cal, iv_normal), 0) * 0.80
+            cp_d = credit_spread_mid("put",  spot, K_ps, K_pl, T_cal, iv_normal) * 0.80
+            cc_d = credit_spread_mid("call", spot, K_cs, K_cl, T_cal, iv_normal) * 0.80
             cred_d = min(cp_d + cc_d, SP_RUIC_MAX_COMBINED_CREDIT_RATIO * width)
             ml_d = max(width - cred_d, 0.01)
             ror_d = cred_d / ml_d
