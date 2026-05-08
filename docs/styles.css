@@ -1569,3 +1569,118 @@ strong{font-weight:600}
 .basket-stat-value{ font-family:var(--mono); font-weight:600; font-size:12px; }
 .basket-stat-value.pos{ color:var(--green); }
 .basket-stat-value.neg{ color:var(--orange); }
+
+/* ============================================================
+   HISTORICAL MONTHLY BASKETS BROWSER
+   ============================================================ */
+.historical-section{
+  padding:48px 0;
+  border-top:1px solid var(--rule);
+}
+.hist-year-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:18px;
+}
+.hist-year-btn{
+  background:var(--bg);
+  border:1px solid var(--rule);
+  padding:6px 12px;
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  color:var(--ink);
+}
+.hist-year-btn:hover{ background:#fafafa; }
+.hist-year-btn.active{
+  background:var(--ink);
+  color:var(--bg);
+  border-color:var(--ink);
+}
+.hist-months{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.hist-month{
+  background:var(--bg);
+  border:1px solid var(--rule);
+  padding:14px 16px;
+}
+.hist-month-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--rule-light);
+}
+.hist-month-date{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:14px;
+}
+.hist-month-meta{
+  font-size:11px;
+  color:var(--muted);
+}
+.hist-pick-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+  gap:8px;
+}
+.hist-pick{
+  border:1px solid var(--rule-light);
+  padding:8px 10px;
+}
+.hist-pick-tkr-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:6px;
+  margin-bottom:4px;
+}
+.hist-pick-tkr{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:14px;
+}
+.hist-pick-status{
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  font-weight:600;
+  padding:1px 5px;
+  border-radius:3px;
+}
+.hist-pick-status.held{
+  background:#f4faf6;
+  color:var(--green);
+}
+.hist-pick-status.exited{
+  background:#f5f5f5;
+  color:var(--muted);
+}
+.hist-pick-px{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+}
+.hist-px-label{ color:#999; font-size:10px; }
+.hist-pick-from{ color:#bbb; }
+.hist-pick-ret{
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:600;
+  margin-top:4px;
+}
+.hist-pick-ret.pos{ color:var(--green); }
+.hist-pick-ret.neg{ color:var(--orange); }
+
+@media (max-width:600px){
+  .hist-pick-grid{ grid-template-columns:1fr; }
+}

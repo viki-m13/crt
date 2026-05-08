@@ -54,6 +54,7 @@ function render(data) {
   renderYears(data);
   renderWalkForward(data);
   renderBias(data);
+  renderHistorical(data);
   renderTrades(data);
 }
 
@@ -467,4 +468,75 @@ function renderTrades(data) {
   body.appendChild(wrap);
   det.appendChild(body);
   sec.appendChild(det);
+}
+
+/* ============================================================
+   Historical monthly baskets browser
+   ============================================================ */
+function renderHistorical(data) {
+  const sec = document.getElementById("historicalSection");
+  if (!sec || !data.pick_log?.length) return;
+  sec.innerHTML = "";
+
+  // Group picks by asof
+  const byAsof = {};
+  for (const p of data.pick_log) {
+    if (!byAsof[p.asof]) byAsof[p.asof] = [];
+    byAsof[p.asof].push(p);
+  }
+  const asofs = Object.keys(byAsof).sort().reverse();
+
+  // Year selector
+  const years = [...new Set(asofs.map(a => a.slice(0, 4)))].sort().reverse();
+  const yearBar = el("div", { class: "hist-year-bar" });
+  let activeYear = years[0];
+  years.forEach(yr => {
+    const btn = el("button", { class: "hist-year-btn" + (yr === activeYear ? " active" : "") }, yr);
+    btn.onclick = () => {
+      activeYear = yr;
+      yearBar.querySelectorAll(".hist-year-btn").forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      renderYearMonths();
+    };
+    yearBar.appendChild(btn);
+  });
+  sec.appendChild(yearBar);
+
+  const monthsContainer = el("div", { class: "hist-months" });
+  sec.appendChild(monthsContainer);
+
+  function renderYearMonths() {
+    monthsContainer.innerHTML = "";
+    const yearAsofs = asofs.filter(a => a.startsWith(activeYear));
+    yearAsofs.forEach(asof => {
+      const basket = byAsof[asof];
+      const card = el("div", { class: "hist-month" });
+      const head = el("div", { class: "hist-month-head" });
+      head.appendChild(el("span", { class: "hist-month-date" }, asof));
+      const winRate = basket.filter(p => p.win).length / basket.length;
+      const beatRate = basket.filter(p => p.beat_spy).length / basket.length;
+      head.appendChild(el("span", { class: "hist-month-meta" },
+        `${basket.length} picks · ${fmtPct0(winRate)} winners · ${fmtPct0(beatRate)} beat SPY`));
+      card.appendChild(head);
+      const grid = el("div", { class: "hist-pick-grid" });
+      basket.forEach(p => {
+        const item = el("div", { class: "hist-pick" });
+        const tickerLine = el("div", { class: "hist-pick-tkr-line" });
+        tickerLine.appendChild(el("span", { class: "hist-pick-tkr" }, p.ticker));
+        tickerLine.appendChild(el("span", { class: "hist-pick-status " + (p.status === "exited" ? "exited" : "held") },
+          p.status === "exited" ? "exited" : "held"));
+        item.appendChild(tickerLine);
+        const px = el("div", { class: "hist-pick-px" });
+        px.innerHTML = `<span class="hist-px-label">${p.status === "exited" ? "exit" : "now"}:</span> ${fmtPx(p.exit_px ?? p.current_px)} <span class="hist-pick-from">from</span> ${fmtPx(p.entry_px)}`;
+        item.appendChild(px);
+        const ret = el("div", { class: "hist-pick-ret " + clsRet(p.ret_strat) },
+          fmtPctSigned(p.ret_strat, 0) + " · vs SPY " + fmtPctSigned(p.ret_spy, 0));
+        item.appendChild(ret);
+        grid.appendChild(item);
+      });
+      card.appendChild(grid);
+      monthsContainer.appendChild(card);
+    });
+  }
+  renderYearMonths();
 }
