@@ -83,6 +83,21 @@ function renderPick(data) {
     body.innerHTML = "<div>No picks available for this month.</div>";
     return;
   }
+  // Compute the sell-by date — 3 years from the strategy's as_of date
+  const asof = data.as_of;
+  let sellBy = "";
+  try {
+    const d = new Date(asof);
+    d.setFullYear(d.getFullYear() + 3);
+    sellBy = d.toISOString().slice(0, 10);
+  } catch (e) {}
+  if (asof && sellBy) {
+    const dates = el("div", { class: "basket-dates" });
+    dates.innerHTML =
+      `<strong>Buy now</strong> at month-end close (${asof}). ` +
+      `<strong>Sell on ${sellBy}</strong> (3 years later) — that's the explicit exit date for every pick in the basket.`;
+    body.appendChild(dates);
+  }
   const grid = el("div", { class: "basket-grid" });
   basket.forEach((p, i) => {
     const card = el("div", { class: "basket-card" + (i === 0 ? " first" : "") });
@@ -91,6 +106,10 @@ function renderPick(data) {
       el("span", { class: "basket-tkr" }, p.ticker),
       el("span", { class: "basket-tkr-px" }, fmtPx(p.price)),
     ]));
+    if (sellBy) {
+      card.appendChild(el("div", { class: "basket-sell-by" },
+        `Buy ${asof} • Sell ${sellBy}`));
+    }
     const stats = el("div", { class: "basket-stats" });
     const statRows = [
       ["1y pullback", fmtPctSigned(p.pullback_1y, 0), clsRet(p.pullback_1y)],
