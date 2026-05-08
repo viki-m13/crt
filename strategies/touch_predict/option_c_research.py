@@ -253,13 +253,15 @@ class RuleResult:
     k_short: float
     k_long: float
     folds: list[dict] = field(default_factory=list)
-    pooled_wins: int = 0
+    pooled_wins: int = 0          # close-at-expiry on the safe side of K_short
     pooled_losses: int = 0
+    pooled_pnl_wins: int = 0      # dollar-profitable trades (credit > breach)
     pooled_pnl: float = 0.0       # sum of $ P&L per share across fires
     pooled_premium: float = 0.0   # sum of $ max_loss per share (capital at risk)
     avg_credit: float = 0.0
     avg_max_loss: float = 0.0
-    win_rate: float = 0.0
+    win_rate: float = 0.0         # buffer-touch win rate (matches cert script)
+    pnl_win_rate: float = 0.0     # dollar-profitable win rate (depends on pricing)
     avg_roi_maxloss: float = 0.0  # pooled_pnl / pooled_premium (aka "return on risk")
     eligible: bool = False
 
@@ -288,7 +290,16 @@ def _evaluate(side: str, regime_name: str, horizon: int,
         fold_fires = by_year.get(year, [])
         if not fold_fires:
             continue
+        # Two win criteria are tracked side-by-side. The displayed and
+        # eligibility-gating "win" is the BUFFER-TOUCH criterion (close
+        # at expiry stayed on the right side of the short strike), to
+        # match the cert script in option_c_certified_cells.py — that
+        # way "Certified" tier and the displayed win rate measure the
+        # same thing. `pnl_wins` is the trade-level dollar-profitable
+        # count (still tracked for transparency and as a sanity check
+        # against the buffer rate).
         wins = losses = 0
+        pnl_wins = 0
         pnl_sum = 0.0
         mxloss_sum = 0.0
         credit_sum = 0.0
@@ -304,24 +315,38 @@ def _evaluate(side: str, regime_name: str, horizon: int,
             pnl_sum += pnl
             mxloss_sum += max_loss
             credit_sum += credit
-            if pnl > 0:
+            # Buffer-touch criterion: did the underlying stay on the
+            # safe side of the short strike at expiry?
+            if side == "put":
+                Ks = fi.spot * (1.0 - k_short)
+                buffer_win = fi.close_at_expiry >= Ks
+            else:
+                Ks = fi.spot * (1.0 + k_short)
+                buffer_win = fi.close_at_expiry <= Ks
+            if buffer_win:
                 wins += 1
             else:
                 losses += 1
+            if pnl > 0:
+                pnl_wins += 1
             tk = tk_year.setdefault(fi.ticker, {
-                "year": year, "n_test": 0, "wins": 0, "losses": 0, "pnl": 0.0,
+                "year": year, "n_test": 0, "wins": 0, "losses": 0,
+                "pnl_wins": 0, "pnl": 0.0,
             })
             tk["n_test"] += 1
-            if pnl > 0:
+            if buffer_win:
                 tk["wins"] += 1
             else:
                 tk["losses"] += 1
+            if pnl > 0:
+                tk["pnl_wins"] += 1
             tk["pnl"] += pnl
         rr.folds.append({
             "year": year,
             "n_fires": len(fold_fires),
             "wins": wins,
             "losses": losses,
+            "pnl_wins": pnl_wins,
             "pnl": pnl_sum,
             "max_loss_sum": mxloss_sum,
             "credit_sum": credit_sum,
@@ -331,11 +356,13 @@ def _evaluate(side: str, regime_name: str, horizon: int,
 
     rr.pooled_wins = sum(f["wins"] for f in rr.folds)
     rr.pooled_losses = sum(f["losses"] for f in rr.folds)
+    rr.pooled_pnl_wins = sum(f.get("pnl_wins", 0) for f in rr.folds)
     total = rr.pooled_wins + rr.pooled_losses
     if total < MIN_POOLED_TEST or not rr.folds:
         return None
 
     rr.win_rate = rr.pooled_wins / total
+    rr.pnl_win_rate = rr.pooled_pnl_wins / total if total > 0 else 0.0
     rr.pooled_pnl = sum(f["pnl"] for f in rr.folds)
     rr.pooled_premium = sum(f["max_loss_sum"] for f in rr.folds)
     rr.avg_credit = sum(f["credit_sum"] for f in rr.folds) / total
@@ -529,8 +556,10 @@ def main() -> int:
             tk_folds = per_ticker_folds_by_rule.get(rule_id, {}).get(fi["ticker"], [])
             tk_wins = sum(f["wins"] for f in tk_folds)
             tk_losses = sum(f["losses"] for f in tk_folds)
+            tk_pnl_wins = sum(f.get("pnl_wins", f["wins"]) for f in tk_folds)
             tk_total = tk_wins + tk_losses
             tk_win_rate = (tk_wins / tk_total) if tk_total > 0 else 0.0
+            tk_pnl_win_rate = (tk_pnl_wins / tk_total) if tk_total > 0 else 0.0
             # Walk-forward-validated Certified tier. A trade qualifies iff
             # its exact (side, k_short, h, ticker) tuple passed the
             # walk-forward at the latest cutoff: the cell calibrated at
@@ -560,15 +589,24 @@ def main() -> int:
                 "strike_short":   fi["strike_short"],
                 "strike_long":    fi["strike_long"],
                 "buffer_pct":     r.k_short * 100.0,           # OTM distance shown as "buffer"
-                # Per-ticker stats (what THIS ticker actually did on this rule)
-                "win_rate_pct":   tk_win_rate * 100.0,
-                "n_test":         tk_total,
-                "n_folds":        len(tk_folds),
-                "pooled_wins":    tk_wins,
-                "pooled_losses":  tk_losses,
+                # Per-ticker stats (what THIS ticker actually did on this rule).
+                # win_rate_pct is the BUFFER-TOUCH rate (close stayed past
+                # K_short) — same criterion the certifier uses, so the
+                # "Certified" badge and the win rate are talking about the
+                # same thing. pnl_win_rate_pct is the dollar-profitable
+                # rate under the published pricing (smile + slippage); it
+                # can sit below the buffer rate when partial losses eat
+                # more than the credit covers.
+                "win_rate_pct":     tk_win_rate * 100.0,
+                "pnl_win_rate_pct": tk_pnl_win_rate * 100.0,
+                "n_test":           tk_total,
+                "n_folds":          len(tk_folds),
+                "pooled_wins":      tk_wins,
+                "pooled_losses":    tk_losses,
                 # Rule-level pooled stats (the rule's universe-wide accuracy)
-                "pool_win_rate_pct": r.win_rate * 100.0,
-                "pool_n_test":       r.pooled_wins + r.pooled_losses,
+                "pool_win_rate_pct":     r.win_rate * 100.0,
+                "pool_pnl_win_rate_pct": r.pnl_win_rate * 100.0,
+                "pool_n_test":           r.pooled_wins + r.pooled_losses,
                 "profit": {
                     "est_credit_per_share":   fi["est_credit"],
                     "mid_credit_per_share":   fi["mid_credit"],
@@ -703,6 +741,10 @@ def main() -> int:
             "n_live_fires":      n_live,
             "overall_win_rate_pct": (
                 sum(r.pooled_wins for r in results)
+                / max(1, sum(r.pooled_wins + r.pooled_losses for r in results)) * 100
+            ),
+            "overall_pnl_win_rate_pct": (
+                sum(r.pooled_pnl_wins for r in results)
                 / max(1, sum(r.pooled_wins + r.pooled_losses for r in results)) * 100
             ),
             "overall_roi_on_max_loss_pct": (
