@@ -345,7 +345,7 @@ def main() -> None:
     eval_at = panel.index.max()
 
     # Load picks for the recommended strategy: pullback_in_winner k=1
-    picks_csv = cache / "picks_full_pullback_in_winner_k1.csv"
+    picks_csv = cache / "picks_full_blended_pullback_momentum_k5.csv"
     picks = pd.read_csv(picks_csv)
     picks["asof"] = pd.to_datetime(picks["asof"])
 
@@ -411,7 +411,7 @@ def main() -> None:
     # 5. Save summary JSON
     out_path = cache / "survivorship_summary.json"
     summary = {
-        "strategy": "pullback_in_winner_k1_hold_forever",
+        "strategy": "blended_pullback_momentum_k5_hold_forever",
         "n_picks": int(len(fv)),
         "raw_cagr": float(np.median([
             (1 + fv[i]) ** (365.25 / max((eval_at - pd.Timestamp(asof_s.iloc[i])).days, 1)) - 1

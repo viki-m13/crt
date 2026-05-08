@@ -29,7 +29,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 def save_strategy(name: str, fn, top_k: int, panel) -> None:
     eval_at = panel.index.max()
-    picks = picks_for(fn, top_k=top_k, start="2017-12-31", end="2025-12-31")
+    # Use the FULL extended history window (2002-2024 picks held to today)
+    picks = picks_for(fn, top_k=top_k, start="2002-01-31", end="2024-12-31")
     feats = load_features_long().reset_index()
     merged = picks.merge(feats, on=["asof", "ticker"], how="left")
 
@@ -78,6 +79,11 @@ def main() -> None:
     save_strategy("quality_pullback", quality_pullback, 5, panel)
     save_strategy("explosive_winners", explosive_winners, 1, panel)
     save_strategy("explosive_winners", explosive_winners, 5, panel)
+    # NEW recommended strategy
+    from experiments.monthly_dca.strategies_fast import blended_pullback_momentum
+    save_strategy("blended_pullback_momentum", blended_pullback_momentum, 5, panel)
+    save_strategy("blended_pullback_momentum", blended_pullback_momentum, 1, panel)
+    save_strategy("blended_pullback_momentum", blended_pullback_momentum, 10, panel)
 
 
 if __name__ == "__main__":

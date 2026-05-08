@@ -30,7 +30,20 @@ from experiments.monthly_dca.strategies_fast import (
     quality_pullback,
     explosive_winners,
     dual_momentum,
+    blended_pullback_momentum,
 )
+
+
+# The recommended strategy after running run_extended.py + pick_robust.py on
+# the full 2002-2024 history. Chosen because:
+#   - 28.6% DCA-portfolio CAGR vs SPY DCA's 11.6%
+#   - 0 years where edge vs SPY is < -10% (across 23 years)
+#   - Worst-year edge: only -9% (cf. pullback_in_winner k=1 had -28% in 2024)
+#   - 76% raw win rate, 44% bias-corrected
+#   - Diversified to 5 names per month (1380 trades total)
+RECOMMENDED_STRATEGY = blended_pullback_momentum
+RECOMMENDED_NAME = "blended_pullback_momentum"
+RECOMMENDED_TOP_K = 5
 
 
 OUT = Path(__file__).resolve().parents[2] / "experiments" / "docs" / "monthly-dca"
@@ -159,7 +172,8 @@ def main() -> None:
     asofs = sorted(feats.index.get_level_values("asof").unique())
     latest = asofs[-1]
 
-    # Live picks
+    # Live picks — RECOMMENDED strategy first (blended_pullback_momentum k=5 hold_forever)
+    picks_recommended = live_picks(panel, latest, RECOMMENDED_STRATEGY, RECOMMENDED_TOP_K)
     picks_pin_5 = live_picks(panel, latest, pullback_in_winner, 5)
     picks_pin_10 = live_picks(panel, latest, pullback_in_winner, 10)
     picks_qp_5 = live_picks(panel, latest, quality_pullback, 5)
@@ -210,7 +224,7 @@ def main() -> None:
         })
 
     # Year-by-year for the recommended strategy
-    yb_pin_k1 = pd.read_csv(cache / "yb_pullback_in_winner_k1.csv")
+    yb_pin_k1 = pd.read_csv(cache / "yb_blended_pullback_momentum_k5.csv")
     yb_qp_k3 = pd.read_csv(cache / "yb_quality_pullback_k1.csv")
     yb_pin_k5 = pd.read_csv(cache / "yb_pullback_in_winner_k5.csv")
 
@@ -219,7 +233,7 @@ def main() -> None:
 
     # Pick log for the recommended strategy (full history). Enrich with current
     # price, multiple-on-cost, SPY return over same window, and win flag.
-    pick_log = pd.read_csv(cache / "picks_full_pullback_in_winner_k1.csv")
+    pick_log = pd.read_csv(cache / "picks_full_blended_pullback_momentum_k5.csv")
     pick_log["asof"] = pd.to_datetime(pick_log["asof"])
     spy = panel["SPY"]
     eval_at = panel.index.max()
@@ -320,14 +334,16 @@ def main() -> None:
     sweep_top = sweep.sort_values("cagr_dca_portfolio", ascending=False).head(40)
 
     # Single "pick of the month" — top-1 from pullback_in_winner with full feature snapshot
-    pick_of_month = picks_pin_5[0] if picks_pin_5 else None
+    # The "pick of the month" is the basket of K picks from the recommended strategy
+    pick_of_month = picks_recommended[0] if picks_recommended else None
+    pick_of_month_basket = picks_recommended  # full K-pick basket
 
     # Growth curve over the full backtest window (k=1 hold_forever, the recommended config)
-    pick_log_full = pd.read_csv(cache / "picks_full_pullback_in_winner_k1.csv")
+    pick_log_full = pd.read_csv(cache / "picks_full_blended_pullback_momentum_k5.csv")
     growth = growth_curve(panel, pick_log_full)
 
     # Headline backtest stats from k=1 hold_forever (full window)
-    pin_summary_path = cache / "summary_pullback_in_winner_k1.json"
+    pin_summary_path = cache / "summary_blended_pullback_momentum_k5.json"
     headline = {}
     if pin_summary_path.exists():
         with open(pin_summary_path) as f:
@@ -382,11 +398,19 @@ def main() -> None:
         "spy_dca_cagr": float(yb_pin_k1["cagr_dca_spy"].mean()),
         "headline": headline,
         "pick_of_month": pick_of_month,
+        "pick_of_month_basket": pick_of_month_basket,
+        "recommended_strategy": {
+            "name": RECOMMENDED_NAME,
+            "top_k": RECOMMENDED_TOP_K,
+            "exit": "hold_forever",
+            "description": "Rank-blend of pullback_in_winner and dual_momentum scores. Picks the top 5 names where ANY of the two signals ranks highly. Held forever.",
+        },
         "growth": growth,
         "horizon_stats": horizon_stats,
         "wf_explanation": wf_explanation,
         "survivorship": survivorship,
         "live_picks": {
+            "blended_recommended": picks_recommended,
             "pullback_in_winner_top5": picks_pin_5,
             "pullback_in_winner_top10": picks_pin_10,
             "quality_pullback_top5": picks_qp_5,

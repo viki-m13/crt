@@ -82,26 +82,26 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">One stock to buy at the end of every month.</h1>
-      <p class="hero-sub">A long-term winner that just pulled back hardest. Buy it, hold it. The same disciplined rule that <strong>tripled SPY DCA in backtest</strong> — out-of-sample validated across 8 walk-forward splits, with comprehensive survivorship-bias accounting.</p>
+      <h1 class="hero-headline">Five stocks to buy at the end of every month.</h1>
+      <p class="hero-sub">A diversified basket of long-term winners that just pulled back, blended with strong-momentum names. Buy them, hold them. <strong>Backtested over 23 years (2002-2024) with 1,007 tickers including 45 historically delisted names</strong> — beat SPY DCA in 20 of 23 years, worst year only -9% behind SPY.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
   <section id="pick" class="pick-section">
     <div class="section-inner">
-      <div class="pick-eyebrow">This month's pick</div>
+      <div class="pick-eyebrow">This month's basket</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        Re-scored at the end of every month. Buy at month-end close, hold. Not financial advice.
+        Re-scored at the end of every month. Buy each pick equally at month-end close, hold forever. Not financial advice.
       </div>
     </div>
   </section>
 
   <section id="backtest" class="bt-section">
     <div class="section-inner">
-      <h2 class="section-h2">Backtest — $1 per month into the strategy</h2>
-      <p class="section-sub">If you put $1 into the top pick at the end of every month and held forever, here's how the portfolio grew compared to putting $1 into SPY at the same dates.</p>
+      <h2 class="section-h2">Backtest — 23 years, $1 per month into the basket</h2>
+      <p class="section-sub">From January 2002 through December 2024, if you'd put $1 into the basket at the end of every month and held forever, here's how the portfolio grew compared to putting $1 into SPY at the same dates. 276 monthly buys, 1,380 individual positions.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <canvas id="btChart" class="bt-chart"></canvas>
@@ -194,8 +194,8 @@
 
   <section id="trades" class="trades-section">
     <div class="section-inner">
-      <h2 class="section-h2">Every trade since 2002</h2>
-      <p class="section-sub">Every monthly pick in the backtest, with entry price, current price, holding period, return, the SPY DCA over the same window, and whether each pick beat SPY. Sorted newest first.</p>
+      <h2 class="section-h2">Every trade since 2002 (1,380 picks)</h2>
+      <p class="section-sub">Every monthly pick in the 23-year backtest, with entry price, current price, holding period, return, the SPY DCA over the same window, and whether each pick beat SPY. Sorted newest first.</p>
       <div id="tradesSection"></div>
     </div>
   </section>
@@ -203,15 +203,15 @@
   <section id="how" class="how-section">
     <div class="section-inner">
       <h2 class="section-h2">How the strategy works</h2>
-      <p class="section-sub">Six rules, applied at the end of every month-end. The same code that ran the backtest is what picks today's stock.</p>
+      <p class="section-sub">A blended rank of two complementary signals. Picks the top 5 names where <em>either</em> signal ranks highly, so trend and pullback regimes both contribute. This diversification keeps any single year from collapsing vs SPY.</p>
 
       <ol class="how-list">
-        <li><strong>Score the universe.</strong> 964 US-listed equities (point-in-time eligible — must have ≥ 504 days of history, no future leakage).</li>
-        <li><strong>Filter for long-term winners.</strong> Stocks that spent at least 55 % of the last 5 years above their 200-day moving average. This is a hard quality gate.</li>
-        <li><strong>Filter for a meaningful pullback.</strong> Stock must be at least 15 % below its 1-year high.</li>
-        <li><strong>Filter for "not in freefall".</strong> 14-day RSI must be above 30 — we don't catch falling knives.</li>
-        <li><strong>Score the survivors.</strong> Combine pullback depth, trend health, recovery track record, momentum, and selling deceleration into a single composite.</li>
-        <li><strong>Buy the top one.</strong> Equal $1 at month-end close. Hold forever (or evaluate at fixed 3 years; both backtest similarly).</li>
+        <li><strong>Score the universe.</strong> 1,007 US-listed equities (964 still trading + 45 historically delisted), point-in-time eligible — must have ≥ 504 days of history, no future leakage.</li>
+        <li><strong>Signal A — pullback in winner:</strong> long-term winners (≥ 55% of last 5 years above 200-day MA) currently at least 15% below their 1-year high, with RSI above 30 (not in freefall).</li>
+        <li><strong>Signal B — dual momentum:</strong> stocks above their 200-day MA <em>and</em> with positive 12-month-minus-1-month momentum.</li>
+        <li><strong>Rank-blend the two signals.</strong> Each ticker gets the max of its two percentile ranks. Stocks that pass either test rank near the top.</li>
+        <li><strong>Buy the top 5.</strong> Equal-weight $1 each at month-end close. Hold forever (no selling rule).</li>
+        <li><strong>Repeat every month.</strong> 5 new positions per month; the basket grows over time. Backtested 276 months × 5 picks = 1,380 trades.</li>
       </ol>
 
       <details class="accordion">

@@ -77,41 +77,38 @@ function renderPick(data) {
   const body = document.getElementById("pickBody");
   body.classList.remove("pick-loading");
   body.innerHTML = "";
-  const p = data.pick_of_month;
-  if (!p) {
-    body.innerHTML = "<div>No pick available for this month.</div>";
+  const basket = data.pick_of_month_basket || (data.pick_of_month ? [data.pick_of_month] : []);
+  if (!basket.length) {
+    body.innerHTML = "<div>No picks available for this month.</div>";
     return;
   }
-  // Pretty narrative
-  const why = [];
-  if (p.pullback_1y != null) why.push(`down <strong>${fmtPctSigned(p.pullback_1y, 0)}</strong> from its 1-year high`);
-  if (p.trend_health_5y != null) why.push(`<strong>${fmtPct0(p.trend_health_5y)}</strong> of the last 5 years above its 200-day moving average`);
-  if (p.recovery_rate != null) why.push(`recovered <strong>${fmtPct0(p.recovery_rate)}</strong> of past similar drawdowns`);
-  if (p.rsi_14 != null) why.push(`14-day RSI of <strong>${Math.round(p.rsi_14)}</strong> (not in freefall)`);
-
-  const card = el("div", { class: "pick-card" });
-  card.appendChild(el("div", { class: "pick-tkr-row" }, [
-    el("span", { class: "pick-tkr" }, p.ticker),
-    el("span", { class: "pick-tkr-px" }, fmtPx(p.price) + " at last close"),
-  ]));
-  card.appendChild(el("div", { class: "pick-rationale", html: "Why this pick: " + why.join(", ") + "." }));
-  const stats = el("div", { class: "pick-stats" });
-  const statRows = [
-    ["1-year pullback", fmtPctSigned(p.pullback_1y, 0), clsRet(p.pullback_1y)],
-    ["5-year trend health", fmtNum(p.trend_health_5y, 2), ""],
-    ["3-year momentum", fmtPctSigned(p.mom_3y, 0), clsRet(p.mom_3y)],
-    ["12-month momentum", fmtPctSigned(p.mom_12_1, 0), clsRet(p.mom_12_1)],
-    ["RSI(14)", Math.round(p.rsi_14 || 0), ""],
-    ["Distance from 200dma", fmtPctSigned(p.d_sma200, 0), clsRet(p.d_sma200)],
-  ];
-  statRows.forEach(([lbl, val, c]) => {
-    const item = el("div", { class: "pick-stat" });
-    item.appendChild(el("div", { class: "pick-stat-label" }, lbl));
-    item.appendChild(el("div", { class: "pick-stat-value " + c }, String(val)));
-    stats.appendChild(item);
+  const grid = el("div", { class: "basket-grid" });
+  basket.forEach((p, i) => {
+    const card = el("div", { class: "basket-card" + (i === 0 ? " first" : "") });
+    card.appendChild(el("div", { class: "basket-tkr-row" }, [
+      el("span", { class: "basket-rank" }, "#" + (i + 1)),
+      el("span", { class: "basket-tkr" }, p.ticker),
+      el("span", { class: "basket-tkr-px" }, fmtPx(p.price)),
+    ]));
+    const stats = el("div", { class: "basket-stats" });
+    const statRows = [
+      ["1y pullback", fmtPctSigned(p.pullback_1y, 0), clsRet(p.pullback_1y)],
+      ["5y trend", fmtNum(p.trend_health_5y, 2), ""],
+      ["3y momentum", fmtPctSigned(p.mom_3y, 0), clsRet(p.mom_3y)],
+      ["12m momentum", fmtPctSigned(p.mom_12_1, 0), clsRet(p.mom_12_1)],
+      ["RSI", Math.round(p.rsi_14 || 0), ""],
+      ["vs 200dma", fmtPctSigned(p.d_sma200, 0), clsRet(p.d_sma200)],
+    ];
+    statRows.forEach(([lbl, val, c]) => {
+      const item = el("div", { class: "basket-stat" });
+      item.appendChild(el("span", { class: "basket-stat-label" }, lbl));
+      item.appendChild(el("span", { class: "basket-stat-value " + c }, String(val)));
+      stats.appendChild(item);
+    });
+    card.appendChild(stats);
+    grid.appendChild(card);
   });
-  card.appendChild(stats);
-  body.appendChild(card);
+  body.appendChild(grid);
 }
 
 function renderBacktest(data) {

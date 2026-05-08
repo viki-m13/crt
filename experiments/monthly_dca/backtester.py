@@ -137,6 +137,22 @@ def compute_features(panel: pd.DataFrame, asof: pd.Timestamp, min_history: int =
     if len(cols) == 0:
         raise ValueError("no eligible tickers")
     sub = sub[cols].astype("float64")
+    # Forward-fill NaN gaps within each ticker's valid range.
+    # The yfinance back-extension created sparse trading-day mismatches where
+    # some tickers don't have data on a date that other tickers do (different
+    # calendar handling around holidays + acquisition dates). Without ffill,
+    # rolling(200, min_periods=200) never reaches 200 consecutive valid values
+    # and SMA200/trend_health_5y come out all NaN. We ffill ONLY between the
+    # first and last valid index of each series so we don't fabricate prices
+    # before the ticker actually existed.
+    first_valid = sub.apply(lambda s: s.first_valid_index())
+    sub_ff = sub.ffill()
+    # Mask out fills that come before the series' first valid date
+    for c in sub_ff.columns:
+        fv = first_valid[c]
+        if pd.notna(fv):
+            sub_ff.loc[sub_ff.index < fv, c] = np.nan
+    sub = sub_ff
 
     px = sub.iloc[-1]
     pack = FeaturePack(asof=asof, px=px)
