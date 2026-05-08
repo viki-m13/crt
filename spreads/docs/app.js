@@ -593,10 +593,19 @@
       const midNote = (p.mid_credit_per_share != null && p.mid_credit_per_share > p.est_credit_per_share + 0.01)
         ? ` (BS-mid $${p.mid_credit_per_share.toFixed(2)} − ~$${(p.bid_ask_per_share||0).toFixed(2)} bid-ask slippage)`
         : "";
+      // The headline win rate matches the certification criterion
+      // (close at expiry stayed past the short strike). The dollar-
+      // profitable rate is parenthesized when it materially trails the
+      // buffer rate — that gap means partial breaches can eat more of
+      // the credit than the credit can cover under current pricing.
+      const pnlGap = (l.pnl_win_rate_pct != null
+                      && l.win_rate_pct - l.pnl_win_rate_pct > 5)
+        ? ` <span title="Dollar-profitable rate: how often a real fill at ~$${(p.est_credit_per_share||0).toFixed(2)} credit covered any partial breach. Sits below the buffer-touch rate when the close lands close to but past the short strike.">($-profitable ${fmtPct(l.pnl_win_rate_pct, 1)})</span>`
+        : "";
       return `
         <div class="cf-rung-profit">
           <span class="cf-rung-profit-main">Est. <strong>${fmtPct(p.return_on_risk_pct, 2)}</strong> on max-loss
-            &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> ${l.ticker || ""} historical win</span>
+            &middot; <strong>${fmtPct(l.win_rate_pct, 1)}</strong> ${l.ticker || ""} historical win${pnlGap}</span>
           <span class="cf-rung-profit-sub">
             credit ~$${p.est_credit_per_share.toFixed(2)} on $${p.spread_width.toFixed(2)} spread${midNote}
             &middot; max loss $${p.est_max_loss_per_share.toFixed(2)}
