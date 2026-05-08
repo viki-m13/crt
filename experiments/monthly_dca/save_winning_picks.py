@@ -82,6 +82,7 @@ def main() -> None:
     # NEW recommended strategy
     from experiments.monthly_dca.strategies_fast import blended_pullback_momentum
     save_strategy("blended_pullback_momentum", blended_pullback_momentum, 5, panel)
+    save_strategy("blended_pullback_momentum", blended_pullback_momentum, 3, panel)
     save_strategy("blended_pullback_momentum", blended_pullback_momentum, 1, panel)
     save_strategy("blended_pullback_momentum", blended_pullback_momentum, 10, panel)
 

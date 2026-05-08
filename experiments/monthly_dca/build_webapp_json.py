@@ -166,12 +166,24 @@ def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str =
                 else:
                     strat_val += 1.0
                 continue
-            # Position is still held — mark to current price
+            # Position is still held — mark to current price.
+            # If the ticker is delisted (no data at d), treat as effectively
+            # exited at the last available price (= _exit_px we precomputed).
+            # Without this, delisted picks drop to 0 during active phase then
+            # jump back to _exit_px once the scheduled-exit date crosses,
+            # creating massive false spikes in the chart.
             s = panel[t].loc[panel.index <= d].dropna()
             if s.empty:
-                strat_val += 0.0
+                ex = p["_exit_px"]
+                strat_val += (ex / entry) if np.isfinite(ex) else 1.0
                 continue
             cur = float(s.iloc[-1])
+            # If this price is older than 30 days, the ticker has likely
+            # delisted — use the precomputed exit price for stable valuation.
+            if (d - s.index[-1]).days > 30:
+                ex = p["_exit_px"]
+                strat_val += (ex / entry) if np.isfinite(ex) else (cur / entry)
+                continue
             strat_val += cur / entry
         # SPY DCA value — same hold_years rule for fair comparison
         spy_val = 0.0
