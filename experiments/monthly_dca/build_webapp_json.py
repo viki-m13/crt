@@ -167,13 +167,24 @@ def main() -> None:
     panel = load_panel()
     cache = Path(__file__).resolve().parent / "cache"
 
-    # Latest cached month-end
+    # Find the latest month-end where the recommended strategy actually has
+    # picks. The most recent month-ends may have incomplete data because not
+    # all tickers update on the same trading day, breaking the strategy's
+    # quality gates.
     feats = load_features_long()
     asofs = sorted(feats.index.get_level_values("asof").unique())
     latest = asofs[-1]
+    picks_recommended = []
+    for candidate in reversed(asofs):
+        candidate_picks = live_picks(panel, candidate, RECOMMENDED_STRATEGY, RECOMMENDED_TOP_K)
+        if candidate_picks:
+            latest = candidate
+            picks_recommended = candidate_picks
+            break
 
-    # Live picks — RECOMMENDED strategy first (blended_pullback_momentum k=5 hold_forever)
-    picks_recommended = live_picks(panel, latest, RECOMMENDED_STRATEGY, RECOMMENDED_TOP_K)
+    # Concentrated top-1 of the same blended strategy (user wanted concentration option)
+    picks_recommended_k1 = live_picks(panel, latest, RECOMMENDED_STRATEGY, 1)
+
     picks_pin_5 = live_picks(panel, latest, pullback_in_winner, 5)
     picks_pin_10 = live_picks(panel, latest, pullback_in_winner, 10)
     picks_qp_5 = live_picks(panel, latest, quality_pullback, 5)
@@ -237,25 +248,35 @@ def main() -> None:
     pick_log["asof"] = pd.to_datetime(pick_log["asof"])
     spy = panel["SPY"]
     eval_at = panel.index.max()
+    # Each pick has a 3-year scheduled exit. If 3 years have passed, the pick
+    # is "exited" with the actual exit price; if still inside the 3-year
+    # window, it's "held" with the current price as the running mark.
+    HOLD_YEARS = 3.0
     enriched_records = []
     for _, r in pick_log.iterrows():
         asof_t = r["asof"]
         tkr = r["ticker"]
         entry_px = float(r["price"])
-        # Current price (last available)
-        cur_px = float("nan")
+        scheduled_exit = asof_t + pd.Timedelta(days=int(HOLD_YEARS * 365.25))
+        is_exited = scheduled_exit <= eval_at
+        # Find the actual evaluation date and price
+        eval_date = scheduled_exit if is_exited else eval_at
+        # Locate price at eval_date (last available on or before)
+        out_px = float("nan")
         if tkr in panel.columns:
-            s = panel[tkr].loc[panel.index <= eval_at].dropna()
+            s = panel[tkr].loc[panel.index <= eval_date].dropna()
             if not s.empty:
-                cur_px = float(s.iloc[-1])
-        # SPY return same window
+                out_px = float(s.iloc[-1])
+                # Update eval_date to the actual data point used
+                eval_date = s.index[-1]
+        # SPY equivalent
         pos = panel.index.searchsorted(asof_t)
         spy_entry = float(spy.iloc[pos]) if pos < len(spy) else float("nan")
-        spy_cur = float(spy.dropna().iloc[-1])
-        # Holding period in years
-        years_held = max((eval_at - asof_t).days, 1) / 365.25
-        ret_strat = (cur_px / entry_px - 1.0) if (entry_px and entry_px > 0 and np.isfinite(cur_px)) else float("nan")
-        ret_spy = (spy_cur / spy_entry - 1.0) if (spy_entry and spy_entry > 0) else float("nan")
+        spy_eval_pos = panel.index.searchsorted(eval_date, side="right") - 1
+        spy_eval = float(spy.iloc[spy_eval_pos]) if spy_eval_pos >= 0 else float("nan")
+        years_held = max((eval_date - asof_t).days, 1) / 365.25
+        ret_strat = (out_px / entry_px - 1.0) if (entry_px > 0 and np.isfinite(out_px)) else float("nan")
+        ret_spy = (spy_eval / spy_entry - 1.0) if (spy_entry > 0 and np.isfinite(spy_eval)) else float("nan")
         cagr_strat = (1 + ret_strat) ** (1 / years_held) - 1 if np.isfinite(ret_strat) else float("nan")
         cagr_spy = (1 + ret_spy) ** (1 / years_held) - 1 if np.isfinite(ret_spy) else float("nan")
         beat_spy = bool(np.isfinite(ret_strat) and np.isfinite(ret_spy) and ret_strat > ret_spy)
@@ -264,7 +285,10 @@ def main() -> None:
             "asof": asof_t.strftime("%Y-%m-%d"),
             "ticker": tkr,
             "entry_px": entry_px,
-            "current_px": None if not np.isfinite(cur_px) else cur_px,
+            "exit_date": eval_date.strftime("%Y-%m-%d") if pd.notna(eval_date) else None,
+            "exit_px": None if not np.isfinite(out_px) else out_px,
+            "scheduled_exit": scheduled_exit.strftime("%Y-%m-%d"),
+            "status": "exited" if is_exited else "held",
             "ret_strat": None if not np.isfinite(ret_strat) else float(ret_strat),
             "ret_spy": None if not np.isfinite(ret_spy) else float(ret_spy),
             "multiple_strat": None if not np.isfinite(ret_strat) else float(1 + ret_strat),

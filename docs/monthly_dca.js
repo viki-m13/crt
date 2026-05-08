@@ -436,13 +436,13 @@ function renderTrades(data) {
   sec.appendChild(stats);
 
   const det = el("details", { class: "accordion accordion-trades", open: "" });
-  det.appendChild(el("summary", {}, "Show every monthly trade since 2002"));
+  det.appendChild(el("summary", {}, `Show every monthly trade (${tot} since 2002)`));
   const body = el("div", { class: "accordion-body" });
   const wrap = el("div", { class: "bias-table-wrap" });
   const t = el("table", { class: "trades-table" });
   t.appendChild(el("thead", {}, el("tr", {},
-    ["Asof", "Ticker", "Entry", "Current", "Years",
-     "Strategy ret", "SPY ret", "Strategy CAGR", "SPY CAGR", "Beat SPY?"]
+    ["Entry", "Ticker", "Entry $", "Exit", "Exit $", "Status",
+     "Years", "Return", "SPY return", "CAGR", "Beat SPY?"]
       .map(h => el("th", {}, h)))));
   const tb = el("tbody");
   // Sort newest first
@@ -452,12 +452,13 @@ function renderTrades(data) {
     row.appendChild(el("td", { class: "mid" }, p.asof));
     row.appendChild(el("td", { class: "tkr" }, p.ticker));
     row.appendChild(el("td", {}, fmtPx(p.entry_px)));
-    row.appendChild(el("td", {}, fmtPx(p.current_px)));
+    row.appendChild(el("td", { class: "mid" }, p.exit_date || p.scheduled_exit || "—"));
+    row.appendChild(el("td", {}, fmtPx(p.exit_px ?? p.current_px)));
+    row.appendChild(el("td", { class: p.status === "exited" ? "mid" : "pos" }, p.status || (p.years_held >= 3 ? "exited" : "held")));
     row.appendChild(el("td", { class: "mid" }, p.years_held?.toFixed(1) ?? "—"));
     row.appendChild(el("td", { class: clsRet(p.ret_strat) }, fmtPctSigned(p.ret_strat, 0)));
     row.appendChild(el("td", { class: clsRet(p.ret_spy) }, fmtPctSigned(p.ret_spy, 0)));
     row.appendChild(el("td", { class: clsRet(p.cagr_strat) }, fmtPctSigned(p.cagr_strat, 0)));
-    row.appendChild(el("td", {}, fmtPctSigned(p.cagr_spy, 0)));
     row.appendChild(el("td", { class: p.beat_spy ? "pos" : "neg" }, p.beat_spy ? "Yes" : "No"));
     tb.appendChild(row);
   });

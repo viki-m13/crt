@@ -28,7 +28,7 @@ from experiments.monthly_dca.backtester import month_end_dates
 OUT = CACHE / "fwd_returns.parquet"
 
 
-def main(start: str = "2002-01-01", end: str = "2099-01-01") -> None:
+def main(start: str = "1997-01-01", end: str = "2099-01-01") -> None:
     panel = load_panel()
     months = month_end_dates(panel.index)
     months = months[(months >= pd.Timestamp(start)) & (months <= pd.Timestamp(end))]
