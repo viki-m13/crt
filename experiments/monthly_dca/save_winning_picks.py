@@ -30,7 +30,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 def save_strategy(name: str, fn, top_k: int, panel) -> None:
     eval_at = panel.index.max()
     # Use the FULL extended history window (2002-2024 picks held to today)
-    picks = picks_for(fn, top_k=top_k, start="2002-01-31", end="2024-12-31")
+    picks = picks_for(fn, top_k=top_k, start="1997-01-31", end="2024-12-31")
     feats = load_features_long().reset_index()
     merged = picks.merge(feats, on=["asof", "ticker"], how="left")
 

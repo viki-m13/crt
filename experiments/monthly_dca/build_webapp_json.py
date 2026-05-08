@@ -98,21 +98,22 @@ def live_picks(panel: pd.DataFrame, asof: pd.Timestamp, fn, top_k: int) -> list[
 
 
 def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str = "ticker",
-                 asof_col: str = "asof", entry_col: str = "price") -> list[dict]:
+                 asof_col: str = "asof", entry_col: str = "price",
+                 hold_years: float = 3.0) -> list[dict]:
     """Monthly snapshot of (cumulative invested, strategy value, SPY DCA value).
 
-    For every month-end T from the first pick date through eval, sum:
-      - strategy value = sum over picks made at asof <= T of (price[ticker, T] / entry_price)
-      - spy value     = sum over picks made at asof <= T of (price[SPY, T] / price[SPY, asof])
-      - invested      = count of picks made at asof <= T
+    Default: hold-forever (positions compound to today). This is the
+    "$1/month → $X today" wealth visualization. Set hold_years < 999 to
+    truncate after a fixed number of years (matches fixed_3y trade log).
 
-    Each pick contributes $1 at its asof. We treat the basket as held forever.
+    SPY DCA uses the same rule for fair comparison.
     """
     picks = picks_csv.copy()
     picks[asof_col] = pd.to_datetime(picks[asof_col])
     me = month_end_dates(panel.index)
     me = me[me >= picks[asof_col].min()]
     spy = panel["SPY"]
+    hold_td = pd.Timedelta(days=int(hold_years * 365.25))
 
     # Pre-extract entry prices for SPY at each pick's asof
     spy_at_pick = []
@@ -120,6 +121,27 @@ def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str =
         pos = panel.index.searchsorted(asof_t)
         spy_at_pick.append(float(spy.iloc[pos]) if pos < len(spy) else float("nan"))
     picks["_spy_entry"] = spy_at_pick
+
+    # Pre-compute exit price for each pick (at asof + hold_years, capped at panel end)
+    eval_at = panel.index.max()
+    exit_px_strat = []
+    exit_px_spy = []
+    for _, p in picks.iterrows():
+        scheduled_exit = p[asof_col] + hold_td
+        eval_date = min(scheduled_exit, eval_at)
+        t = p[ticker_col]
+        # Strategy ticker exit price
+        ex = float("nan")
+        if t in panel.columns:
+            s_ticker = panel[t].loc[panel.index <= eval_date].dropna()
+            if not s_ticker.empty:
+                ex = float(s_ticker.iloc[-1])
+        exit_px_strat.append(ex)
+        # SPY exit price
+        s_spy = spy.loc[spy.index <= eval_date].dropna()
+        exit_px_spy.append(float(s_spy.iloc[-1]) if not s_spy.empty else float("nan"))
+    picks["_exit_px"] = exit_px_strat
+    picks["_spy_exit_px"] = exit_px_spy
 
     out: list[dict] = []
     for d in me:
@@ -132,24 +154,43 @@ def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str =
         for _, p in sub.iterrows():
             t = p[ticker_col]
             entry = float(p[entry_col])
+            scheduled_exit = p[asof_col] + hold_td
             if t not in panel.columns or entry == 0 or not np.isfinite(entry):
                 strat_val += 1.0  # neutral
                 continue
-            # Price at d (or last available before d)
+            if d >= scheduled_exit:
+                # Position has exited — use the exit price
+                ex = p["_exit_px"]
+                if np.isfinite(ex):
+                    strat_val += ex / entry
+                else:
+                    strat_val += 1.0
+                continue
+            # Position is still held — mark to current price
             s = panel[t].loc[panel.index <= d].dropna()
             if s.empty:
                 strat_val += 0.0
                 continue
             cur = float(s.iloc[-1])
             strat_val += cur / entry
-        # SPY DCA value (same dates, $1 each)
+        # SPY DCA value — same hold_years rule for fair comparison
         spy_val = 0.0
         for _, p in sub.iterrows():
             entry = p["_spy_entry"]
             if not np.isfinite(entry) or entry == 0:
                 continue
-            cur = float(spy.loc[spy.index <= d].dropna().iloc[-1])
-            spy_val += cur / entry
+            scheduled_exit = p[asof_col] + hold_td
+            if d >= scheduled_exit:
+                ex = p["_spy_exit_px"]
+                if np.isfinite(ex):
+                    spy_val += ex / entry
+                else:
+                    spy_val += 1.0
+                continue
+            s_spy = spy.loc[spy.index <= d].dropna()
+            if s_spy.empty:
+                continue
+            spy_val += float(s_spy.iloc[-1]) / entry
         invested = float(len(sub))
         out.append({
             "date": str(d.date()),
