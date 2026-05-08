@@ -122,7 +122,7 @@ def compute_extras(panel: pd.DataFrame, asof: pd.Timestamp) -> pd.DataFrame:
     return out
 
 
-def main(start: str = "2017-12-31", end: str = "2025-12-31") -> None:
+def main(start: str = "2002-01-01", end: str = "2099-01-01") -> None:
     panel = load_panel()
     months = month_end_dates(panel.index)
     months = months[(months >= pd.Timestamp(start)) & (months <= pd.Timestamp(end))]

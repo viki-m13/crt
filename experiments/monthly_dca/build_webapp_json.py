@@ -24,6 +24,7 @@ from experiments.monthly_dca.fast_score import (
     load_features_long,
     load_panel,
 )
+from experiments.monthly_dca.fast_engine import xirr
 from experiments.monthly_dca.strategies_fast import (
     pullback_in_winner,
     quality_pullback,
@@ -216,12 +217,103 @@ def main() -> None:
     # Oracle
     oracle = pd.read_csv(cache / "oracle.csv")
 
-    # Pick log for the recommended strategy (full history)
+    # Pick log for the recommended strategy (full history). Enrich with current
+    # price, multiple-on-cost, SPY return over same window, and win flag.
     pick_log = pd.read_csv(cache / "picks_full_pullback_in_winner_k1.csv")
-    pick_log_records = pick_log.assign(asof=pd.to_datetime(pick_log["asof"]).dt.strftime("%Y-%m-%d"))[[
-        "asof", "ticker", "score", "price", "pullback_1y", "trend_health_5y",
-        "recovery_rate", "ret__hold_forever", "ret__fixed_3y", "ret__fixed_5y",
-    ]].to_dict(orient="records")
+    pick_log["asof"] = pd.to_datetime(pick_log["asof"])
+    spy = panel["SPY"]
+    eval_at = panel.index.max()
+    enriched_records = []
+    for _, r in pick_log.iterrows():
+        asof_t = r["asof"]
+        tkr = r["ticker"]
+        entry_px = float(r["price"])
+        # Current price (last available)
+        cur_px = float("nan")
+        if tkr in panel.columns:
+            s = panel[tkr].loc[panel.index <= eval_at].dropna()
+            if not s.empty:
+                cur_px = float(s.iloc[-1])
+        # SPY return same window
+        pos = panel.index.searchsorted(asof_t)
+        spy_entry = float(spy.iloc[pos]) if pos < len(spy) else float("nan")
+        spy_cur = float(spy.dropna().iloc[-1])
+        # Holding period in years
+        years_held = max((eval_at - asof_t).days, 1) / 365.25
+        ret_strat = (cur_px / entry_px - 1.0) if (entry_px and entry_px > 0 and np.isfinite(cur_px)) else float("nan")
+        ret_spy = (spy_cur / spy_entry - 1.0) if (spy_entry and spy_entry > 0) else float("nan")
+        cagr_strat = (1 + ret_strat) ** (1 / years_held) - 1 if np.isfinite(ret_strat) else float("nan")
+        cagr_spy = (1 + ret_spy) ** (1 / years_held) - 1 if np.isfinite(ret_spy) else float("nan")
+        beat_spy = bool(np.isfinite(ret_strat) and np.isfinite(ret_spy) and ret_strat > ret_spy)
+        win = bool(np.isfinite(ret_strat) and ret_strat > 0)
+        enriched_records.append({
+            "asof": asof_t.strftime("%Y-%m-%d"),
+            "ticker": tkr,
+            "entry_px": entry_px,
+            "current_px": None if not np.isfinite(cur_px) else cur_px,
+            "ret_strat": None if not np.isfinite(ret_strat) else float(ret_strat),
+            "ret_spy": None if not np.isfinite(ret_spy) else float(ret_spy),
+            "multiple_strat": None if not np.isfinite(ret_strat) else float(1 + ret_strat),
+            "multiple_spy": None if not np.isfinite(ret_spy) else float(1 + ret_spy),
+            "years_held": float(years_held),
+            "cagr_strat": None if not np.isfinite(cagr_strat) else float(cagr_strat),
+            "cagr_spy": None if not np.isfinite(cagr_spy) else float(cagr_spy),
+            "win": win,
+            "beat_spy": beat_spy,
+            "pullback_at_entry": None if pd.isna(r.get("pullback_1y")) else float(r["pullback_1y"]),
+            "trend_health_at_entry": None if pd.isna(r.get("trend_health_5y")) else float(r["trend_health_5y"]),
+            "score": float(r["score"]),
+        })
+    pick_log_records = enriched_records
+
+    # "If you started X years ago" stats: deploy from start_offset back through eval
+    horizon_stats = []
+    for years_back in (1, 2, 3, 5, 7):
+        cutoff = eval_at - pd.Timedelta(days=int(years_back * 365.25))
+        recent = pick_log[pick_log["asof"] >= cutoff].copy()
+        if recent.empty:
+            continue
+        # Compute strategy DCA from cutoff and SPY DCA from cutoff
+        strat_terminal = 0.0
+        spy_terminal = 0.0
+        n = 0
+        for _, r in recent.iterrows():
+            asof_t = r["asof"]
+            tkr = r["ticker"]
+            entry = float(r["price"])
+            if not np.isfinite(entry) or entry == 0:
+                continue
+            cur = float(panel[tkr].loc[panel.index <= eval_at].dropna().iloc[-1]) if tkr in panel.columns else float("nan")
+            if not np.isfinite(cur):
+                continue
+            pos = panel.index.searchsorted(asof_t)
+            spy_entry = float(spy.iloc[pos])
+            spy_cur = float(spy.dropna().iloc[-1])
+            strat_terminal += cur / entry
+            spy_terminal += spy_cur / spy_entry
+            n += 1
+        if n == 0:
+            continue
+        # IRR via XIRR
+        cf_strat = [(pd.Timestamp(t), -1.0) for t in recent["asof"].values[:n]]
+        cf_strat.append((eval_at, strat_terminal))
+        cf_spy = [(pd.Timestamp(t), -1.0) for t in recent["asof"].values[:n]]
+        cf_spy.append((eval_at, spy_terminal))
+        cagr_s = xirr(cf_strat)
+        cagr_y = xirr(cf_spy)
+        horizon_stats.append({
+            "years_back": years_back,
+            "since_date": cutoff.strftime("%Y-%m-%d"),
+            "n_picks": int(n),
+            "strat_terminal": float(strat_terminal),
+            "spy_terminal": float(spy_terminal),
+            "invested": float(n),
+            "strat_multiple": float(strat_terminal / n),
+            "spy_multiple": float(spy_terminal / n),
+            "cagr_strat": float(cagr_s),
+            "cagr_spy": float(cagr_y),
+            "edge_vs_spy": float(cagr_s - cagr_y),
+        })
 
     # Top sweep
     sweep = pd.read_csv(cache / "sweep_v1.csv")
@@ -258,6 +350,28 @@ def main() -> None:
         with open(surv_path) as f:
             survivorship = json.load(f)
 
+    # Walk-forward summary stat for the recommended strategy across all 8 splits
+    pin_k1_3y_wf = wf_robust[wf_robust["key"] == "pullback_in_winner::1::fixed_3y"]
+    pin_k1_hold_wf = wf_robust[wf_robust["key"] == "pullback_in_winner::1::hold_forever"]
+    wf_explanation = {
+        "n_splits": 8,
+        "headline_key": "pullback_in_winner::1::fixed_3y",
+        "headline_mean_test_cagr": float(pin_k1_3y_wf.iloc[0]["mean_test_cagr"]) if len(pin_k1_3y_wf) else None,
+        "headline_min_test_cagr": float(pin_k1_3y_wf.iloc[0]["min_test_cagr"]) if len(pin_k1_3y_wf) else None,
+        "headline_max_test_cagr": float(pin_k1_3y_wf.iloc[0]["max_test_cagr"]) if len(pin_k1_3y_wf) else None,
+        "hold_forever_mean_test_cagr": float(pin_k1_hold_wf.iloc[0]["mean_test_cagr"]) if len(pin_k1_hold_wf) else None,
+        "hold_forever_min_test_cagr": float(pin_k1_hold_wf.iloc[0]["min_test_cagr"]) if len(pin_k1_hold_wf) else None,
+        "explanation": (
+            "Walk-forward TEST windows are 1-3 years long. Picks made in those "
+            "short windows are then held to today (the eval date), so picks made "
+            "in 2022 and 2023 had ~3 years to compound across the AI-driven 2023-2024 "
+            "rally. The MEAN of those eight short-window CAGRs is 80-89%. The "
+            "FULL-window CAGR (every monthly pick from 2018 through 2024 held to "
+            "today) is 43% because it dilutes the explosive recent cohorts with "
+            "earlier-year picks that compounded more slowly."
+        ),
+    }
+
     out = {
         "as_of": str(latest.date()),
         "panel": {
@@ -269,6 +383,8 @@ def main() -> None:
         "headline": headline,
         "pick_of_month": pick_of_month,
         "growth": growth,
+        "horizon_stats": horizon_stats,
+        "wf_explanation": wf_explanation,
         "survivorship": survivorship,
         "live_picks": {
             "pullback_in_winner_top5": picks_pin_5,

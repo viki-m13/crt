@@ -282,6 +282,36 @@ def proprietary_v7(df: pd.DataFrame) -> pd.Series:
     return score.where(gate)
 
 
+def blended_pullback_momentum(df: pd.DataFrame) -> pd.Series:
+    """Blend: 50/50 pullback-in-winner score + dual-momentum score.
+
+    Designed to avoid the year-by-year tail where the strategy buys deep
+    pullbacks in a regime that keeps falling (e.g. 2021 bubble pops, 2024
+    AI-laggards). Momentum names continue rising in those years and balance
+    out the basket. Use with top_k >= 5.
+    """
+    # Pullback-in-winner half
+    pull = _safe(df, "pullback_1y")
+    trend = _safe(df, "trend_health_5y")
+    rec = _safe(df, "recovery_rate").fillna(0.5)
+    accel = _safe(df, "accel")
+    mom = _safe(df, "mom_12_1")
+    rsi = _safe(df, "rsi_14", 50)
+    pull_score = _z(-pull) + _z(trend) + 0.6 * _z(rec) + 0.4 * _z(accel) + 0.5 * _z(mom)
+    pull_score = pull_score.where((trend > 0.55) & (pull < -0.15) & (rsi > 30))
+
+    # Dual-momentum half
+    dsma = _safe(df, "d_sma200")
+    mom_score = _z(mom)
+    mom_score = mom_score.where((dsma > 0) & (mom > 0))
+
+    # Combine: each ticker gets the better of (pull_score, mom_score)
+    # Use rank-blend so the absolute scales are comparable
+    pull_rank = pull_score.rank(pct=True)
+    mom_rank = mom_score.rank(pct=True)
+    return pull_rank.combine(mom_rank, max, fill_value=0)
+
+
 def proprietary_v8(df: pd.DataFrame) -> pd.Series:
     """Proprietary 'Slope-Up Discount' v8.
 
@@ -326,6 +356,7 @@ def all_strategies(top_k: int = 5) -> list[Strategy]:
         Strategy("winner_only", winner_only, top_k=top_k),
         Strategy("explosive_winners", explosive_winners, top_k=top_k),
         Strategy("min_dd_compounders", min_dd_compounders, top_k=top_k),
+        Strategy("blended_pullback_momentum", blended_pullback_momentum, top_k=top_k),
         Strategy("proprietary_v1", proprietary_v1, top_k=top_k),
         Strategy("proprietary_v2", proprietary_v2, top_k=top_k),
         Strategy("proprietary_v3", proprietary_v3, top_k=top_k),

@@ -20,7 +20,7 @@ from experiments.monthly_dca.backtester import (
 OUT = Path(__file__).resolve().parent / "cache" / "features"
 
 
-def main(start: str = "2017-01-01", end: str = "2025-12-31") -> None:
+def main(start: str = "2002-01-01", end: str = "2099-01-01") -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     panel = load_panel()
     months = month_end_dates(panel.index)

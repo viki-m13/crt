@@ -1340,3 +1340,178 @@ strong{font-weight:600}
   .pick-stats{ grid-template-columns:1fr 1fr; }
   .bt-stats{ grid-template-columns:1fr 1fr; }
 }
+
+/* ============================================================
+   HORIZONS GRID ("if you'd started X years ago")
+   ============================================================ */
+.horizons-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:8px;
+  margin-bottom:24px;
+}
+.horizon-card{
+  background:var(--bg);
+  border:1px solid var(--rule);
+  padding:14px;
+}
+.horizon-label{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.horizon-since{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--muted);
+  margin-top:2px;
+}
+.horizon-cagr{
+  font-family:var(--mono);
+  font-size:24px;
+  font-weight:600;
+  margin-top:6px;
+  letter-spacing:-0.02em;
+}
+.horizon-cagr.pos{ color:var(--green); }
+.horizon-cagr.neg{ color:var(--orange); }
+.horizon-meta{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:6px;
+}
+.horizon-edge{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  margin-top:2px;
+}
+.horizon-edge.pos{ color:var(--green); }
+.horizon-edge.neg{ color:var(--orange); }
+.horizon-multiple{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  margin-top:6px;
+  border-top:1px solid var(--rule-light);
+  padding-top:6px;
+}
+
+/* ============================================================
+   WALK-FORWARD SECTION
+   ============================================================ */
+.wf-section{
+  padding:48px 0;
+  border-top:1px solid var(--rule);
+}
+.wf-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+.wf-card{
+  background:var(--bg);
+  border:1px solid var(--rule);
+  padding:18px;
+}
+.wf-card.highlight{
+  border:2px solid var(--green);
+  background:#f4faf6;
+}
+.wf-card.pos{ border-color:var(--green); }
+.wf-card.neg{ border-color:var(--orange); }
+.wf-label{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.wf-value{
+  font-family:var(--mono);
+  font-size:28px;
+  font-weight:600;
+  margin-top:4px;
+  color:var(--green);
+}
+.wf-card.neg .wf-value{ color:var(--orange); }
+.wf-sub{
+  font-size:12.5px;
+  color:var(--muted);
+  margin-top:8px;
+  line-height:1.45;
+}
+.wf-explain{
+  margin-top:18px;
+  background:var(--bg);
+  border-left:3px solid var(--ink);
+  padding:14px 18px;
+  font-size:14px;
+  line-height:1.65;
+}
+.wf-explain p{ margin-bottom:10px; }
+.split-name{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin:18px 0 6px;
+  font-weight:600;
+}
+
+/* ============================================================
+   TRADES SECTION
+   ============================================================ */
+.trades-section{
+  padding:48px 0;
+  border-top:1px solid var(--rule);
+  background:#fafafa;
+}
+.trades-stats{
+  display:flex;
+  gap:32px;
+  flex-wrap:wrap;
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:16px;
+}
+.trades-stats strong{
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:18px;
+}
+.accordion-trades{
+  margin-top:14px;
+}
+.trades-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--mono);
+  font-size:12px;
+}
+.trades-table th{
+  text-align:left;
+  padding:8px 10px;
+  background:#fafafa;
+  border-bottom:1px solid var(--rule-light);
+  font-weight:600;
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  white-space:nowrap;
+}
+.trades-table td{
+  padding:7px 10px;
+  border-bottom:1px solid var(--rule-light);
+  white-space:nowrap;
+}
+.trades-table td.tkr{
+  font-weight:700;
+}
+.trades-table td.pos{ color:var(--green); }
+.trades-table td.neg{ color:var(--orange); }
+.trades-table td.mid{ color:var(--muted); }

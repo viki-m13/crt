@@ -70,8 +70,9 @@
       <div class="nav-links">
         <a href="#pick">This Month</a>
         <a href="#backtest">Backtest</a>
+        <a href="#walkforward">Walk-forward</a>
+        <a href="#trades">Trades</a>
         <a href="#bias">Bias Audit</a>
-        <a href="#how">How</a>
         <a href="/screener">Screener</a>
         <a href="/spreads/">Spreads</a>
         <a href="/max/">Max</a>
@@ -111,9 +112,21 @@
         </div>
       </div>
 
+      <h3 class="section-h3">If you'd started X years ago</h3>
+      <p class="section-sub">Money-weighted IRR (XIRR) for the strategy DCA vs SPY DCA, computed for each cohort starting X years ago and held to today. Shows recent-period vs full-history performance side-by-side.</p>
+      <div id="horizonsSection" class="horizons-grid"></div>
+
       <h3 class="section-h3">Year-by-year</h3>
-      <p class="section-sub">CAGR of picks made in each year, evaluated to today. <strong>Recent-year cohorts have less time to mature</strong>; this is horizon truncation, not a strategy failure.</p>
+      <p class="section-sub">CAGR of picks made in each year, evaluated to today. Recent-year cohorts have less time to mature; this is horizon truncation, not a strategy failure.</p>
       <div id="btYearGrid" class="year-grid"></div>
+    </div>
+  </section>
+
+  <section id="walkforward" class="wf-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Walk-forward — &quot;what happened to the 80%+ CAGR?&quot;</h2>
+      <p class="section-sub">Two CAGR numbers exist on this page. They're both real and they measure different things. The walk-forward number is the average across many out-of-sample windows; the full-deployment number is the single XIRR if you'd actually invested every month from 2002. Both are reported honestly.</p>
+      <div id="wfSection"></div>
     </div>
   </section>
 
@@ -176,6 +189,14 @@
           <p>We considered tighter gates that produce 80%+ win rates (explosive_winners + take-profit-100%), but their CAGR caps at ~21% — barely beats SPY DCA. The trade-off is real and unavoidable.</p>
         </div>
       </details>
+    </div>
+  </section>
+
+  <section id="trades" class="trades-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Every trade since 2002</h2>
+      <p class="section-sub">Every monthly pick in the backtest, with entry price, current price, holding period, return, the SPY DCA over the same window, and whether each pick beat SPY. Sorted newest first.</p>
+      <div id="tradesSection"></div>
     </div>
   </section>
 

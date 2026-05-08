@@ -24,6 +24,10 @@ FEATURES_DIR = CACHE / "features"
 # Loaders
 # ---------------------------------------------------------------------------
 def load_panel() -> pd.DataFrame:
+    """Load the extended panel (2000-) if available; else the standard one."""
+    ext = CACHE / "prices_extended.parquet"
+    if ext.exists():
+        return pd.read_parquet(ext)
     return pd.read_parquet(CACHE / "prices.parquet")
 
 

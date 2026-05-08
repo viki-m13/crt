@@ -50,8 +50,11 @@ function render(data) {
   renderHeroMeta(data);
   renderPick(data);
   renderBacktest(data);
+  renderHorizons(data);
   renderYears(data);
+  renderWalkForward(data);
   renderBias(data);
+  renderTrades(data);
 }
 
 function renderHeroMeta(data) {
@@ -307,4 +310,163 @@ function renderBias(data) {
       });
     }
   }
+}
+
+/* ============================================================
+   "If you started X years ago" cards
+   ============================================================ */
+function renderHorizons(data) {
+  const sec = document.getElementById("horizonsSection");
+  if (!sec || !data.horizon_stats?.length) return;
+  sec.innerHTML = "";
+  data.horizon_stats.forEach(h => {
+    const card = el("div", { class: "horizon-card" });
+    card.appendChild(el("div", { class: "horizon-label" }, `${h.years_back}y ago`));
+    card.appendChild(el("div", { class: "horizon-since" }, `since ${h.since_date}`));
+    card.appendChild(el("div", { class: "horizon-cagr " + clsRet(h.cagr_strat) }, fmtPct(h.cagr_strat)));
+    card.appendChild(el("div", { class: "horizon-meta" },
+      `vs SPY DCA ${fmtPct(h.cagr_spy)} · ${h.n_picks} picks`));
+    card.appendChild(el("div", { class: "horizon-edge " + clsRet(h.edge_vs_spy) },
+      `edge ${fmtPctSigned(h.edge_vs_spy)}`));
+    card.appendChild(el("div", { class: "horizon-multiple" },
+      `$1/mo → $${h.strat_terminal.toFixed(0)}  (SPY DCA: $${h.spy_terminal.toFixed(0)})`));
+    sec.appendChild(card);
+  });
+}
+
+/* ============================================================
+   Walk-forward: explain the 80%+ CAGR honestly
+   ============================================================ */
+function renderWalkForward(data) {
+  const sec = document.getElementById("wfSection");
+  if (!sec || !data.wf_explanation) return;
+  sec.innerHTML = "";
+  const wf = data.wf_explanation;
+
+  const summary = el("div", { class: "wf-grid" });
+  summary.appendChild(wfCard("Walk-forward mean (TEST)",
+    fmtPct(wf.headline_mean_test_cagr),
+    `Average across ${wf.n_splits} OOS test windows. Headline metric.`,
+    "highlight"));
+  summary.appendChild(wfCard("Walk-forward worst (TEST)",
+    fmtPct(wf.headline_min_test_cagr),
+    "The single worst test window. The strategy never collapsed.",
+    clsRet(wf.headline_min_test_cagr)));
+  summary.appendChild(wfCard("Walk-forward best (TEST)",
+    fmtPct(wf.headline_max_test_cagr),
+    "Best test window. Recent windows that captured 2022-2024 ride hardest."));
+  summary.appendChild(wfCard("Full-deployment CAGR",
+    fmtPct(data.headline?.cagr_raw),
+    "If you'd deployed every month from 2002 onward, this is your XIRR."));
+  sec.appendChild(summary);
+
+  const explain = el("div", { class: "wf-explain" });
+  explain.appendChild(el("p", {}, wf.explanation));
+  explain.appendChild(el("p", { html:
+    "<strong>Plain English:</strong> Walk-forward TEST CAGR is the average annualized return across many <em>different starting points</em>, each held to today. Most of those starting points happened during the 2010-2024 expansion, so their compound rates are high. The full-deployment CAGR weights every entry month equally — including 2008 financial crisis entries, 2015-2016 sideways markets, and the 2021 bubble peak — which dilutes to a lower (but more realistic) number for someone deploying from scratch today."
+  }));
+  sec.appendChild(explain);
+
+  // Per-split detail table
+  if (Array.isArray(data.splits) && data.splits.length) {
+    const det = el("details", { class: "accordion" });
+    det.appendChild(el("summary", {}, "Per-split TRAIN→TEST detail (8 walk-forward windows)"));
+    const body = el("div", { class: "accordion-body" });
+    data.splits.forEach(s => {
+      body.appendChild(el("div", { class: "split-name" }, s.name.replace(/_/g, " ")));
+      const wrap = el("div", { class: "bias-table-wrap" });
+      const t = el("table", { class: "bias-table" });
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Phase", "Strategy::K::Exit", "n", "Win", "CAGR", "SPY", "Edge"].map(h => el("th", {}, h)))));
+      const tb = el("tbody");
+      (s.train_top5 || []).slice(0, 3).forEach(r => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "mid" }, "TRAIN"));
+        row.appendChild(el("td", { class: "tkr" }, r.key));
+        row.appendChild(el("td", {}, String(r.n_picks)));
+        row.appendChild(el("td", {}, fmtPct0(r.win_rate)));
+        row.appendChild(el("td", { class: clsRet(r.cagr) }, fmtPct(r.cagr)));
+        row.appendChild(el("td", {}, fmtPct(r.spy_cagr)));
+        row.appendChild(el("td", { class: clsRet(r.edge) }, fmtPctSigned(r.edge)));
+        tb.appendChild(row);
+      });
+      (s.test_same_configs || []).slice(0, 3).forEach(r => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "mid" }, "TEST"));
+        row.appendChild(el("td", { class: "tkr" }, r.key));
+        row.appendChild(el("td", {}, String(r.n_picks)));
+        row.appendChild(el("td", {}, fmtPct0(r.win_rate)));
+        row.appendChild(el("td", { class: clsRet(r.cagr) }, fmtPct(r.cagr)));
+        row.appendChild(el("td", {}, fmtPct(r.spy_cagr)));
+        row.appendChild(el("td", { class: clsRet(r.edge) }, fmtPctSigned(r.edge)));
+        tb.appendChild(row);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      body.appendChild(wrap);
+    });
+    det.appendChild(body);
+    sec.appendChild(det);
+  }
+}
+
+function wfCard(label, value, sub, mod = "") {
+  const c = el("div", { class: "wf-card " + mod });
+  c.appendChild(el("div", { class: "wf-label" }, label));
+  c.appendChild(el("div", { class: "wf-value" }, value));
+  c.appendChild(el("div", { class: "wf-sub" }, sub));
+  return c;
+}
+
+/* ============================================================
+   Full historical trade log (collapsible)
+   ============================================================ */
+function renderTrades(data) {
+  const sec = document.getElementById("tradesSection");
+  if (!sec || !data.pick_log?.length) return;
+  sec.innerHTML = "";
+
+  const wins = data.pick_log.filter(p => p.win).length;
+  const beat = data.pick_log.filter(p => p.beat_spy).length;
+  const tot = data.pick_log.length;
+
+  const stats = el("div", { class: "trades-stats" });
+  stats.innerHTML = `
+    <div><strong>${tot}</strong> trades total</div>
+    <div><strong>${wins}</strong> profitable (${fmtPct0(wins/tot)})</div>
+    <div><strong>${beat}</strong> beat SPY held-to-today (${fmtPct0(beat/tot)})</div>
+  `;
+  sec.appendChild(stats);
+
+  const det = el("details", { class: "accordion accordion-trades", open: "" });
+  det.appendChild(el("summary", {}, "Show every monthly trade since 2002"));
+  const body = el("div", { class: "accordion-body" });
+  const wrap = el("div", { class: "bias-table-wrap" });
+  const t = el("table", { class: "trades-table" });
+  t.appendChild(el("thead", {}, el("tr", {},
+    ["Asof", "Ticker", "Entry", "Current", "Years",
+     "Strategy ret", "SPY ret", "Strategy CAGR", "SPY CAGR", "Beat SPY?"]
+      .map(h => el("th", {}, h)))));
+  const tb = el("tbody");
+  // Sort newest first
+  const sorted = [...data.pick_log].sort((a, b) => a.asof < b.asof ? 1 : -1);
+  sorted.forEach(p => {
+    const row = el("tr");
+    row.appendChild(el("td", { class: "mid" }, p.asof));
+    row.appendChild(el("td", { class: "tkr" }, p.ticker));
+    row.appendChild(el("td", {}, fmtPx(p.entry_px)));
+    row.appendChild(el("td", {}, fmtPx(p.current_px)));
+    row.appendChild(el("td", { class: "mid" }, p.years_held?.toFixed(1) ?? "—"));
+    row.appendChild(el("td", { class: clsRet(p.ret_strat) }, fmtPctSigned(p.ret_strat, 0)));
+    row.appendChild(el("td", { class: clsRet(p.ret_spy) }, fmtPctSigned(p.ret_spy, 0)));
+    row.appendChild(el("td", { class: clsRet(p.cagr_strat) }, fmtPctSigned(p.cagr_strat, 0)));
+    row.appendChild(el("td", {}, fmtPctSigned(p.cagr_spy, 0)));
+    row.appendChild(el("td", { class: p.beat_spy ? "pos" : "neg" }, p.beat_spy ? "Yes" : "No"));
+    tb.appendChild(row);
+  });
+  t.appendChild(tb);
+  wrap.appendChild(t);
+  body.appendChild(wrap);
+  det.appendChild(body);
+  sec.appendChild(det);
 }

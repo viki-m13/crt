@@ -57,6 +57,10 @@ CACHE = ROOT / "experiments" / "monthly_dca" / "cache"
 # Loading
 # ---------------------------------------------------------------------------
 def load_panel() -> pd.DataFrame:
+    """Load the extended panel (2000-) if available; else the standard one."""
+    ext = CACHE / "prices_extended.parquet"
+    if ext.exists():
+        return pd.read_parquet(ext)
     p = CACHE / "prices.parquet"
     if not p.exists():
         from experiments.monthly_dca.load_data import main as build  # type: ignore
