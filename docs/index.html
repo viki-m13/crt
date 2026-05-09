@@ -69,11 +69,12 @@
       <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
       <div class="nav-links">
         <a href="#pick">This Month</a>
+        <a href="#how">How it works</a>
         <a href="#backtest">Backtest</a>
         <a href="#walkforward">Walk-forward</a>
-        <a href="#v3robust">Robustness</a>
+        <a href="#examples">Every basket</a>
         <a href="#trades">Trades</a>
-        <a href="#bias">Survivorship</a>
+        <a href="#robustness">Robustness</a>
         <a href="/screener">Screener</a>
         <a href="/spreads/">Spreads</a>
         <a href="/max/">Max</a>
@@ -100,7 +101,67 @@
     </div>
   </section>
 
-  <section id="backtest" class="bt-section">
+<section id="how" class="how-section">
+    <div class="section-inner">
+      <h2 class="section-h2">How it works — 6 steps</h2>
+      <p class="section-sub">A machine-learning model picks 3 S&P 500 stocks every 6 months. Cash on crash.</p>
+
+      <ol class="how-list">
+        <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month.</li>
+        <li><strong>Features.</strong> 67 price-only signals per stock (momentum, trend, recovery, RSI, volatility, drawdowns, etc.) ranked relative to peers each month.</li>
+        <li><strong>Model.</strong> Gradient Boosted Trees, retrained every January. Score = mean of 3-month and 6-month forward-return predictions.</li>
+        <li><strong>Crash gate.</strong> SPY drops 8% in 21 days, or 5% over 6 months with bad recent action → hold cash next month.</li>
+        <li><strong>Pick top 3.</strong> Equal weight. 1/3 each.</li>
+        <li><strong>Hold 6 months.</strong> Sell. Pick the new top 3. Repeat. ~1.5× annual turnover.</li>
+      </ol>
+
+      <details class="accordion">
+        <summary>Walk-forward validation (10 splits, OOS test)</summary>
+        <div class="accordion-body">
+          <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
+          <p><strong>Aggregate (TEST):</strong> 10/10 positive splits, mean OOS CAGR <strong>42.80%</strong>, mean edge <strong>+27.99pp</strong> over SPY, 9/10 beat SPY.  Min OOS CAGR +14.5% (R3 2014-2016, the strategy's only loss to SPY at -1.5pp); max OOS CAGR +108.8% (R1 GFC bottom recovery).  R6 AI rally: +40.8% (vs SPY +36.0%, +4.9pp) — including the AI rally.  Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why hold for 6 months instead of monthly?</summary>
+        <div class="accordion-body">
+          <p>The base sweep tested 1755 variants across 13 scorers × 5 K-combos × 3 weightings × 3 gates × 3 holds.  Monthly rebalance (h=1) scored 16.22% WF mean CAGR; 6-month hold scored <strong>42.80%</strong> — a 2.6× improvement.  Reason: the GBM was trained to predict forward 3m and 6m returns, so holding for ~6 months matches the model's predictive horizon.  Monthly rebalancing trades on noise rather than alpha.  Sensitivity confirms a broad plateau: holds of 4, 6, 9, 12 months all score 31-43% WF mean.  No knife-edge.</p>
+          <p>Bonus: 6-month hold reduces transaction costs from ~7× to ~1.5× annual turnover, dramatically improving tax efficiency in taxable accounts.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why K = 3 instead of K = 15?</summary>
+        <div class="accordion-body">
+          <p>Within the S&P 500 cohort, the cross-sectional alpha is concentrated in the top of the score distribution.  Top-3 captures the highest-conviction names; top-15 dilutes alpha with mid-percentile names whose IC is near zero.  Sensitivity: K=1 gives 31.1% WF (single-name volatile), K=2 gives 37.4%, <strong>K=3 gives 42.80%</strong>, K=4 gives 37.4%, K=5 gives 31.0%.  K=3 is the apex.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Survivorship-bias overlay</summary>
+        <div class="accordion-body">
+          <p>Even though the universe is true PIT S&P 500 (no survivor bias from the membership list), the underlying price panel still has Yahoo-style survivor bias for some pre-2010 delisted tickers.  We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to historical hazard rate α).  At α=4%/yr (large-cap historical default), median CAGR is <strong>32.04%</strong> (p10 25.4%, p90 36.1%) — still <strong>+20pp over SPY</strong>.  Edge over SPY remains positive at α ≤ 12%/yr (3× historical rate).</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Generalisation across universes</summary>
+        <div class="accordion-body">
+          <p>We re-ran the same strategy logic (K=3, equal weight, tight gate, 6-month hold) on 4 different stock universes: the broader US market, only non-S&P-500 names, and 5 random 500-name samples. All 10 walk-forward splits stay positive on every universe. S&P 500 has the lowest drawdown and highest Sharpe of all of them. The strategy isn't a quirk of the S&P 500 list specifically — it generalises.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Other strategies & full research</summary>
+        <div class="accordion-body">
+          <p>Full research notes, sweeps, sensitivity, and reproduction guide live in the <code>experiments/monthly_dca/v2/</code> directory of the GitHub repo.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+<section id="backtest" class="bt-section">
     <div class="section-inner">
       <h2 class="section-h2">Backtest — $1 in 2003, compounded</h2>
       <p class="section-sub">Start with $1 in September 2003. Run the strategy through April 2026. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months).</p>
@@ -132,7 +193,7 @@
     </div>
   </section>
 
-  <section id="walkforward" class="wf-section">
+<section id="walkforward" class="wf-section">
     <div class="section-inner">
       <h2 class="section-h2">Walk-forward — 10 out-of-sample tests</h2>
       <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. Mean test CAGR: 42.80%. Min: 14.5%. All 10 positive. 9 of 10 beat SPY.</p>
@@ -140,7 +201,39 @@
     </div>
   </section>
 
-  <section id="bias" class="bias-section">
+<section id="examples" class="examples-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Every basket since 2003</h2>
+      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 3 stocks, the 6-month basket return, and how it compared to SPY over the same window.</p>
+      <div id="caseStudies" class="case-grid"></div>
+    </div>
+  </section>
+
+<section id="historical" class="historical-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Historical monthly baskets</h2>
+      <p class="section-sub">Browse every monthly basket the strategy has picked since inception. Use the year selector to jump to any past month and see what was bought, the entry/exit dates, and what happened.</p>
+      <div id="historicalSection">Loading…</div>
+    </div>
+  </section>
+
+<section id="trades" class="trades-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Every trade since inception</h2>
+      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (6 months later), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
+      <div id="tradesSection"></div>
+    </div>
+  </section>
+
+<section id="robustness" class="robustness-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Robustness checks</h2>
+      <p class="section-sub">Three independent stress tests show the strategy isn't a fluke. Holds up across different decade slices. Holds up on different stock universes. Holds up under small parameter changes.</p>
+      <div id="v3Sections"></div>
+    </div>
+  </section>
+
+<section id="bias" class="bias-section">
     <div class="section-inner">
       <h2 class="section-h2">Is this real or just survivorship?</h2>
       <p class="section-sub">The hardest test of any backtest: would it have worked if we'd actually traded it in real time? Our universe is the actual S&P 500 list at each rebalance date — names that delisted are eligible during their listed period, then auto-removed when they actually delisted. Below: how the strategy holds up under different bias-stress scenarios.</p>
@@ -197,98 +290,6 @@
           <p>The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.035 for our score — small but real. The IC ceiling for a price-only signal on US large caps in the empirical literature is ~0.06; ours is at ~58% of that ceiling, which is a strong but plausible result.</p>
           <p>Any honest strategy with finite IC has a ceiling. Our strategy captures most of what's available. Pushing past 42-45% on the S&P 500 would require alternative data, leverage, or moving to less-liquid universes — each comes with its own costs.</p>
           <p>10/10 splits positive across walk-forward + R6_AI beating SPY is the strongest robustness evidence — it's hard to overfit a strategy to be positive across the GFC, COVID, the 2022 bear, AND the 2023-24 mega-cap-led AI rally.</p>
-        </div>
-      </details>
-    </div>
-  </section>
-
-  <section id="examples" class="examples-section">
-    <div class="section-inner">
-      <h2 class="section-h2">Every basket since 2003</h2>
-      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 3 stocks, the 6-month basket return, and how it compared to SPY over the same window.</p>
-      <div id="caseStudies" class="case-grid"></div>
-    </div>
-  </section>
-
-  <section id="v3robust" class="v3-section">
-    <div class="section-inner">
-      <h2 class="section-h2">Robustness checks</h2>
-      <p class="section-sub">Three independent stress tests show the strategy isn't a fluke. Holds up across different decade slices. Holds up on different stock universes. Holds up under small parameter changes.</p>
-      <div id="v3Sections"></div>
-    </div>
-  </section>
-
-  <section id="historical" class="historical-section">
-    <div class="section-inner">
-      <h2 class="section-h2">Historical monthly baskets</h2>
-      <p class="section-sub">Browse every monthly basket the strategy has picked since inception. Use the year selector to jump to any past month and see what was bought, the entry/exit dates, and what happened.</p>
-      <div id="historicalSection">Loading…</div>
-    </div>
-  </section>
-
-  <section id="trades" class="trades-section">
-    <div class="section-inner">
-      <h2 class="section-h2">Every trade since inception</h2>
-      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (6 months later), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
-      <div id="tradesSection"></div>
-    </div>
-  </section>
-
-  <section id="how" class="how-section">
-    <div class="section-inner">
-      <h2 class="section-h2">How it works — 6 steps</h2>
-      <p class="section-sub">A machine-learning model picks 3 S&P 500 stocks every 6 months. Cash on crash.</p>
-
-      <ol class="how-list">
-        <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month.</li>
-        <li><strong>Features.</strong> 67 price-only signals per stock (momentum, trend, recovery, RSI, volatility, drawdowns, etc.) ranked relative to peers each month.</li>
-        <li><strong>Model.</strong> Gradient Boosted Trees, retrained every January. Score = mean of 3-month and 6-month forward-return predictions.</li>
-        <li><strong>Crash gate.</strong> SPY drops 8% in 21 days, or 5% over 6 months with bad recent action → hold cash next month.</li>
-        <li><strong>Pick top 3.</strong> Equal weight. 1/3 each.</li>
-        <li><strong>Hold 6 months.</strong> Sell. Pick the new top 3. Repeat. ~1.5× annual turnover.</li>
-      </ol>
-
-      <details class="accordion">
-        <summary>Walk-forward validation (10 splits, OOS test)</summary>
-        <div class="accordion-body">
-          <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p><strong>Aggregate (TEST):</strong> 10/10 positive splits, mean OOS CAGR <strong>42.80%</strong>, mean edge <strong>+27.99pp</strong> over SPY, 9/10 beat SPY.  Min OOS CAGR +14.5% (R3 2014-2016, the strategy's only loss to SPY at -1.5pp); max OOS CAGR +108.8% (R1 GFC bottom recovery).  R6 AI rally: +40.8% (vs SPY +36.0%, +4.9pp) — including the AI rally.  Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
-        </div>
-      </details>
-
-      <details class="accordion">
-        <summary>Why hold for 6 months instead of monthly?</summary>
-        <div class="accordion-body">
-          <p>The base sweep tested 1755 variants across 13 scorers × 5 K-combos × 3 weightings × 3 gates × 3 holds.  Monthly rebalance (h=1) scored 16.22% WF mean CAGR; 6-month hold scored <strong>42.80%</strong> — a 2.6× improvement.  Reason: the GBM was trained to predict forward 3m and 6m returns, so holding for ~6 months matches the model's predictive horizon.  Monthly rebalancing trades on noise rather than alpha.  Sensitivity confirms a broad plateau: holds of 4, 6, 9, 12 months all score 31-43% WF mean.  No knife-edge.</p>
-          <p>Bonus: 6-month hold reduces transaction costs from ~7× to ~1.5× annual turnover, dramatically improving tax efficiency in taxable accounts.</p>
-        </div>
-      </details>
-
-      <details class="accordion">
-        <summary>Why K = 3 instead of K = 15?</summary>
-        <div class="accordion-body">
-          <p>Within the S&P 500 cohort, the cross-sectional alpha is concentrated in the top of the score distribution.  Top-3 captures the highest-conviction names; top-15 dilutes alpha with mid-percentile names whose IC is near zero.  Sensitivity: K=1 gives 31.1% WF (single-name volatile), K=2 gives 37.4%, <strong>K=3 gives 42.80%</strong>, K=4 gives 37.4%, K=5 gives 31.0%.  K=3 is the apex.</p>
-        </div>
-      </details>
-
-      <details class="accordion">
-        <summary>Survivorship-bias overlay</summary>
-        <div class="accordion-body">
-          <p>Even though the universe is true PIT S&P 500 (no survivor bias from the membership list), the underlying price panel still has Yahoo-style survivor bias for some pre-2010 delisted tickers.  We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to historical hazard rate α).  At α=4%/yr (large-cap historical default), median CAGR is <strong>32.04%</strong> (p10 25.4%, p90 36.1%) — still <strong>+20pp over SPY</strong>.  Edge over SPY remains positive at α ≤ 12%/yr (3× historical rate).</p>
-        </div>
-      </details>
-
-      <details class="accordion">
-        <summary>Generalisation across universes</summary>
-        <div class="accordion-body">
-          <p>We re-ran the same strategy logic (K=3, equal weight, tight gate, 6-month hold) on 4 different stock universes: the broader US market, only non-S&P-500 names, and 5 random 500-name samples. All 10 walk-forward splits stay positive on every universe. S&P 500 has the lowest drawdown and highest Sharpe of all of them. The strategy isn't a quirk of the S&P 500 list specifically — it generalises.</p>
-        </div>
-      </details>
-
-      <details class="accordion">
-        <summary>Other strategies & full research</summary>
-        <div class="accordion-body">
-          <p>Full research notes, sweeps, sensitivity, and reproduction guide live in the <code>experiments/monthly_dca/v2/</code> directory of the GitHub repo.</p>
         </div>
       </details>
     </div>
