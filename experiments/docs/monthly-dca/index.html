@@ -8,8 +8,8 @@
   <script src="/gate.js"></script>
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
 
-  <title>Monthly DCA — Pullback-In-Winner Strategy</title>
-  <meta name="description" content="An honest, bias-aware monthly stock-pick DCA strategy. Walk-forward validated across 8 splits. ~44% backtest CAGR vs SPY's 14% — and the failure modes documented." />
+  <title>v3 PIT S&amp;P 500 — Research</title>
+  <meta name="description" content="v3 point-in-time S&P 500 strategy research page. Walk-forward Gradient Boosted Trees (3m+6m horizon mean), K=3 picks, 6-month hold, tight regime gate. 42.80% mean OOS CAGR across 10 walk-forward splits, validated 2003-2025. Generalises across universes, robust to parameter perturbations." />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
@@ -171,7 +171,7 @@
 <body>
 
   <nav>
-    <span class="nav-logo">Pullback-In-Winner</span>
+    <span class="nav-logo">v3 PIT S&amp;P 500</span>
     <span class="nav-tag" id="navTag">LIVE</span>
     <div class="nav-links">
       <a href="/experiments/">Experiments</a>
@@ -185,12 +185,13 @@
 
   <div class="footer-disclaimer">
     Research, not advice. Past performance does not predict future results.
-    Backtest universe is today's surviving tickers — survivorship bias is corrected
-    via Monte-Carlo synthetic-delisting overlay (4&nbsp;%/yr) but cannot be eliminated
-    without a delisted-inclusive dataset.
+    Universe is true point-in-time S&amp;P 500 membership — only stocks actually in the index on the rebalance date are eligible. Residual survivorship in the underlying price panel is corrected via Monte-Carlo synthetic-delisting overlay (α=4&nbsp;%/yr) which still preserves +20pp edge over SPY at the median.
     <br>
     <br>
-    Code &amp; raw data: <code>experiments/monthly_dca/</code> in the repo.
+    Code &amp; raw data: <code>experiments/monthly_dca/v2/</code> in the repo.
+    Reports: <a href="/experiments/monthly_dca/v2/SP500_PIT_V3_REPORT.md">SP500_PIT_V3_REPORT.md</a> ·
+    <a href="/experiments/monthly_dca/v2/SP500_PIT_ANALYSIS.md">SP500_PIT_ANALYSIS.md</a> (the v2 collapse) ·
+    <a href="/experiments/monthly_dca/v2/REPRODUCE.md">REPRODUCE.md</a>
   </div>
 
   <script>

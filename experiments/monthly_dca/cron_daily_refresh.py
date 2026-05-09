@@ -1,21 +1,29 @@
-"""Cron-friendly daily refresh for the monthly-DCA strategy webapp.
+"""Cron-friendly daily refresh for the v3 PIT-S&P-500 strategy webapp.
 
 Cheap to run (~30-60s):
   1. Rebuild prices.parquet from docs/data/tickers/*.json (force).
   2. Compute base + extra features for any month-end not yet cached
      (and refresh the most recent two months, which may have grown).
-  3. Rebuild experiments/docs/monthly-dca/data.json.
+  3. Refresh PIT S&P 500 membership panel (extends through latest live month).
+  4. Rebuild experiments/docs/monthly-dca/data.json with the v3 strategy.
 
-Does NOT redo the full sweep / walk-forward — those are slow and
-historical (immutable). The webapp page reads the static aggregate
-CSVs already committed; only `live_picks` and the latest `as_of`
-need to refresh daily.
+Does NOT redo the full strategy sweep / walk-forward — those are slow,
+historical (immutable), and live as static CSVs in
+experiments/monthly_dca/cache/v2/sp500_pit/v3_*.csv. They were generated
+once by the v3 sweep and validation pipeline and only need re-running
+when the strategy logic or universe materially changes (re-run via
+sp500_pit_strategy_sweep.py + sp500_pit_v3_validate.py).
+
+The ML model (ml_preds_v2.parquet for WF backtest, ml_preds_live.parquet
+for current-month picks) needs to be retrained annually — not in the
+daily cron — by re-running experiments/monthly_dca/v2/ml_strategy.py.
 
 Designed to be idempotent and fail-soft: if the panel cannot be
 rebuilt, it leaves the existing data in place.
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 import traceback
 from pathlib import Path
@@ -32,12 +40,7 @@ from experiments.monthly_dca.fast_score import load_features_long
 
 
 def refresh_recent_months(panel: pd.DataFrame, lookback_months: int = 3) -> None:
-    """Re-compute features for the lookback_months most recent month-ends.
-
-    The latest month-end keeps growing as new daily data lands inside the
-    current month, so we re-compute it (and the previous two) every run.
-    Older months are immutable price-history -> no need to recompute.
-    """
+    """Re-compute features for the lookback_months most recent month-ends."""
     me = month_end_dates(panel.index)
     target = me[-lookback_months:]
     if len(target) == 0:
@@ -45,7 +48,6 @@ def refresh_recent_months(panel: pd.DataFrame, lookback_months: int = 3) -> None
     start = target[0].strftime("%Y-%m-%d")
     end = target[-1].strftime("%Y-%m-%d")
 
-    # Force-rebuild the recent months by deleting their parquets first
     feat_dir = Path(__file__).resolve().parent / "cache" / "features"
     for d in target:
         p = feat_dir / f"{d.date()}.parquet"
@@ -57,6 +59,15 @@ def refresh_recent_months(panel: pd.DataFrame, lookback_months: int = 3) -> None
     run_extras(start=start, end=end)
 
 
+def refresh_pit_membership() -> None:
+    """Re-roll the PIT S&P 500 membership panel forward through the latest
+    live-pred month.  Idempotent — the membership history is immutable;
+    this only extends to the current month-end if it isn't already there."""
+    print("Refreshing PIT S&P 500 membership panel...")
+    script = Path(__file__).resolve().parent / "v2" / "build_sp500_pit_membership.py"
+    subprocess.run([sys.executable, str(script)], check=True)
+
+
 def main() -> int:
     try:
         # 1. Rebuild prices panel from latest tickers
@@ -66,21 +77,25 @@ def main() -> int:
 
         # 2. Compute features for any new month-ends, refresh recent ones
         print("\n=== Step 2: Refreshing features for recent month-ends ===")
-        # Cover everything since 2017 — incremental (skips already-cached unless they're in the recent window)
         run_features(start="2017-01-01", end="2099-01-01")
         run_extras(start="2017-01-01", end="2099-01-01")
-        # Always re-run the most recent 3 month-ends (they may have grown intra-month)
         refresh_recent_months(panel, lookback_months=3)
 
-        # 3. Rebuild webapp data.json. The expensive survivorship analysis
-        # (random baseline, sensitivity sweep) is stable across daily updates
-        # — we keep the existing survivorship_summary.json from the last
-        # full run. Re-run it manually via experiments/monthly_dca/survivorship.py
-        # whenever the strategy logic or universe materially changes.
-        print("\n=== Step 3: Rebuilding webapp data.json ===")
-        load_features_long.cache_clear()  # reset lru cache
-        from experiments.monthly_dca.build_webapp_json import main as build_json
-        build_json()
+        # 3. Refresh PIT S&P 500 membership panel.  The S&P 500 changes
+        # post-2019 are sourced from a small CSV that the user updates
+        # manually; the daily cron rolls forward to the latest live-pred
+        # month using the rolled-forward last-known-set.
+        print("\n=== Step 3: Refreshing PIT S&P 500 membership ===")
+        refresh_pit_membership()
+
+        # 4. Rebuild webapp data.json with the v3 strategy.
+        # Static walk-forward / bias / sub-period / sensitivity / generalise
+        # CSVs live under cache/v2/sp500_pit/v3_*.csv and are ingested by
+        # the builder. They only re-generate when v3 strategy logic changes.
+        print("\n=== Step 4: Rebuilding webapp data.json (v3 PIT-S&P-500) ===")
+        load_features_long.cache_clear()
+        from experiments.monthly_dca.v2.build_webapp_v3_pit import main as build_v3
+        build_v3()
 
         print("\nDaily refresh complete.")
         return 0

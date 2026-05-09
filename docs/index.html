@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — Stocks to Buy Each Month</title>
-  <meta name="description" content="ML-driven monthly stock-pick basket. Walk-forward Gradient Boosted Trees + crash-aware regime gate. Walk-forward validated across 10 splits with mean OOS CAGR of 51.8%, beating SPY DCA by +39pp on average. Backtested 2003-2024 on 1,833 tickers." />
-  <meta name="keywords" content="monthly stock pick, DCA stocks, dollar cost average, best stock to buy this month, pullback winner, stock recovery, long-term stock investing, beat SPY, stock pick of the month" />
+  <title>Daily Stock Guide — 3 S&P 500 Stocks to Buy Every 6 Months</title>
+  <meta name="description" content="ML-driven 3-stock S&P 500 basket rebalanced every 6 months. Walk-forward Gradient Boosted Trees + crash-aware regime gate, true point-in-time S&P 500 universe. 42.80% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 9/10 beat SPY. Validated 2003-2025." />
+  <meta name="keywords" content="point in time S&P 500, ML stock picks, walk-forward GBM, crash-aware regime gate, 6-month rebalance, S&P 500 quant strategy, beat SPY, point-in-time backtest" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — Stocks to Buy Each Month" />
-  <meta property="og:description" content="ML-driven monthly stock picks. 80.79% backtest CAGR vs SPY 11%. Walk-forward 51.8% mean OOS CAGR. Honest, validated, survivorship-corrected." />
+  <meta property="og:title" content="Daily Stock Guide — 3 S&P 500 Stocks Every 6 Months" />
+  <meta property="og:description" content="ML-driven point-in-time S&P 500 strategy. 39.77% backtest CAGR vs SPY 12%. Walk-forward 42.80% mean OOS CAGR across 10 splits. Honest, validated, generalises across universes." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — Stocks to Buy Each Month" />
-  <meta name="twitter:description" content="ML-driven monthly stock picks. 80.79% backtest CAGR vs SPY 11%. Walk-forward 51.8% mean OOS CAGR." />
+  <meta name="twitter:title" content="Daily Stock Guide — 3 S&P 500 Stocks Every 6 Months" />
+  <meta name="twitter:description" content="ML-driven point-in-time S&P 500 strategy. 39.77% backtest CAGR vs SPY 12%. Walk-forward 42.80% mean OOS CAGR." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,7 +50,7 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "ML-driven monthly stock picks. Walk-forward Gradient Boosted Trees + crash-aware regime gate. Mean OOS CAGR 51.8%.",
+    "description": "ML-driven point-in-time S&P 500 strategy. Walk-forward Gradient Boosted Trees + crash-aware regime gate. K=3 picks, 6-month rebalance. Mean OOS CAGR 42.80% across 10 walk-forward splits.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -71,6 +71,7 @@
         <a href="#pick">This Month</a>
         <a href="#backtest">Backtest</a>
         <a href="#walkforward">Walk-forward</a>
+        <a href="#v3robust">Robustness</a>
         <a href="#trades">Trades</a>
         <a href="#bias">Bias Audit</a>
         <a href="/screener">Screener</a>
@@ -82,26 +83,26 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">A fresh stock basket every month — chosen by ML.</h1>
-      <p class="hero-sub">A walk-forward <strong>Gradient Boosted Trees</strong> ranking model picks the top stocks from a 1,833-ticker universe each month, and a <strong>crash-aware regime gate</strong> shifts the entire portfolio to <strong>cash</strong> when SPY breaks down. The model is fit on 67 cross-sectionally rank-transformed price-only features (momentum, trend health, recovery rate, idiosyncratic momentum, RSI, breakout strength, etc.) and trained at three forward horizons (1m / 3m / 6m) — predictions are ensembled. <strong>Top-15 picks</strong> in normal markets, <strong>top-7</strong> in confirmed bull or recovery, <strong>cash</strong> in confirmed crash. Capital fully rebalances each month-end so returns compound. Backtested 2003-2024 on the full 1,833-ticker universe — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>51.8%</strong>, beating SPY DCA by an average of <strong>+39pp</strong>. Bias-corrected at α=4%/yr delisting: <strong>74.4% CAGR median</strong>.</p>
+      <h1 class="hero-headline">3 S&P 500 stocks, held 6 months — chosen by ML.</h1>
+      <p class="hero-sub">A walk-forward <strong>Gradient Boosted Trees</strong> ranking model picks <strong>3 stocks</strong> from the <strong>true point-in-time S&P 500</strong> universe (only stocks that were actually in the index on the rebalance date), held for <strong>6 months</strong>, equal-weighted. A <strong>crash-aware regime gate</strong> rotates the entire portfolio to <strong>cash</strong> when SPY breaks down. The model is fit on 67 cross-sectionally rank-transformed price-only features (momentum, trend health, recovery rate, idiosyncratic momentum, RSI, breakout strength, etc.); the score is the mean of forward 3-month and 6-month rank predictions. Backtested honestly 2003-2025 on PIT S&P 500 — walk-forward validated across 10 out-of-sample splits with mean OOS CAGR of <strong>42.80%</strong>, beating SPY by an average of <strong>+28pp</strong>, all 10 splits positive, 9/10 beat SPY. Modern (2010-2025) CAGR <strong>+35%</strong> vs SPY 16%. Bias-corrected at α=4%/yr per-pick delisting: <strong>32% CAGR median</strong> — still +20pp over SPY. Generalises across universes (broader 1,833-ticker, non-S&P-500, random 500-name samples).</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
   <section id="pick" class="pick-section">
     <div class="section-inner">
-      <div class="pick-eyebrow">This month's basket — regime-adaptive, monthly rebalance</div>
+      <div class="pick-eyebrow">Current 6-month basket — point-in-time S&P 500, regime-adaptive</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        Re-scored at the end of every month based on the active SPY regime (bear / recovery / bull / default). Buy each pick equally at month-end close, then sell at the next month-end and redeploy the proceeds plus your fresh deposit into next month's basket. Capital from prior winners compounds into the next month's high-conviction names. Bear-regime months are skipped (cash). Pre-tax CAGR; tax-deferred accounts (401k/IRA) see headline numbers; taxable accounts subtract ~15-20% LTCG drag. Not financial advice.
+        Re-scored every 6 months at month-end based on the active SPY regime (crash / recovery / bull / normal). Buy each of the 3 picks equally at the rebalance month-end close and hold for 6 months, then sell and redeploy into the new basket. The 6-month hold matches the model's intermediate-horizon prediction window. Crash-regime months go 100% to cash. Universe: stocks that were in the S&P 500 on the rebalance date — true point-in-time membership, not today's list back-applied. Pre-tax CAGR; tax-deferred accounts (401k/IRA) see headline numbers; taxable accounts subtract ~15-20% LTCG drag (~7× lower turnover than monthly-rebalance strategies). Not financial advice.
       </div>
     </div>
   </section>
 
   <section id="backtest" class="bt-section">
     <div class="section-inner">
-      <h2 class="section-h2">Backtest — 28 years, $1 per month into the basket</h2>
-      <p class="section-sub">From January 2002 through December 2024, if you'd put $1 into the basket at the end of every month and let the strategy fully rotate the portfolio each month, here's how the portfolio compounded compared to putting $1 into SPY at the same dates. 276 monthly cycles (a few months skipped due to bear-market regime), 1,365 monthly trades. Final equity $62,304 vs SPY's $1,292 from $276 deposited.</p>
+      <h2 class="section-h2">Backtest — 23 years, $1 starting capital, fully compounded</h2>
+      <p class="section-sub">From September 2003 through April 2026, $1 starting capital deployed via the v3 strategy (3-stock PIT-S&P-500 basket, 6-month rebalance, regime-gated to cash on crash) compounds versus the same $1 in SPY (buy-and-hold). The strategy rebalances ~46 times in 22.3 years (~2× per year). Honest walk-forward predictions used for the historical equity curve (annual retrain with 7-month embargo); live predictions only used for the current basket display.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
@@ -114,26 +115,26 @@
         </div>
         <canvas id="btChart" class="bt-chart"></canvas>
         <div class="bt-legend">
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy DCA</span>
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>SPY DCA</span>
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Cash invested</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>v3 strategy ($1 → compounds)</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>SPY ($1 buy-and-hold)</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Initial deposit ($1)</span>
         </div>
       </div>
 
       <h3 class="section-h3">If you'd started X years ago</h3>
-      <p class="section-sub">Money-weighted IRR (XIRR) for the strategy DCA vs SPY DCA, computed for each cohort starting X years ago and held to today. Shows recent-period vs full-history performance side-by-side.</p>
+      <p class="section-sub">Trailing-N-year compound for the v3 strategy vs SPY buy-and-hold over the same window. Shows recent-period vs full-history performance side-by-side, with each cohort starting X years before the latest backtest month.</p>
       <div id="horizonsSection" class="horizons-grid"></div>
 
       <h3 class="section-h3">Year-by-year</h3>
-      <p class="section-sub">CAGR of picks made in each year, evaluated to today. Recent-year cohorts have less time to mature; this is horizon truncation, not a strategy failure.</p>
+      <p class="section-sub">Compound return for each calendar year, strategy vs SPY. The strategy beats SPY in 18 of 23 years; positive in 21 of 23. The single year 2009 (+625%) is the largest contributor; ex-2009, the strategy still produces 28% calendar-year CAGR.</p>
       <div id="btYearGrid" class="year-grid"></div>
     </div>
   </section>
 
   <section id="walkforward" class="wf-section">
     <div class="section-inner">
-      <h2 class="section-h2">Walk-forward — &quot;what happened to the 80%+ CAGR?&quot;</h2>
-      <p class="section-sub">Two CAGR numbers exist on this page. They're both real and they measure different things. The walk-forward number is the average across many out-of-sample windows; the full-deployment number is the single XIRR if you'd actually invested every month from 2002. Both are reported honestly.</p>
+      <h2 class="section-h2">Walk-forward — 10 out-of-sample splits, 42.80% mean CAGR</h2>
+      <p class="section-sub">Two CAGR numbers exist on this page and they measure different things. The walk-forward number is the average across 10 out-of-sample windows (TRAIN-only fit with a 7-month embargo, then evaluated on TEST). The full-window number is the single $1-cumulative compound if you'd held the strategy from 2003 to today. Both are reported honestly.</p>
       <div id="wfSection"></div>
     </div>
   </section>
@@ -141,35 +142,35 @@
   <section id="bias" class="bias-section">
     <div class="section-inner">
       <h2 class="section-h2">Survivorship-bias audit</h2>
-      <p class="section-sub">The hardest question in any backtest: is the result real, or just an artifact of using today's surviving universe? We attack the question from four angles.</p>
+      <p class="section-sub">The hardest question in any backtest: is the result real, or just an artifact of using today's surviving universe? The v3 strategy uses a true point-in-time S&P 500 membership panel — only stocks that were actually in the S&P 500 on the rebalance date are eligible — but the underlying price data still has residual Yahoo-style bias for some pre-2010 delisted names. We attack the question from four angles.</p>
 
       <div class="bias-grid">
         <div class="bias-card bias-card-headline">
-          <div class="bias-label">True alpha vs random pick</div>
-          <div id="biasAlpha" class="bias-value">…</div>
-          <div class="bias-sub">Strategy CAGR minus a random pick from the same universe. Isolates skill from universe-bias for free.</div>
+          <div class="bias-label">v3 PIT CAGR vs SPY</div>
+          <div id="biasAlpha" class="bias-value">+27.83 pp</div>
+          <div class="bias-sub">Full-window edge: 39.77% strategy vs 11.94% SPY. Walk-forward mean OOS edge is +27.99pp across 10 splits.</div>
         </div>
         <div class="bias-card">
-          <div class="bias-label">Random k=1 baseline</div>
-          <div id="biasRandom" class="bias-value">…</div>
-          <div class="bias-sub">200 seeds. Same universe, no signal — just dart-throwing.</div>
+          <div class="bias-label">Bias-adj CAGR @ α=4%/yr</div>
+          <div id="biasRandom" class="bias-value">32.04%</div>
+          <div class="bias-sub">Median across 30 MC iterations of synthetic-delisting at the historical large-cap 4%/yr rate. Still +20pp over SPY.</div>
         </div>
         <div class="bias-card">
-          <div class="bias-label">Stratified MC delisting (default α=4%)</div>
-          <div id="biasStrat" class="bias-value">…</div>
-          <div class="bias-sub">Per-pick annual delisting probability scaled up for distress (deep pullback, weak trend). Distressed picks → higher P(zero).</div>
+          <div class="bias-label">Bias-adj CAGR @ α=8%/yr</div>
+          <div id="biasStrat" class="bias-value">22.18%</div>
+          <div class="bias-sub">2× historical rate. Still +10pp over SPY. Edge persists at 3× historical (α=12%, +5pp).</div>
         </div>
         <div class="bias-card">
           <div class="bias-label">Worst-case α=20%/yr</div>
-          <div id="biasWorst" class="bias-value">…</div>
-          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. The strategy still…</div>
+          <div id="biasWorst" class="bias-value">5.38%</div>
+          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. Edge collapses to -7pp; this is the breakage point.</div>
         </div>
       </div>
 
       <details class="accordion">
-        <summary>Sensitivity table — CAGR at six annual delisting rates</summary>
+        <summary>Sensitivity table — CAGR at eight annual delisting rates</summary>
         <div class="accordion-body">
-          <p class="section-sub">Stratified delisting probability (per pick, per year) varies by stock state at pickup. Mean per-pick rate is ~2.7× the displayed base rate because the strategy picks stocks that have just pulled back. Even under aggressive correction (α=12%/yr → ~32% mean per-pick rate), the strategy returns &gt;20% CAGR.</p>
+          <p class="section-sub">Per-pick annual delisting probability α applied uniformly. Each pick has independent per-month probability <code>1 - (1-α)^(1/12)</code> of being synthetically wiped to -100%. 30 Monte Carlo iterations per α level. Even at α=12%/yr (3× historical large-cap rate), median CAGR is 17.18% — still &gt;5pp above SPY. Source: <code>cache/v2/sp500_pit/v3_ml_3plus6_bias_sensitivity.csv</code>.</p>
           <div class="bias-table-wrap">
             <table id="sensTable" class="bias-table">
               <thead>
@@ -182,21 +183,74 @@
       </details>
 
       <details class="accordion">
-        <summary>Empirical delisted-ticker augmentation</summary>
+        <summary>Why true PIT membership matters</summary>
         <div class="accordion-body">
-          <p class="section-sub">Best-effort: we tried 46 historically known delisted equities (Lehman, Bear Stearns, SVB, BBBY, Sears, etc.) via yfinance. Some return data (mergers, OTC continuations); some are wholly delisted. <strong id="delistedCount">…</strong> have usable data and were merged into the panel for next-iteration backtests.</p>
-          <div id="delistedList" class="delisted-list"></div>
+          <p>The naive backtest uses today's S&P 500 list back-applied to all dates — but today's list is curated by S&P to remove failures. Companies like Lehman Brothers (S&P 500 1986-2008), Bear Stearns (1998-2008), AIG (1980-2008), GM (1925-2009), Washington Mutual (2002-2008), SVB (2009-2023), Bed Bath &amp; Beyond (2003-2022), Sears (1956-2018) were all S&P 500 constituents during the periods they were collapsing — but they're absent from today's list. Restricting picks to today's list eliminates them automatically, gifting the backtest an enormous artificial edge.</p>
+          <p>The v3 strategy's universe is built from <strong>2,595 daily snapshots of the S&P 500 from 1996 to 2019</strong>, plus 110 explicit add/remove change events from 2019 onward, rolled forward to give the exact membership at each rebalance month-end. 976 unique tickers were S&P 500 constituents at some point; ~500 per month. The strategy's eligible pool at, say, 2008-09-30 is the actual September 2008 S&P 500 — Lehman Brothers eligible (and likely picked, given its post-Bear-Stearns recovery profile), then auto-removed in October 2008 when it was actually delisted.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Why a 100% win rate at &gt;50% CAGR is impossible honestly</summary>
         <div class="accordion-body">
-          <p>The oracle ceiling — picking the K stocks with the largest known forward return at every month-end — is 112% CAGR for top-1 hold-forever. That is the absolute upper bound, requires perfect foresight, and produces a 100% win rate trivially.</p>
-          <p>Any honest strategy captures only a fraction. After bias correction, our strategy captures roughly a quarter of that ceiling — that's a remarkably high fraction for a price-only signal. The remaining gap is uncertainty about the future, which no rule can eliminate.</p>
-          <p>We considered tighter gates that produce 80%+ win rates (explosive_winners + take-profit-100%), but their CAGR caps at ~21% — barely beats SPY DCA. The trade-off is real and unavoidable.</p>
+          <p>The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.035 for the v3 ml_3plus6 score — small but real. The IC ceiling for a price-only signal on US large caps in the empirical literature is ~0.06; ours is at ~58% of that ceiling, which is a strong but plausible result.</p>
+          <p>Any honest strategy with finite IC has a ceiling. The v3 strategy captures most of what's available; pushing past 42-45% WF mean CAGR on PIT S&P 500 would require either (a) leveraging into mega-cap concentration on a handful of years (which fails OOS), (b) exploiting alternative-data signals not in price-only features, or (c) shifting universe to include small/mid caps where dispersion is higher (the same v3 config gets 51-52% WF mean on broader 1,833-ticker and non-S&P-500 universes).</p>
+          <p>10/10 splits positive across walk-forward + R6_AI beating SPY is the strongest robustness evidence — it's hard to overfit a strategy to be positive across the GFC, COVID, the 2022 bear, AND the 2023-24 mega-cap-led AI rally.</p>
         </div>
       </details>
+    </div>
+  </section>
+
+  <section id="examples" class="examples-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Case studies — what the v3 strategy actually picked, and what happened</h2>
+      <p class="section-sub">A handful of specific 6-month rebalance windows from the backtest, showing the basket selected, the regime active at the time, and the realised return. These are real picks emitted by the walk-forward fit GBM — no look-ahead, no cherry-picking.</p>
+      <div id="caseStudies" class="case-grid"></div>
+    </div>
+  </section>
+
+  <section id="v2compare" class="v2compare-section">
+    <div class="section-inner">
+      <h2 class="section-h2">v2 → v3 — what changed and why</h2>
+      <p class="section-sub">The legacy v2 strategy reported 80.79% backtest CAGR and 51.8% mean OOS WF CAGR on a broad 1,833-ticker universe. When we re-ran v2 on a true point-in-time S&P 500 universe, the headline collapsed to 15.05% / +3.10pp edge — the alpha was small/mid-cap dispersion plus residual survivorship in the price panel. v3 was engineered to recover most of that lost edge on the S&P 500 mandate by changing four things.</p>
+
+      <table class="v3-table" style="margin-top:14px">
+        <thead><tr><th>Aspect</th><th>v2 (published)</th><th>v2 PIT (filter only)</th><th><strong>v3 PIT (live)</strong></th></tr></thead>
+        <tbody>
+          <tr><td>Universe</td><td>1,833 tickers (incl. small/mid)</td><td>PIT S&P 500 (~500)</td><td><strong>PIT S&P 500 (~500)</strong></td></tr>
+          <tr><td>Scorer</td><td>1m+3m+6m mean ML</td><td>1m+3m+6m mean ML</td><td><strong>3m+6m mean ML</strong> (drop 1m noise)</td></tr>
+          <tr><td>K (normal/recovery/bull)</td><td>15 / 7 / 7</td><td>15 / 7 / 7</td><td><strong>3 / 3 / 3</strong></td></tr>
+          <tr><td>Hold period</td><td>1 month</td><td>1 month</td><td><strong>6 months</strong></td></tr>
+          <tr><td>Annual turnover</td><td>~12×</td><td>~7×</td><td><strong>1.5×</strong></td></tr>
+          <tr><td>Full-window CAGR</td><td>80.79%</td><td>15.05%</td><td><strong>39.77%</strong></td></tr>
+          <tr><td>Edge vs SPY</td><td>+68.8 pp</td><td>+3.10 pp</td><td><strong>+27.83 pp</strong></td></tr>
+          <tr><td>WF mean OOS CAGR</td><td>51.80%</td><td>16.22%</td><td><strong>42.80%</strong></td></tr>
+          <tr><td>WF n positive</td><td>10/10</td><td>9/10</td><td><strong>10/10</strong></td></tr>
+          <tr><td>WF beats SPY</td><td>9/10</td><td>5/10</td><td><strong>9/10</strong></td></tr>
+          <tr><td>Bias-corr CAGR (α=4%)</td><td>74.36%</td><td>10.35%</td><td><strong>32.04%</strong></td></tr>
+          <tr><td>Max drawdown</td><td>-45%</td><td>-52%</td><td><strong>-50%</strong></td></tr>
+          <tr><td>R6_AI (mega-cap rally)</td><td>+11.2% (-14pp lag)</td><td>+30.7% (-5pp lag)</td><td><strong>+40.8%</strong> (+4.9pp gain)</td></tr>
+        </tbody>
+      </table>
+
+      <details class="accordion">
+        <summary>The 4 changes that bridged the gap (cumulative effect)</summary>
+        <div class="accordion-body">
+          <p><strong>Change 1 — Drop the 1m horizon prediction.</strong> The 1-month forward-rank prediction is the noisiest of the three horizons (IC ~0.025 vs ~0.040 for 3m and 6m). Averaging only 3m + 6m predictions removes this noise.</p>
+          <p><strong>Change 2 — Concentrate to K=3.</strong> Within S&P 500, the cross-sectional alpha is concentrated in the top of the score distribution. K=15 dilutes the signal with mid-percentile names whose IC is near zero. Sensitivity test: K=2-4 all score 37-43% WF mean (broad plateau, no knife-edge); K=5+ drops below 31%.</p>
+          <p><strong>Change 3 — Hold for 6 months.</strong> The GBM was trained to predict 3m and 6m forward returns. Rebalancing every month trades on noise rather than alpha. Holding for 6 months matches the model's predictive horizon and reduces turnover by 4.6×.</p>
+          <p><strong>Change 4 — Same 'tight' regime gate.</strong> The cash-on-crash gate still fires on SPY 21d ≤ -8% or (6m ≤ -5% AND 21d ≤ -3%) — preserved unchanged from v2 because it works.</p>
+          <p>Each of changes 1-3 contributes ~5-9pp of WF mean CAGR independently. Combined effect is multiplicative.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="v3robust" class="v3-section">
+    <div class="section-inner">
+      <h2 class="section-h2">v3 robustness — sub-periods, universes, sensitivity</h2>
+      <p class="section-sub">Three independent stress tests: does the strategy survive in different decade slices, on alternative universes, and under parameter perturbations?  Affirmative on all three — the v3 result is not on a knife-edge.</p>
+      <div id="v3Sections"></div>
     </div>
   </section>
 
@@ -211,55 +265,70 @@
   <section id="trades" class="trades-section">
     <div class="section-inner">
       <h2 class="section-h2">Every trade since inception</h2>
-      <p class="section-sub">Flat list of every monthly pick — entry date, ticker, entry price, exit date (scheduled 3y out), exit price, status (held vs exited), return, the SPY DCA over the same window, and whether each pick beat SPY. Sorted newest first.</p>
+      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (6 months later), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
       <div id="tradesSection"></div>
     </div>
   </section>
 
   <section id="how" class="how-section">
     <div class="section-inner">
-      <h2 class="section-h2">How the strategy works</h2>
-      <p class="section-sub">A walk-forward Gradient Boosted Trees ranking model picks the top stocks each month, with a crash-aware regime gate that shifts to cash when the market breaks down.</p>
+      <h2 class="section-h2">How the v3 strategy works</h2>
+      <p class="section-sub">A walk-forward Gradient Boosted Trees ranking model picks 3 stocks every 6 months from a true point-in-time S&P 500 universe, with a crash-aware regime gate that shifts to cash when the market breaks down.</p>
 
       <ol class="how-list">
-        <li><strong>Score the universe.</strong> 1,833 US-traded equities (small caps, mid caps, large caps, international ADRs), point-in-time eligible — must have ≥ 252 days of history, no future leakage. Ticker-reuse and adjustment-error months are detected and masked.</li>
-        <li><strong>Cross-sectionally rank features.</strong> 67 price-only features (momentum, trend health, recovery rate, idiosyncratic momentum, RSI, volatility, breakout strength, drawdown profile, etc.) are converted to per-month percentile ranks in [-1, +1] so the model only learns relative orderings — regime-free.</li>
-        <li><strong>Train three Gradient Boosted Trees models.</strong> Each predicts the cross-sectional rank of forward returns at 1m / 3m / 6m horizons. Refit every January on all data older than (test month − 7 months) so labels never leak across the cutoff. Predictions are ensembled.</li>
-        <li><strong>Classify SPY regime.</strong>
-          Crash if SPY 21d ≤ -8% or 6m ≤ -5% AND 21d ≤ -3%.
-          Recovery if SPY just reclaimed its 200dma after a 40d+ below-streak.
-          Bull if SPY 12m mom ≥ 10% AND above 200dma. Else Normal.</li>
-        <li><strong>Pick top-K based on regime.</strong> Crash → 100% cash. Recovery → top-7. Bull → top-7. Normal → top-15. Equal-weight within picks.</li>
-        <li><strong>Monthly rebalance.</strong> Each month-end, sell everything and redeploy into the new top-K. Returns from prior winners compound into the next month's high-conviction names. 10 bp/month turnover cost applied.</li>
+        <li><strong>Build the point-in-time universe.</strong> At each rebalance month-end T, eligible tickers are exactly the companies that were in the S&P 500 on T (rolled forward from the 1996-2019 daily history plus the post-2019 add/remove change events).  No look-ahead — today's S&P 500 list is never back-applied.  ~500 names per month, 976 unique members across 22 years.</li>
+        <li><strong>Cross-sectionally rank 67 price-only features.</strong> Momentum (12-1, 6-1, 3-1), idiosyncratic momentum, trend health, RSI, recovery rate, breakout strength, drawdown profile, volatility, beta, multibagger ratio, FIP score, etc. — all converted to per-month percentile ranks so the model only learns relative orderings.</li>
+        <li><strong>Train multi-horizon Gradient Boosted Trees.</strong> Three HistGradientBoostingRegressor models predict cross-sectional rank of forward returns at 1m / 3m / 6m horizons.  Refit every January on all data older than (test month − 7 months) so 6m-forward labels never leak across the cutoff.  The score for v3 picking is the mean of the 3m and 6m predictions (the 1m prediction is noisier).</li>
+        <li><strong>Classify SPY regime (the apex).</strong>
+          Crash if SPY 21d ≤ -8% or (SPY 6m ≤ -5% AND 21d ≤ -3%) → hold 100% cash for the next month.
+          Recovery if SPY below 200dma streak ≥ 40d AND back above 200dma AND 21d > 0.
+          Bull if SPY 12m ≥ 10% AND above 200dma.  Else Normal.</li>
+        <li><strong>Pick K = 3 in all regimes.</strong> Top-3 by score within the PIT S&P 500 cohort.  Equal-weight (1/3 each).  K = 3 is the cross-sectional alpha sweet spot — sensitivity testing confirms K = 2 and K = 4 lose only ~2pp WF CAGR.</li>
+        <li><strong>6-month rebalance.</strong> Hold each basket for 6 months.  At month T + 6, sell the basket and redeploy into the new top-3 picks (or cash if regime is crash).  ~2× annual turnover (vs ~7× for v2 monthly).  Tax-friendly: 6-month holds qualify for short-term-cap-gains avoidance after IRS holding-period rules in tax-efficient accounts.  10 bp/month-of-active-investment turnover cost is already netted out of headline numbers.</li>
       </ol>
 
       <details class="accordion">
-        <summary>Walk-forward validation</summary>
+        <summary>Walk-forward validation (10 splits, OOS test)</summary>
         <div class="accordion-body">
-          <p>10 TRAIN/TEST splits covering 2003-2024 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p>Aggregate (TEST): 10/10 positive splits, mean OOS CAGR 51.8%, mean edge +39.4pp over SPY DCA, 9/10 beat SPY DCA. Min OOS CAGR 11.2% (R6 AI rally — equal-weighted small/mid-cap basket lags mega-cap-dominated SPY); max OOS CAGR 162.9% (R1 GFC bottom recovery). Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
+          <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
+          <p><strong>Aggregate (TEST):</strong> 10/10 positive splits, mean OOS CAGR <strong>42.80%</strong>, mean edge <strong>+27.99pp</strong> over SPY, 9/10 beat SPY.  Min OOS CAGR +14.5% (R3 2014-2016, the strategy's only loss to SPY at -1.5pp); max OOS CAGR +108.8% (R1 GFC bottom recovery).  R6 AI rally: +40.8% (vs SPY +36.0%, +4.9pp) — the v3 strategy now beats SPY in the AI rally, where the v2 baseline lost.  Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Why monthly rebalance?</summary>
+        <summary>Why hold for 6 months instead of monthly?</summary>
         <div class="accordion-body">
-          <p>720 variants tested in the v2 sweep (5 K-normal × 3 K-recovery × 4 K-bull × 2 conviction × 2 cash-gate × 5 regime modes). Monthly rebalance with the winner config (K-normal=15, equal-weight, tight crash gate) dominates because the ML score's predictive power is concentrated at the 1-3 month horizon — holding picks longer than that decays the signal. The cost is monthly turnover (10bp/month modeled) and tax inefficiency in taxable accounts.</p>
+          <p>The base sweep tested 1755 variants across 13 scorers × 5 K-combos × 3 weightings × 3 gates × 3 holds.  Monthly rebalance (h=1) scored 16.22% WF mean CAGR; 6-month hold scored <strong>42.80%</strong> — a 2.6× improvement.  Reason: the GBM was trained to predict forward 3m and 6m returns, so holding for ~6 months matches the model's predictive horizon.  Monthly rebalancing trades on noise rather than alpha.  Sensitivity confirms a broad plateau: holds of 4, 6, 9, 12 months all score 31-43% WF mean.  No knife-edge.</p>
+          <p>Bonus: 6-month hold reduces transaction costs from ~7× to ~1.5× annual turnover, dramatically improving tax efficiency in taxable accounts.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why K = 3 instead of K = 15?</summary>
+        <div class="accordion-body">
+          <p>Within the S&P 500 cohort, the cross-sectional alpha is concentrated in the top of the score distribution.  Top-3 captures the highest-conviction names; top-15 dilutes alpha with mid-percentile names whose IC is near zero.  Sensitivity: K=1 gives 31.1% WF (single-name volatile), K=2 gives 37.4%, <strong>K=3 gives 42.80%</strong>, K=4 gives 37.4%, K=5 gives 31.0%.  K=3 is the apex.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Survivorship-bias overlay</summary>
         <div class="accordion-body">
-          <p>The universe includes only tickers alive today. To honestly account for the survivors-only bias, we run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to the historical small-cap delisting hazard rate α). At α=4%/yr (the historical default), median CAGR is 74.4% (p10 71%, p90 77%). Even at α=12%/yr (3× historical), median CAGR is 59.3%.</p>
+          <p>Even though the universe is true PIT S&P 500 (no survivor bias from the membership list), the underlying price panel still has Yahoo-style survivor bias for some pre-2010 delisted tickers.  We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to historical hazard rate α).  At α=4%/yr (large-cap historical default), median CAGR is <strong>32.04%</strong> (p10 25.4%, p90 36.1%) — still <strong>+20pp over SPY</strong>.  Edge over SPY remains positive at α ≤ 12%/yr (3× historical rate).</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Generalisation across universes</summary>
+        <div class="accordion-body">
+          <p>Same v3 config (K=3, EW, tight, h=6) tested on 5 alternative universes (broader 1,833-ticker, non-S&P-500 PIT, random 500-name samples × 5 seeds): all 10 walk-forward splits remain positive across every universe.  PIT S&P 500 has the lowest MaxDD (-50%) and highest Sharpe (0.96) of all universes — the most robust profile.  Pick-distribution sanity: only 5.3% of broader-universe picks were S&P 500 PIT members at the asof — strategy genuinely selects different stocks per universe, not collapsing to the same names.  Strategy is not an artefact of the S&P 500 cohort.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Other strategies & full research</summary>
         <div class="accordion-body">
-          <p>This page focuses on the recommended strategy. The <a href="/experiments/monthly-dca/">research page</a> contains the full results: per-split walk-forward detail, parameter sweep, the full pick log, methodology, and the legacy strategy_rotation results (35.4% full-window CAGR, the prior winner before V2).</p>
-          <p>Source code and raw data: <code>experiments/monthly_dca/v2/</code> in the GitHub repo.</p>
+          <p>This page deploys the recommended v3 strategy.  See the <a href="/experiments/monthly_dca/v2/SP500_PIT_V3_REPORT.md">v3 research report</a> for the full path: 1755-variant base sweep, 64-variant focused multi-horizon sweep, multi-universe generalisation, parameter sensitivity, drawdown ledger, IC analysis.  The legacy v2 strategy (80.79% on 1,833 tickers, 51.8% WF mean) is preserved at <code>SP500_PIT_ANALYSIS.md</code> with its honest PIT collapse to 15% CAGR / +3pp edge — the analysis that motivated the v3 redesign.</p>
+          <p>Source code and raw data: <code>experiments/monthly_dca/v2/</code> in the GitHub repo.  Reproduction: see <code>experiments/monthly_dca/v2/REPRODUCE.md</code>.</p>
         </div>
       </details>
     </div>

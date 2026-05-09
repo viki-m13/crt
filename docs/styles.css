@@ -1794,3 +1794,119 @@ strong{font-weight:600}
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
+
+/* ============================================================
+   V3 ROBUSTNESS SECTION
+   ============================================================ */
+.v3-section{
+  padding:48px 0 60px;
+  background:#fafafa;
+  border-top:1px solid var(--rule-light);
+}
+.v3-block{
+  margin:24px 0 36px;
+}
+.v3-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--mono);
+  font-size:12px;
+  margin-top:10px;
+}
+.v3-table thead th{
+  background:#f0f0f0;
+  font-weight:600;
+  padding:8px 10px;
+  text-align:left;
+  border-bottom:1px solid var(--rule-light);
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  font-size:10.5px;
+  color:var(--muted);
+}
+.v3-table tbody tr{
+  border-bottom:1px solid var(--rule-light);
+}
+.v3-table tbody td{
+  padding:7px 10px;
+  vertical-align:middle;
+}
+.v3-table tbody tr:hover{
+  background:#fafafa;
+}
+.v3-table .pos{ color:var(--green); }
+.v3-table .neg{ color:var(--orange); }
+
+.most-picked-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.most-picked-card{
+  background:#fff;
+  border:1px solid var(--rule-light);
+  padding:10px 12px;
+  text-align:center;
+}
+.most-picked-tkr{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:14px;
+}
+.most-picked-n{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+@media (max-width:600px){
+  .v3-table{ font-size:11px; }
+  .v3-table thead th{ font-size:9.5px; padding:6px 6px; }
+  .v3-table tbody td{ padding:5px 6px; }
+}
+
+/* ============================================================
+   CASE STUDIES + V2 COMPARE
+   ============================================================ */
+.examples-section, .v2compare-section{
+  padding:48px 0 60px;
+  border-top:1px solid var(--rule-light);
+}
+.examples-section{ background:#fff; }
+.v2compare-section{ background:#fafafa; }
+.case-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+  gap:14px;
+  margin-top:18px;
+}
+.case-card{
+  background:#fff;
+  border:1px solid var(--rule-light);
+  padding:16px;
+}
+.case-label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  color:var(--muted);
+  font-weight:600;
+}
+.case-tickers{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:14px;
+  margin:8px 0 6px;
+}
+.case-ret{
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:8px;
+}
+.case-blurb{
+  font-size:12px;
+  line-height:1.5;
+  color:var(--muted-2);
+}
