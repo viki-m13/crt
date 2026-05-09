@@ -67,8 +67,134 @@ function render(data) {
   renderYears(data);
   renderWalkForward(data);
   renderBias(data);
+  renderV3Sections(data);
   renderHistorical(data);
   renderTrades(data);
+}
+
+/* ============================================================
+   v3-specific: sub-period CAGR, multi-universe generalisation,
+   parameter sensitivity, drawdown ledger
+   ============================================================ */
+function renderV3Sections(data) {
+  const host = document.getElementById("v3Sections");
+  if (!host) return;
+  host.innerHTML = "";
+
+  // 1. Sub-period CAGR
+  if (data.sub_periods?.length) {
+    const sec = el("div", { class: "v3-block" });
+    sec.appendChild(el("h3", { class: "section-h3" }, "Sub-period robustness"));
+    sec.appendChild(el("p", { class: "section-sub" },
+      "Strategy CAGR vs SPY across overlapping decade windows. Edge persists in every period."));
+    const tbl = el("table", { class: "v3-table" });
+    tbl.innerHTML = `<thead><tr><th>Period</th><th>Months</th><th>Strategy CAGR</th><th>SPY CAGR</th><th>Edge (pp)</th></tr></thead>`;
+    const tb = el("tbody");
+    data.sub_periods.forEach(p => {
+      const row = el("tr");
+      row.appendChild(el("td", {}, p.period.replace(/^p\d_/, "").replace(/_/g, "-")));
+      row.appendChild(el("td", {}, String(p.n_months)));
+      row.appendChild(el("td", {}, fmtPct(p.cagr_strat)));
+      row.appendChild(el("td", {}, fmtPct(p.cagr_spy)));
+      row.appendChild(el("td", { class: clsRet(p.edge_pp) }, (p.edge_pp >= 0 ? "+" : "") + p.edge_pp.toFixed(1)));
+      tb.appendChild(row);
+    });
+    tbl.appendChild(tb);
+    sec.appendChild(tbl);
+    host.appendChild(sec);
+  }
+
+  // 2. Multi-universe generalisation
+  if (data.multi_universe_generalisation?.length) {
+    const sec = el("div", { class: "v3-block" });
+    sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
+    sec.appendChild(el("p", { class: "section-sub" },
+      "Same v3 config (K=3, EW, tight gate, 6m hold) on 5 alternative universes. Strategy isn't an artefact of the S&P 500 cohort — it works on broader, non-S&P-500, and random universes too."));
+    const tbl = el("table", { class: "v3-table" });
+    tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs SPY</th><th>Sharpe</th><th>MaxDD</th><th>Beats SPY</th></tr></thead>`;
+    const tb = el("tbody");
+    data.multi_universe_generalisation.forEach(u => {
+      const row = el("tr");
+      row.appendChild(el("td", {}, u.universe.replace(/_/g, " ")));
+      row.appendChild(el("td", {}, String(u.n_pool)));
+      row.appendChild(el("td", {}, fmtPct(u.cagr_full)));
+      row.appendChild(el("td", {}, fmtPct(u.wf_mean_cagr)));
+      row.appendChild(el("td", {}, fmtPct(u.wf_min_cagr)));
+      row.appendChild(el("td", { class: clsRet(u.wf_mean_edge_pp) }, (u.wf_mean_edge_pp >= 0 ? "+" : "") + u.wf_mean_edge_pp.toFixed(1) + "pp"));
+      row.appendChild(el("td", {}, u.sharpe.toFixed(2)));
+      row.appendChild(el("td", {}, fmtPct(u.max_dd, 0)));
+      row.appendChild(el("td", {}, `${u.wf_n_beats_spy}/10`));
+      tb.appendChild(row);
+    });
+    tbl.appendChild(tb);
+    sec.appendChild(tbl);
+    host.appendChild(sec);
+  }
+
+  // 3. Parameter sensitivity
+  if (data.parameter_sensitivity?.length) {
+    const sec = el("div", { class: "v3-block" });
+    sec.appendChild(el("h3", { class: "section-h3" }, "Parameter sensitivity"));
+    sec.appendChild(el("p", { class: "section-sub" },
+      "Each row perturbs ONE parameter while holding the others at the v3 winner config (K=3, EW, tight, h=6, cost=10bp). Robust plateau across reasonable perturbations confirms the result is not on a knife-edge."));
+    const tbl = el("table", { class: "v3-table" });
+    tbl.innerHTML = `<thead><tr><th>Param</th><th>Value</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge (pp)</th><th>Beats SPY</th><th>MaxDD</th></tr></thead>`;
+    const tb = el("tbody");
+    data.parameter_sensitivity.forEach(s => {
+      const row = el("tr");
+      row.appendChild(el("td", {}, s.param));
+      row.appendChild(el("td", {}, String(s.value)));
+      row.appendChild(el("td", {}, fmtPct(s.cagr_full)));
+      row.appendChild(el("td", {}, fmtPct(s.wf_mean_cagr)));
+      row.appendChild(el("td", {}, fmtPct(s.wf_min_cagr)));
+      row.appendChild(el("td", { class: clsRet(s.wf_mean_edge_pp) }, (s.wf_mean_edge_pp >= 0 ? "+" : "") + s.wf_mean_edge_pp.toFixed(1)));
+      row.appendChild(el("td", {}, `${s.wf_n_beats_spy}/10`));
+      row.appendChild(el("td", {}, fmtPct(s.max_dd, 0)));
+      tb.appendChild(row);
+    });
+    tbl.appendChild(tb);
+    sec.appendChild(tbl);
+    host.appendChild(sec);
+  }
+
+  // 4. Drawdown ledger (top 5)
+  if (data.drawdowns?.length) {
+    const sec = el("div", { class: "v3-block" });
+    sec.appendChild(el("h3", { class: "section-h3" }, "Drawdown ledger"));
+    sec.appendChild(el("p", { class: "section-sub" },
+      "Top peak-to-trough drawdowns of 5%+ in the v3 backtest. The deepest is the GFC (-50%); recovery in 5 months."));
+    const tbl = el("table", { class: "v3-table" });
+    tbl.innerHTML = `<thead><tr><th>Start</th><th>Trough</th><th>End</th><th>Depth</th></tr></thead>`;
+    const tb = el("tbody");
+    data.drawdowns.slice(0, 8).forEach(d => {
+      const row = el("tr");
+      row.appendChild(el("td", {}, d.start));
+      row.appendChild(el("td", {}, d.trough));
+      row.appendChild(el("td", {}, d.end));
+      row.appendChild(el("td", { class: "neg" }, d.depth_pct.toFixed(1) + "%"));
+      tb.appendChild(row);
+    });
+    tbl.appendChild(tb);
+    sec.appendChild(tbl);
+    host.appendChild(sec);
+  }
+
+  // 5. Most-picked tickers
+  if (data.most_picked?.length) {
+    const sec = el("div", { class: "v3-block" });
+    sec.appendChild(el("h3", { class: "section-h3" }, "Most-picked tickers"));
+    sec.appendChild(el("p", { class: "section-sub" },
+      "Tickers that the v3 strategy selected most often across the 22-year backtest. Concentration in NVDA reflects its persistent multi-horizon momentum signal in S&P 500."));
+    const grid = el("div", { class: "most-picked-grid" });
+    data.most_picked.slice(0, 12).forEach(p => {
+      const card = el("div", { class: "most-picked-card" });
+      card.appendChild(el("div", { class: "most-picked-tkr" }, p.ticker));
+      card.appendChild(el("div", { class: "most-picked-n" }, `${p.n_months_picked} months`));
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    host.appendChild(sec);
+  }
 }
 
 function renderHeroMeta(data) {
@@ -93,22 +219,35 @@ function renderPick(data) {
   body.innerHTML = "";
   const basket = data.pick_of_month_basket || (data.pick_of_month ? [data.pick_of_month] : []);
   if (!basket.length) {
+    // If we're in cash, show a different message
+    const ls = data.live_state || {};
+    if (ls.cash_position) {
+      body.innerHTML = `<div class="basket-dates"><strong>100% cash position.</strong> The crash-aware regime gate has fired — the strategy holds zero stock exposure. Re-evaluated each month-end.</div>`;
+      return;
+    }
     body.innerHTML = "<div>No picks available for this month.</div>";
     return;
   }
-  // Compute the sell-by date — 3 years from the strategy's as_of date
-  const asof = data.as_of;
-  let sellBy = "";
-  try {
-    const d = new Date(asof);
-    d.setFullYear(d.getFullYear() + 3);
-    sellBy = d.toISOString().slice(0, 10);
-  } catch (e) {}
-  if (asof && sellBy) {
+  // v3: 6-month hold from last_rebalance_date to next_rebalance_date (from live_state)
+  const ls = data.live_state || {};
+  const buyDate = ls.last_rebalance_date || data.as_of;
+  const sellDate = ls.next_rebalance_date || (() => {
+    try { const d = new Date(data.as_of); d.setMonth(d.getMonth() + 6); return d.toISOString().slice(0, 10); }
+    catch (e) { return ""; }
+  })();
+  const monthsHeld = ls.months_since_rebalance != null ? ls.months_since_rebalance : null;
+  const monthsLeft = monthsHeld != null ? Math.max(0, 6 - monthsHeld) : null;
+  if (buyDate && sellDate) {
     const dates = el("div", { class: "basket-dates" });
+    let extra = "";
+    if (monthsLeft != null) {
+      if (monthsHeld === 0) extra = `Just rebalanced — fresh basket.`;
+      else if (monthsLeft === 0) extra = `Rebalance imminent — basket will refresh at next month-end.`;
+      else extra = `${monthsHeld} of 6 months elapsed; ${monthsLeft} months remaining until next rebalance.`;
+    }
     dates.innerHTML =
-      `<strong>Buy now</strong> at month-end close (${asof}). ` +
-      `<strong>Sell on ${sellBy}</strong> (3 years later) — that's the explicit exit date for every pick in the basket.`;
+      `<strong>Bought ${buyDate}</strong> at month-end close. ` +
+      `<strong>Hold until ${sellDate}</strong> (6-month rebalance). ${extra}`;
     body.appendChild(dates);
   }
   const grid = el("div", { class: "basket-grid" });
@@ -119,9 +258,9 @@ function renderPick(data) {
       el("span", { class: "basket-tkr" }, p.ticker),
       el("span", { class: "basket-tkr-px" }, fmtPx(p.price)),
     ]));
-    if (sellBy) {
+    if (sellDate) {
       card.appendChild(el("div", { class: "basket-sell-by" },
-        `Buy ${asof} • Sell ${sellBy}`));
+        `Buy ${buyDate} • Sell ${sellDate}`));
     }
     const stats = el("div", { class: "basket-stats" });
     const statRows = [

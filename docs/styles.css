@@ -1794,3 +1794,74 @@ strong{font-weight:600}
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
+
+/* ============================================================
+   V3 ROBUSTNESS SECTION
+   ============================================================ */
+.v3-section{
+  padding:48px 0 60px;
+  background:#fafafa;
+  border-top:1px solid var(--rule-light);
+}
+.v3-block{
+  margin:24px 0 36px;
+}
+.v3-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--mono);
+  font-size:12px;
+  margin-top:10px;
+}
+.v3-table thead th{
+  background:#f0f0f0;
+  font-weight:600;
+  padding:8px 10px;
+  text-align:left;
+  border-bottom:1px solid var(--rule-light);
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  font-size:10.5px;
+  color:var(--muted);
+}
+.v3-table tbody tr{
+  border-bottom:1px solid var(--rule-light);
+}
+.v3-table tbody td{
+  padding:7px 10px;
+  vertical-align:middle;
+}
+.v3-table tbody tr:hover{
+  background:#fafafa;
+}
+.v3-table .pos{ color:var(--green); }
+.v3-table .neg{ color:var(--orange); }
+
+.most-picked-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.most-picked-card{
+  background:#fff;
+  border:1px solid var(--rule-light);
+  padding:10px 12px;
+  text-align:center;
+}
+.most-picked-tkr{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:14px;
+}
+.most-picked-n{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+@media (max-width:600px){
+  .v3-table{ font-size:11px; }
+  .v3-table thead th{ font-size:9.5px; padding:6px 6px; }
+  .v3-table tbody td{ padding:5px 6px; }
+}

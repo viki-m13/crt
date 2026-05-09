@@ -125,9 +125,15 @@ def build_monthly_membership(
 
 
 def main():
-    # Build the panel month-ends. Use the predictions parquet to know which
-    # asof dates we need.
-    preds = pd.read_parquet(CACHE / "v2" / "ml_preds_v2.parquet")
+    # Build the panel month-ends. Use the LIVE predictions parquet to cover
+    # the latest live month (which extends past the WF training cutoff).
+    # Falls back to ml_preds_v2 if ml_preds_live is missing.
+    live_path = CACHE / "v2" / "ml_preds_live.parquet"
+    wf_path = CACHE / "v2" / "ml_preds_v2.parquet"
+    if live_path.exists():
+        preds = pd.read_parquet(live_path)
+    else:
+        preds = pd.read_parquet(wf_path)
     panel_dates = sorted(pd.to_datetime(preds["asof"].unique()))
     print(f"[panel] {len(panel_dates)} month-ends from {panel_dates[0].date()} "
           f"to {panel_dates[-1].date()}")
