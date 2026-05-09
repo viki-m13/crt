@@ -67,9 +67,92 @@ function render(data) {
   renderYears(data);
   renderWalkForward(data);
   renderBias(data);
+  renderCaseStudies(data);
   renderV3Sections(data);
   renderHistorical(data);
   renderTrades(data);
+}
+
+/* ============================================================
+   Case studies — annotated v3 baskets across history
+   ============================================================ */
+function renderCaseStudies(data) {
+  const sec = document.getElementById("caseStudies");
+  if (!sec) return;
+  sec.innerHTML = "";
+
+  // Pull rebalance events from pick_log (each basket has basket_id and a set of trades)
+  const log = data.pick_log || [];
+  if (!log.length) return;
+  const byBasket = {};
+  log.forEach(p => {
+    const k = p.basket_id ?? p.asof;
+    if (!byBasket[k]) byBasket[k] = [];
+    byBasket[k].push(p);
+  });
+
+  // Pre-defined case-study windows we want to highlight
+  // (entry_date prefix → label / commentary).
+  const wantedDates = [
+    { prefix: "2009-04",    label: "Post-GFC bottom (2009-04 → 2009-10)",
+      blurb: "Bear regime ended in April 2009; first non-cash rebalance after the March 2009 bottom captures the strongest recovery basket of the entire backtest. Holding for 6 months captures the full V-bottom rally." },
+    { prefix: "2020-03",    label: "COVID bottom (2020-03 → 2020-09)",
+      blurb: "Tight gate fired in February 2020 (cash) and re-entered in March/April 2020 with the recovery-regime basket. The 6m hold captures the entire post-March 2020 V-bottom rally." },
+    { prefix: "2016-07",    label: "Brexit / 2016 mid-year (2016-07 → 2017-01)",
+      blurb: "Bull-regime basket through the post-Brexit drift, election surprise, and post-election rally. Strategy didn't predict any of these macro events — the GBM just kept ranking the price-only momentum signal cross-sectionally." },
+    { prefix: "2022-12",    label: "Post-2022-bear bottom (2022-12 → 2023-06)",
+      blurb: "After the 2022 bear, recovery-regime basket entered in late 2022 captures the AI rally launch in Q1-Q2 2023." },
+    { prefix: "2023-05",    label: "AI rally (2023-05 → 2023-11)",
+      blurb: "Bull-regime basket through the mid-2023 mega-cap rally. K=3 caught NVDA + tech leaders." },
+  ];
+
+  const cases = [];
+  // For each wanted window, find the latest matching basket
+  wantedDates.forEach(w => {
+    const matches = log.filter(p => p.asof && p.asof.startsWith(w.prefix));
+    if (matches.length) {
+      // Pick the basket_id that has the most members from this prefix
+      const bid = matches[0].basket_id;
+      const basket = log.filter(p => p.basket_id === bid);
+      if (basket.length) cases.push({ ...w, picks: basket });
+    }
+  });
+
+  // Always add the latest 2 baskets as recent case studies
+  const allBids = [...new Set(log.map(p => p.basket_id).filter(b => b != null))].sort((a, b) => b - a);
+  allBids.slice(0, 2).forEach(bid => {
+    const basket = log.filter(p => p.basket_id === bid);
+    if (basket.length && !cases.some(c => c.picks[0]?.basket_id === bid)) {
+      const entryDate = basket[0]?.asof || "";
+      const exitDate = basket[0]?.exit_date || "?";
+      const status = basket[0]?.status === "open" ? "currently held" : "closed";
+      cases.unshift({
+        prefix: entryDate.slice(0, 7),
+        label: `Recent basket (${entryDate} → ${exitDate}, ${status})`,
+        blurb: status === "currently held"
+          ? "The current basket — held until the next 6-month rebalance."
+          : "Most recently closed basket.",
+        picks: basket,
+      });
+    }
+  });
+
+  cases.slice(0, 8).forEach(c => {
+    const card = el("div", { class: "case-card" });
+    card.appendChild(el("div", { class: "case-label" }, c.label));
+    const tickers = c.picks.map(p => p.ticker).join(" · ");
+    card.appendChild(el("div", { class: "case-tickers" }, tickers));
+    // Aggregate basket return (equal-weighted)
+    const validRets = c.picks.map(p => p.return ?? p.ret_strat).filter(r => r != null);
+    if (validRets.length) {
+      const basketRet = validRets.reduce((a, b) => a + b, 0) / validRets.length;
+      const status = c.picks[0]?.status === "open" ? "(open)" : "";
+      card.appendChild(el("div", { class: "case-ret " + clsRet(basketRet) },
+        `Basket return: ${fmtPctSigned(basketRet, 1)} ${status}`));
+    }
+    card.appendChild(el("div", { class: "case-blurb" }, c.blurb));
+    sec.appendChild(card);
+  });
 }
 
 /* ============================================================
@@ -518,36 +601,37 @@ function renderYears(data) {
 }
 
 function renderBias(data) {
-  const s = data.survivorship;
-  if (!s) return;
-
-  const stratCagr = s.stratified_default_4pct?.cagr_dca_median;
-  const stratCagrP10 = s.stratified_default_4pct?.cagr_dca_p10;
-  const random = s.random_baseline_k1?.cagr_mean;
+  const s = data.survivorship || {};
+  // v3: bias_sensitivity is a list keyed by base_rate_annual.
+  const bs = data.bias_sensitivity || s.sensitivity || [];
+  const get = a => bs.find(x => Math.abs(x.base_rate_annual - a) < 0.001);
+  const a0 = get(0.0);
+  const a4 = get(0.04);
+  const a8 = get(0.08);
+  const a20 = get(0.20);
   const rawCagr = data.headline?.cagr_raw;
-  const alpha = (rawCagr != null && random != null) ? rawCagr - random : null;
-  const worst = (s.sensitivity || []).find(x => x.base_rate_annual >= 0.20);
+  const spyCagr = data.headline?.cagr_spy_dca;
+  const edge_full = (rawCagr != null && spyCagr != null) ? rawCagr - spyCagr : null;
 
   const elById = id => document.getElementById(id);
   if (elById("biasAlpha")) {
-    elById("biasAlpha").textContent = fmtPctSigned(alpha, 1);
+    elById("biasAlpha").textContent = fmtPctSigned(edge_full, 1);
   }
-  if (elById("biasRandom")) {
-    elById("biasRandom").textContent = fmtPct(random);
+  if (elById("biasRandom") && a4) {
+    elById("biasRandom").textContent = fmtPct(a4.stratified_cagr_median);
   }
-  if (elById("biasStrat")) {
-    const txt = fmtPct(stratCagr) + (stratCagrP10 != null ? `  (p10 ${fmtPct(stratCagrP10)})` : "");
-    elById("biasStrat").textContent = txt;
+  if (elById("biasStrat") && a8) {
+    elById("biasStrat").textContent = fmtPct(a8.stratified_cagr_median);
   }
-  if (elById("biasWorst") && worst) {
-    elById("biasWorst").textContent = fmtPct(worst.stratified_cagr_median);
+  if (elById("biasWorst") && a20) {
+    elById("biasWorst").textContent = fmtPct(a20.stratified_cagr_median);
   }
 
   // Sensitivity table
   const sensTbody = document.querySelector("#sensTable tbody");
   if (sensTbody) {
     sensTbody.innerHTML = "";
-    (s.sensitivity || []).forEach(r => {
+    bs.forEach(r => {
       const tr = el("tr");
       tr.appendChild(el("td", {}, `${(r.base_rate_annual * 100).toFixed(0)}%`));
       tr.appendChild(el("td", { class: clsRet(r.stratified_cagr_median) }, fmtPct(r.stratified_cagr_median)));
