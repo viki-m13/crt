@@ -17,9 +17,22 @@ const fmtPctSigned = (x, d = 1) => {
   const v = (x * 100).toFixed(d);
   return Number(v) >= 0 ? `+${v}%` : `${v}%`;
 };
-const fmtX = x => x == null || !Number.isFinite(+x) ? "—" : `${(+x).toFixed(2)}×`;
+const fmtX = x => {
+  if (x == null || !Number.isFinite(+x)) return "—";
+  const v = +x;
+  if (v >= 1000) return `${Math.round(v).toLocaleString()}×`;
+  if (v >= 100) return `${v.toFixed(0)}×`;
+  if (v >= 10) return `${v.toFixed(1)}×`;
+  return `${v.toFixed(2)}×`;
+};
 const fmtPx = x => x == null ? "—" : "$" + (+x).toFixed(2);
 const fmtNum = (x, d = 2) => x == null ? "—" : (+x).toFixed(d);
+const fmtMoney = x => {
+  if (x == null || !Number.isFinite(+x)) return "—";
+  const v = +x;
+  if (v >= 1000) return `$${Math.round(v).toLocaleString()}`;
+  return `$${v.toFixed(0)}`;
+};
 
 function el(tag, attrs = {}, children = []) {
   const e = document.createElement(tag);
@@ -145,8 +158,8 @@ function renderBacktest(data) {
 
   const items = [
     ["Strategy CAGR", fmtPct(cagr), "vs SPY DCA " + fmtPct(spyCagr), "highlight"],
-    ["Strategy multiple", fmtX(final_strat / final_cash), "$" + final_cash.toFixed(0) + " in → $" + final_strat.toFixed(0) + " out", "ok"],
-    ["SPY multiple", fmtX(final_spy / final_cash), "$" + final_cash.toFixed(0) + " in → $" + final_spy.toFixed(0) + " out", "ok"],
+    ["Strategy multiple", fmtX(final_strat / final_cash), fmtMoney(final_cash) + " in → " + fmtMoney(final_strat) + " out", "ok"],
+    ["SPY multiple", fmtX(final_spy / final_cash), fmtMoney(final_cash) + " in → " + fmtMoney(final_spy) + " out", "ok"],
     ["Walk-forward CAGR", fmtPct(wf?.mean_test_cagr), "mean across " + (wf?.n_splits_with_test_data || "?") + " out-of-sample splits", "ok"],
   ];
   items.forEach(([lbl, val, sub, cls]) => {
@@ -157,32 +170,80 @@ function renderBacktest(data) {
     stats.appendChild(c);
   });
 
-  // Draw chart
+  // Draw chart with period selector
   const canvas = document.getElementById("btChart");
   if (canvas && data.growth) {
-    requestAnimationFrame(() => drawGrowth(canvas, data.growth));
-    window.addEventListener("resize", () => drawGrowth(canvas, data.growth), { passive: true });
+    let currentPeriod = "all";
+    const draw = () => {
+      const { rows, isRebased } = filterGrowthByPeriod(data.growth, currentPeriod);
+      drawGrowth(canvas, rows, isRebased);
+    };
+    requestAnimationFrame(draw);
+    window.addEventListener("resize", draw, { passive: true });
+
+    // Hook up period buttons
+    const bar = document.getElementById("btPeriodBar");
+    if (bar) {
+      bar.querySelectorAll(".bt-period-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentPeriod = btn.getAttribute("data-period");
+          bar.querySelectorAll(".bt-period-btn").forEach(b => {
+            const active = b === btn;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-selected", active ? "true" : "false");
+          });
+          draw();
+        });
+      });
+    }
   }
 }
 
-function drawGrowth(canvas, growth) {
+function filterGrowthByPeriod(growth, period) {
+  if (!growth?.length || period === "all") return { rows: growth, isRebased: false };
+  const yearsMap = { "1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20 };
+  const yrs = yearsMap[period];
+  if (!yrs) return { rows: growth, isRebased: false };
+  const last = new Date(growth[growth.length - 1].date);
+  const cutoff = new Date(last);
+  cutoff.setFullYear(cutoff.getFullYear() - yrs);
+  // Find first index with date >= cutoff
+  const startIdx = growth.findIndex(g => new Date(g.date) >= cutoff);
+  if (startIdx <= 0) return { rows: growth, isRebased: false };
+  // Re-base equity values to start at 1.0 from the new starting point
+  const sub = growth.slice(startIdx);
+  const baseStrat = sub[0].strat_value || 1;
+  const baseSpy = sub[0].spy_value || 1;
+  const baseInv = sub[0].invested || 1;
+  return {
+    rows: sub.map(g => ({
+      date: g.date,
+      strat_value: g.strat_value / baseStrat,
+      spy_value: (g.spy_value != null ? g.spy_value / baseSpy : null),
+      invested: g.invested / baseInv,
+    })),
+    isRebased: true,
+  };
+}
+
+function drawGrowth(canvas, growth, isRebased) {
   const ctx = canvas.getContext("2d");
   const W = canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
   const H = canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
   ctx.clearRect(0, 0, W, H);
 
   if (!growth || growth.length < 2) return;
-  const padL = 56 * devicePixelRatio, padR = 16 * devicePixelRatio,
+  const padL = 52 * devicePixelRatio, padR = 12 * devicePixelRatio,
         padT = 18 * devicePixelRatio, padB = 32 * devicePixelRatio;
   const n = growth.length;
   let maxY = 0;
   growth.forEach(g => {
-    maxY = Math.max(maxY, g.strat_value, g.spy_value, g.invested);
+    maxY = Math.max(maxY, g.strat_value || 0, g.spy_value || 0, g.invested || 0);
   });
-  // Always include 0
   const minY = 0;
-  // Round maxY up to nice number
   const niceMax = niceTop(maxY);
+  // Rebased periods use × multipliers; "All" uses absolute dollars.
+  const yMode = isRebased ? "x" : "$";
 
   const xAt = i => padL + (W - padL - padR) * (i / (n - 1));
   const yAt = v => H - padB - (H - padT - padB) * ((v - minY) / (niceMax - minY));
@@ -197,22 +258,56 @@ function drawGrowth(canvas, growth) {
     const v = niceMax * (i / ticks);
     const y = yAt(v);
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-    ctx.fillText(`$${v.toFixed(0)}`, 4 * devicePixelRatio, y + 4 * devicePixelRatio);
+    ctx.fillText(formatYAxisValue(v, yMode), 4 * devicePixelRatio, y + 4 * devicePixelRatio);
   }
 
-  // X-axis labels (years)
+  // X-axis labels (years) — adaptive density to avoid overlap
+  // Approx min pixel-spacing per label = 56px (room for 'YYYY' + breathing room)
+  const minLabelSpacingPx = 56 * devicePixelRatio;
+  const chartWidth = W - padL - padR;
+  // First, gather unique years and their first index
+  const yearFirstIdx = [];
   const seenYears = new Set();
   growth.forEach((g, i) => {
     const yr = String(g.date).slice(0, 4);
     if (!seenYears.has(yr)) {
       seenYears.add(yr);
-      const x = xAt(i);
-      ctx.fillStyle = "#767676";
-      ctx.fillText(yr, x - 12 * devicePixelRatio, H - 8 * devicePixelRatio);
-      ctx.strokeStyle = "#f0f0f0";
-      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+      yearFirstIdx.push({ yr, i });
     }
   });
+  // Decide how many years to skip between labels so they don't overlap
+  const maxLabels = Math.max(2, Math.floor(chartWidth / minLabelSpacingPx));
+  const yearStep = Math.max(1, Math.ceil(yearFirstIdx.length / maxLabels));
+  // For short windows (<=2 years), label months instead
+  const totalMonths = growth.length;
+  const useMonths = (yearFirstIdx.length <= 2);
+
+  if (useMonths) {
+    const minMonthSpacingPx = 48 * devicePixelRatio;
+    const maxMonthLabels = Math.max(2, Math.floor(chartWidth / minMonthSpacingPx));
+    const monthStep = Math.max(1, Math.ceil(totalMonths / maxMonthLabels));
+    growth.forEach((g, i) => {
+      if (i % monthStep !== 0 && i !== growth.length - 1) return;
+      const x = xAt(i);
+      ctx.fillStyle = "#767676";
+      const lbl = String(g.date).slice(0, 7); // YYYY-MM
+      const w = ctx.measureText(lbl).width;
+      ctx.fillText(lbl, x - w / 2, H - 8 * devicePixelRatio);
+      ctx.strokeStyle = "#f0f0f0";
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+    });
+  } else {
+    yearFirstIdx.forEach((y, k) => {
+      const isLast = k === yearFirstIdx.length - 1;
+      if (k % yearStep !== 0 && !isLast) return;
+      const x = xAt(y.i);
+      ctx.fillStyle = "#767676";
+      const w = ctx.measureText(y.yr).width;
+      ctx.fillText(y.yr, x - w / 2, H - 8 * devicePixelRatio);
+      ctx.strokeStyle = "#f0f0f0";
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
+    });
+  }
 
   function drawLine(field, color, width = 2.4, fill = false) {
     ctx.lineWidth = width * devicePixelRatio;
@@ -254,6 +349,16 @@ function niceTop(v) {
   else if (f <= 5) nice = 5;
   else nice = 10;
   return nice * exp;
+}
+
+function formatYAxisValue(v, mode) {
+  if (mode === "x") {
+    if (v === 0) return "0×";
+    if (v >= 1000) return `${Math.round(v / 1000)}k×`;
+    return `${v.toFixed(v < 10 ? 1 : 0)}×`;
+  }
+  if (v >= 1000) return `$${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+  return `$${v.toFixed(0)}`;
 }
 
 function renderYears(data) {

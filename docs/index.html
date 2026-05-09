@@ -104,6 +104,14 @@
       <p class="section-sub">From January 2002 through December 2024, if you'd put $1 into the basket at the end of every month and let the strategy fully rotate the portfolio each month, here's how the portfolio compounded compared to putting $1 into SPY at the same dates. 276 monthly cycles (a few months skipped due to bear-market regime), 1,365 monthly trades. Final equity $62,304 vs SPY's $1,292 from $276 deposited.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
+        <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
+          <button class="bt-period-btn" data-period="1y" role="tab">1Y</button>
+          <button class="bt-period-btn" data-period="3y" role="tab">3Y</button>
+          <button class="bt-period-btn" data-period="5y" role="tab">5Y</button>
+          <button class="bt-period-btn" data-period="10y" role="tab">10Y</button>
+          <button class="bt-period-btn" data-period="20y" role="tab">20Y</button>
+          <button class="bt-period-btn active" data-period="all" role="tab" aria-selected="true">All</button>
+        </div>
         <canvas id="btChart" class="bt-chart"></canvas>
         <div class="bt-legend">
           <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy DCA</span>
