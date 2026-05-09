@@ -273,6 +273,43 @@ def main():
     sharpe = float(rets_m.mean() / rets_m.std() * np.sqrt(12)) if rets_m.std() > 0 else None
     win_rate = float((rets_m > 0).mean())
 
+    # === Horizon stats ("if you'd started X years ago") ===
+    # For each lookback window, compute the strategy CAGR and SPY DCA CAGR
+    # over the trailing N years (from the latest backtest month).
+    horizon_stats = []
+    if len(rets_log) >= 12 and growth:
+        latest_d = pd.Timestamp(rets_log[-1]["date"])
+        for years_back in (1, 2, 3, 5, 7, 10, 15, 20):
+            n_needed = years_back * 12
+            if len(rets_log) < n_needed:
+                continue
+            window = rets_log[-n_needed:]
+            window_growth = growth[-n_needed:]
+            since_d = pd.Timestamp(window[0]["date"])
+            # Strategy: cumulative product of monthly returns
+            strat_mult = float(np.prod([1 + r["ret_m"] for r in window]))
+            strat_cagr = strat_mult ** (1.0 / years_back) - 1.0
+            # SPY DCA over same window: re-base SPY value at start of window
+            spy_start = window_growth[0].get("spy_value")
+            spy_end = window_growth[-1].get("spy_value")
+            if spy_start and spy_end and spy_start > 0:
+                spy_mult = spy_end / spy_start
+                spy_cagr = spy_mult ** (1.0 / years_back) - 1.0
+            else:
+                spy_mult = None; spy_cagr = None
+            n_picks = sum(int(r.get("n_picks", 0)) for r in window)
+            edge = (strat_cagr - spy_cagr) if (strat_cagr is not None and spy_cagr is not None) else None
+            horizon_stats.append({
+                "years_back": years_back,
+                "since_date": str(since_d.date()),
+                "cagr_strat": strat_cagr,
+                "cagr_spy": spy_cagr,
+                "edge_vs_spy": edge,
+                "n_picks": n_picks,
+                "strat_terminal": strat_mult,
+                "spy_terminal": spy_mult if spy_mult is not None else 0.0,
+            })
+
     # === Year-by-year (TIME-WEIGHTED) ===
     df = pd.DataFrame(rets_log)
     df["date"] = pd.to_datetime(df["date"])
@@ -445,7 +482,7 @@ def main():
             {"window": "Full 2003-2024", "strategy_cagr": cagr_strat, "spy_cagr": cagr_spy},
         ],
         "live_picks": [],
-        "horizon_stats": [],
+        "horizon_stats": horizon_stats,
         "oracle": {},
         "pick_log": pick_log,
         "sweep_top40": [],
