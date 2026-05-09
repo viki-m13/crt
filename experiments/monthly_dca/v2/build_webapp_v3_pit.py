@@ -178,6 +178,10 @@ def run_full_sim(
     equity = 1.0
     last_rebalance: Optional[pd.Timestamp] = None
     basket_id = 0
+    last_rebalance_to_hold: list[str] = []
+    last_rebalance_to_buy: list[str] = []
+    last_rebalance_to_sell: list[str] = []
+    prev_basket_for_live: list[str] = []
 
     rets_log = []
     trade_log_open: list[dict] = []
@@ -261,12 +265,20 @@ def run_full_sim(
                     if len(top) < K:
                         cur_picks, cur_weights, cash = [], np.array([]), True
                     else:
+                        prev_basket = list(cur_picks)  # before update — used for buy/sell deltas
                         cur_picks = top["ticker"].tolist()
                         cur_weights = np.ones(K) / K
                         cash = False
                         last_rebalance = m
                         basket_id += 1
                         held_for = 0
+                        # Compute hold / buy / sell deltas for the live display.
+                        prev_set = set(prev_basket)
+                        cur_set = set(cur_picks)
+                        last_rebalance_to_hold = sorted(prev_set & cur_set)
+                        last_rebalance_to_buy = sorted(cur_set - prev_set)
+                        last_rebalance_to_sell = sorted(prev_set - cur_set)
+                        prev_basket_for_live = list(prev_basket)
                         # Log entry trades for this basket using REAL prices
                         # at the entry month-end.
                         pos = mr_idx.searchsorted(m)
@@ -363,6 +375,11 @@ def run_full_sim(
         "months_since_rebalance": int(months_since_rebalance),
         "current_basket_picks": list(cur_picks),
         "current_basket_weights": cur_weights.tolist() if len(cur_weights) else [],
+        "previous_basket_picks": list(prev_basket_for_live),
+        # At the LAST rebalance, these were the actions a real investor would have taken:
+        "last_rebalance_to_hold": list(last_rebalance_to_hold),
+        "last_rebalance_to_buy": list(last_rebalance_to_buy),
+        "last_rebalance_to_sell": list(last_rebalance_to_sell),
         "cash_position": cash,
         "current_regime": classify_regime_tight(
             spy_features.loc[months[-1]].to_dict() if months[-1] in spy_features.index else {}
