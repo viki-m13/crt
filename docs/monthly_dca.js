@@ -74,16 +74,17 @@ function render(data) {
 }
 
 /* ============================================================
-   Case studies — annotated v3 baskets across history
+   Case studies — every closed basket + the current one
    ============================================================ */
 function renderCaseStudies(data) {
   const sec = document.getElementById("caseStudies");
   if (!sec) return;
   sec.innerHTML = "";
 
-  // Pull rebalance events from pick_log (each basket has basket_id and a set of trades)
   const log = data.pick_log || [];
   if (!log.length) return;
+
+  // Group by basket_id
   const byBasket = {};
   log.forEach(p => {
     const k = p.basket_id ?? p.asof;
@@ -91,66 +92,67 @@ function renderCaseStudies(data) {
     byBasket[k].push(p);
   });
 
-  // Pre-defined case-study windows we want to highlight
-  // (entry_date prefix → label / commentary).
-  const wantedDates = [
-    { prefix: "2009-04",    label: "Post-GFC bottom (2009-04 → 2009-10)",
-      blurb: "Bear regime ended in April 2009; first non-cash rebalance after the March 2009 bottom captures the strongest recovery basket of the entire backtest. Holding for 6 months captures the full V-bottom rally." },
-    { prefix: "2020-03",    label: "COVID bottom (2020-03 → 2020-09)",
-      blurb: "Tight gate fired in February 2020 (cash) and re-entered in March/April 2020 with the recovery-regime basket. The 6m hold captures the entire post-March 2020 V-bottom rally." },
-    { prefix: "2016-07",    label: "Brexit / 2016 mid-year (2016-07 → 2017-01)",
-      blurb: "Bull-regime basket through the post-Brexit drift, election surprise, and post-election rally. Strategy didn't predict any of these macro events — the GBM just kept ranking the price-only momentum signal cross-sectionally." },
-    { prefix: "2022-12",    label: "Post-2022-bear bottom (2022-12 → 2023-06)",
-      blurb: "After the 2022 bear, recovery-regime basket entered in late 2022 captures the AI rally launch in Q1-Q2 2023." },
-    { prefix: "2023-05",    label: "AI rally (2023-05 → 2023-11)",
-      blurb: "Bull-regime basket through the mid-2023 mega-cap rally. K=3 caught NVDA + tech leaders." },
-  ];
+  // Highlight commentary for famous windows (best-effort match by year)
+  const commentary = {
+    "2009": "Coming off the GFC bottom — captures the post-March 2009 V-bottom rally.",
+    "2020": "COVID era. Crash gate fired in Feb 2020, then re-entered into the recovery.",
+    "2008": "Mid-GFC. Strategy navigates the bear via the cash gate, then catches the bounce.",
+    "2016": "Brexit + 2016 election. Strategy stays disciplined through macro shocks.",
+    "2022": "Bear market year. Strategy modestly underperforms but recovers quickly in 2023.",
+    "2023": "AI rally launch. Caught NVDA + tech leaders.",
+    "2024": "Mega-cap-led rally — the strategy's hardest regime.",
+  };
 
-  const cases = [];
-  // For each wanted window, find the latest matching basket
-  wantedDates.forEach(w => {
-    const matches = log.filter(p => p.asof && p.asof.startsWith(w.prefix));
-    if (matches.length) {
-      // Pick the basket_id that has the most members from this prefix
-      const bid = matches[0].basket_id;
-      const basket = log.filter(p => p.basket_id === bid);
-      if (basket.length) cases.push({ ...w, picks: basket });
-    }
+  // Sort baskets newest-first
+  const bids = Object.keys(byBasket).sort((a, b) => {
+    const aD = byBasket[a][0]?.asof || "";
+    const bD = byBasket[b][0]?.asof || "";
+    return bD.localeCompare(aD);
   });
 
-  // Always add the latest 2 baskets as recent case studies
-  const allBids = [...new Set(log.map(p => p.basket_id).filter(b => b != null))].sort((a, b) => b - a);
-  allBids.slice(0, 2).forEach(bid => {
-    const basket = log.filter(p => p.basket_id === bid);
-    if (basket.length && !cases.some(c => c.picks[0]?.basket_id === bid)) {
-      const entryDate = basket[0]?.asof || "";
-      const exitDate = basket[0]?.exit_date || "?";
-      const status = basket[0]?.status === "open" ? "currently held" : "closed";
-      cases.unshift({
-        prefix: entryDate.slice(0, 7),
-        label: `Recent basket (${entryDate} → ${exitDate}, ${status})`,
-        blurb: status === "currently held"
-          ? "The current basket — held until the next 6-month rebalance."
-          : "Most recently closed basket.",
-        picks: basket,
-      });
-    }
-  });
+  bids.forEach(bid => {
+    const basket = byBasket[bid];
+    if (!basket.length) return;
+    const isOpen = basket[0]?.status !== "exited";
+    const entry = basket[0]?.asof;
+    const exit = basket[0]?.exit_date || (isOpen ? "open" : "?");
+    const yr = (entry || "").slice(0, 4);
 
-  cases.slice(0, 8).forEach(c => {
+    // Basket return = equal-weighted average of pick returns
+    const validRets = basket.map(p => p.ret_strat ?? p.return).filter(r => r != null);
+    const basketRet = validRets.length
+      ? validRets.reduce((a, b) => a + b, 0) / validRets.length
+      : null;
+    const spyRets = basket.map(p => p.ret_spy).filter(r => r != null);
+    const spyBasketRet = spyRets.length ? spyRets[0] : null;  // same window for all picks
+
     const card = el("div", { class: "case-card" });
-    card.appendChild(el("div", { class: "case-label" }, c.label));
-    const tickers = c.picks.map(p => p.ticker).join(" · ");
+    const dateLabel = isOpen
+      ? `${entry} → in progress (open)`
+      : `${entry} → ${exit}`;
+    card.appendChild(el("div", { class: "case-label" }, dateLabel));
+
+    const tickers = basket.map(p => p.ticker).join(" · ");
     card.appendChild(el("div", { class: "case-tickers" }, tickers));
-    // Aggregate basket return (equal-weighted)
-    const validRets = c.picks.map(p => p.return ?? p.ret_strat).filter(r => r != null);
-    if (validRets.length) {
-      const basketRet = validRets.reduce((a, b) => a + b, 0) / validRets.length;
-      const status = c.picks[0]?.status === "open" ? "(open)" : "";
-      card.appendChild(el("div", { class: "case-ret " + clsRet(basketRet) },
-        `Basket return: ${fmtPctSigned(basketRet, 1)} ${status}`));
+
+    if (isOpen) {
+      card.appendChild(el("div", { class: "case-ret mid" }, "Currently held"));
+    } else if (basketRet != null) {
+      const beat = (spyBasketRet != null) ? (basketRet - spyBasketRet) : null;
+      let line = `Strategy ${fmtPctSigned(basketRet, 1)}`;
+      if (spyBasketRet != null) {
+        line += ` · SPY ${fmtPctSigned(spyBasketRet, 1)} · `;
+        if (beat != null) {
+          line += beat >= 0 ? `beat by ${(beat*100).toFixed(1)}pp` : `lagged by ${Math.abs(beat*100).toFixed(1)}pp`;
+        }
+      }
+      card.appendChild(el("div", { class: "case-ret " + clsRet(basketRet) }, line));
     }
-    card.appendChild(el("div", { class: "case-blurb" }, c.blurb));
+
+    const blurb = commentary[yr];
+    if (blurb) {
+      card.appendChild(el("div", { class: "case-blurb" }, blurb));
+    }
     sec.appendChild(card);
   });
 }
