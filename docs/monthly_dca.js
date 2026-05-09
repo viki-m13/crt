@@ -320,64 +320,54 @@ function renderPick(data) {
   const monthsHeld = ls.months_since_rebalance != null ? ls.months_since_rebalance : null;
   const monthsLeft = monthsHeld != null ? Math.max(0, 6 - monthsHeld) : null;
 
-  // Header line: where are we in the 6-month cycle?
-  const head = el("div", { class: "basket-dates" });
-  if (monthsHeld === 0) {
-    head.innerHTML = `<strong>Rebalance day.</strong> Last rebalance ${buyDate}, next rebalance ${sellDate}.`;
-  } else if (monthsLeft === 0) {
-    head.innerHTML = `<strong>Rebalance imminent.</strong> Current basket bought ${buyDate}, ` +
-      `next rebalance at the next month-end (${sellDate}).`;
-  } else {
-    head.innerHTML = `Currently holding the basket bought on <strong>${buyDate}</strong>. ` +
-      `<strong>Hold until ${sellDate}</strong> — that's ${monthsLeft} more month${monthsLeft===1?'':'s'} from now. No action this month.`;
-  }
-  body.appendChild(head);
-
-  // Always show explicit actions from the most recent rebalance.
-  // Frame depends on whether we're on rebalance day or mid-cycle.
+  // What does the user need to do THIS month? Two cases:
+  //   A) On rebalance day → big SELL/BUY/HOLD cards (action required today)
+  //   B) Mid-cycle → big "do nothing" banner (no action this month)
   const lastRebMonth = (ls.last_rebalance_date || "").slice(0, 7);
   const asofMonth = (data.as_of || "").slice(0, 7);
   const justRebalanced = lastRebMonth === asofMonth || monthsHeld === 0;
   const buys = ls.last_rebalance_to_buy || [];
   const holds = ls.last_rebalance_to_hold || [];
   const sells = ls.last_rebalance_to_sell || [];
-  const hasAnyAction = (buys.length + holds.length + sells.length) > 0;
-  if (hasAnyAction) {
-    const actions = el("div", { class: "actions-grid" });
-    const sellLabel = justRebalanced ? "SELL today" : `SELL on ${ls.last_rebalance_date}`;
-    const buyLabel  = justRebalanced ? "BUY today"  : `BUY on ${ls.last_rebalance_date}`;
-    const holdLabel = "HOLD";
-    const sellSub = justRebalanced
-      ? "Was in last basket, no longer in current basket."
-      : "These were sold at the last rebalance — should not be in your account.";
-    const buySub = justRebalanced
-      ? "New names entering the basket."
-      : "These were bought at the last rebalance — should be in your account, equal weight.";
-    const holdSub = justRebalanced
-      ? "Carried forward — don't sell, don't rebuy."
-      : "Carried forward from the previous basket — still in your account.";
-    if (sells.length) {
-      const card = el("div", { class: "action-card sell" });
-      card.appendChild(el("div", { class: "action-label" }, sellLabel));
-      card.appendChild(el("div", { class: "action-tickers" }, sells.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, sellSub));
-      actions.appendChild(card);
+
+  if (justRebalanced) {
+    // Rebalance day: show big action banner + SELL/BUY/HOLD cards
+    const head = el("div", { class: "basket-dates basket-dates-action" });
+    head.innerHTML = `<strong>Rebalance day — action required.</strong> Today (${data.as_of}) is the 6-month rebalance. Sell the names leaving, buy the names entering, keep the carryover. Equal weight (1/3 each) at close.`;
+    body.appendChild(head);
+    if (buys.length + holds.length + sells.length > 0) {
+      const actions = el("div", { class: "actions-grid" });
+      if (sells.length) {
+        const card = el("div", { class: "action-card sell" });
+        card.appendChild(el("div", { class: "action-label" }, "SELL today"));
+        card.appendChild(el("div", { class: "action-tickers" }, sells.join(" · ")));
+        card.appendChild(el("div", { class: "action-sub" }, "These names are leaving the basket."));
+        actions.appendChild(card);
+      }
+      if (buys.length) {
+        const card = el("div", { class: "action-card buy" });
+        card.appendChild(el("div", { class: "action-label" }, "BUY today"));
+        card.appendChild(el("div", { class: "action-tickers" }, buys.join(" · ")));
+        card.appendChild(el("div", { class: "action-sub" }, "Equal weight, 1/3 of capital each."));
+        actions.appendChild(card);
+      }
+      if (holds.length) {
+        const card = el("div", { class: "action-card hold" });
+        card.appendChild(el("div", { class: "action-label" }, "KEEP holding"));
+        card.appendChild(el("div", { class: "action-tickers" }, holds.join(" · ")));
+        card.appendChild(el("div", { class: "action-sub" }, "Carried forward — don't sell, don't rebuy."));
+        actions.appendChild(card);
+      }
+      body.appendChild(actions);
     }
-    if (buys.length) {
-      const card = el("div", { class: "action-card buy" });
-      card.appendChild(el("div", { class: "action-label" }, buyLabel));
-      card.appendChild(el("div", { class: "action-tickers" }, buys.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, buySub));
-      actions.appendChild(card);
-    }
-    if (holds.length) {
-      const card = el("div", { class: "action-card hold" });
-      card.appendChild(el("div", { class: "action-label" }, holdLabel));
-      card.appendChild(el("div", { class: "action-tickers" }, holds.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, holdSub));
-      actions.appendChild(card);
-    }
-    body.appendChild(actions);
+  } else {
+    // Mid-cycle: big "do nothing" message + the current 3 picks
+    const head = el("div", { class: "basket-dates basket-dates-noaction" });
+    const tickerStr = (ls.current_basket_picks || []).join(", ") || basket.map(p=>p.ticker).join(", ");
+    head.innerHTML = `<strong>This month: do nothing.</strong><br>` +
+      `Continue holding <strong>${tickerStr}</strong> (1/3 each, bought ${buyDate}). ` +
+      `Next rebalance: <strong>${sellDate}</strong> (${monthsLeft} more month${monthsLeft===1?'':'s'}).`;
+    body.appendChild(head);
   }
   const grid = el("div", { class: "basket-grid" });
   basket.forEach((p, i) => {
@@ -388,8 +378,9 @@ function renderPick(data) {
       el("span", { class: "basket-tkr-px" }, fmtPx(p.price)),
     ]));
     if (sellDate) {
+      const heldOrBought = justRebalanced ? "Bought" : "Held since";
       card.appendChild(el("div", { class: "basket-sell-by" },
-        `Buy ${buyDate} • Sell ${sellDate}`));
+        `${heldOrBought} ${buyDate} • Sell ${sellDate}`));
     }
     const stats = el("div", { class: "basket-stats" });
     const statRows = [
@@ -410,6 +401,28 @@ function renderPick(data) {
     grid.appendChild(card);
   });
   body.appendChild(grid);
+
+  // Reference footer mid-cycle: tiny note about what happened at last rebalance
+  if (!justRebalanced && (buys.length || sells.length)) {
+    const ref = el("details", { class: "rebalance-ref" });
+    ref.appendChild(el("summary", {},
+      `What happened at the last rebalance (${ls.last_rebalance_date}) — for reference`));
+    const refBody = el("div", { class: "rebalance-ref-body" });
+    if (sells.length) {
+      refBody.appendChild(el("div", {},
+        el("strong", { class: "neg" }, "Sold: "), sells.join(", ")));
+    }
+    if (buys.length) {
+      refBody.appendChild(el("div", {},
+        el("strong", { class: "pos" }, "Bought: "), buys.join(", ")));
+    }
+    if (holds.length) {
+      refBody.appendChild(el("div", {},
+        el("strong", {}, "Kept: "), holds.join(", ") + " (carried forward)"));
+    }
+    ref.appendChild(refBody);
+    body.appendChild(ref);
+  }
 }
 
 function renderBacktest(data) {
