@@ -1923,3 +1923,41 @@ strong{font-weight:600}
   line-height:1.5;
   color:var(--muted-2);
 }
+
+/* ============================================================
+   ACTION CARDS (BUY / SELL / HOLD on rebalance day)
+   ============================================================ */
+.actions-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:10px;
+  margin:14px 0;
+}
+.action-card{
+  padding:14px;
+  border:2px solid;
+}
+.action-card.buy{ border-color:var(--green); background:#f4faf6; }
+.action-card.sell{ border-color:var(--orange); background:#fff5ec; }
+.action-card.hold{ border-color:var(--rule-light); background:#fafafa; }
+.action-label{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  margin-bottom:6px;
+}
+.action-card.buy .action-label{ color:var(--green); }
+.action-card.sell .action-label{ color:var(--orange); }
+.action-card.hold .action-label{ color:var(--muted); }
+.action-tickers{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:15px;
+  margin-bottom:6px;
+}
+.action-sub{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.4;
+}

@@ -301,18 +301,15 @@ function renderPick(data) {
   body.classList.remove("pick-loading");
   body.innerHTML = "";
   const basket = data.pick_of_month_basket || (data.pick_of_month ? [data.pick_of_month] : []);
+  const ls = data.live_state || {};
   if (!basket.length) {
-    // If we're in cash, show a different message
-    const ls = data.live_state || {};
     if (ls.cash_position) {
-      body.innerHTML = `<div class="basket-dates"><strong>100% cash position.</strong> The crash-aware regime gate has fired — the strategy holds zero stock exposure. Re-evaluated each month-end.</div>`;
+      body.innerHTML = `<div class="basket-dates"><strong>100% cash this month.</strong> SPY broke down enough to trigger the crash gate. We re-evaluate at the next month-end.</div>`;
       return;
     }
     body.innerHTML = "<div>No picks available for this month.</div>";
     return;
   }
-  // v3: 6-month hold from last_rebalance_date to next_rebalance_date (from live_state)
-  const ls = data.live_state || {};
   const buyDate = ls.last_rebalance_date || data.as_of;
   const sellDate = ls.next_rebalance_date || (() => {
     try { const d = new Date(data.as_of); d.setMonth(d.getMonth() + 6); return d.toISOString().slice(0, 10); }
@@ -320,18 +317,51 @@ function renderPick(data) {
   })();
   const monthsHeld = ls.months_since_rebalance != null ? ls.months_since_rebalance : null;
   const monthsLeft = monthsHeld != null ? Math.max(0, 6 - monthsHeld) : null;
-  if (buyDate && sellDate) {
-    const dates = el("div", { class: "basket-dates" });
-    let extra = "";
-    if (monthsLeft != null) {
-      if (monthsHeld === 0) extra = `Just rebalanced — fresh basket.`;
-      else if (monthsLeft === 0) extra = `Rebalance imminent — basket will refresh at next month-end.`;
-      else extra = `${monthsHeld} of 6 months elapsed; ${monthsLeft} months remaining until next rebalance.`;
+
+  // Header line: where are we in the 6-month cycle?
+  const head = el("div", { class: "basket-dates" });
+  if (monthsHeld === 0) {
+    head.innerHTML = `<strong>Rebalance day.</strong> Last rebalance ${buyDate}, next rebalance ${sellDate}.`;
+  } else if (monthsLeft === 0) {
+    head.innerHTML = `<strong>Rebalance imminent.</strong> Current basket bought ${buyDate}, ` +
+      `next rebalance at the next month-end (${sellDate}).`;
+  } else {
+    head.innerHTML = `Currently holding the basket bought on <strong>${buyDate}</strong>. ` +
+      `<strong>Hold until ${sellDate}</strong> — that's ${monthsLeft} more month${monthsLeft===1?'':'s'} from now. No action this month.`;
+  }
+  body.appendChild(head);
+
+  // If at-rebalance (just rebalanced), show explicit BUY / SELL / HOLD actions
+  const lastRebMonth = (ls.last_rebalance_date || "").slice(0, 7);
+  const asofMonth = (data.as_of || "").slice(0, 7);
+  const justRebalanced = lastRebMonth === asofMonth || monthsHeld === 0;
+  if (justRebalanced && (ls.last_rebalance_to_buy || ls.last_rebalance_to_sell)) {
+    const actions = el("div", { class: "actions-grid" });
+    const buys = ls.last_rebalance_to_buy || [];
+    const holds = ls.last_rebalance_to_hold || [];
+    const sells = ls.last_rebalance_to_sell || [];
+    if (sells.length) {
+      const card = el("div", { class: "action-card sell" });
+      card.appendChild(el("div", { class: "action-label" }, "SELL today"));
+      card.appendChild(el("div", { class: "action-tickers" }, sells.join(" · ")));
+      card.appendChild(el("div", { class: "action-sub" }, "Was in last basket, no longer in current basket."));
+      actions.appendChild(card);
     }
-    dates.innerHTML =
-      `<strong>Bought ${buyDate}</strong> at month-end close. ` +
-      `<strong>Hold until ${sellDate}</strong> (6-month rebalance). ${extra}`;
-    body.appendChild(dates);
+    if (buys.length) {
+      const card = el("div", { class: "action-card buy" });
+      card.appendChild(el("div", { class: "action-label" }, "BUY today"));
+      card.appendChild(el("div", { class: "action-tickers" }, buys.join(" · ")));
+      card.appendChild(el("div", { class: "action-sub" }, "New names entering the basket."));
+      actions.appendChild(card);
+    }
+    if (holds.length) {
+      const card = el("div", { class: "action-card hold" });
+      card.appendChild(el("div", { class: "action-label" }, "KEEP holding"));
+      card.appendChild(el("div", { class: "action-tickers" }, holds.join(" · ")));
+      card.appendChild(el("div", { class: "action-sub" }, "Carried forward — don't sell, don't rebuy."));
+      actions.appendChild(card);
+    }
+    body.appendChild(actions);
   }
   const grid = el("div", { class: "basket-grid" });
   basket.forEach((p, i) => {
@@ -775,39 +805,53 @@ function renderTrades(data) {
   const beat = data.pick_log.filter(p => p.beat_spy).length;
   const tot = data.pick_log.length;
 
+  // Only count CLOSED trades for win/beat stats; open positions are TBD.
+  const closed = data.pick_log.filter(p => p.status === "exited" && p.return != null);
+  const cWins = closed.filter(p => p.return > 0).length;
+  const cBeat = closed.filter(p => p.beat_spy === true || p.beat_spy === 1).length;
+  const cTot = closed.length;
+  const open = tot - cTot;
+
   const stats = el("div", { class: "trades-stats" });
   stats.innerHTML = `
-    <div><strong>${tot}</strong> trades total</div>
-    <div><strong>${wins}</strong> profitable (${fmtPct0(wins/tot)})</div>
-    <div><strong>${beat}</strong> beat SPY held-to-today (${fmtPct0(beat/tot)})</div>
+    <div><strong>${tot}</strong> trades total · <strong>${open}</strong> still held</div>
+    <div><strong>${cWins}</strong> profitable closed (${fmtPct0(cTot ? cWins/cTot : 0)})</div>
+    <div><strong>${cBeat}</strong> beat SPY closed (${fmtPct0(cTot ? cBeat/cTot : 0)})</div>
   `;
   sec.appendChild(stats);
 
   const det = el("details", { class: "accordion accordion-trades", open: "" });
-  det.appendChild(el("summary", {}, `Show every monthly trade (${tot} since 2002)`));
+  det.appendChild(el("summary", {}, `Show every trade (${tot} since 2003)`));
   const body = el("div", { class: "accordion-body" });
   const wrap = el("div", { class: "bias-table-wrap" });
   const t = el("table", { class: "trades-table" });
   t.appendChild(el("thead", {}, el("tr", {},
     ["Entry", "Ticker", "Entry $", "Exit", "Exit $", "Status",
-     "Years", "Return", "SPY return", "CAGR", "Beat SPY?"]
+     "Hold", "Return", "SPY return", "Annualised", "Beat SPY?"]
       .map(h => el("th", {}, h)))));
   const tb = el("tbody");
   // Sort newest first
   const sorted = [...data.pick_log].sort((a, b) => a.asof < b.asof ? 1 : -1);
   sorted.forEach(p => {
     const row = el("tr");
+    const isHeld = p.status !== "exited";
+    const ret = p.ret_strat ?? p.return;
+    const cagrAnnl = p.cagr;  // annualised (≈ (1+ret_6m)^2 - 1)
+    const yrsTxt = p.years != null ? `${(+p.years).toFixed(1)}y` : "—";
     row.appendChild(el("td", { class: "mid" }, p.asof));
     row.appendChild(el("td", { class: "tkr" }, p.ticker));
     row.appendChild(el("td", {}, fmtPx(p.entry_px)));
-    row.appendChild(el("td", { class: "mid" }, p.exit_date || p.scheduled_exit || "—"));
-    row.appendChild(el("td", {}, fmtPx(p.exit_px ?? p.current_px)));
-    row.appendChild(el("td", { class: p.status === "exited" ? "mid" : "pos" }, p.status || (p.years_held >= 3 ? "exited" : "held")));
-    row.appendChild(el("td", { class: "mid" }, p.years_held?.toFixed(1) ?? "—"));
-    row.appendChild(el("td", { class: clsRet(p.ret_strat) }, fmtPctSigned(p.ret_strat, 0)));
+    row.appendChild(el("td", { class: "mid" }, p.exit_date || (isHeld ? "open" : "—")));
+    row.appendChild(el("td", {}, isHeld ? "—" : fmtPx(p.exit_px)));
+    row.appendChild(el("td", { class: isHeld ? "pos" : "mid" }, isHeld ? "held" : "exited"));
+    row.appendChild(el("td", { class: "mid" }, yrsTxt));
+    row.appendChild(el("td", { class: clsRet(ret) }, fmtPctSigned(ret, 0)));
     row.appendChild(el("td", { class: clsRet(p.ret_spy) }, fmtPctSigned(p.ret_spy, 0)));
-    row.appendChild(el("td", { class: clsRet(p.cagr_strat) }, fmtPctSigned(p.cagr_strat, 0)));
-    row.appendChild(el("td", { class: p.beat_spy ? "pos" : "neg" }, p.beat_spy ? "Yes" : "No"));
+    row.appendChild(el("td", { class: clsRet(cagrAnnl) }, fmtPctSigned(cagrAnnl, 0)));
+    const beat = p.beat_spy === true || p.beat_spy === 1;
+    const beatTxt = isHeld ? "—" : (beat ? "Yes" : "No");
+    const beatCls = isHeld ? "mid" : (beat ? "pos" : "neg");
+    row.appendChild(el("td", { class: beatCls }, beatTxt));
     tb.appendChild(row);
   });
   t.appendChild(tb);
@@ -860,25 +904,42 @@ function renderHistorical(data) {
       const card = el("div", { class: "hist-month" });
       const head = el("div", { class: "hist-month-head" });
       head.appendChild(el("span", { class: "hist-month-date" }, asof));
-      const winRate = basket.filter(p => p.win).length / basket.length;
-      const beatRate = basket.filter(p => p.beat_spy).length / basket.length;
-      head.appendChild(el("span", { class: "hist-month-meta" },
-        `${basket.length} picks · ${fmtPct0(winRate)} winners · ${fmtPct0(beatRate)} beat SPY`));
+      // Only count CLOSED trades for win/beat metrics on this basket
+      const closed = basket.filter(p => p.status === "exited" && p.return != null);
+      const allHeld = closed.length === 0;
+      let metaTxt;
+      if (allHeld) {
+        metaTxt = `${basket.length} picks · still held`;
+      } else {
+        const winRate = closed.filter(p => p.return > 0).length / closed.length;
+        const beatRate = closed.filter(p => p.beat_spy === true || p.beat_spy === 1).length / closed.length;
+        metaTxt = `${basket.length} picks · ${fmtPct0(winRate)} winners · ${fmtPct0(beatRate)} beat SPY`;
+      }
+      head.appendChild(el("span", { class: "hist-month-meta" }, metaTxt));
       card.appendChild(head);
       const grid = el("div", { class: "hist-pick-grid" });
       basket.forEach(p => {
         const item = el("div", { class: "hist-pick" });
+        const isHeld = p.status !== "exited";
         const tickerLine = el("div", { class: "hist-pick-tkr-line" });
         tickerLine.appendChild(el("span", { class: "hist-pick-tkr" }, p.ticker));
-        tickerLine.appendChild(el("span", { class: "hist-pick-status " + (p.status === "exited" ? "exited" : "held") },
-          p.status === "exited" ? "exited" : "held"));
+        tickerLine.appendChild(el("span", { class: "hist-pick-status " + (isHeld ? "held" : "exited") },
+          isHeld ? "held" : "exited"));
         item.appendChild(tickerLine);
         const px = el("div", { class: "hist-pick-px" });
-        px.innerHTML = `<span class="hist-px-label">${p.status === "exited" ? "exit" : "now"}:</span> ${fmtPx(p.exit_px ?? p.current_px)} <span class="hist-pick-from">from</span> ${fmtPx(p.entry_px)}`;
+        if (isHeld) {
+          px.innerHTML = `<span class="hist-pick-from">bought at</span> ${fmtPx(p.entry_px)}`;
+        } else {
+          px.innerHTML = `<span class="hist-px-label">exit:</span> ${fmtPx(p.exit_px)} <span class="hist-pick-from">from</span> ${fmtPx(p.entry_px)}`;
+        }
         item.appendChild(px);
-        const ret = el("div", { class: "hist-pick-ret " + clsRet(p.ret_strat) },
-          fmtPctSigned(p.ret_strat, 0) + " · vs SPY " + fmtPctSigned(p.ret_spy, 0));
-        item.appendChild(ret);
+        if (isHeld) {
+          item.appendChild(el("div", { class: "hist-pick-ret mid" }, "in progress"));
+        } else {
+          const retTxt = fmtPctSigned(p.ret_strat ?? p.return, 0) +
+                          " · vs SPY " + (p.ret_spy != null ? fmtPctSigned(p.ret_spy, 0) : "—");
+          item.appendChild(el("div", { class: "hist-pick-ret " + clsRet(p.ret_strat ?? p.return) }, retTxt));
+        }
         grid.appendChild(item);
       });
       card.appendChild(grid);
