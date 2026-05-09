@@ -43,8 +43,8 @@ from sp500_pit_v3_validate import per_split_eval  # noqa: E402
 
 
 WINNER = Variant(
-    name="ml_filter|k3_3_3|ew|tight|h6|cap1.0",
-    scorer="ml_filter", k_normal=3, k_recovery=3, k_bull=3,
+    name="ml_3plus6|k3_3_3|ew|tight|h6|cap1.0",
+    scorer="ml_3plus6", k_normal=3, k_recovery=3, k_bull=3,
     weighting="ew", regime_gate="tight", hold_months=6, cap_per_pick=1.0,
 )
 
@@ -92,23 +92,16 @@ def build_panel_for_universe(universe_tickers_per_month: dict[pd.Timestamp, set[
     universe_tickers_per_month: per-month asof -> set of eligible tickers
     ticker_filter_set: a fixed set of tickers (used across all months)
 
-    Either / or.  Returns a DataFrame with [asof, ticker, score, vol_1y].
+    Returns a DataFrame with [asof, ticker, score, vol_1y].
+    Score = average of ml pred_3m and pred_6m (the ml_3plus6 scorer).
     """
     ml = pd.read_parquet(V2 / "ml_preds_v2.parquet")
     ml["asof"] = pd.to_datetime(ml["asof"])
-    ml = ml.rename(columns={"pred": "score"})
+    ml["score"] = (ml["pred_3m"] + ml["pred_6m"]) / 2
 
-    # Need vol_1y per (asof,ticker) for invvol weighting (we use EW so this is
-    # actually unused, but keep for completeness)
-    panel = pd.read_parquet(PIT / "sp500_pit_panel.parquet")
-    panel["asof"] = pd.to_datetime(panel["asof"])
-    # We'll re-merge with the broader panel; for non-S&P 500, the
-    # cache/v2 panel doesn't have rows. So we'll work without the panel cache.
-
-    full = ml.copy()
+    full = ml[["asof", "ticker", "score"]].copy()
     full = full[~full["ticker"].isin(EXCLUDE)]
     if universe_tickers_per_month is not None:
-        # Filter by per-month membership
         keep = []
         for d, sub in full.groupby("asof"):
             elig = universe_tickers_per_month.get(pd.Timestamp(d), set())
@@ -116,7 +109,7 @@ def build_panel_for_universe(universe_tickers_per_month: dict[pd.Timestamp, set[
         full = pd.concat(keep, axis=0, ignore_index=True)
     elif ticker_filter_set is not None:
         full = full[full["ticker"].isin(ticker_filter_set)]
-    full["vol_1y"] = 0.3  # placeholder
+    full["vol_1y"] = 0.3  # placeholder for invvol (we use EW)
     return full
 
 
