@@ -333,34 +333,48 @@ function renderPick(data) {
   }
   body.appendChild(head);
 
-  // If at-rebalance (just rebalanced), show explicit BUY / SELL / HOLD actions
+  // Always show explicit actions from the most recent rebalance.
+  // Frame depends on whether we're on rebalance day or mid-cycle.
   const lastRebMonth = (ls.last_rebalance_date || "").slice(0, 7);
   const asofMonth = (data.as_of || "").slice(0, 7);
   const justRebalanced = lastRebMonth === asofMonth || monthsHeld === 0;
-  if (justRebalanced && (ls.last_rebalance_to_buy || ls.last_rebalance_to_sell)) {
+  const buys = ls.last_rebalance_to_buy || [];
+  const holds = ls.last_rebalance_to_hold || [];
+  const sells = ls.last_rebalance_to_sell || [];
+  const hasAnyAction = (buys.length + holds.length + sells.length) > 0;
+  if (hasAnyAction) {
     const actions = el("div", { class: "actions-grid" });
-    const buys = ls.last_rebalance_to_buy || [];
-    const holds = ls.last_rebalance_to_hold || [];
-    const sells = ls.last_rebalance_to_sell || [];
+    const sellLabel = justRebalanced ? "SELL today" : `SELL on ${ls.last_rebalance_date}`;
+    const buyLabel  = justRebalanced ? "BUY today"  : `BUY on ${ls.last_rebalance_date}`;
+    const holdLabel = "HOLD";
+    const sellSub = justRebalanced
+      ? "Was in last basket, no longer in current basket."
+      : "These were sold at the last rebalance — should not be in your account.";
+    const buySub = justRebalanced
+      ? "New names entering the basket."
+      : "These were bought at the last rebalance — should be in your account, equal weight.";
+    const holdSub = justRebalanced
+      ? "Carried forward — don't sell, don't rebuy."
+      : "Carried forward from the previous basket — still in your account.";
     if (sells.length) {
       const card = el("div", { class: "action-card sell" });
-      card.appendChild(el("div", { class: "action-label" }, "SELL today"));
+      card.appendChild(el("div", { class: "action-label" }, sellLabel));
       card.appendChild(el("div", { class: "action-tickers" }, sells.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, "Was in last basket, no longer in current basket."));
+      card.appendChild(el("div", { class: "action-sub" }, sellSub));
       actions.appendChild(card);
     }
     if (buys.length) {
       const card = el("div", { class: "action-card buy" });
-      card.appendChild(el("div", { class: "action-label" }, "BUY today"));
+      card.appendChild(el("div", { class: "action-label" }, buyLabel));
       card.appendChild(el("div", { class: "action-tickers" }, buys.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, "New names entering the basket."));
+      card.appendChild(el("div", { class: "action-sub" }, buySub));
       actions.appendChild(card);
     }
     if (holds.length) {
       const card = el("div", { class: "action-card hold" });
-      card.appendChild(el("div", { class: "action-label" }, "KEEP holding"));
+      card.appendChild(el("div", { class: "action-label" }, holdLabel));
       card.appendChild(el("div", { class: "action-tickers" }, holds.join(" · ")));
-      card.appendChild(el("div", { class: "action-sub" }, "Carried forward — don't sell, don't rebuy."));
+      card.appendChild(el("div", { class: "action-sub" }, holdSub));
       actions.appendChild(card);
     }
     body.appendChild(actions);
