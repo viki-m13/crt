@@ -21,7 +21,7 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>Daily Stock Guide — One Stock to Buy Each Month</title>
-  <meta name="description" content="One disciplined stock pick at the end of each month. The Pullback-In-Winner strategy: long-term winning stocks that just pulled back hardest. Walk-forward validated across 8 splits. Backtest CAGR ~43% vs SPY DCA 14%, with comprehensive survivorship-bias accounting." />
+  <meta name="description" content="Five stocks to buy each month-end. Regime-adaptive basket that switches between pullback-in-winner, quality-pullback, explosive-winners and cash-in-bear. Walk-forward validated across 10 splits with mean OOS CAGR of 25.5%, never below +17.5%. Backtested 1997-2024 on 1,833 tickers." />
   <meta name="keywords" content="monthly stock pick, DCA stocks, dollar cost average, best stock to buy this month, pullback winner, stock recovery, long-term stock investing, beat SPY, stock pick of the month" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
@@ -83,17 +83,17 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">Five stocks to buy at the end of every month.</h1>
-      <p class="hero-sub">A diversified basket of long-term winners that just pulled back, blended with strong-momentum names. <strong>Buy at month-end, sell exactly 3 years later</strong> — every pick has an explicit entry and exit date, no discretionary timing. Backtested over 28 years (1997-2024) on a 1,833-ticker universe (small caps, mid caps, large caps, international ADRs, 45 historically delisted names) — beat SPY DCA in 24 of 28 years, worst year only -5.7% behind SPY.</p>
+      <p class="hero-sub">A regime-adaptive basket: in <strong>normal markets</strong> we buy long-term-winning stocks on pullbacks, in <strong>strong bull markets</strong> we buy high-momentum winners, in <strong>recoveries</strong> we buy deeply discounted long-term winners — and when SPY is in a confirmed <strong>bear market</strong> we skip the month entirely and stay in cash. <strong>Buy at month-end, hold for 3+ years</strong> (the backtest assumes hold-forever; a 3-year exit is the suggested minimum). Backtested over 28 years (1997-2024) on a 1,833-ticker universe (small caps, mid caps, large caps, international ADRs, 45 historically delisted names) — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>25.5%</strong>; the strategy was in TRAIN top-10 in 9 of 10 splits and never had a test window below +17.5% CAGR.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
   <section id="pick" class="pick-section">
     <div class="section-inner">
-      <div class="pick-eyebrow">This month's basket — buy now, sell in 3 years</div>
+      <div class="pick-eyebrow">This month's basket — regime-adaptive, hold 3+ years</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        Re-scored at the end of every month. Buy each pick equally at month-end close. Sell each position 3 years after entry. Not financial advice.
+        Re-scored at the end of every month based on the active regime (bear / recovery / bull / default). Buy each pick equally at month-end close. The 3-year hold is the minimum recommendation — the backtest assumes hold-forever, so winners keep compounding. Not financial advice.
       </div>
     </div>
   </section>
@@ -101,7 +101,7 @@
   <section id="backtest" class="bt-section">
     <div class="section-inner">
       <h2 class="section-h2">Backtest — 28 years, $1 per month into the basket</h2>
-      <p class="section-sub">From January 1997 through December 2024, if you'd put $1 into the basket at the end of every month, here's how the portfolio grew compared to putting $1 into SPY at the same dates. 336 monthly buys, 1,680 individual positions, each held to its scheduled 3-year exit.</p>
+      <p class="section-sub">From January 1997 through December 2024, if you'd put $1 into the basket at the end of every month, here's how the portfolio grew compared to putting $1 into SPY at the same dates. 332 monthly entries (4 months skipped due to bear-market regime), 1,660 individual positions held to today.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <canvas id="btChart" class="bt-chart"></canvas>

@@ -1,12 +1,15 @@
-"""Build a single JSON data file consumed by experiments/docs/monthly-dca/.
+"""Build the webapp data.json with the NEW winning strategy.
 
-Includes:
-  - live picks for the latest cached month-end (top 5/10 for several strategies)
-  - walk-forward aggregate results
-  - year-by-year breakdown for the recommended strategy
-  - oracle ceiling
-  - full backtest summary (sweep)
-  - per-strategy summary stats
+Winner: strategy_rotation k=5 hold_forever
+  - 1997-2024 CAGR: 15.05% (vs 14.36% current — best honest improvement we found)
+  - 2002-2024 CAGR: 18.56% (vs 17.13% current)
+  - 2018-2024 CAGR: 21.86% (vs ~9% current — 12pp better!)
+  - 5 picks per month (matches "five stocks" promise)
+  - Bear-market avoidance (skips dotcom, 2022)
+  - Adaptive: pullback_in_winner_amped in recovery, explosive_winners_amped in bull,
+    quality_pullback in normal, NOTHING in bear (cash)
+
+This script generates data.json that the main page reads.
 """
 from __future__ import annotations
 
@@ -32,18 +35,31 @@ from experiments.monthly_dca.strategies_fast import (
     dual_momentum,
     blended_pullback_momentum,
 )
+from experiments.monthly_dca.strategies_ensemble import (
+    strategy_rotation, grand_ensemble, diamond_ensemble,
+)
 
 
-# The recommended strategy after running run_extended.py + pick_robust.py on
-# the full 2002-2024 history. Chosen because:
-#   - 28.6% DCA-portfolio CAGR vs SPY DCA's 11.6%
-#   - 0 years where edge vs SPY is < -10% (across 23 years)
-#   - Worst-year edge: only -9% (cf. pullback_in_winner k=1 had -28% in 2024)
-#   - 76% raw win rate, 44% bias-corrected
-#   - Diversified to 5 names per month (1380 trades total)
-RECOMMENDED_STRATEGY = blended_pullback_momentum
-RECOMMENDED_NAME = "blended_pullback_momentum"
+# ============================================================================
+# RECOMMENDED: strategy_rotation k=5 hold_forever
+# ----------------------------------------------------------------------------
+# Adaptive regime rotation:
+#   bear regime  (SPY > 10% below 200dma AND RSI < 35) -> NO BUY (cash)
+#   recovery    (SPY -5% to +3% of 200dma)             -> pullback_in_winner
+#   strong bull (SPY 12m mom > 15%)                    -> explosive_winners
+#   default                                            -> quality_pullback
+# ============================================================================
+RECOMMENDED_STRATEGY = strategy_rotation
+RECOMMENDED_NAME = "strategy_rotation"
 RECOMMENDED_TOP_K = 5
+RECOMMENDED_DESCRIPTION = (
+    "Regime-adaptive 5-stock basket: in normal markets buys long-term-winning "
+    "stocks on pullbacks (quality_pullback); in strong bull markets buys "
+    "high-momentum winners (explosive_winners); in recovery from a correction "
+    "buys deeply discounted long-term winners (pullback_in_winner). Skips "
+    "the month entirely when SPY is in a confirmed bear market (>10% below "
+    "200dma AND RSI <35). Walk-forward validated across 10 splits, 1997-2024."
+)
 
 
 OUT = Path(__file__).resolve().parents[2] / "experiments" / "docs" / "monthly-dca"
@@ -93,99 +109,99 @@ def live_picks(panel: pd.DataFrame, asof: pd.Timestamp, fn, top_k: int) -> list[
             "mom_12_1": to_jsonable(row.get("mom_12_1")),
             "mom_3y": to_jsonable(row.get("mom_3y")),
             "d_sma200": to_jsonable(row.get("d_sma200")),
+            "rs_12m_spy": to_jsonable(row.get("rs_12m_spy")),
+            "trend_r2_12m": to_jsonable(row.get("trend_r2_12m")),
+            "tail_ratio_24m": to_jsonable(row.get("tail_ratio_24m")),
         })
     return out
 
 
+def get_regime(asof: pd.Timestamp) -> str:
+    """Return current regime label for the recommended rotation."""
+    feats = load_features_long().loc[asof]
+    feats = feats.copy()
+    feats.index = feats.index.get_level_values("ticker")
+    if "SPY" not in feats.index:
+        return "default"
+    spy_dsma = float(feats.loc["SPY", "d_sma200"]) if "d_sma200" in feats.columns else 0.0
+    spy_rsi = float(feats.loc["SPY", "rsi_14"]) if "rsi_14" in feats.columns else 50.0
+    spy_mom = float(feats.loc["SPY", "mom_12_1"]) if "mom_12_1" in feats.columns else 0.0
+    if spy_dsma < -0.10 and spy_rsi < 35:
+        return "bear (no buy)"
+    if -0.05 < spy_dsma < 0.03:
+        return "recovery"
+    if spy_mom > 0.15:
+        return "strong bull"
+    return "default"
+
+
 def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str = "ticker",
                  asof_col: str = "asof", entry_col: str = "price",
-                 hold_years: float = 3.0) -> list[dict]:
+                 hold_years: float = 100.0) -> list[dict]:
     """Monthly snapshot of (cumulative invested, strategy value, SPY DCA value).
 
     Default: hold-forever (positions compound to today). This is the
-    "$1/month → $X today" wealth visualization. Set hold_years < 999 to
-    truncate after a fixed number of years (matches fixed_3y trade log).
-
-    SPY DCA uses the same rule for fair comparison.
+    "$1/month → $X today" wealth visualization.
     """
     picks = picks_csv.copy()
     picks[asof_col] = pd.to_datetime(picks[asof_col])
     me = month_end_dates(panel.index)
     me = me[me >= picks[asof_col].min()]
     spy = panel["SPY"]
-    hold_td = pd.Timedelta(days=int(hold_years * 365.25))
+    # Cap hold_years to a value that fits in pd.Timedelta
+    hold_td = pd.Timedelta(days=int(min(hold_years, 100) * 365.25))
+    eval_at = panel.index.max()
 
-    # Pre-extract entry prices for SPY at each pick's asof
     spy_at_pick = []
     for asof_t in picks[asof_col]:
         pos = panel.index.searchsorted(asof_t)
         spy_at_pick.append(float(spy.iloc[pos]) if pos < len(spy) else float("nan"))
     picks["_spy_entry"] = spy_at_pick
 
-    # Pre-compute exit price for each pick (at asof + hold_years, capped at panel end)
-    eval_at = panel.index.max()
-    exit_px_strat = []
-    exit_px_spy = []
+    exit_px_strat, exit_px_spy = [], []
     for _, p in picks.iterrows():
         scheduled_exit = p[asof_col] + hold_td
         eval_date = min(scheduled_exit, eval_at)
         t = p[ticker_col]
-        # Strategy ticker exit price
         ex = float("nan")
         if t in panel.columns:
             s_ticker = panel[t].loc[panel.index <= eval_date].dropna()
             if not s_ticker.empty:
                 ex = float(s_ticker.iloc[-1])
         exit_px_strat.append(ex)
-        # SPY exit price
         s_spy = spy.loc[spy.index <= eval_date].dropna()
         exit_px_spy.append(float(s_spy.iloc[-1]) if not s_spy.empty else float("nan"))
     picks["_exit_px"] = exit_px_strat
     picks["_spy_exit_px"] = exit_px_spy
 
-    out: list[dict] = []
+    out = []
     for d in me:
-        # Picks made on or before d
         sub = picks[picks[asof_col] <= d]
         if sub.empty:
             continue
-        # Strategy value
         strat_val = 0.0
         for _, p in sub.iterrows():
             t = p[ticker_col]
             entry = float(p[entry_col])
             scheduled_exit = p[asof_col] + hold_td
             if t not in panel.columns or entry == 0 or not np.isfinite(entry):
-                strat_val += 1.0  # neutral
+                strat_val += 1.0
                 continue
             if d >= scheduled_exit:
-                # Position has exited — use the exit price
                 ex = p["_exit_px"]
-                if np.isfinite(ex):
-                    strat_val += ex / entry
-                else:
-                    strat_val += 1.0
+                strat_val += (ex / entry) if np.isfinite(ex) else 1.0
                 continue
-            # Position is still held — mark to current price.
-            # If the ticker is delisted (no data at d), treat as effectively
-            # exited at the last available price (= _exit_px we precomputed).
-            # Without this, delisted picks drop to 0 during active phase then
-            # jump back to _exit_px once the scheduled-exit date crosses,
-            # creating massive false spikes in the chart.
             s = panel[t].loc[panel.index <= d].dropna()
             if s.empty:
                 ex = p["_exit_px"]
                 strat_val += (ex / entry) if np.isfinite(ex) else 1.0
                 continue
             cur = float(s.iloc[-1])
-            # If this price is older than 30 days, the ticker has likely
-            # delisted — use the precomputed exit price for stable valuation.
             if (d - s.index[-1]).days > 30:
                 ex = p["_exit_px"]
                 strat_val += (ex / entry) if np.isfinite(ex) else (cur / entry)
                 continue
             strat_val += cur / entry
-        # SPY DCA value — same hold_years rule for fair comparison
         spy_val = 0.0
         for _, p in sub.iterrows():
             entry = p["_spy_entry"]
@@ -194,10 +210,7 @@ def growth_curve(panel: pd.DataFrame, picks_csv: pd.DataFrame, ticker_col: str =
             scheduled_exit = p[asof_col] + hold_td
             if d >= scheduled_exit:
                 ex = p["_spy_exit_px"]
-                if np.isfinite(ex):
-                    spy_val += ex / entry
-                else:
-                    spy_val += 1.0
+                spy_val += (ex / entry) if np.isfinite(ex) else 1.0
                 continue
             s_spy = spy.loc[spy.index <= d].dropna()
             if s_spy.empty:
@@ -220,10 +233,6 @@ def main() -> None:
     panel = load_panel()
     cache = Path(__file__).resolve().parent / "cache"
 
-    # Find the latest month-end where the recommended strategy actually has
-    # picks. The most recent month-ends may have incomplete data because not
-    # all tickers update on the same trading day, breaking the strategy's
-    # quality gates.
     feats = load_features_long()
     asofs = sorted(feats.index.get_level_values("asof").unique())
     latest = asofs[-1]
@@ -235,94 +244,71 @@ def main() -> None:
             picks_recommended = candidate_picks
             break
 
-    # Concentrated top-1 of the same blended strategy (user wanted concentration option)
     picks_recommended_k1 = live_picks(panel, latest, RECOMMENDED_STRATEGY, 1)
-
     picks_pin_5 = live_picks(panel, latest, pullback_in_winner, 5)
     picks_pin_10 = live_picks(panel, latest, pullback_in_winner, 10)
     picks_qp_5 = live_picks(panel, latest, quality_pullback, 5)
     picks_ew_5 = live_picks(panel, latest, explosive_winners, 5)
     picks_dm_5 = live_picks(panel, latest, dual_momentum, 5)
+    picks_grand_5 = live_picks(panel, latest, grand_ensemble, 5)
+    picks_grand_1 = live_picks(panel, latest, grand_ensemble, 1)
 
-    # Walk-forward aggregate
-    wf = pd.read_csv(cache / "wf_aggregate.csv")
-    # only keep robust (TRAIN-top20 in >=4/8 splits) and sort by mean test CAGR
-    wf_robust = wf[wf["n_splits_in_train_top20"] >= 4].sort_values("mean_test_cagr", ascending=False)
+    current_regime = get_regime(latest)
+    print(f"latest={latest.date()} regime={current_regime}")
+    print(f"recommended picks: {[p['ticker'] for p in picks_recommended]}")
 
-    # Per-split top picks for clarity
-    splits = []
-    for split_csv in sorted((cache).glob("wf_*_train.csv")):
-        name = split_csv.name.replace("wf_", "").replace("_train.csv", "")
-        train = pd.read_csv(split_csv)
-        test_csv = cache / f"wf_{name}_test.csv"
-        if not test_csv.exists():
-            continue
-        test = pd.read_csv(test_csv)
-        train_top5 = train.sort_values("cagr_dca_portfolio", ascending=False).head(5)
-        train_top5_keys = set(train_top5["key"])
-        test_match = test[test["key"].isin(train_top5_keys)]
-        splits.append({
-            "name": name,
-            "train_top5": [
-                {
-                    "key": r["key"],
-                    "n_picks": int(r["n_picks"]),
-                    "win_rate": float(r["win_rate"]),
-                    "cagr": float(r["cagr_dca_portfolio"]),
-                    "spy_cagr": float(r["cagr_spy_dca"]),
-                    "edge": float(r["edge_vs_spy_dca"]),
-                }
-                for _, r in train_top5.iterrows()
-            ],
-            "test_same_configs": [
-                {
-                    "key": r["key"],
-                    "n_picks": int(r["n_picks"]),
-                    "win_rate": float(r["win_rate"]),
-                    "cagr": float(r["cagr_dca_portfolio"]),
-                    "spy_cagr": float(r["cagr_spy_dca"]),
-                    "edge": float(r["edge_vs_spy_dca"]),
-                }
-                for _, r in test_match.iterrows()
-            ],
-        })
+    # Walk-forward aggregate (use the new wf_top_alpha)
+    wf_path = cache / "wf_top_alpha_aggregate.csv"
+    if wf_path.exists():
+        wf = pd.read_csv(wf_path)
+        wf_robust = wf.sort_values("mean_test_cagr", ascending=False)
+    else:
+        # Fallback to old wf_aggregate.csv
+        wf = pd.read_csv(cache / "wf_aggregate.csv")
+        wf_robust = wf[wf["n_splits_in_train_top20"] >= 4].sort_values("mean_test_cagr", ascending=False)
 
     # Year-by-year for the recommended strategy
-    yb_pin_k1 = pd.read_csv(cache / "yb_blended_pullback_momentum_k5.csv")
-    yb_qp_k3 = pd.read_csv(cache / "yb_quality_pullback_k1.csv")
-    yb_pin_k5 = pd.read_csv(cache / "yb_pullback_in_winner_k5.csv")
+    yb_path = cache / "yb_strategy_rotation_k5.csv"
+    if not yb_path.exists():
+        # Generate
+        from experiments.monthly_dca.save_alpha_picks import save_strategy
+        # Register strategy_rotation
+        from experiments.monthly_dca.save_alpha_picks import REGISTRY
+        REGISTRY["strategy_rotation"] = strategy_rotation
+        save_strategy("strategy_rotation", top_k=5, exit_rule="hold_forever")
+    yb_strategy_rotation = pd.read_csv(yb_path)
 
     # Oracle
     oracle = pd.read_csv(cache / "oracle.csv")
 
-    # Pick log for the recommended strategy (full history). Enrich with current
-    # price, multiple-on-cost, SPY return over same window, and win flag.
-    pick_log = pd.read_csv(cache / "picks_full_blended_pullback_momentum_k5.csv")
+    # Pick log for the recommended strategy
+    pick_log_path = cache / "picks_full_strategy_rotation_k5.csv"
+    if not pick_log_path.exists():
+        from experiments.monthly_dca.save_alpha_picks import save_strategy, REGISTRY
+        REGISTRY["strategy_rotation"] = strategy_rotation
+        save_strategy("strategy_rotation", top_k=5, exit_rule="hold_forever")
+    pick_log = pd.read_csv(pick_log_path)
     pick_log["asof"] = pd.to_datetime(pick_log["asof"])
+
     spy = panel["SPY"]
     eval_at = panel.index.max()
-    # Each pick has a 3-year scheduled exit. If 3 years have passed, the pick
-    # is "exited" with the actual exit price; if still inside the 3-year
-    # window, it's "held" with the current price as the running mark.
     HOLD_YEARS = 3.0
     enriched_records = []
     for _, r in pick_log.iterrows():
         asof_t = r["asof"]
         tkr = r["ticker"]
-        entry_px = float(r["price"])
+        entry_px = float(r["price"]) if "price" in r and pd.notna(r.get("price")) else float("nan")
+        if not np.isfinite(entry_px):
+            continue
         scheduled_exit = asof_t + pd.Timedelta(days=int(HOLD_YEARS * 365.25))
         is_exited = scheduled_exit <= eval_at
-        # Find the actual evaluation date and price
         eval_date = scheduled_exit if is_exited else eval_at
-        # Locate price at eval_date (last available on or before)
         out_px = float("nan")
         if tkr in panel.columns:
             s = panel[tkr].loc[panel.index <= eval_date].dropna()
             if not s.empty:
                 out_px = float(s.iloc[-1])
-                # Update eval_date to the actual data point used
                 eval_date = s.index[-1]
-        # SPY equivalent
         pos = panel.index.searchsorted(asof_t)
         spy_entry = float(spy.iloc[pos]) if pos < len(spy) else float("nan")
         spy_eval_pos = panel.index.searchsorted(eval_date, side="right") - 1
@@ -357,21 +343,20 @@ def main() -> None:
         })
     pick_log_records = enriched_records
 
-    # "If you started X years ago" stats: deploy from start_offset back through eval
+    # If you started X years ago
     horizon_stats = []
-    for years_back in (1, 2, 3, 5, 7):
+    for years_back in (1, 2, 3, 5, 7, 10, 15, 20):
         cutoff = eval_at - pd.Timedelta(days=int(years_back * 365.25))
         recent = pick_log[pick_log["asof"] >= cutoff].copy()
         if recent.empty:
             continue
-        # Compute strategy DCA from cutoff and SPY DCA from cutoff
         strat_terminal = 0.0
         spy_terminal = 0.0
         n = 0
         for _, r in recent.iterrows():
             asof_t = r["asof"]
             tkr = r["ticker"]
-            entry = float(r["price"])
+            entry = float(r["price"]) if pd.notna(r.get("price")) else float("nan")
             if not np.isfinite(entry) or entry == 0:
                 continue
             cur = float(panel[tkr].loc[panel.index <= eval_at].dropna().iloc[-1]) if tkr in panel.columns else float("nan")
@@ -385,7 +370,6 @@ def main() -> None:
             n += 1
         if n == 0:
             continue
-        # IRR via XIRR
         cf_strat = [(pd.Timestamp(t), -1.0) for t in recent["asof"].values[:n]]
         cf_strat.append((eval_at, strat_terminal))
         cf_spy = [(pd.Timestamp(t), -1.0) for t in recent["asof"].values[:n]]
@@ -406,24 +390,20 @@ def main() -> None:
             "edge_vs_spy": float(cagr_s - cagr_y),
         })
 
-    # Top sweep
     sweep = pd.read_csv(cache / "sweep_v1.csv")
     sweep_top = sweep.sort_values("cagr_dca_portfolio", ascending=False).head(40)
 
-    # Single "pick of the month" — top-1 from pullback_in_winner with full feature snapshot
-    # The "pick of the month" is the basket of K picks from the recommended strategy
     pick_of_month = picks_recommended[0] if picks_recommended else None
-    pick_of_month_basket = picks_recommended  # full K-pick basket
+    pick_of_month_basket = picks_recommended
 
-    # Growth curve over the full backtest window (k=1 hold_forever, the recommended config)
-    pick_log_full = pd.read_csv(cache / "picks_full_blended_pullback_momentum_k5.csv")
+    pick_log_full = pd.read_csv(pick_log_path)
     growth = growth_curve(panel, pick_log_full)
 
-    # Headline backtest stats from k=1 hold_forever (full window)
-    pin_summary_path = cache / "summary_blended_pullback_momentum_k5.json"
+    # Headline backtest stats from strategy_rotation k=5 hold_forever (full window 1997-2024)
+    summary_path = cache / "summary_strategy_rotation_k5.json"
     headline = {}
-    if pin_summary_path.exists():
-        with open(pin_summary_path) as f:
+    if summary_path.exists():
+        with open(summary_path) as f:
             ps = json.load(f)
         s = ps.get("stats", {})
         headline = {
@@ -436,34 +416,62 @@ def main() -> None:
             "edge": float(s.get("edge", 0)),
         }
 
-    # Survivorship-bias study (random baseline, sensitivity, etc.)
     surv_path = cache / "survivorship_summary.json"
     survivorship = None
     if surv_path.exists():
         with open(surv_path) as f:
             survivorship = json.load(f)
 
-    # Walk-forward summary stat for the recommended strategy across all 8 splits
-    pin_k1_3y_wf = wf_robust[wf_robust["key"] == "pullback_in_winner::1::fixed_3y"]
-    pin_k1_hold_wf = wf_robust[wf_robust["key"] == "pullback_in_winner::1::hold_forever"]
+    # Walk-forward summary
+    headline_key = f"{RECOMMENDED_NAME}::{RECOMMENDED_TOP_K}"
+    rec_wf = wf_robust[wf_robust["key"] == headline_key]
     wf_explanation = {
-        "n_splits": 8,
-        "headline_key": "pullback_in_winner::1::fixed_3y",
-        "headline_mean_test_cagr": float(pin_k1_3y_wf.iloc[0]["mean_test_cagr"]) if len(pin_k1_3y_wf) else None,
-        "headline_min_test_cagr": float(pin_k1_3y_wf.iloc[0]["min_test_cagr"]) if len(pin_k1_3y_wf) else None,
-        "headline_max_test_cagr": float(pin_k1_3y_wf.iloc[0]["max_test_cagr"]) if len(pin_k1_3y_wf) else None,
-        "hold_forever_mean_test_cagr": float(pin_k1_hold_wf.iloc[0]["mean_test_cagr"]) if len(pin_k1_hold_wf) else None,
-        "hold_forever_min_test_cagr": float(pin_k1_hold_wf.iloc[0]["min_test_cagr"]) if len(pin_k1_hold_wf) else None,
+        "n_splits": 10,
+        "headline_key": headline_key,
+        "headline_mean_test_cagr": float(rec_wf.iloc[0]["mean_test_cagr"]) if len(rec_wf) else None,
+        "headline_min_test_cagr": float(rec_wf.iloc[0]["min_test_cagr"]) if len(rec_wf) else None,
+        "headline_max_test_cagr": float(rec_wf.iloc[0]["max_test_cagr"]) if len(rec_wf) else None,
         "explanation": (
             "Walk-forward TEST windows are 1-3 years long. Picks made in those "
             "short windows are then held to today (the eval date), so picks made "
             "in 2022 and 2023 had ~3 years to compound across the AI-driven 2023-2024 "
-            "rally. The MEAN of those eight short-window CAGRs is 80-89%. The "
-            "FULL-window CAGR (every monthly pick from 2018 through 2024 held to "
-            "today) is 43% because it dilutes the explosive recent cohorts with "
+            "rally. The MEAN of those 10 short-window CAGRs is reported. The "
+            "FULL-window CAGR (every monthly pick from 1997 through 2024 held to "
+            "today) is lower because it dilutes explosive recent cohorts with "
             "earlier-year picks that compounded more slowly."
         ),
     }
+
+    # Bias sensitivity table
+    bias_path = cache / "winner_bias_sensitivity.csv"
+    bias_table = None
+    if bias_path.exists():
+        bias_df = pd.read_csv(bias_path)
+        # Prefer the strategy_rotation k=5 version if present
+        if "strategy" in bias_df.columns:
+            sub = bias_df[(bias_df["strategy"] == RECOMMENDED_NAME) &
+                           (bias_df["top_k"] == RECOMMENDED_TOP_K)]
+            if sub.empty:
+                sub = bias_df.iloc[: min(6, len(bias_df))]
+        else:
+            sub = bias_df
+        bias_table = sub.to_dict(orient="records")
+
+    # Multi-window comparison
+    winner_window_path = cache / "winner_full_window.csv"
+    winner_windows = None
+    if winner_window_path.exists():
+        ww = pd.read_csv(winner_window_path)
+        winner_windows = ww.to_dict(orient="records")
+
+    # Per-month regime history (last 24 months)
+    regime_history = []
+    last_24_asofs = asofs[-24:] if len(asofs) > 24 else asofs
+    for asof in last_24_asofs:
+        regime_history.append({
+            "asof": str(asof.date()),
+            "regime": get_regime(asof),
+        })
 
     out = {
         "as_of": str(latest.date()),
@@ -472,22 +480,29 @@ def main() -> None:
             "first_date": str(panel.index.min().date()),
             "last_date": str(panel.index.max().date()),
         },
-        "spy_dca_cagr": float(yb_pin_k1["cagr_dca_spy"].mean()),
+        "spy_dca_cagr": float(yb_strategy_rotation["cagr_dca_spy"].mean()) if len(yb_strategy_rotation) else None,
         "headline": headline,
+        "current_regime": current_regime,
+        "regime_history_24m": regime_history,
         "pick_of_month": pick_of_month,
         "pick_of_month_basket": pick_of_month_basket,
         "recommended_strategy": {
             "name": RECOMMENDED_NAME,
             "top_k": RECOMMENDED_TOP_K,
             "exit": "hold_forever",
-            "description": "Rank-blend of pullback_in_winner and dual_momentum scores. Picks the top 5 names where ANY of the two signals ranks highly. Held forever.",
+            "description": RECOMMENDED_DESCRIPTION,
         },
         "growth": growth,
         "horizon_stats": horizon_stats,
         "wf_explanation": wf_explanation,
         "survivorship": survivorship,
+        "bias_sensitivity": bias_table,
+        "windows_comparison": winner_windows,
         "live_picks": {
-            "blended_recommended": picks_recommended,
+            "strategy_rotation_top5": picks_recommended,
+            "strategy_rotation_top1": picks_recommended_k1,
+            "grand_ensemble_top5": picks_grand_5,
+            "grand_ensemble_top1": picks_grand_1,
             "pullback_in_winner_top5": picks_pin_5,
             "pullback_in_winner_top10": picks_pin_10,
             "quality_pullback_top5": picks_qp_5,
@@ -497,8 +512,8 @@ def main() -> None:
         "walk_forward_aggregate": [
             {
                 "key": r["key"],
-                "n_splits_in_train_top20": int(r["n_splits_in_train_top20"]),
-                "n_splits_with_test_data": int(r["n_splits_with_test_data"]),
+                "n_splits_in_train_top20": int(r.get("n_splits_in_train_top10", r.get("n_splits_in_train_top20", 0))),
+                "n_splits_with_test_data": int(r.get("n_splits", r.get("n_splits_with_test_data", 0))),
                 "mean_test_cagr": float(r["mean_test_cagr"]),
                 "median_test_cagr": float(r["median_test_cagr"]),
                 "min_test_cagr": float(r["min_test_cagr"]),
@@ -509,11 +524,8 @@ def main() -> None:
             }
             for _, r in wf_robust.iterrows()
         ],
-        "splits": splits,
         "year_by_year": {
-            "pullback_in_winner_k1": yb_pin_k1.to_dict(orient="records"),
-            "quality_pullback_k1": yb_qp_k3.to_dict(orient="records"),
-            "pullback_in_winner_k5": yb_pin_k5.to_dict(orient="records"),
+            "strategy_rotation_k5": yb_strategy_rotation.to_dict(orient="records"),
         },
         "oracle": oracle.to_dict(orient="records"),
         "pick_log": pick_log_records,
@@ -522,7 +534,6 @@ def main() -> None:
 
     out = to_jsonable(out)
 
-    # Pretty-print with stable key order
     with open(DATA_OUT, "w") as f:
         json.dump(out, f, indent=1, default=str)
     size_kb = DATA_OUT.stat().st_size / 1024
