@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — One Stock to Buy Each Month</title>
-  <meta name="description" content="Five stocks to buy each month-end. Regime-adaptive basket that switches between pullback-in-winner, quality-pullback, explosive-winners and cash-in-bear. Walk-forward validated across 10 splits with mean OOS CAGR of 25.5%, never below +17.5%. Backtested 1997-2024 on 1,833 tickers." />
+  <title>Daily Stock Guide — Stocks to Buy Each Month</title>
+  <meta name="description" content="ML-driven monthly stock-pick basket. Walk-forward Gradient Boosted Trees + crash-aware regime gate. Walk-forward validated across 10 splits with mean OOS CAGR of 51.8%, beating SPY DCA by +39pp on average. Backtested 2003-2024 on 1,833 tickers." />
   <meta name="keywords" content="monthly stock pick, DCA stocks, dollar cost average, best stock to buy this month, pullback winner, stock recovery, long-term stock investing, beat SPY, stock pick of the month" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — One Stock to Buy Each Month" />
-  <meta property="og:description" content="One disciplined stock pick at month-end. ~43% backtest CAGR vs SPY 14%. Honest, walk-forward validated, survivorship-bias corrected." />
+  <meta property="og:title" content="Daily Stock Guide — Stocks to Buy Each Month" />
+  <meta property="og:description" content="ML-driven monthly stock picks. 80.79% backtest CAGR vs SPY 11%. Walk-forward 51.8% mean OOS CAGR. Honest, validated, survivorship-corrected." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — One Stock to Buy Each Month" />
-  <meta name="twitter:description" content="One disciplined stock pick at month-end. ~43% backtest CAGR vs SPY 14%." />
+  <meta name="twitter:title" content="Daily Stock Guide — Stocks to Buy Each Month" />
+  <meta name="twitter:description" content="ML-driven monthly stock picks. 80.79% backtest CAGR vs SPY 11%. Walk-forward 51.8% mean OOS CAGR." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,7 +50,7 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "One disciplined stock pick at the end of each month, based on the Pullback-In-Winner strategy.",
+    "description": "ML-driven monthly stock picks. Walk-forward Gradient Boosted Trees + crash-aware regime gate. Mean OOS CAGR 51.8%.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -82,8 +82,8 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">Five stocks to buy at the end of every month.</h1>
-      <p class="hero-sub">A regime-adaptive <strong>compounding</strong> basket: each month-end we classify the SPY regime and rotate the entire portfolio into 5 fresh picks for that regime — in <strong>normal markets</strong> long-term-winning stocks on pullbacks, in <strong>strong bull markets</strong> high-momentum winners, in <strong>recoveries</strong> deeply discounted long-term winners, and in confirmed <strong>bear markets</strong> all-cash. Capital from prior winners recycles into the next month's high-conviction names, so returns compound. Backtested 2002-2024 on a 1,833-ticker universe — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>40.5%</strong>, beating SPY DCA by an average of <strong>+25.8pp</strong>. Bias-corrected at α=4%/yr delisting: <strong>28.6% CAGR (+16.2pp edge over SPY)</strong>.</p>
+      <h1 class="hero-headline">A fresh stock basket every month — chosen by ML.</h1>
+      <p class="hero-sub">A walk-forward <strong>Gradient Boosted Trees</strong> ranking model picks the top stocks from a 1,833-ticker universe each month, and a <strong>crash-aware regime gate</strong> shifts the entire portfolio to <strong>cash</strong> when SPY breaks down. The model is fit on 67 cross-sectionally rank-transformed price-only features (momentum, trend health, recovery rate, idiosyncratic momentum, RSI, breakout strength, etc.) and trained at three forward horizons (1m / 3m / 6m) — predictions are ensembled. <strong>Top-15 picks</strong> in normal markets, <strong>top-7</strong> in confirmed bull or recovery, <strong>cash</strong> in confirmed crash. Capital fully rebalances each month-end so returns compound. Backtested 2003-2024 on the full 1,833-ticker universe — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>51.8%</strong>, beating SPY DCA by an average of <strong>+39pp</strong>. Bias-corrected at α=4%/yr delisting: <strong>74.4% CAGR median</strong>.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
@@ -211,38 +211,47 @@
   <section id="how" class="how-section">
     <div class="section-inner">
       <h2 class="section-h2">How the strategy works</h2>
-      <p class="section-sub">A blended rank of two complementary signals. Picks the top 5 names where <em>either</em> signal ranks highly, so trend and pullback regimes both contribute. This diversification keeps any single year from collapsing vs SPY.</p>
+      <p class="section-sub">A walk-forward Gradient Boosted Trees ranking model picks the top stocks each month, with a crash-aware regime gate that shifts to cash when the market breaks down.</p>
 
       <ol class="how-list">
-        <li><strong>Score the universe.</strong> 1,844 US-traded equities (small caps, mid caps, large caps, international ADRs + 45 historically delisted names), point-in-time eligible — must have ≥ 504 days of history, no future leakage.</li>
-        <li><strong>Signal A — pullback in winner:</strong> long-term winners (≥ 55% of last 5 years above 200-day MA) currently at least 15% below their 1-year high, with RSI above 30 (not in freefall).</li>
-        <li><strong>Signal B — dual momentum:</strong> stocks above their 200-day MA <em>and</em> with positive 12-month-minus-1-month momentum.</li>
-        <li><strong>Rank-blend the two signals.</strong> Each ticker gets the max of its two percentile ranks. Stocks that pass either test rank near the top.</li>
-        <li><strong>Buy the top 5.</strong> Equal-weight $1 each at month-end close. Sell each position exactly 3 years after entry.</li>
-        <li><strong>Repeat every month.</strong> 5 new positions per month; positions exit on a rolling 3-year schedule. Backtested 336 months × 5 picks = 1,680 trades.</li>
+        <li><strong>Score the universe.</strong> 1,833 US-traded equities (small caps, mid caps, large caps, international ADRs), point-in-time eligible — must have ≥ 252 days of history, no future leakage. Ticker-reuse and adjustment-error months are detected and masked.</li>
+        <li><strong>Cross-sectionally rank features.</strong> 67 price-only features (momentum, trend health, recovery rate, idiosyncratic momentum, RSI, volatility, breakout strength, drawdown profile, etc.) are converted to per-month percentile ranks in [-1, +1] so the model only learns relative orderings — regime-free.</li>
+        <li><strong>Train three Gradient Boosted Trees models.</strong> Each predicts the cross-sectional rank of forward returns at 1m / 3m / 6m horizons. Refit every January on all data older than (test month − 7 months) so labels never leak across the cutoff. Predictions are ensembled.</li>
+        <li><strong>Classify SPY regime.</strong>
+          Crash if SPY 21d ≤ -8% or 6m ≤ -5% AND 21d ≤ -3%.
+          Recovery if SPY just reclaimed its 200dma after a 40d+ below-streak.
+          Bull if SPY 12m mom ≥ 10% AND above 200dma. Else Normal.</li>
+        <li><strong>Pick top-K based on regime.</strong> Crash → 100% cash. Recovery → top-7. Bull → top-7. Normal → top-15. Equal-weight within picks.</li>
+        <li><strong>Monthly rebalance.</strong> Each month-end, sell everything and redeploy into the new top-K. Returns from prior winners compound into the next month's high-conviction names. 10 bp/month turnover cost applied.</li>
       </ol>
 
       <details class="accordion">
         <summary>Walk-forward validation</summary>
         <div class="accordion-body">
-          <p>Eight TRAIN/TEST splits — three expanding-window, four 3y/1y rolling, one strict last-block holdout. The recommended strategy was selected from the walk-forward aggregate, not from the full-window backtest, so its parameters are not curve-fit to the future.</p>
-          <p>Strategies that <em>looked</em> great on early TRAIN windows but collapsed on TEST (e.g., pure long-term momentum) are exposed and excluded. Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
+          <p>10 TRAIN/TEST splits covering 2003-2024 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
+          <p>Aggregate (TEST): 10/10 positive splits, mean OOS CAGR 51.8%, mean edge +39.4pp over SPY DCA, 9/10 beat SPY DCA. Min OOS CAGR 11.2% (R6 AI rally — equal-weighted small/mid-cap basket lags mega-cap-dominated SPY); max OOS CAGR 162.9% (R1 GFC bottom recovery). Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Why hold forever, not sell?</summary>
+        <summary>Why monthly rebalance?</summary>
         <div class="accordion-body">
-          <p>We backtested 13 different exit rules. Hold-forever and fixed-3-year exits dominate every selling rule (trailing-stop, hard-stop, take-profit). Why? The biggest winners — the kind of stocks that 5×, 10×, 20× — routinely take 30–40 % drawdowns mid-rally. Any meaningful stop kicks you out before the multi-bagger plays out.</p>
-          <p>The cost of holding forever is that ~ 40 % of single picks under-perform SPY (the bias-corrected win rate is ~ 45 %). The benefit is that the winners 5–20× and dominate the basket. Concentrate on the right side of that distribution.</p>
+          <p>720 variants tested in the v2 sweep (5 K-normal × 3 K-recovery × 4 K-bull × 2 conviction × 2 cash-gate × 5 regime modes). Monthly rebalance with the winner config (K-normal=15, equal-weight, tight crash gate) dominates because the ML score's predictive power is concentrated at the 1-3 month horizon — holding picks longer than that decays the signal. The cost is monthly turnover (10bp/month modeled) and tax inefficiency in taxable accounts.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Survivorship-bias overlay</summary>
+        <div class="accordion-body">
+          <p>The universe includes only tickers alive today. To honestly account for the survivors-only bias, we run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to the historical small-cap delisting hazard rate α). At α=4%/yr (the historical default), median CAGR is 74.4% (p10 71%, p90 77%). Even at α=12%/yr (3× historical), median CAGR is 59.3%.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Other strategies & full research</summary>
         <div class="accordion-body">
-          <p>This page focuses on the recommended strategy. The <a href="/experiments/monthly-dca/">research page</a> contains the full results: every strategy variant tested (24 strategies × 5 K-values × 13 exit rules), per-split walk-forward detail, the oracle ceiling, the full pick log, and methodology.</p>
-          <p>Source code and raw data: <code>experiments/monthly_dca/</code> in the GitHub repo.</p>
+          <p>This page focuses on the recommended strategy. The <a href="/experiments/monthly-dca/">research page</a> contains the full results: per-split walk-forward detail, parameter sweep, the full pick log, methodology, and the legacy strategy_rotation results (35.4% full-window CAGR, the prior winner before V2).</p>
+          <p>Source code and raw data: <code>experiments/monthly_dca/v2/</code> in the GitHub repo.</p>
         </div>
       </details>
     </div>
