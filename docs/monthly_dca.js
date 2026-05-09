@@ -451,7 +451,7 @@ function renderHorizons(data) {
     card.appendChild(el("div", { class: "horizon-edge " + clsRet(h.edge_vs_spy) },
       `edge ${fmtPctSigned(h.edge_vs_spy)}`));
     card.appendChild(el("div", { class: "horizon-multiple" },
-      `$1/mo → $${h.strat_terminal.toFixed(0)}  (SPY DCA: $${h.spy_terminal.toFixed(0)})`));
+      `$1 → ${fmtMoney(h.strat_terminal)}  ·  SPY: ${fmtMoney(h.spy_terminal)}`));
     sec.appendChild(card);
   });
 }

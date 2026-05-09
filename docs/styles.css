@@ -1425,7 +1425,7 @@ strong{font-weight:600}
    ============================================================ */
 .horizons-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
   gap:8px;
   margin-bottom:24px;
 }
@@ -1449,10 +1449,11 @@ strong{font-weight:600}
 }
 .horizon-cagr{
   font-family:var(--mono);
-  font-size:24px;
+  font-size:clamp(18px, 3.4vw, 24px);
   font-weight:600;
   margin-top:6px;
   letter-spacing:-0.02em;
+  word-break:break-word;
 }
 .horizon-cagr.pos{ color:var(--green); }
 .horizon-cagr.neg{ color:var(--orange); }
