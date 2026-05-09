@@ -83,17 +83,17 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">Five stocks to buy at the end of every month.</h1>
-      <p class="hero-sub">A regime-adaptive basket: in <strong>normal markets</strong> we buy long-term-winning stocks on pullbacks, in <strong>strong bull markets</strong> we buy high-momentum winners, in <strong>recoveries</strong> we buy deeply discounted long-term winners — and when SPY is in a confirmed <strong>bear market</strong> we skip the month entirely and stay in cash. <strong>Buy at month-end, hold for 3+ years</strong> (the backtest assumes hold-forever; a 3-year exit is the suggested minimum). Backtested over 28 years (1997-2024) on a 1,833-ticker universe (small caps, mid caps, large caps, international ADRs, 45 historically delisted names) — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>25.5%</strong>; the strategy was in TRAIN top-10 in 9 of 10 splits and never had a test window below +17.5% CAGR.</p>
+      <p class="hero-sub">A regime-adaptive <strong>compounding</strong> basket: each month-end we classify the SPY regime and rotate the entire portfolio into 5 fresh picks for that regime — in <strong>normal markets</strong> long-term-winning stocks on pullbacks, in <strong>strong bull markets</strong> high-momentum winners, in <strong>recoveries</strong> deeply discounted long-term winners, and in confirmed <strong>bear markets</strong> all-cash. Capital from prior winners recycles into the next month's high-conviction names, so returns compound. Backtested 2002-2024 on a 1,833-ticker universe — walk-forward validated across 10 splits with mean out-of-sample CAGR of <strong>40.5%</strong>, beating SPY DCA by an average of <strong>+25.8pp</strong>. Bias-corrected at α=4%/yr delisting: <strong>28.6% CAGR (+16.2pp edge over SPY)</strong>.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
   <section id="pick" class="pick-section">
     <div class="section-inner">
-      <div class="pick-eyebrow">This month's basket — regime-adaptive, hold 3+ years</div>
+      <div class="pick-eyebrow">This month's basket — regime-adaptive, monthly rebalance</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        Re-scored at the end of every month based on the active regime (bear / recovery / bull / default). Buy each pick equally at month-end close. The 3-year hold is the minimum recommendation — the backtest assumes hold-forever, so winners keep compounding. Not financial advice.
+        Re-scored at the end of every month based on the active SPY regime (bear / recovery / bull / default). Buy each pick equally at month-end close, then sell at the next month-end and redeploy the proceeds plus your fresh deposit into next month's basket. Capital from prior winners compounds into the next month's high-conviction names. Bear-regime months are skipped (cash). Pre-tax CAGR; tax-deferred accounts (401k/IRA) see headline numbers; taxable accounts subtract ~15-20% LTCG drag. Not financial advice.
       </div>
     </div>
   </section>
@@ -101,7 +101,7 @@
   <section id="backtest" class="bt-section">
     <div class="section-inner">
       <h2 class="section-h2">Backtest — 28 years, $1 per month into the basket</h2>
-      <p class="section-sub">From January 1997 through December 2024, if you'd put $1 into the basket at the end of every month, here's how the portfolio grew compared to putting $1 into SPY at the same dates. 332 monthly entries (4 months skipped due to bear-market regime), 1,660 individual positions held to today.</p>
+      <p class="section-sub">From January 2002 through December 2024, if you'd put $1 into the basket at the end of every month and let the strategy fully rotate the portfolio each month, here's how the portfolio compounded compared to putting $1 into SPY at the same dates. 276 monthly cycles (a few months skipped due to bear-market regime), 1,365 monthly trades. Final equity $62,304 vs SPY's $1,292 from $276 deposited.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <canvas id="btChart" class="bt-chart"></canvas>
