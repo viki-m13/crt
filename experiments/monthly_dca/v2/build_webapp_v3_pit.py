@@ -143,6 +143,7 @@ def run_full_sim(
     preds_live: pd.DataFrame,
     spy_features: pd.DataFrame,
     monthly_returns: pd.DataFrame,
+    monthly_prices: pd.DataFrame,
     cost_bps: float = 10.0,
     hold_months: int = 6,
     K: int = 3,
@@ -189,7 +190,8 @@ def run_full_sim(
         do_reb = (i == 0) or (held_for >= hold_months) or cash
 
         if do_reb:
-            # Close out the OLD basket: book the realised return and exit prices for trade log
+            # Close out the OLD basket: book actual entry/exit prices, realised
+            # returns, and the SPY benchmark return over the same window.
             if cur_picks and last_rebalance is not None:
                 pos1 = mr_idx.searchsorted(m)
                 cands = []
@@ -198,24 +200,43 @@ def run_full_sim(
                         cands.append((j, abs((mr_idx[j] - m).days)))
                 cands.sort(key=lambda x: x[1])
                 close_d = mr_idx[cands[0][0]] if cands and cands[0][1] <= 7 else m
+                # SPY return over the holding window
+                spy_entry_px = (float(monthly_prices.at[trade_log_open[0]["entry_date_ts"], "SPY"])
+                                if trade_log_open and "SPY" in monthly_prices.columns
+                                and trade_log_open[0]["entry_date_ts"] in monthly_prices.index
+                                else None)
+                spy_exit_px = (float(monthly_prices.at[close_d, "SPY"])
+                               if "SPY" in monthly_prices.columns and close_d in monthly_prices.index
+                               else None)
+                spy_ret_window = ((spy_exit_px / spy_entry_px - 1)
+                                  if (spy_entry_px and spy_exit_px) else None)
                 for trade in trade_log_open:
                     tk = trade["ticker"]
-                    if tk in monthly_returns.columns:
-                        # exit price approx via cumulative returns
-                        exit_px = trade["entry_px"]
-                        try:
-                            entry_pos = mr_idx.searchsorted(trade["entry_date"])
-                            for kk in range(entry_pos + 1, mr_idx.searchsorted(close_d) + 1):
-                                if kk < len(mr_idx):
-                                    rr = monthly_returns.iat[kk, monthly_returns.columns.get_loc(tk)]
-                                    if not pd.isna(rr):
-                                        exit_px *= (1 + rr)
-                        except Exception:
-                            pass
-                        trade["exit_date"] = str(close_d.date())
-                        trade["exit_px"] = float(exit_px)
-                        trade["return"] = (trade["exit_px"] / trade["entry_px"] - 1) if trade["entry_px"] else None
-                        trade["status"] = "exited"
+                    entry_d_ts = trade.pop("entry_date_ts")
+                    if tk in monthly_prices.columns and entry_d_ts in monthly_prices.index:
+                        entry_px_real = float(monthly_prices.at[entry_d_ts, tk])
+                        if pd.isna(entry_px_real):
+                            entry_px_real = None
+                    else:
+                        entry_px_real = None
+                    if tk in monthly_prices.columns and close_d in monthly_prices.index:
+                        exit_px_real = float(monthly_prices.at[close_d, tk])
+                        if pd.isna(exit_px_real):
+                            exit_px_real = None
+                    else:
+                        exit_px_real = None
+                    pick_ret = ((exit_px_real / entry_px_real - 1)
+                                if (entry_px_real and exit_px_real) else None)
+                    trade["entry_px"] = entry_px_real
+                    trade["exit_date"] = str(close_d.date())
+                    trade["exit_px"] = exit_px_real
+                    trade["return"] = pick_ret
+                    trade["spy_entry_px"] = spy_entry_px
+                    trade["spy_exit_px"] = spy_exit_px
+                    trade["spy_return"] = spy_ret_window
+                    trade["beat_spy"] = (pick_ret is not None and spy_ret_window is not None
+                                          and pick_ret > spy_ret_window)
+                    trade["status"] = "exited"
                     trade_log_closed.append(trade)
                 trade_log_open = []
 
@@ -246,20 +267,31 @@ def run_full_sim(
                         last_rebalance = m
                         basket_id += 1
                         held_for = 0
-                        # Log entry trades for this basket
-                        # entry price ~ price at next month-end (approx start of next month)
+                        # Log entry trades for this basket using REAL prices
+                        # at the entry month-end.
                         pos = mr_idx.searchsorted(m)
-                        entry_d = mr_idx[pos] if pos < len(mr_idx) else m
+                        cands_entry = []
+                        for j in (pos - 1, pos):
+                            if 0 <= j < len(mr_idx):
+                                cands_entry.append((j, abs((mr_idx[j] - m).days)))
+                        cands_entry.sort(key=lambda x: x[1])
+                        entry_d = (mr_idx[cands_entry[0][0]]
+                                   if cands_entry and cands_entry[0][1] <= 7 else m)
                         for tk in cur_picks:
-                            if tk in monthly_returns.columns:
-                                # Use 1.0 as relative entry price
-                                trade_log_open.append({
-                                    "ticker": tk, "entry_date": str(entry_d.date()),
-                                    "entry_px": 1.0,
-                                    "regime": regime,
-                                    "basket_id": basket_id,
-                                    "status": "open",
-                                })
+                            entry_px_real = None
+                            if (tk in monthly_prices.columns
+                                    and entry_d in monthly_prices.index):
+                                v = monthly_prices.at[entry_d, tk]
+                                entry_px_real = float(v) if not pd.isna(v) else None
+                            trade_log_open.append({
+                                "ticker": tk,
+                                "entry_date": str(entry_d.date()),
+                                "entry_date_ts": entry_d,  # private — popped on close
+                                "entry_px": entry_px_real,
+                                "regime": regime,
+                                "basket_id": basket_id,
+                                "status": "open",
+                            })
 
         # Compute monthly return on current basket.
         # NaN returns for tickers that ARE in the panel mean "data not yet
@@ -368,7 +400,7 @@ def main():
     print("\n=== Running v3 simulation over live window ===")
     rets_log, trade_log, live_state = run_full_sim(
         members_g, preds_wf, preds_live, spy_features, monthly_returns,
-        cost_bps=10.0, hold_months=6, K=3,
+        monthly_prices, cost_bps=10.0, hold_months=6, K=3,
     )
     print(f"  months: {len(rets_log)}, last basket id: {live_state['basket_id']}")
     print(f"  current basket: {live_state['current_basket_picks']}")
@@ -643,6 +675,8 @@ def main():
     pick_log_rows = []
     for trade in trade_log.to_dict(orient="records") if len(trade_log) else []:
         ret = trade.get("return")
+        spy_ret = trade.get("spy_return")
+        beat = trade.get("beat_spy")
         pick_log_rows.append({
             "asof": trade.get("entry_date"),
             "ticker": trade.get("ticker"),
@@ -655,11 +689,11 @@ def main():
             "return": ret,
             "ret": ret,
             "ret_strat": ret,
-            "ret_spy": None,
+            "ret_spy": spy_ret,
             "cagr": (((1 + ret) ** 2 - 1) if ret is not None else None),  # 6m hold => annl ~ (1+r)^2 -1
-            "spy_return": None,
+            "spy_return": spy_ret,
             "win": (ret is not None and ret > 0),
-            "beat_spy": None,
+            "beat_spy": beat,
             "status": trade.get("status"),
             "basket_id": trade.get("basket_id"),
         })
