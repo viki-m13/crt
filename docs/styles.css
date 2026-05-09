@@ -1575,6 +1575,10 @@ strong{font-weight:600}
   font-family:var(--mono);
   font-size:12px;
 }
+.accordion-trades > div{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
 .trades-table th{
   text-align:left;
   padding:8px 10px;
@@ -1812,6 +1816,14 @@ strong{font-weight:600}
   font-family:var(--mono);
   font-size:12px;
   margin-top:10px;
+  display:block;
+  overflow-x:auto;
+  white-space:nowrap;
+}
+.v3-table thead, .v3-table tbody{
+  display:table;
+  width:100%;
+  table-layout:auto;
 }
 .v3-table thead th{
   background:#f0f0f0;
@@ -1869,12 +1881,13 @@ strong{font-weight:600}
 /* ============================================================
    CASE STUDIES + V2 COMPARE
    ============================================================ */
-.examples-section, .v2compare-section{
+.examples-section, .v2compare-section, .universe-section{
   padding:48px 0 60px;
   border-top:1px solid var(--rule-light);
 }
 .examples-section{ background:#fff; }
 .v2compare-section{ background:#fafafa; }
+.universe-section{ background:#fff; }
 .case-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
