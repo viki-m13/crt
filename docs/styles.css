@@ -1961,3 +1961,40 @@ strong{font-weight:600}
   color:var(--muted);
   line-height:1.4;
 }
+
+/* ============================================================
+   PICK BANNER (mid-cycle vs rebalance day)
+   ============================================================ */
+.basket-dates-action{
+  background:#fff5ec;
+  border:2px solid var(--orange);
+  color:#5c2d00;
+}
+.basket-dates-action strong{ color:var(--orange); }
+.basket-dates-noaction{
+  background:#f4faf6;
+  border:2px solid var(--green);
+  color:#1a3a26;
+  font-size:14px;
+  line-height:1.6;
+}
+.basket-dates-noaction strong{ color:var(--green); font-weight:600; }
+.rebalance-ref{
+  margin-top:18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--rule-light);
+  padding-top:14px;
+}
+.rebalance-ref summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  font-size:10.5px;
+  margin-bottom:8px;
+}
+.rebalance-ref summary:hover{ color:var(--ink); }
+.rebalance-ref-body div{ margin:4px 0; line-height:1.5; }
+.rebalance-ref-body .pos{ color:var(--green); }
+.rebalance-ref-body .neg{ color:var(--orange); }
