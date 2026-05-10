@@ -114,6 +114,26 @@ def load_xs_dispersion() -> pd.DataFrame:
     return pd.read_parquet(DATA / "xs_dispersion.parquet")
 
 
+def load_panel_specialist() -> pd.DataFrame:
+    """Session 5: pit_panel_full + 6 regime-specialist heads (3m/6m x bull/normal/recovery)."""
+    p = pd.read_parquet(DATA / "pit_panel_full.parquet")
+    p["asof"] = pd.to_datetime(p["asof"])
+    for regime in ["bull", "normal", "recovery"]:
+        for h in [3, 6]:
+            f = DATA / f"ml_preds_{h}m_{regime}.parquet"
+            if not f.exists():
+                continue
+            spec = pd.read_parquet(f)
+            spec["asof"] = pd.to_datetime(spec["asof"])
+            p = p.merge(spec, on=["asof", "ticker"], how="left")
+    rl_path = DATA / "regime_labels.parquet"
+    if rl_path.exists():
+        rl = pd.read_parquet(rl_path).reset_index()
+        rl["asof"] = pd.to_datetime(rl["asof"])
+        p = p.merge(rl, on="asof", how="left")
+    return p[~p["ticker"].isin(EXCLUDE)].copy()
+
+
 def load_monthly_returns() -> pd.DataFrame:
     return pd.read_parquet(CACHE / "v2" / "monthly_returns_clean.parquet")
 
@@ -533,6 +553,79 @@ def score_adaptive_ic_proportional(panel_at: pd.DataFrame) -> pd.Series:
     return out
 
 
+def _regime_at(panel_at: pd.DataFrame) -> str:
+    """Return the regime label associated with this asof (from precomputed
+    labels file). Defaults to 'normal' if missing."""
+    if "regime" in panel_at.columns:
+        r = panel_at["regime"].iloc[0]
+        if isinstance(r, str):
+            return r
+    return "normal"
+
+
+def score_specialist_router(panel_at: pd.DataFrame) -> pd.Series:
+    """Session 5 — route to the regime specialist's (pred_3m + pred_6m)/2.
+
+    If specialist columns missing or specialist for this regime not trained,
+    fall back to v3 baseline ml_3plus6.
+    """
+    regime = _regime_at(panel_at)
+    p3 = f"pred_3m_{regime}"
+    p6 = f"pred_6m_{regime}"
+    if p3 in panel_at.columns and p6 in panel_at.columns:
+        s = (panel_at[p3].fillna(0) + panel_at[p6].fillna(0)) / 2
+        if s.notna().sum() > 50:
+            return s
+    return score_ml_3plus6(panel_at)
+
+
+def score_specialist_blend(panel_at: pd.DataFrame, w: float = 0.5) -> pd.Series:
+    """Blend baseline ml_3plus6 with the specialist's prediction at w fraction.
+
+    score = (1-w) * ml_3plus6_magnitude + w * specialist_magnitude
+    Both are raw magnitudes, not ranks (preserves calibration).
+    """
+    base = score_ml_3plus6(panel_at)
+    regime = _regime_at(panel_at)
+    p3 = f"pred_3m_{regime}"
+    p6 = f"pred_6m_{regime}"
+    if p3 in panel_at.columns and p6 in panel_at.columns:
+        spec = (panel_at[p3].fillna(0) + panel_at[p6].fillna(0)) / 2
+        if spec.notna().sum() > 50:
+            return (1 - w) * base + w * spec
+    return base
+
+
+def score_specialist_blend_03(panel_at):
+    return score_specialist_blend(panel_at, w=0.30)
+
+
+def score_specialist_blend_05(panel_at):
+    return score_specialist_blend(panel_at, w=0.50)
+
+
+def score_specialist_blend_07(panel_at):
+    return score_specialist_blend(panel_at, w=0.70)
+
+
+def score_specialist_rank_avg(panel_at: pd.DataFrame) -> pd.Series:
+    """Average of rank(ml_3plus6) and rank(specialist for current regime).
+
+    Equal-weight rank ensemble of the two heads. Rank-based to be regime-
+    comparable across regimes.
+    """
+    base_r = _safe_rank(score_ml_3plus6(panel_at))
+    regime = _regime_at(panel_at)
+    p3 = f"pred_3m_{regime}"
+    p6 = f"pred_6m_{regime}"
+    if p3 in panel_at.columns and p6 in panel_at.columns:
+        spec = (panel_at[p3].fillna(0) + panel_at[p6].fillna(0)) / 2
+        if spec.notna().sum() > 50:
+            spec_r = _safe_rank(spec)
+            return 0.5 * base_r + 0.5 * spec_r
+    return base_r
+
+
 def score_ml_3plus6_with_ic_filter(panel_at: pd.DataFrame) -> pd.Series:
     """ml_3plus6 baseline; if all rolling-ICs are weak (<0.02), shrink score
     by 0.5 (effectively asking simulator to be less aggressive)."""
@@ -578,6 +671,12 @@ SCORERS = {
     "adaptive_ic": score_adaptive_ic,
     "adaptive_ic_prop": score_adaptive_ic_proportional,
     "ml_3plus6_ic_filter": score_ml_3plus6_with_ic_filter,
+    # Session 5 - regime specialists
+    "specialist_router": score_specialist_router,
+    "specialist_blend_03": score_specialist_blend_03,
+    "specialist_blend_05": score_specialist_blend_05,
+    "specialist_blend_07": score_specialist_blend_07,
+    "specialist_rank_avg": score_specialist_rank_avg,
 }
 
 
