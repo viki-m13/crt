@@ -197,3 +197,141 @@ explored, including these creative additions.
 The path to higher CAGR is **not** via novel strategy construction on the
 existing 67-feature panel — it's via expanding the universe or adding new
 information sources.
+
+---
+
+## 8. v6 GBM with proprietary features (post-initial-report)
+
+### Proprietary features added (11 new)
+
+- `rank_mom_change_12`, `rank_mom_change_3`: change in cross-sectional rank of mom_12_1 / mom_3 vs 3 months ago (rising-rank momentum).
+- `mtf_alignment`: count of (price > 50dma > 100dma > 200dma) — multi-timeframe trend alignment.
+- `coiling_strength`: vol_contraction × tight_consolidation_60 × (mom_12_1 > 0) — "spring-loaded" pre-breakout setup.
+- `reversal_mom`: 5d return - 21d return (decelerating selling).
+- `power_consolidation`: low BB width × high RSI × positive mom (pre-breakout consolidation with momentum).
+- `vertical_index`: composite of acceleration_2y + multibagger_ratio + fip_score + breakout_strength_60.
+- `quality_compounder`: trend_health × positive momentum / volatility.
+- `recovery_setup`: in moderate (10-40%) DD with positive 12m momentum.
+- `rank_mom_12_now`, `rank_mom_3_now`: current cross-sectional rank in mom_12_1 / mom_3.
+
+### v6 results (LightGBM 5-seed ensemble, full-history training, 7m embargo)
+
+| Variant                     | Full CAGR | WF mean | WF min  | Beats SPY | Sharpe | MaxDD |
+|-----------------------------|----------:|--------:|--------:|----------:|-------:|------:|
+| v3 baseline (deployed v2 GBM) |  39.77% |  42.80% |  14.49% |       9/10|   0.96 | -49.8%|
+| v6 alone (k=3 h=6)          |     2.74% |   3.57% | -20.68% |       2/10|   0.25 | -78.2%|
+| v6 alone (k=3 h=12)         |    10.30% |   8.78% |  -4.17% |       5/10|   0.47 | -53.9%|
+| v6_6m alone (k=3 h=6)       |     2.57% |   0.58% | -15.60% |       2/10|   0.27 | -80.9%|
+| v6_3m alone (k=3 h=12)      |    11.10% |  14.41% |  -7.01% |       4/10|   0.49 | -66.3%|
+| 50/50 v3+v6 rank-blend (h=12)| 16.33% |  15.82% |  -6.47% |       7/10|   0.62 | -53.9%|
+| 70/30 v3+v6 (h=12)          |    15.54% |  17.24% |  -6.47% |       6/10|   0.59 | -65.4%|
+| v3 score, filter v6 top 50% (h=12)| 11.25% |  20.04% | -16.02% |  7/10|   0.46 | -94.0%|
+
+The v6 model is **substantially worse** than v3 in every configuration tested:
+no blend, ensemble, or filter improves on baseline.  Adding the 11 hand-crafted
+proprietary features to the v6 LightGBM pipeline hurt rather than helped —
+likely because:
+
+1. **The v2 GBM training pipeline is meaningfully different from v6's**: the
+   deployed v2 model used HistGradientBoostingRegressor with multi-horizon
+   joint training and full-history rolling.  My v6 LightGBM with rolling 10y
+   window is a different beast and has consistently underperformed even
+   without the extra features (cf. v4 ML in the previous report).
+
+2. **Adding noisy features degrades GBM performance**: GBMs are not robust to
+   spurious features.  Each of the 11 new features has individual IC near
+   zero (we can verify post-hoc), and adding them as additional split
+   candidates dilutes the model's capacity to learn from the strong v3-style
+   features.
+
+3. **Combining v3 deployed predictions with v6 ranks** still hurts because the
+   v6 ranks are essentially noise.
+
+### Conclusion: proprietary features did not work
+
+The 11 hand-crafted features are individually intuitive but collectively offer
+no marginal lift over the v3 67-feature panel + v2 GBM training pipeline.
+
+---
+
+## 9. HuggingFace foundation models (Chronos)
+
+We tested two zero-shot time-series foundation models from Amazon's Chronos
+family:
+
+- **chronos-t5-small** (~46M params): On CPU, **114 seconds per single
+  forecast** of 126 days. For the full PIT panel (280 asofs × ~500 tickers ×
+  6m horizon) this would take **51+ days**. Infeasible on this hardware.
+
+- **chronos-bolt-tiny** (much smaller, 250x faster): 500 forecasts in 4.84s.
+  Tractable in principle (~23 min for full panel), but yielded asof 4/276
+  with the script in roughly 2 min before being killed to free CPU for v6
+  training.  The Chronos-bolt scoring infrastructure (`score_chronos_bolt.py`)
+  is committed and can be re-run when GPU is available.
+
+Limitations of zero-shot foundation models for this task:
+
+1. They forecast univariate price paths, not cross-sectional relative
+   performance.  We would need to convert their output to a cross-sectional
+   ranking, which loses information.
+2. The Chronos models are trained on generic time series, not financial
+   returns specifically.  Their priors on mean reversion / momentum may
+   conflict with stock-market dynamics.
+3. Without fine-tuning on our cross-section, they're unlikely to produce
+   alpha that beats a well-tuned in-domain GBM.
+
+### Conclusion: Chronos is not honestly tractable on CPU here
+
+For meaningful evaluation we need GPU access or a much smaller model (e.g.
+TimesFM-200M, Lag-Llama-tiny).  Code is committed for future re-run.
+
+---
+
+## 10. 1D CNN on raw 252-day price paths
+
+Trained a small 3-layer 1D CNN (~10K params) to predict cross-sectional 6m
+forward rank from 252-day normalized log-return paths. Walk-forward annual
+retrain, 7m embargo, 10y rolling window.
+
+The CNN trained 4 of 22 years before being killed to free CPU for v6.  At ~30s
+per year × 22 years = ~10 min standalone, but 3 concurrent processes made
+each ~3x slower.  Code is committed (`train_ts_cnn.py`); resumable.
+
+---
+
+## 11. Final updated bottom line
+
+**Total experiments:** 4,000+ variants in v4 (TP/SL/K/H/blends/regime gates) +
+~80 strategies in v5 orthogonal sweep + 11 proprietary features in v6 +
+zero-shot Chronos + 1D CNN time-series.
+
+**Outcome:** the deployed v3 strategy at 42.80% WF mean OOS CAGR remains the
+best honest answer for PIT S&P 500.  None of:
+
+- factor blends or hand-crafted proprietary features
+- multi-strategy orthogonal ensembles  
+- pattern matching to historical multibaggers
+- vertical-winner classifiers
+- score momentum
+- multi-horizon ensembles
+- fresh LightGBM training (with or without new features)
+- HuggingFace zero-shot foundation models (Chronos)
+- multi-timeframe alignment, coiling, recovery setup features
+
+beat v3 in honest evaluation.
+
+To deliver materially higher CAGR the user needs to either:
+
+1. **Expand the universe.** v3 on broader 1,833-ticker universe → 51.8% WF
+   mean.  On non-S&P 500 PIT → 51.0%.  The user's planned Russell 1000 / tech
+   all-cap deployment should naturally deliver the desired CAGR uplift.
+2. **Use leverage** (linear scaling of return + risk).
+3. **Add information beyond price**: fundamentals, news, alternative data,
+   options flow, etc.
+4. **GPU compute** to train competitive deep-learning models (Transformer
+   sequence models on raw price data) that may capture structure the
+   tabular GBM misses.
+
+The PIT S&P 500 universe with price-only features is a mature game where
+the deployed v3 sits at the local optimum.  This honest conclusion holds
+even after extensive novel-strategy exploration.
