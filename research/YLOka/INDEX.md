@@ -53,6 +53,8 @@ data/YLOka/                   ← (placeholder; using existing experiments/month
 | 2a | Cheap experiments (19 runs) | ✅ `research/YLOka/exp_summary.md` |
 | 2b | H1 multi-target ensemble (12m + cls heads, 12 variants) | ✅ `research/YLOka/exp_summary_session2.md` |
 | 2b | H7 dispersion-conditional K (7 variants) | ✅ `research/YLOka/exp_summary_session2.md` |
+| 2c | Session 3: 11 feature-based scorers | ✅ `research/YLOka/exp_summary_session3_4.md` |
+| 2c | Session 4: 10 adaptive-IC / dynamic-hold / regime-K variants | ✅ `research/YLOka/exp_summary_session3_4.md` |
 | 2 | Experiment harness | ✅ `strategy/YLOka/harness.py` (reproduces v3 to 4 dp) |
 | 2 | Tests | ✅ `tests/YLOka/test_*.py` — all PASS |
 | 2 | Executive summary | ✅ `reports/YLOka/executive_summary.md` |
@@ -62,7 +64,7 @@ data/YLOka/                   ← (placeholder; using existing experiments/month
 
 ## Key result
 
-**45+ experiments across Sessions 1-2; nothing beats v3 cleanly.**
+**80+ experiments across Sessions 1-4; v3 remains the local optimum.**
 
 Sessions covered: H2 conviction sizing, H3 accel overlay, H4 soft-cash continuum, H6 Donchian-130 breakout, H1 multi-target ensemble (12m regressor + classifier heads, 12 variants), H7 dispersion-conditional K (7 variants), full K/h grid, scorer alternatives, cash-yield variant.
 

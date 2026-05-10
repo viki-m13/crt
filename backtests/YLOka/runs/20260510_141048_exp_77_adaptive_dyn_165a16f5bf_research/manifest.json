@@ -1,0 +1,39 @@
+{
+  "cfg": {
+    "name": "exp_77_adaptive_dyn",
+    "K": 3,
+    "hold_months": 6,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.0,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "adaptive_ic",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0,
+    "dispersion_K": false,
+    "K_low_dispersion": 5,
+    "K_high_dispersion": 3,
+    "dispersion_threshold_pctile": 0.5,
+    "dynamic_hold": true,
+    "dynamic_hold_quantile": 0.8,
+    "monthly_score_check": true
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.3482940061876163,
+    "sharpe": 0.9174833530969714,
+    "sortino": 2.400537001443693,
+    "max_dd": -0.5077425035059271,
+    "best_m": 0.8495509234283266,
+    "worst_m": -0.26216954159891065,
+    "positive_months": 154,
+    "total_months": 248,
+    "cash_months": 4,
+    "window": "research",
+    "wall_time_s": 1.14
+  },
+  "run_id": "20260510_141048_exp_77_adaptive_dyn_165a16f5bf_research",
+  "git_sha": "0348edde5a9dfd649815fc64239cbca692d78323"
+}

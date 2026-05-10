@@ -1,0 +1,39 @@
+{
+  "cfg": {
+    "name": "exp_80_hold4",
+    "K": 3,
+    "hold_months": 4,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.0,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "ml_3plus6",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0,
+    "dispersion_K": false,
+    "K_low_dispersion": 5,
+    "K_high_dispersion": 3,
+    "dispersion_threshold_pctile": 0.5,
+    "dynamic_hold": false,
+    "dynamic_hold_quantile": 0.85,
+    "monthly_score_check": false
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.21695594421046716,
+    "sharpe": 0.6343817080687154,
+    "sortino": 1.3426179580482485,
+    "max_dd": -0.908413619213871,
+    "best_m": 0.8533108637475202,
+    "worst_m": -0.3611710281521931,
+    "positive_months": 147,
+    "total_months": 248,
+    "cash_months": 5,
+    "window": "research",
+    "wall_time_s": 0.26
+  },
+  "run_id": "20260510_141049_exp_80_hold4_087475f4f9_research",
+  "git_sha": "0348edde5a9dfd649815fc64239cbca692d78323"
+}

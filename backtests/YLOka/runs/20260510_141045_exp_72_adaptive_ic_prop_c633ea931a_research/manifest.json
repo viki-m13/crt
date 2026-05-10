@@ -1,0 +1,39 @@
+{
+  "cfg": {
+    "name": "exp_72_adaptive_ic_prop",
+    "K": 3,
+    "hold_months": 6,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.0,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "adaptive_ic_prop",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0,
+    "dispersion_K": false,
+    "K_low_dispersion": 5,
+    "K_high_dispersion": 3,
+    "dispersion_threshold_pctile": 0.5,
+    "dynamic_hold": false,
+    "dynamic_hold_quantile": 0.85,
+    "monthly_score_check": false
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.34767026545455426,
+    "sharpe": 0.9019325950913999,
+    "sortino": 2.353874231787964,
+    "max_dd": -0.5323951188133157,
+    "best_m": 0.8495509234283266,
+    "worst_m": -0.3676796230427317,
+    "positive_months": 151,
+    "total_months": 248,
+    "cash_months": 4,
+    "window": "research",
+    "wall_time_s": 0.28
+  },
+  "run_id": "20260510_141045_exp_72_adaptive_ic_prop_c633ea931a_research",
+  "git_sha": "0348edde5a9dfd649815fc64239cbca692d78323"
+}

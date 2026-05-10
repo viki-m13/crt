@@ -1,0 +1,36 @@
+{
+  "cfg": {
+    "name": "exp_58_fip_gate_ml",
+    "K": 3,
+    "hold_months": 6,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.0,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "fip_gate_ml",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0,
+    "dispersion_K": false,
+    "K_low_dispersion": 5,
+    "K_high_dispersion": 3,
+    "dispersion_threshold_pctile": 0.5
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.19824006218268542,
+    "sharpe": 0.7166760885581093,
+    "sortino": 1.3492514787591967,
+    "max_dd": -0.6642319066226439,
+    "best_m": 0.4491322125409023,
+    "worst_m": -0.48088246425105613,
+    "positive_months": 146,
+    "total_months": 248,
+    "cash_months": 4,
+    "window": "research",
+    "wall_time_s": 0.24
+  },
+  "run_id": "20260510_140813_exp_58_fip_gate_ml_5eadaf0074_research",
+  "git_sha": "0348edde5a9dfd649815fc64239cbca692d78323"
+}
