@@ -1,0 +1,36 @@
+
+=== run_universe (robust): broad ===
+  -> CAGR=6.45%  SPY=10.93%  edge=-4.49pp  MDD=-18.60%  Sharpe=0.72  cash_m=12
+  WF mean CAGR=5.22%  +-7.41pp  (1/10 beat SPY)
+
+=== run_universe (robust_v2_invvol_k5): broad ===
+  -> CAGR=5.45%  SPY=10.93%  edge=-5.48pp  MDD=-46.40%  Sharpe=0.37  cash_m=4
+  WF mean CAGR=3.90%  +-8.74pp  (1/10 beat SPY)
+
+=== run_universe (robust): levered ===
+  -> CAGR=11.45%  SPY=13.92%  edge=-2.46pp  MDD=-39.82%  Sharpe=0.57  cash_m=7
+  WF mean CAGR=12.37%  +-1.60pp  (4/9 beat SPY)
+
+=== run_universe (robust_v2_invvol_k5): levered ===
+  -> CAGR=24.41%  SPY=13.92%  edge=+10.50pp  MDD=-70.06%  Sharpe=0.73  cash_m=0
+  WF mean CAGR=27.01%  ++13.03pp  (8/9 beat SPY)
+
+=== run_universe (robust): combined ===
+  -> CAGR=10.20%  SPY=10.93%  edge=-0.73pp  MDD=-30.88%  Sharpe=0.64  cash_m=12
+  WF mean CAGR=10.81%  +-1.83pp  (4/10 beat SPY)
+
+=== run_universe (robust_v2_invvol_k5): combined ===
+  -> CAGR=8.83%  SPY=10.93%  edge=-2.11pp  MDD=-83.26%  Sharpe=0.41  cash_m=4
+  WF mean CAGR=14.85%  ++2.21pp  (6/10 beat SPY)
+
+=== comparison_robust.csv ===
+universe                variant  cagr_full  spy_cagr_full  edge_full_pp   sharpe    max_dd  n_cash  n_rebalances  n_months first_month last_month  wf_mean_cagr  wf_mean_edge_pp  wf_n_beats_spy  wf_n_splits
+   broad            v3_baseline   0.017720       0.109335     -9.161511 0.192645 -0.671540       4            47       257  2005-01-31 2026-05-08     -0.010759       -13.712151               0           10
+ levered            v3_baseline   0.272882       0.139156     13.372579 0.759390 -0.702579       0            31       181  2011-05-31 2026-05-08      0.307719        16.796900               8            9
+combined            v3_baseline   0.092865       0.109335     -1.646963 0.430127 -0.845010       4            47       257  2005-01-31 2026-05-08      0.147959         2.159653               6           10
+   broad   v3_robust_v1_kitchen   0.064470       0.109335     -4.486488 0.715276 -0.186025      12            58       257  2005-01-31 2026-05-08      0.052244        -7.411818               1           10
+   broad v3_robust_v2_invvol_k5   0.054528       0.109335     -5.480660 0.371914 -0.463978       4            47       257  2005-01-31 2026-05-08      0.038958        -8.740432               1           10
+ levered   v3_robust_v1_kitchen   0.114524       0.139156     -2.463226 0.574071 -0.398225       7            40       181  2011-05-31 2026-05-08      0.123730        -1.601992               4            9
+ levered v3_robust_v2_invvol_k5   0.244108       0.139156     10.495237 0.734008 -0.700572       0            31       181  2011-05-31 2026-05-08      0.270051        13.030108               8            9
+combined   v3_robust_v1_kitchen   0.101997       0.109335     -0.733782 0.637553 -0.308849      12            58       257  2005-01-31 2026-05-08      0.108051        -1.831074               4           10
+combined v3_robust_v2_invvol_k5   0.088284       0.109335     -2.105049 0.413393 -0.832598       4            47       257  2005-01-31 2026-05-08      0.148460         2.209844               6           10

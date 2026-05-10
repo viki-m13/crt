@@ -1,0 +1,83 @@
+
+=== broad ablations ===
+  broad    baseline               CAGR=   1.77%  MDD=-67.15%  Sharpe=0.19  WF=0/10
+  broad    k5_ew                  CAGR=   4.80%  MDD=-47.64%  Sharpe=0.33  WF=1/10
+  broad    k5_ew_midhold          CAGR=   5.18%  MDD=-46.89%  Sharpe=0.37  WF=1/10
+  broad    k5_invvol              CAGR=   5.45%  MDD=-46.40%  Sharpe=0.37  WF=1/10
+  broad    k5_invvol_midhold      CAGR=   4.84%  MDD=-43.54%  Sharpe=0.36  WF=1/10
+  broad    k3_ew_midhold          CAGR=   1.45%  MDD=-66.01%  Sharpe=0.17  WF=1/10
+  broad    k7_ew_midhold          CAGR=   8.30%  MDD=-42.77%  Sharpe=0.55  WF=1/10
+  broad    k5_ew_volscore         CAGR=   5.31%  MDD=-36.52%  Sharpe=0.46  WF=0/10
+  broad    kitchen_sink           CAGR=   6.45%  MDD=-18.60%  Sharpe=0.72  WF=1/10
+
+=== levered ablations ===
+  levered  baseline               CAGR=  27.29%  MDD=-70.26%  Sharpe=0.76  WF=8/9
+  levered  k5_ew                  CAGR=  28.03%  MDD=-71.54%  Sharpe=0.79  WF=9/9
+  levered  k5_ew_midhold          CAGR=  20.95%  MDD=-76.40%  Sharpe=0.65  WF=6/9
+  levered  k5_invvol              CAGR=  24.41%  MDD=-70.06%  Sharpe=0.73  WF=8/9
+  levered  k5_invvol_midhold      CAGR=  20.23%  MDD=-71.81%  Sharpe=0.65  WF=6/9
+  levered  k3_ew_midhold          CAGR=  23.17%  MDD=-68.76%  Sharpe=0.68  WF=8/9
+  levered  k7_ew_midhold          CAGR=  20.42%  MDD=-72.28%  Sharpe=0.66  WF=6/9
+  levered  k5_ew_volscore         CAGR=  16.97%  MDD=-38.32%  Sharpe=0.72  WF=7/9
+  levered  kitchen_sink           CAGR=  11.45%  MDD=-39.82%  Sharpe=0.57  WF=4/9
+
+=== combined ablations ===
+  combined baseline               CAGR=   9.29%  MDD=-84.50%  Sharpe=0.43  WF=6/10
+  combined k5_ew                  CAGR=   9.66%  MDD=-84.91%  Sharpe=0.43  WF=6/10
+  combined k5_ew_midhold          CAGR=  10.00%  MDD=-82.26%  Sharpe=0.44  WF=5/10
+  combined k5_invvol              CAGR=   8.83%  MDD=-83.26%  Sharpe=0.41  WF=6/10
+  combined k5_invvol_midhold      CAGR=   9.66%  MDD=-80.11%  Sharpe=0.44  WF=5/10
+  combined k3_ew_midhold          CAGR=  10.68%  MDD=-83.34%  Sharpe=0.45  WF=5/10
+  combined k7_ew_midhold          CAGR=  13.89%  MDD=-73.91%  Sharpe=0.55  WF=7/10
+  combined k5_ew_volscore         CAGR=  10.27%  MDD=-50.87%  Sharpe=0.52  WF=7/10
+  combined kitchen_sink           CAGR=  10.20%  MDD=-30.88%  Sharpe=0.64  WF=4/10
+
+=== SP500 ablations ===
+  sp500_pit baseline               CAGR=  39.77%  MDD=-49.83%  Sharpe=0.96  WF=10/10
+  sp500_pit k5_ew                  CAGR=  29.81%  MDD=-59.09%  Sharpe=0.86  WF=8/10
+  sp500_pit k5_ew_midhold          CAGR=  27.85%  MDD=-42.94%  Sharpe=0.88  WF=7/10
+  sp500_pit k5_invvol              CAGR=  26.81%  MDD=-57.36%  Sharpe=0.83  WF=9/10
+  sp500_pit k5_invvol_midhold      CAGR=  27.47%  MDD=-44.91%  Sharpe=0.90  WF=8/10
+  sp500_pit k3_ew_midhold          CAGR=  29.07%  MDD=-50.25%  Sharpe=0.81  WF=7/10
+  sp500_pit k7_ew_midhold          CAGR=  25.18%  MDD=-47.71%  Sharpe=0.90  WF=7/10
+  sp500_pit k5_ew_volscore         CAGR=  14.14%  MDD=-48.41%  Sharpe=0.67  WF=4/10
+  sp500_pit kitchen_sink           CAGR=   5.01%  MDD=-61.81%  Sharpe=0.38  WF=3/10
+
+=== ablations_master ===
+ universe           variant  cagr_pct   edge_pp   sharpe    mdd_pct  wf_n_beats_spy  wf_n_splits
+    broad          baseline  1.771955 -9.161511 0.192645 -67.154046               0           10
+    broad             k5_ew  4.803771 -6.129696 0.334557 -47.644394               1           10
+    broad     k5_ew_midhold  5.183054 -5.750413 0.367584 -46.888065               1           10
+    broad         k5_invvol  5.452807 -5.480660 0.371914 -46.397791               1           10
+    broad k5_invvol_midhold  4.841473 -6.091994 0.361023 -43.535335               1           10
+    broad     k3_ew_midhold  1.453444 -9.480023 0.172824 -66.009779               1           10
+    broad     k7_ew_midhold  8.304419 -2.629047 0.551937 -42.770041               1           10
+    broad    k5_ew_volscore  5.313308 -5.620159 0.456185 -36.521338               0           10
+    broad      kitchen_sink  6.446978 -4.486488 0.715276 -18.602460               1           10
+  levered          baseline 27.288170 13.372579 0.759390 -70.257861               8            9
+  levered             k5_ew 28.031736 14.116144 0.785289 -71.538054               9            9
+  levered     k5_ew_midhold 20.951127  7.035535 0.648102 -76.396619               6            9
+  levered         k5_invvol 24.410829 10.495237 0.734008 -70.057228               8            9
+  levered k5_invvol_midhold 20.229242  6.313650 0.646066 -71.810978               6            9
+  levered     k3_ew_midhold 23.171234  9.255642 0.676264 -68.757126               8            9
+  levered     k7_ew_midhold 20.422511  6.506919 0.663556 -72.284932               6            9
+  levered    k5_ew_volscore 16.966063  3.050471 0.718577 -38.323495               7            9
+  levered      kitchen_sink 11.452366 -2.463226 0.574071 -39.822527               4            9
+ combined          baseline  9.286503 -1.646963 0.430127 -84.501012               6           10
+ combined             k5_ew  9.655357 -1.278109 0.431556 -84.911433               6           10
+ combined     k5_ew_midhold  9.997558 -0.935909 0.439846 -82.255494               5           10
+ combined         k5_invvol  8.828418 -2.105049 0.413393 -83.259753               6           10
+ combined k5_invvol_midhold  9.663763 -1.269704 0.438443 -80.107515               5           10
+ combined     k3_ew_midhold 10.681896 -0.251570 0.446044 -83.338413               5           10
+ combined     k7_ew_midhold 13.892440  2.958974 0.551403 -73.906760               7           10
+ combined    k5_ew_volscore 10.273007 -0.660460 0.518211 -50.872782               7           10
+ combined      kitchen_sink 10.199684 -0.733782 0.637553 -30.884911               4           10
+sp500_pit          baseline 39.774062 28.656269 0.955364 -49.828619              10           10
+sp500_pit             k5_ew 29.808336 18.690544 0.858831 -59.091421               8           10
+sp500_pit     k5_ew_midhold 27.854259 16.736467 0.877049 -42.935384               7           10
+sp500_pit         k5_invvol 26.811506 15.693713 0.832461 -57.364052               9           10
+sp500_pit k5_invvol_midhold 27.473595 16.355803 0.895022 -44.908676               8           10
+sp500_pit     k3_ew_midhold 29.072884 17.955091 0.809395 -50.246628               7           10
+sp500_pit     k7_ew_midhold 25.176066 14.058274 0.898734 -47.705875               7           10
+sp500_pit    k5_ew_volscore 14.135086  3.017293 0.674538 -48.407560               4           10
+sp500_pit      kitchen_sink  5.010437 -6.107355 0.376118 -61.810193               3           10

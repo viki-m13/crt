@@ -1,0 +1,37 @@
+=== loading S&P 500 PIT v3 artifacts ===
+  PIT-S&P-500 membership: 140,011 (asof, ticker) pairs over 280 months
+  preds filtered to PIT members: 372,218 -> 98,059
+  preds=(98059, 7)  feat=(101039, 69)  mret=(377, 1833)
+
+--- baseline ---
+  CAGR=39.77%  SPY=11.12%  edge=+28.66pp  MDD=-49.83%  Sharpe=0.96  cash_m=4
+  WF mean CAGR=42.80%  ++30.12pp  (10/10 beat SPY)
+
+--- robust ---
+  CAGR=5.01%  SPY=11.12%  edge=-6.11pp  MDD=-61.81%  Sharpe=0.38  cash_m=12
+  WF mean CAGR=2.53%  +-10.15pp  (3/10 beat SPY)
+
+--- robust_v2_invvol_k5 ---
+  CAGR=26.81%  SPY=11.12%  edge=+15.69pp  MDD=-57.36%  Sharpe=0.83  cash_m=4
+  WF mean CAGR=27.60%  ++14.92pp  (9/10 beat SPY)
+
+--- ablation_midhold_only ---
+  CAGR=29.07%  SPY=11.12%  edge=+17.96pp  MDD=-50.25%  Sharpe=0.81  cash_m=12
+  WF mean CAGR=27.84%  ++15.17pp  (7/10 beat SPY)
+
+--- ablation_volscore_only ---
+  CAGR=10.02%  SPY=11.12%  edge=-1.09pp  MDD=-52.55%  Sharpe=0.51  cash_m=4
+  WF mean CAGR=9.31%  +-3.37pp  (4/10 beat SPY)
+
+--- ablation_invvolk5_only ---
+  CAGR=26.81%  SPY=11.12%  edge=+15.69pp  MDD=-57.36%  Sharpe=0.83  cash_m=4
+  WF mean CAGR=27.60%  ++14.92pp  (9/10 beat SPY)
+
+=== sp500_compare.csv ===
+               variant  cagr_pct  spy_cagr_pct   edge_pp   sharpe    mdd_pct  n_cash  n_rebalances  wf_mean_cagr_pct  wf_mean_edge_pp  wf_n_beats_spy  wf_n_splits
+              baseline 39.774062     11.117793 28.656269 0.955364 -49.828619       4            48         42.800538        30.124831              10           10
+                robust  5.010437     11.117793 -6.107355 0.376118 -61.810193      12            60          2.527737       -10.147970               3           10
+   robust_v2_invvol_k5 26.811506     11.117793 15.693713 0.832461 -57.364052       4            48         27.597016        14.921309               9           10
+ ablation_midhold_only 29.072884     11.117793 17.955091 0.809395 -50.246628      12            60         27.842946        15.167239               7           10
+ablation_volscore_only 10.022920     11.117793 -1.094873 0.507828 -52.553343       4            48          9.308137        -3.367570               4           10
+ablation_invvolk5_only 26.811506     11.117793 15.693713 0.832461 -57.364052       4            48         27.597016        14.921309               9           10
