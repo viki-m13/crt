@@ -62,6 +62,11 @@ class StratConfig:
     pick_filter: str = "none"  # "none" | "donchian130" | "accel"
     conv_lambda: float = 0.0  # H2 - 0=ew; >0 = softmax tilt by score z
     cash_score_floor: float = 0.0  # H2 - if top score < floor, partial cash
+    # H7 - dispersion-conditional K. When wide=K_low (concentrate); when narrow=K_high (diversify)
+    dispersion_K: bool = False
+    K_low_dispersion: int = 5    # when xs mom dispersion is narrow (low) -> diversify
+    K_high_dispersion: int = 3   # when xs mom dispersion is wide (high) -> concentrate
+    dispersion_threshold_pctile: float = 0.50  # >= median dispersion = wide
 
 
 # ----------------------------------------------------------------------
@@ -73,6 +78,18 @@ def load_panel() -> pd.DataFrame:
     p = pd.read_parquet(DATA / "pit_panel_with_scores.parquet")
     p["asof"] = pd.to_datetime(p["asof"])
     return p[~p["ticker"].isin(EXCLUDE)].copy()
+
+
+def load_panel_ensemble() -> pd.DataFrame:
+    """Same as load_panel plus pred_12m + pred_12m_cls (H1 ensemble heads)."""
+    p = pd.read_parquet(DATA / "pit_panel_with_12m.parquet")
+    p["asof"] = pd.to_datetime(p["asof"])
+    return p[~p["ticker"].isin(EXCLUDE)].copy()
+
+
+def load_xs_dispersion() -> pd.DataFrame:
+    """Per-asof XS dispersion of mom_12_1 (and mom_6_1, vol_12m). H7 input."""
+    return pd.read_parquet(DATA / "xs_dispersion.parquet")
 
 
 def load_monthly_returns() -> pd.DataFrame:
@@ -160,9 +177,132 @@ def score_ml_136(panel_at: pd.DataFrame) -> pd.Series:
     return (panel_at["pred_1m"] + panel_at["pred_3m"] + panel_at["pred_6m"]) / 3
 
 
+def _xs_rank(s: pd.Series) -> pd.Series:
+    """Cross-sectional rank in [0, 1] within the given panel-at slice."""
+    return s.rank(pct=True)
+
+
+def score_ens_3_6_12(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v1 — equal-weight rank ensemble of 3m, 6m, 12m heads.
+
+    Falls back to ml_3plus6 if pred_12m missing (early-period coverage hole)."""
+    if "pred_12m" not in panel_at.columns:
+        return score_ml_3plus6(panel_at)
+    r3 = _xs_rank(panel_at["pred_3m"])
+    r6 = _xs_rank(panel_at["pred_6m"])
+    r12 = _xs_rank(panel_at["pred_12m"])
+    # When pred_12m is NaN, fall back to (r3 + r6)/2
+    base = (r3 + r6) / 2
+    full = (r3 + r6 + r12) / 3
+    return full.where(panel_at["pred_12m"].notna(), base)
+
+
+def score_ens_3_6_12_cls(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v2 — rank ensemble of 3m, 6m, 12m + classifier prob bonus.
+
+    score = 0.7 * mean(rank(pred_3m, pred_6m, pred_12m)) + 0.3 * pred_12m_cls
+    """
+    base = score_ens_3_6_12(panel_at)
+    cls = panel_at.get("pred_12m_cls")
+    if cls is None or cls.isna().all():
+        return base
+    cls_rank = _xs_rank(cls.fillna(cls.median()))
+    return 0.7 * base + 0.3 * cls_rank
+
+
+def score_ens_3_6_12_invvol(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v3 — score / vol_1y to penalise high-vol picks within the ensemble."""
+    base = score_ens_3_6_12(panel_at)
+    vol = panel_at.get("vol_1y")
+    if vol is None or vol.isna().all():
+        return base
+    v = vol.copy()
+    v = v.where(v > 0.05, 0.40)
+    return base - 0.10 * _xs_rank(v)
+
+
+def score_ml_3plus6_plus_12m_tilt(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v5 — keep baseline ml_3plus6 magnitudes; add small 12m-rank tilt.
+
+    score = ml_3plus6 + 0.05 * (rank(pred_12m) - 0.5)
+    The tilt is small enough to act as a tie-breaker on the baseline top picks
+    rather than re-rank the universe.
+    """
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    if "pred_12m" not in panel_at.columns:
+        return base
+    r12 = _xs_rank(panel_at["pred_12m"].fillna(panel_at["pred_12m"].median()))
+    return base + 0.05 * (r12 - 0.5)
+
+
+def score_ml_3plus6_plus_12m_tilt_strong(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v6 — same as v5 but with 0.15 tilt weight."""
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    if "pred_12m" not in panel_at.columns:
+        return base
+    r12 = _xs_rank(panel_at["pred_12m"].fillna(panel_at["pred_12m"].median()))
+    return base + 0.15 * (r12 - 0.5)
+
+
+def score_ml_3plus6_cls_filter(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v7 — classifier hard filter: drop picks where prob(top-quintile) < 0.18.
+
+    Returns the baseline ml_3plus6 score, but sets score to -1e9 for any
+    name where the classifier predicts below-threshold probability of being
+    a top-quintile performer. Effectively excludes those names from the basket.
+    """
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    cls = panel_at.get("pred_12m_cls")
+    if cls is None or cls.isna().all():
+        return base
+    keep = cls.fillna(1.0) >= 0.18
+    return base.where(keep, -1e9)
+
+
+def score_ml_3plus6_cls_filter_tight(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v8 — tighter classifier filter at 0.25."""
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    cls = panel_at.get("pred_12m_cls")
+    if cls is None or cls.isna().all():
+        return base
+    keep = cls.fillna(1.0) >= 0.25
+    return base.where(keep, -1e9)
+
+
+def score_ml_3plus6_cls_tilt(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v9 — classifier as soft tilt: score = ml_3plus6 + 0.05 * (cls - 0.2)"""
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    cls = panel_at.get("pred_12m_cls")
+    if cls is None or cls.isna().all():
+        return base
+    return base + 0.05 * (cls.fillna(0.2) - 0.2)
+
+
+def score_ens_36_12wt(panel_at: pd.DataFrame) -> pd.Series:
+    """H1 v4 — biased toward longer horizons: 0.2 * 3m + 0.4 * 6m + 0.4 * 12m
+    using rank-transformed predictions."""
+    if "pred_12m" not in panel_at.columns:
+        return score_ml_3plus6(panel_at)
+    r3 = _xs_rank(panel_at["pred_3m"])
+    r6 = _xs_rank(panel_at["pred_6m"])
+    r12 = _xs_rank(panel_at["pred_12m"])
+    base = 0.5 * r3 + 0.5 * r6
+    full = 0.2 * r3 + 0.4 * r6 + 0.4 * r12
+    return full.where(panel_at["pred_12m"].notna(), base)
+
+
 SCORERS = {
     "ml_3plus6": score_ml_3plus6,
     "ml_136": score_ml_136,
+    "ens_3_6_12": score_ens_3_6_12,
+    "ens_3_6_12_cls": score_ens_3_6_12_cls,
+    "ens_3_6_12_invvol": score_ens_3_6_12_invvol,
+    "ens_36_12wt": score_ens_36_12wt,
+    "ml_3plus6_plus_12m_tilt": score_ml_3plus6_plus_12m_tilt,
+    "ml_3plus6_plus_12m_tilt_strong": score_ml_3plus6_plus_12m_tilt_strong,
+    "ml_3plus6_cls_filter": score_ml_3plus6_cls_filter,
+    "ml_3plus6_cls_filter_tight": score_ml_3plus6_cls_filter_tight,
+    "ml_3plus6_cls_tilt": score_ml_3plus6_cls_tilt,
 }
 
 
@@ -241,6 +381,7 @@ def weights_conv(picks: pd.DataFrame, panel_at: pd.DataFrame, lam: float) -> np.
 
 def simulate(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
              spy_features: pd.DataFrame, prices: Optional[pd.DataFrame] = None,
+             xs_dispersion: Optional[pd.DataFrame] = None,
              start: Optional[pd.Timestamp] = None,
              end: Optional[pd.Timestamp] = None) -> pd.DataFrame:
     """Run the strategy and return per-month equity / regime / picks."""
@@ -289,6 +430,18 @@ def simulate(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
                 held_for = 0
             else:
                 K = cfg.K
+                # H7 - dispersion-conditional K via precomputed XS dispersion table
+                if cfg.dispersion_K and xs_dispersion is not None:
+                    if m in xs_dispersion.index:
+                        disp_now = float(xs_dispersion.loc[m, "xs_mom12_std"])
+                        # Threshold: historical percentile of dispersion up to and including m
+                        hist = xs_dispersion.loc[:m, "xs_mom12_std"]
+                        if len(hist) > 12:
+                            thr = float(hist.quantile(cfg.dispersion_threshold_pctile))
+                            if disp_now >= thr:
+                                K = cfg.K_high_dispersion  # wide -> concentrate
+                            else:
+                                K = cfg.K_low_dispersion   # narrow -> diversify
                 picks = pick_top_k(sub, K)
                 if cfg.pick_filter == "donchian130":
                     if prices is None:
@@ -410,6 +563,7 @@ def rolling_5y_cagr(eq: pd.DataFrame, window_m: int = 60) -> pd.Series:
 
 def run_and_log(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
                 spy_features: pd.DataFrame, prices: Optional[pd.DataFrame] = None,
+                xs_dispersion: Optional[pd.DataFrame] = None,
                 window: str = "research") -> dict:
     """Run a config, write manifest, append to log csv. Returns metrics dict."""
     if window == "research":
@@ -422,7 +576,8 @@ def run_and_log(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
         raise ValueError(window)
 
     t0 = time.time()
-    eq = simulate(cfg, panel, mr, spy_features, prices=prices, start=start, end=end)
+    eq = simulate(cfg, panel, mr, spy_features, prices=prices,
+                   xs_dispersion=xs_dispersion, start=start, end=end)
     met = metrics(eq)
     met["window"] = window
     met["wall_time_s"] = round(time.time() - t0, 2)
