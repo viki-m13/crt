@@ -1,0 +1,36 @@
+{
+  "name": "v5_pit_sp500_ml_3plus6_chronos_p70_filter_k3_h6",
+  "spec": {
+    "scorer": "ml_3plus6 (v2 GBM 3m+6m forward-rank ensemble)",
+    "K": 3,
+    "weighting": "equal-weight",
+    "regime_gate": "tight",
+    "hold_months": 6,
+    "cost_bps": 10,
+    "chronos_model": "amazon/chronos-bolt-tiny",
+    "chronos_filter_quantile": 0.4,
+    "chronos_horizon_days": 64,
+    "chronos_quantile_metric": "p70"
+  },
+  "headline": {
+    "cagr_full": 0.4481362715456887,
+    "spy_cagr_full": 0.12725478443785376,
+    "edge_full_pp": 32.08814871078349,
+    "wf_mean_cagr": 0.45860399893579257,
+    "wf_median_cagr": 0.43832658350017706,
+    "wf_min_cagr": 0.17006813149774525,
+    "wf_max_cagr": 1.0879351638068608,
+    "wf_mean_edge_pp": 31.054380159635805,
+    "wf_n_pos": 10,
+    "wf_n_beats": 10,
+    "sharpe": 1.03558644651507,
+    "max_dd": -0.4982861928502925,
+    "n_cash": 4,
+    "annl_turnover": 1.4559386973180075
+  },
+  "vs_v3_baseline": {
+    "cagr_lift_pp": 5.04362715456887,
+    "wf_mean_lift_pp": 3.0603998935792576,
+    "wf_min_lift_pp": 2.5168131497745243
+  }
+}
