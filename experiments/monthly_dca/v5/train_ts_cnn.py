@@ -99,6 +99,9 @@ def build_dataset(daily, monthly_returns):
             path = normalized_log_path(daily[tk].dropna(), d)
             if path is None:
                 continue
+            # Skip paths with NaN/inf (bad price data)
+            if not np.all(np.isfinite(path)):
+                continue
             rows.append({"asof": d, "ticker": tk, "path": path, "rank": float(r)})
     return rows
 
