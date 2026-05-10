@@ -1,0 +1,49 @@
+
+=== run_universe: combined ===
+  panel shape=(7890, 379)  range=1995-01-03 → 2026-05-08
+  [combined] computing features for 281 months...
+    [24/281] 2004-12-31  features cols=38
+    [48/281] 2006-12-29  features cols=38
+    [72/281] 2008-12-31  features cols=38
+    [96/281] 2010-12-31  features cols=38
+    [120/281] 2012-12-31  features cols=38
+    [144/281] 2014-12-31  features cols=38
+    [168/281] 2016-12-30  features cols=38
+    [192/281] 2018-12-31  features cols=38
+    [216/281] 2020-12-31  features cols=38
+    [240/281] 2022-12-30  features cols=38
+    [264/281] 2024-12-31  features cols=38
+    [281/281] 2026-05-08  features cols=38
+  [combined] adding forward returns...
+  [combined] wrote feat_combined.parquet shape=(77016, 41)
+  fitting walk-forward ML on combined...
+  cross-sectional ranking 37 features...
+    retrain @ 2005-01-31  train_rows=1,000
+    retrain @ 2006-01-31  train_rows=1,819
+    retrain @ 2007-01-31  train_rows=2,805
+    retrain @ 2008-01-31  train_rows=4,099
+    retrain @ 2009-01-30  train_rows=5,685
+    retrain @ 2010-01-29  train_rows=7,788
+    retrain @ 2011-01-31  train_rows=10,271
+    retrain @ 2012-01-31  train_rows=13,194
+    retrain @ 2013-01-31  train_rows=16,767
+    retrain @ 2014-01-31  train_rows=20,333
+    retrain @ 2015-01-30  train_rows=23,734
+    retrain @ 2016-01-29  train_rows=27,648
+    retrain @ 2017-01-31  train_rows=31,691
+    retrain @ 2018-01-31  train_rows=35,877
+    retrain @ 2019-01-31  train_rows=40,454
+    retrain @ 2020-01-31  train_rows=44,748
+    retrain @ 2021-01-29  train_rows=48,752
+    retrain @ 2022-01-31  train_rows=53,146
+    retrain @ 2023-01-31  train_rows=57,582
+    retrain @ 2024-01-31  train_rows=62,024
+    retrain @ 2025-01-31  train_rows=66,835
+    retrain @ 2026-01-30  train_rows=70,905
+  preds shape=(73911, 6)  range=2005-01-31 00:00:00 → 2026-05-08 00:00:00
+  -> CAGR=9.29%  SPY=10.93%  edge=-1.65pp  MDD=-84.50%  Sharpe=0.43
+  WF mean CAGR=14.80%  ++2.16pp  (6/10 beat SPY)
+
+=== comparison.csv ===
+universe  n_tickers  n_months first_month last_month  cagr_full_pct  spy_cagr_pct  edge_full_pp   sharpe  max_dd_pct  n_cash_months  n_rebalances  wf_mean_cagr_pct  wf_mean_edge_pp  wf_n_beats_spy  wf_n_splits
+combined        379       257  2005-01-31 2026-05-08       9.286503     10.933466     -1.646963 0.430127  -84.501012              4            47         14.795853         2.159653               6           10
