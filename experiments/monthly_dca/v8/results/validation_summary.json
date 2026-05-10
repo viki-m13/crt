@@ -1,0 +1,131 @@
+{
+  "winner_config": {
+    "scorer": "ml_3plus6plus1",
+    "universe": "sp500_pit",
+    "regime_gate": "safer",
+    "k": 1,
+    "hold_months": 1,
+    "weighting": "invvol",
+    "cost_bps": 10.0,
+    "crash_fallback": "tlt",
+    "fallback_ticker": "TLT"
+  },
+  "winner_metrics": {
+    "name": "00_winner",
+    "cagr_full": 0.40267298748555014,
+    "spy_cagr_full": 0.1194382410561079,
+    "edge_full_pp": 28.323474642944223,
+    "sharpe": 1.0049476831406066,
+    "max_dd": -0.44491228273912364,
+    "n_cash": 0,
+    "wf_mean_cagr": 0.5015715115302177,
+    "wf_median_cagr": 0.5045679027332499,
+    "wf_min_cagr": 0.17380293998300544,
+    "wf_max_cagr": 0.8252962730162461,
+    "wf_mean_sharpe": 1.0835717274449161,
+    "wf_min_sharpe": 0.6750424274665263,
+    "wf_mean_dd": -0.3807806041871994,
+    "wf_min_dd": -0.44491228273912387,
+    "wf_mean_edge_pp": 35.35113141907831,
+    "wf_n_pos": 10,
+    "wf_n_beats_spy": 10,
+    "wf_n_splits": 10
+  },
+  "robustness_min_wf_mean_cagr": 0.18730053370882394,
+  "robustness_max_wf_mean_cagr": 0.5333619347843274,
+  "yearly_positive_count": 18,
+  "yearly_beat_spy_count": 14,
+  "yearly_total": 23,
+  "generalisation": [
+    {
+      "name": "gen_sp500_pit",
+      "wf_mean_cagr": 0.5015715115302177,
+      "wf_n_beats_spy": 10
+    },
+    {
+      "name": "gen_broader",
+      "wf_mean_cagr": 1.193452677872293,
+      "wf_n_beats_spy": 7
+    },
+    {
+      "name": "gen_non_sp500",
+      "wf_mean_cagr": 0.7611033142684719,
+      "wf_n_beats_spy": 6
+    }
+  ],
+  "bias_sensitivity": [
+    {
+      "alpha_yr": 0.0,
+      "cagr_p10": 0.40267298748555014,
+      "cagr_median": 0.40267298748555014,
+      "cagr_p90": 0.40267298748555014,
+      "cagr_mean": 0.40267298748555014
+    },
+    {
+      "alpha_yr": 0.02,
+      "cagr_p10": -1.0,
+      "cagr_median": 0.40267298748555014,
+      "cagr_p90": 0.40267298748555014,
+      "cagr_mean": -0.0882625581343924
+    },
+    {
+      "alpha_yr": 0.04,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": 0.40267298748555014,
+      "cagr_mean": -0.5090644543800574
+    },
+    {
+      "alpha_yr": 0.06,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": -0.859732701251443,
+      "cagr_mean": -0.859732701251445
+    },
+    {
+      "alpha_yr": 0.08,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": 0.40267298748555014,
+      "cagr_mean": -0.7194654025028899
+    },
+    {
+      "alpha_yr": 0.12,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": -1.0,
+      "cagr_mean": -0.9298663506257224
+    },
+    {
+      "alpha_yr": 0.16,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": -1.0,
+      "cagr_mean": -0.9298663506257224
+    },
+    {
+      "alpha_yr": 0.2,
+      "cagr_p10": -1.0,
+      "cagr_median": -1.0,
+      "cagr_p90": -1.0,
+      "cagr_mean": -1.0
+    }
+  ],
+  "holdout": {
+    "n_months": 12,
+    "cagr": -0.3236927519146676,
+    "spy_cagr": 0.1601629026607252,
+    "edge_pp": -48.38556545753928,
+    "sharpe": -1.35877117916802,
+    "max_dd": -0.3158828187143255,
+    "n_cash_months": 0
+  },
+  "live_deg_forecast": {
+    "spy_cagr": 0.1194382410561079,
+    "raw_strategy_cagr": 0.40267298748555014,
+    "raw_edge_pp": 28.323474642944223,
+    "haircut_30pct_edge": 0.31770256355671744,
+    "haircut_50pct_edge": 0.261055614270829,
+    "still_beats_spy_at_50pct": true
+  }
+}
