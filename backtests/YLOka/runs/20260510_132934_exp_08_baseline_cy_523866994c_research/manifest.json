@@ -1,0 +1,32 @@
+{
+  "cfg": {
+    "name": "exp_08_baseline_cy",
+    "K": 3,
+    "hold_months": 6,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.03,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "ml_3plus6",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.40845440987251,
+    "sharpe": 0.9540243527323292,
+    "sortino": 2.6147612542250513,
+    "max_dd": -0.49456494553078356,
+    "best_m": 0.8495509234283266,
+    "worst_m": -0.3357942381205953,
+    "positive_months": 159,
+    "total_months": 248,
+    "cash_months": 4,
+    "window": "research",
+    "wall_time_s": 0.16
+  },
+  "run_id": "20260510_132934_exp_08_baseline_cy_523866994c_research",
+  "git_sha": "ed52fb1deb6ade154808a7aea1fa9884423831fd"
+}
