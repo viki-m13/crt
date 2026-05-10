@@ -1,0 +1,5 @@
+experiment,branch,timestamp,config_hash,git_sha,scorer,universe,regime,k,hold,weighting,cost_bps,cagr_full,sharpe,max_dd,wf_mean_cagr,wf_median_cagr,wf_min_cagr,wf_max_cagr,wf_mean_sharpe,wf_n_pos,wf_n_beats_spy,n_cash,verdict,note
+exp_00_baseline,baseline,2026-05-10,v3-pit-sp500,3639596,ml_3plus6,sp500_pit,tight,3,6,ew,10.0,0.39774,0.95536,-0.49829,0.42801,0.39898,0.14492,1.08794,1.03094,10,9,4,baseline,deployed v3 reproduced exactly
+exp_01_best,exp_01,2026-05-10,tier1_top,3639596,ml_3plus6plus1,sp500_pit,safer,1,1,invvol,10.0,0.38636,1.05782,-0.45014,0.48279,,0.09536,,1.05782,10,10,,KEEP,best floor-passing in 384-cfg sweep
+exp_02_tlt,exp_02,2026-05-10,tier3_tlt,3639596,ml_3plus6plus1,sp500_pit,safer_tlt,1,1,invvol,10.0,0.40267,1.08357,-0.44491,0.50157,,0.17380,,1.08357,10,10,0,KEEP,TLT crash-fallback Pareto-improves exp_01
+exp_03_weekly,exp_03,2026-05-10,weekly_track,3639596,weekly_gbm_4w,sp500_pit,safer,3,4,ew,10.0,0.17059,0.61173,-0.60155,0.17122,,-0.02234,,0.61173,8,5,,KILL,best weekly variant; misses floors badly

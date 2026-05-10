@@ -6,10 +6,20 @@ experiments/data/
 *.npy
 crypto/src/data/
 
+# v8 research: large rebuilt panel + retrained predictions (regenerable)
+experiments/monthly_dca/v8/panel_v8.parquet
+experiments/monthly_dca/v8/ml_preds_v8.parquet
+
 # Regen backups and run logs
 *.bak
 max/research/*.log
 max/research/fetch_new_log.txt
+
+# v8 weekly track — features panel is 337MB, regenerable from
+# experiments/monthly_dca/v8/weekly/build_weekly_features.py.
+# Keep weekly_preds.parquet (7MB, the actual GBM walk-forward output)
+# and the small membership/SPY caches.
+experiments/monthly_dca/v8/weekly/cache/features_weekly.parquet
 
 # Agent worktrees (internal state from parallel research subagents)
 .claude/

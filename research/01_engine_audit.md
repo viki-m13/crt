@@ -1,100 +1,110 @@
-# 01 — Engine Audit
+# Engine audit — leakage, survivorship, execution
 
-The brief says "the engine must be honest before anything else". Here is the
-audit, what's clean, what's broken, and what we're going to do about each.
+Date: 2026-05-10. Engine of record:
+`experiments/monthly_dca/v6/lib_engine.py` (parity-tested against deployed
+v3; reproduces V3 metrics exactly).
 
-## Findings, in order of severity
+## Findings
 
-### 🟥 H1. Universe is materially survivorship-biased
-**Evidence.** `cache/prices_extended.parquet` contains 1833 tickers spanning
-1995–2026. Only **9 tickers** show no observations in the last 6 months —
-i.e. only 9 names "died". Real S&P 500 turnover historically removes roughly
-20–30 names per year, so a 30-year panel should contain **600+ delisted /
-acquired / removed names**, not 9. The panel is ~the union of "names that
-survived to or joined the index recently".
+### ✓ Point-in-time S&P 500 membership
+- `experiments/monthly_dca/v2/build_sp500_pit_membership.py` reconstructs
+  monthly index membership from `sp500_hist_1996_2019.csv` (Bloomberg /
+  CRSP-style historical lists) + `sp500_changes_since_2019.csv` (manually
+  curated additions/removals).
+- 985 unique tickers ever in index across 280 monthly asofs (2003-01 →
+  2026-04). Verified by `sp500_membership_count.csv`.
+- Each rebalance T uses `mem.asof == T`, **not today's index**.
+- Source files committed in `experiments/monthly_dca/cache/v2/sp500_pit/`.
 
-**Impact.** Every backtest CAGR on this universe is biased upward. The MC
-overlay at α=4%/yr partially compensates and gives a more honest 28.6%
-median CAGR (vs 35.4% raw). But the overlay is a model, not real data —
-e.g. it can't reproduce specific patterns like "stocks that crashed
-mid-pullback before recovering" because the dead names are just gone.
+**Caveat.** Pre-2003 PIT membership is not maintained, so any backtest
+window starting before 2003 must use the broader 1,833-ticker universe
+(survivorship-biased; see below).
 
-**Plan.** I'm not going to rebuild PIT constituents from scratch (multi-week
-project). Instead:
-1. Keep the existing engine.
-2. Use the α=4%/yr MC overlay as the **headline bias-corrected number**.
-3. Run a generalization test on a held-out universe slice (frozen ticker
-   holdout) and a held-out time slice (last 18 months untouched).
-4. State the limitation explicitly in the final report.
+### ⚠ Survivorship — partly handled
+- Inclusion: `monthly_returns_clean.parquet` has 1,833 tickers including
+  many that delisted (`delisted_panel.parquet` exists). Good.
+- Returns from delisted names: tickers with bad/incomplete months get
+  masked by `bad_month_cells_mask.parquet`. Returns sourced from
+  Yahoo Finance via `yfinance` (in `extend_history.py`).
+- **Gap**: Yahoo's coverage of delisted names is incomplete. There is no
+  proper CRSP/Norgate delisted-with-final-return source in the repo. The
+  Monte-Carlo overlay (`v3_winner_bias_sensitivity.csv`, α∈{0..20}%/yr)
+  is a *model* of delisting, not measured delisted returns. Honest
+  bias-corrected CAGR at α=4%/yr is **28.6%** (full-window v3),
+  vs the headline 39.8%.
+- Decision needed (see scoping questions): is α=4% MC overlay acceptable,
+  or should we pull in a proper delisted-with-final-return dataset
+  (Norgate, Sharadar, CRSP) before any "honest" claim?
 
-### 🟧 H2. No volume data in the cached panel
-**Evidence.** `prices_extended.parquet` has only adjusted close. The panel
-columns are tickers, the rows are dates, the values are floats. No
-`volume_<ticker>` column exists.
+### ✓ Walk-forward / no look-ahead in features
+- All features per `cache/features/{date}.parquet` use only data with
+  index ≤ asof (verified in `backtester.py:compute_features`).
+- Cross-sectional ranks `_xs` are computed *within* an asof, no leakage.
+- ML walk-forward in `ml_strategy.py:200-238`:
+  ```python
+  cutoff = tm - pd.DateOffset(months=embargo_months)   # embargo=7
+  train = big[big["asof"] < cutoff]
+  ```
+- Targets are 1m / 3m / 6m forward returns. With 6m max horizon and 7m
+  embargo, the most-recent training row's target ends ≤ test month T-1m.
+  **Embargo is correct — no target leakage.** (Strictly, the training
+  cutoff is on `asof`, and a row with `asof = T-7m` has target ending at
+  `T-7m + 6m = T-1m`, which is *before* T. Safe.)
+- Annual retrain (Jan), so January-T's model was fit on data ending
+  ≈Jun T-1.
 
-**Impact.** Accumulation-footprint signals (Wyckoff-style up-vs-down volume
-asymmetry, dollar-volume signatures, volume-weighted relative strength)
-cannot be computed without volume. Many of my candidate inventions need
-volume.
+### ⚠ ML target lookahead — minor risk in cross-sectional rank features
+The 67 features include rank transforms grouped by `asof`. Those are
+fine. But several momentum windows (e.g., `mom_12_1`, `mom_6_1`) skip the
+final month (`_1`) — common practice to avoid 1-month reversal. Make
+sure any new features follow the same convention.
 
-**Plan.** Pull volume from yfinance for the existing 1833 tickers, append
-to the cache as `prices_extended_with_volume.parquet`. Cap to last 25 years
-to keep size manageable. (Done in feasibility step.)
+### ⚠ Execution price — month-end close, no slippage model
+- The simulator uses `monthly_returns_clean.parquet` directly. Pick at T,
+  realise return = month T to T+1 (close-to-close).
+- 10 bps cost model is a flat round-trip charge per ticker that changes
+  between baskets. Not scaled to ADV, not a slippage model.
+- For monthly strategies on S&P 500 names this is acceptable; for any new
+  candidate at higher frequency or smaller-cap universe this needs
+  upgrading (next-day-open or VWAP fill, ADV-scaled slippage).
+- **Note**: end-of-month close has nuanced "last 30 minutes" liquidity
+  characteristics. A more honest fill is "next-day open" or VWAP.
 
-### 🟧 H3. Same-day execution leak (small but real)
-**Evidence.** `compound_engine.py` line 273-298: scoring uses
-`load_features(date_t)` (which uses prices ≤ T-close), and deployment
-happens at `panel_arr[cur_panel_pos, ci]` (T's close).
+### ✓ No fundamentals release-lag bug (because no fundamentals)
+- Price-only strategy. So no period-end vs filing-date lag risk.
 
-**Impact.** Signal can use information from T's close to decide what to
-buy at T's close. Real-world equivalent: signal at T close → execute at
-T+1 open. The bias rewards strategies that latch onto the day's intraday
-momentum. Likely small at monthly frequency but non-zero.
+### ✓ Regime gate is PIT-clean
+- Uses SPY's own price features at asof T only (`spy_ret_21d`,
+  `spy_mom_6_1`, `spy_dsma200`, `spy_below_200_streak`, `spy_mom_12_1`).
+  No outside data, no future data.
 
-**Plan.** Build a strict "T+1 open" execution mode in the new selection
-harness. Compare the new strategy at both T-close (legacy) and T+1-open
-(strict) to estimate the bias size. Headline number = T+1-open.
+### ✓ One bug found and fixed in v6
+- v3 stored `dd_from_52wh` as a positive magnitude
+  (`backtester.py:246: pack.add("dd_from_52wh", -pullback_252)`); v3's
+  `regime_strict_dd` branch tested `dd <= -0.10` and could never fire
+  → it was a no-op. v3-deployed used the `tight` gate which doesn't
+  reference this field, so deployed numbers are unaffected. v6 corrects
+  the sign on load. **No action needed.**
 
-### 🟨 M1. No embargo at WF split boundaries
-**Evidence.** The 10 WF splits in REPORT.md split TRAIN ends at year T,
-TEST starts at year T+1, with no embargo period. The 12-month features
-straddle the boundary, so there is mild information leakage of training-set
-returns into test-set features.
+### ✓ Deterministic / reproducible
+- HistGBM uses `random_state` set in `ml_strategy.py`.
+- Engine is pure-pandas / numpy, no hidden randomness.
+- v6 `run_baseline.py` reproduces v3 numbers exactly:
+  `cagr_full=0.39774062, sharpe=0.95536375, max_dd=-0.49828619`.
 
-**Impact.** Inflates OOS metrics by perhaps 0.5-2pp.
+## Verdict
 
-**Plan.** New WF splits will use a 6-month embargo and use a *purged*
-splitter à la López de Prado. Test OOS numbers will be on the embargoed
-splitter.
+**Engine is honest enough to extend, with two known caveats:**
 
-### 🟨 M2. Round-trip cost may be optimistic for small/illiquid
-**Evidence.** `cost_bps=5` per trade (10bp round-trip). Reasonable for
-mega-cap liquid names; aggressive for smaller index names where bid-ask +
-impact at any meaningful AUM is 25–80bp round-trip.
+1. Survivorship: the bias overlay (MC delisting at α=4%/yr) is reasonable
+   but a proper delisted-with-final-return dataset would harden any
+   claim. **Surface to user before final validation.**
+2. Execution: month-end close fills + flat 10 bps work for monthly S&P
+   500 strategies. Any new candidate at higher frequency or smaller-cap
+   universe needs an upgraded fill+slippage model. **Surface if scope
+   expands.**
 
-**Plan.** Sensitivity sweep at 5 / 10 / 25 / 50 bp round-trip. Headline
-uses 10bp (one-way 5bp) but report all four. Capacity estimate downstream
-will scale slippage with ADV.
-
-### 🟩 OK
-- Feature parquets are computed strictly from `panel.loc[panel.index <= asof]`.
-  No look-ahead in feature definitions.
-- ETF / benchmark exclusion is enforced (`SPY/QQQ/IWM/VTI/RSP/DIA/BTC/ETH`).
-- Synthetic delisting overlay is documented and disclosed.
-- Eligibility requires ≥ 252 trading days of prior history, killing the
-  obvious "newly listed" leak.
-- XIRR is correctly money-weighted; benchmarks use the same dates.
-
-## Summary
-
-The engine is good enough to test new ideas on, with these overlays:
-1. **Headline CAGR** = α=4%/yr MC bias-corrected.
-2. **OOS metric of record** = walk-forward with **6-month embargo**.
-3. **Execution price** = next-day open (T+1) for the new strategy.
-4. **Generalization** = frozen ticker holdout + last 18-month time holdout.
-5. **Slippage sensitivity** = 5 / 10 / 25 / 50 bp round-trip.
-
-These overlays apply equally to baseline and to the new strategy. The
-*relative* edge is what we're measuring; absolute numbers are bias-haircut.
-
-We proceed.
+No blocking leakage was found. Walk-forward is correctly embargoed.
+Targets do not leak into training. PIT membership is correctly
+constructed. The 42.80% WF mean CAGR figure is honestly produced under
+the documented assumptions.
