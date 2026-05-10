@@ -1,7 +1,26 @@
-# v8 — stock-selection rebuild research
+# v8 — stock-selection rebuild research (2qHxY run)
 
-Branch: `claude/rebuild-stock-selection-2qHxY`. Run identifier: **v8**.
-Date: 2026-05-10. Author: Claude.
+Branch: `claude/rebuild-stock-selection-2qHxY`.
+Run identifier: **v8-2qHxY**.
+Date: 2026-05-10. Author: Claude (one of multiple parallel agents).
+
+> **Two independent v8 research efforts coexist in this directory.**
+> The other run is `[uDXqh]` from branch
+> `claude/optimize-stock-selection-uDXqh`, documented in
+> `REPORT_V8.md` (with files `lib_engine_v8.py`, `build_v8_results.py`,
+> `build_webapp_v8.py`, `train_v8.py`, `results/eq_v{3,6,8}.csv`,
+> `results/{generalization,regime_K_sweep,scorer_K_sweep,winner_refinement}.json`,
+> and the v8 cache files under `cache/v2/sp500_pit/v8_*.csv`).
+> That run found a **K=2-in-bull, invvol** Pareto-improvement at
+> WF mean **46.08%**.
+>
+> This 2qHxY run goes further: **k=1, hold=1m, ml_3plus6plus1, safer
+> regime, TLT crash-fallback** at WF mean **50.16%**. Same Pareto
+> direction, different concentration regime. See
+> `reports/final_validation.md` for the brutal honest caveats
+> (k=1 fragile to delisting; -32% in the 2025 holdout).
+>
+> Both runs intentionally did NOT update the website.
 
 This directory contains the experimental sweep, weekly walk-forward
 build, and final validation gauntlet that produced the
