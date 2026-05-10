@@ -67,6 +67,14 @@ class StratConfig:
     K_low_dispersion: int = 5    # when xs mom dispersion is narrow (low) -> diversify
     K_high_dispersion: int = 3   # when xs mom dispersion is wide (high) -> concentrate
     dispersion_threshold_pctile: float = 0.50  # >= median dispersion = wide
+    # Session 4 - dynamic hold: keep names while their score remains in top quantile
+    dynamic_hold: bool = False
+    dynamic_hold_quantile: float = 0.85  # keep while score >= this percentile of universe
+    monthly_score_check: bool = False     # check every month, not every hold_months
+    # Regime-conditional K (production v3 has these but my harness has been using K_only)
+    K_bull: int = 0       # 0 = use cfg.K
+    K_recovery: int = 0   # 0 = use cfg.K
+    K_normal: int = 0     # 0 = use cfg.K
 
 
 # ----------------------------------------------------------------------
@@ -85,6 +93,20 @@ def load_panel_ensemble() -> pd.DataFrame:
     p = pd.read_parquet(DATA / "pit_panel_with_12m.parquet")
     p["asof"] = pd.to_datetime(p["asof"])
     return p[~p["ticker"].isin(EXCLUDE)].copy()
+
+
+def load_panel_full() -> pd.DataFrame:
+    """PIT panel x ml predictions x 12m heads x 40-feature subset (Session 3+)."""
+    p = pd.read_parquet(DATA / "pit_panel_full.parquet")
+    p["asof"] = pd.to_datetime(p["asof"])
+    return p[~p["ticker"].isin(EXCLUDE)].copy()
+
+
+def load_rolling_ic() -> pd.DataFrame:
+    """Per-asof rolling 24m IC of each prediction head (Session 4)."""
+    df = pd.read_parquet(DATA / "rolling_ic.parquet")
+    df["asof"] = pd.to_datetime(df["asof"])
+    return df.set_index("asof")
 
 
 def load_xs_dispersion() -> pd.DataFrame:
@@ -291,6 +313,243 @@ def score_ens_36_12wt(panel_at: pd.DataFrame) -> pd.Series:
     return full.where(panel_at["pred_12m"].notna(), base)
 
 
+# ----------------------------------------------------------------------
+# Session 3 - feature-based scorers ("runner footprint" hypothesis from
+# the mission preamble: NVDA/TSLA-like winners leave footprints before
+# they move; engineer a system that catches them).
+# ----------------------------------------------------------------------
+
+def _safe_rank(s: pd.Series) -> pd.Series:
+    """Cross-sectional rank in [0, 1]; NaN -> median of available."""
+    if s.isna().all():
+        return pd.Series(0.5, index=s.index)
+    med = s.median()
+    return s.fillna(med).rank(pct=True)
+
+
+def score_idio_mom(panel_at: pd.DataFrame) -> pd.Series:
+    """Pure idio_mom_12_1 (residualized vs SPY). Already in features but
+    never tested as a primary scorer in YLOka."""
+    if "idio_mom_12_1" not in panel_at.columns:
+        return score_ml_3plus6(panel_at)
+    return panel_at["idio_mom_12_1"]
+
+
+def score_runner_footprint(panel_at: pd.DataFrame) -> pd.Series:
+    """Composite runner footprint: history of large-magnitude wins,
+    long-term acceleration, and recent breakout/consolidation pattern.
+
+    score = 0.30 * rank(multibagger_ratio_24m)
+          + 0.25 * rank(acceleration_2y)
+          + 0.15 * rank(breakout_strength_60)
+          + 0.15 * rank(idio_mom_12_1)
+          + 0.15 * rank(fip_score)
+    Designed to capture stocks that have ALREADY done it before AND are
+    showing the same pattern again now.
+    """
+    needed = ["multibagger_ratio_24m", "acceleration_2y", "breakout_strength_60",
+              "idio_mom_12_1", "fip_score"]
+    missing = [c for c in needed if c not in panel_at.columns]
+    if missing:
+        return score_ml_3plus6(panel_at)
+    return (
+        0.30 * _safe_rank(panel_at["multibagger_ratio_24m"])
+        + 0.25 * _safe_rank(panel_at["acceleration_2y"])
+        + 0.15 * _safe_rank(panel_at["breakout_strength_60"])
+        + 0.15 * _safe_rank(panel_at["idio_mom_12_1"])
+        + 0.15 * _safe_rank(panel_at["fip_score"])
+    )
+
+
+def score_runner_gated_ml(panel_at: pd.DataFrame) -> pd.Series:
+    """Use baseline ML score, but gate to top-quartile by runner footprint.
+
+    Names below the 75th-percentile runner footprint get score = -inf,
+    effectively excluded from the candidate pool. Among the survivors,
+    rank by ml_3plus6 magnitude.
+    """
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    rf = score_runner_footprint(panel_at)
+    if rf is None:
+        return base
+    keep = rf >= rf.quantile(0.75)
+    return base.where(keep, -1e9)
+
+
+def score_ml_plus_runner(panel_at: pd.DataFrame, w: float = 0.20) -> pd.Series:
+    """Additive blend: rank(ml_3plus6) + w * rank(runner_footprint).
+
+    Default w=0.20 keeps the ML score primary, lets runner footprint act
+    as a secondary differentiator on near-tied ML candidates.
+    """
+    base = score_ml_3plus6(panel_at)
+    base_r = _safe_rank(base)
+    rf = score_runner_footprint(panel_at)
+    if rf.isna().all():
+        return base_r
+    return base_r + w * (rf - 0.5)
+
+
+def score_ml_plus_runner_strong(panel_at: pd.DataFrame) -> pd.Series:
+    return score_ml_plus_runner(panel_at, w=0.40)
+
+
+def score_ml_plus_runner_weak(panel_at: pd.DataFrame) -> pd.Series:
+    return score_ml_plus_runner(panel_at, w=0.10)
+
+
+def score_idio_plus_ml(panel_at: pd.DataFrame) -> pd.Series:
+    """Equal blend of rank(ml_3plus6) and rank(idio_mom_12_1)."""
+    base_r = _safe_rank(score_ml_3plus6(panel_at))
+    if "idio_mom_12_1" not in panel_at.columns:
+        return base_r
+    idio_r = _safe_rank(panel_at["idio_mom_12_1"])
+    return 0.5 * base_r + 0.5 * idio_r
+
+
+def score_fip_gate_ml(panel_at: pd.DataFrame) -> pd.Series:
+    """Gate ml_3plus6 by fip_score top-half (smooth-momentum filter).
+
+    fip_score (frog-in-pan): high = smooth uptrend, low = jumpy. Drop
+    candidates with fip_score below median.
+    """
+    base = (panel_at["pred_3m"] + panel_at["pred_6m"]) / 2
+    if "fip_score" not in panel_at.columns:
+        return base
+    fip = panel_at["fip_score"]
+    keep = fip >= fip.quantile(0.50)
+    return base.where(keep, -1e9)
+
+
+def score_ml_plus_cst(panel_at: pd.DataFrame) -> pd.Series:
+    """ml_3plus6 + 0.15 * rank(cst_score) (consolidation-then-thrust)."""
+    base_r = _safe_rank(score_ml_3plus6(panel_at))
+    if "cst_score" not in panel_at.columns:
+        return base_r
+    cst_r = _safe_rank(panel_at["cst_score"])
+    return base_r + 0.15 * (cst_r - 0.5)
+
+
+def score_ml_plus_breakout(panel_at: pd.DataFrame) -> pd.Series:
+    """ml_3plus6 + 0.15 * rank(breakout_strength_60)."""
+    base_r = _safe_rank(score_ml_3plus6(panel_at))
+    if "breakout_strength_60" not in panel_at.columns:
+        return base_r
+    bo_r = _safe_rank(panel_at["breakout_strength_60"])
+    return base_r + 0.15 * (bo_r - 0.5)
+
+
+def score_ml_plus_multibagger(panel_at: pd.DataFrame) -> pd.Series:
+    """ml_3plus6 + 0.15 * rank(multibagger_ratio_24m).
+
+    Tilt toward names that have HISTORICALLY produced multibagger months —
+    proxies for "this stock can run".
+    """
+    base_r = _safe_rank(score_ml_3plus6(panel_at))
+    if "multibagger_ratio_24m" not in panel_at.columns:
+        return base_r
+    mb_r = _safe_rank(panel_at["multibagger_ratio_24m"])
+    return base_r + 0.15 * (mb_r - 0.5)
+
+
+# ----------------------------------------------------------------------
+# Session 4 - rolling-IC adaptive scorers + dynamic-hold variants.
+# ----------------------------------------------------------------------
+
+# Lazy-loaded rolling IC table; threaded through simulator via cfg.use_adaptive_ic
+_IC_CACHE = {}
+
+
+def _get_ic_table():
+    if "ic" not in _IC_CACHE:
+        try:
+            _IC_CACHE["ic"] = load_rolling_ic()
+        except Exception:
+            _IC_CACHE["ic"] = None
+    return _IC_CACHE["ic"]
+
+
+def _ic_weights_at(asof: pd.Timestamp, scaler: str = "softmax") -> dict:
+    """Return weights for each head at asof. If IC table unavailable or
+    asof not in it, default to baseline-equivalent weights (3m+6m = 0.5
+    each, 12m = 0)."""
+    ic = _get_ic_table()
+    default = {"pred_1m": 0.0, "pred_3m": 0.5, "pred_6m": 0.5, "pred_12m": 0.0}
+    if ic is None or asof not in ic.index:
+        return default
+    row = ic.loc[asof]
+    ics = {
+        "pred_1m": row.get("rolling_ic_1m"),
+        "pred_3m": row.get("rolling_ic_3m"),
+        "pred_6m": row.get("rolling_ic_6m"),
+        "pred_12m": row.get("rolling_ic_12m"),
+    }
+    if any(pd.isna(v) for v in ics.values()):
+        return default
+    if scaler == "softmax":
+        # softmax over IC * 10 -> sharpish weights
+        x = np.array(list(ics.values())) * 10.0
+        x = x - x.max()
+        w = np.exp(x)
+        w = w / w.sum()
+        return dict(zip(ics.keys(), w.tolist()))
+    elif scaler == "proportional":
+        # clip negative IC to zero
+        x = np.clip(np.array(list(ics.values())), 0.0, None)
+        s = x.sum()
+        if s == 0:
+            return default
+        return dict(zip(ics.keys(), (x / s).tolist()))
+    return default
+
+
+def score_adaptive_ic(panel_at: pd.DataFrame) -> pd.Series:
+    """Score = sum_h weight_h * pred_h, where weight_h = softmax(rolling_IC_h).
+
+    Uses RAW magnitudes (not ranks) -- preserves model's confidence
+    calibration the way v3's baseline does.
+    """
+    asof = panel_at["asof"].iloc[0] if len(panel_at) else None
+    if asof is None:
+        return score_ml_3plus6(panel_at)
+    w = _ic_weights_at(asof, scaler="softmax")
+    out = pd.Series(0.0, index=panel_at.index)
+    for h, wh in w.items():
+        if h in panel_at.columns and wh > 0:
+            out = out + wh * panel_at[h].fillna(panel_at[h].median())
+    return out
+
+
+def score_adaptive_ic_proportional(panel_at: pd.DataFrame) -> pd.Series:
+    """Same as adaptive_ic but with IC-proportional weights (softer)."""
+    asof = panel_at["asof"].iloc[0] if len(panel_at) else None
+    if asof is None:
+        return score_ml_3plus6(panel_at)
+    w = _ic_weights_at(asof, scaler="proportional")
+    out = pd.Series(0.0, index=panel_at.index)
+    for h, wh in w.items():
+        if h in panel_at.columns and wh > 0:
+            out = out + wh * panel_at[h].fillna(panel_at[h].median())
+    return out
+
+
+def score_ml_3plus6_with_ic_filter(panel_at: pd.DataFrame) -> pd.Series:
+    """ml_3plus6 baseline; if all rolling-ICs are weak (<0.02), shrink score
+    by 0.5 (effectively asking simulator to be less aggressive)."""
+    base = score_ml_3plus6(panel_at)
+    asof = panel_at["asof"].iloc[0] if len(panel_at) else None
+    if asof is None:
+        return base
+    ic = _get_ic_table()
+    if ic is None or asof not in ic.index:
+        return base
+    row = ic.loc[asof]
+    avg_ic = pd.Series([row.get("rolling_ic_3m"), row.get("rolling_ic_6m")]).dropna().mean()
+    if pd.isna(avg_ic) or avg_ic >= 0.02:
+        return base
+    return base * 0.5
+
+
 SCORERS = {
     "ml_3plus6": score_ml_3plus6,
     "ml_136": score_ml_136,
@@ -303,6 +562,22 @@ SCORERS = {
     "ml_3plus6_cls_filter": score_ml_3plus6_cls_filter,
     "ml_3plus6_cls_filter_tight": score_ml_3plus6_cls_filter_tight,
     "ml_3plus6_cls_tilt": score_ml_3plus6_cls_tilt,
+    # Session 3
+    "idio_mom": score_idio_mom,
+    "runner_footprint": score_runner_footprint,
+    "runner_gated_ml": score_runner_gated_ml,
+    "ml_plus_runner": score_ml_plus_runner,
+    "ml_plus_runner_strong": score_ml_plus_runner_strong,
+    "ml_plus_runner_weak": score_ml_plus_runner_weak,
+    "idio_plus_ml": score_idio_plus_ml,
+    "fip_gate_ml": score_fip_gate_ml,
+    "ml_plus_cst": score_ml_plus_cst,
+    "ml_plus_breakout": score_ml_plus_breakout,
+    "ml_plus_multibagger": score_ml_plus_multibagger,
+    # Session 4
+    "adaptive_ic": score_adaptive_ic,
+    "adaptive_ic_prop": score_adaptive_ic_proportional,
+    "ml_3plus6_ic_filter": score_ml_3plus6_with_ic_filter,
 }
 
 
@@ -407,6 +682,17 @@ def simulate(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
     for i, m in enumerate(months):
         m = pd.Timestamp(m)
         do_reb = (i == 0) or (held_for >= cfg.hold_months) or cash
+        # Session 4 - dynamic hold: rebalance early if any current pick falls below threshold
+        if cfg.dynamic_hold and cur_picks and not do_reb and cfg.monthly_score_check:
+            sub_now = by_asof.get(m, pd.DataFrame())
+            if not sub_now.empty:
+                sub_now = sub_now.copy()
+                sub_now["score"] = score_fn(sub_now)
+                qcut = sub_now["score"].quantile(cfg.dynamic_hold_quantile)
+                cur_scores = sub_now.set_index("ticker")["score"].reindex(cur_picks)
+                fail_count = (cur_scores < qcut).sum()
+                if fail_count > 0 and held_for >= 1:
+                    do_reb = True
 
         # Compute regime / soft-cash from SPY features at m
         spy_now = spy_features.loc[m].to_dict() if m in spy_features.index else {}
@@ -430,6 +716,13 @@ def simulate(cfg: StratConfig, panel: pd.DataFrame, mr: pd.DataFrame,
                 held_for = 0
             else:
                 K = cfg.K
+                # Regime-conditional K override
+                if regime == "bull" and cfg.K_bull > 0:
+                    K = cfg.K_bull
+                elif regime == "recovery" and cfg.K_recovery > 0:
+                    K = cfg.K_recovery
+                elif regime == "normal" and cfg.K_normal > 0:
+                    K = cfg.K_normal
                 # H7 - dispersion-conditional K via precomputed XS dispersion table
                 if cfg.dispersion_K and xs_dispersion is not None:
                     if m in xs_dispersion.index:

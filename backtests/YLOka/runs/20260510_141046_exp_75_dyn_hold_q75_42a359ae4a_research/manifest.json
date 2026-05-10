@@ -1,0 +1,39 @@
+{
+  "cfg": {
+    "name": "exp_75_dyn_hold_q75",
+    "K": 3,
+    "hold_months": 6,
+    "weighting": "ew",
+    "cost_bps_per_leg": 5.0,
+    "cash_yield_apr": 0.0,
+    "crash_gate": true,
+    "soft_cash": false,
+    "score_fn_name": "ml_3plus6",
+    "pick_filter": "none",
+    "conv_lambda": 0.0,
+    "cash_score_floor": 0.0,
+    "dispersion_K": false,
+    "K_low_dispersion": 5,
+    "K_high_dispersion": 3,
+    "dispersion_threshold_pctile": 0.5,
+    "dynamic_hold": true,
+    "dynamic_hold_quantile": 0.75,
+    "monthly_score_check": true
+  },
+  "metrics": {
+    "n_months": 248,
+    "cagr": 0.31836479534710516,
+    "sharpe": 0.8295558020214115,
+    "sortino": 2.1154008974601153,
+    "max_dd": -0.6442299232619288,
+    "best_m": 0.8533108637475202,
+    "worst_m": -0.35618674053437727,
+    "positive_months": 148,
+    "total_months": 248,
+    "cash_months": 3,
+    "window": "research",
+    "wall_time_s": 0.76
+  },
+  "run_id": "20260510_141046_exp_75_dyn_hold_q75_42a359ae4a_research",
+  "git_sha": "0348edde5a9dfd649815fc64239cbca692d78323"
+}
