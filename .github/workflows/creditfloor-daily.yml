@@ -123,23 +123,6 @@ jobs:
           set -e
           python strategies/stillpoint/live_log.py
 
-      - name: Refresh monthly-DCA webapp data
-        # Pullback-In-Winner monthly DCA strategy webapp at
-        # /experiments/monthly-dca/. This rebuilds the price panel
-        # from the freshly-backfilled docs/data/tickers/*.json,
-        # recomputes features for the most recent 3 month-ends
-        # (current month grows intra-month), and emits the
-        # experiments/docs/monthly-dca/data.json the page renders from.
-        # ~30-60s, idempotent, fail-soft (catches & logs all errors so
-        # this step never blocks the credit-spread / Stillpoint
-        # commits above).
-        if: steps.gate.outputs.skip != 'true'
-        continue-on-error: true
-        run: |
-          set -e
-          pip install --quiet pyarrow pandas numpy yfinance
-          python experiments/monthly_dca/cron_daily_refresh.py
-
       - name: Summarize results
         if: steps.gate.outputs.skip != 'true'
         run: |
@@ -198,13 +181,7 @@ jobs:
             strategies/credit_spread/results/signals.json \
             strategies/touch_predict/results/option_c_signals.json \
             strategies/touch_predict/results/option_c_certified_cells.json \
-            strategies/stillpoint/results/stillpoint_signals.json \
-            experiments/docs/monthly-dca/data.json \
-            experiments/monthly_dca/cache/prices.parquet \
-            experiments/monthly_dca/cache/meta.parquet \
-            experiments/monthly_dca/cache/survivorship_summary.json \
-            experiments/monthly_dca/cache/delisted_panel.parquet \
-            "experiments/monthly_dca/cache/features/" || true
+            strategies/stillpoint/results/stillpoint_signals.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             # Discard the backfill's in-place ticker mutations so the
