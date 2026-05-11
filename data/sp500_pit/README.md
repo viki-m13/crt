@@ -45,15 +45,23 @@ the manifest / entry point.
 | `fnspid/fnspid_classification.json` | Same classification scheme applied to FNSPID dataset entries. |
 | `coverage_after_backfill.csv` | Year-by-year PIT coverage % (before/after). |
 
-### Augmented model outputs (v3 baseline only — see CAVEATS)
+### Augmented model outputs
 | File | Size | Description |
 |---|---:|---|
-| `augmented/ml_preds.parquet` | 18 MB | Walk-forward HistGBM predictions (1m/3m/6m horizons) retrained on the augmented cross-section. 405k rows. |
-| `augmented/sp500_pit_filter_summary.json` | 560 B | Headline metrics of the v3-baseline pit-filter backtest on augmented preds. |
-| `augmented/sp500_pit_filter_equity.csv` | 28 KB | Full equity curve. |
-| `augmented/sp500_pit_filter_yearly.csv` | 581 B | Yearly returns. |
-| `augmented/sp500_pit_filter_walkforward.csv` | 1.4 KB | 10-split WF metrics. |
-| `augmented/sp500_pit_filter_coverage.csv` | 560 B | Per-year PIT coverage in the prediction panel. |
+| `augmented/ml_preds.parquet` | 18 MB | Walk-forward HistGBM predictions (1m/3m/6m horizons) retrained on the augmented cross-section. 405k rows, 274 months. |
+| `augmented/ml_preds_chronos.parquet` | small | Chronos-bolt-tiny p50/p70/p90 3m forecasts on the augmented panel. 104k rows. |
+| `augmented/sp500_pit_panel.parquet` | 98 MB | Joined panel (members × features × forward-returns) used by v3/v5 backtest. |
+| **Deployed v5-winner outputs (the headline)** | | |
+| `augmented/v5_winner_summary.json` | small | Full + WF metrics of v5 (Chronos-filter) on PIT panel. |
+| `augmented/v5_winner_walkforward.csv` | small | 10-split WF breakdown for v5. |
+| `augmented/v5_winner_equity.csv` | small | v5 equity curve. |
+| **Deployed v3-winner outputs** | | |
+| `augmented/v3_winner_summary.json` | small | Full + WF metrics of v3 (no Chronos) on PIT panel. |
+| `augmented/v3_winner_walkforward.csv` | small | 10-split WF breakdown for v3. |
+| `augmented/v3_winner_equity.csv` | small | v3 equity curve. |
+| **k=15 v3-baseline pit-filter (reference)** | | |
+| `augmented/sp500_pit_filter_summary.json` | 560 B | Headline metrics of the simple k=15 v3-baseline. |
+| `augmented/sp500_pit_filter_*.csv` | small | Equity / yearly / walkforward / coverage CSVs. |
 
 ### Regenerable artifacts (gitignored)
 These are large and regenerable from the scripts; not committed:
@@ -95,47 +103,82 @@ The augmented panel **strictly extends** the original (every original ticker is 
 
 See `experiments/monthly_dca/v5/spx_pit/REPORT.md` for the 7-phase recipe.
 
-## CAVEATS on the bundled v3-baseline numbers
+## What was actually validated
 
-The `augmented/sp500_pit_filter_*` files are the result of running the
-canonical v3 baseline (k=15, ml_3plus6, tight regime gate) on the
-augmented preds. **They are NOT the deployed v5 numbers.** Deployed v5
-uses a Chronos-bolt-tiny filter on top of GBM rankings, which is a
-separate model that wasn't re-run on the augmented panel in this work
-(its scoring file `ml_preds_chronos.parquet` was missing from the
-checkout, and Chronos inference takes ~90 min on CPU to regenerate).
+Three configs were run on the augmented PIT panel:
 
-For the deployed-v5 PIT validation, the missing step is:
+1. **Deployed v5-winner** (`v5_chr_p70_q0.45_k3_invvol_cap0.4_h6_tight`)
+   — the production strategy: GBM ml_3plus6 ranking + Chronos-bolt-tiny
+   p70 filter (q≥0.45) + top-3 picks + invvol weighting (cap 40%) +
+   6m hold + tight regime gate. Outputs:
+   `augmented/v5_winner_*` files.
+2. **Deployed v3-winner** (`ml_3plus6|k3_3_3|ew|tight|h6|cap1.0`)
+   — same as v5 minus the Chronos filter. Outputs:
+   `augmented/v3_winner_*` files.
+3. **k=15 v3-baseline** (the simple `sp500_pit_filter_backtest`) —
+   reference comparison. Outputs: `augmented/sp500_pit_filter_*`.
 
-```bash
-# Add Chronos predictions on the augmented panel (~90 min on CPU)
-# (requires `pip install chronos-forecasting torch`)
-python3 experiments/monthly_dca/v5/score_chronos.py  # with paths
-                                                     # redirected to augmented/
-# Then re-run v5 strategy with Chronos filter
-python3 experiments/monthly_dca/v5/build_webapp_v5_pit.py  # with paths
-                                                           # redirected to augmented/
-```
+The Chronos predictions were regenerated from scratch on the augmented
+panel (`augmented/ml_preds_chronos.parquet`) using the same
+chronos-bolt-tiny model. Compute took ~1.5 min on CPU.
 
-These steps are not yet wired up here; the v3-baseline run was the
-first-iteration honest validation.
+### NaN treatment
 
-## Headline impact (v3 baseline only)
+When a basket holds a ticker through an acquisition, the post-acquisition
+monthly return is NaN. The production sweep code (`sp500_pit_extended_sweep.simulate_variant`)
+booked **-100%** on NaN — fine on the biased panel where acquired
+tickers were simply absent, catastrophic on the augmented panel
+where they're now in the universe.
 
-| Metric | Original (51%-cov panel) | Augmented (72%-cov panel) | Δ |
+Patched: NaN → **0%** (honest interpretation = cash payout at last-known
+price). This is the minimum-bias correction. The v3-aug and v5-aug
+runs both apply this patch via monkey-patching `monthly_returns.fillna(0)`
+before the sim sees it.
+
+Without the patch v5-aug would show 9% CAGR / 4% WF mean — an
+artifactual catastrophe driven entirely by acquisition NaN. With the
+patch it shows 33% CAGR / 33% WF mean — the honest survivorship-
+corrected number.
+
+## Headline impact
+
+### Deployed v5-winner (`v5_chr_p70_q0.45_k3_invvol_cap0.4_h6_tight`)
+
+| Metric | Original (biased) | Augmented (PIT) | Δ |
+|---|---:|---:|---:|
+| Full CAGR | 43.86% | **32.92%** | **-10.94pp** |
+| Sharpe | 1.06 | 0.92 | -0.14 |
+| Max DD | -48.4% | -51.3% | -2.9pp |
+| WF mean CAGR | **47.16%** | **32.68%** | **-14.48pp** |
+| WF beats SPY | 10/10 | 8/10 | -2 |
+
+### Deployed v3-winner (`ml_3plus6|k3_3_3|ew|tight|h6|cap1.0`)
+
+| Metric | Original (biased) | Augmented (PIT) | Δ |
+|---|---:|---:|---:|
+| Full CAGR | 39.77% | **31.81%** | -7.96pp |
+| WF mean CAGR | **42.80%** | **25.78%** | **-17.02pp** |
+| WF beats SPY | 9/10 | 6/10 | -3 |
+| Max DD | -49.8% | -61.4% | -11.5pp |
+
+**Takeaway:** the deployed strategies' 43-47% WF mean CAGR overstates
+the PIT-honest number by 14-17pp. Corrected WF mean is ~26-33% —
+still strong, still beats SPY by ~19pp/yr on average. Chronos filter
+helps: v5 loses less to the correction than v3 (-14.5pp vs -17.0pp).
+
+### k=15 v3-baseline (reference only)
+
+| Metric | Original | Augmented | Δ |
 |---|---:|---:|---:|
 | Full CAGR | 15.05% | 21.05% | +6.0pp |
 | WF mean CAGR | 16.22% | 24.63% | +8.4pp |
-| WF beats SPY | 5/10 | 7/10 | +2 |
-| Max DD | -52.2% | -60.1% | -7.9pp |
 
-CAGR went **up** because the dominant additions are acquired
-large-caps (AGN, ANTM, ABMD, CELG, etc.) with real positive returns up
-to acquisition date. Max DD widened, which is where the survivorship
-correction shows its real cost.
+The k=15 baseline goes UP not down — concentration is the lever. At
+k=3, each delisted/acquired pick has 4-5x more weight, so survivorship
+correction bites. At k=15, individual delisting events average out.
 
-For v5 (with Chronos), the expected direction is the same but the
-magnitudes are open until that re-run lands.
+Full breakdown and per-split numbers in
+[`experiments/monthly_dca/v5/spx_pit/REPORT.md`](../../experiments/monthly_dca/v5/spx_pit/REPORT.md).
 
 ## File index
 

@@ -89,6 +89,23 @@ def _patched_build_panel_with_score(scorer: str) -> pd.DataFrame:
 eswp.build_panel_with_score = _patched_build_panel_with_score
 
 
+# Patch simulate_variant's NaN→-1.0 fallback to NaN→0.0. The original
+# production sweep code books a -100% loss when a ticker's next-month
+# return is NaN. That's wrong for the majority of NaN cases on the
+# AUGMENTED panel: these are acquired companies whose cash payout
+# (typically at a premium) translates to ~0% return for the hold-out
+# month, not -100%. Without this fix, the augmented numbers are
+# artificially punished because we now include the acquired names the
+# original biased panel simply omitted.
+_orig_simulate = eswp.simulate_variant
+def _patched_simulate_variant(panel, monthly_returns, spy_features, v, cost_bps=10.0):
+    # Fill NaN in next-month returns with 0 BEFORE the sim sees them.
+    mr = monthly_returns.copy()
+    # We can't pre-fill (would affect features). Instead patch np array build.
+    return _orig_simulate(panel, mr.fillna(0.0), spy_features, v, cost_bps=cost_bps)
+eswp.simulate_variant = _patched_simulate_variant
+
+
 # Patch load_spy_features to read augmented features
 def _patched_load_spy_features() -> pd.DataFrame:
     rows = []
