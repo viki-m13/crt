@@ -686,15 +686,19 @@
         At α=4% the median CAGR is 36.24% — still +24pp over SPY.`));
 
       sec.appendChild(makeAccordion("Cron & data pipeline", `
-        Monthly GitHub Actions workflow (<code>.github/workflows/monthly-dca-cron.yml</code>)
-        runs on the 1st of each month. Pipeline:
+        Daily GitHub Actions workflow (<code>.github/workflows/creditfloor-daily.yml</code>)
+        runs after each weekday's NY close. The monthly-DCA refresh step
+        piggybacks on it. Pipeline:
         (1) IVV holdings refresh (<code>load_ivv_holdings.py</code>),
         (2) yfinance backfill for any missing constituents,
         (3) panel & features rebuild,
         (4) PIT membership update,
         (5) Chronos incremental scoring (idempotent — skipped if asof already
         in <code>ml_preds_chronos.parquet</code>),
-        (6) v5 simulator and <code>data.json</code> emit.`));
+        (6) v5 simulator and <code>data.json</code> emit.
+        The basket itself only rotates every 6 months on a month-end; the
+        daily refresh keeps the current-basket prices, weights and SPY
+        crash-gate features up to date in between rebalances.`));
 
       sec.appendChild(makeAccordion("Reproducibility", `
         All caches (panel parquet, per-month feature parquets, Chronos predictions,
