@@ -293,6 +293,22 @@ def run_sim(data: HarnessData,
         regime = classify_regime_tight(spy_now)
         do_reb = (i == 0) or (held >= hold_months) or cash
 
+        # Apply CURRENT month's return BEFORE any rebalance, using the basket
+        # carried from the PREVIOUS iteration. This is the no-look-ahead
+        # semantics: a basket formed at month-end m-1 captures month m's
+        # return, NOT month m-1's return.
+        if cash or not cur_picks:
+            ret_m = 0.0
+        else:
+            r = 0.0
+            for tk, w in zip(cur_picks, cur_weights):
+                rt = (float(data.mret.at[m, tk])
+                      if (tk in data.mret.columns and m in data.mret.index
+                          and pd.notna(data.mret.at[m, tk]))
+                      else 0.0)
+                r += w * rt
+            ret_m = r
+
         if do_reb:
             # Book exits
             for tr in open_trades:
@@ -339,21 +355,8 @@ def run_sim(data: HarnessData,
                             "entry_px": ep, "basket_id": basket_id,
                             "status": "open",
                         })
-
-        # This month's return
-        if cash or not cur_picks:
-            ret_m = 0.0
-        else:
-            r = 0.0
-            for tk, w in zip(cur_picks, cur_weights):
-                rt = (float(data.mret.at[m, tk])
-                      if (tk in data.mret.columns and m in data.mret.index
-                          and pd.notna(data.mret.at[m, tk]))
-                      else 0.0)
-                r += w * rt
-            ret_m = r
-            if i > 0 and do_reb:
-                ret_m -= cf
+            if i > 0:
+                ret_m -= cf  # transaction cost charged at rebalance
 
         # Optional cash overlay (e.g. variant 1: SPY sleeve when dispersion low)
         if cash_overlay_fn is not None and not cash and cur_picks:
