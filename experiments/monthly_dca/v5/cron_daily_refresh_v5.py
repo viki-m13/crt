@@ -186,17 +186,12 @@ def main() -> int:
             latest_asof = pd.Timestamp(feat_files[-1].stem)
             score_chronos_incremental(latest_asof)
 
-        print("\n=== Step 5: Rebuilding webapp data.json (Mode B = 50% v5 + 50% trend sleeve) ===")
+        print("\n=== Step 5: Rebuilding webapp data.json (v5 PIT-S&P-500) ===")
         load_features_long.cache_clear()
-        # Mode B is the deployed production strategy. It internally runs the
-        # v5 picker simulator (build_webapp_v5_pit's run_full_sim) AND overlays
-        # the multi-asset trend rotation sleeve, then emits data.json with the
-        # blended numbers. To return to Mode A (v5 picker only), swap the
-        # import to build_webapp_v5_pit.
-        from experiments.monthly_dca.v5.build_webapp_v5_mode_b import main as build_mode_b
-        build_mode_b()
+        from experiments.monthly_dca.v5.build_webapp_v5_pit import main as build_v5
+        build_v5()
 
-        print("\nDaily refresh complete (Mode B).")
+        print("\nDaily refresh complete (v5).")
         return 0
     except Exception as e:
         print(f"ERROR during daily refresh: {e}", file=sys.stderr)
