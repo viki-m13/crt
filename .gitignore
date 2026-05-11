@@ -38,3 +38,8 @@ experiments/monthly_dca/cache/v2/sp500_pit/fnspid/
 # rebuild; the final summary metrics (the actual validation outputs) ARE
 # committed.
 experiments/monthly_dca/cache/v2/sp500_pit/augmented/features/
+
+# Augmented panel_cross_section_v3 (~244 MB; exceeds GitHub's 100 MB hard
+# limit). Regenerable from augmented features + monthly returns via
+# experiments/monthly_dca/v5/spx_pit/build_panel_pit.py.
+experiments/monthly_dca/cache/v2/sp500_pit/augmented/panel_cross_section_v3.parquet
