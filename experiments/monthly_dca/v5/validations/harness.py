@@ -72,6 +72,25 @@ class HarnessData:
     spy_features: pd.DataFrame  # monthly index, columns include spy_ret_21d, spy_mom_*
     sector_map: dict         # ticker -> GICS sector (best-effort, from IVV)
     asofs: list              # sorted month-ends covering the full range
+    features_cache: dict = None  # lazy asof->DataFrame; populated on demand
+
+    def features(self, asof: pd.Timestamp) -> pd.DataFrame | None:
+        """Lazy-load the per-stock features parquet for a given asof.
+
+        Each parquet at cache/features/<YYYY-MM-DD>.parquet has tickers
+        as index and 79 columns (momentum, vol, trend, quality, etc.).
+        """
+        if self.features_cache is None:
+            self.features_cache = {}
+        if asof in self.features_cache:
+            return self.features_cache[asof]
+        path = CACHE / "features" / f"{asof.strftime('%Y-%m-%d')}.parquet"
+        if not path.exists():
+            self.features_cache[asof] = None
+            return None
+        df = pd.read_parquet(path)
+        self.features_cache[asof] = df
+        return df
 
 
 def load_all() -> HarnessData:
@@ -154,6 +173,27 @@ def _build_spy_features(monthly_prices: pd.DataFrame) -> pd.DataFrame:
     in cache/features/. These contain the DAILY-based 21d return, 200-day SMA
     distance, 12-1 momentum, 6-1 momentum, RSI14 and below-200dma streak."""
     feat_dir = CACHE / "features"
+    daily = pd.read_parquet(CACHE / "prices_extended.parquet")
+    daily_spy = daily["SPY"].dropna() if "SPY" in daily.columns else pd.Series(dtype=float)
+
+    def streak_1y(asof):
+        if len(daily_spy) == 0:
+            return 0.0
+        s = daily_spy.loc[:asof]
+        if len(s) < 200 + 21:
+            return 0.0
+        sma200 = s.rolling(200, min_periods=200).mean()
+        below = (s < sma200).astype(int).iloc[-252:]
+        m = 0; cur = 0
+        for v in below.values:
+            if v == 1:
+                cur += 1
+                if cur > m:
+                    m = cur
+            else:
+                cur = 0
+        return float(m)
+
     rows = []
     for f in sorted(feat_dir.glob("*.parquet")):
         d = pd.Timestamp(f.stem)
@@ -168,7 +208,7 @@ def _build_spy_features(monthly_prices: pd.DataFrame) -> pd.DataFrame:
             "spy_mom_12_1": float(spy.get("mom_12_1", 0.0)),
             "spy_mom_6_1": float(spy.get("mom_6_1", 0.0)),
             "spy_ret_21d": float(spy.get("ret_21d", 0.0)),
-            "spy_below_200_streak": float(spy.get("max_below_200_streak", 0.0)),
+            "spy_below_200_streak": streak_1y(d),
         })
     return pd.DataFrame(rows).set_index("asof")
 
@@ -224,7 +264,10 @@ def invvol_weights(picks: list[str], monthly_returns: pd.DataFrame,
             w[~over] += excess * w[~over] / w[~over].sum()
         else:
             break
-    return w
+    # Renormalise: handles K=1 (cap dilutes single pick below 1.0) and the
+    # K*cap < 1 case generally — without this, capital is implicitly stranded.
+    s = w.sum()
+    return w / s if s > 0 else np.ones_like(w) / len(w)
 
 
 # ============================================================
@@ -274,6 +317,22 @@ def run_sim(data: HarnessData,
         regime = classify_regime_tight(spy_now)
         do_reb = (i == 0) or (held >= hold_months) or cash
 
+        # Apply CURRENT month's return BEFORE any rebalance, using the basket
+        # carried from the PREVIOUS iteration. This is the no-look-ahead
+        # semantics: a basket formed at month-end m-1 captures month m's
+        # return, NOT month m-1's return.
+        if cash or not cur_picks:
+            ret_m = 0.0
+        else:
+            r = 0.0
+            for tk, w in zip(cur_picks, cur_weights):
+                rt = (float(data.mret.at[m, tk])
+                      if (tk in data.mret.columns and m in data.mret.index
+                          and pd.notna(data.mret.at[m, tk]))
+                      else 0.0)
+                r += w * rt
+            ret_m = r
+
         if do_reb:
             # Book exits
             for tr in open_trades:
@@ -320,21 +379,8 @@ def run_sim(data: HarnessData,
                             "entry_px": ep, "basket_id": basket_id,
                             "status": "open",
                         })
-
-        # This month's return
-        if cash or not cur_picks:
-            ret_m = 0.0
-        else:
-            r = 0.0
-            for tk, w in zip(cur_picks, cur_weights):
-                rt = (float(data.mret.at[m, tk])
-                      if (tk in data.mret.columns and m in data.mret.index
-                          and pd.notna(data.mret.at[m, tk]))
-                      else 0.0)
-                r += w * rt
-            ret_m = r
-            if i > 0 and do_reb:
-                ret_m -= cf
+            if i > 0:
+                ret_m -= cf  # transaction cost charged at rebalance
 
         # Optional cash overlay (e.g. variant 1: SPY sleeve when dispersion low)
         if cash_overlay_fn is not None and not cash and cur_picks:

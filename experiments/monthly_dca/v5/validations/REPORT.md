@@ -193,3 +193,86 @@ experiments/monthly_dca/v5/validations/
 ```
 
 Reproduce: `python3 -m experiments.monthly_dca.v5.validations.run_staggered_dca`
+
+---
+
+## 2026-05-11 — Look-ahead bias found in harness, all anchor variants re-validated
+
+### Bug
+
+While deploying `anchor_idio` to production, the production simulator reported
+**CAGR 37.01 %** vs baseline 40.85 % — the opposite of what the harness
+predicted. Tracing the gap revealed a **1-month look-ahead bias** in the harness's
+return-application order:
+
+- **Harness (buggy)**: at iteration `m`, FIRST rebalance (form new basket from
+  picks at month-end m), THEN apply `mret.at[m, tk]` — the return *during*
+  month m — to the freshly-formed basket. But month m's return is realised
+  BEFORE the month-end basket-formation moment, so the basket gets credit for
+  a return it could not actually capture.
+- **Production (correct)**: at iteration `m`, form basket, then apply
+  `mret.at[next_d, tk]` — month m+1's return — i.e. what you actually realise
+  having bought at month-end m's close.
+
+The bias systematically **overstates anchor variants** because the anchor pick
+is selected for *strong recent momentum*; its formation-month return is highly
+positive by construction, so the look-ahead credits the basket for the very
+rally that made the anchor look attractive. The baseline picks are less
+momentum-correlated, so the bias is smaller. The relative ranking inverts.
+
+Fix: in `harness.py:run_sim`, apply month m's return **to the basket carried
+from the previous iteration** BEFORE checking for rebalance. The new basket
+formed at m then captures m+1's return at the next iteration.
+
+### Sanity check after fix
+
+| Metric              | Production v5 | Harness baseline (post-fix) | Δ        |
+|---------------------|--------------:|----------------------------:|---------:|
+| Full-window CAGR    |    40.85 %    |    43.79 %                  | +2.94 pp |
+| WF mean CAGR        |    47.16 %*   |    46.55 %                  | −0.61 pp |
+| WF beat-SPY count   |    10 / 10    |    10 / 10                  | ✓        |
+
+*WF mean from cached production run (Apr 2025 cutoff); harness recomputed
+post-fix. Residual ~3 pp on full-window CAGR comes from harness using
+`ml_preds_live` (always) while production switches to `ml_preds_wf` for
+historical months and `ml_preds_live` only past WF cutoff, plus tiny
+asof-alignment / cost-treatment differences. Direction of the bias is gone:
+harness ≈ production now matches **and** the ordering of variants is stable.
+
+### Honest variant table (12 variants, full window 2003-09 → 2026-04)
+
+| #   | Variant                  | Lump CAGR | DCA CAGR | WF mean | WF min | y2024 edge | y2025 edge | Beats SPY | Sharpe |
+|----:|--------------------------|----------:|---------:|--------:|-------:|-----------:|-----------:|----------:|-------:|
+|  0  | **baseline_v5**          | **43.79** | **44.04** | **46.55** | 20.37 |  −14.76    |   +8.61    | 10 / 10   | 0.999  |
+|  1  | anchor_idio              |   38.95   |   38.21  |  41.78  |  23.18 |  +19.17    |   −6.49    | 10 / 10   | 0.986  |
+|  2  | anchor_chronos_gated     |   34.97   |   34.68  |  39.76  |  23.80 |  +47.05    |   −6.49    | 10 / 10   | 0.962  |
+|  3  | anchor_quality_5y        |   36.34   |   35.77  |  39.39  |  14.21 |  +19.04    |  −11.23    |  9 / 10   | 1.042  |
+|  4  | anchor_sharpe_5y         |   35.91   |   35.59  |  37.30  |  14.48 |  +19.40    |  −11.95    |  9 / 10   | 1.000  |
+|  5  | anchor_uptrend           |   33.93   |   33.04  |  36.09  |  18.59 |   +6.76    |  −12.75    | 10 / 10   | 0.942  |
+|  6  | anchor_mom12             |   33.63   |   32.75  |  35.54  |  23.80 |   +6.76    |  −12.75    | 10 / 10   | 0.934  |
+|  7  | anchor_low_cap_0.30      |   32.28   |   31.76  |  34.07  |  22.14 |   −7.73    |   −9.12    | 10 / 10   | 0.907  |
+|  8  | anchor_multi_horizon     |   32.12   |   31.16  |  34.06  |  19.72 |  +27.33    |   −6.49    | 10 / 10   | 0.909  |
+|  9  | anchor_rs_spy            |   31.00   |   30.12  |  33.93  |  13.52 |  +31.25    |  −13.69    |  9 / 10   | 0.883  |
+| 10  | anchor_vol_adj           |   30.70   |   29.65  |  32.67  |   5.03 |  +18.06    |  −15.40    |  9 / 10   | 0.906  |
+| 11  | dual_anchor_12_6         |   25.45   |   23.49  |  22.30  |  −3.07 |  +61.94    |  +35.84    |  8 / 10   | 0.842  |
+
+### Verdict — **revert, baseline stays**
+
+- **No anchor variant beats baseline** on full CAGR, DCA CAGR, or WF mean.
+- The previous report's "anchor wins by +1.3 pp" was the look-ahead bias talking.
+- Anchor variants **do** still cure 2024 (e.g. anchor_chronos_gated: +47 pp
+  edge in 2024 vs baseline's −15 pp). But every one of them **gives back more
+  than it gains** across the other 22 years.
+- 2024 is genuinely a hard year for the GBM scorer (rich-get-richer
+  mega-cap-led rally) but anchoring on momentum doesn't recover the cost
+  honestly. Future work: a 2024-specific diagnosis (regime gate? sector tilt?
+  factor neutralisation?) instead of a momentum prosthesis.
+
+Production code (`build_webapp_v5_pit.py`) and live data.json are **back to
+baseline**. The fixed harness lives at `validations/harness.py` and is the
+canonical sim from this point forward. The old
+`results/SUMMARY_momentum.csv` etc. were re-generated under the fixed harness;
+the previous biased versions are gone.
+
+Reproduce all variants under the honest harness:
+`python3 -m experiments.monthly_dca.v5.validations.run_momentum_variants`

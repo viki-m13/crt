@@ -152,8 +152,35 @@ def to_jsonable(x):
 
 
 # ---------------------------------------------------------------------------
+def _spy_below_200_streak_1y(daily_spy: pd.Series, asof: pd.Timestamp) -> float:
+    """Max consecutive trading days SPY closed below its 200dma in the past
+    12 months (~252 trading days) ending at `asof`. Used by the regime
+    classifier — replaces the legacy 5y-window streak which never re-zeros
+    after a single bear market.
+    """
+    s = daily_spy.loc[:asof]
+    if len(s) < 200 + 21:
+        return 0.0
+    sma200 = s.rolling(200, min_periods=200).mean()
+    below = (s < sma200).astype(int).iloc[-252:]
+    m = 0
+    cur = 0
+    for v in below.values:
+        if v == 1:
+            cur += 1
+            if cur > m:
+                m = cur
+        else:
+            cur = 0
+    return float(m)
+
+
 def load_spy_features() -> pd.DataFrame:
     feat_dir = CACHE / "features"
+    # Load daily SPY for on-the-fly 12-month streak (legacy 5y feature stays
+    # in the parquets for backwards compat but is no longer consulted).
+    daily = pd.read_parquet(CACHE / "prices_extended.parquet")
+    daily_spy = daily["SPY"].dropna() if "SPY" in daily.columns else pd.Series(dtype=float)
     rows = []
     for f in sorted(feat_dir.glob("*.parquet")):
         d = pd.Timestamp(f.stem)
@@ -161,6 +188,7 @@ def load_spy_features() -> pd.DataFrame:
         if "SPY" not in df.index:
             continue
         spy = df.loc["SPY"]
+        streak_1y = _spy_below_200_streak_1y(daily_spy, d) if len(daily_spy) else 0.0
         rows.append({
             "asof": d,
             "spy_dsma200": float(spy.get("d_sma200", 0.0)),
@@ -168,7 +196,7 @@ def load_spy_features() -> pd.DataFrame:
             "spy_mom_12_1": float(spy.get("mom_12_1", 0.0)),
             "spy_mom_6_1": float(spy.get("mom_6_1", 0.0)),
             "spy_ret_21d": float(spy.get("ret_21d", 0.0)),
-            "spy_below_200_streak": float(spy.get("max_below_200_streak", 0.0)),
+            "spy_below_200_streak": streak_1y,
         })
     return pd.DataFrame(rows).set_index("asof")
 
