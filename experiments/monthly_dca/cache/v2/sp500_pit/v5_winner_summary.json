@@ -1,36 +1,26 @@
 {
-  "name": "v5_pit_sp500_ml_3plus6_chronos_p70_filter_k3_h6",
-  "spec": {
-    "scorer": "ml_3plus6 (v2 GBM 3m+6m forward-rank ensemble)",
-    "K": 3,
-    "weighting": "equal-weight",
-    "regime_gate": "tight",
-    "hold_months": 6,
-    "cost_bps": 10,
-    "chronos_model": "amazon/chronos-bolt-tiny",
-    "chronos_filter_quantile": 0.4,
-    "chronos_horizon_days": 64,
-    "chronos_quantile_metric": "p70"
-  },
-  "headline": {
-    "cagr_full": 0.4481362715456887,
-    "spy_cagr_full": 0.12725478443785376,
-    "edge_full_pp": 32.08814871078349,
-    "wf_mean_cagr": 0.45860399893579257,
-    "wf_median_cagr": 0.43832658350017706,
-    "wf_min_cagr": 0.17006813149774525,
-    "wf_max_cagr": 1.0879351638068608,
-    "wf_mean_edge_pp": 31.054380159635805,
-    "wf_n_pos": 10,
-    "wf_n_beats": 10,
-    "sharpe": 1.03558644651507,
-    "max_dd": -0.4982861928502925,
-    "n_cash": 4,
-    "annl_turnover": 1.4559386973180075
-  },
-  "vs_v3_baseline": {
-    "cagr_lift_pp": 5.04362715456887,
-    "wf_mean_lift_pp": 3.0603998935792576,
-    "wf_min_lift_pp": 2.5168131497745243
+  "variant_name": "v5_chr_p70_q0.45_k3_invvol_cap0.4",
+  "n_months": 268,
+  "final_equity": 3224.9392203427337,
+  "cagr_full": 0.43864629694883184,
+  "spy_cagr_full": 0.12725478443785376,
+  "edge_full_pp": 31.139151251097807,
+  "sharpe": 1.0627352046927585,
+  "max_dd": -0.4841335600608197,
+  "n_cash_months": 4,
+  "wf_mean_cagr": 0.4715628096454572,
+  "wf_median_cagr": 0.4348503729834512,
+  "wf_min_cagr": 0.2308054868545717,
+  "wf_max_cagr": 1.0458558656075327,
+  "wf_mean_edge_pp": 32.35026123060226,
+  "wf_n_positive": 10,
+  "wf_n_beats_spy": 10,
+  "n_positive_years": 20,
+  "n_beats_spy_years": 18,
+  "cy_cagr_full": 0.4235596000608062,
+  "turnover": {
+    "n_pairs": 261,
+    "mean_overlap": 0.8773946360153256,
+    "approx_annl_turnover": 1.4712643678160924
   }
 }

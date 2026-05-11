@@ -194,13 +194,26 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Same v3 config (K=3, EW, tight gate, 6m hold) on 5 alternative universes. Strategy isn't an artefact of the S&P 500 cohort — it works on broader, non-S&P-500, and random universes too."));
+      "Same v5 config (Chronos p70 filter + K=3 inv-vol cap=0.4, tight gate, 6m hold) on 5 alternative universes. The Chronos filter is universe-agnostic alpha — v5 beats the v3 baseline on 5 of 6 universes including broader 1833-ticker and non-S&P 500 PIT."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs SPY</th><th>Sharpe</th><th>MaxDD</th><th>Beats SPY</th></tr></thead>`;
     const tb = el("tbody");
     data.multi_universe_generalisation.forEach(u => {
       const row = el("tr");
-      row.appendChild(el("td", {}, u.universe.replace(/_/g, " ")));
+      const UNIV_LABEL = {
+        "PIT_SP500": "PIT S&P 500",
+        "broader_1833": "Broader 1,833-ticker",
+        "non_SP500_PIT": "Non-S&P 500 PIT",
+        "random_500_seed1": "Random 500 (seed 1)",
+        "random_500_seed2": "Random 500 (seed 2)",
+        "random_500_seed3": "Random 500 (seed 3)",
+        "random_500_seed4": "Random 500 (seed 4)",
+        "random_500_seed5": "Random 500 (seed 5)",
+        "sp500_pit": "PIT S&P 500",
+        "broader_1833_pit": "Broader 1,833 (PIT)",
+        "non_sp500_pit": "Non-S&P 500 PIT",
+      };
+      row.appendChild(el("td", {}, UNIV_LABEL[u.universe] || u.universe.replace(/_/g, " ")));
       row.appendChild(el("td", {}, String(u.n_pool)));
       row.appendChild(el("td", {}, fmtPct(u.cagr_full)));
       row.appendChild(el("td", {}, fmtPct(u.wf_mean_cagr)));
@@ -221,7 +234,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Parameter sensitivity"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Each row perturbs ONE parameter while holding the others at the v3 winner config (K=3, EW, tight, h=6, cost=10bp). Robust plateau across reasonable perturbations confirms the result is not on a knife-edge."));
+      "Each row perturbs ONE parameter while holding the others at the v5 winner config (Chronos p70 q=0.45, K=3, inv-vol cap=0.4, tight, h=6, cost=10bp). Robust plateau across reasonable perturbations confirms the result is not on a knife-edge."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Param</th><th>Value</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge (pp)</th><th>Beats SPY</th><th>MaxDD</th></tr></thead>`;
     const tb = el("tbody");
@@ -247,7 +260,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Drawdown ledger"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Top peak-to-trough drawdowns of 5%+ in the v3 backtest. The deepest is the GFC (-50%); recovery in 5 months."));
+      "Top peak-to-trough drawdowns of 5%+ in the v5 backtest. The deepest is the GFC (-48%); recovery in months."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Start</th><th>Trough</th><th>End</th><th>Depth</th></tr></thead>`;
     const tb = el("tbody");
@@ -269,7 +282,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Most-picked tickers"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Tickers that the v3 strategy selected most often across the 22-year backtest. Concentration in NVDA reflects its persistent multi-horizon momentum signal in S&P 500."));
+      "Tickers that the v5 strategy selected most often across the 22-year backtest. NVDA appears in 114 of ~268 backtest months (vs v3's 120) — Chronos confirmation slightly tempers the NVDA concentration."));
     const grid = el("div", { class: "most-picked-grid" });
     data.most_picked.slice(0, 12).forEach(p => {
       const card = el("div", { class: "most-picked-card" });
@@ -333,7 +346,7 @@ function renderPick(data) {
   if (justRebalanced) {
     // Rebalance day: show big action banner + SELL/BUY/HOLD cards
     const head = el("div", { class: "basket-dates basket-dates-action" });
-    head.innerHTML = `<strong>Rebalance day — action required.</strong> Today (${data.as_of}) is the 6-month rebalance. Sell the names leaving, buy the names entering, keep the carryover. Equal weight (1/3 each) at close.`;
+    head.innerHTML = `<strong>Rebalance day — action required.</strong> Today (${data.as_of}) is the 6-month rebalance. Sell the names leaving, buy the names entering, keep the carryover. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with 40% cap per pick.`;
     body.appendChild(head);
     if (buys.length + holds.length + sells.length > 0) {
       const actions = el("div", { class: "actions-grid" });
@@ -348,7 +361,7 @@ function renderPick(data) {
         const card = el("div", { class: "action-card buy" });
         card.appendChild(el("div", { class: "action-label" }, "BUY today"));
         card.appendChild(el("div", { class: "action-tickers" }, buys.join(" · ")));
-        card.appendChild(el("div", { class: "action-sub" }, "Equal weight, 1/3 of capital each."));
+        card.appendChild(el("div", { class: "action-sub" }, "Weights = 1/vol_1y, capped at 40% per name."));
         actions.appendChild(card);
       }
       if (holds.length) {
@@ -364,8 +377,13 @@ function renderPick(data) {
     // Mid-cycle: big "do nothing" message + the current 3 picks
     const head = el("div", { class: "basket-dates basket-dates-noaction" });
     const tickerStr = (ls.current_basket_picks || []).join(", ") || basket.map(p=>p.ticker).join(", ");
+    const weights = ls.current_basket_weights || [];
+    const tickerWtStr = (ls.current_basket_picks || []).map((tk, i) => {
+      const w = weights[i];
+      return w != null ? `${tk} (${Math.round(w*100)}%)` : tk;
+    }).join(", ");
     head.innerHTML = `<strong>This month: do nothing.</strong><br>` +
-      `Continue holding <strong>${tickerStr}</strong> (1/3 each, bought ${buyDate}). ` +
+      `Continue holding <strong>${tickerWtStr}</strong> (bought ${buyDate}). ` +
       `Next rebalance: <strong>${sellDate}</strong> (${monthsLeft} more month${monthsLeft===1?'':'s'}).`;
     body.appendChild(head);
   }
