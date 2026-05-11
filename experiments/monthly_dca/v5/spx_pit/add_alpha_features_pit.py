@@ -90,7 +90,34 @@ def main():
     ef.FEATURES_DIR = AUG_FEATURES
     ef.load_panel = _patched_load_panel
     ef.load_features = _patched_load_features
-    ef.main()
+    # extra_features.compute_extras recomputes a couple of columns that
+    # alpha2 already produced (beta_2y in particular). The default merge
+    # crashes on the overlap. Reimplement main() inline with a per-column
+    # drop-on-overlap policy: trust the alpha2 version (computed first),
+    # discard the extras duplicate.
+    from experiments.monthly_dca.backtester import month_end_dates
+    panel = _patched_load_panel()
+    months = month_end_dates(panel.index)
+    print(f"    Adding extra features to {len(months)} months")
+    for i, asof in enumerate(months):
+        feat_path = AUG_FEATURES / f"{asof.date()}.parquet"
+        if not feat_path.exists():
+            continue
+        existing = pd.read_parquet(feat_path)
+        if "trend_r2_12m" in existing.columns:
+            continue
+        try:
+            extras = ef.compute_extras(panel, asof)
+        except Exception as e:
+            print(f"    skip {asof.date()}: {e}")
+            continue
+        overlap = [c for c in extras.columns if c in existing.columns]
+        if overlap:
+            extras = extras.drop(columns=overlap)
+        merged = existing.join(extras, how="left")
+        merged.to_parquet(feat_path)
+        if (i + 1) % 24 == 0 or i == len(months) - 1:
+            print(f"      [{i+1}/{len(months)}] {asof.date()}: {merged.shape}")
     print(f"    elapsed: {time.time()-t0:.1f}s")
 
     # Verify
