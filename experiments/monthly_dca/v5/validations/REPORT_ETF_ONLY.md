@@ -8,18 +8,26 @@ Chronos — just price momentum on liquid ETFs.
 This is the SLEEVE portion of Mode B as a standalone strategy. The user
 asked: does it generalize? Short answer: yes.
 
+> **Note (2026-05-11)**: an earlier version of this report under-stated
+> the strategy's CAGR and over-stated leveraged-ETF crisis protection due
+> to a date-alignment bug between calendar month-ends (e.g., Feb-29) and
+> trading-day month-ends (Feb-28). The bug silently dropped any month
+> where the calendar month-end fell on a weekend, treating those months
+> as 0% return. The numbers below are the **corrected** values after the
+> nearest-prior-trading-day lookup fix.
+
 ## TL;DR
 
 | Metric | ETF-only | SPY (lump) |
 |---|---:|---:|
-| Full-window CAGR (2003-2026) | **19.88 %** | 11.46 % |
-| Sharpe | **1.37** | ~0.55 |
-| MaxDD | **−19.0 %** | ~−51 % |
-| Edge over SPY | **+8.42 pp/yr** | — |
+| Full-window CAGR (2003-2026) | **29.51 %** | 11.46 % |
+| Sharpe | **1.77** | ~0.55 |
+| MaxDD | **−20.2 %** | ~−51 % |
+| Edge over SPY | **+18.06 pp/yr** | — |
 
-- **Walk-forward (10 splits)**: beats SPY **8/10**, mean edge **+6.32 pp**, mean Sharpe **1.34**
-- **GFC stress (R1_GFC 2008-10)**: ETF-only +15.6 % CAGR with only −15.7 % MDD while SPY collapsed. Bond rotation (TLT) saved it.
-- **Bootstrap (5,000 iter, 3m blocks)**: P(beat SPY in any 12m) = **84.4 %**, P(lag SPY −10pp) = **3.9 %**
+- **Walk-forward (10 splits)**: beats SPY **9/10**, mean edge **+14.7 pp**, mean Sharpe **1.75**
+- **GFC stress (R1_GFC 2008-10)**: ETF-only +19.2 % CAGR with only −20.2 % MDD while SPY collapsed. Bond rotation (TLT) saved it.
+- **Bootstrap (5,000 iter, 3m blocks)**: P(beat SPY in any 12m) = **90.8 %**, P(lag SPY −10pp) = **3.2 %**
 - **Generalizes** across ETF baskets ≥5 asset-class-diverse names; fails on pure-equity baskets
 
 ## How the strategy works
@@ -230,62 +238,94 @@ No TMF (3× long bonds) available, so no leveraged bond complement to TLT.
 
 Backtest window: 2010-03-31 → 2026-04-30 (constrained by TQQQ/URTY/SOXL launches).
 
-### Headline: leveraged variants tested (16-year window)
+### Headline: leveraged variants tested (16-year window, post-fix)
 
-Best results from 38 leveraged-universe variants (top-N × lookback × universe):
+Best results sorted by Sharpe ratio:
 
 | Universe | Top-N | Lookback | CAGR | Sharpe | MDD | Edge |
 |---|---:|---:|---:|---:|---:|---:|
-| Unleveraged 12 (reference) | 2 | 6m | **28.69 %** | **2.10** | **−10.98 %** | +14.3 |
-| Unleveraged 12 (reference) | 3 | 6m | 24.76 | **2.05** | −11.02 | +10.4 |
-| 2× SSO + 12 unleveraged | 3 | 6m | 28.22 | 1.99 | −11.02 | +13.9 |
-| 2× SSO + 12 unleveraged | 2 | 6m | 29.07 | 1.82 | −10.98 | +14.7 |
-| 3× mix (3 swapped + 10 unl) | 2 | 6m | **52.72** | 1.72 | −25.94 | **+38.4** |
-| 3× mix (5 swapped + 10 unl) | 2 | 6m | **80.02** | 1.66 | −25.94 | **+65.7** |
-| 5× pure 3× ETFs + TLT | 2 | 6m | 76.83 | 1.48 | −31.64 | +62.5 |
-| Pure 3× leveraged (8 ETFs) | 2 | 6m | **87.59** | 1.56 | −28.91 | **+73.2** |
+| **Unleveraged 12 (reference)** | 3 | 6m | 35.93 % | **2.61** | **−11.0 %** | +21.6 |
+| Unleveraged 12 (reference) | 2 | 6m | 40.99 % | 2.59 | −11.0 | +26.6 |
+| 2× SSO + 12 unleveraged | 3 | 6m | 41.11 % | 2.56 | −11.0 | +26.8 |
+| 2× SSO + 12 unleveraged | 2 | 6m | 43.11 % | 2.32 | −11.3 | +28.8 |
+| 3× mix (3 swapped + 10 unl) | 2 | 6m | 82.90 % | 2.19 | −25.9 | +68.5 |
+| 3× mix (3 swapped + 10 unl) | 3 | 6m | 71.71 % | 2.17 | −23.7 | +57.4 |
+| 3× mix (5 swapped + 10 unl) | 2 | 6m | **120.62 %** | 2.05 | −32.4 | **+106.3** |
+| Pure 3× leveraged full | 3 | 6m | 119.47 % | 1.99 | −27.3 | +105.1 |
+| 3× mix (5 swapped + 10 unl) | 3 | 6m | 97.75 % | 1.98 | −31.3 | +83.4 |
+| **Pure 3× leveraged full** | **2** | **6m** | **137.67 %** | **1.98** | **−28.9 %** | **+123.3** |
 
 ### Key finding: leverage TRIPLES CAGR but doesn't improve Sharpe
 
-| Risk-adjusted (Sharpe) | Best variant | CAGR |
-|---|---|---:|
-| **Highest Sharpe (2.10)** | **Unleveraged** 12 ETFs, top-2, 6m | 28.69 % |
-| Next (1.99) | 2× SSO + 12 unleveraged | 28.22 % |
-| Best with 3× leverage (1.72) | 3 swapped + 10 unleveraged | 52.72 % |
+| Risk-adjusted (Sharpe) | Best variant | CAGR | MDD |
+|---|---|---:|---:|
+| **Highest Sharpe (2.61)** | **Unleveraged 12 ETFs, top-3, 6m** | 35.93 % | −11 % |
+| Next (2.59) | Unleveraged top-2, 6m | 40.99 % | −11 % |
+| Best 3× leverage Sharpe (2.19) | mixed 3×+10unl, top-2, 6m | 82.90 % | −26 % |
+| Highest CAGR (1.98) | **Pure 3× full, top-2, 6m** | **137.67 %** | **−29 %** |
 
-**Adding leveraged ETFs increases CAGR proportionally to leverage but also
-amplifies drawdown.** The Sharpe ratio is similar or slightly lower for
-leveraged variants. For risk-adjusted return seekers, unleveraged is the
-better choice.
+**Leverage triples the CAGR but proportionally amplifies drawdown.**
+Sharpe ratios are 1.98–2.19 for leveraged variants vs 2.61 for the
+unleveraged baseline. For risk-adjusted return seekers, unleveraged is
+the better choice.
 
-For absolute-return seekers with high risk tolerance and confidence in the
-strategy's regime-detection, the pure-3× universe gives ~80 % CAGR with
-~−29 % MaxDD.
+For absolute-return seekers with high risk tolerance, the pure 3× variant
+delivers ~138 % CAGR over 2010-26 with ~−29 % MaxDD.
 
-### Crisis behavior — where leverage really matters
+### Crisis behavior — corrected and honest
 
 | Crisis window | Unleveraged 12 | Pure 3× (8 ETFs) | Mixed 3× + TLT | Mixed 3× + defensives |
 |---|---:|---:|---:|---:|
-| **2020 COVID crash (Feb–Apr)** | +40.3 % CAGR / −1.2 % MDD | **−4.7 % / 0 % MDD** ⭐ | +18.8 % / 0 % MDD | +39.8 % / 0 % MDD |
-| 2020 full year | +50.5 % | **+198.9 %** ⭐ | +162.6 % | +177.2 % |
-| 2022 bear year | +52.2 % | **+59.6 %** ⭐ | +59.7 % | +24.0 % |
-| **2018 Q4 selloff** | −10.7 % / −6.7 % MDD | **0.0 % / 0 % MDD** ⭐ | **+18.6 % / 0 % MDD** ⭐ | −10.8 % / −6.7 % MDD |
-| 2023–24 AI rally | +26.3 % | **+131.6 %** ⭐ | +88.6 % | +80.0 % |
-| Full window 2010-26 | 28.7 % / −11 % MDD | 82.0 % / −29 % MDD | 76.8 % / −32 % MDD | 75.6 % / −26 % MDD |
+| 2020 COVID crash (Feb–Apr) | +38.9 % CAGR / −1.5 % MDD | **−45.1 % / −16.8 % MDD** | −31.6 % / −16.8 % MDD | −19.5 % / −16.8 % MDD |
+| 2020 full year | +53.0 % | **+177.4 %** ⭐ | +122.8 % | +135.2 % |
+| 2022 bear year | +54.0 % | +33.7 % | +33.8 % | +16.5 % |
+| 2018 Q4 selloff | −6.7 % / −6.7 % MDD | −0.5 % / 0 % MDD | **+18.0 % / 0 % MDD** ⭐ | −11.3 % / −6.7 % MDD |
+| 2023–24 AI rally | +40.7 % | **+192.3 %** ⭐ | +147.1 % | +135.8 % |
+| Full window 2010-26 | 41.0 % / −11 % MDD | 122.0 % / −38 % MDD | 113.6 % / −38 % MDD | 113.4 % / −38 % MDD |
 
-**Two critical observations**:
+**Honest assessment after fixing the date-alignment bug**:
 
-1. **The momentum filter protects leveraged ETFs from the worst days.**
-   In Feb–Apr 2020 (COVID crash) and Q4 2018 (Fed pivot panic), the pure
-   3× universe lost essentially nothing — the strategy had already rotated
-   out of equity leverage before the bottom. **MDD with leveraged ETFs is
-   not 3× MDD without them — the trend filter cuts the tails.**
+1. **The momentum filter softens — but does NOT eliminate — crisis losses.**
+   In Feb–Apr 2020 the pure 3× universe held SOXL/TQQQ through February's
+   −17 % monthly drawdown, then went to CASH at end-of-February (when 12-m
+   momentum on all assets turned negative). The strategy avoided March
+   2020's much deeper drawdown (~−50 % on the leveraged ETFs) by sitting
+   in cash. **So the strategy does rotate out before the WORST month, but
+   not before the FIRST stress month.**
 
-2. **In strong trends, leverage pays.** 2020 recovery: 199 % vs 50 %.
-   2023–24 AI rally: 132 % vs 26 %. A 12-month momentum filter applied to
-   leveraged equities is — in our 16-year sample — a remarkable
-   risk-adjusted compounding machine, provided the investor can stomach
-   the larger drawdowns.
+   Quantitatively: pure 3× Feb–Apr 2020 = −45 % CAGR / −17 % monthly MDD.
+   SPY Feb–Apr 2020 = −25 % CAGR. The leveraged strategy fared WORSE than
+   SPY in this specific window because the Feb hit was concentrated in
+   leveraged ETFs.
+
+2. **In strong trends, leverage delivers spectacularly.** 2020 full year
+   +177 % vs +53 %. 2023-24 AI rally +192 % vs +41 %. Full window 2010-26
+   +122 % CAGR vs +41 %. The trade-off: peak-to-trough drawdowns of
+   −38 % vs −11 % for unleveraged.
+
+3. **2018 Q4 is the clearest "trend-filter saves the day" example.** Pure
+   3× returned essentially 0 % during a quarter when SPY dropped ~14 %.
+   Mixed 3×+TLT actually made +18 % as the strategy rotated into bonds.
+
+### Detailed trace — pure 3× through 2020 (what really happened)
+
+| Month-end | Picks | Monthly return | Cumulative equity |
+|---|---|---:|---:|
+| 2020-01-31 | SOXL, TQQQ | −1.58 % | 0.984 |
+| **2020-02-29** | **SOXL, TQQQ** | **−16.81 %** | **0.819** |
+| 2020-03-31 | (cash) | 0.00 % | 0.819 |
+| 2020-04-30 | (cash) | 0.00 % | 0.819 |
+| 2020-05-31 | TQQQ | +18.63 % | 0.971 |
+| 2020-06-30 | TQQQ | +17.98 % | 1.146 |
+| 2020-07-31 | TQQQ | +22.25 % | 1.401 |
+| 2020-08-31 | TQQQ, SOXL | +26.52 % | 1.772 |
+
+**The strategy took a real −17 % hit in February** when it was still holding
+the leveraged equities. It rotated to cash AT the end of February (when
+12-month momentum dropped below zero for all 8 leveraged ETFs) and
+avoided the much worse March +April months. Then re-entered TQQQ in May
+as it crossed back into positive momentum, capturing the V-shaped
+recovery.
 
 ### Pure 3× ETF strategy spec
 

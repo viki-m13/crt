@@ -35,7 +35,14 @@ def run_etf_only(daily_prices: pd.DataFrame,
                    cost_bps: float = 10.0) -> dict:
     """Simulate a pure ETF momentum strategy: each month-end rotate to
     top-N by trailing momentum, equal-weight. Returns log of monthly
-    returns + equity curve."""
+    returns + equity curve.
+
+    IMPORTANT: monthly_returns is indexed on TRADING-day month-ends (which
+    differ from calendar month-ends in 2020-Feb, May, Oct etc when the
+    last day falls on a weekend). The strategy must use the trading-day
+    month-end's monthly return for the next-month-in-trace. We do a
+    nearest-prior-trading-day lookup to handle this.
+    """
     cf = cost_bps / 1e4
     available = [a for a in assets if a in daily_prices.columns]
     prev_picks: list[str] = []
@@ -43,20 +50,27 @@ def run_etf_only(daily_prices: pd.DataFrame,
     log = []
     rotations = 0
     cash_months = 0
+    mret_idx = monthly_returns.index
     for i, m in enumerate(asofs):
         px = daily_prices.loc[:m, available].dropna(how="all")
         picks = []
         if len(px) >= lookback_d:
-            ret = px.iloc[-1] / px.iloc[-lookback_d] - 1
-            ret = ret[ret > 0]
-            if len(ret) > 0:
-                picks = ret.sort_values(ascending=False).head(top_n).index.tolist()
-        if picks:
+            ret_lookback = px.iloc[-1] / px.iloc[-lookback_d] - 1
+            ret_lookback = ret_lookback[ret_lookback > 0]
+            if len(ret_lookback) > 0:
+                picks = ret_lookback.sort_values(ascending=False).head(top_n).index.tolist()
+        # Resolve the trading-day index entry for this calendar month-end m
+        pos = mret_idx.searchsorted(m, side="right") - 1
+        m_idx = mret_idx[pos] if pos >= 0 else None
+        # Only accept if the trading-day asof is within 7 days of m
+        if m_idx is None or abs((m_idx - m).days) > 7:
+            m_idx = None
+        if picks and m_idx is not None:
             rs = []
             for tk in picks:
-                if (tk in monthly_returns.columns and m in monthly_returns.index
-                        and pd.notna(monthly_returns.at[m, tk])):
-                    rs.append(float(monthly_returns.at[m, tk]))
+                if (tk in monthly_returns.columns
+                        and pd.notna(monthly_returns.at[m_idx, tk])):
+                    rs.append(float(monthly_returns.at[m_idx, tk]))
             ret_m = float(np.mean(rs)) if rs else 0.0
             if prev_picks and set(picks) != set(prev_picks):
                 turnover = len(set(picks) ^ set(prev_picks)) / (2 * top_n)
@@ -67,7 +81,8 @@ def run_etf_only(daily_prices: pd.DataFrame,
             cash_months += 1
         equity *= (1 + ret_m)
         log.append({"date": str(m.date()), "ret_m": ret_m, "equity": equity,
-                     "picks": ",".join(picks) if picks else "", "n_rotations": rotations})
+                     "picks": ",".join(picks) if picks else "",
+                     "n_rotations": rotations})
         prev_picks = picks
     return {"log": log, "n_rotations": rotations, "cash_months": cash_months}
 
