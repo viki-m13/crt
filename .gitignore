@@ -26,3 +26,8 @@ experiments/monthly_dca/v8/weekly/cache/features_weekly.parquet
 
 # CreditFloor: large per-run audit dump is regenerable; keep only lean signals
 strategies/credit_spread/results/research_full.json
+
+# FNSPID raw dataset (641 MB Hugging Face zip + per-ticker CSV extracts).
+# Re-downloaded on demand by experiments/monthly_dca/v5/spx_pit/build_sp500_pit_prices.py
+# from https://huggingface.co/datasets/Zihan1004/FNSPID
+experiments/monthly_dca/cache/v2/sp500_pit/fnspid/
