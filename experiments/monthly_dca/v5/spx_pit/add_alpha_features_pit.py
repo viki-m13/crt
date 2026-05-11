@@ -120,6 +120,39 @@ def main():
             print(f"      [{i+1}/{len(months)}] {asof.date()}: {merged.shape}")
     print(f"    elapsed: {time.time()-t0:.1f}s")
 
+    print("\n[3.5] novel_features (strategy/features/novel_features.py) ...")
+    sys.path.insert(0, str(ROOT / "strategy" / "features"))
+    import novel_features as nf
+    nf.FEATURES_DIR = AUG_FEATURES
+    nf.load_panel = _patched_load_panel
+    nf.load_features = _patched_load_features
+    # novel_features.main also iterates month_end_dates(load_panel()) and merges.
+    # Same potential-overlap issue: defensive drop on any column already present.
+    from experiments.monthly_dca.backtester import month_end_dates as _med
+    panel2 = _patched_load_panel()
+    months2 = _med(panel2.index)
+    print(f"    Adding novel features to {len(months2)} months")
+    for i, asof in enumerate(months2):
+        feat_path = AUG_FEATURES / f"{asof.date()}.parquet"
+        if not feat_path.exists():
+            continue
+        existing = pd.read_parquet(feat_path)
+        if "rbi_60" in existing.columns:
+            continue
+        try:
+            extras = nf.compute_all_novel(panel2, asof)
+        except Exception as e:
+            print(f"    skip {asof.date()}: {e}")
+            continue
+        overlap = [c for c in extras.columns if c in existing.columns]
+        if overlap:
+            extras = extras.drop(columns=overlap)
+        merged = existing.join(extras, how="left")
+        merged.to_parquet(feat_path)
+        if (i + 1) % 24 == 0 or i == len(months2) - 1:
+            print(f"      [{i+1}/{len(months2)}] {asof.date()}: {merged.shape}")
+    print(f"    elapsed: {time.time()-t0:.1f}s")
+
     # Verify
     sample = pd.Timestamp("2010-12-31")
     sp = AUG_FEATURES / f"{sample.date()}.parquet"
