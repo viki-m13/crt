@@ -64,3 +64,83 @@ def tech_broad():
 
 
 TECH_BROAD = tech_broad()
+
+
+# iShares Global Tech ETF (IXN) — modern composition snapshot.
+# IXN holds ~140 names globally. Many of its non-US holdings (Samsung,
+# SAP, Sony, Infineon local listings) do not have US-listed tickers in
+# our price database; only US-listed names + ADRs are included below.
+# Effective coverage: ~70-75% of IXN's market-cap weight via US + ADR.
+IXN = [
+    # US large-cap tech (heavy weight)
+    "AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "CRM", "ACN", "ADBE", "AMD",
+    "NOW", "INTU", "QCOM", "IBM", "TXN", "CSCO", "INTC", "AMAT", "MU",
+    "PANW", "ANET", "LRCX", "KLAC", "ADI", "FTNT", "CRWD", "SNPS", "CDNS",
+    "MRVL", "NXPI", "MCHP", "GLW", "MSI", "ROP", "DELL", "HPQ", "HPE",
+    "NTAP", "JNPR", "STX", "WDC", "FSLR", "ON", "SWKS", "QRVO", "TER",
+    "MPWR", "ANSS", "TDY", "FFIV", "AKAM", "VRSN", "SMCI", "WDAY",
+    # International tech via US-listed ADRs
+    "TSM",   # Taiwan Semiconductor
+    "ASML",  # ASML Netherlands
+    "ARM",   # ARM Holdings UK
+    "SHOP",  # Shopify Canada
+    "GFS",   # GlobalFoundries
+    # Internet / services overlap
+    "GOOGL", "GOOG", "META", "AMZN", "NFLX", "TSLA", "BIDU", "JD",
+    "PDD", "BABA",
+]
+
+
+# Russell 1000 approximation — top US large- and mid-cap names.
+# Russell 1000 has ~1000 names; not all are in our broader 1811 panel
+# (some are mid-caps that came public after 2010 and aren't in v3's
+# trained universe). This is a representative subset focused on the
+# major sectors. Use with caution — this is NOT a PIT R1000 membership;
+# it's a modern-snapshot approximation that may have survivorship bias.
+RUSSELL_1000_CORE = [
+    # S&P 500 mega/large caps (subset)
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "GOOG", "META", "AVGO",
+    "TSLA", "JPM", "V", "WMT", "XOM", "JNJ", "MA", "UNH", "PG", "HD",
+    "ORCL", "CVX", "MRK", "LLY", "ABBV", "KO", "PEP", "BAC", "COST",
+    "ADBE", "TMO", "MCD", "CSCO", "CRM", "NFLX", "ABT", "ACN", "LIN",
+    "DHR", "INTC", "TXN", "VZ", "WFC", "NKE", "DIS", "AMD", "PM", "QCOM",
+    "T", "BMY", "CMCSA", "RTX", "INTU", "UPS", "LOW", "HON", "AMGN",
+    "ISRG", "SPGI", "GS", "CAT", "PFE", "BLK", "IBM", "ELV", "BKNG",
+    "AXP", "DE", "MS", "GILD", "C", "TJX", "PLD", "SCHW", "ADP", "MDLZ",
+    "MO", "SYK", "VRTX", "REGN", "ZTS", "MMC", "CB", "ETN", "BSX", "CI",
+    "FI", "AMAT", "PYPL", "PNC", "BX", "EQIX", "DUK", "AON", "CL", "PGR",
+    "ICE", "SO", "USB", "TGT", "EOG", "BDX", "WM", "ITW", "MMM", "CSX",
+    # Plus mid-caps from broader
+    "ROK", "PSX", "PCG", "FCX", "EW", "MNST", "GD", "EMR", "FDX",
+    "HCA", "CME", "APD", "MCO", "GE", "F", "NEM", "NSC", "TFC", "EXC",
+    "SLB", "ATVI", "PSA", "AIG", "FIS", "MET", "ADI", "MAR", "AEP",
+    "WBA", "DOW", "TRV", "GIS", "AFL", "PEG", "PRU", "DG", "ECL",
+    "OXY", "WMB", "VLO", "SRE", "TWLO", "ROST", "MSCI", "STZ", "CCI",
+    "DLR", "PCAR", "AZO", "ED", "PXD", "MCK", "FTNT", "KDP", "CTAS",
+    "DLTR", "EBAY", "KMB", "MPC", "EL", "PAYX", "ORLY", "HUM", "WELL",
+    "BIIB", "ATO", "MTB", "FAST", "VICI", "EFX", "STT", "WTW", "ANET",
+    "CTSH", "ETSY", "WEC", "GLW", "PPG", "BR", "TROW", "ROL", "GWW",
+    "DD", "NUE", "OKE", "LRCX", "KLAC", "MNDT", "PEG", "DTE", "EXR",
+    "EIX", "MRO", "AVB", "BIO", "MTD", "DOV", "CBRE", "ESS", "WAB",
+    "FE", "RMD", "SBUX", "ALL", "HSY", "DLTR", "FANG", "WTRG", "CHD",
+    "CTAS", "IDXX", "PWR", "MLM", "ROST", "VMC", "OMC", "VTR", "HUBS",
+    "ALGN", "BR", "OKE", "GPN", "STZ", "HBAN", "PFG", "ZBH", "WAT",
+    # ARM, GFS, GEHC, NET, SNOW (newer issues)
+    "ARM", "GFS", "GEHC", "NET", "SNOW", "DDOG", "DOCU", "ZM", "PLTR",
+    "ABNB", "UBER", "LYFT", "DASH", "AFRM", "HOOD", "RIVN", "ZS", "TEAM",
+    "WBD", "PARA",
+]
+
+
+def ixn_us():
+    """Universe of IXN names that have US-listed equivalents in our data."""
+    return sorted(set(IXN))
+
+
+def russell1000_core():
+    """Russell-1000-ish approximation, deduped."""
+    return sorted(set(RUSSELL_1000_CORE))
+
+
+IXN_US = ixn_us()
+R1000 = russell1000_core()
