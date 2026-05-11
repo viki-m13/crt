@@ -173,6 +173,27 @@ def _build_spy_features(monthly_prices: pd.DataFrame) -> pd.DataFrame:
     in cache/features/. These contain the DAILY-based 21d return, 200-day SMA
     distance, 12-1 momentum, 6-1 momentum, RSI14 and below-200dma streak."""
     feat_dir = CACHE / "features"
+    daily = pd.read_parquet(CACHE / "prices_extended.parquet")
+    daily_spy = daily["SPY"].dropna() if "SPY" in daily.columns else pd.Series(dtype=float)
+
+    def streak_1y(asof):
+        if len(daily_spy) == 0:
+            return 0.0
+        s = daily_spy.loc[:asof]
+        if len(s) < 200 + 21:
+            return 0.0
+        sma200 = s.rolling(200, min_periods=200).mean()
+        below = (s < sma200).astype(int).iloc[-252:]
+        m = 0; cur = 0
+        for v in below.values:
+            if v == 1:
+                cur += 1
+                if cur > m:
+                    m = cur
+            else:
+                cur = 0
+        return float(m)
+
     rows = []
     for f in sorted(feat_dir.glob("*.parquet")):
         d = pd.Timestamp(f.stem)
@@ -187,7 +208,7 @@ def _build_spy_features(monthly_prices: pd.DataFrame) -> pd.DataFrame:
             "spy_mom_12_1": float(spy.get("mom_12_1", 0.0)),
             "spy_mom_6_1": float(spy.get("mom_6_1", 0.0)),
             "spy_ret_21d": float(spy.get("ret_21d", 0.0)),
-            "spy_below_200_streak": float(spy.get("max_below_200_streak", 0.0)),
+            "spy_below_200_streak": streak_1y(d),
         })
     return pd.DataFrame(rows).set_index("asof")
 
@@ -243,7 +264,10 @@ def invvol_weights(picks: list[str], monthly_returns: pd.DataFrame,
             w[~over] += excess * w[~over] / w[~over].sum()
         else:
             break
-    return w
+    # Renormalise: handles K=1 (cap dilutes single pick below 1.0) and the
+    # K*cap < 1 case generally — without this, capital is implicitly stranded.
+    s = w.sum()
+    return w / s if s > 0 else np.ones_like(w) / len(w)
 
 
 # ============================================================
