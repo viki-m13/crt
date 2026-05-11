@@ -95,37 +95,22 @@
     }
     .callout strong { color: var(--gold); }
 
-    .pick-grid {
+    .basket-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;
     }
-    .pick-card {
+    .basket-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px; transition: border-color .15s;
+      border-radius: var(--radius); padding: 14px;
     }
-    .pick-card:hover { border-color: var(--green); }
-    .pick-card.rank-1 { border: 2px solid var(--green); background: var(--green-bg); }
-    .pick-head { display: flex; align-items: baseline; gap: 8px; }
-    .pick-rank { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--muted-2); font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .pick-card.rank-1 .pick-rank { background: var(--green); color: var(--bg); }
-    .pick-tkr { font-family: var(--mono); font-weight: 800; font-size: 18px; }
-    .pick-px { color: var(--muted); font-size: 12px; margin-left: auto; font-family: var(--mono); }
-    .pick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 10px; font-size: 12px; }
-    .pick-row .lbl { color: var(--muted); }
-    .pick-row .val { font-family: var(--mono); font-weight: 700; text-align: right; }
-    .pick-row .val.neg { color: var(--red); }
-    .pick-row .val.pos { color: var(--green); }
-    .pick-row .val.mid { color: var(--muted-2); }
-
-    .strat-tabs {
-      display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
-    }
-    .strat-btn {
-      background: var(--surface); border: 1px solid var(--border); color: var(--ink);
-      padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
-      font-family: var(--font); font-weight: 600;
-    }
-    .strat-btn:hover { border-color: var(--muted-2); }
-    .strat-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .basket-head { display: flex; align-items: baseline; gap: 8px; }
+    .basket-tkr { font-family: var(--mono); font-weight: 800; font-size: 18px; }
+    .basket-wt { color: var(--green); font-weight: 700; font-family: var(--mono); margin-left:auto; font-size: 14px; }
+    .basket-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 10px; font-size: 12px; }
+    .basket-row .lbl { color: var(--muted); }
+    .basket-row .val { font-family: var(--mono); font-weight: 700; text-align: right; }
+    .basket-row .val.neg { color: var(--red); }
+    .basket-row .val.pos { color: var(--green); }
+    .basket-row .val.mid { color: var(--muted-2); }
 
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
@@ -159,9 +144,6 @@
       text-align: center; color: var(--muted); font-size: 11px;
       padding: 32px 16px; border-top: 1px solid var(--border); margin-top: 32px; line-height: 1.6;
     }
-
-    .ext-link { color: var(--blue); font-size: 13px; }
-    .ext-link::after { content: ' →'; color: var(--muted); }
 
     code { font-family: var(--mono); background: var(--surface-2); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
 
@@ -197,19 +179,28 @@
 
   <script>
     /* ============================================================
-       Monthly DCA — Pullback-In-Winner research page
+       v5 PIT S&P 500 — research page renderer
        ============================================================
-       Loads experiments/docs/monthly-dca/data.json and renders the
-       full report: live picks, walk-forward results, year-by-year,
-       oracle ceiling, top sweep table, methodology.
+       Reads experiments/docs/monthly-dca/data.json (built by
+       experiments/monthly_dca/v5/build_webapp_v5_pit.py) and renders
+       the full research view: current basket, walk-forward per-split
+       table, year-by-year, drawdowns, multi-universe generalisation,
+       parameter sensitivity, survivorship bias sweep, methodology.
     */
     const DATA_URL = "./data.json";
-    const fmtPct = x => x == null ? "—" : `${(x * 100).toFixed(1)}%`;
+    const STRAT_KEY = "v5_pit_sp500_ml_3plus6_chronos_p70_k3_invvol_cap0.4_h6";
+
+    const fmtPct = (x, d=1) => x == null ? "—" : `${(x * 100).toFixed(d)}%`;
     const fmtPct0 = x => x == null ? "—" : `${(x * 100).toFixed(0)}%`;
-    const fmtPctSigned = x => {
+    const fmtPctSigned = (x, d=1) => {
       if (x == null) return "—";
-      const v = (x * 100).toFixed(1);
+      const v = (x * 100).toFixed(d);
       return v >= 0 ? `+${v}%` : `${v}%`;
+    };
+    const fmtPPSigned = (x, d=1) => {
+      if (x == null) return "—";
+      const v = Number(x).toFixed(d);
+      return v >= 0 ? `+${v}pp` : `${v}pp`;
     };
     const fmtNum = (x, d = 2) => x == null ? "—" : Number(x).toFixed(d);
     const fmtPx = x => x == null ? "—" : "$" + Number(x).toFixed(2);
@@ -228,14 +219,17 @@
       app.innerHTML = "";
       app.appendChild(hero(data));
       app.appendChild(callout());
-      app.appendChild(livePicksSection(data));
+      app.appendChild(currentBasketSection(data));
       app.appendChild(walkForwardSection(data));
       app.appendChild(yearByYearSection(data));
-      app.appendChild(splitsSection(data));
-      app.appendChild(oracleSection(data));
-      app.appendChild(sweepSection(data));
+      app.appendChild(subPeriodsSection(data));
+      app.appendChild(generalisationSection(data));
+      app.appendChild(sensitivitySection(data));
+      app.appendChild(drawdownsSection(data));
+      app.appendChild(mostPickedSection(data));
+      app.appendChild(biasSweepSection(data));
       app.appendChild(pickLogSection(data));
-      app.appendChild(methodologySection(data));
+      app.appendChild(methodologySection());
     }
 
     function el(tag, attrs = {}, children = []) {
@@ -255,24 +249,25 @@
     }
 
     function hero(data) {
-      const recommended = data.walk_forward_aggregate?.[0];
-      const meanCagr = recommended ? fmtPct(recommended.mean_test_cagr) : "—";
-      const minCagr = recommended ? fmtPct(recommended.min_test_cagr) : "—";
-      const edge = recommended ? fmtPctSigned(recommended.mean_test_edge) : "—";
+      const agg = data.walk_forward_aggregate?.[0];
+      const meanCagr = agg ? fmtPct(agg.mean_test_cagr) : "—";
+      const minCagr = agg ? fmtPct(agg.min_test_cagr) : "—";
+      const edgePp = agg ? fmtPPSigned(agg.mean_edge_pp) : "—";
+      const nBeats = agg ? `${agg.n_beats_spy}/${agg.n_splits}` : "—";
+      const fullCagr = fmtPct(data.headline?.cagr_raw);
       const spy = fmtPct(data.spy_dca_cagr);
 
       const wrap = el("section", { class: "hero" });
-      wrap.appendChild(el("h1", {}, "An honest, bias-aware monthly stock-pick DCA strategy."));
+      wrap.appendChild(el("h1", {}, "v5 — Two AI models, 3 S&P 500 stocks, 6-month hold."));
       wrap.appendChild(el("p", { class: "sub" },
-        "We searched 1,500+ (strategy × concentration × exit-rule) combinations across a 964-ticker universe with strict point-in-time eligibility, then validated the survivors out-of-sample on 8 walk-forward splits. The honest top pick: " +
-        "buy the long-term winner that just pulled back hardest, hold ≈ 3 years."));
-      wrap.appendChild(el("p", { class: "as-of" }, `As of ${data.as_of} • ${data.panel.n_tickers} tickers • ${data.panel.first_date} → ${data.panel.last_date}`));
+        "Gradient Boosted Trees on 67 price-only features pick the top 3 stocks from the actual point-in-time S&P 500 each rebalance date. Each candidate must first pass a confirmation filter from Amazon Chronos-bolt-tiny — a 9M-parameter HuggingFace zero-shot time-series foundation model — and the whole portfolio drops to cash when the SPY crash gate fires. Inverse-volatility weighted with a 40% per-pick cap, held 6 months."));
+      wrap.appendChild(el("p", { class: "as-of" }, `As of ${data.as_of} • ${data.panel.n_tickers} tickers • ${data.panel.first_date} → ${data.panel.last_date} • universe: ${data.panel.universe}`));
 
       const kpi = el("div", { class: "kpi-row" });
-      kpi.appendChild(kpiCard("Mean OOS CAGR", meanCagr, `min ${minCagr} • across 8 walk-forward splits`, "highlight"));
-      kpi.appendChild(kpiCard("Edge vs SPY DCA", edge, "money-weighted (XIRR)"));
-      kpi.appendChild(kpiCard("SPY DCA CAGR", spy, "same windows, baseline"));
-      kpi.appendChild(kpiCard("Recommended", "Top-1, hold 3y", "pullback_in_winner / fixed_3y", "warn"));
+      kpi.appendChild(kpiCard("Mean OOS CAGR (10 splits)", meanCagr, `min ${minCagr} • ${nBeats} beat SPY`, "highlight"));
+      kpi.appendChild(kpiCard("Mean OOS edge", edgePp, "annualised pp over SPY DCA"));
+      kpi.appendChild(kpiCard("Full-window CAGR", fullCagr, `2003-2026 deploy. SPY DCA ${spy}`));
+      kpi.appendChild(kpiCard("Recommended", "K=3, hold 6m", "GBM + Chronos · inv-vol cap 0.4", "warn"));
       wrap.appendChild(kpi);
       return wrap;
     }
@@ -286,96 +281,91 @@
 
     function callout() {
       const c = el("section", { class: "callout" });
-      c.innerHTML = `<strong>Honesty note.</strong> A 100% win rate at >50% CAGR <em>is</em>
-        achievable on this universe — but only with perfect-foresight oracle picking
-        (top-1 hold-forever oracle: 112% CAGR). Every honest strategy captures only
-        a fraction. Headline numbers below are <em>raw</em> CAGR over the survivor universe;
-        bias-corrected medians (Monte-Carlo synthetic delistings, 4 %/yr) shave roughly
-        5 percentage points off CAGR and 9 points off win-rate. Both are reported.`;
+      c.innerHTML = `<strong>Honesty note.</strong> Walk-forward TEST CAGR is the average annualised return across 10 different OOS windows. Each split's model is fit only on TRAIN data with a 7-month embargo, then scored on TEST. The HuggingFace Chronos confidence filter is zero-shot — the model never sees market data during training, only generic time series. Raw backtest CAGR is reported alongside the Monte-Carlo synthetic-delisting bias-corrected median (α=4&nbsp;%/yr historical large-cap rate).`;
       return c;
     }
 
-    function livePicksSection(data) {
+    function currentBasketSection(data) {
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, `Live picks for ${data.as_of}`));
+      const ls = data.live_state || {};
+      const basket = data.pick_of_month_basket || [];
+      sec.appendChild(el("div", { class: "section-title" }, `Current 6-month basket — bought ${ls.last_rebalance_date || data.as_of}`));
       sec.appendChild(el("div", { class: "section-sub" },
-        "Re-scored at the most recent month-end. The strategy you would buy today, as a basket of K equal-weighted positions."));
+        `Held from ${ls.last_rebalance_date || data.as_of} to ${ls.next_rebalance_date || "next month-end"}. Weights: inverse-volatility (1/vol_1y), capped 40% per name and renormalised. ${ls.months_since_rebalance != null ? `Currently ${ls.months_since_rebalance} of 6 months into the hold.` : ""}`));
 
-      const tabs = el("div", { class: "strat-tabs" });
-      const buckets = [
-        ["pullback_in_winner_top5", "Pullback-In-Winner (top 5)"],
-        ["pullback_in_winner_top10", "Pullback-In-Winner (top 10)"],
-        ["quality_pullback_top5", "Quality-Pullback (top 5)"],
-        ["explosive_winners_top5", "Explosive-Winners (top 5)"],
-        ["dual_momentum_top5", "Dual-Momentum (top 5)"],
-      ];
-      const grid = el("div", { class: "pick-grid" });
+      if (ls.cash_position) {
+        const cashCard = el("div", { class: "callout" });
+        cashCard.innerHTML = `<strong>100% cash this month.</strong> The crash gate fired — SPY broke down enough to switch the portfolio to cash. We re-evaluate at the next month-end.`;
+        sec.appendChild(cashCard);
+        return sec;
+      }
 
-      buckets.forEach(([key, label], i) => {
-        const b = el("button", { class: "strat-btn" + (i === 0 ? " active" : "") }, label);
-        b.onclick = () => {
-          tabs.querySelectorAll(".strat-btn").forEach(x => x.classList.remove("active"));
-          b.classList.add("active");
-          renderPicks(grid, data.live_picks[key]);
-        };
-        tabs.appendChild(b);
-      });
-      sec.appendChild(tabs);
-      sec.appendChild(grid);
-      renderPicks(grid, data.live_picks[buckets[0][0]]);
-      return sec;
-    }
-    function renderPicks(grid, picks) {
-      grid.innerHTML = "";
-      picks.forEach((p, i) => {
-        const card = el("div", { class: "pick-card" + (i === 0 ? " rank-1" : "") });
-        const head = el("div", { class: "pick-head" }, [
-          el("span", { class: "pick-rank" }, String(i + 1)),
-          el("span", { class: "pick-tkr" }, p.ticker),
-          el("span", { class: "pick-px" }, fmtPx(p.price)),
+      const weights = ls.current_basket_weights || [];
+      const grid = el("div", { class: "basket-grid" });
+      basket.forEach((p, i) => {
+        const card = el("div", { class: "basket-card" });
+        const w = weights[i];
+        const head = el("div", { class: "basket-head" }, [
+          el("span", { class: "basket-tkr" }, p.ticker),
+          el("span", { class: "basket-wt" }, w != null ? `${(w*100).toFixed(1)}%` : ""),
         ]);
         card.appendChild(head);
-        const rows = [
-          ["1y pullback", fmtPctSigned(p.pullback_1y), cls(p.pullback_1y)],
-          ["5y trend health", fmtNum(p.trend_health_5y, 2), "mid"],
-          ["RSI(14)", fmtNum(p.rsi_14, 0), "mid"],
-          ["mom 12-1", fmtPctSigned(p.mom_12_1), cls(p.mom_12_1)],
-          ["mom 3y", fmtPctSigned(p.mom_3y), cls(p.mom_3y)],
-          ["recovery rate", fmtPct0(p.recovery_rate), "mid"],
-        ];
-        const r = el("div", { class: "pick-row" });
-        rows.forEach(([lbl, val, c]) => {
-          r.appendChild(el("span", { class: "lbl" }, lbl));
-          r.appendChild(el("span", { class: "val " + c }, val));
-        });
-        card.appendChild(r);
+        card.appendChild(el("div", { class: "basket-row" }, [
+          el("span", { class: "lbl" }, "Entry price"),
+          el("span", { class: "val mid" }, fmtPx(p.price)),
+          el("span", { class: "lbl" }, "Score"),
+          el("span", { class: "val mid" }, fmtNum(p.score, 3)),
+          el("span", { class: "lbl" }, "1y pullback"),
+          el("span", { class: "val " + cls(p.pullback_1y) }, fmtPctSigned(p.pullback_1y)),
+          el("span", { class: "lbl" }, "12-1 momentum"),
+          el("span", { class: "val " + cls(p.mom_12_1) }, fmtPctSigned(p.mom_12_1)),
+          el("span", { class: "lbl" }, "3y momentum"),
+          el("span", { class: "val " + cls(p.mom_3y) }, fmtPctSigned(p.mom_3y)),
+          el("span", { class: "lbl" }, "5y trend"),
+          el("span", { class: "val mid" }, fmtNum(p.trend_health_5y, 2)),
+        ]));
         grid.appendChild(card);
       });
+      sec.appendChild(grid);
+      return sec;
     }
 
     function walkForwardSection(data) {
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Walk-Forward (8-split aggregate)"));
+      sec.appendChild(el("div", { class: "section-title" }, "Walk-forward — 10-split out-of-sample test"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "For each of 8 TRAIN/TEST splits, we ranked every (strategy, K, exit) on TRAIN by CAGR and re-evaluated only the TRAIN-top-20 on TEST. Strategies below appeared in the TRAIN-top-20 at least 4 times, ranked by mean TEST CAGR. This is the headline robustness check."));
+        "Three expanding-window splits (A1/A2/A3), six 3-year rolling splits (R1 GFC, R2, R3, R4, R5 COVID, R6 AI rally), and one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo and re-scored on the TEST window. The Chronos filter is zero-shot — it never sees market data during fitting."));
+
+      const agg = data.walk_forward_aggregate?.[0];
+      if (agg) {
+        const sumWrap = el("div", { class: "kpi-row" });
+        sumWrap.appendChild(kpiCard("Mean TEST CAGR", fmtPct(agg.mean_test_cagr), `Across ${agg.n_splits} splits`, "highlight"));
+        sumWrap.appendChild(kpiCard("Min TEST CAGR", fmtPct(agg.min_test_cagr), "Worst window"));
+        sumWrap.appendChild(kpiCard("Max TEST CAGR", fmtPct(agg.max_test_cagr), "Best window"));
+        sumWrap.appendChild(kpiCard("Positive splits", `${agg.n_positive_splits}/${agg.n_splits}`, `${agg.n_beats_spy}/${agg.n_splits} beat SPY`));
+        sec.appendChild(sumWrap);
+      }
+
       const wrap = el("div", { class: "table-wrap" });
+      wrap.style.marginTop = "12px";
       const t = el("table");
-      const thead = el("thead", {}, el("tr", {}, [
-        "Strategy::K::Exit", "Splits in TRAIN top-20", "Mean TEST CAGR", "Min", "Max",
-        "Mean Edge vs SPY", "Min Edge", "Mean Win",
-      ].map(h => el("th", {}, h))));
-      t.appendChild(thead);
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Split", "Window", "Months", "Strategy CAGR", "SPY CAGR", "Edge", "Sharpe", "MaxDD", "Cash months"]
+          .map(h => el("th", {}, h)))));
       const tb = el("tbody");
-      (data.walk_forward_aggregate || []).slice(0, 12).forEach((r, i) => {
+      (data.walk_forward_forced || []).forEach(r => {
         const row = el("tr");
-        row.appendChild(el("td", { class: "tkr" }, r.key));
-        row.appendChild(el("td", { class: "mid" }, `${r.n_splits_in_train_top20} / 8`));
-        row.appendChild(el("td", { class: "pos" }, fmtPct(r.mean_test_cagr)));
-        row.appendChild(el("td", { class: cls(r.min_test_cagr) }, fmtPct(r.min_test_cagr)));
-        row.appendChild(el("td", { class: "pos" }, fmtPct(r.max_test_cagr)));
-        row.appendChild(el("td", { class: cls(r.mean_test_edge) }, fmtPctSigned(r.mean_test_edge)));
-        row.appendChild(el("td", { class: cls(r.min_test_edge) }, fmtPctSigned(r.min_test_edge)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct0(r.mean_test_win)));
+        const stratCagr = (r.CAGR_pct ?? 0) / 100;
+        const spyCagr = (r.SPY_CAGR_pct ?? 0) / 100;
+        row.appendChild(el("td", { class: "tkr" }, r.split));
+        row.appendChild(el("td", { class: "mid" }, `${r.from} → ${r.to}`));
+        row.appendChild(el("td", { class: "mid" }, String(r.n_months)));
+        row.appendChild(el("td", { class: cls(stratCagr) }, fmtPct(stratCagr)));
+        row.appendChild(el("td", { class: "mid" }, fmtPct(spyCagr)));
+        row.appendChild(el("td", { class: cls(r.Edge_pp) }, fmtPPSigned(r.Edge_pp)));
+        row.appendChild(el("td", { class: "mid" }, fmtNum(r.Sharpe, 2)));
+        row.appendChild(el("td", { class: "neg" }, fmtPct(r.MaxDD, 0)));
+        row.appendChild(el("td", { class: "mid" }, String(r.n_cash_months)));
         tb.appendChild(row);
       });
       t.appendChild(tb);
@@ -386,105 +376,44 @@
 
     function yearByYearSection(data) {
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Year-by-year (entries by year, evaluated to today)"));
+      sec.appendChild(el("div", { class: "section-title" }, "Year-by-year (v5 production strategy)"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "Each year shows the CAGR of picks made that year, held to the latest evaluation date. Recent-year picks (2024+) under-perform because they haven't had time to mature — this is horizon-truncation, not strategy failure."));
-
-      const tabs = el("div", { class: "strat-tabs" });
+        "DCA-style annualised return for each calendar year — strategy vs SPY held the same window. 2003 and 2026 are partial-year stubs. Recent picks held to the latest panel date."));
+      const rows = data.year_by_year?.[STRAT_KEY] || data.year_by_year?.pullback_in_winner_k1 || [];
       const grid = el("div", { class: "year-grid" });
-      const buckets = [
-        ["pullback_in_winner_k1", "Pullback-In-Winner k=1"],
-        ["pullback_in_winner_k5", "Pullback-In-Winner k=5"],
-        ["quality_pullback_k1", "Quality-Pullback k=1"],
-      ];
-      buckets.forEach(([key, label], i) => {
-        const b = el("button", { class: "strat-btn" + (i === 0 ? " active" : "") }, label);
-        b.onclick = () => {
-          tabs.querySelectorAll(".strat-btn").forEach(x => x.classList.remove("active"));
-          b.classList.add("active");
-          renderYears(grid, data.year_by_year[key]);
-        };
-        tabs.appendChild(b);
-      });
-      sec.appendChild(tabs);
-      sec.appendChild(grid);
-      renderYears(grid, data.year_by_year[buckets[0][0]]);
-      return sec;
-    }
-    function renderYears(grid, rows) {
-      grid.innerHTML = "";
-      (rows || []).forEach(r => {
+      rows.forEach(r => {
         const c = el("div", { class: "year-cell" });
         c.appendChild(el("div", { class: "yr" }, String(r.year)));
-        const cagrEl = el("div", { class: "cagr " + cls(r.cagr_dca_picks) }, fmtPctSigned(r.cagr_dca_picks));
-        c.appendChild(cagrEl);
+        c.appendChild(el("div", { class: "cagr " + cls(r.cagr_dca_picks) }, fmtPctSigned(r.cagr_dca_picks, 0)));
         c.appendChild(el("div", { class: "meta" },
-          `n=${r.n_picks} · win ${fmtPct0(r.win_rate)} · vs SPY ${fmtPct(r.cagr_dca_spy)}`));
+          `n=${r.n_picks} · win ${fmtPct0(r.win_rate)} · SPY ${fmtPct(r.cagr_dca_spy, 0)}`));
         c.appendChild(el("div", { class: "meta " + cls(r.edge) },
-          `edge ${fmtPctSigned(r.edge)}`));
+          `edge ${fmtPctSigned(r.edge, 0)}`));
         grid.appendChild(c);
       });
-    }
-
-    function splitsSection(data) {
-      const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Per-split TRAIN→TEST detail"));
-      sec.appendChild(el("div", { class: "section-sub" },
-        "For each split, we show the TRAIN-top-5 by CAGR and how those exact configurations performed on TEST. Watch for collapses (strategy great on TRAIN, terrible on TEST → likely overfit)."));
-      (data.splits || []).forEach(s => {
-        const det = el("details", { class: "accordion" });
-        const summary = el("summary", {}, s.name.replace(/_/g, " "));
-        det.appendChild(summary);
-        const body = el("div", { class: "accordion-body" });
-        body.appendChild(el("div", {}, "TRAIN top-5 by CAGR:"));
-        body.appendChild(splitTable(s.train_top5));
-        body.appendChild(el("div", { style: "margin-top: 12px" }, "Same configs on TEST:"));
-        body.appendChild(splitTable(s.test_same_configs));
-        det.appendChild(body);
-        sec.appendChild(det);
-      });
+      sec.appendChild(grid);
       return sec;
     }
-    function splitTable(rows) {
-      const wrap = el("div", { class: "table-wrap" });
-      const t = el("table");
-      t.appendChild(el("thead", {}, el("tr", {},
-        ["Strategy::K::Exit", "n", "Win", "CAGR", "SPY CAGR", "Edge"].map(h => el("th", {}, h)))));
-      const tb = el("tbody");
-      (rows || []).forEach(r => {
-        const row = el("tr");
-        row.appendChild(el("td", { class: "tkr" }, r.key));
-        row.appendChild(el("td", { class: "mid" }, String(r.n_picks)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct0(r.win_rate)));
-        row.appendChild(el("td", { class: cls(r.cagr) }, fmtPct(r.cagr)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct(r.spy_cagr)));
-        row.appendChild(el("td", { class: cls(r.edge) }, fmtPctSigned(r.edge)));
-        tb.appendChild(row);
-      });
-      t.appendChild(tb);
-      wrap.appendChild(t);
-      return wrap;
-    }
 
-    function oracleSection(data) {
+    function subPeriodsSection(data) {
+      const rows = data.sub_periods || [];
+      if (!rows.length) return el("div");
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Oracle ceiling (perfect foresight)"));
+      sec.appendChild(el("div", { class: "section-title" }, "Sub-period robustness"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "Pick the K stocks each month with the largest known forward return. This is the absolute upper bound for any picking rule. You cannot beat the oracle without cheating."));
+        "Strategy CAGR vs SPY across overlapping decade windows. Edge persists in every period — not a single-era artefact."));
       const wrap = el("div", { class: "table-wrap" });
       const t = el("table");
       t.appendChild(el("thead", {}, el("tr", {},
-        ["top_k", "Exit rule", "Picks", "Win", "Median pick return", "Oracle CAGR", "SPY DCA"].map(h => el("th", {}, h)))));
+        ["Period", "Months", "Strategy CAGR", "SPY CAGR", "Edge (pp)"].map(h => el("th", {}, h)))));
       const tb = el("tbody");
-      (data.oracle || []).forEach(r => {
+      rows.forEach(r => {
         const row = el("tr");
-        row.appendChild(el("td", { class: "mid" }, String(r.top_k)));
-        row.appendChild(el("td", { class: "tkr" }, r.rule));
-        row.appendChild(el("td", { class: "mid" }, String(r.n_picks)));
-        row.appendChild(el("td", { class: "pos" }, fmtPct0(r.win_rate)));
-        row.appendChild(el("td", { class: "pos" }, fmtPctSigned(r.median_pick_ret)));
-        row.appendChild(el("td", { class: "pos" }, fmtPct(r.cagr_dca)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct(r.cagr_spy_dca)));
+        row.appendChild(el("td", { class: "tkr" }, (r.period || "").replace(/^p\d_/, "").replace(/_/g, "-")));
+        row.appendChild(el("td", { class: "mid" }, String(r.n_months)));
+        row.appendChild(el("td", { class: cls(r.cagr_strat) }, fmtPct(r.cagr_strat)));
+        row.appendChild(el("td", { class: "mid" }, fmtPct(r.cagr_spy)));
+        row.appendChild(el("td", { class: cls(r.edge_pp) }, fmtPPSigned(r.edge_pp)));
         tb.appendChild(row);
       });
       t.appendChild(tb);
@@ -493,27 +422,147 @@
       return sec;
     }
 
-    function sweepSection(data) {
+    function generalisationSection(data) {
+      const rows = data.multi_universe_generalisation || [];
+      if (!rows.length) return el("div");
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Top sweep results (full window 2018-01 → 2024-12)"));
+      sec.appendChild(el("div", { class: "section-title" }, "Generalisation across universes"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "All 24 strategies × 5 K-values × 13 exit rules sorted by money-weighted CAGR. Single full-window backtest, no walk-forward. Held to evaluation date " + data.as_of + "."));
+        "Same v5 config (Chronos p70 filter + K=3 inv-vol cap=0.4, tight gate, 6m hold) re-run on 5 alternative universes. The Chronos filter is universe-agnostic alpha: v5 beats the v3 baseline on 5 of 6 universes including the broader 1833-ticker universe and the non-S&P 500 PIT cohort."));
+      const wrap = el("div", { class: "table-wrap" });
+      const UNIV_LABEL = {
+        "PIT_SP500": "PIT S&P 500",
+        "broader_1833": "Broader 1,833-ticker",
+        "non_SP500_PIT": "Non-S&P 500 PIT",
+        "random_500_seed1": "Random 500 (seed 1)",
+        "random_500_seed2": "Random 500 (seed 2)",
+        "random_500_seed3": "Random 500 (seed 3)",
+      };
+      const t = el("table");
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Universe", "Pool", "Full CAGR", "WF mean", "WF min", "WF max", "Edge vs SPY", "Sharpe", "MaxDD", "Beats SPY"]
+          .map(h => el("th", {}, h)))));
+      const tb = el("tbody");
+      rows.forEach(u => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "tkr" }, UNIV_LABEL[u.universe] || u.universe));
+        row.appendChild(el("td", { class: "mid" }, String(u.n_pool)));
+        row.appendChild(el("td", { class: cls(u.cagr_full) }, fmtPct(u.cagr_full)));
+        row.appendChild(el("td", { class: cls(u.wf_mean_cagr) }, fmtPct(u.wf_mean_cagr)));
+        row.appendChild(el("td", { class: cls(u.wf_min_cagr) }, fmtPct(u.wf_min_cagr)));
+        row.appendChild(el("td", { class: "pos" }, fmtPct(u.wf_max_cagr)));
+        row.appendChild(el("td", { class: cls(u.wf_mean_edge_pp) }, fmtPPSigned(u.wf_mean_edge_pp)));
+        row.appendChild(el("td", { class: "mid" }, fmtNum(u.sharpe, 2)));
+        row.appendChild(el("td", { class: "neg" }, fmtPct(u.max_dd, 0)));
+        row.appendChild(el("td", { class: "mid" }, `${u.wf_n_beats_spy}/10`));
+        tb.appendChild(row);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      sec.appendChild(wrap);
+      return sec;
+    }
+
+    function sensitivitySection(data) {
+      const rows = data.parameter_sensitivity || [];
+      if (!rows.length) return el("div");
+      const sec = el("section", { class: "section" });
+      sec.appendChild(el("div", { class: "section-title" }, "Parameter sensitivity"));
+      sec.appendChild(el("div", { class: "section-sub" },
+        "Each row perturbs ONE parameter while the others stay at the v5 winner config (Chronos p70 q=0.45, K=3, inv-vol cap=0.4, tight gate, h=6, cost=10bp). A broad plateau across reasonable perturbations confirms the result is not on a knife-edge."));
       const wrap = el("div", { class: "table-wrap" });
       const t = el("table");
       t.appendChild(el("thead", {}, el("tr", {},
-        ["Strategy", "K", "Exit", "n", "Win (raw)", "Win (bias-corr)", "Beat SPY", "CAGR", "Edge"].map(h => el("th", {}, h)))));
+        ["Param", "Value", "Full CAGR", "WF mean", "WF min", "Edge (pp)", "Beats SPY", "MaxDD"]
+          .map(h => el("th", {}, h)))));
       const tb = el("tbody");
-      (data.sweep_top40 || []).slice(0, 25).forEach(r => {
+      rows.forEach(s => {
         const row = el("tr");
-        row.appendChild(el("td", { class: "tkr" }, r.strategy));
-        row.appendChild(el("td", { class: "mid" }, String(r.top_k)));
-        row.appendChild(el("td", { class: "mid" }, r.exit));
-        row.appendChild(el("td", { class: "mid" }, String(r.n_picks)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct0(r.win_rate)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct0(r.win_rate_bias_corr)));
-        row.appendChild(el("td", { class: "mid" }, fmtPct0(r.beat_spy_rate)));
-        row.appendChild(el("td", { class: "pos" }, fmtPct(r.cagr_dca_portfolio)));
-        row.appendChild(el("td", { class: cls(r.edge_vs_spy_dca) }, fmtPctSigned(r.edge_vs_spy_dca)));
+        row.appendChild(el("td", { class: "tkr" }, s.param));
+        row.appendChild(el("td", { class: "mid" }, String(s.value)));
+        row.appendChild(el("td", { class: cls(s.cagr_full) }, fmtPct(s.cagr_full)));
+        row.appendChild(el("td", { class: cls(s.wf_mean_cagr) }, fmtPct(s.wf_mean_cagr)));
+        row.appendChild(el("td", { class: cls(s.wf_min_cagr) }, fmtPct(s.wf_min_cagr)));
+        row.appendChild(el("td", { class: cls(s.wf_mean_edge_pp) }, fmtPPSigned(s.wf_mean_edge_pp)));
+        row.appendChild(el("td", { class: "mid" }, `${s.wf_n_beats_spy}/10`));
+        row.appendChild(el("td", { class: "neg" }, fmtPct(s.max_dd, 0)));
+        tb.appendChild(row);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      sec.appendChild(wrap);
+      return sec;
+    }
+
+    function drawdownsSection(data) {
+      const rows = data.drawdowns || [];
+      if (!rows.length) return el("div");
+      const sec = el("section", { class: "section" });
+      sec.appendChild(el("div", { class: "section-title" }, "Drawdown ledger"));
+      sec.appendChild(el("div", { class: "section-sub" },
+        "Top peak-to-trough drawdowns of 5%+ in the v5 backtest. Each entry shows when the strategy peaked, when it bottomed, and when it fully recovered. The deepest is the GFC at -48%."));
+      const wrap = el("div", { class: "table-wrap" });
+      const t = el("table");
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Start", "Trough", "End", "Depth"].map(h => el("th", {}, h)))));
+      const tb = el("tbody");
+      rows.forEach(d => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "mid" }, d.start));
+        row.appendChild(el("td", { class: "mid" }, d.trough));
+        row.appendChild(el("td", { class: "mid" }, d.end));
+        row.appendChild(el("td", { class: "neg" }, `${d.depth_pct.toFixed(1)}%`));
+        tb.appendChild(row);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      sec.appendChild(wrap);
+      return sec;
+    }
+
+    function mostPickedSection(data) {
+      const rows = data.most_picked || [];
+      if (!rows.length) return el("div");
+      const sec = el("section", { class: "section" });
+      sec.appendChild(el("div", { class: "section-title" }, "Most-picked tickers"));
+      sec.appendChild(el("div", { class: "section-sub" },
+        "Tickers the v5 strategy selected most often across the 22-year backtest. NVDA dominates (114 months) but the Chronos confirmation filter slightly tempers the concentration vs the v3 baseline (120 months)."));
+      const wrap = el("div", { class: "table-wrap" });
+      const t = el("table");
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Ticker", "Months picked"].map(h => el("th", {}, h)))));
+      const tb = el("tbody");
+      rows.forEach(p => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "tkr" }, p.ticker));
+        row.appendChild(el("td", { class: "mid" }, String(p.n_months_picked)));
+        tb.appendChild(row);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      sec.appendChild(wrap);
+      return sec;
+    }
+
+    function biasSweepSection(data) {
+      const rows = data.bias_sensitivity || [];
+      if (!rows.length) return el("div");
+      const sec = el("section", { class: "section" });
+      sec.appendChild(el("div", { class: "section-title" }, "Survivorship-bias sensitivity"));
+      sec.appendChild(el("div", { class: "section-sub" },
+        "Monte-Carlo synthetic-delisting overlay. For each pick made at T held for Y months, we draw a Bernoulli with annual rate α and wipe the position to -100% with probability 1-(1-α)^(Y/12). 200 MC iterations; reported as the median CAGR. α=4%/yr is the empirical large-cap delisting rate."));
+      const wrap = el("div", { class: "table-wrap" });
+      const t = el("table");
+      t.appendChild(el("thead", {}, el("tr", {},
+        ["Annual α", "Stratified median", "p10", "p90", "Uniform median"].map(h => el("th", {}, h)))));
+      const tb = el("tbody");
+      rows.forEach(r => {
+        const row = el("tr");
+        row.appendChild(el("td", { class: "mid" }, `${(r.base_rate_annual * 100).toFixed(0)}%`));
+        row.appendChild(el("td", { class: cls(r.stratified_cagr_median) }, fmtPct(r.stratified_cagr_median)));
+        row.appendChild(el("td", { class: "mid" }, fmtPct(r.stratified_cagr_p10)));
+        row.appendChild(el("td", { class: "mid" }, fmtPct(r.stratified_cagr_p90)));
+        row.appendChild(el("td", { class: cls(r.uniform_cagr_median) }, fmtPct(r.uniform_cagr_median)));
         tb.appendChild(row);
       });
       t.appendChild(tb);
@@ -524,29 +573,32 @@
 
     function pickLogSection(data) {
       const sec = el("section", { class: "section" });
-      sec.appendChild(el("div", { class: "section-title" }, "Full pick log — Pullback-In-Winner k=1"));
+      const log = data.pick_log || [];
+      sec.appendChild(el("div", { class: "section-title" }, "Full pick log — v5 PIT S&P 500"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "Every pick this strategy made, with the entry price and what happened next. Auditable."));
+        `Every pick the v5 strategy made since 2003, with entry/exit prices, the 6-month return, and SPY comparison. Auditable.`));
       const det = el("details", { class: "accordion" });
-      det.appendChild(el("summary", {}, "Show 96 historical picks"));
+      det.appendChild(el("summary", {}, `Show all ${log.length} historical picks`));
       const body = el("div", { class: "accordion-body" });
       const wrap = el("div", { class: "table-wrap" });
       const t = el("table");
       t.appendChild(el("thead", {}, el("tr", {},
-        ["Asof", "Ticker", "Entry $", "1y pullback", "Trend 5y", "Recovery", "Hold-fwd %", "Fixed-3y %", "Fixed-5y %"]
+        ["Asof", "Ticker", "Entry $", "Exit date", "Exit $", "Status", "Return", "SPY return", "Beat SPY"]
           .map(h => el("th", {}, h)))));
       const tb = el("tbody");
-      (data.pick_log || []).forEach(r => {
+      [...log].sort((a, b) => a.asof < b.asof ? 1 : -1).forEach(r => {
         const row = el("tr");
+        const isHeld = r.status !== "exited";
         row.appendChild(el("td", { class: "mid" }, r.asof));
         row.appendChild(el("td", { class: "tkr" }, r.ticker));
-        row.appendChild(el("td", { class: "mid" }, fmtPx(r.price)));
-        row.appendChild(el("td", { class: cls(r.pullback_1y) }, fmtPctSigned(r.pullback_1y)));
-        row.appendChild(el("td", { class: "mid" }, fmtNum(r.trend_health_5y, 2)));
-        row.appendChild(el("td", { class: "mid" }, r.recovery_rate == null ? "—" : fmtPct0(r.recovery_rate)));
-        row.appendChild(el("td", { class: cls(r.ret__hold_forever) }, r.ret__hold_forever == null ? "—" : fmtPctSigned(r.ret__hold_forever)));
-        row.appendChild(el("td", { class: cls(r.ret__fixed_3y) }, r.ret__fixed_3y == null ? "—" : fmtPctSigned(r.ret__fixed_3y)));
-        row.appendChild(el("td", { class: cls(r.ret__fixed_5y) }, r.ret__fixed_5y == null ? "—" : fmtPctSigned(r.ret__fixed_5y)));
+        row.appendChild(el("td", { class: "mid" }, fmtPx(r.entry_px ?? r.price)));
+        row.appendChild(el("td", { class: "mid" }, r.exit_date || (isHeld ? "open" : "—")));
+        row.appendChild(el("td", { class: "mid" }, isHeld ? "—" : fmtPx(r.exit_px)));
+        row.appendChild(el("td", { class: isHeld ? "pos" : "mid" }, isHeld ? "held" : "exited"));
+        row.appendChild(el("td", { class: cls(r.ret_strat ?? r.return) }, r.ret_strat != null ? fmtPctSigned(r.ret_strat) : (r.return != null ? fmtPctSigned(r.return) : "—")));
+        row.appendChild(el("td", { class: cls(r.ret_spy) }, r.ret_spy != null ? fmtPctSigned(r.ret_spy) : "—"));
+        const beat = r.beat_spy === true || r.beat_spy === 1;
+        row.appendChild(el("td", { class: isHeld ? "mid" : (beat ? "pos" : "neg") }, isHeld ? "—" : (beat ? "Yes" : "No")));
         tb.appendChild(row);
       });
       t.appendChild(tb);
@@ -560,64 +612,98 @@
     function methodologySection() {
       const sec = el("section", { class: "section" });
       sec.appendChild(el("div", { class: "section-title" }, "Methodology"));
-      sec.appendChild(makeAccordion("Universe & data", `
-        964 tickers from the existing daily-stock-guide data set, with prices from
-        2014-09-22 through 2026-03-20. Excluded from picking: SPY, QQQ, IWM, VTI, RSP,
-        DIA, BTC-USD, ETH-USD (benchmarks, ETFs, crypto). SPY's local snapshot was
-        backfilled from yfinance and spliced via local-anchored scaling so adjusted
-        prices stay consistent.`));
-      sec.appendChild(makeAccordion("Point-in-time eligibility", `
-        At each month-end T, a ticker is eligible for picking only if it has at
-        least 504 trading days of valid history strictly preceding T. Tickers that
-        IPO'd later become eligible later — e.g. AFRM appears starting Jan 2023,
-        DJT starting Sept 2023. There is no future leakage.`));
-      sec.appendChild(makeAccordion("Survivorship-bias correction", `
-        The local universe is the set of names that survived to today, so it
-        over-represents winners. We don't have a delisted-inclusive dataset.
-        Math overlay: for each pick made at T held for Y years, with probability
-        p = 1 − (1 − α)^Y where α = 4 %/yr (US-equity base delisting rate),
-        replace its forward return with -100 %. Both the raw (survivor-only) and
-        bias-corrected (Monte-Carlo, 200 iterations, median) numbers are reported.`));
-      sec.appendChild(makeAccordion("Walk-forward design", `
-        Eight TRAIN/TEST splits: three expanding-window splits (TRAIN ends 2020,
-        2021, 2022), four rolling 3y/1y splits, and one strict last-block holdout.
-        For each split, we re-evaluate every (strategy, K, exit) combo that ranked
-        in the TRAIN top-20 on the corresponding TEST window. Strategies that
-        ranked high on TRAIN but collapsed on TEST (e.g. trend_continuation:
-        rank 1 on TRAIN 2018-2020, ~0% CAGR on TEST 2021-2024) are exposed and
-        excluded from the recommendation.`));
-      sec.appendChild(makeAccordion("Money-weighted CAGR (XIRR)", `
-        For each strategy we deposit $1 on every month-end and allocate equally
-        among the K picks. Each position is held under the chosen exit rule
-        (hold-forever, fixed-1y/2y/3y/5y, trailing-25/35/50, hard-stop-30,
-        trail+fixed combo, take-profit-100/200). Final value is summed across
-        positions; CAGR is the IRR of the deposit + valuation cash-flow stream
-        (Newton-Raphson, bisection fallback). SPY DCA is computed identically
-        with $1 on each month-end going to SPY.`));
-      sec.appendChild(makeAccordion("Why we cannot honestly hit 100% / 50%", `
-        100% win rate: every honest strategy makes some picks that never recover
-        before the evaluation date. Recent picks (2024+) need more time to mature.
-        Bubble-era picks (2021) include names that may be permanently revalued
-        lower. Bias-correction adds another ~9 points of "phantom" delisting losses.
-        50% CAGR: the eight-split-mean TEST CAGR for the top strategy is 88.8%,
-        but its min across splits is 10.2%. The full-sample backtest CAGR is 44.5%
-        — well above 25% but not 50%.`));
+
+      sec.appendChild(makeAccordion("Universe — true point-in-time S&P 500", `
+        At each rebalance month-end T we use the actual S&P 500 membership on T —
+        not today's index. The historical membership panel is built from 2,595 daily
+        snapshots of S&P 500 constituents (1996–2019) plus 110 explicit add/remove
+        change events from 2019 onward. 985 unique tickers were S&P 500 members at
+        some point; ~500 are members in any given month. The <em>live</em> universe
+        is the current iShares Core S&P 500 ETF (IVV) holdings, which the monthly
+        cron downloads from the public iShares CSV endpoint and backfills via
+        yfinance for any new constituents.`));
+
+      sec.appendChild(makeAccordion("Features — 67 price-only signals", `
+        For every eligible ticker at each month-end T we compute 67 features derived
+        only from prior price history: momentum (12-1, 6-1, 3-1, 1m, 12m), trend
+        (SMA50/100/200 slopes and distances), pullback depth, recovery rate,
+        drawdown statistics, RSI(14/28), volatility (1m/3m/1y/3y), Sharpe-like
+        ratios, and 5-year trend health. Every feature is cross-sectionally ranked
+        within the PIT S&P 500 cohort that month so the model sees relative,
+        regime-invariant inputs.`));
+
+      sec.appendChild(makeAccordion("Primary model — Gradient Boosted Trees on multi-horizon rank", `
+        We train two LightGBM regressors per January-on-January walk-forward fold:
+        one on the 3-month forward rank target and one on the 6-month forward rank
+        target. At inference the final score is the mean of the two predicted ranks
+        (the <code>ml_3plus6</code> scorer). Each model is re-fit annually using
+        all data older than the rebalance date minus the 7-month embargo, so there
+        is no leakage from the test window.`));
+
+      sec.appendChild(makeAccordion("Confirmation filter — HuggingFace Chronos-bolt-tiny", `
+        Amazon Chronos-bolt-tiny is a 9M-parameter zero-shot time-series foundation
+        model trained on millions of generic time series. At each rebalance we feed
+        each S&P 500 candidate's trailing 252-day daily price history into Chronos
+        and extract the 70th-percentile of its 64-day-ahead probabilistic forecast.
+        We then cross-sectionally rank that p70 within the cohort. Only candidates
+        whose Chronos p70 rank is ≥ 0.45 (upper 55%) are eligible for the GBM
+        top-K selection. The model never sees market data during training, so the
+        signal is independent of any tabular feature in the GBM.`));
+
+      sec.appendChild(makeAccordion("Regime gate — crash-aware cash trigger", `
+        The whole portfolio drops to cash next month if either: SPY's trailing
+        21-day return ≤ −8%, or SPY's trailing 6-month return ≤ −5% AND
+        21-day return ≤ −3%. A "recovery" regime triggers when SPY has been
+        below the 200dma for ≥ 40 trading days and just crossed back above with
+        positive 21-day momentum. Otherwise the gate stays in "normal" or "bull"
+        regime and the strategy stays fully invested.`));
+
+      sec.appendChild(makeAccordion("Sizing — inverse-volatility weighted with 40% cap", `
+        Once the top 3 picks are chosen from the Chronos-filtered pool, weights are
+        set to 1/vol_1y, capped at 40% per name and renormalised. This down-weights
+        the highest-volatility names (often the model's hot favourites in late-cycle
+        rallies) and gives more weight to steadier compounders. Empirically:
+        K=3 inv-vol cap=0.4 generalises better than equal weight or K=2 — it loses
+        a little WF mean CAGR on PIT S&P 500 vs K=2 but wins on the broader and
+        non-S&P 500 universes, indicating less single-name concentration risk.`));
+
+      sec.appendChild(makeAccordion("Walk-forward design — 10 splits, 7-month embargo", `
+        Ten OOS splits: three expanding-window splits (A1 TRAIN ≤ 2010 TEST 2011-18,
+        A2 TRAIN ≤ 2013 TEST 2014-19, A3 TRAIN ≤ 2016 TEST 2017-21), six
+        3-year rolling splits (R1 GFC 2007-09, R2 2011-13, R3 2014-16, R4 2017-19,
+        R5 COVID 2020-22, R6 AI rally 2023-25), and a strict last-block holdout
+        (STRICT 2022-25 with TRAIN ≤ 2021). The model is fit only on TRAIN data
+        with a 7-month embargo between TRAIN-end and TEST-start so no overlapping
+        feature horizons leak. All 10/10 splits are positive and beat SPY.`));
+
+      sec.appendChild(makeAccordion("Survivorship bias — Monte-Carlo synthetic delisting", `
+        Even though the universe is true PIT S&P 500, the underlying yfinance
+        price panel can over-represent surviving large caps for pre-2010 names.
+        We overlay a Monte-Carlo synthetic delisting: for each pick at T held
+        for Y months, we draw a Bernoulli with probability 1−(1−α)^(Y/12) and on
+        a hit replace the forward return with −100%. α=4%/yr is the empirical
+        large-cap historical rate; we also stress α at 0/2/4/8/12/16/20%/yr.
+        At α=4% the median CAGR is 36.24% — still +24pp over SPY.`));
+
+      sec.appendChild(makeAccordion("Cron & data pipeline", `
+        Monthly GitHub Actions workflow (<code>.github/workflows/monthly-dca-cron.yml</code>)
+        runs on the 1st of each month. Pipeline:
+        (1) IVV holdings refresh (<code>load_ivv_holdings.py</code>),
+        (2) yfinance backfill for any missing constituents,
+        (3) panel & features rebuild,
+        (4) PIT membership update,
+        (5) Chronos incremental scoring (idempotent — skipped if asof already
+        in <code>ml_preds_chronos.parquet</code>),
+        (6) v5 simulator and <code>data.json</code> emit.`));
+
       sec.appendChild(makeAccordion("Reproducibility", `
-        All caches (panel parquet, per-month feature parquets, forward returns,
-        sweep/aggregate CSVs, pick logs) are committed to the repo at
-        experiments/monthly_dca/cache/. To re-run end-to-end:
-        load_data.py → cache_features.py → extra_features.py → forward_returns.py →
-        run_oracle_and_sweep.py → run_pro.py → walk_forward_v2.py →
-        save_winning_picks.py → build_webapp_json.py.
-        Subsequent runs use the caches and finish in seconds.`));
-      sec.appendChild(makeAccordion("Source code", `
-        See experiments/monthly_dca/ in the repo:
-        load_data.py (panel build),
-        backtester.py (reference engine), fast_engine.py (fast scoring),
-        strategies_fast.py (15 base strategies), strategies_pro.py (9 tier-2),
-        deepdive.py (per-year, ensembles, bias-corrected CAGR),
-        walk_forward_v2.py (8-split aggregate). Full report:
-        experiments/monthly_dca/REPORT.md.`));
+        All caches (panel parquet, per-month feature parquets, Chronos predictions,
+        sweep/aggregate CSVs, pick logs) are committed to the repo. Production
+        builder: <code>experiments/monthly_dca/v5/build_webapp_v5_pit.py</code>.
+        Cron orchestrator: <code>experiments/monthly_dca/v5/cron_daily_refresh_v5.py</code>.
+        Full reports: <code>experiments/monthly_dca/v5/REPORT_FINAL.md</code> and
+        <code>REPORT_FINETUNE.md</code>.`));
+
       return sec;
     }
     function makeAccordion(title, body) {

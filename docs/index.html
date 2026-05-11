@@ -164,7 +164,7 @@
       <details class="accordion">
         <summary>Other strategies & full research</summary>
         <div class="accordion-body">
-          <p>Full research notes, sweeps, sensitivity, and reproduction guide live in the <code>experiments/monthly_dca/v2/</code> directory of the GitHub repo.</p>
+          <p>Full v5 research notes (sweeps, sensitivity, Chronos fine-tune, generalisation), the production simulator, and reproduction guide live in the <code>experiments/monthly_dca/v5/</code> directory of the GitHub repo. The v2/v3/v4 baselines remain in their respective directories for comparison.</p>
         </div>
       </details>
     </div>
@@ -173,7 +173,7 @@
 <section id="backtest" class="bt-section">
     <div class="section-inner">
       <h2 class="section-h2">Backtest — $1 in 2003, compounded</h2>
-      <p class="section-sub">Start with $1 in September 2003. Run the strategy through April 2026. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months).</p>
+      <p class="section-sub">Start with $1 in September 2003. Run the strategy through the most recent month-end. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months) and the HuggingFace Chronos zero-shot model only sees prices up to the rebalance date.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
@@ -197,7 +197,7 @@
       <div id="horizonsSection" class="horizons-grid"></div>
 
       <h3 class="section-h3">Year-by-year</h3>
-      <p class="section-sub">Compound return for each calendar year, strategy vs SPY. The strategy beats SPY in 18 of 23 years; positive in 21 of 23. The single year 2009 (+625%) is the largest contributor; ex-2009, the strategy still produces 28% calendar-year CAGR.</p>
+      <p class="section-sub">Compound return for each calendar year, strategy vs SPY. The strategy beats SPY in 17 of 24 years and is positive in 19 of 24. 2003 and 2026 are partial years; restricted to full calendar years the strategy beats SPY in 17 of 22 and is positive in 18 of 22. 2009 (+711%, GFC-recovery basket) is the largest single contributor.</p>
       <div id="btYearGrid" class="year-grid"></div>
     </div>
   </section>
@@ -323,7 +323,7 @@
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
-        <span class="footer-text">Updated once daily after market close, New York time.</span>
+        <span class="footer-text">Basket refreshed monthly. The v5 strategy rebalances every 6 months on a month-end.</span>
         <span class="footer-text footnote-text">Past performance does not predict future results. Research, not financial advice.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>
