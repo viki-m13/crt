@@ -1,0 +1,17 @@
+exp_id: exp_002_vol_targeting
+hypothesis: >
+  Volatility targeting: scale position size inversely to realized portfolio
+  volatility to target 15% annual vol. Remaining capital earns T-bill rate.
+  Hypothesis: same picks as v3 baseline but dramatically reduced drawdowns
+  and higher Sharpe. CAGR may decrease ~5-10pp but Sharpe should 2x.
+base_strategy: rung5a_mlv3_K3_h6_tight  # CAGR=40.7%, Sharpe=0.863
+vol_targets: [0.10, 0.12, 0.15, 0.18, 0.20, 0.25]
+lookback_months: [3, 6, 12]
+assumptions:
+  - Realized vol estimated from monthly returns over lookback_months window
+  - Position scaling: exposure = vol_target / realized_vol, capped at 1.0
+  - Unconstrained: can scale DOWN when vol is high (no leverage allowed)
+  - T-bill yield: 4% annual on undeployed capital
+  - All other parameters identical to v3 baseline (K=3, h=6m, tight gate)
+research_window: "2003-09-30 to 2024-04-30"
+lockbox: "2024-05-01 to 2026-04-30 (SEALED)"
