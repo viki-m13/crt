@@ -336,36 +336,60 @@ def run_sleeve_sim(daily_prices: pd.DataFrame,
                      monthly_returns: pd.DataFrame,
                      asofs: list[pd.Timestamp]) -> tuple[list[dict], list[dict]]:
     """For each month-end in asofs, compute the sleeve's picks and returns.
-    Returns (monthly_log, sleeve_pick_log)."""
+    Returns (monthly_log, sleeve_pick_log).
+
+    NO-LOOK-AHEAD SEMANTICS:
+    Picks decided at end of month m are the BASKET for month m+1's return.
+    Returns at iteration m are applied to the basket CARRIED from m-1.
+    """
     monthly_log = []
     sleeve_pick_log = []
-    prev_picks: list[str] = []
-    cost_per_rotation = 10e-4  # 10 bps when sleeve composition changes
+    cost_per_rotation = 10e-4
+    carried_picks: list[str] = []
+    carried_turnover = 0.0  # cost to charge when carried-basket return is realised
+    mret_idx = monthly_returns.index
     for i, m in enumerate(asofs):
-        picks = compute_sleeve_picks(daily_prices, m)
+        # 1) Apply month m's return to the carried basket from m-1
+        pos = mret_idx.searchsorted(m, side="right") - 1
+        m_idx = mret_idx[pos] if pos >= 0 else None
+        if m_idx is None or abs((m_idx - m).days) > 7:
+            m_idx = None
         ret_m = 0.0
-        if picks:
+        if carried_picks and m_idx is not None:
             rs = []
-            for tk in picks:
-                if (tk in monthly_returns.columns and m in monthly_returns.index
-                        and pd.notna(monthly_returns.at[m, tk])):
-                    rs.append(float(monthly_returns.at[m, tk]))
+            for tk in carried_picks:
+                if (tk in monthly_returns.columns
+                        and pd.notna(monthly_returns.at[m_idx, tk])):
+                    rs.append(float(monthly_returns.at[m_idx, tk]))
             ret_m = float(np.mean(rs)) if rs else 0.0
-            # Cost on turnover when composition changes
-            if prev_picks and set(picks) != set(prev_picks):
-                turnover = len(set(picks) ^ set(prev_picks)) / (2 * SLEEVE_TOP_N)
-                ret_m -= cost_per_rotation * turnover
-                sleeve_pick_log.append({
-                    "asof": str(m.date()),
-                    "kind": "sleeve_rotation",
-                    "previous_holdings": ",".join(prev_picks),
-                    "new_holdings": ",".join(picks),
-                    "turnover": float(turnover),
-                })
+            if carried_turnover > 0:
+                ret_m -= cost_per_rotation * carried_turnover
+
+        # 2) Decide NEW picks at end of m (these become the basket for m+1)
+        new_picks = compute_sleeve_picks(daily_prices, m)
+
+        # Log THIS month's return labelled with the carried basket
         monthly_log.append({"date": str(m.date()),
-                             "sleeve_picks": ",".join(picks) if picks else "",
+                             "sleeve_picks": ",".join(carried_picks) if carried_picks else "",
+                             "next_sleeve_picks": ",".join(new_picks) if new_picks else "",
                              "ret_sleeve": ret_m})
-        prev_picks = picks
+
+        # 3) Determine turnover for the next iteration's cost charge
+        if new_picks and carried_picks and set(new_picks) != set(carried_picks):
+            turnover = len(set(new_picks) ^ set(carried_picks)) / (2 * SLEEVE_TOP_N)
+            sleeve_pick_log.append({
+                "asof": str(m.date()),
+                "kind": "sleeve_rotation",
+                "previous_holdings": ",".join(carried_picks),
+                "new_holdings": ",".join(new_picks),
+                "turnover": float(turnover),
+            })
+            carried_turnover = turnover
+        elif new_picks and not carried_picks:
+            carried_turnover = 1.0  # initial entry cost
+        else:
+            carried_turnover = 0.0
+        carried_picks = new_picks
     return monthly_log, sleeve_pick_log
 
 
@@ -413,17 +437,21 @@ def main():
     daily_prices = pd.read_parquet(CACHE / "prices_extended.parquet")
     sim_asofs = [pd.Timestamp(r["date"]) for r in rets_log_v5]
     sleeve_log, sleeve_pick_log = run_sleeve_sim(daily_prices, monthly_returns, sim_asofs)
+    # The webapp's "current basket" must show what the USER should be HOLDING
+    # right now — i.e., the picks decided at the most recent month-end, which
+    # under no-look-ahead semantics are stored in `next_sleeve_picks` of the
+    # last log entry (the basket that takes effect for the next month).
     current_sleeve_picks = []
     previous_sleeve_picks = []
     if sleeve_log:
         last_sleeve = sleeve_log[-1]
-        if last_sleeve["sleeve_picks"]:
-            current_sleeve_picks = last_sleeve["sleeve_picks"].split(",")
-        if len(sleeve_log) >= 2:
-            prev = sleeve_log[-2]
-            if prev["sleeve_picks"]:
-                previous_sleeve_picks = prev["sleeve_picks"].split(",")
-    # Compute sleeve buy/hold/sell deltas
+        if last_sleeve.get("next_sleeve_picks"):
+            current_sleeve_picks = last_sleeve["next_sleeve_picks"].split(",")
+        # "Previous" = what we were holding through the most recent month,
+        # i.e., the carried picks in the last log entry's `sleeve_picks` field.
+        if last_sleeve.get("sleeve_picks"):
+            previous_sleeve_picks = last_sleeve["sleeve_picks"].split(",")
+    # Compute sleeve buy/hold/sell deltas (NEW vs PREVIOUS basket)
     cur_set = set(current_sleeve_picks)
     prev_set = set(previous_sleeve_picks)
     sleeve_to_hold = sorted(cur_set & prev_set)

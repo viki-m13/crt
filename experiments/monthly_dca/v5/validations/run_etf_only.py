@@ -45,45 +45,73 @@ def run_etf_only(daily_prices: pd.DataFrame,
     """
     cf = cost_bps / 1e4
     available = [a for a in assets if a in daily_prices.columns]
-    prev_picks: list[str] = []
     equity = 1.0
     log = []
     rotations = 0
     cash_months = 0
     mret_idx = monthly_returns.index
+
+    # NO-LOOK-AHEAD SEMANTICS:
+    # At iteration i with asof m, we first apply month m's return to the
+    # basket carried from iteration i-1 (decided at month m-1). Then we
+    # compute picks using prices up to m, which become the basket for
+    # month m+1's return at iteration i+1. The basket formed at m never
+    # receives credit for m's own return.
+    carried_picks: list[str] = []
+    carried_basket_was_rotation = False  # cost only if this carried basket replaced a prior one
+
     for i, m in enumerate(asofs):
-        px = daily_prices.loc[:m, available].dropna(how="all")
-        picks = []
-        if len(px) >= lookback_d:
-            ret_lookback = px.iloc[-1] / px.iloc[-lookback_d] - 1
-            ret_lookback = ret_lookback[ret_lookback > 0]
-            if len(ret_lookback) > 0:
-                picks = ret_lookback.sort_values(ascending=False).head(top_n).index.tolist()
-        # Resolve the trading-day index entry for this calendar month-end m
+        # 1) Apply month m's realised return to the basket carried from m-1
         pos = mret_idx.searchsorted(m, side="right") - 1
         m_idx = mret_idx[pos] if pos >= 0 else None
-        # Only accept if the trading-day asof is within 7 days of m
         if m_idx is None or abs((m_idx - m).days) > 7:
             m_idx = None
-        if picks and m_idx is not None:
+        if carried_picks and m_idx is not None:
             rs = []
-            for tk in picks:
+            for tk in carried_picks:
                 if (tk in monthly_returns.columns
                         and pd.notna(monthly_returns.at[m_idx, tk])):
                     rs.append(float(monthly_returns.at[m_idx, tk]))
             ret_m = float(np.mean(rs)) if rs else 0.0
-            if prev_picks and set(picks) != set(prev_picks):
-                turnover = len(set(picks) ^ set(prev_picks)) / (2 * top_n)
-                ret_m -= cf * turnover
-                rotations += 1
+            if carried_basket_was_rotation:
+                # Pay transaction cost on the rotation that created this basket
+                ret_m -= cf * carried_basket_was_rotation  # turnover * cf
+                carried_basket_was_rotation = 0
         else:
             ret_m = 0.0
-            cash_months += 1
+            if not carried_picks:
+                cash_months += 1
+
         equity *= (1 + ret_m)
+
+        # 2) Now decide NEW picks at month-end m for next iteration's return
+        px = daily_prices.loc[:m, available].dropna(how="all")
+        new_picks = []
+        if len(px) >= lookback_d:
+            ret_lookback = px.iloc[-1] / px.iloc[-lookback_d] - 1
+            ret_lookback = ret_lookback[ret_lookback > 0]
+            if len(ret_lookback) > 0:
+                new_picks = ret_lookback.sort_values(ascending=False).head(top_n).index.tolist()
+
+        # Log THIS month-end with the basket that produced m's return
         log.append({"date": str(m.date()), "ret_m": ret_m, "equity": equity,
-                     "picks": ",".join(picks) if picks else "",
+                     "picks": ",".join(carried_picks) if carried_picks else "",
+                     "next_picks": ",".join(new_picks) if new_picks else "",
                      "n_rotations": rotations})
-        prev_picks = picks
+
+        # 3) Carry the new picks for the next iteration
+        if new_picks and carried_picks and set(new_picks) != set(carried_picks):
+            turnover = len(set(new_picks) ^ set(carried_picks)) / (2 * top_n)
+            carried_basket_was_rotation = turnover
+            rotations += 1
+        elif new_picks and not carried_picks:
+            # Initial entry — also a rotation
+            carried_basket_was_rotation = 1.0
+            rotations += 1
+        else:
+            carried_basket_was_rotation = 0
+        carried_picks = new_picks
+
     return {"log": log, "n_rotations": rotations, "cash_months": cash_months}
 
 
