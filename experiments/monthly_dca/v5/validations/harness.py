@@ -72,6 +72,25 @@ class HarnessData:
     spy_features: pd.DataFrame  # monthly index, columns include spy_ret_21d, spy_mom_*
     sector_map: dict         # ticker -> GICS sector (best-effort, from IVV)
     asofs: list              # sorted month-ends covering the full range
+    features_cache: dict = None  # lazy asof->DataFrame; populated on demand
+
+    def features(self, asof: pd.Timestamp) -> pd.DataFrame | None:
+        """Lazy-load the per-stock features parquet for a given asof.
+
+        Each parquet at cache/features/<YYYY-MM-DD>.parquet has tickers
+        as index and 79 columns (momentum, vol, trend, quality, etc.).
+        """
+        if self.features_cache is None:
+            self.features_cache = {}
+        if asof in self.features_cache:
+            return self.features_cache[asof]
+        path = CACHE / "features" / f"{asof.strftime('%Y-%m-%d')}.parquet"
+        if not path.exists():
+            self.features_cache[asof] = None
+            return None
+        df = pd.read_parquet(path)
+        self.features_cache[asof] = df
+        return df
 
 
 def load_all() -> HarnessData:
