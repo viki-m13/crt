@@ -4,6 +4,38 @@ Date: 2026-05-10. Branch: `claude/rebuild-stock-selection-2qHxY`.
 Engine: `experiments/monthly_dca/v6/lib_engine.py` (parity with deployed v3).
 Driver: `experiments/monthly_dca/v8/run_validation_gauntlet.py`.
 
+> **2026-05-11 update — PIT survivorship correction**
+>
+> All headline numbers below were computed on the v2 panel which was
+> missing **374 of the 985 historical PIT S&P 500 tickers** (51%
+> coverage in 2003, 96% in 2025). Acquired large-caps (AGN, ANTM,
+> ABMD, CELG, ATVI, AET, …) were absent from the universe and could
+> not be picked.
+>
+> The augmented panel (`data/sp500_pit/`, 161 backfilled names, 72%
+> coverage in 2003) was re-run through the full pipeline. Empirical
+> deltas to the deployed strategies:
+>
+> | | Original (biased) | Augmented (PIT) | Δ |
+> |---|---:|---:|---:|
+> | **v5-winner WF mean CAGR** | **47.16%** | **32.68%** | **-14.48pp** |
+> | v5-winner Full CAGR | 43.86% | 32.92% | -10.94pp |
+> | v5-winner WF beats SPY | 10/10 | 8/10 | -2 |
+> | v3-winner WF mean CAGR | 42.80% | 25.78% | -17.02pp |
+> | v3-winner Full CAGR | 39.77% | 31.81% | -7.96pp |
+>
+> The exp_02 winner config below was NOT re-run on the augmented
+> panel (k=1 + v6 simulator); the closest comparable is deployed
+> v5-winner (k=3, with Chronos), which lands at WF mean **32.68%**.
+> Assuming exp_02 drops by a similar 14-17pp from its 50.16% claim,
+> the PIT-honest exp_02 WF mean is plausibly in the **33-36% range**
+> — still above the deployed v5 and still strong, but materially
+> below the headline 50.16%.
+>
+> See [`data/sp500_pit/README.md`](../data/sp500_pit/README.md) and
+> [`experiments/monthly_dca/v5/spx_pit/REPORT.md`](../experiments/monthly_dca/v5/spx_pit/REPORT.md)
+> for full methodology and per-split numbers.
+
 ## Winner config
 
 ```python

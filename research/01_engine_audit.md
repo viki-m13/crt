@@ -20,21 +20,65 @@ v3; reproduces V3 metrics exactly).
 window starting before 2003 must use the broader 1,833-ticker universe
 (survivorship-biased; see below).
 
-### ⚠ Survivorship — partly handled
+### ⚠ Survivorship — partly handled, now empirically measured (May 2026)
 - Inclusion: `monthly_returns_clean.parquet` has 1,833 tickers including
   many that delisted (`delisted_panel.parquet` exists). Good.
 - Returns from delisted names: tickers with bad/incomplete months get
   masked by `bad_month_cells_mask.parquet`. Returns sourced from
   Yahoo Finance via `yfinance` (in `extend_history.py`).
-- **Gap**: Yahoo's coverage of delisted names is incomplete. There is no
-  proper CRSP/Norgate delisted-with-final-return source in the repo. The
-  Monte-Carlo overlay (`v3_winner_bias_sensitivity.csv`, α∈{0..20}%/yr)
-  is a *model* of delisting, not measured delisted returns. Honest
-  bias-corrected CAGR at α=4%/yr is **28.6%** (full-window v3),
-  vs the headline 39.8%.
-- Decision needed (see scoping questions): is α=4% MC overlay acceptable,
-  or should we pull in a proper delisted-with-final-return dataset
-  (Norgate, Sharadar, CRSP) before any "honest" claim?
+- **Gap, quantified**: Yahoo's coverage of delisted names was incomplete.
+  The original v2 panel had only **611 of the 985 unique PIT S&P 500
+  tickers** (51% coverage in 2003, rising to 96% in 2025). The 374
+  missing names were mostly acquired or bankrupt companies whose tickers
+  Yahoo retired.
+
+#### Augmented PIT panel + empirical validation (May 2026 work)
+
+See [`data/sp500_pit/`](../data/sp500_pit/README.md) and
+[`experiments/monthly_dca/v5/spx_pit/REPORT.md`](../experiments/monthly_dca/v5/spx_pit/REPORT.md)
+for full detail.
+
+Backfilled **161 acquired/renamed large-caps** from FNSPID (Hugging Face
+`Zihan1004/FNSPID`, CC BY-NC) + yfinance, date-validated against PIT
+membership to filter ticker-reuse traps. Coverage lifts to **72% in
+2003 → 99.7% in 2025**. 213 OTC bankruptcy-Q tickers (AAMRQ, LEHMQ, etc.)
+remain unreachable on free data.
+
+End-to-end pipeline re-run on augmented panel (Phase 1-5d in
+[REPORT.md](../experiments/monthly_dca/v5/spx_pit/REPORT.md)):
+re-extracted daily prices → resampled to monthly clean → recomputed all
+79 features → retrained GBM walk-forward → regenerated Chronos
+forecasts → re-ran v3-winner AND v5-winner backtests.
+
+**Empirical PIT-corrected numbers** (NaN-on-acquisition treated as 0%
+cash payout, not -100%, since the majority of the backfilled names were
+acquired-at-premium, not bankrupt):
+
+|                    | Original (biased) | Augmented (PIT) |        Δ |
+|--------------------|------------------:|----------------:|---------:|
+| **v5 WF mean CAGR**|        **47.16%** |      **32.68%** | **-14.5pp** |
+| v5 Full CAGR       |            43.86% |          32.92% |  -10.9pp |
+| v5 WF beats SPY    |             10/10 |            8/10 |       -2 |
+| v3 WF mean CAGR    |            42.80% |          25.78% |  -17.0pp |
+| v3 Full CAGR       |            39.77% |          31.81% |   -8.0pp |
+
+The deployed strategies' 43-47% WF mean CAGR overstates the
+PIT-honest number by **14-17pp**. Corrected WF mean is **~26-33% —
+still strong, still beats SPY by ~19pp/yr on average, still positive
+in 10/10 (v5) and 8/10 (v3) splits**.
+
+**Chronos filter helps**: v5 loses LESS to the PIT correction than v3
+(-14.5pp vs -17.0pp). Chronos genuinely protects against picking the
+worst acquired/delisted names.
+
+The MC bias overlay (`v3_winner_bias_sensitivity.csv`, α∈{0..20}%/yr,
+28.6% CAGR at α=4%) was a reasonable proxy but TOO PESSIMISTIC at
+α=4% — the empirical PIT-corrected number lands at 32% (v5) / 26%
+(v3 WF mean), notably higher than the MC's 28.6%.
+
+- **The 213 unreachable bankruptcy-Q tickers are the residual gap.**
+  These would shave the corrected numbers further (perhaps another
+  3-5pp on WF mean). Closing this gap requires CRSP / Sharadar (paid).
 
 ### ✓ Walk-forward / no look-ahead in features
 - All features per `cache/features/{date}.parquet` use only data with
@@ -96,9 +140,13 @@ sure any new features follow the same convention.
 
 **Engine is honest enough to extend, with two known caveats:**
 
-1. Survivorship: the bias overlay (MC delisting at α=4%/yr) is reasonable
+1. ~~Survivorship: the bias overlay (MC delisting at α=4%/yr) is reasonable
    but a proper delisted-with-final-return dataset would harden any
-   claim. **Surface to user before final validation.**
+   claim.~~ **Largely addressed (May 2026):** empirical PIT-corrected
+   numbers via the augmented panel — see
+   [`data/sp500_pit/`](../data/sp500_pit/README.md). Honest deployed-v5
+   WF mean = **32.7% CAGR** (vs original 47.2% claim). 213 OTC bankruptcy
+   tickers remain unreachable on free data (residual ~3-5pp uncertainty).
 2. Execution: month-end close fills + flat 10 bps work for monthly S&P
    500 strategies. Any new candidate at higher frequency or smaller-cap
    universe needs an upgraded fill+slippage model. **Surface if scope
@@ -106,5 +154,7 @@ sure any new features follow the same convention.
 
 No blocking leakage was found. Walk-forward is correctly embargoed.
 Targets do not leak into training. PIT membership is correctly
-constructed. The 42.80% WF mean CAGR figure is honestly produced under
-the documented assumptions.
+constructed. The headline 42.80% (v3) / 47.16% (v5) WF mean CAGR figures
+are honestly produced *under the original data assumptions*; the
+PIT-corrected numbers per the May 2026 augmentation are 25.78% (v3) and
+**32.68% (v5)**.
