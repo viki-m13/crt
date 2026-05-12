@@ -194,25 +194,29 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Same K=2 v5 config (Chronos p70 q=0.45 + inv-vol cap=0.4 + tight gate + 6m hold) on 6 alternative universes built from the augmented panel. Headline: the picker stays positive everywhere (every universe beats SPY on Full CAGR), but PIT S&P 500 is the sweet spot — every other universe has materially wider Max DD. The S&P 500 cohort's size/liquidity/maturity profile suits this concentrated picker; broader universes admit more thinly-traded names that occasionally produce -50% basket months."));
+      "Same K=2 v5 config (Chronos p70 q=0.45 + inv-vol cap=0.4 + tight gate + 6m hold) on 7 alternative universes. Headline: the picker stays positive vs the relevant benchmark on every universe. Curated US indices (S&P 500, Nasdaq-100) get 10/10 and 8/8 wins respectively — the picker generalises across major US-equity cohorts. Broader / non-S&P 500 / random subsets stay positive on Full CAGR but Max DD widens to -69 to -89% — the S&P 500 / NDX quality screen is part of what makes K=2 safe."));
     const tbl = el("table", { class: "v3-table" });
-    tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs SPY</th><th>Sharpe</th><th>MaxDD</th><th>Beats SPY</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs bench</th><th>Sharpe</th><th>MaxDD</th><th>Beats bench</th></tr></thead>`;
     const tb = el("tbody");
     data.multi_universe_generalisation.forEach(u => {
       const row = el("tr");
       const UNIV_LABEL = {
-        "PIT_SP500": "PIT S&P 500",
-        "broader_1833": "Broader 1,833-ticker",
-        "non_SP500_PIT": "Non-S&P 500 PIT",
+        "PIT_SP500_augmented": "PIT S&P 500 (augmented)",
+        "NDX_PIT": "PIT Nasdaq-100",
+        "broader_augmented": "Broader 1964-ticker (augmented)",
+        "non_sp500_augmented": "Non-S&P 500 (augmented)",
         "random_500_seed1": "Random 500 (seed 1)",
         "random_500_seed2": "Random 500 (seed 2)",
         "random_500_seed3": "Random 500 (seed 3)",
-        "random_500_seed4": "Random 500 (seed 4)",
-        "random_500_seed5": "Random 500 (seed 5)",
+        "PIT_SP500": "PIT S&P 500",
+        "broader_1833": "Broader 1,833-ticker",
+        "non_SP500_PIT": "Non-S&P 500 PIT",
         "sp500_pit": "PIT S&P 500",
-        "broader_1833_pit": "Broader 1,833 (PIT)",
-        "non_sp500_pit": "Non-S&P 500 PIT",
       };
+      // Each universe knows its own split count; NDX is 8 splits (2015-25),
+      // SP500-derived universes are 10. We pull wf_n_splits when present.
+      const n_splits = u.wf_n_splits || (u.universe === "NDX_PIT" ? 8 : 10);
+      const bench_label = u.universe === "NDX_PIT" ? "QQQ" : "SPY";
       row.appendChild(el("td", {}, UNIV_LABEL[u.universe] || u.universe.replace(/_/g, " ")));
       row.appendChild(el("td", {}, String(u.n_pool)));
       row.appendChild(el("td", {}, fmtPct(u.cagr_full)));
@@ -221,7 +225,7 @@ function renderV3Sections(data) {
       row.appendChild(el("td", { class: clsRet(u.wf_mean_edge_pp) }, (u.wf_mean_edge_pp >= 0 ? "+" : "") + u.wf_mean_edge_pp.toFixed(1) + "pp"));
       row.appendChild(el("td", {}, u.sharpe.toFixed(2)));
       row.appendChild(el("td", {}, fmtPct(u.max_dd, 0)));
-      row.appendChild(el("td", {}, `${u.wf_n_beats_spy}/10`));
+      row.appendChild(el("td", {}, `${u.wf_n_beats_spy}/${n_splits} vs ${bench_label}`));
       tb.appendChild(row);
     });
     tbl.appendChild(tb);
