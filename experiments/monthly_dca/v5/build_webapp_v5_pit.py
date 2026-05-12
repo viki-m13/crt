@@ -51,9 +51,9 @@ STRATEGY_SPEC = {
         "v2 GBM 3m+6m forward-rank ensemble, gated by HuggingFace Chronos-bolt-tiny "
         "zero-shot probabilistic p70 forecast (must rank top 55% of cross-section)"
     ),
-    "K_normal": 3,
-    "K_recovery": 3,
-    "K_bull": 3,
+    "K_normal": 2,
+    "K_recovery": 2,
+    "K_bull": 2,
     "weighting": "inverse-volatility",
     "cap_per_pick": 0.40,
     "regime_gate": "tight",
@@ -501,27 +501,67 @@ def run_full_sim(
 
 
 # ---------------------------------------------------------------------------
+# Augmented PIT data redirection (May 2026):
+# If the augmented PIT artefacts exist under PIT/augmented/, prefer them
+# everywhere — that's the survivorship-corrected universe (1994 tickers,
+# 78% PIT coverage globally, 99.7% in 2025). See data/sp500_pit/ for the
+# full dataset and methodology. Falling back to the original V2 paths
+# keeps the script usable on legacy checkouts.
+AUG = PIT / "augmented"
+USE_AUG = (AUG / "ml_preds.parquet").exists() and (AUG / "ml_preds_chronos.parquet").exists()
+
+
+def _path(filename: str, prefer_aug: bool = True) -> Path:
+    """Resolve a path that may have an augmented version."""
+    if USE_AUG and prefer_aug:
+        cand = AUG / filename
+        if cand.exists():
+            return cand
+    # legacy fallbacks
+    if filename == "prices_extended_pit.parquet":
+        # canonical: PIT/prices_extended_pit.parquet
+        return PIT / filename if (PIT / filename).exists() else CACHE / "prices_extended.parquet"
+    if filename in ("monthly_returns_clean.parquet", "monthly_prices_clean.parquet"):
+        return V2 / filename
+    if filename in ("ml_preds_v2.parquet", "ml_preds_live.parquet"):
+        return V2 / filename
+    if filename == "ml_preds_chronos.parquet":
+        return PIT / filename
+    return PIT / filename
+
+
 def main():
     print("=== Loading inputs ===")
+    print(f"    USE_AUG = {USE_AUG}  ({'augmented' if USE_AUG else 'legacy V2'} data layer)")
     members = pd.read_parquet(PIT / "sp500_membership_monthly.parquet")
     members["asof"] = pd.to_datetime(members["asof"])
     members_g = members.groupby("asof")["ticker"].apply(set).to_dict()
 
-    monthly_returns = pd.read_parquet(V2 / "monthly_returns_clean.parquet")
-    monthly_prices = pd.read_parquet(V2 / "monthly_prices_clean.parquet")
+    monthly_returns = pd.read_parquet(_path("monthly_returns_clean.parquet"))
+    monthly_prices = pd.read_parquet(_path("monthly_prices_clean.parquet"))
     spy_features = load_spy_features()
 
-    preds_live = pd.read_parquet(V2 / "ml_preds_live.parquet")
+    # ml_preds_live: latest-month live prediction. The augmented panel's
+    # walk-forward predictions extend through the latest asof, so when
+    # USE_AUG is on we treat the augmented preds as the source for both
+    # historical AND live (their latest asof IS the live month).
+    if USE_AUG:
+        preds_live = pd.read_parquet(_path("ml_preds.parquet"))
+    else:
+        preds_live = pd.read_parquet(V2 / "ml_preds_live.parquet")
     preds_live["asof"] = pd.to_datetime(preds_live["asof"])
-    preds_wf = pd.read_parquet(V2 / "ml_preds_v2.parquet")
+    if USE_AUG:
+        preds_wf = pd.read_parquet(_path("ml_preds.parquet"))
+    else:
+        preds_wf = pd.read_parquet(V2 / "ml_preds_v2.parquet")
     preds_wf["asof"] = pd.to_datetime(preds_wf["asof"])
     print(f"  live preds: {len(preds_live)}, asof range "
           f"{preds_live['asof'].min().date()} -> {preds_live['asof'].max().date()}")
     print(f"  WF preds:   {len(preds_wf)}, asof range "
           f"{preds_wf['asof'].min().date()} -> {preds_wf['asof'].max().date()}")
 
-    # v5: load Chronos-bolt-tiny forecasts
-    chronos_path = PIT / "ml_preds_chronos.parquet"
+    # v5: load Chronos-bolt-tiny forecasts (augmented when available)
+    chronos_path = _path("ml_preds_chronos.parquet")
     chronos_preds = None
     if chronos_path.exists():
         chr_df = pd.read_parquet(chronos_path)
@@ -669,7 +709,7 @@ def main():
     # === Walk-forward (load from cached v3 results) ===
     wf_split_rows = []
     wf_aggregate_rows = []
-    wf_path = PIT / "v5_winner_walkforward.csv"
+    wf_path = _path("v5_winner_walkforward.csv")
     if wf_path.exists():
         wf_test = pd.read_csv(wf_path)
         for _, r in wf_test.iterrows():
@@ -699,7 +739,7 @@ def main():
 
     # === Bias overlay ===
     bias_rows = []
-    bias_path = PIT / "v5_winner_bias_sensitivity.csv"
+    bias_path = _path("v5_winner_bias_sensitivity.csv")
     if bias_path.exists():
         bias = pd.read_csv(bias_path)
         for _, r in bias.iterrows():
@@ -722,7 +762,7 @@ def main():
 
     # === Sub-period CAGR ===
     sub_period_rows = []
-    sp_path = PIT / "v5_winner_sub_periods.csv"
+    sp_path = _path("v5_winner_sub_periods.csv")
     if sp_path.exists():
         sp = pd.read_csv(sp_path)
         for _, r in sp.iterrows():
@@ -737,7 +777,7 @@ def main():
 
     # === Multi-universe generalisation ===
     gen_rows = []
-    gen_path = PIT / "v5_winner_generalize.csv"
+    gen_path = _path("v5_winner_generalize.csv")
     if gen_path.exists():
         gen = pd.read_csv(gen_path)
         for _, r in gen.iterrows():
@@ -757,7 +797,7 @@ def main():
 
     # === Sensitivity ===
     sens_rows = []
-    sens_path = PIT / "v5_winner_sensitivity.csv"
+    sens_path = _path("v5_winner_sensitivity.csv")
     if sens_path.exists():
         sn = pd.read_csv(sens_path)
         for _, r in sn.iterrows():
@@ -774,7 +814,7 @@ def main():
 
     # === Most-picked tickers (concentration audit) ===
     most_picked = []
-    mp_path = PIT / "v5_winner_most_picked.csv"
+    mp_path = _path("v5_winner_most_picked.csv")
     if mp_path.exists():
         mp = pd.read_csv(mp_path).head(20)
         for _, r in mp.iterrows():
@@ -783,7 +823,7 @@ def main():
 
     # === Drawdown ledger ===
     drawdowns = []
-    dd_path = PIT / "v5_winner_drawdowns.csv"
+    dd_path = _path("v5_winner_drawdowns.csv")
     if dd_path.exists():
         dd = pd.read_csv(dd_path).head(10)
         for _, r in dd.iterrows():
@@ -806,7 +846,7 @@ def main():
 
     # === Universe coverage ===
     coverage_rows = []
-    cov_path = PIT / "sp500_pit_filter_coverage.csv"
+    cov_path = _path("sp500_pit_filter_coverage.csv")
     if cov_path.exists():
         cov = pd.read_csv(cov_path)
         for _, r in cov.iterrows():
