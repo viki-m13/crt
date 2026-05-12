@@ -164,6 +164,37 @@ Augmented outputs (under `experiments/monthly_dca/cache/v2/sp500_pit/augmented/`
 - `v5_winner_summary.json` + `v5_winner_walkforward.csv` + `v5_winner_equity.csv`
 - `sp500_pit_filter_*` (the k=15 v3-baseline reference)
 
+## Rebalance-timing-luck mitigation (Phase 6, separate analysis)
+
+The deployed v5 rebalances every 6 months → 2 annual entries → exposed
+to timing luck. 2024 was the worst case: Jan-31 and Jul-31 lump-sum
+entries landed on the year's two worst picking moments, producing
+−25.0 pp edge for the year even though the other 10 monthly entry dates
+averaged +5.7 pp.
+
+Three configurations compared on the augmented PIT panel:
+
+|                            | Lump-sum (deployed) | Basic stagger | Crash-aware stagger |
+|----------------------------|--------------------:|--------------:|--------------------:|
+| Entries / year             |                  ~2 |           12  |                12   |
+| Active tranches            |                   1 |       up to 6 |             up to 6 |
+| Crash gate on legacy tranches | yes              |          no   |                yes  |
+| **Full CAGR**              |         **32.92 %** |     27.77 %  |          **29.80 %** |
+| Sharpe                     |                0.92 |        0.84   |                0.86 |
+| Max DD                     |             −51.3 % |     −53.6 %   |             −51.0 % |
+| **2024 edge vs SPY**       |         **−25.0 pp** | **+55.8 pp** |             −13.9 pp |
+
+Full analysis and recommendation:
+[`TIMING_LUCK.md`](TIMING_LUCK.md). Crash-aware staggered is the
+recommended production path — preserves crash protection (essentially
+identical Max DD and Sharpe to lump-sum) and partially mitigates
+2024-style timing luck (+11 pp better than lump-sum in 2024), at a
+cost of ~3 pp on full-window CAGR.
+
+Scripts:
+- [`run_v5_staggered_aug.py`](run_v5_staggered_aug.py) — basic 6-tranche stagger
+- [`run_v5_staggered_crash_aware_aug.py`](run_v5_staggered_crash_aware_aug.py) — crash-aware variant
+
 ## Reproduction
 
 ```bash

@@ -15,6 +15,7 @@ training, validation gauntlets, web frontend, and assorted experiments.
 | Engine audit (leakage, survivorship) | [`research/01_engine_audit.md`](research/01_engine_audit.md) |
 | Final validation (v8 exp_02 winner) | [`reports/final_validation.md`](reports/final_validation.md) |
 | PIT v5 validation report | [`experiments/monthly_dca/v5/spx_pit/REPORT.md`](experiments/monthly_dca/v5/spx_pit/REPORT.md) |
+| Rebalance-timing-luck analysis | [`experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md`](experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md) |
 | Data layer overview | [`data/README.md`](data/README.md) |
 
 ## Honest performance numbers

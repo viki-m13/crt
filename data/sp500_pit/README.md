@@ -180,6 +180,35 @@ correction bites. At k=15, individual delisting events average out.
 Full breakdown and per-split numbers in
 [`experiments/monthly_dca/v5/spx_pit/REPORT.md`](../../experiments/monthly_dca/v5/spx_pit/REPORT.md).
 
+## Staggered-tranche timing-luck mitigation (Phase 6)
+
+The deployed v5 rebalances every 6 months → 2 entries / year → exposed
+to **rebalance-date luck**. 2024 was a particularly bad example: both
+the Jan-31 and Jul-31 entries landed on the year's worst picking
+moments, while the other 10 months of the year were positive on
+average. Full diagnosis:
+[`experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md`](../../experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md).
+
+|                          | Lump-sum (deployed) | Basic staggered | Crash-aware staggered |
+|--------------------------|--------------------:|----------------:|----------------------:|
+| Entries / year           |                  ~2 |              12 |                    12 |
+| Active tranches          |                   1 |        up to 6  |              up to 6  |
+| Crash-regime gate active for legacy tranches | yes | no   |                   yes |
+| **Full-window CAGR**     |          **32.92 %** |       27.77 %  |             29.80 %   |
+| Sharpe                   |                0.92 |          0.84   |                 0.86  |
+| Max DD                   |             -51.3 % |        -53.6 % |             -51.0 %   |
+| **2024 edge vs SPY**     |          **-25.0 pp** |   **+55.8 pp** |             -13.9 pp  |
+
+**Recommended path**: crash-aware staggered. Preserves crash protection
+(Max DD identical to lump-sum), preserves Sharpe (0.86 vs 0.92),
+partially mitigates 2024-style timing-luck (+11 pp better than lump in
+2024), at the cost of ~3 pp WF CAGR vs lump-sum.
+
+Outputs:
+- `augmented/v5_staggered_*.{json,csv}` — basic 6-tranche stagger
+- `augmented/v5_staggered_ca_*.{json,csv}` — crash-aware variant
+- `augmented/v5_staggered_vs_lump.json` — side-by-side summary
+
 ## File index
 
 ```
