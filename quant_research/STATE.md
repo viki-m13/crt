@@ -6,18 +6,46 @@
 ## Mission
 Develop a US equity stock-picking strategy with **CAGR ≥ 50%** and **Sharpe ≥ 2.0** on a walk-forward OOS basis (2007–2021), monthly rebalance, long-only, no leverage.
 
-## Current Best Result
+## Current Best Result (Updated after exp_014)
 
 | Config | CAGR | Sharpe | MaxDD | Ann Vol | mean_m | ratio |
 |--------|------|--------|-------|---------|--------|-------|
-| K=30, LGBM×0.70+sh12×0.20+sh5y×0.10, inv_vol, vt18%, regime_loose | 63.1% ✓ | 1.82 ✗ | -13.6% | 29.5% | 4.48% | 0.527 |
-| inv_vol cap=5%, K=30, same blend, vt18%, regime_loose | 65.1% ✓ | 1.834 ✗ | -13.6% | 30.1% | — | 0.529 |
+| K=30, 4way blend (vol_asym_60×0.10), inv_vol, vt18%, regime_loose | **66.5% ✓** | **1.841 ✗** | -13.75% | 30.5% | ~4.5% | **0.5315** |
+| K=30, LGBM×0.70+sh12×0.20+sh5y×0.10, inv_vol, vt18%, regime_loose | 63.1% ✓ | 1.825 ✗ | -13.6% | 29.5% | 4.48% | 0.527 |
 
-**Status:** CAGR gate PASSED ✓ — Sharpe gate FAILED ✗ (best: 1.834, target: 2.0)
+**Status:** CAGR gate PASSED ✓ — Sharpe gate FAILED ✗ (best: 1.841, target: 2.0)
 
-**To reach Sharpe 2.0:** Need ratio = 0.5774. Currently at 0.529. Gap = 0.048.
+**To reach Sharpe 2.0:** Need ratio = 0.5774. Currently at 0.5315. Gap = 0.046.
 - Keep mean_m=4.48%: need std_m ≤ 7.76% (ann_vol ≤ 26.9%) vs current 8.51% (29.5%)
 - OR keep std_m=8.51%: need mean_m ≥ 4.91% (monthly mean, +9.5% increase)
+
+## Structural Analysis: Why Sharpe 2.0 Is Hard
+
+**Root cause**: Average pairwise portfolio correlation ρ≈0.53 among K=30 momentum picks.
+
+Portfolio vol formula: σ_port = σ_stock × √(ρ + (1-ρ)/K)
+= 40% × √(0.53 + 0.023) = 40% × 0.744 = 29.8% ≈ observed 29.5% ✓
+
+**For Sharpe 2.0 (target σ_port = 27.0%):**
+- Need ρ ≤ 0.43 (from 0.53) — 19% reduction in avg pairwise correlation
+- OR individual stock σ ≤ 36% (lower-vol stocks, but these have lower returns)
+
+**Fundamental tension**:
+- CAGR ≥ 50% requires momentum stocks (high return, high correlation)
+- Sharpe ≥ 2.0 requires lower portfolio correlation
+- Momentum stocks ARE correlated because they share the same market factor
+
+**Approaches exhausted** (all capped at Sharpe ≈ 1.84):
+- Signal blending (13 blend configurations)
+- Weighting (inv_vol, ERC, inv_vol², capped, conviction)
+- Risk scaling (SPY vol, portfolio vol, drawdown)
+- New signals (full IC audit of 79 features, add untried signals)
+
+**Remaining approaches** (lower probability of success):
+- Correlation-penalized greedy selection (exp_015): reduce ρ via diversification
+- Vol-screen universe (exp_016): filter to lower-vol stocks (may cut CAGR)
+- Conviction sizing (exp_016): concentrate weight in top picks
+- LGBM variants (exp_017): longer training window, ensemble
 
 ## Experiments Run
 
