@@ -1,87 +1,54 @@
 # Ideas Backlog
 
-Ranked by expected Sharpe improvement × implementation effort (high value, low effort first).
+Ranked by expected Sharpe improvement × implementation effort. Updated after exp_013.
 
-## Tier 1 — High Confidence, Try Next
+## Current State
+- Best Sharpe: 1.836 (gap = 0.164 to target 2.0)
+- Best CAGR: 65.1%
+- Ratio: 0.530 (target 0.577, gap = 8.9%)
+- Key constraint: mean_m/std_m ratio structurally limited by high within-portfolio correlation (ρ≈0.50)
+- Full IC audit done: crt_3m IC=0.135, prerunner_dist IC=0.137, vol_asym_60 IC=0.105 (untried)
 
-### 1. Volatility Targeting (exp_006)
-Scale position size inversely with realized vol to target a fixed portfolio vol (e.g., 15% ann).
-- Mechanism: negative vol-return correlation in equities means you scale down in bad times
-- Implementation: `scale = min(target_vol / spy_vol_21d, 1.0)` applied to monthly return
-- Expected Sharpe gain: 0.1–0.3 (empirical from academic literature on vol timing)
-- Status: PENDING
+## Active/Planned Experiments
 
-### 2. Cross-Sector Momentum Rotation (exp_007)
-Select top-3 sectors by 6m relative strength vs SPY, then top-K stocks within those sectors.
-- Mechanism: sector-level momentum has IC > stock-level momentum (Graham-Harvey 2022)
-- Implementation: compute sector rs_6m_spy, filter stocks to top-sector tickers before scoring
-- Expected Sharpe gain: 0.1–0.2
+### exp_014 (running): New High-IC Signals in Blend
+crt_3m, prerunner_dist, vol_asym_60 added to 3-way LGBM blend.
 
-### 3. Alternative Regime Signal: VIX or Credit Spread (exp_008)
-Replace SPY 200-day MA gate with VIX level or IG credit spread threshold.
-- VIX < 20: full invest; VIX 20-30: scale 0.5; VIX > 30: cash
-- Credit spread: proxy via TLT/HYG ratio momentum
-- Motivation: price-MA is lagging; vol-based regimes are more forward-looking
-- Expected Sharpe gain: 0.05–0.15
+### exp_015 (written): Correlation-Penalized Greedy Selection
+Greedy stock selection penalizing correlation with already-selected picks.
+Math: ρ=0.50→0.30 reduces portfolio σ from 28.8%→22.7% → Sharpe=4.48%/6.55%×√12=2.37.
+Risk: lower-correlation stocks may have lower returns, hurting CAGR.
 
-### 4. Large-Cap Only Universe (exp_009)
-Restrict to stocks with market cap implied by vol and price > $10B equivalent.
-- Proxy: filter to stocks with vol_1y < 25% (large-caps are less volatile)
-- Motivation: reduces survivorship bias, but may reduce CAGR
-- Expected Sharpe gain: uncertain — may be honest correction downward
+## Remaining Tier 1 — High Impact
 
-## Tier 2 — Medium Confidence
+### Conviction-Based Sizing (within-K weight by score magnitude)
+Weight within top-K by blend_score × inv_vol (not uniform inv_vol).
+Higher-scoring picks get disproportionate weight → higher mean_m.
+Expected gain: 0.05-0.15 Sharpe units.
 
-### 5. Quarterly Rebalance
-Monthly rebalance costs 10bp/year in transactions. Quarterly drops cost to ~3.3bp/year.
-- Expected vol effect: similar, turnover cost savings ~7bp/year, marginal
-- Risk: less reactive to regime changes
+### Vol-Screen Universe (vol_12m < 40%)
+Only consider stocks with annual vol < 40% before ranking.
+Math: avg σ=40%→33% → portfolio σ≈0.719×33%=23.7% → std_m=6.84%.
+With mean_m=4.0%: Sharpe=4.0%/6.84%×√12=2.03 (if CAGR ≥ 50% holds).
 
-### 6. Different LightGBM Objective
-Switch from regression on ranked returns to binary classification: top quintile vs bottom.
-- Intuition: cleaner labels, better calibrated probabilities
-- Expected Sharpe gain: unclear
+### Regime Quality Exposure Scaling
+In borderline-pass months (SPY just above 200ma): reduce exposure to 50%.
+Expected: cuts std_m without reducing mean proportionally.
 
-### 7. Longer Training Window (72m vs 48m)
-More training data → better generalization, but model may be stale at end.
-- Expected Sharpe gain: 0.0–0.1
+### Adaptive K (based on regime quality)
+K=15-20 in strong bull regime, K=30-40 in borderline regime.
+Concentration when signal is cleaner.
 
-### 8. Factor Timing
-In bull regime (d_sma200 > 0.05): use momentum. In choppy regime: use quality/Sharpe.
-- Two-factor blend with regime-conditional weights
-- Expected Sharpe gain: 0.1–0.2
+## Previously Explored (completed)
+- exp_006: Vol targeting (SPY vol) → Sharpe 1.74 (+0.06 vs baseline)
+- exp_007: Trend filters (d_sma200, rs_6m_spy) → Sharpe 1.76
+- exp_008: Two-way blend LGBM+sh12 → Sharpe 1.80
+- exp_009: Three-way blend LGBM+sh12+sh5y → Sharpe 1.82 (best pure signal)
+- exp_010: Sharpe-target LGBM training → Sharpe 1.76 (worse)
+- exp_011: High-IC signals (breakout, crt_6m) → fails CAGR gate alone
+- exp_012: ERC/inv_vol²/capped weighting → Sharpe 1.834 (marginal)
+- exp_013: Portfolio vol targeting + drawdown → Sharpe 1.836 (marginal)
 
-### 9. Momentum Reversal Filter
-After a stock is up >100% in 12m, reduce weight (crowding proxy).
-- Expected Sharpe gain: small, reduces crowding risk
-
-### 10. Portfolio-Level Realized Vol Targeting
-Instead of SPY vol as proxy, compute realized vol of actual portfolio from last 6m.
-- Cleaner match between scale signal and actual portfolio vol
-- Implementation complexity: medium (need to track portfolio returns history)
-
-## Tier 3 — Speculative
-
-### 11. Long/Short Market Neutral
-Hedge market beta by shorting SPY proportional to portfolio beta.
-- Problem: adds borrowing cost, still long-only for stock selection
-- Likely reduces CAGR below 50% gate
-
-### 12. Alternative Universe: NDX vs SPX
-Switch from full 1833-ticker universe to NDX 100 only.
-- NDX has higher growth tilt, may improve Sharpe via tech momentum
-- Risk: 2000-2002 drawdown would be catastrophic (but OOS starts 2007)
-
-### 13. Stop-Loss at Stock Level
-Remove any position that falls >15% in a single month.
-- Implementation: look ahead into monthly prices during rebalance
-- Expected benefit: marginal in monthly context
-
-### 14. Ensemble of Models
-Average rankings from 3 different LightGBM seeds or hyperparameter sets.
-- Expected Sharpe gain: variance reduction, small improvement
-
-### 15. Time-Series Momentum (TSMOM)
-Size position by sign and magnitude of own 12m return.
-- Well-studied, but already proxied by mom_12_1 filter in lgbm_smooth
-- Standalone TSMOM: expected Sharpe ~0.8-1.0 (not sufficient alone)
+## Dead Ends (see dead_ends.md)
+ERC weighting, min-var, Sharpe-target LGBM, high-IC signals replacing LGBM,
+EW weighting, very large K (>100), PIT pred column, dual/triple regime.
