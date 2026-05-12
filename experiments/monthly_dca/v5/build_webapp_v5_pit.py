@@ -62,10 +62,12 @@ STRATEGY_SPEC = {
         "recovery if SPY below 200dma streak >= 40d AND SPY just back above 200dma AND SPY 21d > 0; "
         "bull if SPY 12m >= 10% AND above 200dma; else normal."
     ),
-    "hold_months": 6,
+    "min_hold_months": 6,
+    "max_hold_months": 24,
+    "rebalance_mode": "rule_based_score_drift",
     "cost_bps": 10,
     "universe": "PIT S&P 500 members at each rebalance month-end (iShares IVV current holdings used for live universe)",
-    "rebalance_rule": "Hold each basket for 6 months. Reform basket on month T if (T - last_rebalance) >= 6m or regime transitions to/from cash. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized.",
+    "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool (i.e., the picker has discovered they're no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT panel: WF mean 54.9% vs 49.4%, Sharpe 1.10 vs 1.04, Max DD -34.5% vs -52.5%, 10/10 splits beat SPY, +45.3pp edge in 2024 vs -10.2pp for fixed h=6.",
     "chronos_filter": {
         "model": "amazon/chronos-bolt-tiny (HuggingFace)",
         "model_size": "9M params, zero-shot foundation model",
@@ -83,7 +85,7 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_h6"
+WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -93,8 +95,17 @@ WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_h6"
 # under PIT correction AND under MC delisting overlay across all alpha.
 CHRONOS_FILTER_Q = 0.45          # filter quantile: require Chronos p70 rank >= 0.45
 CAP_PER_PICK = 0.40              # cap inverse-vol weights at 40% per pick
-HOLD_MONTHS = 6
+HOLD_MONTHS = 6                  # legacy fixed-hold (back-compat for v3/v5 fixed sims)
 K_PICKS = 2
+# Rebalance-rule config (Phase 10, May 2026): rule-based dominates fixed h=6 on
+# every risk-adjusted metric on augmented PIT (see IMPROVEMENTS.md Phase 10).
+# Hold at least MIN_HOLD_MONTHS; after that, rebalance EARLIER if neither
+# current pick is still in the new top-K eligible pool (score_drift trigger).
+# Force rebalance at MAX_HOLD_MONTHS regardless. Always rebalance on regime
+# change crash↔non-crash (preserves crash protection).
+REBALANCE_MODE = "rule_based"   # 'fixed' or 'rule_based'
+MIN_HOLD_MONTHS = 6
+MAX_HOLD_MONTHS = 24
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
@@ -288,10 +299,49 @@ def run_full_sim(
     trade_log_closed: list[dict] = []
     mr_idx = monthly_returns.index
 
+    def _compute_candidate_top(m_):
+        """Peek at the would-be top-K at month-end m (PIT members + Chronos
+        filter applied). Returns the top-K DataFrame, or None if no eligible
+        basket can be formed. Used by the rule-based score_drift trigger AND
+        the actual basket-forming branch when do_reb=True."""
+        if m_ <= wf_max_asof:
+            sub_ = preds_wf[preds_wf["asof"] == m_].copy()
+        else:
+            sub_ = preds_live[preds_live["asof"] == m_].copy()
+        sub_ = sub_[~sub_["ticker"].isin(EXCLUDE)]
+        sp_set_ = members_g.get(m_, set())
+        sub_pit_ = sub_[sub_["ticker"].isin(sp_set_)].copy()
+        if len(sub_pit_) == 0:
+            return None
+        sub_pit_["score"] = (sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2
+        if chronos_preds is not None and m_ in chronos_preds:
+            chronos_at_m_ = chronos_preds[m_]
+            sub_pit_["chr_p70"] = sub_pit_["ticker"].map(chronos_at_m_)
+            sub_pit_["chr_p70_rk"] = sub_pit_["chr_p70"].rank(pct=True)
+            sub_pit_ = sub_pit_[sub_pit_["chr_p70_rk"] >= CHRONOS_FILTER_Q]
+        top_ = sub_pit_.sort_values("score", ascending=False).head(K)
+        return top_ if len(top_) >= K else None
+
     for i, m in enumerate(months):
         spy_now = spy_features.loc[m].to_dict() if m in spy_features.index else {}
         regime = classify_regime_tight(spy_now)
-        do_reb = (i == 0) or (held_for >= hold_months) or cash
+        # Rule-based rebalance (Phase 10):
+        #   - Always reb on first month, regime crash transition, or MAX_HOLD reached.
+        #   - After MIN_HOLD, reb EARLIER if neither current pick is still in the
+        #     new top-K eligible pool (score_drift trigger).
+        if REBALANCE_MODE == "fixed":
+            do_reb = (i == 0) or (held_for >= hold_months) or cash
+        else:
+            do_reb = (i == 0) or (cash != (regime == "crash"))
+            if held_for >= MAX_HOLD_MONTHS:
+                do_reb = True
+            elif held_for >= MIN_HOLD_MONTHS and cur_picks and regime != "crash":
+                # Peek at would-be top-K and check overlap
+                _candidate = _compute_candidate_top(m)
+                if _candidate is not None:
+                    new_top_set = set(_candidate["ticker"])
+                    if not (set(cur_picks) & new_top_set):
+                        do_reb = True
 
         if do_reb:
             # Close out the OLD basket: book actual entry/exit prices, realised
