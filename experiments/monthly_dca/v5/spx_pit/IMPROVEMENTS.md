@@ -258,3 +258,52 @@ Files:
 - `augmented/ml_preds_chronos_broader.parquet` (1964-ticker Chronos preds)
 - `augmented/v5_k2_generalize.csv` (raw sweep results)
 - `augmented/v5_winner_generalize.csv` (reshaped for homepage builder)
+
+## Phase 9 — Cross-index generalization: NDX PIT
+
+Tested whether the K=2 v5 picker also works on Nasdaq-100 PIT data.
+Script: `experiments/monthly_dca/v5/qqq_pit/run_v5_k2_ndx.py`.
+
+NDX PIT artefacts already in the repo (membership 2015-01..2026-05,
+backfilled tickers via FNSPID/yfinance, ml_preds + Chronos preds):
+  - `qqq_pit/ndx_pit_membership_monthly.parquet`
+  - `qqq_pit/ml_preds_v2_ndx.parquet`
+  - `qqq_pit/ml_preds_chronos_ndx.parquet`
+  - `qqq_pit/ndx_monthly_returns.parquet`
+  - `qqq_pit/ndx_monthly_prices.parquet`
+
+| Metric                   | K=2 NDX  | K=3 NDX  | K=2 SP500 (deployed) |
+|--------------------------|---------:|---------:|---------------------:|
+| Window                   |  2015–25 |  2015–25 |              2003–25 |
+| Full CAGR                |   19.74% |   19.87% |             **49.21%** |
+| Sharpe                   |    0.77  |    0.87  |             **1.04** |
+| Max DD                   |  -31.42% |  -27.58% |              -52.5% |
+| **WF mean CAGR**         | **44.20%** | 38.34% |             **49.39%** |
+| WF mean edge vs QQQ      |  +24.79pp|  +18.93pp|                    – |
+| WF mean edge vs SPY      |  +27.66pp|  +21.80pp|             +35.99pp |
+| WF beats QQQ             |     **8/8** |     7/8 |                    – |
+| WF beats SPY             |       8/8 |     8/8  |               **10/10** |
+
+Findings:
+1. **K=2 v5 generalizes to NDX.** 8/8 WF splits beat QQQ, +24.8pp mean
+   edge. Strategy clearly works on a different curated US equity cohort.
+2. **K=2 beats K=3 on NDX too**, just like SP500. +5.86pp WF mean CAGR,
+   +1 more split beating QQQ (8/8 vs 7/8). Trade-off: slightly worse
+   Sharpe (0.77 vs 0.87) and Max DD (-31% vs -28%) on NDX — the K=2
+   concentration shows up more on the smaller, more-volatile NDX
+   cohort.
+3. **SP500 PIT remains the global sweet spot** (49.4% WF mean, 10/10
+   beats SPY, Sharpe 1.04). NDX's tech-concentration limits the
+   picker's Sharpe relative to the S&P 500 cohort.
+4. **Curation matters.** NDX gets 8/8 beats QQQ (+24.8pp edge) — a
+   strong result — while the broader 1964-ticker / non-S&P 500
+   augmented universes only got 5/10 with -89% Max DD. The S&P 500 +
+   Nasdaq-100 cohorts both have quality / liquidity / mcap screens
+   that keep K=2 safe. Broader uncurated universes don't.
+
+Files:
+- `qqq_pit/run_v5_k2_ndx.py` — backtest script (K=2 + K=3 side-by-side)
+- `qqq_pit/v5_k2_ndx_summary.json` — headline metrics
+- `qqq_pit/v5_k{2,3}_ndx_equity.csv` — equity curves
+- `qqq_pit/v5_k{2,3}_ndx_walkforward_vs_{spy,qqq}.csv` — WF tables
+- `qqq_pit/v5_k{2,3}_ndx_yearly_vs_{spy,qqq}.csv` — yearly returns
