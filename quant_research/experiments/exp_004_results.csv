@@ -1,0 +1,14 @@
+name,top_k,weighting,cagr,sharpe,max_dd,win_rate,ann_vol,n_months,cash_months,mean_m,std_m
+lgbm_smooth [EXP002_BEST] K=20 inv_vol + regime,20,inv_vol,0.4861,1.629,-0.1137,0.453,0.2667,179,30,0.0362,0.07698
+sharpe_target K=30 inv_vol + regime,30,inv_vol,0.3831,1.521,-0.1592,0.43,0.232,179,30,0.02941,0.06697
+sharpe_target K=10 inv_vol + regime,10,inv_vol,0.4352,1.511,-0.1668,0.447,0.263,179,30,0.03311,0.07593
+sharpe_target K=20 inv_vol + regime,20,inv_vol,0.4115,1.493,-0.1397,0.436,0.253,179,30,0.03147,0.07303
+sharpe_smooth K=10 inv_vol + regime,10,inv_vol,0.2986,1.475,-0.0983,0.436,0.1903,179,30,0.0234,0.05495
+sharpe_smooth K=10 inv_vol [no regime],10,inv_vol,0.3585,1.455,-0.3367,0.508,0.23,179,0,0.02789,0.06641
+sharpe_target K=20 inv_vol [no regime],20,inv_vol,0.4995,1.452,-0.4804,0.514,0.3138,179,0,0.03797,0.09059
+sharpe_smooth K=30 inv_vol + regime,30,inv_vol,0.2542,1.451,-0.168,0.43,0.1667,179,30,0.02016,0.04811
+sharpe_target K=15 inv_vol + regime,15,inv_vol,0.4277,1.44,-0.1946,0.436,0.2732,179,30,0.03278,0.07886
+sharpe_smooth K=15 inv_vol + regime,15,inv_vol,0.2689,1.422,-0.1825,0.447,0.1799,179,30,0.02132,0.05193
+sharpe_target K=10 inv_vol [no regime],10,inv_vol,0.5562,1.413,-0.4771,0.525,0.357,179,0,0.04203,0.10306
+sharpe_smooth K=20 inv_vol + regime,20,inv_vol,0.2584,1.412,-0.1988,0.43,0.1747,179,30,0.02056,0.05043
+sharpe_smooth K=20 inv_vol [no regime],20,inv_vol,0.3066,1.36,-0.3711,0.497,0.215,179,0,0.02437,0.06206

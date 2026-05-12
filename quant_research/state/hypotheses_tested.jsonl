@@ -1,0 +1,6 @@
+{"exp":"exp_001","n":52,"desc":"Baseline ladder: composite_v1, smooth_compounder, momentum_lowvol, momentum_quality_lowvol. K=5,10,20,30. EW, inv_vol, vol_score. Regime: none, 200ma_loose, 200ma, 200ma_strict, conservative, aggressive."}
+{"exp":"exp_002","n":21,"desc":"Walk-forward LGBM ranker. lgbm, lgbm_qual, lgbm_smooth. K=5,10,20. EW, inv_vol. Regime: none, 200ma."}
+{"exp":"exp_003","n":24,"desc":"Sharpe maximization: larger K=25-50, vol-triggered regime, dual/triple regime, min-var weights. lgbm and lgbm_smooth."}
+{"exp":"exp_004","n":13,"desc":"IC analysis and Sharpe-target model. Cross-sectional IC via Spearman. IC target variants. Baseline references."}
+{"exp":"exp_005","n":24,"desc":"Very large K: regime-only K=20-200, lgbm K=50-150, lgbm_smooth K=40-100, hybrid 2x pre-filter K=20-50."}
+{"total":134,"note":"Deflated Sharpe Ratio adjustment requires using this total count across all experiments."}
