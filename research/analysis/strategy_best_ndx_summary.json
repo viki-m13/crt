@@ -1,0 +1,45 @@
+{
+  "panel": "ndx_pit",
+  "oos_start": "2019-04-30",
+  "oos_end": "2025-12-31",
+  "cagr": 0.07225270624227398,
+  "ann_vol": 0.09771254377982135,
+  "sharpe": 0.763630880791463,
+  "max_dd": -0.12331788314589692,
+  "win_rate": 0.24691358024691357,
+  "n_months": 81,
+  "mean_m": 0.006218026322579948,
+  "std_m": 0.028207181727241473,
+  "ratio": 0.2204412472932311,
+  "config": {
+    "top_k": 30,
+    "top_k_pre": 60,
+    "sector_cap": 4,
+    "weight_cap": 0.07,
+    "regime_dsma": -0.05,
+    "signals": [
+      [
+        "mom_6_1",
+        1
+      ],
+      [
+        "sharpe_5y",
+        1
+      ],
+      [
+        "idio_mom_12_1",
+        1
+      ],
+      [
+        "vol_1y",
+        -1
+      ],
+      [
+        "trend_health_5y",
+        1
+      ]
+    ],
+    "cost_bps": 5.0,
+    "vol_target": null
+  }
+}
