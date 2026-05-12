@@ -1,0 +1,108 @@
+{
+  "ts": "2026-05-11T20:31:49.251279+00:00",
+  "n_pass": 20,
+  "n_warn": 0,
+  "n_fail": 0,
+  "results": [
+    {
+      "check": "Google added Oct 2006, not in 2005-03",
+      "status": "\u2705 PASS",
+      "detail": "GOOG not found at 2005-03-31 (expected not in)"
+    },
+    {
+      "check": "GOOG Class C in PIT data from 2014 (pre-split ticker was GOOGL)",
+      "status": "\u2705 PASS",
+      "detail": "GOOG found at 2014-05-30 (expected in)"
+    },
+    {
+      "check": "Tesla added Dec 2020",
+      "status": "\u2705 PASS",
+      "detail": "TSLA found at 2020-12-31 (expected in)"
+    },
+    {
+      "check": "Tesla not in S&P500 until Dec 2020",
+      "status": "\u2705 PASS",
+      "detail": "TSLA not found at 2020-09-30 (expected not in)"
+    },
+    {
+      "check": "AAPL in S&P 500 in 2010",
+      "status": "\u2705 PASS",
+      "detail": "AAPL found at 2010-04-30 (expected in)"
+    },
+    {
+      "check": "Citigroup in S&P 500 in Dec 2008",
+      "status": "\u2705 PASS",
+      "detail": "C found at 2008-12-31 (expected in)"
+    },
+    {
+      "check": "GE in S&P 500 in 2004",
+      "status": "\u2705 PASS",
+      "detail": "GE found at 2004-09-30 (expected in)"
+    },
+    {
+      "check": "AAPL 4:1 split Aug 2020",
+      "status": "\u2705 PASS",
+      "detail": "Price before/after ratio=0.95 (expected ~1.0 for adjusted, >4 for unadjusted)"
+    },
+    {
+      "check": "TSLA 5:1 split Aug 2020",
+      "status": "\u2705 PASS",
+      "detail": "Price before/after ratio=0.93 (expected ~1.0 for adjusted, >4 for unadjusted)"
+    },
+    {
+      "check": "Leakage audit 2019-07-31",
+      "status": "\u2705 PASS",
+      "detail": "0/10 tickers show mom_12_1 mismatch (may differ by convention)"
+    },
+    {
+      "check": "Leakage audit 2009-11-30",
+      "status": "\u2705 PASS",
+      "detail": "0/10 tickers show mom_12_1 mismatch (may differ by convention)"
+    },
+    {
+      "check": "Leakage audit 2016-02-29",
+      "status": "\u2705 PASS",
+      "detail": "0/10 tickers show mom_12_1 mismatch (may differ by convention)"
+    },
+    {
+      "check": "Leakage audit 1999-08-31",
+      "status": "\u2705 PASS",
+      "detail": "0/10 tickers show mom_12_1 mismatch (may differ by convention)"
+    },
+    {
+      "check": "Leakage audit 2009-09-30",
+      "status": "\u2705 PASS",
+      "detail": "0/10 tickers show mom_12_1 mismatch (may differ by convention)"
+    },
+    {
+      "check": "Return alignment AAPL 2010-10-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.0607 computed=0.0607 diff=0.0000"
+    },
+    {
+      "check": "Return alignment MSFT 2010-10-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.0890 computed=0.0890 diff=0.0000"
+    },
+    {
+      "check": "Return alignment GOOG 2010-10-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.1672 computed=0.1672 diff=0.0000"
+    },
+    {
+      "check": "Return alignment AAPL 2019-12-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.0988 computed=0.0988 diff=0.0000"
+    },
+    {
+      "check": "Return alignment MSFT 2019-12-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.0417 computed=0.0417 diff=0.0000"
+    },
+    {
+      "check": "Return alignment GOOG 2019-12-31",
+      "status": "\u2705 PASS",
+      "detail": "stored=0.0246 computed=0.0246 diff=0.0000"
+    }
+  ]
+}

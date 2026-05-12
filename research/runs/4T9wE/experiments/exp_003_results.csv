@@ -1,0 +1,25 @@
+name,top_k,weighting,cagr,sharpe,max_dd,win_rate,ann_vol,n_months,cash_months,mean_m,std_m
+lgbm K=40 inv_vol + regime_200ma,40,inv_vol,0.611,1.677,-0.145,0.453,0.3159,179,30,0.04414,0.09119
+lgbm K=30 inv_vol + regime_200ma,30,inv_vol,0.6424,1.649,-0.149,0.458,0.3363,179,30,0.04622,0.09707
+lgbm_smooth K=30 inv_vol + regime_200ma,30,inv_vol,0.4271,1.635,-0.112,0.447,0.2364,179,30,0.03219,0.06823
+lgbm_smooth K=30 inv_vol + dual_regime,30,inv_vol,0.4271,1.635,-0.112,0.447,0.2364,179,30,0.03219,0.06823
+lgbm_smooth K=20 inv_vol + dual_regime,20,inv_vol,0.4861,1.629,-0.1137,0.453,0.2667,179,30,0.0362,0.07698
+lgbm_smooth K=25 inv_vol + regime_200ma,25,inv_vol,0.4452,1.623,-0.1051,0.447,0.2473,179,30,0.03346,0.0714
+lgbm_smooth K=15 inv_vol + dual_regime,15,inv_vol,0.5325,1.622,-0.1282,0.453,0.2905,179,30,0.03926,0.08387
+lgbm_smooth K=40 inv_vol + regime_200ma,40,inv_vol,0.3935,1.614,-0.1188,0.453,0.2225,179,30,0.02992,0.06422
+lgbm_smooth K=30 inv_vol + vol_regime(0.25),30,inv_vol,0.4182,1.613,-0.1279,0.43,0.2354,179,35,0.03164,0.06795
+lgbm_smooth K=20 inv_vol + vol_regime(0.25),20,inv_vol,0.4755,1.604,-0.1265,0.436,0.2661,179,35,0.03557,0.07682
+lgbm K=20 inv_vol + regime_200ma,20,inv_vol,0.7343,1.596,-0.1498,0.469,0.3921,179,30,0.05214,0.1132
+lgbm_smooth K=20 min_var + regime_200ma,20,min_var,0.3816,1.594,-0.1423,0.43,0.2194,179,30,0.02915,0.06334
+lgbm_smooth K=50 inv_vol + regime_200ma,50,inv_vol,0.363,1.578,-0.1408,0.453,0.2119,179,30,0.02787,0.06118
+lgbm_smooth K=20 inv_vol + triple_regime,20,inv_vol,0.4597,1.566,-0.1257,0.425,0.2653,179,38,0.03462,0.07659
+lgbm_smooth K=15 inv_vol + triple_regime,15,inv_vol,0.5035,1.56,-0.1282,0.425,0.2892,179,38,0.03758,0.08347
+lgbm_smooth K=30 inv_vol + vol_regime(0.2),30,inv_vol,0.3753,1.554,-0.1397,0.413,0.2223,179,40,0.02879,0.06416
+lgbm_smooth K=30 inv_vol + vol_regime(0.22),30,inv_vol,0.3753,1.554,-0.1397,0.413,0.2223,179,40,0.02879,0.06416
+lgbm_smooth K=20 inv_vol + vol_regime(0.22),20,inv_vol,0.4292,1.544,-0.1483,0.419,0.2532,179,40,0.03259,0.07309
+lgbm_smooth K=20 inv_vol + vol_regime(0.2),20,inv_vol,0.4292,1.544,-0.1483,0.419,0.2532,179,40,0.03259,0.07309
+lgbm_smooth K=30 min_var + regime_200ma,30,min_var,0.3314,1.533,-0.1432,0.436,0.2012,179,30,0.0257,0.05807
+lgbm_smooth K=30 inv_vol + vol_regime(0.18),30,inv_vol,0.3602,1.524,-0.1397,0.391,0.2187,179,48,0.02778,0.06313
+lgbm_smooth K=20 min_var + vol_regime,20,min_var,0.3333,1.515,-0.1423,0.397,0.205,179,40,0.02589,0.05919
+lgbm_smooth K=20 inv_vol + vol_regime(0.18),20,inv_vol,0.4106,1.507,-0.1483,0.397,0.25,179,48,0.0314,0.07216
+lgbm_smooth K=30 min_var + vol_regime,30,min_var,0.2884,1.462,-0.1432,0.402,0.1863,179,40,0.02269,0.05379
