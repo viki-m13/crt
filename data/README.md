@@ -32,10 +32,16 @@ This strategy reuses the existing data layer in
 - No volume data in the cached panel.  FHtzX did not pull volume; all
   features are price-only.
 - No fundamentals; price-only by design.
-- No PIT S&P 500 membership.  The universe is an approximation —
+- ~~No PIT S&P 500 membership.  The universe is an approximation —
   flagged in `research/01_engine_audit.md` as the largest honesty
   gap, partially mitigated by the bias overlay and the 30%-bucket
-  ticker holdout test.
+  ticker holdout test.~~ **Partially addressed** (May 2026): see
+  [`data/sp500_pit/`](./sp500_pit/README.md) for an augmented PIT
+  S&P 500 panel that lifts the historical coverage from 62% → 78%
+  globally (51% → 72% in 2003, 96% → 99.7% in 2025). 161 acquired
+  large-caps and renamed companies backfilled from FNSPID + yfinance,
+  date-validated against PIT membership to filter ticker-reuse.
+  213 OTC bankruptcy-Q tickers remain unreachable on free data.
 
 ## Frozen holdouts (for FHtzX)
 
