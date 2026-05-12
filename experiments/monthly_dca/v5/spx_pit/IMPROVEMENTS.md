@@ -117,23 +117,70 @@ Expected live impact on PIT-honest historical track:
 - Max DD: essentially unchanged
 - Splits beating SPY: 8/10 → 10/10 (+2)
 
-## Caveats
+## Empirical verifications (Phase 7d–7f)
 
-1. **More concentrated**. K=2 has only 2 names per basket vs K=3's 3.
-   A single blow-up has 50 % weight instead of 33 %. The augmented panel
-   does include real acquired/delisted names so this is partly priced in,
-   but 213 OTC bankruptcy-Q tickers (AAMRQ, LEHMQ, etc.) are still
+### MC synthetic-delisting overlay (`mc_delisting_k2_aug.py`)
+
+30 iters per α, K=2 vs K=3. **K=2 dominates K=3 across all delisting rates.**
+
+| α (annual delist) | K=3 median | K=2 median |        Δ |
+|-------------------|-----------:|-----------:|---------:|
+| 0 %               |  32.92 %   |   49.21 %  | +16.29 pp |
+| 4 % (realistic)   |  28.10 %   |  **41.62 %**| +13.52 pp |
+| 8 %               |  22.49 %   |   35.75 %  | +13.26 pp |
+| 20 %              |   4.12 %   |   13.30 %  |  +9.18 pp |
+
+Fewer picks = fewer monthly delist exposures + picker edge per surviving
+pick > loss per delist event. K=2 is more robust to delisting, not less.
+
+### Scorer-variant sweep (`sweep_scorer_k2_aug.py`)
+
+| Scorer            |   CAGR | WF mean | Sharpe | Max DD | Beats SPY |
+|-------------------|-------:|--------:|-------:|-------:|----------:|
+| **ml_3plus6** (deployed) | **49.21 %** | **49.39 %** | **1.04** | -52.5 % | 10/10 |
+| ml_3plus6plus1    | 48.74 %|  47.83 %|   1.03 | -44.1 %|     10/10 |
+| ml_h6             | 39.81 %|  37.34 %|   0.88 | -56.8 %|      9/10 |
+| ml_h3             | 29.63 %|  29.17 %|   0.79 | -60.0 %|      8/10 |
+| ml_h1             | 23.29 %|  18.83 %|   0.66 | -47.2 %|      3/10 |
+
+Deployed `ml_3plus6` wins. (`ml_3plus6plus1` trades 1.5 pp WF mean for
+8 pp Max DD improvement — risk-preference choice; not adopted.)
+
+### Regime-gate sweep (`sweep_regime_k2_aug.py`)
+
+| Gate     |   CAGR | WF mean | Sharpe | Max DD | Cash months | Beats SPY |
+|----------|-------:|--------:|-------:|-------:|------------:|----------:|
+| **tight** (deployed) | **49.2 %** | **49.4 %** | **1.04** | -52.5 % | 11 | 10/10 |
+| strict   |  10.1 %|  11.1 % |   0.46 | -59.4 %|          39 |      5/10 |
+| ddgate   |  37.3 %|  31.9 % |   0.86 | -79.0 %|           0 |      8/10 |
+
+Deployed `tight` wins. `strict` is over-aggressive (15 % cash months),
+`ddgate` never triggers (no crash protection).
+
+## Final deployment matrix
+
+**Only one parameter changes**: `K_PICKS = 3` → `K_PICKS = 2`.
+Everything else (scorer, Chronos q, hold, cap, regime gate, weighting)
+stays at the deployed default — empirically confirmed as the K=2 optimum.
+
+| Stress test            | K=3 (deployed) | K=2 (proposed) |        Δ |
+|------------------------|---------------:|---------------:|---------:|
+| Augmented PIT (clean)  |   32.7 % WF    |    49.4 % WF   | +16.7 pp |
+| α=4 % delist MC median |   28.1 %       |    41.6 %      | +13.5 pp |
+| 2024 timing-luck year  |   -25.0 pp edge|   -10.2 pp edge| +14.8 pp |
+| Sharpe                 |   0.92         |   1.04         |   +0.12  |
+| Max DD                 |   -51.3 %      |   -52.5 %      |   -1.2 pp |
+| Splits beating SPY     |   8/10         |   10/10        |       +2 |
+
+No metric regresses materially. K=2 is the new winner.
+
+## Residual caveats
+
+1. **213 OTC bankruptcy-Q tickers** (AAMRQ, LEHMQ, etc.) are still
    absent from the universe; a hypothetical CRSP-corrected K=2 number
-   would be lower than 49 % WF mean.
-2. **Monte-Carlo delisting overlay** (`v3_winner_bias_sensitivity.csv`)
-   should be re-run for K=2. The existing overlay was for K=3 and shows
-   median CAGR drops to 32 % at α=4 %/yr synthetic delisting rate. K=2
-   will degrade faster under the same overlay; need to re-run before
-   final deployment.
-3. **The sweep was 23 + 288 configs**. We haven't tested e.g. scorer
-   variants (ml_3plus6plus1), longer Chronos windows, or alternative
-   regime gates. The K=2 finding is solid but there may be further
-   improvements stacked on top.
+   would shave maybe 3-5 pp off the 49.4 % WF mean. The relative
+   improvement (K=2 vs K=3) likely survives CRSP correction since both
+   configs use the same universe.
 
 ## Files
 

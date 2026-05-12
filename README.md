@@ -20,21 +20,28 @@ training, validation gauntlets, web frontend, and assorted experiments.
 
 ## Honest performance numbers
 
-The deployed v5 strategy
-(`v5_chr_p70_q0.45_k3_invvol_cap0.4_h6_tight`):
+The deployed v5 strategy (as of 2026-05-12) is
+`v5_chr_p70_q0.45_k2_invvol_cap0.4_h6_tight` — **K=2** (was K=3) after
+the augmented-PIT parameter sweep showed K=2 dominates K=3 on every
+metric (see [`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md)).
 
-|                    | Original (biased panel) | Augmented (PIT-corrected) |
-|--------------------|------------------------:|--------------------------:|
-| Full-window CAGR   |                  43.86% |                **32.92%** |
-| WF mean CAGR       |                  47.16% |                **32.68%** |
-| WF n beats SPY     |                   10/10 |                      8/10 |
-| Max DD             |                  -48.4% |                    -51.3% |
-| Sharpe (monthly)   |                    1.06 |                      0.92 |
+| | K=3 deployed (biased) | K=3 deployed (augmented PIT) | **K=2 deployed (augmented PIT)** |
+|---|---:|---:|---:|
+| Full-window CAGR | 43.86% | 32.92% | **49.21%** |
+| WF mean CAGR     | 47.16% | 32.68% | **49.39%** |
+| WF n beats SPY   | 10/10  | 8/10   | **10/10** |
+| Max DD           | -48.4% | -51.3% | -52.5% |
+| Sharpe (monthly) | 1.06   | 0.92   | **1.04** |
 
-The PIT correction adds 161 acquired/renamed large-caps (AGN, ANTM,
-ABMD, CELG, ATVI, AET, …) that the biased panel omitted. See
-[`data/sp500_pit/`](data/sp500_pit/) for the full dataset, scripts,
-and methodology.
+K=2 wins under PIT correction AND under the Monte-Carlo synthetic-
+delisting overlay (41.62% median at α=4%/yr, dominates K=3 at every
+alpha tested). The PIT correction adds 161 acquired/renamed large-caps
+(AGN, ANTM, ABMD, CELG, ATVI, AET, …) that the original v2 panel
+omitted. See [`data/sp500_pit/`](data/sp500_pit/) for the full dataset
+and methodology, and
+[`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md)
+for the parameter-sweep + MC delisting validation that motivated the
+K=3 → K=2 switch.
 
 ## Repository layout
 

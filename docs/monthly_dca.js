@@ -194,7 +194,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Same v5 config (Chronos p70 filter + K=3 inv-vol cap=0.4, tight gate, 6m hold) on 5 alternative universes. The Chronos filter is universe-agnostic alpha — v5 beats the v3 baseline on 5 of 6 universes including broader 1833-ticker and non-S&P 500 PIT."));
+      "Same v5 config (Chronos p70 filter + K=2 inv-vol cap=0.4, tight gate, 6m hold). Generalisation numbers here are from the prior K=3 sweep on the older biased panel and are kept for historical context; the headline strategy now runs on the augmented PIT panel with K=2 (see IMPROVEMENTS.md for the parameter-sweep + MC overlay re-validation)."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs SPY</th><th>Sharpe</th><th>MaxDD</th><th>Beats SPY</th></tr></thead>`;
     const tb = el("tbody");
@@ -234,7 +234,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Parameter sensitivity"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Each row perturbs ONE parameter while holding the others at the v5 winner config (Chronos p70 q=0.45, K=3, inv-vol cap=0.4, tight, h=6, cost=10bp). Robust plateau across reasonable perturbations confirms the result is not on a knife-edge."));
+      "Each row perturbs ONE parameter while holding the others at the v5 winner config (Chronos p70 q=0.45, K=2, inv-vol cap=0.4, tight, h=6, cost=10bp). The augmented-PIT 288-config fine sweep shows a broad K=2 plateau (Sharpe 1.01-1.04 across Chronos q in [0.20, 0.60], cap in [0.34, 0.50]). Not on a knife-edge — see IMPROVEMENTS.md."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Param</th><th>Value</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge (pp)</th><th>Beats SPY</th><th>MaxDD</th></tr></thead>`;
     const tb = el("tbody");
@@ -374,7 +374,7 @@ function renderPick(data) {
       body.appendChild(actions);
     }
   } else {
-    // Mid-cycle: big "do nothing" message + the current 3 picks
+    // Mid-cycle: big "do nothing" message + the current 2 picks
     const head = el("div", { class: "basket-dates basket-dates-noaction" });
     const tickerStr = (ls.current_basket_picks || []).join(", ") || basket.map(p=>p.ticker).join(", ");
     const weights = ls.current_basket_weights || [];

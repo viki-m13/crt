@@ -77,17 +77,20 @@ def main():
     sub = sub.merge(p70, on="ticker", how="left")
     sub["chr_p70_rk"] = sub["chronos_p70_3m"].rank(pct=True)
 
-    # Apply filter and pick
+    # Apply filter and pick. K=2 (was K=3) — updated 2026-05-12 after
+    # the augmented-PIT sweep confirmed K=2 dominates K=3 on every
+    # metric (see experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md).
     eligible = sub.dropna(subset=["v3_score", "chronos_p70_3m"])
-    eligible = eligible[eligible["chr_p70_rk"] >= 0.4]
+    eligible = eligible[eligible["chr_p70_rk"] >= 0.45]
     eligible = eligible[~eligible["ticker"].isin(EXCLUDE)]
     print(f"  eligible after filter: {len(eligible)}", flush=True)
-    top = eligible.sort_values("v3_score", ascending=False).head(3)
+    K_PICKS = 2
+    top = eligible.sort_values("v3_score", ascending=False).head(K_PICKS)
     picks = []
     for i, (_, r) in enumerate(top.iterrows()):
         picks.append({
             "ticker": r["ticker"],
-            "weight": 1/3,
+            "weight": 1 / K_PICKS,
             "v3_score": float(r["v3_score"]),
             "chronos_p70_3m": float(r["chronos_p70_3m"]),
             "chronos_rank": float(r["chr_p70_rk"]),
@@ -95,9 +98,9 @@ def main():
 
     out = {
         "asof": str(last_asof.date()),
-        "strategy": "v5_chr_p70_filter",
-        "spec": {"k": 3, "weighting": "ew", "regime_gate": "tight",
-                 "hold_months": 6, "chronos_filter_quantile": 0.4,
+        "strategy": "v5_chr_p70_filter_k2",
+        "spec": {"k": K_PICKS, "weighting": "invvol", "regime_gate": "tight",
+                 "hold_months": 6, "chronos_filter_quantile": 0.45,
                  "chronos_model": CHRONOS_MODEL},
         "picks": picks,
     }

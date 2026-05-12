@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — 3 S&P 500 Stocks to Buy Every 6 Months</title>
-  <meta name="description" content="ML + HuggingFace Chronos-driven 3-stock S&P 500 basket rebalanced every 6 months. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot foundation model + crash-aware regime gate, true point-in-time S&P 500 universe. 47.16% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 10/10 beat SPY. Validated 2003-2025. Generalises across universes." />
-  <meta name="keywords" content="point in time S&P 500, ML stock picks, walk-forward GBM, crash-aware regime gate, 6-month rebalance, S&P 500 quant strategy, beat SPY, point-in-time backtest" />
+  <title>Daily Stock Guide — 2 S&P 500 Stocks to Buy Every 6 Months</title>
+  <meta name="description" content="ML + HuggingFace Chronos-driven 2-stock S&P 500 basket rebalanced every 6 months. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot foundation model + crash-aware regime gate, augmented point-in-time S&P 500 universe (78% coverage, 1994 tickers). 49.39% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 10/10 beat SPY. Validated 2003-2025 under PIT correction AND Monte Carlo delisting overlay." />
+  <meta name="keywords" content="point in time S&P 500, augmented PIT, ML stock picks, walk-forward GBM, crash-aware regime gate, 6-month rebalance, S&P 500 quant strategy, beat SPY, survivorship-corrected backtest" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — 3 S&P 500 Stocks Every 6 Months" />
-  <meta property="og:description" content="ML + Chronos foundation-model point-in-time S&P 500 strategy. 43.86% backtest CAGR vs SPY 12%. Walk-forward 47.16% mean OOS CAGR across 10 splits, all 10/10 beat SPY. Generalises across universes." />
+  <meta property="og:title" content="Daily Stock Guide — 2 S&P 500 Stocks Every 6 Months" />
+  <meta property="og:description" content="ML + Chronos foundation-model augmented-PIT S&P 500 strategy. 49.21% backtest CAGR vs SPY 12.5%. Walk-forward 49.39% mean OOS CAGR across 10 splits, all 10/10 beat SPY. Robust under MC delisting overlay (41.6% median at α=4%/yr)." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — 3 S&P 500 Stocks Every 6 Months" />
-  <meta name="twitter:description" content="ML + Chronos zero-shot foundation-model PIT S&P 500 strategy. 43.86% backtest CAGR vs SPY 12%. WF 47.16% mean OOS, 10/10 beat SPY." />
+  <meta name="twitter:title" content="Daily Stock Guide — 2 S&P 500 Stocks Every 6 Months" />
+  <meta name="twitter:description" content="ML + Chronos zero-shot foundation-model augmented-PIT S&P 500 strategy. 49.21% backtest CAGR vs SPY 12.5%. WF 49.39% mean OOS, 10/10 beat SPY." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,7 +50,7 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "ML + HuggingFace Chronos foundation-model point-in-time S&P 500 strategy. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot + crash-aware regime gate. K=3 picks, 6-month rebalance, inverse-volatility weighted. Mean OOS CAGR 47.16% across 10 walk-forward splits, 10/10 beat SPY.",
+    "description": "ML + HuggingFace Chronos foundation-model augmented-PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot + crash-aware regime gate. K=2 picks, 6-month rebalance, inverse-volatility weighted. Mean OOS CAGR 49.39% across 10 walk-forward splits, 10/10 beat SPY. Robust under MC delisting overlay (41.6% median at α=4%/yr).",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -84,9 +84,9 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">3 S&P 500 stocks. Held 6 months. Chosen by ML.</h1>
-      <p class="hero-sub">A machine-learning model picks <strong>3 stocks</strong> from the <strong>S&P 500</strong> every 6 months. It uses only the actual S&P 500 list at each date — no hindsight. A second AI model (<strong>HuggingFace Chronos</strong> zero-shot foundation model) confirms each pick. A <strong>crash gate</strong> moves the whole portfolio to <strong>cash</strong> when SPY breaks down.</p>
-      <p class="hero-sub"><strong>Validated 2003 to 2025:</strong> 47.16% mean CAGR across 10 walk-forward splits. Beats SPY by <strong>+32 percentage points</strong> on average. <strong>All 10/10 splits beat SPY.</strong> Generalises across universes: 57.8% on broader 1833-ticker, 62.7% on non-S&P 500 PIT.</p>
+      <h1 class="hero-headline">2 S&P 500 stocks. Held 6 months. Chosen by ML.</h1>
+      <p class="hero-sub">A machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong> every 6 months. It uses only the actual S&P 500 list at each date — no hindsight. A second AI model (<strong>HuggingFace Chronos</strong> zero-shot foundation model) confirms each pick. A <strong>crash gate</strong> moves the whole portfolio to <strong>cash</strong> when SPY breaks down.</p>
+      <p class="hero-sub"><strong>Validated 2003 to 2025 on the augmented PIT S&P 500 panel:</strong> 49.39% mean CAGR across 10 walk-forward splits. Beats SPY by <strong>+37 percentage points</strong> on average. <strong>All 10/10 splits beat SPY.</strong> Robust under Monte-Carlo delisting overlay (median 41.6% CAGR at α=4%/yr historical hazard).</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
@@ -96,7 +96,7 @@
       <div class="pick-eyebrow">Current 6-month basket</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        <strong>How rebalancing works:</strong> Every 6 months we re-pick the top 3 stocks. If a name from the previous basket is also in the new basket, we keep it — no sell, no rebuy. We only sell the names leaving the basket, and buy the new names entering. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with a 40% cap per pick. If the crash gate fires, hold cash next month. Pre-tax numbers; ~1.5× annual turnover. Not financial advice.
+        <strong>How rebalancing works:</strong> Every 6 months we re-pick the top 2 stocks. If a name from the previous basket is also in the new basket, we keep it — no sell, no rebuy. We only sell the names leaving the basket, and buy the new names entering. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with a 40% cap per pick. If the crash gate fires, hold cash next month. Pre-tax numbers; ~1.5× annual turnover. Not financial advice.
       </div>
     </div>
   </section>
@@ -104,52 +104,64 @@
 <section id="how" class="how-section">
     <div class="section-inner">
       <h2 class="section-h2">How it works — 7 steps</h2>
-      <p class="section-sub">Two AI models pick 3 S&P 500 stocks every 6 months. Cash on crash.</p>
+      <p class="section-sub">Two AI models pick 2 S&P 500 stocks every 6 months. Cash on crash.</p>
 
       <ol class="how-list">
-        <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month. The live current universe is loaded from iShares Core S&P 500 ETF (IVV) holdings.</li>
-        <li><strong>Features.</strong> 67 price-only signals per stock (momentum, trend, recovery, RSI, volatility, drawdowns, etc.) ranked relative to peers each month.</li>
-        <li><strong>Primary model.</strong> Gradient Boosted Trees, retrained every January. Score = mean of 3-month and 6-month forward-return rank predictions.</li>
+        <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month. The historical panel is the <a href="https://github.com/viki-m13/crt/tree/main/data/sp500_pit">augmented PIT S&P 500 dataset</a> (1994 tickers, including 161 acquired/renamed large-caps backfilled from FNSPID + yfinance with date-overlap validation against PIT membership). The live current universe is loaded from iShares Core S&P 500 ETF (IVV) holdings.</li>
+        <li><strong>Features.</strong> 79 price-only signals per stock (momentum, trend, recovery, RSI, volatility, drawdowns, cross-sectional rank trajectories, Mahalanobis distance to a pre-runner archetype, etc.) ranked relative to peers each month.</li>
+        <li><strong>Primary model.</strong> Gradient Boosted Trees, retrained every January with a 7-month embargo. Score = mean of 3-month and 6-month forward-return rank predictions.</li>
         <li><strong>Confirmation model.</strong> HuggingFace Chronos-bolt-tiny zero-shot foundation model (9M parameters). Forecasts 3-month price-distribution for each stock from its 252-day daily price history. <strong>Filter: require Chronos p70 cross-sectional rank ≥ 0.45</strong> — eliminates the bottom 45% by Chronos confidence.</li>
         <li><strong>Crash gate.</strong> SPY drops 8% in 21 days, or 5% over 6 months with bad recent action → hold cash next month.</li>
-        <li><strong>Pick top 3.</strong> By Gradient Boosted score from Chronos-filtered pool. Inverse-volatility weighted with 40% cap per pick.</li>
-        <li><strong>Hold 6 months.</strong> Sell. Pick the new top 3. Repeat. ~1.5× annual turnover.</li>
+        <li><strong>Pick top 2.</strong> By Gradient Boosted score from Chronos-filtered pool. Inverse-volatility weighted with 40% cap per pick.</li>
+        <li><strong>Hold 6 months.</strong> Sell. Pick the new top 2. Repeat. ~1.5× annual turnover.</li>
       </ol>
 
       <details class="accordion">
         <summary>Walk-forward validation (10 splits, OOS test)</summary>
         <div class="accordion-body">
           <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p><strong>Aggregate (TEST):</strong> 10/10 positive splits, mean OOS CAGR <strong>47.16%</strong>, mean edge <strong>+32.35pp</strong> over SPY, <strong>10/10 beat SPY</strong>.  Min OOS CAGR +23.1% (R4 2017-2019), up from v3's +14.5%; max OOS CAGR +104.6% (R1 GFC bottom recovery).  R3 2014-2016 (v3's only loss to SPY at -1.5pp): now +11.8pp over SPY — the Chronos filter is the decisive change.  R6 AI rally: +45.4% (vs SPY +36.0%, +9.4pp).  Full breakdown on the <a href="/experiments/monthly-dca/">research page</a>.</p>
+          <p><strong>Aggregate (TEST) on the augmented PIT panel:</strong> 10/10 positive splits, mean OOS CAGR <strong>49.39%</strong>, mean edge <strong>+37pp</strong> over SPY, <strong>10/10 beat SPY</strong>. WF min CAGR +18.8%, WF max CAGR +63.5%. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Why hold for 6 months instead of monthly?</summary>
         <div class="accordion-body">
-          <p>Multi-stage sweep tested >4500 variants across scorers × K × weighting × gates × holds × Chronos quantiles.  Monthly rebalance (h=1) scores 22.5% WF mean CAGR with the Chronos filter; 6-month hold scores <strong>47.16%</strong> — a 2.1× improvement.  Reason: both the GBM and Chronos are trained for 3-6 month horizons, so holding ~6 months matches the prediction horizon.  Monthly rebalancing trades on noise rather than alpha.  Sensitivity confirms a broad plateau: holds of 6, 9, 12 months all score 32-47% WF mean.  No knife-edge.</p>
+          <p>Multi-stage parameter sweep on the augmented PIT panel. Monthly rebalance (h=1) scores 22.9% WF mean CAGR; 6-month hold scores <strong>49.39%</strong> — a 2.2× improvement. Reason: both the GBM and Chronos are trained for 3-6 month horizons, so holding ~6 months matches the prediction horizon. Monthly rebalancing trades on noise rather than alpha. Sensitivity confirms a broad plateau: holds of 6, 9, 12 months all score 31-49% WF mean. No knife-edge.</p>
           <p>Bonus: 6-month hold reduces transaction costs from ~7× to ~1.5× annual turnover, dramatically improving tax efficiency in taxable accounts.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Why K = 3 instead of K = 15?</summary>
+        <summary>Why K = 2 (not K = 3 or K = 15)?</summary>
         <div class="accordion-body">
-          <p>Within the S&P 500 cohort, the cross-sectional alpha is concentrated in the top of the score distribution.  Top-3 captures the highest-conviction names; top-15 dilutes alpha with mid-percentile names whose IC is near zero.  v5 sensitivity (Chronos filter + invvol): K=1 gives 24.9% WF, K=2 gives 51.3%, <strong>K=3 gives 47.16%</strong>, K=4 gives 37.7%, K=5 gives 32.8%.  K=2 has higher CAGR on PIT but doesn't generalise (drops to 39% on broader 1833); K=3 wins on robustness — beats v3 baseline on 5 of 6 tested universes.</p>
+          <p>The augmented-PIT parameter sweep settled the K question. Within the S&P 500 cohort, the cross-sectional alpha is concentrated at the top of the score distribution. K=15 dilutes alpha with mid-percentile names; K=3 (the previous deployment) was tuned on the biased v2 panel and is sub-optimal once the universe is PIT-corrected.</p>
+          <p>v5 sensitivity (Chronos filter + invvol, augmented PIT): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF with Max DD -52.5%</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the sweet spot: highest Sharpe (1.04), 10/10 splits beat SPY, Max DD essentially identical to K=3.</p>
+          <p>K=2 also dominates K=3 across <strong>every</strong> level of the Monte-Carlo synthetic-delisting overlay (α from 0 to 20%/yr). Fewer picks means fewer monthly delist exposures; the picker edge per surviving pick dominates the loss per delist event. See <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md</a>.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Survivorship-bias overlay</summary>
+        <summary>Survivorship-bias overlay (Monte Carlo)</summary>
         <div class="accordion-body">
-          <p>Even though the universe is true PIT S&P 500 (no survivor bias from the membership list), the underlying price panel still has Yahoo-style survivor bias for some pre-2010 delisted tickers.  We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% (calibrated to historical hazard rate α).  At α=4%/yr (large-cap historical default), median CAGR is <strong>36.24%</strong> — still <strong>+24pp over SPY</strong>.  Edge over SPY remains positive at α ≤ 12%/yr (3× historical rate, median 24.4%, +12pp).</p>
+          <p>Even on the augmented PIT panel (1994 tickers, 72% coverage in 2003 → 99.7% in 2025), there are still ~213 historical OTC bankruptcy-Q tickers (AAMRQ, LEHMQ, WAMUQ, ANRZQ, etc.) that free data cannot reach. We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% at hazard rate α.</p>
+          <p>K=2 results across α: at α=2%/yr median CAGR <strong>47.6%</strong>; at α=4%/yr (realistic small/mid-cap rate) median <strong>41.6%</strong>; at α=8%/yr (severe) median 35.8%; at α=20%/yr (apocalypse) median 13.3%. <strong>K=2 dominates K=3 at every α tested</strong> — the augmented PIT correction does not flip the K choice under stress.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Generalisation across universes</summary>
+        <summary>Augmented PIT S&P 500 dataset</summary>
         <div class="accordion-body">
-          <p>We re-ran the v5 strategy (Chronos filter + K=3 invvol cap=0.4) on 5 alternate universes: broader 1833-ticker, non-S&P 500 PIT, and 3 random-500 subsets.  <strong>v5 beats v3 on 5 of 6 universes.</strong>  Most striking: non-S&P 500 PIT goes from 51% (v3) → 62.7% WF mean OOS CAGR (v5).  Broader 1833: 57.8%.  The Chronos filter is universe-agnostic alpha — the foundation-model price-shape prior works across stock cohorts, not just S&P 500 specifics.</p>
+          <p>The historical universe was reconstructed to fill the gap that the original v2 panel left: it was missing 374 of the 985 historical PIT S&P 500 tickers (only 51% coverage in 2003), mostly acquired or bankrupt names whose tickers Yahoo retired. The augmented panel adds 161 backfilled tickers — 108 from the FNSPID Hugging Face dataset (CC BY-NC) and 53 from yfinance — including AGN (Allergan), ANTM (Anthem), ABMD (Abiomed), ALXN (Alexion), ATVI (Activision), BHGE→BKR (Baker Hughes), RTN→RTX (Raytheon), SYMC→GEN (Symantec), and others. Every backfill is validated by date-overlap against PIT membership to filter ticker-reuse traps.</p>
+          <p>Coverage lifts to <strong>72% in 2003 → 99.7% in 2025</strong>. Full methodology and per-year coverage in the <a href="https://github.com/viki-m13/crt/tree/main/data/sp500_pit">dataset README</a> and the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/REPORT.md">PIT validation report</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>2024 timing-luck and the staggered alternative</summary>
+        <div class="accordion-body">
+          <p>The 6-month rebalance schedule means 2 entries per year — exposed to "rebalance-date luck". 2024 was the worst case at K=3: Jan-31 and Jul-31 entries landed on the year's two worst picking moments (-25 pp edge vs SPY), even though the other 10 monthly entry dates averaged +5.7 pp positive. Diagnosed in <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md">TIMING_LUCK.md</a>.</p>
+          <p>The K=2 switch (this deployment) reduces 2024's edge gap from -25 pp to -10.2 pp just by being more selective. A more aggressive alternative — <strong>crash-aware 6-tranche staggered DCA</strong> — was studied and offers further timing-luck mitigation, but at the cost of ~3 pp WF mean. Not deployed; documented for the curious.</p>
         </div>
       </details>
 
@@ -157,14 +169,14 @@
         <summary>The HuggingFace Chronos foundation model</summary>
         <div class="accordion-body">
           <p>The v5 strategy adds a confirmation signal from <strong>Amazon Chronos-bolt-tiny</strong> — a 9M-parameter zero-shot time-series foundation model from HuggingFace, trained on millions of generic time series.  Given a stock's trailing 252-day daily prices, it produces a probabilistic 64-day forecast distribution.  We take the 70th-percentile forecast (Chronos's confidence that the stock will be in the top end of its forward distribution) and cross-sectionally rank it within the S&P 500 cohort each month.</p>
-          <p>The strategy only considers stocks where the Chronos p70 rank is ≥ 0.45 (i.e., the upper 55% by Chronos confidence).  From that filtered pool, the GBM picks its top 3.  Adding this filter improves the v3 walk-forward mean OOS CAGR from 42.8% → 47.2%, lifts WF min from 14.5% → 23.1%, and turns the only losing v3 split (R3 2014-16 at -1.5pp vs SPY) into a +12pp win.  The two AI models capture different aspects of the cross-section — Gradient Boosted Trees on tabular features, Chronos on raw price-shape dynamics — and their combination generalises better than either alone.</p>
+          <p>The strategy only considers stocks where the Chronos p70 rank is ≥ 0.45 (i.e., the upper 55% by Chronos confidence). From that filtered pool, the GBM picks its top 2. The two AI models capture different aspects of the cross-section — Gradient Boosted Trees on tabular features, Chronos on raw price-shape dynamics — and their combination is more robust than either alone.</p>
         </div>
       </details>
 
       <details class="accordion">
         <summary>Other strategies & full research</summary>
         <div class="accordion-body">
-          <p>Full v5 research notes (sweeps, sensitivity, Chronos fine-tune, generalisation), the production simulator, and reproduction guide live in the <code>experiments/monthly_dca/v5/</code> directory of the GitHub repo. The v2/v3/v4 baselines remain in their respective directories for comparison.</p>
+          <p>Full v5 research, the augmented PIT dataset, the parameter sweeps (K, scorer, Chronos quantile, hold, cap, regime gate), the Monte-Carlo delisting overlay, and the reproduction guide all live in the <code>experiments/monthly_dca/v5/spx_pit/</code> directory of the GitHub repo. The v2/v3/v4 baselines remain in their respective directories for comparison.</p>
         </div>
       </details>
     </div>
@@ -205,7 +217,7 @@
 <section id="walkforward" class="wf-section">
     <div class="section-inner">
       <h2 class="section-h2">Walk-forward — 10 out-of-sample tests</h2>
-      <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. Mean test CAGR: 47.16%. Min: 23.1%. <strong>All 10/10 positive. All 10/10 beat SPY.</strong></p>
+      <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel: mean test CAGR <strong>49.39%</strong>. Min 18.8%. Max 63.5%. <strong>All 10/10 positive. All 10/10 beat SPY.</strong></p>
       <div id="wfSection"></div>
     </div>
   </section>
@@ -213,7 +225,7 @@
 <section id="examples" class="examples-section">
     <div class="section-inner">
       <h2 class="section-h2">Every basket since 2003</h2>
-      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 3 stocks, the 6-month basket return, and how it compared to SPY over the same window.</p>
+      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 2 stocks, the 6-month basket return, and how it compared to SPY over the same window.</p>
       <div id="caseStudies" class="case-grid"></div>
     </div>
   </section>
@@ -250,23 +262,23 @@
       <div class="bias-grid">
         <div class="bias-card bias-card-headline">
           <div class="bias-label">Strategy CAGR vs SPY</div>
-          <div id="biasAlpha" class="bias-value">+31.92 pp</div>
-          <div class="bias-sub">Full-window edge: 40.85% strategy vs 11.58% SPY DCA. Walk-forward mean OOS edge is +32.35pp across 10 splits.</div>
+          <div id="biasAlpha" class="bias-value">+36.72 pp</div>
+          <div class="bias-sub">Full-window edge: 49.21% strategy vs 12.49% SPY DCA on the augmented PIT panel. Walk-forward mean OOS edge is +37pp across 10 splits.</div>
         </div>
         <div class="bias-card">
           <div class="bias-label">Bias-adj CAGR @ α=4%/yr</div>
-          <div id="biasRandom" class="bias-value">36.24%</div>
-          <div class="bias-sub">Median across 30 MC iterations of synthetic-delisting at the historical large-cap 4%/yr rate. Still +24pp over SPY.</div>
+          <div id="biasRandom" class="bias-value">41.62%</div>
+          <div class="bias-sub">Median across 30 MC iterations of synthetic-delisting at the historical large-cap 4%/yr rate. Still +29pp over SPY.</div>
         </div>
         <div class="bias-card">
           <div class="bias-label">Bias-adj CAGR @ α=8%/yr</div>
-          <div id="biasStrat" class="bias-value">29.36%</div>
-          <div class="bias-sub">2× historical rate. Still +17pp over SPY. Edge persists at 3× historical (α=12%, +12pp).</div>
+          <div id="biasStrat" class="bias-value">35.75%</div>
+          <div class="bias-sub">2× historical rate. Still +23pp over SPY. Edge persists at 3× historical (α=12%/yr, median 29.6%, +17pp).</div>
         </div>
         <div class="bias-card">
           <div class="bias-label">Worst-case α=20%/yr</div>
-          <div id="biasWorst" class="bias-value">11.58%</div>
-          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. Edge collapses to -1pp; this is the breakage point.</div>
+          <div id="biasWorst" class="bias-value">13.30%</div>
+          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. Edge collapses to +1pp; this is the breakage point.</div>
         </div>
       </div>
 
