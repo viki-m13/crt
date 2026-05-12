@@ -194,7 +194,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Same v5 config (Chronos p70 filter + K=2 inv-vol cap=0.4, tight gate, 6m hold). Generalisation numbers here are from the prior K=3 sweep on the older biased panel and are kept for historical context; the headline strategy now runs on the augmented PIT panel with K=2 (see IMPROVEMENTS.md for the parameter-sweep + MC overlay re-validation)."));
+      "Same K=2 v5 config (Chronos p70 q=0.45 + inv-vol cap=0.4 + tight gate + 6m hold) on 6 alternative universes built from the augmented panel. Headline: the picker stays positive everywhere (every universe beats SPY on Full CAGR), but PIT S&P 500 is the sweet spot — every other universe has materially wider Max DD. The S&P 500 cohort's size/liquidity/maturity profile suits this concentrated picker; broader universes admit more thinly-traded names that occasionally produce -50% basket months."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs SPY</th><th>Sharpe</th><th>MaxDD</th><th>Beats SPY</th></tr></thead>`;
     const tb = el("tbody");

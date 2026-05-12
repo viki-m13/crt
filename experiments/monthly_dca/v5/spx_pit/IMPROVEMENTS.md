@@ -196,3 +196,65 @@ Outputs (in `augmented/`):
 - `v5_k2_lump_summary.json` — K=2 lump-sum headline
 - `v5_k2_staggered_ca_*.{json,csv}` — K=2 crash-aware-staggered
 - `v5_k2_vs_deployed.json` — side-by-side
+
+## Phase 8 — Cross-universe generalization (May 2026)
+
+Scripts:
+- `score_chronos_broader_aug.py` — regenerates Chronos preds on the
+  full augmented panel (~1964 tickers, vs PIT-only 731).
+- `sweep_generalize_k2_aug.py` — runs K=2 v5 on 6 universes.
+
+Output: `augmented/v5_k2_generalize.csv` (also surfaced via
+data.json's `multi_universe_generalisation`).
+
+| Universe                  | Pool size | Full CAGR | WF mean | Sharpe | Max DD  | Beats SPY |
+|---------------------------|----------:|----------:|--------:|-------:|--------:|----------:|
+| **PIT S&P 500 augmented** |       229 | **49.21%**| **49.39%**| **1.04** | **-52.5%** | **10/10** |
+| broader augmented (~1964) |       815 |    38.13% |  31.48% |   0.74 |  -88.7% |     5/10  |
+| non-S&P 500 augmented     |       586 |    31.28% |  25.77% |   0.69 |  -88.7% |     5/10  |
+| random 500 seed1          |       199 |    33.90% |  33.81% |   0.72 |  -69.2% |     6/10  |
+| random 500 seed2          |       201 |    40.52% |  73.81% |   0.82 |  -73.2% |     8/10  |
+| random 500 seed3          |       210 |    30.49% |  38.93% |   0.69 |  -88.7% |     6/10  |
+
+Findings:
+1. **The K=2 picker generalizes positively to every universe.** Full
+   CAGR is well above SPY's ~12% in all 6 tests; WF mean edge ranges
+   from +12pp (non-S&P) to +60pp (random seed 2). No universe regresses
+   below SPY on average.
+
+2. **But S&P 500 is the sweet spot.** Every other universe shows:
+   - Materially lower Sharpe (0.69-0.82 vs 1.04)
+   - Wider Max DD (-69% to -89% vs -52%)
+   - Fewer WF splits beating SPY (5-8/10 vs 10/10)
+
+3. **The Max DD widening is the clearest signal.** Broader, non-S&P,
+   and random-seed3 all hit -88.7% — concentrating into 2 names from
+   a less-curated universe occasionally lands on a stock that
+   collapses. The S&P 500's quality filter (market-cap, liquidity,
+   maturity) is doing real work.
+
+4. **Random subsets show high variance.** Seed-2 lucks into a 73.81%
+   WF mean; seed-3 drags to 38.93%. The deployed S&P 500 universe
+   (49.39%) is a tighter, more reliable result than any individual
+   random pick.
+
+5. **K=2 is universe-tuned for S&P 500.** Earlier evidence (K=1 on
+   PIT scores 63% WF but blows Max DD to -80%) suggested the K choice
+   trades return for concentration risk; the cross-universe results
+   confirm this is universe-dependent. On a broader universe, K=2
+   might be too concentrated (one might prefer K=3+ there). We
+   haven't re-swept K on alt universes; that's an open follow-up.
+
+**Honest claim for the website:** the strategy generalizes positively
+across universes but is BEST on PIT S&P 500. The S&P 500 cohort's
+quality screen is part of what makes K=2 safe. We're not selling
+"works on any universe at 50% CAGR"; we're selling "K=2 + Chronos +
+PIT S&P 500 is the discovered local optimum, and it survives PIT
+correction + MC delisting overlay + cross-universe stress."
+
+Files:
+- `score_chronos_broader_aug.py`
+- `sweep_generalize_k2_aug.py`
+- `augmented/ml_preds_chronos_broader.parquet` (1964-ticker Chronos preds)
+- `augmented/v5_k2_generalize.csv` (raw sweep results)
+- `augmented/v5_winner_generalize.csv` (reshaped for homepage builder)
