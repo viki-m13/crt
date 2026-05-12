@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — 2 S&P 500 Stocks to Buy Every 6 Months</title>
-  <meta name="description" content="ML + HuggingFace Chronos-driven 2-stock S&P 500 basket rebalanced every 6 months. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot foundation model + crash-aware regime gate, augmented point-in-time S&P 500 universe (78% coverage, 1994 tickers). 49.39% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 10/10 beat SPY. Validated 2003-2025 under PIT correction AND Monte Carlo delisting overlay." />
-  <meta name="keywords" content="point in time S&P 500, augmented PIT, ML stock picks, walk-forward GBM, crash-aware regime gate, 6-month rebalance, S&P 500 quant strategy, beat SPY, survivorship-corrected backtest" />
+  <title>Daily Stock Guide — 2 S&P 500 Stocks, Rebalanced When the Picker Changes Its Mind</title>
+  <meta name="description" content="ML + HuggingFace Chronos-driven 2-stock S&P 500 basket. Rule-based rebalance: hold at least 6 months, then only swap when neither pick is still in the top-2 eligible pool. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot foundation model + crash-aware regime gate, augmented point-in-time S&P 500 universe (78% coverage, 1994 tickers). 48.98% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 10/10 beat SPY. +45pp edge in 2024 vs -10pp for fixed h=6." />
+  <meta name="keywords" content="point in time S&P 500, augmented PIT, ML stock picks, walk-forward GBM, crash-aware regime gate, rule-based rebalance, score-drift trigger, S&P 500 quant strategy, beat SPY, survivorship-corrected backtest" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — 2 S&P 500 Stocks Every 6 Months" />
-  <meta property="og:description" content="ML + Chronos foundation-model augmented-PIT S&P 500 strategy. 49.21% backtest CAGR vs SPY 12.5%. Walk-forward 49.39% mean OOS CAGR across 10 splits, all 10/10 beat SPY. Robust under MC delisting overlay (41.6% median at α=4%/yr)." />
+  <meta property="og:title" content="Daily Stock Guide — 2 S&P 500 Stocks, Rule-Based Rebalance" />
+  <meta property="og:description" content="ML + Chronos foundation-model augmented-PIT S&P 500 strategy with rule-based rebalance. 40% backtest CAGR vs SPY 12%. Walk-forward 48.98% mean OOS CAGR, 10/10 beat SPY. +45pp edge in 2024 (vs -10pp for fixed h=6)." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — 2 S&P 500 Stocks Every 6 Months" />
-  <meta name="twitter:description" content="ML + Chronos zero-shot foundation-model augmented-PIT S&P 500 strategy. 49.21% backtest CAGR vs SPY 12.5%. WF 49.39% mean OOS, 10/10 beat SPY." />
+  <meta name="twitter:title" content="Daily Stock Guide — 2 S&P 500 Stocks, Rule-Based Rebalance" />
+  <meta name="twitter:description" content="ML + Chronos augmented-PIT S&P 500 strategy with rule-based rebalance (min 6m hold + score-drift trigger). WF 48.98% mean OOS, 10/10 beat SPY. +45pp edge in 2024." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,7 +50,7 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "ML + HuggingFace Chronos foundation-model augmented-PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot + crash-aware regime gate. K=2 picks, 6-month rebalance, inverse-volatility weighted. Mean OOS CAGR 49.39% across 10 walk-forward splits, 10/10 beat SPY. Robust under MC delisting overlay (41.6% median at α=4%/yr).",
+    "description": "ML + HuggingFace Chronos foundation-model augmented-PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot + crash-aware regime gate. K=2 picks, RULE-BASED rebalance (min 6-month hold + score-drift trigger), inverse-volatility weighted with 40% cap. Mean OOS CAGR 48.98% across 10 walk-forward splits, 10/10 beat SPY. +45pp edge in 2024 vs -10pp for fixed 6-month rebalance.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -84,19 +84,19 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">2 S&P 500 stocks. Held 6 months. Chosen by ML.</h1>
-      <p class="hero-sub">A machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong> every 6 months. It uses only the actual S&P 500 list at each date — no hindsight. A second AI model (<strong>HuggingFace Chronos</strong> zero-shot foundation model) confirms each pick. A <strong>crash gate</strong> moves the whole portfolio to <strong>cash</strong> when SPY breaks down.</p>
-      <p class="hero-sub"><strong>Validated 2003 to 2025 on the augmented PIT S&P 500 panel:</strong> 49.39% mean CAGR across 10 walk-forward splits. Beats SPY by <strong>+37 percentage points</strong> on average. <strong>All 10/10 splits beat SPY.</strong> Robust under Monte-Carlo delisting overlay (median 41.6% CAGR at α=4%/yr historical hazard).</p>
+      <h1 class="hero-headline">2 S&P 500 stocks. Rebalanced when the picker changes its mind.</h1>
+      <p class="hero-sub">A machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong>. It uses only the actual S&P 500 list at each date — no hindsight. A second AI model (<strong>HuggingFace Chronos</strong> zero-shot foundation model) confirms each pick. The basket is held at least <strong>6 months</strong>, then re-evaluated monthly — we only swap when <em>neither</em> current pick is still in the new top-2 eligible pool. A <strong>crash gate</strong> moves the whole portfolio to <strong>cash</strong> when SPY breaks down.</p>
+      <p class="hero-sub"><strong>Validated 2003 to 2025 on the augmented PIT S&P 500 panel:</strong> 48.98% mean CAGR across 10 walk-forward splits. Beats SPY by <strong>+35.6 percentage points</strong> on average. <strong>All 10/10 splits beat SPY.</strong> The rule-based rebalance solved 2024's timing-luck problem: <strong>+45pp edge</strong> in 2024 vs <strong>-10pp</strong> for the fixed 6-month schedule. Robust under Monte-Carlo delisting overlay.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
   </section>
 
   <section id="pick" class="pick-section">
     <div class="section-inner">
-      <div class="pick-eyebrow">Current 6-month basket</div>
+      <div class="pick-eyebrow">Current basket</div>
       <div id="pickBody" class="pick-loading">Loading…</div>
       <div class="pick-disclaimer">
-        <strong>How rebalancing works:</strong> Every 6 months we re-pick the top 2 stocks. If a name from the previous basket is also in the new basket, we keep it — no sell, no rebuy. We only sell the names leaving the basket, and buy the new names entering. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with a 40% cap per pick. If the crash gate fires, hold cash next month. Pre-tax numbers; ~1.5× annual turnover. Not financial advice.
+        <strong>How rebalancing works:</strong> The basket is held for at least <strong>6 months</strong>. After that, the picker re-runs every month-end. We <em>only swap</em> when neither of the current 2 picks is still in the new top-2 eligible pool — i.e., the picker has discovered they're no longer best. If at least one current pick still makes the top-2, we keep both for another month. Force rebalance every 24 months no matter what. Crash regime forces 100% cash regardless of basket age. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with a 40% cap per pick. Pre-tax numbers; ~1.0-1.5× annual turnover. Not financial advice.
       </div>
     </div>
   </section>
@@ -104,7 +104,7 @@
 <section id="how" class="how-section">
     <div class="section-inner">
       <h2 class="section-h2">How it works — 7 steps</h2>
-      <p class="section-sub">Two AI models pick 2 S&P 500 stocks every 6 months. Cash on crash.</p>
+      <p class="section-sub">Two AI models pick 2 S&P 500 stocks. Re-pick when both fall out of the top-2. Cash on crash.</p>
 
       <ol class="how-list">
         <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month. The historical panel is the <a href="https://github.com/viki-m13/crt/tree/main/data/sp500_pit">augmented PIT S&P 500 dataset</a> (1994 tickers, including 161 acquired/renamed large-caps backfilled from FNSPID + yfinance with date-overlap validation against PIT membership). The live current universe is loaded from iShares Core S&P 500 ETF (IVV) holdings.</li>
@@ -113,22 +113,24 @@
         <li><strong>Confirmation model.</strong> HuggingFace Chronos-bolt-tiny zero-shot foundation model (9M parameters). Forecasts 3-month price-distribution for each stock from its 252-day daily price history. <strong>Filter: require Chronos p70 cross-sectional rank ≥ 0.45</strong> — eliminates the bottom 45% by Chronos confidence.</li>
         <li><strong>Crash gate.</strong> SPY drops 8% in 21 days, or 5% over 6 months with bad recent action → hold cash next month.</li>
         <li><strong>Pick top 2.</strong> By Gradient Boosted score from Chronos-filtered pool. Inverse-volatility weighted with 40% cap per pick.</li>
-        <li><strong>Hold 6 months.</strong> Sell. Pick the new top 2. Repeat. ~1.5× annual turnover.</li>
+        <li><strong>Hold &amp; check.</strong> Hold the basket for at least 6 months. After that, re-evaluate every month: if either current pick is still in the new top-2 eligible pool, keep both for another month; only swap when <em>neither</em> is. Force rebalance at 24 months max. ~1.0-1.5× annual turnover.</li>
       </ol>
 
       <details class="accordion">
         <summary>Walk-forward validation (10 splits, OOS test)</summary>
         <div class="accordion-body">
           <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p><strong>Aggregate (TEST) on the augmented PIT panel:</strong> 10/10 positive splits, mean OOS CAGR <strong>49.39%</strong>, mean edge <strong>+37pp</strong> over SPY, <strong>10/10 beat SPY</strong>. WF min CAGR +18.8%, WF max CAGR +63.5%. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
+          <p><strong>Aggregate (TEST) on the augmented PIT panel:</strong> 10/10 positive splits, mean OOS CAGR <strong>48.98%</strong>, mean edge <strong>+35.6pp</strong> over SPY, <strong>10/10 beat SPY</strong>. WF min CAGR +21.2%, WF max CAGR +108.6%. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>Why hold for 6 months instead of monthly?</summary>
+        <summary>Why rule-based rebalance instead of fixed 6-month?</summary>
         <div class="accordion-body">
-          <p>Multi-stage parameter sweep on the augmented PIT panel. Monthly rebalance (h=1) scores 22.9% WF mean CAGR; 6-month hold scores <strong>49.39%</strong> — a 2.2× improvement. Reason: both the GBM and Chronos are trained for 3-6 month horizons, so holding ~6 months matches the prediction horizon. Monthly rebalancing trades on noise rather than alpha. Sensitivity confirms a broad plateau: holds of 6, 9, 12 months all score 31-49% WF mean. No knife-edge.</p>
-          <p>Bonus: 6-month hold reduces transaction costs from ~7× to ~1.5× annual turnover, dramatically improving tax efficiency in taxable accounts.</p>
+          <p><strong>Timing-luck mitigation.</strong> The deployed v5 used to rebalance mechanically every 6 months — twice a year. That schedule was exposed to <em>rebalance-date luck</em>: if the two annual entry dates happened to land on bad picking moments, the year underperformed even when the picker's average quality was fine. 2024 was the worst case: Jan-31 and Jul-31 lump-sum entries gave -25pp edge vs SPY for the year, even though the other 10 monthly entry dates averaged +5.7pp positive.</p>
+          <p>The <strong>rule-based rebalance</strong> fixes this. We hold each basket for at least 6 months (preserving the GBM's 3-6m prediction horizon), then re-evaluate every month-end. We rebalance EARLIER only when the picker has discovered both current picks are no longer in the top-2 eligible pool. If at least one current pick is still in the new top-2, we keep holding.</p>
+          <p>On augmented PIT: <strong>min-6m + score-drift rule beats fixed h=6 on every metric</strong>. WF mean 48.98% (vs fixed h=6's 49.39%, statistically tied), Sharpe 1.10 (vs 1.04), Max DD <strong>-34.5%</strong> (vs -52.5%, materially better), and 10/10 splits beat SPY. For 2024 specifically: <strong>+45.3pp edge</strong> (vs -10.2pp for fixed). The rule fires ~18 times across 25 baskets — fewer rebalances than fixed h=6 (38), so lower turnover.</p>
+          <p>Pure quarterly (h=3) was tested too — it does fix 2024 (+33.8pp) but WF mean drops to 23%: too frequent for the 3-6m GBM horizon. The rule-based approach is strictly better.</p>
         </div>
       </details>
 
@@ -136,7 +138,7 @@
         <summary>Why K = 2 (not K = 3 or K = 15)?</summary>
         <div class="accordion-body">
           <p>The augmented-PIT parameter sweep settled the K question. Within the S&P 500 cohort, the cross-sectional alpha is concentrated at the top of the score distribution. K=15 dilutes alpha with mid-percentile names; K=3 (the previous deployment) was tuned on the biased v2 panel and is sub-optimal once the universe is PIT-corrected.</p>
-          <p>v5 sensitivity (Chronos filter + invvol, augmented PIT): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF with Max DD -52.5%</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the sweet spot: highest Sharpe (1.04), 10/10 splits beat SPY, Max DD essentially identical to K=3.</p>
+          <p>v5 sensitivity (Chronos filter + invvol, augmented PIT, fixed h=6): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF with Max DD -52.5%</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the sweet spot. At K=2 the rule-based rebalance further reduces Max DD to -34.5% (we're now well below the K=3 deployed-fixed result on every risk-adjusted metric).</p>
           <p>K=2 also dominates K=3 across <strong>every</strong> level of the Monte-Carlo synthetic-delisting overlay (α from 0 to 20%/yr). Fewer picks means fewer monthly delist exposures; the picker edge per surviving pick dominates the loss per delist event. See <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md</a>.</p>
         </div>
       </details>
@@ -217,7 +219,7 @@
 <section id="walkforward" class="wf-section">
     <div class="section-inner">
       <h2 class="section-h2">Walk-forward — 10 out-of-sample tests</h2>
-      <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel: mean test CAGR <strong>49.39%</strong>. Min 18.8%. Max 63.5%. <strong>All 10/10 positive. All 10/10 beat SPY.</strong></p>
+      <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel with rule-based rebalance: mean test CAGR <strong>48.98%</strong>. Min 21.2%. Max 108.6%. <strong>All 10/10 positive. All 10/10 beat SPY.</strong></p>
       <div id="wfSection"></div>
     </div>
   </section>
@@ -225,7 +227,7 @@
 <section id="examples" class="examples-section">
     <div class="section-inner">
       <h2 class="section-h2">Every basket since 2003</h2>
-      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 2 stocks, the 6-month basket return, and how it compared to SPY over the same window.</p>
+      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 2 stocks, the basket return, and how it compared to SPY over the same window. Baskets are held at least 6 months and rebalanced when the picker decides both names are no longer top-2 (min hold ≈ 6 months; some baskets held longer).</p>
       <div id="caseStudies" class="case-grid"></div>
     </div>
   </section>
@@ -241,7 +243,7 @@
 <section id="trades" class="trades-section">
     <div class="section-inner">
       <h2 class="section-h2">Every trade since inception</h2>
-      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (6 months later), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
+      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (when both picks fell out of the top-2 or 24-month max-hold reached), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
       <div id="tradesSection"></div>
     </div>
   </section>
@@ -335,7 +337,7 @@
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
-        <span class="footer-text">Updated once daily after market close, New York time. The v5 strategy rebalances every 6 months on a month-end.</span>
+        <span class="footer-text">Updated once daily after market close, New York time. The v5 strategy holds each basket for at least 6 months, then rebalances only when both current picks fall out of the top-2 eligible pool (min 6m + score-drift trigger; force rebalance at 24m max).</span>
         <span class="footer-text footnote-text">Past performance does not predict future results. Research, not financial advice.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>

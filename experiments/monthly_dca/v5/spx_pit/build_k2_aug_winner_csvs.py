@@ -33,8 +33,12 @@ from sweep_v5_aug import (  # noqa: E402
 
 K = 2
 CHR_Q = 0.45
-HOLD = 6
+HOLD = 6           # legacy fixed hold (only used if REBALANCE_MODE='fixed')
 CAP = 0.40
+# Phase 10 (May 2026): rule-based rebalance now deployed.
+REBALANCE_MODE = "rule_based"   # 'fixed' or 'rule_based'
+MIN_HOLD = 6
+MAX_HOLD = 24
 
 
 def _load_data():
@@ -55,14 +59,39 @@ def _load_data():
     return panel, ml, chr_, spy, mr, members_g
 
 
-def run_sim(panel, ml, chr_, spy, mr, members_g, k=K, chr_q=CHR_Q, hold=HOLD, cap=CAP):
-    """Run v5 sim, return (eq_df, picks_log)."""
+def run_sim(panel, ml, chr_, spy, mr, members_g, k=K, chr_q=CHR_Q, hold=HOLD, cap=CAP,
+            mode=REBALANCE_MODE, min_hold=MIN_HOLD, max_hold=MAX_HOLD):
+    """Run v5 sim, return (eq_df, picks_log).
+
+    Phase 10: defaults to rule-based rebalance (min_hold=6 + score_drift trigger).
+    Pass mode='fixed' to fall back to the original h=6 schedule.
+    """
     panel_by_asof = {a: g for a, g in panel.groupby("asof")}
     ml_by_asof = {a: g for a, g in ml.groupby("asof")}
     chr_by_asof = {a: g for a, g in chr_.groupby("asof")}
     months = sorted(set(panel["asof"]).intersection(set(spy.index)))
     months = [pd.Timestamp(m) for m in months]
     cf = COST_BPS / 1e4
+
+    def _compute_candidate(m_):
+        sub_panel_ = panel_by_asof.get(m_); sub_ml_ = ml_by_asof.get(m_)
+        sub_chr_ = chr_by_asof.get(m_)
+        if sub_panel_ is None or sub_ml_ is None:
+            return None
+        sp_set_ = members_g.get(m_, set())
+        sub_ = sub_panel_[sub_panel_["ticker"].isin(sp_set_)]
+        sub_ = sub_[~sub_["ticker"].isin(EXCLUDE)]
+        sub_ = sub_.merge(sub_ml_[["ticker", "ml_score"]], on="ticker", how="left")
+        sub_ = sub_.dropna(subset=["ml_score"])
+        if chr_q > 0 and sub_chr_ is not None and not sub_chr_.empty:
+            sub_ = sub_.merge(sub_chr_[["ticker", "chronos_p70_3m"]],
+                              on="ticker", how="left")
+            sub_ = sub_.dropna(subset=["chronos_p70_3m"])
+            sub_["chr_p70_rk"] = sub_["chronos_p70_3m"].rank(pct=True)
+            sub_ = sub_[sub_["chr_p70_rk"] >= chr_q]
+        sub_ = sub_.sort_values("ml_score", ascending=False)
+        top_ = sub_.head(k)
+        return top_ if len(top_) >= k else None
 
     cur_picks = []; cur_weights = np.array([])
     cash = False; held_for = 0; equity = 1.0
@@ -71,7 +100,17 @@ def run_sim(panel, ml, chr_, spy, mr, members_g, k=K, chr_q=CHR_Q, hold=HOLD, ca
 
     for i, m in enumerate(months):
         regime = classify_regime_tight(spy.loc[m].to_dict() if m in spy.index else {})
-        do_reb = (i == 0) or (held_for >= hold) or (cash != (regime == "crash"))
+        if mode == "fixed":
+            do_reb = (i == 0) or (held_for >= hold) or (cash != (regime == "crash"))
+        else:
+            do_reb = (i == 0) or (cash != (regime == "crash"))
+            if held_for >= max_hold:
+                do_reb = True
+            elif held_for >= min_hold and cur_picks and regime != "crash":
+                _candidate = _compute_candidate(m)
+                if _candidate is not None:
+                    if not (set(cur_picks) & set(_candidate["ticker"])):
+                        do_reb = True
         ret_m = 0.0
         if not cash and cur_picks:
             mr_pos = mr.index.searchsorted(m)

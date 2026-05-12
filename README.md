@@ -21,27 +21,35 @@ training, validation gauntlets, web frontend, and assorted experiments.
 ## Honest performance numbers
 
 The deployed v5 strategy (as of 2026-05-12) is
-`v5_chr_p70_q0.45_k2_invvol_cap0.4_h6_tight` — **K=2** (was K=3) after
-the augmented-PIT parameter sweep showed K=2 dominates K=3 on every
-metric (see [`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md)).
+`v5_chr_p70_q0.45_k2_invvol_cap0.4_minhold6_scoredrift` — **K=2** with
+**rule-based rebalance** (min 6-month hold + score-drift trigger).
+Both changes vs the original deployment were validated on the
+augmented PIT panel (see
+[`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md)).
 
-| | K=3 deployed (biased) | K=3 deployed (augmented PIT) | **K=2 deployed (augmented PIT)** |
+| | K=3 fixed h=6 (was deployed, biased panel) | K=2 fixed h=6 (augmented PIT) | **K=2 rule-based (deployed, augmented PIT)** |
 |---|---:|---:|---:|
-| Full-window CAGR | 43.86% | 32.92% | **49.21%** |
-| WF mean CAGR     | 47.16% | 32.68% | **49.39%** |
-| WF n beats SPY   | 10/10  | 8/10   | **10/10** |
-| Max DD           | -48.4% | -51.3% | -52.5% |
-| Sharpe (monthly) | 1.06   | 0.92   | **1.04** |
+| Full-window CAGR | 43.86% | 49.21% | **40.08%** |
+| WF mean CAGR     | 47.16% | 49.39% | **48.98%** |
+| WF n beats SPY   | 10/10  | 10/10  | **10/10** |
+| Max DD           | -48.4% | -52.5% | **-34.5%** |
+| Sharpe (monthly) | 1.06   | 1.04   | **1.10** |
+| 2024 edge vs SPY | n/a    | -10.2pp | **+45.3pp** |
 
-K=2 wins under PIT correction AND under the Monte-Carlo synthetic-
-delisting overlay (41.62% median at α=4%/yr, dominates K=3 at every
-alpha tested). The PIT correction adds 161 acquired/renamed large-caps
-(AGN, ANTM, ABMD, CELG, ATVI, AET, …) that the original v2 panel
-omitted. See [`data/sp500_pit/`](data/sp500_pit/) for the full dataset
-and methodology, and
+**Rule-based rebalance**: hold each basket for at least 6 months,
+then rebalance ONLY when neither current pick is still in the new
+top-2 eligible pool. Force rebalance at 24 months. This solves the
+2024 timing-luck problem (-25pp → +45pp edge) and meaningfully
+reduces Max DD (-52% → -34%), at a small WF mean cost (-0.4pp).
+
+The PIT correction adds 161 acquired/renamed large-caps (AGN, ANTM,
+ABMD, CELG, ATVI, AET, …) that the original v2 panel omitted. See
+[`data/sp500_pit/`](data/sp500_pit/) for the full dataset and
+methodology, and
 [`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md)
-for the parameter-sweep + MC delisting validation that motivated the
-K=3 → K=2 switch.
+for the K=3→K=2 sweep, MC delisting validation, cross-universe
+generalization (NDX 8/8 beats QQQ), and the rule-based rebalance
+sweep.
 
 ## Repository layout
 

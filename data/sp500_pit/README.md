@@ -142,7 +142,26 @@ corrected number.
 
 ## Headline impact
 
-### Deployed v5-winner (`v5_chr_p70_q0.45_k3_invvol_cap0.4_h6_tight`)
+### Currently deployed v5-winner (`v5_chr_p70_q0.45_k2_invvol_cap0.4_minhold6_scoredrift`)
+
+K=2 + Chronos p70 filter q=0.45 + inverse-volatility weighting cap=0.40
++ tight regime gate + **rule-based rebalance** (min 6m hold +
+score-drift trigger; force at 24m max).
+
+| Metric | Was deployed (K=3 fixed h=6, biased panel) | Now deployed (K=2 rule-based, augmented PIT) | Δ |
+|---|---:|---:|---:|
+| Full CAGR | 43.86% | **40.08%** | -3.78pp |
+| Sharpe | 1.06 | **1.10** | +0.04 |
+| **Max DD** | -48.4% | **-34.5%** | **+13.9pp better** |
+| **WF mean CAGR** | **47.16%** | **48.98%** | **+1.82pp** |
+| WF beats SPY | 10/10 | **10/10** | tied |
+| **2024 edge vs SPY** | -25.0pp (biased) / -10.2pp (PIT corrected) | **+45.3pp** | **+55+pp** |
+
+The rule-based rebalance (min 6m + score-drift) solves the 2024
+timing-luck problem AND meaningfully reduces Max DD vs both the
+fixed-h=6 baselines, at a small headline cost.
+
+### Same picker, fixed h=6 (for comparison, no longer deployed)
 
 | Metric | Original (biased) | Augmented (PIT) | Δ |
 |---|---:|---:|---:|

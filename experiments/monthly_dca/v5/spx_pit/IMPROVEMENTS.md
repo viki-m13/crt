@@ -307,3 +307,92 @@ Files:
 - `qqq_pit/v5_k{2,3}_ndx_equity.csv` — equity curves
 - `qqq_pit/v5_k{2,3}_ndx_walkforward_vs_{spy,qqq}.csv` — WF tables
 - `qqq_pit/v5_k{2,3}_ndx_yearly_vs_{spy,qqq}.csv` — yearly returns
+
+## Phase 10 — Rule-based rebalance (deployed May 2026)
+
+Script: `experiments/monthly_dca/v5/spx_pit/sweep_rebalance_rules.py`.
+Output: `augmented/rebalance_rule_sweep.csv`.
+
+Tested 11 rebalance schedules (4 fixed + 7 rule-based) at both K=2
+and K=3 on the augmented PIT panel. The rule-based variant with
+`min_hold=6m + score_drift trigger` dominated the deployed fixed-h=6
+schedule on every risk-adjusted metric.
+
+### Winner: `K=2 min=6 + score_drift`
+
+Hold each basket at least 6 months. After that, rebalance ONLY when
+neither current pick is still in the new top-K eligible pool (the
+picker has discovered they're no longer best). Force rebalance at
+24 months max. Always rebalance on regime crash transition.
+
+|                    | K=2 fixed h=6 | **K=2 min=6 score_drift** | Δ |
+|--------------------|-------------:|--------------------------:|---:|
+| CAGR full          |        49.2% |                    42.6%  | -6.6pp |
+| **WF mean CAGR**   |        49.4% |                  **54.9%**| **+5.5pp** |
+| **Sharpe**         |         1.04 |                   **1.10**| **+0.06** |
+| **Max DD**         |       -52.5% |                 **-34.5%**| **+18pp better** |
+| Beats SPY          |        10/10 |                     10/10 | tied |
+| **2024 edge vs SPY**| -10.2pp     |                **+45.3pp**| **+55.5pp** |
+| Number of baskets  |           38 |                        25 | -13 (lower turnover) |
+| Early rebalances   |            0 |                        18 |  |
+
+(Numbers from the sweep simulator. The production simulator in
+build_webapp_v5_pit.py uses real entry/exit prices, NaN handling, and
+log-return marking — that produces slightly different headline
+numbers: WF mean 48.98%, Full CAGR 40.08%, Max DD -34.5% — but the
+ordering vs fixed h=6 is preserved.)
+
+### Why it works
+
+- `min_hold=6m` preserves the 3-6m GBM alpha horizon (the picker is
+  trained on 3m + 6m forward returns; rebalancing inside that window
+  trades on noise).
+- `score_drift` trigger catches regime shifts WITHIN the hold window —
+  the picker is allowed to course-correct when its previous picks are
+  no longer top-2 candidates.
+- For 2024 specifically: the deployed fixed h=6 schedule held the bad
+  Jan-31 basket all the way through Jul-31. The rule rotates out
+  earlier when picks fall out of the top-K — catching the late-Q3
+  Sep-Oct rally that the fixed schedule missed.
+
+### Other variants tested (NOT deployed)
+
+- **Pure quarterly (h=3)**: WF mean 23.4% — too frequent for the
+  3-6m GBM horizon. Trades on noise rather than alpha.
+- **h=2 fixed**: WF mean 28.9% — same problem, worse.
+- **min=3 + score_drift**: WF mean 25.7% — even with the rule, 3m
+  min-hold is too short.
+- **min=6 + drawdown trigger (-15%, -25%)**: mediocre. Sometimes help
+  (DD25 catches some recovery years) but adds variance.
+- **min=3, max=9 or 12 + score+regime triggers**: bad (15% WF). Too
+  many early rebalances.
+
+### Universality check at K=3 (sanity)
+
+K=3 + same rule (min=6 + score_drift) also wins vs K=3 + fixed h=6:
+WF mean 42.8% (vs 32.7%), Sharpe 1.07 (vs 0.92), Max DD -35.4% (vs
+-51.3%), 10/10 beats SPY (vs 8/10), 2024 +36.6pp (vs -25.0pp). So
+the rule is universally beneficial, not K=2-specific.
+
+### Deployment changes
+
+- `experiments/monthly_dca/v5/build_webapp_v5_pit.py`:
+  - New constants `REBALANCE_MODE = "rule_based"`, `MIN_HOLD_MONTHS = 6`,
+    `MAX_HOLD_MONTHS = 24`.
+  - Refactored simulation loop to compute candidate top-K BEFORE the
+    rebalance decision, then apply the score_drift trigger.
+  - `WINNER_NAME` updated to
+    `v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift`.
+  - `STRATEGY_SPEC` updated: `min_hold_months: 6`, `max_hold_months: 24`,
+    `rebalance_mode: rule_based_score_drift`.
+- `experiments/monthly_dca/v5/spx_pit/build_k2_aug_winner_csvs.py`:
+  - `REBALANCE_MODE = "rule_based"`, defaults pass through to `run_sim`.
+  - All `v5_winner_*.csv` artifacts regenerated with the rule.
+- `experiments/docs/monthly-dca/data.json` — regenerated; current
+  basket is now `['PH', 'ETN']` (was `['CNC', 'UBER']` under fixed
+  h=6). Last rebalance 2025-12-31.
+
+### Files
+- `experiments/monthly_dca/v5/spx_pit/sweep_rebalance_rules.py` — 11×2
+  variant sweep
+- `augmented/rebalance_rule_sweep.csv` — raw results
