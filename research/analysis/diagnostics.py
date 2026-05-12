@@ -221,6 +221,16 @@ def run_with_score_fn(panel, daily, membership, oos_start, oos_end, score_fn,
             w = np.ones(len(common))/len(common)
 
         rets = np.array([(p1[t]-p0[t])/p0[t] for t in common])
+        # Sanity filter: drop picks with |monthly return| > 200% (data errors -- the
+        # augmented PIT SP500 panel has split-adjustment failures for CFC 2007-01,
+        # TIE 2011-01, etc. — see backtest_diag for the audit).
+        sane = np.abs(rets) <= 2.0
+        if not sane.all():
+            w = w[sane]; rets = rets[sane]; common = [c for c,s in zip(common,sane) if s]
+            if w.sum() < 1e-6:
+                rows.append(dict(date=date, ret_m=0.0, n_picks=0, scale=0.0, reason="all_extreme"))
+                continue
+            w = w / w.sum()
         raw_port = float((w*rets).sum())
 
         scale = 1.0
