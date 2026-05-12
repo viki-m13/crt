@@ -43,3 +43,21 @@ Approaches that have been tried and failed. Do not retry without a substantively
 - **Result:** Consistently worse Sharpe than inv_vol by ~0.1-0.2.
 - **Root cause:** Small-cap and high-vol picks are equally weighted, adding noise; inv_vol naturally tilts toward larger, lower-vol stocks.
 - **Dead end:** EW is dominated by inv_vol for this universe.
+
+## 8. ERC (Equal Risk Contribution) Weighting
+- **Tried:** exp_012 — scipy SLSQP optimization targeting equal marginal risk contribution
+- **Result:** Sharpe 1.77-1.79, ann_vol 34.5% — WORSE than inv_vol (1.82, 29.5%). ERC increased vol.
+- **Root cause:** ERC with noisy 252-day lookback covariance results in extreme weights that amplify correlated factors, not reduce them. Also ~12s per month vs ~1s for inv_vol.
+- **Dead end unless:** Factor-model-based covariance (e.g., Barra-style) which is unavailable here.
+
+## 9. Sharpe-Target LGBM Training (exp_010)
+- **Tried:** Train LightGBM on rank(fwd_ret/vol_12m) instead of rank(fwd_ret)
+- **Result:** Pure Sharpe-target: CAGR=39%, Sharpe=1.64. 70/30 ensemble: Sharpe=1.76 — worse than 1.82.
+- **Root cause:** Dividing returns by vol introduces noise (vol estimation is unreliable at 1-year lookback). The vol-adjustment degrades the cross-sectional rank signal.
+- **Dead end:** Risk-adjusted ranking is strictly dominated by raw return ranking in this setting.
+
+## 10. High-IC Signals Replacing LGBM (exp_011)
+- **Tried:** breakout_strength_60 (IC=0.088), crt_6m (IC=0.081) as primary scores without LGBM
+- **Result:** Pure breakout_60 K=20: CAGR=47%, Sharpe=1.71 — fails CAGR gate. All pure IC combos fail CAGR gate.
+- **Root cause:** High-IC signals select lower-volatility, lower-momentum stocks. These have better signal quality but lower raw returns than LGBM's momentum picks. Need LGBM for CAGR ≥ 50%.
+- **Dead end:** Cannot replace LGBM with purely signal-based selection. Must blend.

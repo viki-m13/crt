@@ -3,4 +3,11 @@
 {"exp":"exp_003","n":24,"desc":"Sharpe maximization: larger K=25-50, vol-triggered regime, dual/triple regime, min-var weights. lgbm and lgbm_smooth."}
 {"exp":"exp_004","n":13,"desc":"IC analysis and Sharpe-target model. Cross-sectional IC via Spearman. IC target variants. Baseline references."}
 {"exp":"exp_005","n":24,"desc":"Very large K: regime-only K=20-200, lgbm K=50-150, lgbm_smooth K=40-100, hybrid 2x pre-filter K=20-50."}
-{"total":134,"note":"Deflated Sharpe Ratio adjustment requires using this total count across all experiments."}
+{"exp":"exp_006","n":30,"desc":"Volatility targeting: SPY vol-based scaling. target_vol in {12%,15%,18%,22%}. K=20,30,40,50. Regime: 200ma, 200ma_loose. score_fn: lgbm, lgbm_smooth."}
+{"exp":"exp_007","n":44,"desc":"Trend filters: d_sma200 > {0,0.02,0.05}, rs_6m_spy > {0,-0.05}. K=20,30,40,50. vt=18%, regime_loose, lgbm."}
+{"exp":"exp_008","n":48,"desc":"Two-way signal blend: lgbm×(1-w)+sharpe_12m×w, w in {0.10,0.20,0.30,0.40,0.50}. K=20,25,30,40. vt=18%, regime_loose."}
+{"exp":"exp_009","n":45,"desc":"Three-way blend: LGBM×L+sh12×S12+sh5y×S5y. L in {0.60,0.65,0.70,0.75}, S12 in {0.10,0.20,0.30}, S5y in {0,0.05,0.10,0.15}. K=25,30,40. vt=18%, regime_loose."}
+{"exp":"exp_010","n":24,"desc":"Sharpe-target LGBM: train on rank(fwd_ret/vol_12m). Pure Sharpe-target, 70/30 ensemble with std LGBM. K=20,30,40,50. vt=18%, regime_loose."}
+{"exp":"exp_011","n":35,"desc":"High-IC signals: breakout_strength_60 (IC=0.088), crt_6m (IC=0.081), sharpe_12m (IC=0.043). Pure signals, 50/50 blend, 4-way blend, LGBM+highIC. K=20,30,40,50,60. Various regimes."}
+{"exp":"exp_012","n":30,"desc":"Alternative weighting: inv_vol (ref), ERC (equal risk contribution), inv_vol² (double inv vol), inv_vol with 5/7/10% cap, ERC with 7/10% cap. K=20,25,30,35,40. vt=15%,18%."}
+{"total":390,"note":"Deflated Sharpe Ratio adjustment requires using this total count across all experiments. Current best Sharpe=1.834 OOS 2007-2021."}
