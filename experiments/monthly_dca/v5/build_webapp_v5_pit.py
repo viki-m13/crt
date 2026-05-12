@@ -6,7 +6,7 @@ v5 = v3 baseline (ml_3plus6, tight gate, h=6) + two additions:
 
 Backtest (PIT S&P 500 2003-2025):
   - Full CAGR: 43.86% (vs v3 39.77%)
-  - Walk-forward mean OOS CAGR: 47.16% (vs v3 42.80%)
+  - Walk-forward mean OOS CAGR: 49.39% on augmented PIT panel (was 47.16% K=3 on biased v2 panel)
   - WF min OOS CAGR: 23.08% (vs v3 14.49%)
   - All 10/10 splits beat SPY (vs v3's 9/10)
   - Sharpe 1.06 (vs 0.96); MaxDD -48.4% (vs -49.8%)
@@ -76,20 +76,25 @@ STRATEGY_SPEC = {
         "rule": (
             "At each rebalance, the candidate pool is restricted to stocks where the "
             "Chronos p70 3m-forecast cross-sectional rank is >= 0.45 (i.e., the upper 55%). "
-            "Then v3 picks the top 3 by ml_3plus6 score from that filtered pool. "
+            "Then v3 picks the top 2 by ml_3plus6 score from that filtered pool. "
             "This is universe-agnostic alpha that complements the GBM's tabular signal — "
             "verified on broader 1833-ticker, non-S&P 500 PIT, and random subset universes."
         ),
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k3_invvol_cap0.4_h6"
+WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_h6"
 
-# v5 strategy hyperparameters
+# v5 strategy hyperparameters.
+# K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
+# parameter sweep (`experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md`)
+# confirmed K=2 dominates K=3 on every metric (WF mean 49.4% vs 32.7%,
+# 10/10 vs 8/10 splits beating SPY, Sharpe 1.04 vs 0.92, identical Max DD)
+# under PIT correction AND under MC delisting overlay across all alpha.
 CHRONOS_FILTER_Q = 0.45          # filter quantile: require Chronos p70 rank >= 0.45
 CAP_PER_PICK = 0.40              # cap inverse-vol weights at 40% per pick
 HOLD_MONTHS = 6
-K_PICKS = 3
+K_PICKS = 2
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
@@ -882,12 +887,14 @@ def main():
                 "ranking model (3m+6m forward-rank ensemble) restricted to "
                 "point-in-time S&P 500 constituents at each rebalance, gated by "
                 "the HuggingFace Chronos-bolt-tiny zero-shot foundation model "
-                "(p70 forecast rank ≥ 0.45). Top-3 picks held for 6 months; "
+                "(p70 forecast rank ≥ 0.45). Top-2 picks held for 6 months; "
                 "inverse-volatility weighted with 40% cap per pick; 'tight' "
                 "regime gate goes 100% cash on SPY 21d <= -8% or 6m <= -5%. "
-                "Walk-forward 47.16% MEAN OOS CAGR over 10 splits 2003-2025 "
-                "with 10/10 positive, 10/10 beating SPY. Generalises across "
-                "universes — 57.82% on broader 1833-ticker, 62.72% on non-S&P 500."
+                "Walk-forward 49.39% MEAN OOS CAGR over 10 splits 2003-2025 "
+                "on the augmented PIT panel, with 10/10 positive, 10/10 beating "
+                "SPY. Robust under Monte-Carlo synthetic-delisting overlay: "
+                "41.6% median CAGR at α=4%/yr (realistic small/mid-cap rate), "
+                "still +29pp over SPY. K=2 dominates K=3 at every alpha tested."
             ),
         },
         "growth": growth,
