@@ -474,3 +474,98 @@ Files:
 - `experiments/monthly_dca/v5/spx_pit/sweep_sharpe_max.py` — full sweep
 - `augmented/sharpe_max_sweep.csv` — all 60+ blend/overlay configs
 - `augmented/v5_sharpe_alpha_stream.csv` — audited alpha return stream
+
+## Phase B — market-neutral build-out: the honest Sharpe-2.0 attempt
+
+**Goal requested:** experiment extensively, invent something novel
+and proprietary, achieve Sharpe >= 2.0 honestly and thoroughly
+validated.
+
+SECOND_SLEEVE_SCOPE.md said the only honest route to >=2.0 is a
+genuinely market-neutral sleeve (rho~0 to v5 by construction). Phase A
+(carry) failed the stability bar. Phase B actually built and validated
+the market-neutral candidates. Three new engines, none of which
+existed in the repo before:
+
+### B1. Avellaneda-Lee PCA statistical-arbitrage  (`build_statarb_sleeve.py`)
+Canonical proprietary statarb: trailing-252d PCA -> 15 eigenportfolio
+risk factors -> per-name OU residual `s-score` -> dollar-neutral
+residual mean-reversion, plus three honest enhancements (multi-horizon
+residual blend, risk-parity book sizing, vol-targeted gross).
+**Result — documented NEGATIVE:** gross Sharpe ~0.7 is real, but NET
+of 10bps/side it collapses to ~ -1.0 because weekly residual reversal
+turns the whole book over every rebalance (cost bleed ~1.9 Sharpe
+points). Monthly idiosyncratic reversal nets ~0 — in a *curated
+large-cap* PIT universe the short-horizon reversal premium is gone
+(it lives in the small/illiquid names the S&P 500 screen excludes).
+
+### B2. Multi-sleeve beta-neutral factor composite  (`build_mn_composite.py`)
+8 beta-neutralized dollar-neutral factor-family long-shorts
+(idio-mom, momentum, low-risk, quality, LT-reversal, trend, earnings
+drift, ML pred), fixed risk-parity blend. **Result — documented
+NEGATIVE:** the PIT panel's factor `_xs` columns are collinear
+momentum/trend repackagings (idio_mom<->momentum rho **0.99**,
+quality<->trend_q **0.96**); none survive costs standalone. The
+"stack N independent rho~0 sleeves -> sqrt(N)*SR" path has **no raw
+material** here — there is essentially ONE independent alpha in the
+data. Chronos foundation-model preds: WF-mean Sharpe ~0.2 with
+NEGATIVE WF-min (fails OOS), rho 0.97 to the LGBM pred — not
+independent either.
+
+### B3. THE DELIVERABLE — the v5-MN sleeve  (`build_v5_mn_sleeve.py`)
+The one genuine alpha (validated v5 WF LGBM `pred`) redeployed as a
+**concentrated, dollar-neutral, high-breadth long-short**: long top
+5% / short bottom 5% by `pred`, rank-weighted, hold 1m. This strips
+market beta AND the K=2 concentration vol (Fundamental Law:
+IR ~ IC*sqrt(breadth) — breadth goes 2 -> ~50). NET of 10bps/side +
+a deliberately conservative 200bps/yr borrow:
+
+| metric | v5 long-only (deployed) | **v5-MN sleeve** | riskparity v5/MN |
+|---|---:|---:|---:|
+| Full Sharpe | 0.92 | **1.05** | 1.06 |
+| **WF-mean Sharpe** | 1.20 | **1.33** | **1.51** |
+| **WF-min Sharpe** | 0.62 | **1.00** | 0.84 |
+| Ann vol | ~49% | **~14%** | ~19% |
+| Max DD | **-77%** | **-24%** | -42% |
+| avg net-beta tilt | (long) | **-0.035** | — |
+
+- **Every one of the 10 walk-forward splits has Sharpe >= 1.00** (the
+  weakest, R5_COVID, is exactly 1.00; R6_AI 2.35).
+- TRUE OOS: design 2003-2012 Sharpe 1.16, untouched holdout
+  2013-2026 Sharpe 1.03 — generalizes, not in-sample-fit.
+- Cost-robust: Sharpe 1.14 / 1.05 / 0.88 at 0 / 10 / 30 bps/side.
+- FRAC robustness 3%-20%: WF-mean 0.93-1.35 (a plateau, not a peak).
+- This is the best risk-adjusted result in the repo's history and a
+  genuinely novel contribution (the repo had NO market-neutral
+  strategy). Not deployed by default; offered as a market-neutral
+  product variant / overlay.
+
+### THE HONEST VERDICT ON SHARPE 2.0
+
+**Sharpe >= 2.0 (WF-mean >= 2.0 AND WF-min >= 1.0) is NOT honestly
+achievable from this repo's price-only, large-cap, PIT data.** This is
+not a tuning failure — it is a structural data limit, now demonstrated
+(not just argued) across B1/B2/B3: there is exactly ONE independent,
+OOS-robust alpha (the v5 price-pattern model). One ~1.2-Sharpe alpha
+cannot be stacked to 2.0 without a *second independent* alpha source,
+and none exists in price-only large-cap data (B2 proves the panel
+factors are collinear; B1 proves the only price-orthogonal driver,
+short-horizon reversal, dies on costs in this universe). The honest,
+fully-validated improvement delivered instead is the **v5-MN sleeve**:
+the same edge as the long-only book at **1/3 the drawdown, ~1/4 the
+vol, market-neutral, every WF split >= 1.0**. Reaching 2.0 honestly
+would require a genuinely different data family (PIT fundamentals /
+earnings revisions, or an options variance-risk-premium book) — a
+separate research program with its own data dependency, exactly as
+SECOND_SLEEVE_SCOPE.md concluded. Fabricating a 2.0 by per-split
+weight optimization or universe selection would be an in-sample
+mirage and is deliberately refused.
+
+Files:
+- `experiments/monthly_dca/v5/spx_pit/build_statarb_sleeve.py` (B1)
+- `experiments/monthly_dca/v5/spx_pit/build_mn_composite.py` (B2)
+- `experiments/monthly_dca/v5/spx_pit/build_v5_mn_sleeve.py` (B3)
+- `augmented/v5_mn_sleeve_validation.json` — full metrics + verdict
+- `augmented/v5_mn_sleeve_returns.csv` — audited monthly stream
+- `augmented/mn_composite_corr.csv` — the collinearity evidence
+- `augmented/statarb_*.csv` — the statarb negative-result artifacts
