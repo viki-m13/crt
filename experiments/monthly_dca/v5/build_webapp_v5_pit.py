@@ -640,7 +640,7 @@ def _dca_switch(v5r, mnr, spyr, th=0.25):
     return np.array(vals)
 
 
-def compute_dca_investor(rets_log, monthly_returns):
+def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None):
     try:
         v5 = pd.Series(
             [float(r["ret_m"]) for r in rets_log],
@@ -787,6 +787,58 @@ def compute_dca_investor(rets_log, monthly_returns):
                 "beat_spy": bool(sv > pv),
             })
         out["since"] = since
+
+        # DCA over arbitrary [from,to] windows — used to DCA-convert the
+        # walk-forward splits and the sub-period robustness table so the
+        # whole page speaks money-in multiples, never lump-sum CAGR.
+        ts = [p.to_timestamp(how="end") for p in idx]
+
+        def _win(lo, hi):
+            lo, hi = pd.Timestamp(lo), pd.Timestamp(hi)
+            k = [j for j, t in enumerate(ts) if lo <= t <= hi]
+            if len(k) < 2:
+                return None
+            rv, rs = v5a[k], spya[k]
+            sv = _dca_path(rv)[0][-1]
+            pv = _dca_path(rs)[0][-1]
+            return {
+                "n_months": len(k),
+                "strat_moic": round(float(sv / len(k)), 3),
+                "spy_moic": round(float(pv / len(k)), 3),
+                "edge_moic": round(float((sv - pv) / len(k)), 3),
+                "strat_irr": round(float(_irr_from_terminal(sv, len(k))), 4),
+                "beat_spy": bool(sv > pv),
+            }
+
+        if wf_rows:
+            wf_dca = []
+            for r in wf_rows:
+                w = _win(r["from"], r["to"])
+                if w:
+                    w["split"] = r.get("split", "")
+                    w["from"] = str(r["from"])[:10]
+                    w["to"] = str(r["to"])[:10]
+                    wf_dca.append(w)
+            out["walk_forward"] = wf_dca
+            if wf_dca:
+                out["walk_forward_summary"] = {
+                    "n_windows": len(wf_dca),
+                    "n_beat_spy": int(sum(x["beat_spy"] for x in wf_dca)),
+                    "median_strat_moic": round(float(np.median([x["strat_moic"] for x in wf_dca])), 3),
+                    "median_spy_moic": round(float(np.median([x["spy_moic"] for x in wf_dca])), 3),
+                    "worst_strat_moic": round(float(min(x["strat_moic"] for x in wf_dca)), 3),
+                }
+
+        if sub_rows:
+            sp_dca = []
+            for r in sub_rows:
+                w = _win(r["from"], r["to"])
+                if w:
+                    w["period"] = r.get("period", "")
+                    w["from"] = str(r["from"])[:10]
+                    w["to"] = str(r["to"])[:10]
+                    sp_dca.append(w)
+            out["subperiods"] = sp_dca
         return out
     except Exception as e:  # never break the live build
         print(f"  WARNING: compute_dca_investor failed: {e}")
@@ -1145,7 +1197,9 @@ def main():
 
     # === DCA-investor evaluation (the product's actual user) ===
     print("=== Computing DCA-investor outcomes (rolling horizons + MN-switch) ===")
-    dca_investor = compute_dca_investor(rets_log, monthly_returns)
+    dca_investor = compute_dca_investor(rets_log, monthly_returns,
+                                        wf_rows=wf_split_rows,
+                                        sub_rows=sub_period_rows)
     if dca_investor:
         h120 = dca_investor["horizons"]["H120"]["v5"]
         print(f"  10y DCA: win vs SPY-DCA {h120['win_vs_spy_dca']*100:.0f}%  "
