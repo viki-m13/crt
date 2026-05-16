@@ -190,3 +190,63 @@ overlay.
 - `probe_second_sleeve.py` — the empirical orthogonality probe
 - `augmented/second_sleeve_probe.csv` — per-candidate metrics + corr
 - `augmented/second_sleeve_streams.csv` — audited return streams
+
+---
+
+## Phase A RESULT — cross-asset carry sleeve built & validated
+
+`build_carry_sleeve.py` built the GTAA / risk-parity sleeve
+(SPY/QQQ/IWM/EFA/EEM/TLT/VNQ/SLV/XLU/XLP, 12-1 trend filter, inverse-
+vol risk parity, monthly, 10bps cost). Validated on the augmented PIT
+overlap window (2003-2025, 183 months).
+
+**Standalone:** CAGR 4.8%, vol 9%, Sharpe 0.59, MaxDD -26%
+(modest, as expected for a defensive GTAA sleeve).
+
+**Correlation to v5 — FAILS the stability bar:**
+
+| split | carry Sharpe | corr → v5 |
+|---|---:|---:|
+| A1 (11-18) | 0.95 | +0.05 |
+| A2 (15-21) | 0.67 | +0.46 |
+| A3 (18-24) | 0.38 | +0.59 |
+| R1_GFC | 0.46 | +0.09 |
+| R2 | 1.33 | -0.20 |
+| R3 | 0.83 | +0.17 |
+| R4 | 1.15 | +0.38 |
+| **R5_COVID** | 0.12 | **+0.75** |
+| R6_AI | 0.69 | +0.44 |
+| STRICT (21-24) | 0.27 | +0.58 |
+
+Full-sample corr +0.23, but it swings from -0.20 to **+0.75**. The
+decorrelation is NOT stable: in crises (COVID +0.75) and the recent
+regime (STRICT +0.58, A3 +0.59) the carry sleeve co-moves with v5,
+because **both go risk-off on the same equity-regime signal exactly
+when decorrelation matters most**. Max |corr| 0.75 ≫ the 0.25 honesty
+bar → it **does not qualify as an uncorrelated alpha sleeve**.
+
+**As a risk-reduction overlay it IS real and validated:**
+
+| config | Sharpe | CAGR | vol | MaxDD | WF-mean SR |
+|---|---:|---:|---:|---:|---:|
+| v5 alone (overlap) | 0.95 | 44.7% | 51% | -55% | 1.03 |
+| 50% v5 + 50% carry | 1.04 | 28.1% | 27% | **-33%** | **1.16** |
+| risk-parity v5/carry | 1.02 | 15.7% | 15% | -23% | 1.14 |
+
+The 50/50 blend nearly halves Max DD (-55%→-33%) and lifts WF-mean
+Sharpe 1.03→1.16 — a legitimate, non-overfit **"smooth mode" product
+variant** if the user wants a calmer ride (at roughly half the CAGR).
+But it is a defensive overlay, **not** the independent-alpha second
+sleeve that breaks the Sharpe ceiling.
+
+**Verdict:** Phase A delivers a usable risk overlay but, honestly,
+NOT a decorrelating alpha source. This *strengthens* the scoping
+thesis: any sleeve whose risk-on/off is driven by the equity regime
+will correlate with v5 in crises. The genuine Sharpe lever remains
+**Phase B — a PIT-fundamentals earnings-revision sleeve** whose driver
+(information diffusion around earnings) is not the equity regime.
+That requires sourcing point-in-time fundamentals data (the one
+honest dependency we cannot avoid).
+
+Not deployed. Offered to the user as an optional "smooth mode" blend;
+the core deployed strategy is unchanged.
