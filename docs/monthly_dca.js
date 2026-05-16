@@ -51,6 +51,13 @@ function el(tag, attrs = {}, children = []) {
 
 function clsRet(x) { return x == null ? "" : (x > 0 ? "pos" : (x < 0 ? "neg" : "")); }
 
+function median(arr) {
+  const a = (arr || []).filter(x => x != null && Number.isFinite(+x)).map(Number).sort((p, q) => p - q);
+  if (!a.length) return null;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+
 fetch(DATA_URL + "?v=" + Date.now())
   .then(r => r.json())
   .then(render)
@@ -107,14 +114,14 @@ function renderDcaInvestor(data) {
   const band = el("div", { class: "bias-grid", style: "margin-bottom:20px" });
   band.appendChild(biasCard("10-year DCA win vs S&P-DCA",
     fmtPct0(h120.win_vs_spy_dca),
-    `${h120.n_windows} rolling 10y windows on PIT data. Median ${fmtX(h120.median_moic)} money-in, worst ever ${fmtX(h120.min_moic)}. This is the honest "high hit rate".`,
+    `${h120.n_windows} rolling 10y windows on PIT data. Median money-weighted return ${fmtPct(h120.median_irr)}/yr, worst ${fmtPct(h120.min_irr)}/yr. This is the honest "high hit rate".`,
     true));
-  band.appendChild(biasCard("Median 10y outcome",
-    fmtX(h120.median_moic),
-    `Each $1 contributed became a median ${fmtX(h120.median_moic)} over 10y of monthly buys. SPY-DCA median: ${fmtX(di.horizons.H120.SPY?.median_moic)}.`));
-  band.appendChild(biasCard("Worst 1-year DCA window",
-    fmtX(h12.min_moic),
-    `Brutal short-horizon reality: the single worst 12-month window left contributions worth ${fmtX(h12.min_moic)}×. DCA is a multi-year commitment, not a 1-year trade.`));
+  band.appendChild(biasCard("Median 10y DCA return",
+    fmtPct(h120.median_irr),
+    `Annualized money-weighted return on monthly contributions over 10y. S&P-DCA median: ${fmtPct(di.horizons.H120.SPY?.median_irr)}/yr.`));
+  band.appendChild(biasCard("Worst 1-year DCA return",
+    fmtPct(h12.min_irr),
+    `Brutal short-horizon reality: the single worst 12-month contribution window. DCA is a multi-year commitment, not a 1-year trade.`));
   band.appendChild(biasCard("Raw interim drawdown",
     fmtPct(fh.v5?.max_value_drawdown, 0),
     `Peak-to-trough on the accumulating portfolio (raw v5). There is no no-downside version. The MN-switch variant below cuts this to ${fmtPct(fh.mn_switch?.max_value_drawdown, 0)}.`));
@@ -122,7 +129,7 @@ function renderDcaInvestor(data) {
 
   // horizon breakdown — responsive card grid (mobile-safe; no wide table)
   const hint = el("p", { class: "bias-sub", style: "margin:0 0 12px" },
-    "Each card: a DCA horizon. Top number = % of all rolling windows where contributing into the strategy beat the same contributions into the S&P 500. \"×\" = ending value ÷ total money contributed.");
+    "Each card: a DCA horizon. Top number = % of all rolling windows where contributing into the strategy beat the same contributions into the S&P 500. Returns shown are annualized money-weighted (the rate your contributions actually compounded at).");
   sec.appendChild(hint);
   const grid = el("div", { class: "bias-grid" });
   ["H120", "H60", "H36", "H24", "H12"].forEach(H => {
@@ -133,9 +140,9 @@ function renderDcaInvestor(data) {
     const c = el("div", { class: "bias-card" + (isHero ? " bias-card-headline" : "") });
     c.appendChild(el("div", { class: "bias-label" }, `${DCA_HLABEL[H]} DCA — win vs S&P-DCA`));
     c.appendChild(el("div", { class: "bias-value" }, fmtPct0(win)));
-    let sub = `Raw v5: median <strong>${fmtX(v.median_moic)}</strong> · worst ever <span style="color:var(--orange)">${fmtX(v.min_moic)}</span>`;
-    if (mn) sub += `<br>Smoother (MN-switch): win <strong>${fmtPct0(mn.win_vs_spy_dca)}</strong> · median ${fmtX(mn.median_moic)} · worst ${fmtX(mn.min_moic)}`;
-    sub += `<br>S&P-DCA median: ${fmtX(sp.median_moic)}`;
+    let sub = `Raw v5: median <strong>${fmtPct(v.median_irr)}/yr</strong> · worst <span style="color:var(--orange)">${fmtPct(v.min_irr)}/yr</span>`;
+    if (mn) sub += `<br>Smoother (MN-switch): win <strong>${fmtPct0(mn.win_vs_spy_dca)}</strong> · median ${fmtPct(mn.median_irr)}/yr`;
+    sub += `<br>S&P-DCA median: ${fmtPct(sp.median_irr)}/yr`;
     c.appendChild(el("div", { class: "bias-sub", html: sub }));
     grid.appendChild(c);
   });
@@ -145,11 +152,11 @@ function renderDcaInvestor(data) {
   if (hasSwitch && fh.v5 && fh.mn_switch) {
     const g = el("div", { class: "bias-grid", style: "margin-top:20px" });
     g.appendChild(biasCard("Variant A — Raw v5 (max parabola)",
-      fmtX(fh.v5.terminal_moic),
-      `Full-history money-in multiple, ${di.window}. IRR ${fmtPct(fh.v5.money_weighted_irr)}, interim drawdown ${fmtPct(fh.v5.max_value_drawdown, 0)}. Choose this only for a 10-year+ commitment you will not interrupt.`));
+      fmtPct(fh.v5.money_weighted_irr),
+      `Money-weighted return on monthly contributions, ${di.window}. Each $1 → $${fmtNum(fh.v5.terminal_moic, 0)}; interim drawdown ${fmtPct(fh.v5.max_value_drawdown, 0)}. Choose this only for a 10-year+ commitment you will not interrupt.`));
     g.appendChild(biasCard("Variant B — MN drawdown-switch",
-      fmtX(fh.mn_switch.terminal_moic),
-      `Same picker, but rotates the book into the validated market-neutral sleeve when the portfolio draws down past -25% (an honest portfolio switch, not a new alpha). IRR ${fmtPct(fh.mn_switch.money_weighted_irr)}, interim drawdown only ${fmtPct(fh.mn_switch.max_value_drawdown, 0)}. ~Half the upside for ~half the drawdown — still 100% at 10y.`));
+      fmtPct(fh.mn_switch.money_weighted_irr),
+      `Same picker, but rotates into the validated market-neutral sleeve when the portfolio draws down past -25% (an honest portfolio switch, not a new alpha). Interim drawdown only ${fmtPct(fh.mn_switch.max_value_drawdown, 0)}. ~Half the upside for ~half the drawdown — still 100% at 10y.`));
     sec.appendChild(g);
   }
 }
@@ -261,17 +268,18 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Sub-period robustness (DCA)"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "If you'd contributed monthly through each historical sub-period, what each $1 became (money-in multiple) vs identical contributions into the S&P 500. The DCA edge holds across every multi-year sub-period."));
+      "If you'd contributed monthly through each historical sub-period: the money-weighted return (annualized IRR) on your contributions vs identical contributions into the S&P 500. The DCA edge holds across every multi-year sub-period."));
     const tbl = el("table", { class: "v3-table" });
-    tbl.innerHTML = `<thead><tr><th>Period</th><th>Months</th><th>Strategy DCA</th><th>S&P-DCA</th><th>Edge</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Period</th><th>Months</th><th>Strategy DCA (IRR)</th><th>S&P-DCA (IRR)</th><th>Edge</th></tr></thead>`;
     const tb = el("tbody");
     subp.forEach(p => {
+      const ep = (p.strat_irr != null && p.spy_irr != null) ? p.strat_irr - p.spy_irr : null;
       const row = el("tr");
       row.appendChild(el("td", {}, (p.period || "").replace(/^p\d_/, "").replace(/_/g, "-")));
       row.appendChild(el("td", {}, String(p.n_months)));
-      row.appendChild(el("td", { class: clsRet(p.edge_moic) }, fmtX(p.strat_moic)));
-      row.appendChild(el("td", {}, fmtX(p.spy_moic)));
-      row.appendChild(el("td", { class: clsRet(p.edge_moic) }, (p.edge_moic >= 0 ? "+" : "") + fmtNum(p.edge_moic, 2) + "×"));
+      row.appendChild(el("td", { class: clsRet(ep) }, fmtPct(p.strat_irr)));
+      row.appendChild(el("td", {}, fmtPct(p.spy_irr)));
+      row.appendChild(el("td", { class: clsRet(ep) }, fmtPctSigned(ep)));
       tb.appendChild(row);
     });
     tbl.appendChild(tb);
@@ -384,7 +392,7 @@ function renderHeroMeta(data) {
   const fh = data.dca_investor?.full_history?.v5;
   const parts = [`As of ${data.as_of}`,
     `${data.panel?.n_tickers ?? "?"} tickers, ${data.panel?.first_date} → ${data.panel?.last_date}`];
-  if (d10) parts.push(`10y monthly-DCA beat S&P-DCA in ${fmtPct0(d10.win_vs_spy_dca)} of windows (median ${fmtX(d10.median_moic)} money-in)`);
+  if (d10) parts.push(`10y monthly-DCA beat S&P-DCA in ${fmtPct0(d10.win_vs_spy_dca)} of windows (median ${fmtPct(d10.median_irr)}/yr)`);
   if (fh) parts.push(`money-weighted IRR ${fmtPct(fh.money_weighted_irr)}`);
   meta.textContent = parts.join(" · ");
 }
@@ -540,7 +548,7 @@ function renderBacktest(data) {
     ["S&P-DCA, same schedule", fmtMoney(final_spy),
       "identical monthly contributions into the S&P 500", "ok"],
     ["10-year DCA win vs S&P-DCA", fmtPct0(d10?.win_vs_spy_dca),
-      "of all rolling 10y windows; median " + fmtX(d10?.median_moic) + " money-in", "ok"],
+      "of all rolling 10y windows; median " + fmtPct(d10?.median_irr) + "/yr money-weighted", "ok"],
   ];
   items.forEach(([lbl, val, sub, cls]) => {
     const c = el("div", { class: "bt-stat-card " + cls });
@@ -579,20 +587,33 @@ function renderBacktest(data) {
   }
 }
 
+// Re-simulate the DCA account from the start of the selected window, so
+// every period button means "if you STARTED contributing $1/mo then" —
+// all three lines begin at $0 and grow comparably (not a mid-stream
+// balance where the long-running account dwarfs everything).
+function dcaResimulate(rows) {
+  let v = 0, sp = 0, inv = 0;
+  return rows.map(g => {
+    v = (v + 1) * (1 + (g.r || 0));
+    sp = (sp + 1) * (1 + (g.s || 0));
+    inv += 1;
+    return { date: g.date, strat_value: v, spy_value: sp, invested: inv };
+  });
+}
+
 function filterGrowthByPeriod(growth, period) {
-  if (!growth?.length || period === "all") return { rows: growth, isRebased: false };
+  if (!growth?.length) return { rows: [], isRebased: false };
+  if (period === "all") return { rows: dcaResimulate(growth), isRebased: false };
   const yearsMap = { "1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20 };
   const yrs = yearsMap[period];
-  if (!yrs) return { rows: growth, isRebased: false };
+  if (!yrs) return { rows: dcaResimulate(growth), isRebased: false };
   const last = new Date(growth[growth.length - 1].date);
   const cutoff = new Date(last);
   cutoff.setFullYear(cutoff.getFullYear() - yrs);
-  // Find first index with date >= cutoff
   const startIdx = growth.findIndex(g => new Date(g.date) >= cutoff);
-  if (startIdx <= 0) return { rows: growth, isRebased: false };
-  // DCA dollars are an accumulating balance, not a rebaseable multiple —
-  // just window it and keep absolute $ (the account over the last N years).
-  return { rows: growth.slice(startIdx), isRebased: false };
+  if (startIdx <= 0) return { rows: dcaResimulate(growth), isRebased: false };
+  // "Started DCA-ing N years ago": contribute from the slice start.
+  return { rows: dcaResimulate(growth.slice(startIdx)), isRebased: false };
 }
 
 function drawGrowth(canvas, growth, isRebased) {
@@ -736,17 +757,17 @@ function renderYears(data) {
   grid.innerHTML = "";
   const rows = data.year_by_year?.pullback_in_winner_k1 || [];
   rows.forEach(r => {
-    // DCA-framed: contribute monthly THROUGH that calendar year; value ÷
-    // money contributed that year (no lump-sum calendar compounding).
-    const edge = r.edge_moic;
+    // DCA-framed, shown as % return on the money you contributed THAT
+    // year (contribute monthly Jan–Dec; year-end value ÷ contributed − 1).
+    const edge = r.edge_pct;
     const c = el("div", { class: "year-cell" });
     c.appendChild(el("div", { class: "year-cell-yr" }, String(r.year)));
-    c.appendChild(el("div", { class: "year-cell-cagr " + clsRet(edge) }, fmtX(r.strat_moic)));
+    c.appendChild(el("div", { class: "year-cell-cagr " + clsRet(edge) }, fmtPctSigned(r.strat_gain_pct, 0)));
     const meta = el("div", { class: "year-cell-meta" });
-    meta.innerHTML = `DCA ${r.months}mo · ${r.n_picks} picks · S&P-DCA ${fmtX(r.spy_moic)}`;
+    meta.innerHTML = `on ${r.months}mo of contributions · S&P-DCA ${fmtPctSigned(r.spy_gain_pct, 0)}`;
     c.appendChild(meta);
     c.appendChild(el("div", { class: "year-cell-edge " + clsRet(edge) },
-      (edge >= 0 ? "+" : "") + fmtNum(edge, 2) + "× vs S&P-DCA"));
+      "edge " + fmtPctSigned(edge, 0) + " vs S&P-DCA"));
     grid.appendChild(c);
   });
 }
@@ -816,17 +837,17 @@ function renderHorizons(data) {
   sec.innerHTML = "";
   data.horizon_stats.forEach(h => {
     // DCA-framed: if you'd contributed monthly starting Xy ago to today.
-    const edge = h.edge_moic;
+    // Primary = annualized money-weighted IRR (the rate you compounded at).
+    const edgePp = (h.strat_irr != null && h.spy_irr != null) ? h.strat_irr - h.spy_irr : null;
     const card = el("div", { class: "horizon-card" });
     card.appendChild(el("div", { class: "horizon-label" }, `DCA'd for ${h.years_back}y`));
     card.appendChild(el("div", { class: "horizon-since" }, `since ${h.since_date}`));
-    card.appendChild(el("div", { class: "horizon-cagr " + clsRet(edge) }, fmtX(h.strat_moic)));
-    card.appendChild(el("div", { class: "horizon-meta" },
-      `money-weighted IRR ${fmtPct(h.strat_irr)}`));
-    card.appendChild(el("div", { class: "horizon-edge " + clsRet(edge) },
-      (edge >= 0 ? "+" : "") + fmtNum(edge, 2) + "× vs S&P-DCA"));
+    card.appendChild(el("div", { class: "horizon-cagr " + clsRet(edgePp) }, fmtPct(h.strat_irr)));
+    card.appendChild(el("div", { class: "horizon-meta" }, "money-weighted IRR (annualized)"));
+    card.appendChild(el("div", { class: "horizon-edge " + clsRet(edgePp) },
+      "edge " + fmtPctSigned(edgePp) + " vs S&P-DCA"));
     card.appendChild(el("div", { class: "horizon-multiple" },
-      `each $1 in → $${fmtNum(h.strat_moic, 2)}  ·  S&P-DCA: $${fmtNum(h.spy_moic, 2)}`));
+      `S&P-DCA IRR ${fmtPct(h.spy_irr)} · each $1 → $${fmtNum(h.strat_moic, 2)}`));
     sec.appendChild(card);
   });
 }
@@ -847,12 +868,15 @@ function renderWalkForward(data) {
     `${sum.n_beat_spy}/${sum.n_windows}`,
     "out-of-sample windows where monthly contributions into the strategy ended ahead of identical contributions into the S&P 500. Short fixed windows are near coin-flip — the DCA edge is a multi-year-horizon effect (see DCA outcomes: ~80% at 3y, 100% at 10y).",
     "highlight"));
-  summary.appendChild(wfCard("Median window money-in",
-    fmtX(sum.median_strat_moic),
-    `vs S&P-DCA ${fmtX(sum.median_spy_moic)} over the same windows. "×" = ending value ÷ contributed.`));
-  summary.appendChild(wfCard("Worst window money-in",
-    fmtX(sum.worst_strat_moic),
-    "Single worst out-of-sample window for a monthly contributor. Honest: short windows can leave you below money-in."));
+  const medIrr = median(wfd.map(w => w.strat_irr));
+  const medSpyIrr = median(wfd.map(w => w.spy_irr));
+  const worstIrr = Math.min(...wfd.map(w => w.strat_irr));
+  summary.appendChild(wfCard("Median window DCA return",
+    fmtPct(medIrr),
+    `money-weighted IRR across the windows, vs S&P-DCA ${fmtPct(medSpyIrr)}.`));
+  summary.appendChild(wfCard("Worst window DCA return",
+    fmtPct(worstIrr),
+    "Single worst out-of-sample window for a monthly contributor. Honest: short windows can be negative."));
   sec.appendChild(summary);
 
   const explain = el("div", { class: "wf-explain" });
@@ -863,17 +887,18 @@ function renderWalkForward(data) {
 
   const wrap = el("div", { class: "bias-table-wrap" });
   const t = el("table", { class: "bias-table" });
-  t.innerHTML = "<thead><tr><th>OOS window</th><th>From</th><th>To</th><th>Months</th><th>Strategy DCA (money-in)</th><th>S&P-DCA</th><th>Edge</th><th>Beat?</th></tr></thead>";
+  t.innerHTML = "<thead><tr><th>OOS window</th><th>From</th><th>To</th><th>Months</th><th>Strategy DCA (IRR)</th><th>S&P-DCA (IRR)</th><th>Edge</th><th>Beat?</th></tr></thead>";
   const tb = el("tbody");
   wfd.forEach(w => {
+    const ep = (w.strat_irr != null && w.spy_irr != null) ? w.strat_irr - w.spy_irr : null;
     const row = el("tr");
     row.appendChild(el("td", { class: "tkr" }, (w.split || "").replace(/_/g, " ")));
     row.appendChild(el("td", {}, w.from));
     row.appendChild(el("td", {}, w.to));
     row.appendChild(el("td", {}, String(w.n_months)));
-    row.appendChild(el("td", { class: clsRet(w.edge_moic) }, fmtX(w.strat_moic)));
-    row.appendChild(el("td", {}, fmtX(w.spy_moic)));
-    row.appendChild(el("td", { class: clsRet(w.edge_moic) }, (w.edge_moic >= 0 ? "+" : "") + fmtNum(w.edge_moic, 2) + "×"));
+    row.appendChild(el("td", { class: clsRet(ep) }, fmtPct(w.strat_irr)));
+    row.appendChild(el("td", {}, fmtPct(w.spy_irr)));
+    row.appendChild(el("td", { class: clsRet(ep) }, fmtPctSigned(ep)));
     row.appendChild(el("td", { class: w.beat_spy ? "pos" : "neg" }, w.beat_spy ? "yes" : "no"));
     tb.appendChild(row);
   });

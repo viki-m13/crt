@@ -687,7 +687,7 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
             for s in range(0, n - H + 1):
                 spy_terms.append(_dca_path(spya[s:s + H])[0][-1])
             for label in (["v5", "mn_switch", "SPY"] if mn_csv.exists() else ["v5", "SPY"]):
-                wins, moic = [], []
+                wins, moic, irr = [], [], []
                 worst = 1e18
                 for j, s in enumerate(range(0, n - H + 1)):
                     if label == "mn_switch":
@@ -699,7 +699,9 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
                     m = tv / H
                     wins.append(tv > spy_terms[j])
                     moic.append(m)
+                    irr.append(_irr_from_terminal(tv, H))
                     worst = min(worst, m)
+                irr = np.array(irr)
                 row[label] = {
                     "win_vs_spy_dca": (None if label == "SPY"
                                        else round(float(np.mean(wins)), 4)),
@@ -707,6 +709,9 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
                     "median_moic": round(float(np.median(moic)), 3),
                     "p05_moic": round(float(np.quantile(moic, 0.05)), 3),
                     "min_moic": round(float(worst), 3),
+                    "median_irr": round(float(np.median(irr)), 4),
+                    "p05_irr": round(float(np.quantile(irr, 0.05)), 4),
+                    "min_irr": round(float(irr.min()), 4),
                 }
             out["horizons"][f"H{H}"] = row
 
@@ -742,7 +747,8 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
         out["growth"] = [
             {"date": dates[i], "strat_value": round(float(gv[i]), 4),
              "spy_value": round(float(gs[i]), 4),
-             "invested": round(float(gb[i]), 4)}
+             "invested": round(float(gb[i]), 4),
+             "r": round(float(v5a[i]), 6), "s": round(float(spya[i]), 6)}
             for i in range(len(idx))
         ]
 
@@ -762,6 +768,9 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
                 "strat_moic": round(float(sm), 3),
                 "spy_moic": round(float(pm), 3),
                 "edge_moic": round(float(sm - pm), 3),
+                "strat_gain_pct": round(float(sm - 1.0), 4),
+                "spy_gain_pct": round(float(pm - 1.0), 4),
+                "edge_pct": round(float(sm - pm), 4),
                 "n_picks": int(npk),
                 "win_rate": round(wr, 4),
                 "months": len(sel),
@@ -807,6 +816,7 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
                 "spy_moic": round(float(pv / len(k)), 3),
                 "edge_moic": round(float((sv - pv) / len(k)), 3),
                 "strat_irr": round(float(_irr_from_terminal(sv, len(k))), 4),
+                "spy_irr": round(float(_irr_from_terminal(pv, len(k))), 4),
                 "beat_spy": bool(sv > pv),
             }
 

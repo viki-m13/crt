@@ -87,7 +87,7 @@
     <div class="hero-inner">
       <h1 class="hero-headline">A monthly DCA strategy that beat S&P-into-S&P in <span id="heroWin">100%</span> of 10-year windows.</h1>
       <p class="hero-sub">This is built for people who <strong>invest a fixed amount every month</strong>. Each month a machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong> (using only the actual S&P 500 list at each date — no hindsight), confirmed by the <strong>HuggingFace Chronos</strong> foundation model, held ≥6 months, with a <strong>crash gate</strong> to cash. The honest question isn't "what's the CAGR" — it's <em>"if I contribute every month, do I end up ahead of contributing the same into the S&P 500?"</em></p>
-      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2025, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows. Each $1 contributed became a <strong>median ~12×</strong> (worst-ever ~2.7×) over 10 years of monthly buys, versus ~2× for S&P-DCA. <strong>This is the honest version of a "high hit rate"</strong> — a multi-year commitment, not a monthly coin-flip.</p>
+      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2025, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows, earning a <strong>median ~47%/yr</strong> money-weighted return (even the worst 10-year window still compounded at ~19%/yr) versus ~13%/yr for S&P-DCA. <strong>This is the honest version of a "high hit rate"</strong> — a multi-year commitment, not a monthly coin-flip.</p>
       <p class="hero-sub hero-warn"><strong>Honest downside:</strong> short-horizon outcomes can be brutal — the worst 1-year DCA window lost ~66% of contributions and the portfolio took a <strong>~-79% interim drawdown</strong>. There is no parabolic-upside-with-no-downside version; the data refuses it. A second, lower-volatility variant (<strong>market-neutral drawdown-switch</strong>) cuts the worst drawdown to <strong>~-39%</strong> for roughly half the upside — both are shown below, honestly.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
@@ -135,7 +135,7 @@
         <summary>Walk-forward validation (10 splits, OOS test)</summary>
         <div class="accordion-body">
           <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p><strong>The honest DCA reading is in the Walk-forward section above</strong> (money-in vs S&P-DCA per window). The lump-sum "10/10 beat SPY" figure is engine evidence that the picker is real and not overfit — it survives the GFC, COVID, the 2022 bear and the 2023-24 AI rally out-of-sample — but a monthly contributor does not experience per-window lump-sum CAGR, so we do not headline it. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
+          <p><strong>The honest DCA reading is in the Walk-forward section above</strong> (money-weighted return vs S&P-DCA per window). The lump-sum "10/10 beat SPY" figure is engine evidence that the picker is real and not overfit — it survives the GFC, COVID, the 2022 bear and the 2023-24 AI rally out-of-sample — but a monthly contributor does not experience per-window lump-sum CAGR, so we do not headline it. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
         </div>
       </details>
 
@@ -221,11 +221,11 @@
       </div>
 
       <h3 class="section-h3">If you'd been DCA-ing for X years</h3>
-      <p class="section-sub">If you'd contributed monthly starting X years ago and kept going to today: what each $1 contributed is worth now (money-in multiple), the money-weighted IRR, and the same for identical contributions into the S&P 500.</p>
+      <p class="section-sub">If you'd contributed monthly starting X years ago and kept going to today: the annualized money-weighted return your contributions earned, and the same for identical contributions into the S&P 500.</p>
       <div id="horizonsSection" class="horizons-grid"></div>
 
       <h3 class="section-h3">Year-by-year (DCA through each year)</h3>
-      <p class="section-sub">For each calendar year: if you contributed $1 every month <em>during that year</em>, what was the account worth at year-end per $1 contributed (money-in multiple), versus the identical monthly contributions into the S&P 500. This is the DCA experience within each year — not lump-sum calendar compounding.</p>
+      <p class="section-sub">For each calendar year: if you contributed $1 every month <em>during that year</em>, the % return on the money you put in by year-end, versus the identical monthly contributions into the S&P 500. This is the DCA experience within each year — not lump-sum calendar compounding.</p>
       <div id="btYearGrid" class="year-grid"></div>
     </div>
   </section>
@@ -265,7 +265,7 @@
 <section id="robustness" class="robustness-section">
     <div class="section-inner">
       <h2 class="section-h2">Robustness — the DCA edge and the engine behind it</h2>
-      <p class="section-sub">Sub-period robustness is shown in DCA terms (money-in vs S&P-DCA). The universe- and parameter-generalisation checks below validate the <em>picker</em> that generates your DCA account — they are engine robustness, not a DCA return promise. Your DCA outcome is the section at the top of the page.</p>
+      <p class="section-sub">Sub-period robustness is shown in DCA terms (money-weighted return vs S&P-DCA). The universe- and parameter-generalisation checks below validate the <em>picker</em> that generates your DCA account — they are engine robustness, not a DCA return promise. Your DCA outcome is the section at the top of the page.</p>
       <div id="v3Sections"></div>
     </div>
   </section>
