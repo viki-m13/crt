@@ -726,6 +726,67 @@ def compute_dca_investor(rets_log, monthly_returns):
                 "max_value_drawdown": round(float(((val - pk) / pk).min()), 4),
                 "worst_underwater_vs_contrib": round(float(uw.min()), 4),
             }
+
+        # ---- DCA-framed growth / year-by-year / since (replaces the old
+        # lump-sum equity curve, calendar-year compounding, and "started X
+        # years ago" CAGR — every number here is the monthly-contribution
+        # experience, consistent with the rolling-horizon block above) ----
+        dates = [p.to_timestamp(how="end").date().isoformat() for p in idx]
+        npicks_by_p = {}
+        for r in rets_log:
+            p = pd.Timestamp(r["date"]).to_period("M")
+            npicks_by_p[p] = int(r.get("n_picks", 0))
+
+        gv, gb = _dca_path(v5a)
+        gs, _ = _dca_path(spya)
+        out["growth"] = [
+            {"date": dates[i], "strat_value": round(float(gv[i]), 4),
+             "spy_value": round(float(gs[i]), 4),
+             "invested": round(float(gb[i]), 4)}
+            for i in range(len(idx))
+        ]
+
+        years = sorted({p.year for p in idx})
+        yb = []
+        for y in years:
+            sel = [k for k, p in enumerate(idx) if p.year == y]
+            if not sel:
+                continue
+            rv, rs = v5a[sel], spya[sel]
+            sm = _dca_path(rv)[0][-1] / len(sel)
+            pm = _dca_path(rs)[0][-1] / len(sel)
+            npk = sum(npicks_by_p.get(idx[k], 0) for k in sel)
+            wr = float((rv > 0).mean())
+            yb.append({
+                "year": int(y),
+                "strat_moic": round(float(sm), 3),
+                "spy_moic": round(float(pm), 3),
+                "edge_moic": round(float(sm - pm), 3),
+                "n_picks": int(npk),
+                "win_rate": round(wr, 4),
+                "months": len(sel),
+            })
+        out["year_by_year"] = yb
+
+        since = []
+        for yb_back in (1, 2, 3, 5, 7, 10, 15, 20):
+            need = yb_back * 12
+            if len(idx) < need:
+                continue
+            rv, rs = v5a[-need:], spya[-need:]
+            sv = _dca_path(rv)[0][-1]
+            pv = _dca_path(rs)[0][-1]
+            since.append({
+                "years_back": yb_back,
+                "since_date": dates[-need],
+                "strat_moic": round(float(sv / need), 3),
+                "spy_moic": round(float(pv / need), 3),
+                "edge_moic": round(float((sv - pv) / need), 3),
+                "strat_irr": round(float(_irr_from_terminal(sv, need)), 4),
+                "spy_irr": round(float(_irr_from_terminal(pv, need)), 4),
+                "beat_spy": bool(sv > pv),
+            })
+        out["since"] = since
         return out
     except Exception as e:  # never break the live build
         print(f"  WARNING: compute_dca_investor failed: {e}")
@@ -1089,6 +1150,15 @@ def main():
         h120 = dca_investor["horizons"]["H120"]["v5"]
         print(f"  10y DCA: win vs SPY-DCA {h120['win_vs_spy_dca']*100:.0f}%  "
               f"median {h120['median_moic']:.1f}x  worst {h120['min_moic']:.1f}x")
+        # DCA-convert the equity curve, year-by-year and horizons so the
+        # ENTIRE page is the monthly-contribution experience (no lump-sum
+        # compounding / no +1571%-style calendar numbers anywhere).
+        if dca_investor.get("growth"):
+            growth = dca_investor["growth"]
+        if dca_investor.get("year_by_year"):
+            year_rows = dca_investor["year_by_year"]
+        if dca_investor.get("since"):
+            horizon_stats = dca_investor["since"]
 
     # === Build final data.json ===
     n_picks_total = sum(r["n_picks"] for r in rets_log)

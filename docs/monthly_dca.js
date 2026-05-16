@@ -541,15 +541,18 @@ function renderBacktest(data) {
   const final_strat = last.strat_value;
   const final_spy = last.spy_value;
   const final_cash = last.invested;
-  const cagr = data.headline?.cagr_raw;
-  const spyCagr = data.headline?.cagr_spy_dca;
-  const wf = data.walk_forward_aggregate?.[0];
+  const fh = data.dca_investor?.full_history || {};
+  const d10 = data.dca_investor?.horizons?.H120?.v5;
 
   const items = [
-    ["Strategy CAGR", fmtPct(cagr), "vs SPY DCA " + fmtPct(spyCagr), "highlight"],
-    ["Strategy multiple", fmtX(final_strat / final_cash), fmtMoney(final_cash) + " in → " + fmtMoney(final_strat) + " out", "ok"],
-    ["SPY multiple", fmtX(final_spy / final_cash), fmtMoney(final_cash) + " in → " + fmtMoney(final_spy) + " out", "ok"],
-    ["Walk-forward CAGR", fmtPct(wf?.mean_test_cagr), "mean across " + (wf?.n_splits_with_test_data || "?") + " out-of-sample splits", "ok"],
+    ["Every $1 contributed became", fmtX(fh.v5?.terminal_moic ?? (final_strat / final_cash)),
+      fmtMoney(final_cash) + " contributed → " + fmtMoney(final_strat) + " (full history)", "highlight"],
+    ["Money-weighted IRR", fmtPct(fh.v5?.money_weighted_irr),
+      "the rate your monthly contributions actually compounded at", "ok"],
+    ["S&P-DCA, same schedule", fmtMoney(final_spy),
+      "identical monthly contributions into the S&P 500", "ok"],
+    ["10-year DCA win vs S&P-DCA", fmtPct0(d10?.win_vs_spy_dca),
+      "of all rolling 10y windows; median " + fmtX(d10?.median_moic) + " money-in", "ok"],
   ];
   items.forEach(([lbl, val, sub, cls]) => {
     const c = el("div", { class: "bt-stat-card " + cls });
@@ -599,20 +602,9 @@ function filterGrowthByPeriod(growth, period) {
   // Find first index with date >= cutoff
   const startIdx = growth.findIndex(g => new Date(g.date) >= cutoff);
   if (startIdx <= 0) return { rows: growth, isRebased: false };
-  // Re-base equity values to start at 1.0 from the new starting point
-  const sub = growth.slice(startIdx);
-  const baseStrat = sub[0].strat_value || 1;
-  const baseSpy = sub[0].spy_value || 1;
-  const baseInv = sub[0].invested || 1;
-  return {
-    rows: sub.map(g => ({
-      date: g.date,
-      strat_value: g.strat_value / baseStrat,
-      spy_value: (g.spy_value != null ? g.spy_value / baseSpy : null),
-      invested: g.invested / baseInv,
-    })),
-    isRebased: true,
-  };
+  // DCA dollars are an accumulating balance, not a rebaseable multiple —
+  // just window it and keep absolute $ (the account over the last N years).
+  return { rows: growth.slice(startIdx), isRebased: false };
 }
 
 function drawGrowth(canvas, growth, isRebased) {
@@ -756,13 +748,17 @@ function renderYears(data) {
   grid.innerHTML = "";
   const rows = data.year_by_year?.pullback_in_winner_k1 || [];
   rows.forEach(r => {
+    // DCA-framed: contribute monthly THROUGH that calendar year; value ÷
+    // money contributed that year (no lump-sum calendar compounding).
+    const edge = r.edge_moic;
     const c = el("div", { class: "year-cell" });
     c.appendChild(el("div", { class: "year-cell-yr" }, String(r.year)));
-    c.appendChild(el("div", { class: "year-cell-cagr " + clsRet(r.cagr_dca_picks) }, fmtPctSigned(r.cagr_dca_picks, 0)));
+    c.appendChild(el("div", { class: "year-cell-cagr " + clsRet(edge) }, fmtX(r.strat_moic)));
     const meta = el("div", { class: "year-cell-meta" });
-    meta.innerHTML = `n=${r.n_picks} · win ${fmtPct0(r.win_rate)} · SPY ${fmtPct(r.cagr_dca_spy)}`;
+    meta.innerHTML = `DCA ${r.months}mo · ${r.n_picks} picks · S&P-DCA ${fmtX(r.spy_moic)}`;
     c.appendChild(meta);
-    c.appendChild(el("div", { class: "year-cell-edge " + clsRet(r.edge) }, "edge " + fmtPctSigned(r.edge, 0)));
+    c.appendChild(el("div", { class: "year-cell-edge " + clsRet(edge) },
+      (edge >= 0 ? "+" : "") + fmtNum(edge, 2) + "× vs S&P-DCA"));
     grid.appendChild(c);
   });
 }
@@ -832,16 +828,18 @@ function renderHorizons(data) {
   if (!sec || !data.horizon_stats?.length) return;
   sec.innerHTML = "";
   data.horizon_stats.forEach(h => {
+    // DCA-framed: if you'd contributed monthly starting Xy ago to today.
+    const edge = h.edge_moic;
     const card = el("div", { class: "horizon-card" });
-    card.appendChild(el("div", { class: "horizon-label" }, `${h.years_back}y ago`));
+    card.appendChild(el("div", { class: "horizon-label" }, `DCA'd for ${h.years_back}y`));
     card.appendChild(el("div", { class: "horizon-since" }, `since ${h.since_date}`));
-    card.appendChild(el("div", { class: "horizon-cagr " + clsRet(h.cagr_strat) }, fmtPct(h.cagr_strat)));
+    card.appendChild(el("div", { class: "horizon-cagr " + clsRet(edge) }, fmtX(h.strat_moic)));
     card.appendChild(el("div", { class: "horizon-meta" },
-      `vs SPY DCA ${fmtPct(h.cagr_spy)} · ${h.n_picks} picks`));
-    card.appendChild(el("div", { class: "horizon-edge " + clsRet(h.edge_vs_spy) },
-      `edge ${fmtPctSigned(h.edge_vs_spy)}`));
+      `money-weighted IRR ${fmtPct(h.strat_irr)}`));
+    card.appendChild(el("div", { class: "horizon-edge " + clsRet(edge) },
+      (edge >= 0 ? "+" : "") + fmtNum(edge, 2) + "× vs S&P-DCA"));
     card.appendChild(el("div", { class: "horizon-multiple" },
-      `$1 → ${fmtMoney(h.strat_terminal)}  ·  SPY: ${fmtMoney(h.spy_terminal)}`));
+      `each $1 in → $${fmtNum(h.strat_moic, 2)}  ·  S&P-DCA: $${fmtNum(h.spy_moic, 2)}`));
     sec.appendChild(card);
   });
 }
