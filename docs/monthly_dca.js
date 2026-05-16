@@ -133,7 +133,7 @@ function renderDcaInvestor(data) {
     const anyLag = era.some(e => !e.beat_spy);
     const warn = el("div", { class: "pick-disclaimer", style: "margin:0 0 20px;border-color:var(--orange)" });
     warn.innerHTML =
-      "<strong>Read this honestly — the edge is NOT uniform.</strong> The all-history number is heavily front-loaded by the 2003–2009 GFC-recovery era (a one-off ~80%/yr DCA window that will not repeat at that scale). Broken into non-overlapping eras below" +
+      "<strong>Read this honestly — the edge is NOT uniform.</strong> The all-history number is heavily front-loaded by the 2003–2009 GFC-recovery era (a one-off window that will not repeat at that scale). Broken into non-overlapping eras below" +
       (anyLag ? ", the strategy <strong>underperformed S&P-DCA in at least one recent era</strong>." : ".") +
       " It does <em>not</em> substantially beat the S&P in every period — the reliable edge is the long-horizon (10-year) result, not any given short era.";
     sec.appendChild(warn);

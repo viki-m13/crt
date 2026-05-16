@@ -23,30 +23,38 @@ import numpy as np
 import pandas as pd
 
 AUG = Path(__file__).resolve().parents[2] / "cache" / "v2" / "sp500_pit" / "augmented"
+WEBAPP_DATA = Path(__file__).resolve().parents[3] / "docs" / "monthly-dca" / "data.json"
 HORIZONS = [12, 24, 36, 60, 120]   # months: 1y, 2y, 3y, 5y, 10y
 
 
 def load_streams():
-    eq = pd.read_csv(AUG / "v5_winner_equity.csv", parse_dates=["date"])
-    v5 = eq.set_index("date")["ret_m"].astype(float)
-    v5.index = v5.index.to_period("M")
+    """CANONICAL stream loader.
+
+    NOTE (2026-05-16 data-integrity fix): `v5_winner_equity.csv` is a
+    STALE/CORRUPTED artifact — its returns from 2023-04 onward are
+    inflated to an implausible ~85%/yr (e.g. 2023-05 shows +40% in one
+    month). The trustworthy v5 stream is the live production sim
+    (`run_full_sim` -> rets_log) that the website is built from; it is
+    exported as `dca_investor.growth[*].r` in the deployed data.json.
+    We read THAT here so research == website. SPY = same data.json `s`.
+    """
+    djson = json.loads((WEBAPP_DATA).read_text())
+    g = pd.DataFrame(djson["dca_investor"]["growth"])
+    g["p"] = pd.to_datetime(g["date"]).dt.to_period("M")
+    v5 = g.set_index("p")["r"].astype(float)
+    spy = g.set_index("p")["s"].astype(float)
 
     mn = pd.read_csv(AUG / "v5_mn_sleeve_returns.csv", index_col=0, parse_dates=True).iloc[:, 0].astype(float)
     mn.index = mn.index.to_period("M")
 
-    ret = pd.read_parquet(AUG / "monthly_returns_clean.parquet")
-    spy = ret["SPY"].dropna().astype(float)
-    spy.index = spy.index.to_period("M")
-
-    regime = eq.set_index("date")["regime"]
-    regime.index = regime.index.to_period("M")
-
-    idx = v5.index.intersection(spy.index)            # 2003-01 .. 2026-02
-    v5, spy = v5.reindex(idx).fillna(0.0), spy.reindex(idx)
+    idx = v5.index
+    spy = spy.reindex(idx).fillna(0.0)
     mn = mn.reindex(idx).fillna(0.0)
     blend = 0.6 * v5 + 0.4 * spy
     df = pd.DataFrame({"v5": v5, "mn": mn, "blend60_40": blend, "SPY": spy})
-    df.attrs["crash_mask"] = regime.reindex(idx).eq("crash").to_numpy()
+    # crash mask not available from data.json growth; not needed by the
+    # canonical analyses (shield variant is legacy).
+    df.attrs["crash_mask"] = (v5.values == 0.0)
     return df
 
 

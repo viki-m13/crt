@@ -46,10 +46,18 @@ WEBAPP_OUT = ROOT / "experiments" / "docs" / "monthly-dca"
 WEBAPP_OUT.mkdir(parents=True, exist_ok=True)
 
 STRATEGY_SPEC = {
-    "scorer": "ml_3plus6 + chronos_p70_filter",
+    "scorer": "multi_horizon_consensus + chronos_p70_filter",
     "scorer_description": (
-        "v2 GBM 3m+6m forward-rank ensemble, gated by HuggingFace Chronos-bolt-tiny "
-        "zero-shot probabilistic p70 forecast (must rank top 55% of cross-section)"
+        "Multi-horizon CONSENSUS scorer: the walk-forward GBM emits 1m/3m/6m "
+        "forward-rank predictions; names whose three horizon ranks DISAGREE "
+        "(cross-sectional rank dispersion above the median) are dropped — a "
+        "variance-reduction / ensemble-agreement filter — then survivors are "
+        "ranked by mean horizon rank. Gated by HuggingFace Chronos-bolt-tiny "
+        "zero-shot p70 forecast (must rank top 55%). Deployed 2026-05-16 after "
+        "full production-harness validation (vs the prior mean(3m,6m) scorer: "
+        "CAGR 40%->47%, Sharpe 0.87->0.94, Max DD -81%->-69%, recent 2021-26 "
+        "era now beats S&P-DCA; honest cost: weaker 2010-15 era, 10y DCA-win "
+        "100%->~99%). See NOVEL_V9_PROD_FINDINGS.md."
     ),
     "K_normal": 2,
     "K_recovery": 2,
@@ -85,7 +93,7 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+WINNER_NAME = "v5_pit_sp500_consensus_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -106,6 +114,13 @@ K_PICKS = 2
 REBALANCE_MODE = "rule_based"   # 'fixed' or 'rule_based'
 MIN_HOLD_MONTHS = 6
 MAX_HOLD_MONTHS = 24
+# Scorer: 'ml_3plus6' = deployed mean(pred_3m,pred_6m).
+# 'consensus' = multi-horizon variance-reduction (novel-v9): drop names
+# whose pred_1m/3m/6m cross-sectional ranks disagree (dispersion above
+# the cross-sectional median), then rank survivors by mean horizon rank.
+# Default stays 'ml_3plus6' — consensus is opt-in until it clears the
+# full production gauntlet (see NOVEL_V9_FINDINGS.md).
+SCORER_MODE = "consensus"
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
@@ -313,7 +328,18 @@ def run_full_sim(
         sub_pit_ = sub_[sub_["ticker"].isin(sp_set_)].copy()
         if len(sub_pit_) == 0:
             return None
-        sub_pit_["score"] = (sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2
+        if SCORER_MODE == "consensus" and len(sub_pit_) >= 4:
+            r1 = sub_pit_["pred_1m"].rank(pct=True)
+            r3 = sub_pit_["pred_3m"].rank(pct=True)
+            r6 = sub_pit_["pred_6m"].rank(pct=True)
+            disp = pd.concat([r1, r3, r6], axis=1).std(axis=1)
+            keep = disp <= disp.median()          # multi-horizon agreement
+            if keep.sum() >= K:
+                sub_pit_ = sub_pit_[keep]
+                r1, r3, r6 = r1[keep], r3[keep], r6[keep]
+            sub_pit_["score"] = (r1 + r3 + r6) / 3.0
+        else:
+            sub_pit_["score"] = (sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2
         if chronos_preds is not None and m_ in chronos_preds:
             chronos_at_m_ = chronos_preds[m_]
             sub_pit_["chr_p70"] = sub_pit_["ticker"].map(chronos_at_m_)
