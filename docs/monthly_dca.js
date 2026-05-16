@@ -61,6 +61,7 @@ fetch(DATA_URL + "?v=" + Date.now())
 
 function render(data) {
   renderHeroMeta(data);
+  renderDcaInvestor(data);
   renderPick(data);
   renderBacktest(data);
   renderHorizons(data);
@@ -71,6 +72,99 @@ function render(data) {
   renderV3Sections(data);
   renderHistorical(data);
   renderTrades(data);
+}
+
+/* ============================================================
+   DCA-investor outcomes — the only section that describes the
+   actual user (monthly contributions), rendered from
+   data.dca_investor (built daily by build_webapp_v5_pit.py)
+   ============================================================ */
+const DCA_HLABEL = { H12: "1 year", H24: "2 years", H36: "3 years", H60: "5 years", H120: "10 years" };
+
+function renderDcaInvestor(data) {
+  const sec = document.getElementById("dcaInvestorSection");
+  if (!sec) return;
+  const di = data.dca_investor;
+  if (!di || !di.horizons) {
+    sec.innerHTML = `<div style="color:var(--orange)">DCA-investor data not available in this build.</div>`;
+    return;
+  }
+  sec.innerHTML = "";
+
+  const hasSwitch = !!(di.horizons.H120 && di.horizons.H120.mn_switch);
+  const h120 = di.horizons.H120.v5;
+  const h12 = di.horizons.H12.v5;
+  const fh = di.full_history || {};
+
+  // hero numbers
+  try {
+    const w = Math.round((h120.win_vs_spy_dca || 0) * 100) + "%";
+    const a = document.getElementById("heroWin"); if (a) a.textContent = w;
+    const b = document.getElementById("heroWin2"); if (b) b.textContent = w;
+  } catch (e) {}
+
+  // headline band
+  const band = el("div", { class: "bias-grid", style: "margin-bottom:20px" });
+  band.appendChild(biasCard("10-year DCA win vs S&P-DCA",
+    fmtPct0(h120.win_vs_spy_dca),
+    `${h120.n_windows} rolling 10y windows on PIT data. Median ${fmtX(h120.median_moic)} money-in, worst ever ${fmtX(h120.min_moic)}. This is the honest "high hit rate".`,
+    true));
+  band.appendChild(biasCard("Median 10y outcome",
+    fmtX(h120.median_moic),
+    `Each $1 contributed became a median ${fmtX(h120.median_moic)} over 10y of monthly buys. SPY-DCA median: ${fmtX(di.horizons.H120.SPY?.median_moic)}.`));
+  band.appendChild(biasCard("Worst 1-year DCA window",
+    fmtX(h12.min_moic),
+    `Brutal short-horizon reality: the single worst 12-month window left contributions worth ${fmtX(h12.min_moic)}×. DCA is a multi-year commitment, not a 1-year trade.`));
+  band.appendChild(biasCard("Raw interim drawdown",
+    fmtPct(fh.v5?.max_value_drawdown, 0),
+    `Peak-to-trough on the accumulating portfolio (raw v5). There is no no-downside version. The MN-switch variant below cuts this to ${fmtPct(fh.mn_switch?.max_value_drawdown, 0)}.`));
+  sec.appendChild(band);
+
+  // horizon table
+  const wrap = el("div", { class: "bias-table-wrap" });
+  const t = el("table", { class: "bias-table" });
+  const variants = hasSwitch ? ["v5", "mn_switch"] : ["v5"];
+  const vlab = { v5: "Raw v5 (max upside)", mn_switch: "MN drawdown-switch (smoother)" };
+  let head = `<thead><tr><th>DCA horizon</th>`;
+  variants.forEach(v => { head += `<th>${vlab[v]} — win vs S&P-DCA</th><th>median</th><th>worst ever</th>`; });
+  head += `<th>S&P-DCA median</th></tr></thead>`;
+  t.innerHTML = head;
+  const tb = el("tbody");
+  ["H12", "H24", "H36", "H60", "H120"].forEach(H => {
+    const row = di.horizons[H]; if (!row) return;
+    let tds = `<td><strong>${DCA_HLABEL[H]}</strong></td>`;
+    variants.forEach(v => {
+      const r = row[v] || {};
+      const win = r.win_vs_spy_dca;
+      const cls = win != null && win >= 0.999 ? "pos" : "";
+      tds += `<td class="${cls}"><strong>${fmtPct0(win)}</strong></td><td>${fmtX(r.median_moic)}</td><td class="${(r.min_moic < 1 ? 'neg' : '')}">${fmtX(r.min_moic)}</td>`;
+    });
+    tds += `<td>${fmtX(row.SPY?.median_moic)}</td>`;
+    tb.appendChild(el("tr", { html: tds }));
+  });
+  t.appendChild(tb);
+  wrap.appendChild(t);
+  sec.appendChild(wrap);
+
+  // two-variant explainer
+  if (hasSwitch && fh.v5 && fh.mn_switch) {
+    const g = el("div", { class: "bias-grid", style: "margin-top:20px" });
+    g.appendChild(biasCard("Variant A — Raw v5 (max parabola)",
+      fmtX(fh.v5.terminal_moic),
+      `Full-history money-in multiple, ${di.window}. IRR ${fmtPct(fh.v5.money_weighted_irr)}, interim drawdown ${fmtPct(fh.v5.max_value_drawdown, 0)}. Choose this only for a 10-year+ commitment you will not interrupt.`));
+    g.appendChild(biasCard("Variant B — MN drawdown-switch",
+      fmtX(fh.mn_switch.terminal_moic),
+      `Same picker, but rotates the book into the validated market-neutral sleeve when the portfolio draws down past -25% (an honest portfolio switch, not a new alpha). IRR ${fmtPct(fh.mn_switch.money_weighted_irr)}, interim drawdown only ${fmtPct(fh.mn_switch.max_value_drawdown, 0)}. ~Half the upside for ~half the drawdown — still 100% at 10y.`));
+    sec.appendChild(g);
+  }
+}
+
+function biasCard(label, value, sub, headline) {
+  const c = el("div", { class: "bias-card" + (headline ? " bias-card-headline" : "") });
+  c.appendChild(el("div", { class: "bias-label" }, label));
+  c.appendChild(el("div", { class: "bias-value" }, value));
+  c.appendChild(el("div", { class: "bias-sub" }, sub));
+  return c;
 }
 
 /* ============================================================

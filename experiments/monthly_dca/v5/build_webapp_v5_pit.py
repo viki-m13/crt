@@ -580,6 +580,158 @@ def _path(filename: str, prefer_aug: bool = True) -> Path:
     return PIT / filename
 
 
+# === DCA-investor evaluation (what a monthly-contribution investor lives) ===
+# Mirrors experiments/monthly_dca/v5/spx_pit/dca_investor_eval.py exactly:
+# contribute 1 unit at the start of each month, earn that month's return;
+# identical schedule for every stream. The v5 stream is net of 10bps.
+# Fail-soft: any error returns None so the live build never breaks.
+
+DCA_HORIZONS = [12, 24, 36, 60, 120]
+
+
+def _dca_path(rets):
+    v = 0.0
+    vals, basis = [], []
+    for t, r in enumerate(rets):
+        v = (v + 1.0) * (1.0 + r)
+        vals.append(v)
+        basis.append(t + 1.0)
+    return np.array(vals), np.array(basis)
+
+
+def _irr_from_terminal(terminal, H):
+    def npv(i):
+        out = sum(1.0 / (1.0 + i) ** t for t in range(H))
+        return terminal / (1.0 + i) ** (H - 1) - out
+    lo, hi = -0.5, 0.5
+    flo = npv(lo)
+    mid = 0.0
+    for _ in range(160):
+        mid = 0.5 * (lo + hi)
+        fm = npv(mid)
+        if abs(fm) < 1e-10:
+            break
+        if (fm > 0) == (flo > 0):
+            lo, flo = mid, fm
+        else:
+            hi = mid
+    return (1.0 + mid) ** 12 - 1.0
+
+
+def _dca_switch(v5r, mnr, spyr, th=0.25):
+    """Drawdown-conditional rotation: DCA into v5; when the portfolio's
+    drawdown from its running peak breaches -th, route the book + new
+    contributions into the validated market-neutral sleeve; switch back
+    at -th/2 recovery (hysteresis). An honest portfolio switch between two
+    already-validated streams — NOT a new alpha."""
+    v = peak = 0.0
+    in_mn = False
+    vals = []
+    for t in range(len(v5r)):
+        v += 1.0
+        v *= (1.0 + (mnr[t] if in_mn else v5r[t]))
+        peak = max(peak, v)
+        dd = v / peak - 1.0
+        if not in_mn and dd <= -th:
+            in_mn = True
+        elif in_mn and dd >= -th / 2.0:
+            in_mn = False
+        vals.append(v)
+    return np.array(vals)
+
+
+def compute_dca_investor(rets_log, monthly_returns):
+    try:
+        v5 = pd.Series(
+            [float(r["ret_m"]) for r in rets_log],
+            index=pd.PeriodIndex([pd.Timestamp(r["date"]) for r in rets_log], freq="M"),
+        )
+        spy = monthly_returns["SPY"].dropna().astype(float)
+        spy.index = pd.to_datetime(spy.index).to_period("M")
+        idx = v5.index.intersection(spy.index)
+        v5, spy = v5.reindex(idx).fillna(0.0), spy.reindex(idx)
+
+        mn = pd.Series(0.0, index=idx)
+        mn_csv = AUG / "v5_mn_sleeve_returns.csv"
+        if mn_csv.exists():
+            m = pd.read_csv(mn_csv, index_col=0, parse_dates=True).iloc[:, 0].astype(float)
+            m.index = pd.to_datetime(m.index).to_period("M")
+            mn = m.reindex(idx).fillna(0.0)
+
+        v5a, spya, mna = v5.to_numpy(), spy.to_numpy(), mn.to_numpy()
+        sw = None
+        if mn_csv.exists():
+            sw_path = _dca_switch(v5a, mna, spya, 0.25)
+
+        def variant_series(name):
+            if name == "v5":
+                return v5a, None
+            if name == "mn_switch":
+                return None, _dca_switch  # path-dependent
+            return spya, None
+
+        out = {
+            "window": f"{idx[0]} .. {idx[-1]}",
+            "n_months": int(len(idx)),
+            "convention": ("contribute $1 at the start of each month, earn that "
+                           "month's return; v5 net of 10bps; PIT data, no tuning"),
+            "horizons": {},
+            "full_history": {},
+        }
+
+        # rolling horizons
+        n = len(idx)
+        for H in DCA_HORIZONS:
+            row = {}
+            spy_terms = []
+            for s in range(0, n - H + 1):
+                spy_terms.append(_dca_path(spya[s:s + H])[0][-1])
+            for label in (["v5", "mn_switch", "SPY"] if mn_csv.exists() else ["v5", "SPY"]):
+                wins, moic = [], []
+                worst = 1e18
+                for j, s in enumerate(range(0, n - H + 1)):
+                    if label == "mn_switch":
+                        tv = _dca_switch(v5a[s:s + H], mna[s:s + H], spya[s:s + H], 0.25)[-1]
+                    elif label == "v5":
+                        tv = _dca_path(v5a[s:s + H])[0][-1]
+                    else:
+                        tv = spy_terms[j]
+                    m = tv / H
+                    wins.append(tv > spy_terms[j])
+                    moic.append(m)
+                    worst = min(worst, m)
+                row[label] = {
+                    "win_vs_spy_dca": (None if label == "SPY"
+                                       else round(float(np.mean(wins)), 4)),
+                    "n_windows": int(len(moic)),
+                    "median_moic": round(float(np.median(moic)), 3),
+                    "p05_moic": round(float(np.quantile(moic, 0.05)), 3),
+                    "min_moic": round(float(worst), 3),
+                }
+            out["horizons"][f"H{H}"] = row
+
+        # full history
+        for label in (["v5", "mn_switch", "SPY"] if mn_csv.exists() else ["v5", "SPY"]):
+            if label == "mn_switch":
+                val = _dca_switch(v5a, mna, spya, 0.25)
+                basis = np.arange(1, len(val) + 1, dtype=float)
+            else:
+                val, basis = _dca_path(v5a if label == "v5" else spya)
+            pk = np.maximum.accumulate(val)
+            uw = (val - basis) / basis
+            out["full_history"][label] = {
+                "months": int(len(val)),
+                "terminal_moic": round(float(val[-1] / basis[-1]), 2),
+                "money_weighted_irr": round(float(_irr_from_terminal(val[-1], len(val))), 4),
+                "max_value_drawdown": round(float(((val - pk) / pk).min()), 4),
+                "worst_underwater_vs_contrib": round(float(uw.min()), 4),
+            }
+        return out
+    except Exception as e:  # never break the live build
+        print(f"  WARNING: compute_dca_investor failed: {e}")
+        return None
+
+
 def main():
     print("=== Loading inputs ===")
     print(f"    USE_AUG = {USE_AUG}  ({'augmented' if USE_AUG else 'legacy V2'} data layer)")
@@ -930,6 +1082,14 @@ def main():
             "basket_id": trade.get("basket_id"),
         })
 
+    # === DCA-investor evaluation (the product's actual user) ===
+    print("=== Computing DCA-investor outcomes (rolling horizons + MN-switch) ===")
+    dca_investor = compute_dca_investor(rets_log, monthly_returns)
+    if dca_investor:
+        h120 = dca_investor["horizons"]["H120"]["v5"]
+        print(f"  10y DCA: win vs SPY-DCA {h120['win_vs_spy_dca']*100:.0f}%  "
+              f"median {h120['median_moic']:.1f}x  worst {h120['min_moic']:.1f}x")
+
     # === Build final data.json ===
     n_picks_total = sum(r["n_picks"] for r in rets_log)
     last_pred_month = preds_live["asof"].max()
@@ -1025,6 +1185,7 @@ def main():
         ],
         "live_picks": [],
         "horizon_stats": horizon_stats,
+        "dca_investor": dca_investor,
         "oracle": {},
         "pick_log": pick_log_rows,
         "sweep_top40": [],
