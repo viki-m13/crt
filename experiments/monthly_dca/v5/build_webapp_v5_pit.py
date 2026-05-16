@@ -849,6 +849,22 @@ def compute_dca_investor(rets_log, monthly_returns, wf_rows=None, sub_rows=None)
                     w["to"] = str(r["to"])[:10]
                     sp_dca.append(w)
             out["subperiods"] = sp_dca
+
+        # Honest era-by-era DCA: is the headline front-loaded? Show
+        # non-overlapping eras incl. the most recent — explicitly so the
+        # page cannot imply "beats every period" when it does not.
+        last_yr = ts[-1].year if len(ts) else 2026
+        eras = [("2003–2009", "2003-01-01", "2009-12-31"),
+                ("2010–2015", "2010-01-01", "2015-12-31"),
+                ("2016–2020", "2016-01-01", "2020-12-31"),
+                (f"2021–{last_yr}", "2021-01-01", f"{last_yr}-12-31")]
+        era_dca = []
+        for name, lo, hi in eras:
+            w = _win(lo, hi)
+            if w:
+                w["era"] = name
+                era_dca.append(w)
+        out["by_era"] = era_dca
         return out
     except Exception as e:  # never break the live build
         print(f"  WARNING: compute_dca_investor failed: {e}")

@@ -127,6 +127,35 @@ function renderDcaInvestor(data) {
     `Peak-to-trough on the accumulating portfolio (raw v5). There is no no-downside version. The MN-switch variant below cuts this to ${fmtPct(fh.mn_switch?.max_value_drawdown, 0)}.`));
   sec.appendChild(band);
 
+  // HONEST era-by-era: the headline is front-loaded; recent eras can lag.
+  const era = di.by_era;
+  if (era?.length) {
+    const anyLag = era.some(e => !e.beat_spy);
+    const warn = el("div", { class: "pick-disclaimer", style: "margin:0 0 20px;border-color:var(--orange)" });
+    warn.innerHTML =
+      "<strong>Read this honestly — the edge is NOT uniform.</strong> The all-history number is heavily front-loaded by the 2003–2009 GFC-recovery era (a one-off ~80%/yr DCA window that will not repeat at that scale). Broken into non-overlapping eras below" +
+      (anyLag ? ", the strategy <strong>underperformed S&P-DCA in at least one recent era</strong>." : ".") +
+      " It does <em>not</em> substantially beat the S&P in every period — the reliable edge is the long-horizon (10-year) result, not any given short era.";
+    sec.appendChild(warn);
+    const wrap = el("div", { class: "bias-table-wrap", style: "margin-bottom:20px" });
+    const t = el("table", { class: "bias-table" });
+    t.innerHTML = "<thead><tr><th>Era (non-overlapping)</th><th>Strategy DCA (IRR)</th><th>S&P-DCA (IRR)</th><th>Edge</th><th>Beat S&P-DCA?</th></tr></thead>";
+    const tb = el("tbody");
+    era.forEach(e => {
+      const ep = (e.strat_irr != null && e.spy_irr != null) ? e.strat_irr - e.spy_irr : null;
+      const tr = el("tr");
+      tr.appendChild(el("td", { class: "tkr" }, e.era));
+      tr.appendChild(el("td", { class: clsRet(ep) }, fmtPct(e.strat_irr)));
+      tr.appendChild(el("td", {}, fmtPct(e.spy_irr)));
+      tr.appendChild(el("td", { class: clsRet(ep) }, fmtPctSigned(ep)));
+      tr.appendChild(el("td", { class: e.beat_spy ? "pos" : "neg" }, e.beat_spy ? "yes" : "NO"));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    sec.appendChild(wrap);
+  }
+
   // horizon breakdown — responsive card grid (mobile-safe; no wide table)
   const hint = el("p", { class: "bias-sub", style: "margin:0 0 12px" },
     "Each card: a DCA horizon. Top number = % of all rolling windows where contributing into the strategy beat the same contributions into the S&P 500. Returns shown are annualized money-weighted (the rate your contributions actually compounded at).");
@@ -188,18 +217,6 @@ function renderCaseStudies(data) {
     byBasket[k].push(p);
   });
 
-  // Highlight commentary for famous windows (best-effort match by year)
-  const commentary = {
-    "2009": "Coming off the GFC bottom — captures the post-March 2009 V-bottom rally.",
-    "2020": "COVID era. Crash gate fired in Feb 2020, then re-entered into the recovery.",
-    "2008": "Mid-GFC. Strategy navigates the bear via the cash gate, then catches the bounce.",
-    "2016": "Brexit + 2016 election. Strategy stays disciplined through macro shocks.",
-    "2022": "Bear market year. Strategy modestly underperforms but recovers quickly in 2023.",
-    "2023": "AI rally launch. Caught NVDA + tech leaders.",
-    "2024": "Mega-cap-led rally — the strategy's hardest regime.",
-  };
-
-  // Sort baskets newest-first
   const bids = Object.keys(byBasket).sort((a, b) => {
     const aD = byBasket[a][0]?.asof || "";
     const bD = byBasket[b][0]?.asof || "";
@@ -212,15 +229,13 @@ function renderCaseStudies(data) {
     const isOpen = basket[0]?.status !== "exited";
     const entry = basket[0]?.asof;
     const exit = basket[0]?.exit_date || (isOpen ? "open" : "?");
-    const yr = (entry || "").slice(0, 4);
 
-    // Basket return = equal-weighted average of pick returns
     const validRets = basket.map(p => p.ret_strat ?? p.return).filter(r => r != null);
     const basketRet = validRets.length
       ? validRets.reduce((a, b) => a + b, 0) / validRets.length
       : null;
     const spyRets = basket.map(p => p.ret_spy).filter(r => r != null);
-    const spyBasketRet = spyRets.length ? spyRets[0] : null;  // same window for all picks
+    const spyBasketRet = spyRets.length ? spyRets[0] : null;
 
     const card = el("div", { class: "case-card" });
     const dateLabel = isOpen
@@ -243,11 +258,6 @@ function renderCaseStudies(data) {
         }
       }
       card.appendChild(el("div", { class: "case-ret " + clsRet(basketRet) }, line));
-    }
-
-    const blurb = commentary[yr];
-    if (blurb) {
-      card.appendChild(el("div", { class: "case-blurb" }, blurb));
     }
     sec.appendChild(card);
   });
