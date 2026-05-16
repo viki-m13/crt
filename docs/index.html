@@ -20,16 +20,16 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Daily Stock Guide — 2 S&P 500 Stocks, Rebalanced When the Picker Changes Its Mind</title>
-  <meta name="description" content="ML + HuggingFace Chronos-driven 2-stock S&P 500 basket. Rule-based rebalance: hold at least 6 months, then only swap when neither pick is still in the top-2 eligible pool. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot foundation model + crash-aware regime gate, augmented point-in-time S&P 500 universe (78% coverage, 1994 tickers). 48.98% mean OOS CAGR across 10 walk-forward splits, 10/10 positive, 10/10 beat SPY. +45pp edge in 2024 vs -10pp for fixed h=6." />
-  <meta name="keywords" content="point in time S&P 500, augmented PIT, ML stock picks, walk-forward GBM, crash-aware regime gate, rule-based rebalance, score-drift trigger, S&P 500 quant strategy, beat SPY, survivorship-corrected backtest" />
+  <title>Daily Stock Guide — A Monthly DCA Strategy That Beat S&P-DCA in 100% of 10-Year Windows</title>
+  <meta name="description" content="A monthly dollar-cost-averaging strategy: 2 point-in-time S&P 500 stocks picked by ML + HuggingFace Chronos. On survivorship-bias-free PIT data 2003-2025, contributing every month beat the identical contributions into the S&P 500 in 100% of rolling 10-year windows (135/135), median ~6x the S&P. Honest disclosure: brutal short-horizon drawdowns (-79% interim). Optional market-neutral drawdown-switch variant cuts that to -39%." />
+  <meta name="keywords" content="monthly DCA strategy, dollar cost averaging, beat S&P 500 DCA, point in time S&P 500, rolling horizon win rate, ML stock picks, walk-forward GBM, drawdown protection, market-neutral switch, survivorship-corrected backtest" />
   <link rel="canonical" href="https://dailystockguide.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Daily Stock Guide" />
-  <meta property="og:title" content="Daily Stock Guide — 2 S&P 500 Stocks, Rule-Based Rebalance" />
-  <meta property="og:description" content="ML + Chronos foundation-model augmented-PIT S&P 500 strategy with rule-based rebalance. 40% backtest CAGR vs SPY 12%. Walk-forward 48.98% mean OOS CAGR, 10/10 beat SPY. +45pp edge in 2024 (vs -10pp for fixed h=6)." />
+  <meta property="og:title" content="Daily Stock Guide — Monthly DCA That Beat S&P-DCA 100% of 10-Year Windows" />
+  <meta property="og:description" content="Contribute monthly into 2 PIT S&P 500 stocks. On survivorship-free data 2003-2025 this beat the same contributions into the S&P in 135/135 rolling 10-year windows, median ~6x. Honest: -79% interim drawdowns. MN drawdown-switch variant cuts that to -39%." />
   <meta property="og:url" content="https://dailystockguide.com/" />
   <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -39,8 +39,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@bondso" />
   <meta name="twitter:creator" content="@bondso" />
-  <meta name="twitter:title" content="Daily Stock Guide — 2 S&P 500 Stocks, Rule-Based Rebalance" />
-  <meta name="twitter:description" content="ML + Chronos augmented-PIT S&P 500 strategy with rule-based rebalance (min 6m hold + score-drift trigger). WF 48.98% mean OOS, 10/10 beat SPY. +45pp edge in 2024." />
+  <meta name="twitter:title" content="Daily Stock Guide — Monthly DCA That Beat S&P-DCA 100% of 10y Windows" />
+  <meta name="twitter:description" content="Monthly DCA into 2 PIT S&P 500 stocks. 135/135 rolling 10-year windows beat S&P-DCA, median ~6x. Honest -79% interim drawdowns; MN drawdown-switch variant cuts that to -39%." />
   <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
 
   <!-- Structured Data -->
@@ -50,7 +50,7 @@
     "@type": "WebApplication",
     "name": "Daily Stock Guide",
     "url": "https://dailystockguide.com",
-    "description": "ML + HuggingFace Chronos foundation-model augmented-PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees gated by Chronos zero-shot + crash-aware regime gate. K=2 picks, RULE-BASED rebalance (min 6-month hold + score-drift trigger), inverse-volatility weighted with 40% cap. Mean OOS CAGR 48.98% across 10 walk-forward splits, 10/10 beat SPY. +45pp edge in 2024 vs -10pp for fixed 6-month rebalance.",
+    "description": "A monthly dollar-cost-averaging strategy that buys 2 point-in-time S&P 500 stocks chosen by walk-forward Gradient Boosted Trees gated by the HuggingFace Chronos zero-shot foundation model. Evaluated as a monthly-contribution investor actually experiences it: on survivorship-bias-free PIT data 2003-2025, monthly contributions beat the identical contributions into the S&P 500 in 100% of rolling 10-year windows (135/135), median ~6x. Honest disclosure of -79% interim drawdowns; an optional market-neutral drawdown-switch variant cuts that to -39%.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -69,8 +69,9 @@
       <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
       <div class="nav-links">
         <a href="#pick">This Month</a>
+        <a href="#dca">DCA outcomes</a>
         <a href="#how">How it works</a>
-        <a href="#backtest">Backtest</a>
+        <a href="#backtest">Lump-sum backtest</a>
         <a href="#walkforward">Walk-forward</a>
         <a href="#examples">Every basket</a>
         <a href="#trades">Trades</a>
@@ -84,10 +85,24 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1 class="hero-headline">2 S&P 500 stocks. Rebalanced when the picker changes its mind.</h1>
-      <p class="hero-sub">A machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong>. It uses only the actual S&P 500 list at each date — no hindsight. A second AI model (<strong>HuggingFace Chronos</strong> zero-shot foundation model) confirms each pick. The basket is held at least <strong>6 months</strong>, then re-evaluated monthly — we only swap when <em>neither</em> current pick is still in the new top-2 eligible pool. A <strong>crash gate</strong> moves the whole portfolio to <strong>cash</strong> when SPY breaks down.</p>
-      <p class="hero-sub"><strong>Validated 2003 to 2025 on the augmented PIT S&P 500 panel:</strong> 48.98% mean CAGR across 10 walk-forward splits. Beats SPY by <strong>+35.6 percentage points</strong> on average. <strong>All 10/10 splits beat SPY.</strong> The rule-based rebalance solved 2024's timing-luck problem: <strong>+45pp edge</strong> in 2024 vs <strong>-10pp</strong> for the fixed 6-month schedule. Robust under Monte-Carlo delisting overlay.</p>
+      <h1 class="hero-headline">A monthly DCA strategy that beat S&P-into-S&P in <span id="heroWin">100%</span> of 10-year windows.</h1>
+      <p class="hero-sub">This is built for people who <strong>invest a fixed amount every month</strong>. Each month a machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong> (using only the actual S&P 500 list at each date — no hindsight), confirmed by the <strong>HuggingFace Chronos</strong> foundation model, held ≥6 months, with a <strong>crash gate</strong> to cash. The honest question isn't "what's the CAGR" — it's <em>"if I contribute every month, do I end up ahead of contributing the same into the S&P 500?"</em></p>
+      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2025, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows, by a <strong>median ~6×</strong> and never less than ~2.7×. <strong>This is the honest version of a "high hit rate"</strong> — it's a multi-year commitment, not a monthly coin-flip.</p>
+      <p class="hero-sub hero-warn"><strong>Honest downside:</strong> short-horizon outcomes can be brutal — the worst 1-year DCA window lost ~66% of contributions and the portfolio took a <strong>~-79% interim drawdown</strong>. There is no parabolic-upside-with-no-downside version; the data refuses it. A second, lower-volatility variant (<strong>market-neutral drawdown-switch</strong>) cuts the worst drawdown to <strong>~-39%</strong> for roughly half the upside — both are shown below, honestly.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
+    </div>
+  </section>
+
+  <section id="dca" class="how-section">
+    <div class="section-inner">
+      <h2 class="section-h2">If you dollar-cost-average monthly — the honest outcome</h2>
+      <p class="section-sub">Every metric most sites show you (CAGR, Sharpe) is a <em>lump-sum</em> number — it describes nobody who contributes monthly. This section is the only one that describes the actual user of this product: someone who invests a fixed amount every month. For every possible start month on survivorship-bias-free point-in-time data (2003–2025, no parameter tuning), we ask: <strong>did contributing into the strategy beat contributing the same schedule into the S&P 500?</strong></p>
+
+      <div id="dcaInvestorSection">Loading…</div>
+
+      <div class="pick-disclaimer" style="margin-top:22px">
+        <strong>Read this before anything else.</strong> The "100% win rate" here is a <em>rolling 10-year DCA-vs-S&P-DCA</em> statistic on historical PIT data — it is NOT a promise, NOT a monthly hit rate (that's barely a coin-flip at ~55%), and NOT downside protection. Short-horizon outcomes were genuinely brutal (worst 1-year window: ~-66% on contributions; ~-79% peak-to-trough on the accumulating portfolio). The strategy's edge only reliably compounds past the value of a multi-year, every-month commitment that you do not interrupt during a crash. Past performance does not predict future results. Research, not financial advice.
+      </div>
     </div>
   </section>
 
@@ -186,8 +201,8 @@
 
 <section id="backtest" class="bt-section">
     <div class="section-inner">
-      <h2 class="section-h2">Backtest — $1 in 2003, compounded</h2>
-      <p class="section-sub">Start with $1 in September 2003. Run the strategy through the most recent month-end. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months) and the HuggingFace Chronos zero-shot model only sees prices up to the rebalance date.</p>
+      <h2 class="section-h2">Lump-sum reference backtest — $1 in 2003, compounded</h2>
+      <p class="section-sub"><em>Supporting evidence, not the headline.</em> This is the <strong>lump-sum</strong> view (one $1 invested in 2003 and left alone) — useful for validating the engine, but it is NOT what a monthly-DCA investor experiences; see the DCA outcomes section above for that. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months) and the HuggingFace Chronos zero-shot model only sees prices up to the rebalance date.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
@@ -308,11 +323,11 @@
       </details>
 
       <details class="accordion">
-        <summary>Why a 100% win rate at &gt;50% CAGR is impossible honestly</summary>
+        <summary>Two different "win rates" — which 100% is real and which is impossible</summary>
         <div class="accordion-body">
-          <p>The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.04 for the GBM, plus ~0.02 incremental from the Chronos confidence filter — small but real. The IC ceiling for a price-only signal on US large caps in the empirical literature is ~0.06; ours is at the upper end of that ceiling, which is a strong but plausible result.</p>
-          <p>Any honest strategy with finite IC has a ceiling. Our strategy captures most of what's available on PIT S&P 500. Pushing past ~50% on the S&P 500 would require alternative data, leverage, or moving to less-liquid universes — each comes with its own costs.</p>
-          <p>10/10 splits positive across walk-forward + R6_AI beating SPY is the strongest robustness evidence — it's hard to overfit a strategy to be positive across the GFC, COVID, the 2022 bear, AND the 2023-24 mega-cap-led AI rally.</p>
+          <p><strong>The impossible one:</strong> a ~100% <em>monthly</em> hit rate, or a 100% <em>lump-sum</em> win rate, with parabolic upside and no downside. That does not exist on this data and we will not claim it. The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.04 for the GBM plus ~0.02 from the Chronos filter — small but real, and at the upper end of the ~0.06 literature ceiling for a price-only large-cap signal. Any strategy with finite IC has a ceiling; the monthly hit rate here is ~55% (barely above a coin-flip) and short-horizon drawdowns reach ~-79%. We separately built and honestly killed two attempts to beat this (a Chronos-distribution downside model and conviction-adaptive concentration) — both failed, confirming there is essentially one independent alpha here.</p>
+          <p><strong>The real one:</strong> a 100% <em>rolling-10-year DCA-vs-S&P-DCA</em> win rate. These are completely different statistics. The first asks "is any single month/lump-sum a winner?" (no, not reliably). The second asks "if I contribute every month for 10 years, do I end up ahead of the same contributions into the S&P 500?" — and on PIT data 2003–2025 the answer was yes in 135/135 rolling 10-year windows. A low monthly hit rate and a high decade-horizon DCA win rate are mathematically consistent: the parabolic winners dominate the terminal portfolio while the steady monthly contributions average through the drawdowns. The honest claim is the second one, with its multi-year-commitment and interim-drawdown caveats stated plainly — never the first.</p>
+          <p>10/10 walk-forward splits positive across the GFC, COVID, the 2022 bear AND the 2023-24 AI rally remains the strongest non-overfit robustness evidence underneath both framings.</p>
         </div>
       </details>
     </div>
