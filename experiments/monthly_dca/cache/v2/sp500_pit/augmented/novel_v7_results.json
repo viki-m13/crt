@@ -1,0 +1,50 @@
+{
+  "knn_recovery": {
+    "label": "knn_recovery",
+    "n_months": 254,
+    "cagr_full": 0.0141,
+    "sharpe": 0.224,
+    "max_dd": -0.8654,
+    "dca_win_H36": 0.416,
+    "dca_win_H60": 0.374,
+    "dca_win_H120": 0.341,
+    "era": {
+      "2003-2009": {
+        "strat_irr": -0.2342,
+        "spy_irr": 0.0143,
+        "beat": false
+      },
+      "2010-2015": {
+        "strat_irr": 0.0482,
+        "spy_irr": 0.1355,
+        "beat": false
+      },
+      "2016-2020": {
+        "strat_irr": 0.1441,
+        "spy_irr": 0.2069,
+        "beat": false
+      },
+      "2021-2026": {
+        "strat_irr": 0.0627,
+        "spy_irr": 0.1737,
+        "beat": false
+      }
+    }
+  },
+  "deployed_baseline_ref": {
+    "label": "deployed_K2",
+    "n_months": 254,
+    "cagr_full": 0.4921,
+    "spy_cagr_full": 0.1249,
+    "edge_pp": 36.72,
+    "sharpe": 1.04,
+    "max_dd": -0.525,
+    "wf_mean_cagr": 0.4939,
+    "wf_min_cagr": 0.1882,
+    "wf_n_beats_spy": 10,
+    "wf_n_splits": 10,
+    "design_sharpe_<=2012": 1.013,
+    "holdout_sharpe_>=2013": 1.121,
+    "holdout_cagr_>=2013": 0.4371
+  }
+}
