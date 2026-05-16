@@ -1,0 +1,120 @@
+{
+  "deployed consensus": {
+    "cagr": 0.4732,
+    "sharpe": 0.939,
+    "max_dd": -0.6909,
+    "wf_beats": 8,
+    "wf_n": 10,
+    "dca_H36": 0.845,
+    "dca_H60": 0.893,
+    "dca_H120": 0.987,
+    "eras_beat": 3,
+    "era_detail": {
+      "03-09": true,
+      "10-15": false,
+      "16-20": true,
+      "21-26": true
+    }
+  },
+  "WIN1 trig=blend/sel=ml": {
+    "cagr": 0.5189,
+    "sharpe": 1.008,
+    "max_dd": -0.6584,
+    "wf_beats": 9,
+    "wf_n": 10,
+    "dca_H36": 0.912,
+    "dca_H60": 0.953,
+    "dca_H120": 1.0,
+    "eras_beat": 4,
+    "era_detail": {
+      "03-09": true,
+      "10-15": true,
+      "16-20": true,
+      "21-26": true
+    }
+  },
+  "WIN2 trig=ml/sel=blend": {
+    "cagr": 0.488,
+    "sharpe": 0.955,
+    "max_dd": -0.5447,
+    "wf_beats": 9,
+    "wf_n": 10,
+    "dca_H36": 0.841,
+    "dca_H60": 0.981,
+    "dca_H120": 1.0,
+    "eras_beat": 4,
+    "era_detail": {
+      "03-09": true,
+      "10-15": true,
+      "16-20": true,
+      "21-26": true
+    }
+  },
+  "oos": {
+    "deployed consensus": {
+      "design": {
+        "cagr": 0.9219,
+        "sharpe": 1.222,
+        "max_dd": -0.6909,
+        "spy_cagr": 0.0807,
+        "n": 118
+      },
+      "holdout": {
+        "cagr": 0.2047,
+        "sharpe": 0.677,
+        "max_dd": -0.6187,
+        "spy_cagr": 0.1453,
+        "n": 156
+      }
+    },
+    "WIN1 trig=blend/sel=ml": {
+      "design": {
+        "cagr": 0.7799,
+        "sharpe": 1.106,
+        "max_dd": -0.6584,
+        "spy_cagr": 0.0807,
+        "n": 118
+      },
+      "holdout": {
+        "cagr": 0.3472,
+        "sharpe": 1.043,
+        "max_dd": -0.59,
+        "spy_cagr": 0.1453,
+        "n": 156
+      }
+    },
+    "WIN2 trig=ml/sel=blend": {
+      "design": {
+        "cagr": 0.7033,
+        "sharpe": 1.035,
+        "max_dd": -0.446,
+        "spy_cagr": 0.0807,
+        "n": 118
+      },
+      "holdout": {
+        "cagr": 0.3434,
+        "sharpe": 0.982,
+        "max_dd": -0.5447,
+        "spy_cagr": 0.1453,
+        "n": 156
+      }
+    }
+  },
+  "mc_delist": {
+    "a0": {
+      "deployed consensus": 0.4872,
+      "WIN1 trig=blend/sel=ml": 0.5282,
+      "WIN2 trig=ml/sel=blend": 0.4903
+    },
+    "a4": {
+      "deployed consensus": 0.2723,
+      "WIN1 trig=blend/sel=ml": 0.2776,
+      "WIN2 trig=ml/sel=blend": 0.2555
+    },
+    "a8": {
+      "deployed consensus": -0.0349,
+      "WIN1 trig=blend/sel=ml": 0.0497,
+      "WIN2 trig=ml/sel=blend": -0.0494
+    }
+  }
+}
