@@ -201,8 +201,8 @@
 
 <section id="backtest" class="bt-section">
     <div class="section-inner">
-      <h2 class="section-h2">Lump-sum reference backtest — $1 in 2003, compounded</h2>
-      <p class="section-sub"><em>Supporting evidence, not the headline.</em> This is the <strong>lump-sum</strong> view (one $1 invested in 2003 and left alone) — useful for validating the engine, but it is NOT what a monthly-DCA investor experiences; see the DCA outcomes section above for that. Compare against $1 in SPY held the whole way. The historical equity curve uses honest walk-forward predictions — the model only sees data older than (test month − 7 months) and the HuggingFace Chronos zero-shot model only sees prices up to the rebalance date.</p>
+      <h2 class="section-h2">Your DCA account — $1 contributed every month since 2003</h2>
+      <p class="section-sub">This is the monthly-DCA experience, not lump-sum: contribute <strong>$1 every month-end</strong> into the strategy and watch the account accumulate, versus contributing the <strong>identical</strong> schedule into the S&P 500. The grey line is the money you put in; green is the strategy account; the S&P-DCA line is the same contributions into SPY. Honest walk-forward predictions throughout — the model only sees data older than (test month − 7 months) and Chronos only sees prices up to the rebalance date.</p>
       <div class="bt-stats" id="btStats">Loading…</div>
       <div class="bt-chart-wrap">
         <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
@@ -215,18 +215,18 @@
         </div>
         <canvas id="btChart" class="bt-chart"></canvas>
         <div class="bt-legend">
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy ($1 → compounds)</span>
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>SPY ($1 buy-and-hold)</span>
-          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Initial deposit ($1)</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy DCA account</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>S&P-DCA (same contributions)</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Money contributed</span>
         </div>
       </div>
 
-      <h3 class="section-h3">If you'd started X years ago</h3>
-      <p class="section-sub"><em>Lump-sum view.</em> If you'd invested once X years ago and held to today: the strategy CAGR vs SPY over the same window. For the monthly-contribution outcome (what this product is actually for) see the DCA outcomes section near the top.</p>
+      <h3 class="section-h3">If you'd been DCA-ing for X years</h3>
+      <p class="section-sub">If you'd contributed monthly starting X years ago and kept going to today: what each $1 contributed is worth now (money-in multiple), the money-weighted IRR, and the same for identical contributions into the S&P 500.</p>
       <div id="horizonsSection" class="horizons-grid"></div>
 
-      <h3 class="section-h3">Year-by-year</h3>
-      <p class="section-sub">Compound return for each calendar year, strategy vs SPY. The strategy beats SPY in 17 of 24 years and is positive in 19 of 24. 2003 and 2026 are partial years; restricted to full calendar years the strategy beats SPY in 17 of 22 and is positive in 18 of 22. 2009 (+711%, GFC-recovery basket) is the largest single contributor.</p>
+      <h3 class="section-h3">Year-by-year (DCA through each year)</h3>
+      <p class="section-sub">For each calendar year: if you contributed $1 every month <em>during that year</em>, what was the account worth at year-end per $1 contributed (money-in multiple), versus the identical monthly contributions into the S&P 500. This is the DCA experience within each year — not lump-sum calendar compounding.</p>
       <div id="btYearGrid" class="year-grid"></div>
     </div>
   </section>
