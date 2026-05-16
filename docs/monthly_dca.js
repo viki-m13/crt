@@ -120,31 +120,26 @@ function renderDcaInvestor(data) {
     `Peak-to-trough on the accumulating portfolio (raw v5). There is no no-downside version. The MN-switch variant below cuts this to ${fmtPct(fh.mn_switch?.max_value_drawdown, 0)}.`));
   sec.appendChild(band);
 
-  // horizon table
-  const wrap = el("div", { class: "bias-table-wrap" });
-  const t = el("table", { class: "bias-table" });
-  const variants = hasSwitch ? ["v5", "mn_switch"] : ["v5"];
-  const vlab = { v5: "Raw v5 (max upside)", mn_switch: "MN drawdown-switch (smoother)" };
-  let head = `<thead><tr><th>DCA horizon</th>`;
-  variants.forEach(v => { head += `<th>${vlab[v]} — win vs S&P-DCA</th><th>median</th><th>worst ever</th>`; });
-  head += `<th>S&P-DCA median</th></tr></thead>`;
-  t.innerHTML = head;
-  const tb = el("tbody");
-  ["H12", "H24", "H36", "H60", "H120"].forEach(H => {
+  // horizon breakdown — responsive card grid (mobile-safe; no wide table)
+  const hint = el("p", { class: "bias-sub", style: "margin:0 0 12px" },
+    "Each card: a DCA horizon. Top number = % of all rolling windows where contributing into the strategy beat the same contributions into the S&P 500. \"×\" = ending value ÷ total money contributed.");
+  sec.appendChild(hint);
+  const grid = el("div", { class: "bias-grid" });
+  ["H120", "H60", "H36", "H24", "H12"].forEach(H => {
     const row = di.horizons[H]; if (!row) return;
-    let tds = `<td><strong>${DCA_HLABEL[H]}</strong></td>`;
-    variants.forEach(v => {
-      const r = row[v] || {};
-      const win = r.win_vs_spy_dca;
-      const cls = win != null && win >= 0.999 ? "pos" : "";
-      tds += `<td class="${cls}"><strong>${fmtPct0(win)}</strong></td><td>${fmtX(r.median_moic)}</td><td class="${(r.min_moic < 1 ? 'neg' : '')}">${fmtX(r.min_moic)}</td>`;
-    });
-    tds += `<td>${fmtX(row.SPY?.median_moic)}</td>`;
-    tb.appendChild(el("tr", { html: tds }));
+    const v = row.v5 || {}, mn = row.mn_switch, sp = row.SPY || {};
+    const win = v.win_vs_spy_dca;
+    const isHero = win != null && win >= 0.999;
+    const c = el("div", { class: "bias-card" + (isHero ? " bias-card-headline" : "") });
+    c.appendChild(el("div", { class: "bias-label" }, `${DCA_HLABEL[H]} DCA — win vs S&P-DCA`));
+    c.appendChild(el("div", { class: "bias-value" }, fmtPct0(win)));
+    let sub = `Raw v5: median <strong>${fmtX(v.median_moic)}</strong> · worst ever <span style="color:var(--orange)">${fmtX(v.min_moic)}</span>`;
+    if (mn) sub += `<br>Smoother (MN-switch): win <strong>${fmtPct0(mn.win_vs_spy_dca)}</strong> · median ${fmtX(mn.median_moic)} · worst ${fmtX(mn.min_moic)}`;
+    sub += `<br>S&P-DCA median: ${fmtX(sp.median_moic)}`;
+    c.appendChild(el("div", { class: "bias-sub", html: sub }));
+    grid.appendChild(c);
   });
-  t.appendChild(tb);
-  wrap.appendChild(t);
-  sec.appendChild(wrap);
+  sec.appendChild(grid);
 
   // two-variant explainer
   if (hasSwitch && fh.v5 && fh.mn_switch) {
@@ -396,16 +391,13 @@ function renderV3Sections(data) {
 function renderHeroMeta(data) {
   const meta = document.getElementById("heroMeta");
   if (!meta) return;
-  const win = data.headline?.win_rate_raw;
   const cagr = data.headline?.cagr_raw;
-  const spy = data.headline?.cagr_spy_dca;
   const wf = data.walk_forward_aggregate?.[0];
-  const parts = [
-    `As of ${data.as_of}`,
-    `${data.panel?.n_tickers ?? "?"} tickers, ${data.panel?.first_date} → ${data.panel?.last_date}`,
-    `Backtest: ${fmtPct(cagr)} CAGR vs SPY DCA ${fmtPct(spy)}`,
-    `Walk-forward (${wf?.n_splits_with_test_data ?? "?"} splits): mean OOS CAGR ${fmtPct(wf?.mean_test_cagr)}`,
-  ];
+  const d10 = data.dca_investor?.horizons?.H120?.v5;
+  const parts = [`As of ${data.as_of}`,
+    `${data.panel?.n_tickers ?? "?"} tickers, ${data.panel?.first_date} → ${data.panel?.last_date}`];
+  if (d10) parts.push(`10y monthly-DCA beat S&P-DCA in ${fmtPct0(d10.win_vs_spy_dca)} of windows (median ${fmtX(d10.median_moic)})`);
+  parts.push(`Lump-sum ref: ${fmtPct(cagr)} CAGR · WF mean ${fmtPct(wf?.mean_test_cagr)}`);
   meta.textContent = parts.join(" · ");
 }
 

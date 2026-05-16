@@ -1117,7 +1117,7 @@ def main():
         },
         "current_regime": {
             "regime": live_state["current_regime"],
-            "K": 3 if live_state["current_regime"] != "crash" else 0,
+            "K": K_PICKS if live_state["current_regime"] != "crash" else 0,
             "spy_dsma200": spy_features.loc[months_dt[-1]].get("spy_dsma200") if months_dt[-1] in spy_features.index else None,
             "spy_rsi14": spy_features.loc[months_dt[-1]].get("spy_rsi14") if months_dt[-1] in spy_features.index else None,
             "spy_mom_12_1": spy_features.loc[months_dt[-1]].get("spy_mom_12_1") if months_dt[-1] in spy_features.index else None,
@@ -1130,21 +1130,23 @@ def main():
         "live_state": live_state,
         "recommended_strategy": {
             "name": WINNER_NAME,
-            "k": 3,
-            "exit_rule": "6-month rebalance",
+            "k": K_PICKS,
+            "exit_rule": "rule-based (min 6m hold + score-drift; force at 24m)",
             "description": (
-                "v5 PIT S&P 500 strategy.  Walk-forward Gradient Boosted Trees "
+                "v5 PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees "
                 "ranking model (3m+6m forward-rank ensemble) restricted to "
                 "point-in-time S&P 500 constituents at each rebalance, gated by "
                 "the HuggingFace Chronos-bolt-tiny zero-shot foundation model "
-                "(p70 forecast rank ≥ 0.45). Top-2 picks held for 6 months; "
-                "inverse-volatility weighted with 40% cap per pick; 'tight' "
+                "(p70 forecast rank ≥ 0.45). Top-2 picks, inverse-volatility "
+                "weighted with 40% cap per pick, held a minimum of 6 months "
+                "then rebalanced only on score-drift (force at 24m); 'tight' "
                 "regime gate goes 100% cash on SPY 21d <= -8% or 6m <= -5%. "
-                "Walk-forward 49.39% MEAN OOS CAGR over 10 splits 2003-2025 "
-                "on the augmented PIT panel, with 10/10 positive, 10/10 beating "
-                "SPY. Robust under Monte-Carlo synthetic-delisting overlay: "
-                "41.6% median CAGR at α=4%/yr (realistic small/mid-cap rate), "
-                "still +29pp over SPY. K=2 dominates K=3 at every alpha tested."
+                "Lump-sum walk-forward ~49% MEAN OOS CAGR over 10 splits "
+                "2003-2025 (10/10 positive, 10/10 beat SPY) — strong engine "
+                "evidence, NOT the monthly-DCA experience. The honest "
+                "investor-facing result is in dca_investor: a 10-year monthly "
+                "DCA beat the identical S&P-500 DCA in 100% of rolling "
+                "windows, with deep (~-79%) interim drawdowns disclosed."
             ),
         },
         "growth": growth,

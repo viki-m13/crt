@@ -87,7 +87,7 @@
     <div class="hero-inner">
       <h1 class="hero-headline">A monthly DCA strategy that beat S&P-into-S&P in <span id="heroWin">100%</span> of 10-year windows.</h1>
       <p class="hero-sub">This is built for people who <strong>invest a fixed amount every month</strong>. Each month a machine-learning model picks <strong>2 stocks</strong> from the <strong>S&P 500</strong> (using only the actual S&P 500 list at each date — no hindsight), confirmed by the <strong>HuggingFace Chronos</strong> foundation model, held ≥6 months, with a <strong>crash gate</strong> to cash. The honest question isn't "what's the CAGR" — it's <em>"if I contribute every month, do I end up ahead of contributing the same into the S&P 500?"</em></p>
-      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2025, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows, by a <strong>median ~6×</strong> and never less than ~2.7×. <strong>This is the honest version of a "high hit rate"</strong> — it's a multi-year commitment, not a monthly coin-flip.</p>
+      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2025, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows. Each $1 contributed became a <strong>median ~12×</strong> (worst-ever ~2.7×) over 10 years of monthly buys, versus ~2× for S&P-DCA. <strong>This is the honest version of a "high hit rate"</strong> — a multi-year commitment, not a monthly coin-flip.</p>
       <p class="hero-sub hero-warn"><strong>Honest downside:</strong> short-horizon outcomes can be brutal — the worst 1-year DCA window lost ~66% of contributions and the portfolio took a <strong>~-79% interim drawdown</strong>. There is no parabolic-upside-with-no-downside version; the data refuses it. A second, lower-volatility variant (<strong>market-neutral drawdown-switch</strong>) cuts the worst drawdown to <strong>~-39%</strong> for roughly half the upside — both are shown below, honestly.</p>
       <p class="hero-meta" id="heroMeta">Loading…</p>
     </div>
@@ -144,7 +144,7 @@
         <div class="accordion-body">
           <p><strong>Timing-luck mitigation.</strong> The deployed v5 used to rebalance mechanically every 6 months — twice a year. That schedule was exposed to <em>rebalance-date luck</em>: if the two annual entry dates happened to land on bad picking moments, the year underperformed even when the picker's average quality was fine. 2024 was the worst case: Jan-31 and Jul-31 lump-sum entries gave -25pp edge vs SPY for the year, even though the other 10 monthly entry dates averaged +5.7pp positive.</p>
           <p>The <strong>rule-based rebalance</strong> fixes this. We hold each basket for at least 6 months (preserving the GBM's 3-6m prediction horizon), then re-evaluate every month-end. We rebalance EARLIER only when the picker has discovered both current picks are no longer in the top-2 eligible pool. If at least one current pick is still in the new top-2, we keep holding.</p>
-          <p>On augmented PIT: <strong>min-6m + score-drift rule beats fixed h=6 on every metric</strong>. WF mean 48.98% (vs fixed h=6's 49.39%, statistically tied), Sharpe 1.10 (vs 1.04), Max DD <strong>-34.5%</strong> (vs -52.5%, materially better), and 10/10 splits beat SPY. For 2024 specifically: <strong>+45.3pp edge</strong> (vs -10.2pp for fixed). The rule fires ~18 times across 25 baskets — fewer rebalances than fixed h=6 (38), so lower turnover.</p>
+          <p>On augmented PIT: <strong>min-6m + score-drift rule beats fixed h=6 on the walk-forward metrics</strong> — WF mean 48.98% (vs fixed h=6's 49.39%, statistically tied) and 10/10 splits beat SPY; for 2024 specifically <strong>+45.3pp edge</strong> (vs -10.2pp for fixed). The rule fires ~18 times across 25 baskets — fewer rebalances than fixed h=6 (38), so lower turnover. <strong>Honesty note:</strong> an earlier simplified sweep reported Sharpe 1.10 / Max DD -34.5% for this rule — but that used a NaN-favorable sim. The <em>canonical</em> production equity curve (and the DCA-investor numbers in the section above) is the honest reference: Sharpe ≈0.9 and deep interim drawdowns (~-72% lump-sum, ~-79% on the accumulating DCA portfolio). The rule improves rebalance-timing robustness; it does <em>not</em> remove the drawdown.</p>
           <p>Pure quarterly (h=3) was tested too — it does fix 2024 (+33.8pp) but WF mean drops to 23%: too frequent for the 3-6m GBM horizon. The rule-based approach is strictly better.</p>
         </div>
       </details>
@@ -153,7 +153,7 @@
         <summary>Why K = 2 (not K = 3 or K = 15)?</summary>
         <div class="accordion-body">
           <p>The augmented-PIT parameter sweep settled the K question. Within the S&P 500 cohort, the cross-sectional alpha is concentrated at the top of the score distribution. K=15 dilutes alpha with mid-percentile names; K=3 (the previous deployment) was tuned on the biased v2 panel and is sub-optimal once the universe is PIT-corrected.</p>
-          <p>v5 sensitivity (Chronos filter + invvol, augmented PIT, fixed h=6): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF with Max DD -52.5%</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the sweet spot. At K=2 the rule-based rebalance further reduces Max DD to -34.5% (we're now well below the K=3 deployed-fixed result on every risk-adjusted metric).</p>
+          <p>v5 walk-forward sensitivity (Chronos filter + invvol, augmented PIT, fixed h=6): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the WF sweet spot. (Drawdowns are deep at every K — the canonical K=2 interim drawdown is ~-72% lump-sum / ~-79% on the accumulating DCA portfolio, NOT the -34.5% an earlier NaN-favorable sweep reported. K=2 is chosen for the picker edge, not for low drawdown — which the DCA section above discloses honestly.)</p>
           <p>K=2 also dominates K=3 across <strong>every</strong> level of the Monte-Carlo synthetic-delisting overlay (α from 0 to 20%/yr). Fewer picks means fewer monthly delist exposures; the picker edge per surviving pick dominates the loss per delist event. See <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md</a>.</p>
         </div>
       </details>
@@ -222,7 +222,7 @@
       </div>
 
       <h3 class="section-h3">If you'd started X years ago</h3>
-      <p class="section-sub">If you'd started X years ago and held to today: the strategy CAGR vs SPY held over the same window.</p>
+      <p class="section-sub"><em>Lump-sum view.</em> If you'd invested once X years ago and held to today: the strategy CAGR vs SPY over the same window. For the monthly-contribution outcome (what this product is actually for) see the DCA outcomes section near the top.</p>
       <div id="horizonsSection" class="horizons-grid"></div>
 
       <h3 class="section-h3">Year-by-year</h3>
@@ -234,7 +234,7 @@
 <section id="walkforward" class="wf-section">
     <div class="section-inner">
       <h2 class="section-h2">Walk-forward — 10 out-of-sample tests</h2>
-      <p class="section-sub">10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel with rule-based rebalance: mean test CAGR <strong>48.98%</strong>. Min 21.2%. Max 108.6%. <strong>All 10/10 positive. All 10/10 beat SPY.</strong></p>
+      <p class="section-sub"><em>Out-of-sample engine validation (lump-sum CAGR per split).</em> 10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel: mean test CAGR <strong>48.98%</strong>, min 21.2%, max 108.6%, <strong>10/10 positive, 10/10 beat SPY</strong>. This is the strongest non-overfit evidence the picker is real; it is not the monthly-DCA experience (see DCA outcomes above).</p>
       <div id="wfSection"></div>
     </div>
   </section>

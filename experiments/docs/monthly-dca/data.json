@@ -47,7 +47,7 @@
  },
  "current_regime": {
   "regime": "bull",
-  "K": 3,
+  "K": 2,
   "spy_dsma200": 0.09099513579641072,
   "spy_rsi14": 51.427244038194615,
   "spy_mom_12_1": 0.1843475376156496,
@@ -239,9 +239,9 @@
  },
  "recommended_strategy": {
   "name": "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift",
-  "k": 3,
-  "exit_rule": "6-month rebalance",
-  "description": "v5 PIT S&P 500 strategy.  Walk-forward Gradient Boosted Trees ranking model (3m+6m forward-rank ensemble) restricted to point-in-time S&P 500 constituents at each rebalance, gated by the HuggingFace Chronos-bolt-tiny zero-shot foundation model (p70 forecast rank \u2265 0.45). Top-2 picks held for 6 months; inverse-volatility weighted with 40% cap per pick; 'tight' regime gate goes 100% cash on SPY 21d <= -8% or 6m <= -5%. Walk-forward 49.39% MEAN OOS CAGR over 10 splits 2003-2025 on the augmented PIT panel, with 10/10 positive, 10/10 beating SPY. Robust under Monte-Carlo synthetic-delisting overlay: 41.6% median CAGR at \u03b1=4%/yr (realistic small/mid-cap rate), still +29pp over SPY. K=2 dominates K=3 at every alpha tested."
+  "k": 2,
+  "exit_rule": "rule-based (min 6m hold + score-drift; force at 24m)",
+  "description": "v5 PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees ranking model (3m+6m forward-rank ensemble) restricted to point-in-time S&P 500 constituents at each rebalance, gated by the HuggingFace Chronos-bolt-tiny zero-shot foundation model (p70 forecast rank \u2265 0.45). Top-2 picks, inverse-volatility weighted with 40% cap per pick, held a minimum of 6 months then rebalanced only on score-drift (force at 24m); 'tight' regime gate goes 100% cash on SPY 21d <= -8% or 6m <= -5%. Lump-sum walk-forward ~49% MEAN OOS CAGR over 10 splits 2003-2025 (10/10 positive, 10/10 beat SPY) \u2014 strong engine evidence, NOT the monthly-DCA experience. The honest investor-facing result is in dca_investor: a 10-year monthly DCA beat the identical S&P-500 DCA in 100% of rolling windows, with deep (~-79%) interim drawdowns disclosed."
  },
  "growth": [
   {
