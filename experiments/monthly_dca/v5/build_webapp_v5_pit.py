@@ -46,10 +46,18 @@ WEBAPP_OUT = ROOT / "experiments" / "docs" / "monthly-dca"
 WEBAPP_OUT.mkdir(parents=True, exist_ok=True)
 
 STRATEGY_SPEC = {
-    "scorer": "ml_3plus6 + chronos_p70_filter",
+    "scorer": "multi_horizon_consensus + chronos_p70_filter",
     "scorer_description": (
-        "v2 GBM 3m+6m forward-rank ensemble, gated by HuggingFace Chronos-bolt-tiny "
-        "zero-shot probabilistic p70 forecast (must rank top 55% of cross-section)"
+        "Multi-horizon CONSENSUS scorer: the walk-forward GBM emits 1m/3m/6m "
+        "forward-rank predictions; names whose three horizon ranks DISAGREE "
+        "(cross-sectional rank dispersion above the median) are dropped — a "
+        "variance-reduction / ensemble-agreement filter — then survivors are "
+        "ranked by mean horizon rank. Gated by HuggingFace Chronos-bolt-tiny "
+        "zero-shot p70 forecast (must rank top 55%). Deployed 2026-05-16 after "
+        "full production-harness validation (vs the prior mean(3m,6m) scorer: "
+        "CAGR 40%->47%, Sharpe 0.87->0.94, Max DD -81%->-69%, recent 2021-26 "
+        "era now beats S&P-DCA; honest cost: weaker 2010-15 era, 10y DCA-win "
+        "100%->~99%). See NOVEL_V9_PROD_FINDINGS.md."
     ),
     "K_normal": 2,
     "K_recovery": 2,
@@ -85,7 +93,7 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_ml_3plus6_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+WINNER_NAME = "v5_pit_sp500_consensus_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -112,7 +120,7 @@ MAX_HOLD_MONTHS = 24
 # the cross-sectional median), then rank survivors by mean horizon rank.
 # Default stays 'ml_3plus6' — consensus is opt-in until it clears the
 # full production gauntlet (see NOVEL_V9_FINDINGS.md).
-SCORER_MODE = "ml_3plus6"
+SCORER_MODE = "consensus"
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
