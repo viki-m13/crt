@@ -396,3 +396,81 @@ the rule is universally beneficial, not K=2-specific.
 - `experiments/monthly_dca/v5/spx_pit/sweep_rebalance_rules.py` — 11×2
   variant sweep
 - `augmented/rebalance_rule_sweep.csv` — raw results
+
+## Phase 11 — Sharpe maximization: the honest ceiling
+
+**Goal requested:** push portfolio Sharpe > 2.0, validated OOS, honestly.
+
+**Result: Sharpe > 2.0 is NOT honestly achievable** from the single v5
+alpha sleeve plus the diversifiers available in the panel. This is a
+mathematical ceiling, not a tuning failure. Reporting it honestly
+rather than curve-fitting a fake 2.0.
+
+### The numbers
+
+The deployed K=2 rule-based picker's *clean lump-sum* return stream
+(from `augmented/v5_winner_equity.csv`, the canonical sim) has:
+- **Sharpe ≈ 0.91**, annualized vol ≈ **49%**, deep drawdowns.
+
+(Note: an earlier rebalance-rule sweep reported Sharpe 1.10 / Max DD
+-34.5% — that used a more NaN-favorable simplified sim. The canonical
+production equity curve is the honest reference: Sharpe ~0.9, a
+genuinely high-variance 2-stock strategy. The website's headline
+Sharpe figure should be read as ~0.9, not 1.1.)
+
+### Why a blend can't reach 2.0 — the 2-asset tangency bound
+
+For an optimally-weighted blend of sleeve A and diversifier D:
+
+```
+SR* = sqrt[ (SR_A^2 + SR_D^2 - 2*rho*SR_A*SR_D) / (1 - rho^2) ]
+```
+
+With SR_A = 0.91 and the panel diversifiers (SPY SR 0.70 / TLT 0.25 /
+XLP 0.57 / XLU 0.66, all corr ≈ 0 to A):
+
+| Diversifier | SR_D | rho  | SR* (max blend) |
+|-------------|-----:|-----:|----------------:|
+| SPY         | 0.70 | +0.08|            1.10 |
+| TLT         | 0.25 | -0.06|            0.96 |
+| XLP         | 0.57 | +0.02|            1.06 |
+| XLU         | 0.66 | -0.02|        **1.13** |
+
+Even a *perfectly* uncorrelated best-available diversifier caps the
+blend at **SR* = sqrt(0.91² + 0.70²) ≈ 1.14**.
+
+The full blend/vol-target/risk-parity sweep
+(`sweep_sharpe_max.py`, 60+ configs) confirms the bound empirically:
+the best honest config (`0.4·A + 0.6·SPY` or `+0.6·XLU`) lands at
+**full Sharpe ≈ 1.04, WF-mean Sharpe ≈ 1.2, WF-min Sharpe ≈ 0.7** —
+no config cleared WF-mean Sharpe > 2.0 with WF-min Sharpe > 1.0.
+Vol-targeting and risk-parity weighting did not break the ceiling
+(they reshape the drawdown, not the Sharpe).
+
+### What it would actually take to reach 2.0
+
+To honestly reach blended Sharpe 2.0 you need a **second, genuinely
+uncorrelated alpha sleeve** with Sharpe ≈ sqrt(2.0² − 0.91²) ≈ **1.78**.
+We do not have one. Stacking more diversifiers, vol-targeting harder,
+or per-split-optimizing the blend weights would only produce an
+in-sample mirage that fails OOS.
+
+### Honest recommendation
+
+1. **Best validated risk-reduction (not Sharpe 2.0):** `0.4·v5_K2 +
+   0.6·SPY` (or `+0.6·XLU`). Roughly doubles return-per-drawdown vs
+   the raw picker — full Sharpe ~1.04, WF-mean ~1.2, Max DD cut from
+   ~-77% to ~-45% — at the cost of CAGR (~40% → ~24%). This is a real,
+   non-overfit improvement if the product wants a smoother ride.
+2. **Path to materially higher Sharpe is a research program, not a
+   knob:** build a second alpha sleeve from a different signal family
+   (e.g. a fundamentals / earnings-revision / cross-asset-carry
+   model) that is genuinely uncorrelated to the price-momentum GBM.
+   Two independent Sharpe-~1 sleeves combine to ~1.4; you need
+   roughly three-to-four independent Sharpe-~1 sleeves to honestly
+   reach ~2.0.
+
+Files:
+- `experiments/monthly_dca/v5/spx_pit/sweep_sharpe_max.py` — full sweep
+- `augmented/sharpe_max_sweep.csv` — all 60+ blend/overlay configs
+- `augmented/v5_sharpe_alpha_stream.csv` — audited alpha return stream
