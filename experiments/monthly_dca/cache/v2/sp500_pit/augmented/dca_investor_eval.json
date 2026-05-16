@@ -1,0 +1,444 @@
+{
+  "window": "2003-01 .. 2026-02",
+  "n_months": 254,
+  "convention": "contribute 1 unit at start of each month, earn that month's return; identical schedule for every stream; v5 stream is net of 10bps costs (repo canonical sim)",
+  "full_history_dca": {
+    "v5": {
+      "months": 254,
+      "total_contributed": 254.0,
+      "terminal_value": 103582.8,
+      "terminal_moic": 407.81,
+      "money_weighted_irr": 0.4677,
+      "max_value_drawdown": -0.7214,
+      "worst_underwater_vs_contrib": -0.5478,
+      "months_underwater_vs_contrib": 16
+    },
+    "mn": {
+      "months": 254,
+      "total_contributed": 254.0,
+      "terminal_value": 1345.6,
+      "terminal_moic": 5.3,
+      "money_weighted_irr": 0.1388,
+      "max_value_drawdown": -0.177,
+      "worst_underwater_vs_contrib": -0.062,
+      "months_underwater_vs_contrib": 11
+    },
+    "blend60_40": {
+      "months": 254,
+      "total_contributed": 254.0,
+      "terminal_value": 23493.3,
+      "terminal_moic": 92.49,
+      "money_weighted_irr": 0.3529,
+      "max_value_drawdown": -0.5153,
+      "worst_underwater_vs_contrib": -0.3799,
+      "months_underwater_vs_contrib": 15
+    },
+    "SPY": {
+      "months": 254,
+      "total_contributed": 254.0,
+      "terminal_value": 1133.4,
+      "terminal_moic": 4.46,
+      "money_weighted_irr": 0.1256,
+      "max_value_drawdown": -0.3855,
+      "worst_underwater_vs_contrib": -0.3328,
+      "months_underwater_vs_contrib": 18
+    },
+    "v5_shield": {
+      "months": 254,
+      "total_contributed": 254.0,
+      "terminal_value": 94063.8,
+      "terminal_moic": 370.33,
+      "money_weighted_irr": 0.4601,
+      "max_value_drawdown": -0.7214,
+      "worst_underwater_vs_contrib": -0.5475,
+      "months_underwater_vs_contrib": 16
+    }
+  },
+  "rolling": {
+    "H12": {
+      "horizon_months": 12,
+      "n_windows": 243,
+      "v5": {
+        "win_rate_vs_spy": 0.7119,
+        "n_windows": 243,
+        "median_moic": 1.222,
+        "p05_moic": 0.732,
+        "min_moic": 0.342,
+        "median_irr": 0.5238,
+        "p05_irr": -0.5173,
+        "min_irr": -0.9592,
+        "median_vs_spy": 1.149,
+        "min_vs_spy": 0.349,
+        "worst_window": {
+          "start": "2007-06",
+          "end": "2008-05",
+          "v5_moic": 0.342,
+          "spy_moic": 0.979
+        }
+      },
+      "mn": {
+        "win_rate_vs_spy": 0.4239,
+        "n_windows": 243,
+        "median_moic": 1.058,
+        "p05_moic": 0.965,
+        "min_moic": 0.882,
+        "median_irr": 0.1293,
+        "p05_irr": -0.0758,
+        "min_irr": -0.2449,
+        "median_vs_spy": 0.992,
+        "min_vs_spy": 0.789,
+        "worst_window": {
+          "start": "2003-01",
+          "end": "2003-12",
+          "mn_moic": 0.938,
+          "spy_moic": 1.188
+        }
+      },
+      "blend60_40": {
+        "win_rate_vs_spy": 0.7325,
+        "n_windows": 243,
+        "median_moic": 1.164,
+        "p05_moic": 0.809,
+        "min_moic": 0.547,
+        "median_irr": 0.3807,
+        "p05_irr": -0.3825,
+        "min_irr": -0.7814,
+        "median_vs_spy": 1.091,
+        "min_vs_spy": 0.559,
+        "worst_window": {
+          "start": "2007-06",
+          "end": "2008-05",
+          "blend60_40_moic": 0.547,
+          "spy_moic": 0.979
+        }
+      },
+      "v5_shield": {
+        "win_rate_vs_spy": 0.7037,
+        "n_windows": 243,
+        "median_moic": 1.215,
+        "p05_moic": 0.74,
+        "min_moic": 0.342,
+        "median_irr": 0.5064,
+        "p05_irr": -0.5045,
+        "min_irr": -0.9592,
+        "median_vs_spy": 1.138,
+        "min_vs_spy": 0.349,
+        "worst_window": {
+          "start": "2007-06",
+          "end": "2008-05",
+          "v5_shield_moic": 0.342,
+          "spy_moic": 0.979
+        }
+      },
+      "spy_median_moic": 1.078
+    },
+    "H24": {
+      "horizon_months": 24,
+      "n_windows": 231,
+      "v5": {
+        "win_rate_vs_spy": 0.8052,
+        "n_windows": 231,
+        "median_moic": 1.521,
+        "p05_moic": 0.729,
+        "min_moic": 0.338,
+        "median_irr": 0.5045,
+        "p05_irr": -0.2956,
+        "min_irr": -0.7754,
+        "median_vs_spy": 1.301,
+        "min_vs_spy": 0.332,
+        "worst_window": {
+          "start": "2006-06",
+          "end": "2008-05",
+          "v5_moic": 0.338,
+          "spy_moic": 1.018
+        }
+      },
+      "mn": {
+        "win_rate_vs_spy": 0.4762,
+        "n_windows": 231,
+        "median_moic": 1.111,
+        "p05_moic": 0.99,
+        "min_moic": 0.931,
+        "median_irr": 0.1136,
+        "p05_irr": -0.01,
+        "min_irr": -0.0728,
+        "median_vs_spy": 0.991,
+        "min_vs_spy": 0.775,
+        "worst_window": {
+          "start": "2011-10",
+          "end": "2014-02",
+          "mn_moic": 0.974,
+          "spy_moic": 1.258
+        }
+      },
+      "blend60_40": {
+        "win_rate_vs_spy": 0.8225,
+        "n_windows": 231,
+        "median_moic": 1.367,
+        "p05_moic": 0.86,
+        "min_moic": 0.558,
+        "median_irr": 0.3627,
+        "p05_irr": -0.15,
+        "min_irr": -0.499,
+        "median_vs_spy": 1.192,
+        "min_vs_spy": 0.548,
+        "worst_window": {
+          "start": "2006-06",
+          "end": "2008-05",
+          "blend60_40_moic": 0.558,
+          "spy_moic": 1.018
+        }
+      },
+      "v5_shield": {
+        "win_rate_vs_spy": 0.8052,
+        "n_windows": 231,
+        "median_moic": 1.478,
+        "p05_moic": 0.729,
+        "min_moic": 0.338,
+        "median_irr": 0.4662,
+        "p05_irr": -0.2956,
+        "min_irr": -0.7754,
+        "median_vs_spy": 1.299,
+        "min_vs_spy": 0.332,
+        "worst_window": {
+          "start": "2006-06",
+          "end": "2008-05",
+          "v5_shield_moic": 0.338,
+          "spy_moic": 1.018
+        }
+      },
+      "spy_median_moic": 1.138
+    },
+    "H36": {
+      "horizon_months": 36,
+      "n_windows": 219,
+      "v5": {
+        "win_rate_vs_spy": 0.8813,
+        "n_windows": 219,
+        "median_moic": 1.9,
+        "p05_moic": 0.754,
+        "min_moic": 0.374,
+        "median_irr": 0.4912,
+        "p05_irr": -0.1849,
+        "min_irr": -0.573,
+        "median_vs_spy": 1.57,
+        "min_vs_spy": 0.349,
+        "worst_window": {
+          "start": "2005-06",
+          "end": "2008-05",
+          "v5_moic": 0.374,
+          "spy_moic": 1.072
+        }
+      },
+      "mn": {
+        "win_rate_vs_spy": 0.4155,
+        "n_windows": 219,
+        "median_moic": 1.165,
+        "p05_moic": 1.032,
+        "min_moic": 0.965,
+        "median_irr": 0.1075,
+        "p05_irr": 0.0218,
+        "min_irr": -0.0243,
+        "median_vs_spy": 0.974,
+        "min_vs_spy": 0.739,
+        "worst_window": {
+          "start": "2011-06",
+          "end": "2015-02",
+          "mn_moic": 1.018,
+          "spy_moic": 1.377
+        }
+      },
+      "blend60_40": {
+        "win_rate_vs_spy": 0.9041,
+        "n_windows": 219,
+        "median_moic": 1.634,
+        "p05_moic": 0.861,
+        "min_moic": 0.541,
+        "median_irr": 0.3662,
+        "p05_irr": -0.1001,
+        "min_irr": -0.3812,
+        "median_vs_spy": 1.331,
+        "min_vs_spy": 0.569,
+        "worst_window": {
+          "start": "2005-06",
+          "end": "2008-05",
+          "blend60_40_moic": 0.61,
+          "spy_moic": 1.072
+        }
+      },
+      "v5_shield": {
+        "win_rate_vs_spy": 0.8813,
+        "n_windows": 219,
+        "median_moic": 1.829,
+        "p05_moic": 0.737,
+        "min_moic": 0.374,
+        "median_irr": 0.459,
+        "p05_irr": -0.1992,
+        "min_irr": -0.573,
+        "median_vs_spy": 1.558,
+        "min_vs_spy": 0.349,
+        "worst_window": {
+          "start": "2005-06",
+          "end": "2008-05",
+          "v5_shield_moic": 0.374,
+          "spy_moic": 1.072
+        }
+      },
+      "spy_median_moic": 1.207
+    },
+    "H60": {
+      "horizon_months": 60,
+      "n_windows": 195,
+      "v5": {
+        "win_rate_vs_spy": 0.9179,
+        "n_windows": 195,
+        "median_moic": 3.095,
+        "p05_moic": 0.77,
+        "min_moic": 0.44,
+        "median_irr": 0.485,
+        "p05_irr": -0.1057,
+        "min_irr": -0.3294,
+        "median_vs_spy": 2.374,
+        "min_vs_spy": 0.373,
+        "worst_window": {
+          "start": "2003-06",
+          "end": "2008-05",
+          "v5_moic": 0.444,
+          "spy_moic": 1.192
+        }
+      },
+      "mn": {
+        "win_rate_vs_spy": 0.4513,
+        "n_windows": 195,
+        "median_moic": 1.379,
+        "p05_moic": 1.147,
+        "min_moic": 1.048,
+        "median_irr": 0.1322,
+        "p05_irr": 0.0559,
+        "min_irr": 0.0192,
+        "median_vs_spy": 0.983,
+        "min_vs_spy": 0.742,
+        "worst_window": {
+          "start": "2009-07",
+          "end": "2015-03",
+          "mn_moic": 1.14,
+          "spy_moic": 1.536
+        }
+      },
+      "blend60_40": {
+        "win_rate_vs_spy": 0.9333,
+        "n_windows": 195,
+        "median_moic": 2.338,
+        "p05_moic": 0.909,
+        "min_moic": 0.589,
+        "median_irr": 0.3585,
+        "p05_irr": -0.0389,
+        "min_irr": -0.2131,
+        "median_vs_spy": 1.825,
+        "min_vs_spy": 0.597,
+        "worst_window": {
+          "start": "2003-06",
+          "end": "2008-05",
+          "blend60_40_moic": 0.712,
+          "spy_moic": 1.192
+        }
+      },
+      "v5_shield": {
+        "win_rate_vs_spy": 0.9179,
+        "n_windows": 195,
+        "median_moic": 2.975,
+        "p05_moic": 0.753,
+        "min_moic": 0.444,
+        "median_irr": 0.4669,
+        "p05_irr": -0.1146,
+        "min_irr": -0.3255,
+        "median_vs_spy": 2.209,
+        "min_vs_spy": 0.373,
+        "worst_window": {
+          "start": "2003-06",
+          "end": "2008-05",
+          "v5_shield_moic": 0.444,
+          "spy_moic": 1.192
+        }
+      },
+      "spy_median_moic": 1.379
+    },
+    "H120": {
+      "horizon_months": 120,
+      "n_windows": 135,
+      "v5": {
+        "win_rate_vs_spy": 1.0,
+        "n_windows": 135,
+        "median_moic": 12.922,
+        "p05_moic": 7.254,
+        "min_moic": 5.675,
+        "median_irr": 0.488,
+        "p05_irr": 0.3771,
+        "min_irr": 0.3307,
+        "median_vs_spy": 6.244,
+        "min_vs_spy": 2.891,
+        "worst_window": {
+          "start": "2010-12",
+          "end": "2022-11",
+          "v5_moic": 5.675,
+          "spy_moic": 1.963
+        }
+      },
+      "mn": {
+        "win_rate_vs_spy": 0.4148,
+        "n_windows": 135,
+        "median_moic": 1.936,
+        "p05_moic": 1.592,
+        "min_moic": 1.52,
+        "median_irr": 0.1287,
+        "p05_irr": 0.0913,
+        "min_irr": 0.0824,
+        "median_vs_spy": 0.935,
+        "min_vs_spy": 0.671,
+        "worst_window": {
+          "start": "2010-01",
+          "end": "2021-12",
+          "mn_moic": 1.715,
+          "spy_moic": 2.557
+        }
+      },
+      "blend60_40": {
+        "win_rate_vs_spy": 1.0,
+        "n_windows": 135,
+        "median_moic": 6.753,
+        "p05_moic": 4.604,
+        "min_moic": 4.042,
+        "median_irr": 0.3635,
+        "p05_irr": 0.2914,
+        "min_irr": 0.267,
+        "median_vs_spy": 3.242,
+        "min_vs_spy": 2.059,
+        "worst_window": {
+          "start": "2010-12",
+          "end": "2022-11",
+          "blend60_40_moic": 4.042,
+          "spy_moic": 1.963
+        }
+      },
+      "v5_shield": {
+        "win_rate_vs_spy": 1.0,
+        "n_windows": 135,
+        "median_moic": 11.983,
+        "p05_moic": 6.703,
+        "min_moic": 5.592,
+        "median_irr": 0.4733,
+        "p05_irr": 0.3621,
+        "min_irr": 0.3279,
+        "median_vs_spy": 5.651,
+        "min_vs_spy": 2.849,
+        "worst_window": {
+          "start": "2010-12",
+          "end": "2022-11",
+          "v5_shield_moic": 5.592,
+          "spy_moic": 1.963
+        }
+      },
+      "spy_median_moic": 1.963
+    }
+  }
+}
