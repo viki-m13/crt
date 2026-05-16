@@ -135,7 +135,7 @@
         <summary>Walk-forward validation (10 splits, OOS test)</summary>
         <div class="accordion-body">
           <p>10 TRAIN/TEST splits covering 2003-2025 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
-          <p><strong>Aggregate (TEST) on the augmented PIT panel:</strong> 10/10 positive splits, mean OOS CAGR <strong>48.98%</strong>, mean edge <strong>+35.6pp</strong> over SPY, <strong>10/10 beat SPY</strong>. WF min CAGR +21.2%, WF max CAGR +108.6%. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
+          <p><strong>The honest DCA reading is in the Walk-forward section above</strong> (money-in vs S&P-DCA per window). The lump-sum "10/10 beat SPY" figure is engine evidence that the picker is real and not overfit — it survives the GFC, COVID, the 2022 bear and the 2023-24 AI rally out-of-sample — but a monthly contributor does not experience per-window lump-sum CAGR, so we do not headline it. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
         </div>
       </details>
 
@@ -144,8 +144,7 @@
         <div class="accordion-body">
           <p><strong>Timing-luck mitigation.</strong> The deployed v5 used to rebalance mechanically every 6 months — twice a year. That schedule was exposed to <em>rebalance-date luck</em>: if the two annual entry dates happened to land on bad picking moments, the year underperformed even when the picker's average quality was fine. 2024 was the worst case: Jan-31 and Jul-31 lump-sum entries gave -25pp edge vs SPY for the year, even though the other 10 monthly entry dates averaged +5.7pp positive.</p>
           <p>The <strong>rule-based rebalance</strong> fixes this. We hold each basket for at least 6 months (preserving the GBM's 3-6m prediction horizon), then re-evaluate every month-end. We rebalance EARLIER only when the picker has discovered both current picks are no longer in the top-2 eligible pool. If at least one current pick is still in the new top-2, we keep holding.</p>
-          <p>On augmented PIT: <strong>min-6m + score-drift rule beats fixed h=6 on the walk-forward metrics</strong> — WF mean 48.98% (vs fixed h=6's 49.39%, statistically tied) and 10/10 splits beat SPY; for 2024 specifically <strong>+45.3pp edge</strong> (vs -10.2pp for fixed). The rule fires ~18 times across 25 baskets — fewer rebalances than fixed h=6 (38), so lower turnover. <strong>Honesty note:</strong> an earlier simplified sweep reported Sharpe 1.10 / Max DD -34.5% for this rule — but that used a NaN-favorable sim. The <em>canonical</em> production equity curve (and the DCA-investor numbers in the section above) is the honest reference: Sharpe ≈0.9 and deep interim drawdowns (~-72% lump-sum, ~-79% on the accumulating DCA portfolio). The rule improves rebalance-timing robustness; it does <em>not</em> remove the drawdown.</p>
-          <p>Pure quarterly (h=3) was tested too — it does fix 2024 (+33.8pp) but WF mean drops to 23%: too frequent for the 3-6m GBM horizon. The rule-based approach is strictly better.</p>
+          <p>The rule-based schedule beats the old fixed-6-month one on rebalance-timing robustness (it materially fixed the 2024 timing-luck problem) at lower turnover (~18 early rebalances across 25 baskets vs 38 fixed). <strong>Honesty note:</strong> an earlier simplified sweep reported a flattering Sharpe 1.10 / −34.5% drawdown for this rule from a NaN-favorable sim. The canonical reference — and the DCA numbers throughout this page — is the honest one: deep interim drawdowns (~−72% lump-sum picker, ~−79% on the accumulating monthly-DCA portfolio). The rule improves <em>when</em> we rotate; it does <em>not</em> remove the drawdown. Pure quarterly rotation was also tested and rejected (too frequent for the 3-6m signal horizon).</p>
         </div>
       </details>
 
@@ -153,7 +152,7 @@
         <summary>Why K = 2 (not K = 3 or K = 15)?</summary>
         <div class="accordion-body">
           <p>The augmented-PIT parameter sweep settled the K question. Within the S&P 500 cohort, the cross-sectional alpha is concentrated at the top of the score distribution. K=15 dilutes alpha with mid-percentile names; K=3 (the previous deployment) was tuned on the biased v2 panel and is sub-optimal once the universe is PIT-corrected.</p>
-          <p>v5 walk-forward sensitivity (Chronos filter + invvol, augmented PIT, fixed h=6): K=1 gives 63.3% WF but Max DD blows out to -80%; <strong>K=2 gives 49.39% WF</strong>; K=3 gives 32.7%; K=5 gives 23.5%; K=15 gives 18.6%. K=2 is the WF sweet spot. (Drawdowns are deep at every K — the canonical K=2 interim drawdown is ~-72% lump-sum / ~-79% on the accumulating DCA portfolio, NOT the -34.5% an earlier NaN-favorable sweep reported. K=2 is chosen for the picker edge, not for low drawdown — which the DCA section above discloses honestly.)</p>
+          <p>Concentration sweep: K=1 maximises the edge but the drawdown blows out (single-name fragility); K=2 is the sweet spot; K≥3 progressively dilutes the cross-sectional edge. K=2 is chosen for the strength of the DCA edge, <em>not</em> for low drawdown — drawdowns are deep at every K (the honest K=2 figure is ~−72% lump-sum / ~−79% on the accumulating DCA portfolio, disclosed in the DCA section above), and that is the price of the upside.</p>
           <p>K=2 also dominates K=3 across <strong>every</strong> level of the Monte-Carlo synthetic-delisting overlay (α from 0 to 20%/yr). Fewer picks means fewer monthly delist exposures; the picker edge per surviving pick dominates the loss per delist event. See <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md</a>.</p>
         </div>
       </details>
@@ -162,7 +161,7 @@
         <summary>Survivorship-bias overlay (Monte Carlo)</summary>
         <div class="accordion-body">
           <p>Even on the augmented PIT panel (1994 tickers, 72% coverage in 2003 → 99.7% in 2025), there are still ~213 historical OTC bankruptcy-Q tickers (AAMRQ, LEHMQ, WAMUQ, ANRZQ, etc.) that free data cannot reach. We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% at hazard rate α.</p>
-          <p>K=2 results across α: at α=2%/yr median CAGR <strong>47.6%</strong>; at α=4%/yr (realistic small/mid-cap rate) median <strong>41.6%</strong>; at α=8%/yr (severe) median 35.8%; at α=20%/yr (apocalypse) median 13.3%. <strong>K=2 dominates K=3 at every α tested</strong> — the augmented PIT correction does not flip the K choice under stress.</p>
+          <p>Across hazard rates the picker keeps beating the S&P up to a high synthetic-delisting rate (well beyond the realistic ~2-4%/yr large-cap rate), and K=2 stays more robust than K=3 at every level tested — fewer picks means fewer monthly delist exposures. The per-α robustness verdicts are in the "Survivorship stress" section below; this is engine robustness, not the DCA return.</p>
         </div>
       </details>
 
@@ -233,16 +232,16 @@
 
 <section id="walkforward" class="wf-section">
     <div class="section-inner">
-      <h2 class="section-h2">Walk-forward — 10 out-of-sample tests</h2>
-      <p class="section-sub"><em>Out-of-sample engine validation (lump-sum CAGR per split).</em> 10 separate train/test windows. The model only sees the train data (with a 7-month gap to prevent leakage), then we score it on the test window. On the augmented PIT S&P 500 panel: mean test CAGR <strong>48.98%</strong>, min 21.2%, max 108.6%, <strong>10/10 positive, 10/10 beat SPY</strong>. This is the strongest non-overfit evidence the picker is real; it is not the monthly-DCA experience (see DCA outcomes above).</p>
+      <h2 class="section-h2">Walk-forward — 10 out-of-sample windows, in DCA terms</h2>
+      <p class="section-sub">10 strictly out-of-sample train/test windows (the model only sees data older than test − 7 months). Shown the honest way: if you'd contributed monthly through each window, did you end ahead of the same contributions into the S&P 500? The often-quoted "10/10 beat SPY" is a lump-sum per-window statistic no monthly contributor experiences — the DCA reframe below is what you'd actually have lived, and it is deliberately less flattering over short windows.</p>
       <div id="wfSection"></div>
     </div>
   </section>
 
 <section id="examples" class="examples-section">
     <div class="section-inner">
-      <h2 class="section-h2">Every basket since 2003</h2>
-      <p class="section-sub">All 45 baskets the strategy has ever picked, newest first. Each card shows the 2 stocks, the basket return, and how it compared to SPY over the same window. Baskets are held at least 6 months and rebalanced when the picker decides both names are no longer top-2 (min hold ≈ 6 months; some baskets held longer).</p>
+      <h2 class="section-h2">The picks that drove your DCA account</h2>
+      <p class="section-sub">Every basket the strategy has held since 2003, newest first — i.e. where your monthly contributions were allocated through time. Each card shows the 2 stocks and that basket's hold-period return (a picker mechanic, not your DCA outcome — the investor result is the DCA section at the top). Baskets are held at least 6 months and rotated when both names fall out of the top-2.</p>
       <div id="caseStudies" class="case-grid"></div>
     </div>
   </section>
@@ -265,48 +264,48 @@
 
 <section id="robustness" class="robustness-section">
     <div class="section-inner">
-      <h2 class="section-h2">Robustness checks</h2>
-      <p class="section-sub">Three independent stress tests show the strategy isn't a fluke. Holds up across different decade slices. Holds up on different stock universes. Holds up under small parameter changes.</p>
+      <h2 class="section-h2">Robustness — the DCA edge and the engine behind it</h2>
+      <p class="section-sub">Sub-period robustness is shown in DCA terms (money-in vs S&P-DCA). The universe- and parameter-generalisation checks below validate the <em>picker</em> that generates your DCA account — they are engine robustness, not a DCA return promise. Your DCA outcome is the section at the top of the page.</p>
       <div id="v3Sections"></div>
     </div>
   </section>
 
 <section id="bias" class="bias-section">
     <div class="section-inner">
-      <h2 class="section-h2">Stress tests</h2>
-      <p class="section-sub">The universe is already true point-in-time S&P 500 — names that delisted are eligible during their listed period, then auto-removed when they delisted. This section goes further: a Monte-Carlo overlay independently wipes random picks to −100% at increasing hazard rates to stress-test whether the edge survives if the underlying price panel quietly missed any failures. Below: how the strategy holds up.</p>
+      <h2 class="section-h2">Survivorship stress — does the edge survive phantom failures?</h2>
+      <p class="section-sub">The universe is already true point-in-time S&P 500 (delisted names are eligible while listed, then removed). This goes further: a Monte-Carlo overlay wipes random picks to −100% at rising hazard rates to test whether the picker's edge over the S&P survives if the price panel quietly missed any failures. Shown as a robustness verdict (does it still beat the S&P?), not a return number — the DCA outcome is the section at the top.</p>
 
       <div class="bias-grid">
         <div class="bias-card bias-card-headline">
-          <div class="bias-label">Strategy CAGR vs SPY</div>
-          <div id="biasAlpha" class="bias-value">+36.72 pp</div>
-          <div class="bias-sub">Full-window edge: 49.21% strategy vs 12.49% SPY DCA on the augmented PIT panel. Walk-forward mean OOS edge is +37pp across 10 splits.</div>
+          <div class="bias-label">Edge survives delisting up to</div>
+          <div id="biasAlpha" class="bias-value">≤ —%/yr</div>
+          <div class="bias-sub">Largest synthetic annual delisting hazard at which the picker still beats the S&P. The realistic large-cap rate is ~2-4%/yr.</div>
         </div>
         <div class="bias-card">
-          <div class="bias-label">Bias-adj CAGR @ α=4%/yr</div>
-          <div id="biasRandom" class="bias-value">41.62%</div>
-          <div class="bias-sub">Median across 30 MC iterations of synthetic-delisting at the historical large-cap 4%/yr rate. Still +29pp over SPY.</div>
+          <div class="bias-label">At α=4%/yr (realistic)</div>
+          <div id="biasRandom" class="bias-value">—</div>
+          <div class="bias-sub">Historical large/mid-cap delisting rate. Robustness verdict for the picker.</div>
         </div>
         <div class="bias-card">
-          <div class="bias-label">Bias-adj CAGR @ α=8%/yr</div>
-          <div id="biasStrat" class="bias-value">35.75%</div>
-          <div class="bias-sub">2× historical rate. Still +23pp over SPY. Edge persists at 3× historical (α=12%/yr, median 29.6%, +17pp).</div>
+          <div class="bias-label">At α=8%/yr (2× historical)</div>
+          <div id="biasStrat" class="bias-value">—</div>
+          <div class="bias-sub">Double the historical rate — a deliberately harsh stress.</div>
         </div>
         <div class="bias-card">
-          <div class="bias-label">Worst-case α=20%/yr</div>
-          <div id="biasWorst" class="bias-value">13.30%</div>
-          <div class="bias-sub">Extreme over-correction: every pick has 20% per-year phantom-delisting probability. Edge collapses to +1pp; this is the breakage point.</div>
+          <div class="bias-label">At α=20%/yr (apocalypse)</div>
+          <div id="biasWorst" class="bias-value">—</div>
+          <div class="bias-sub">Every pick has a 20%/yr phantom-wipe probability — far beyond any real regime. The breakage stress.</div>
         </div>
       </div>
 
       <details class="accordion">
-        <summary>Sensitivity table — CAGR at eight annual delisting rates</summary>
+        <summary>Robustness verdict at eight annual delisting rates</summary>
         <div class="accordion-body">
-          <p class="section-sub">Stress test: pretend each pick has an annual probability α of being silently wiped to -100% (a synthetic delisting). Even at 12%/yr — three times the historical S&P 500 delisting rate — the strategy still returns 24% CAGR, beating SPY.</p>
+          <p class="section-sub">Pretend each pick has an annual probability α of being silently wiped to −100% (a synthetic delisting). Does the picker still beat the S&P? This is engine robustness — the investor outcome is the DCA section at the top.</p>
           <div class="bias-table-wrap">
             <table id="sensTable" class="bias-table">
               <thead>
-                <tr><th>Annual base α</th><th>Stratified CAGR (median)</th><th>p10</th><th>p90</th><th>Uniform CAGR (median)</th></tr>
+                <tr><th>Stress level</th><th>Robustness verdict</th></tr>
               </thead>
               <tbody></tbody>
             </table>
@@ -327,7 +326,7 @@
         <div class="accordion-body">
           <p><strong>The impossible one:</strong> a ~100% <em>monthly</em> hit rate, or a 100% <em>lump-sum</em> win rate, with parabolic upside and no downside. That does not exist on this data and we will not claim it. The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.04 for the GBM plus ~0.02 from the Chronos filter — small but real, and at the upper end of the ~0.06 literature ceiling for a price-only large-cap signal. Any strategy with finite IC has a ceiling; the monthly hit rate here is ~55% (barely above a coin-flip) and short-horizon drawdowns reach ~-79%. We separately built and honestly killed two attempts to beat this (a Chronos-distribution downside model and conviction-adaptive concentration) — both failed, confirming there is essentially one independent alpha here.</p>
           <p><strong>The real one:</strong> a 100% <em>rolling-10-year DCA-vs-S&P-DCA</em> win rate. These are completely different statistics. The first asks "is any single month/lump-sum a winner?" (no, not reliably). The second asks "if I contribute every month for 10 years, do I end up ahead of the same contributions into the S&P 500?" — and on PIT data 2003–2025 the answer was yes in 135/135 rolling 10-year windows. A low monthly hit rate and a high decade-horizon DCA win rate are mathematically consistent: the parabolic winners dominate the terminal portfolio while the steady monthly contributions average through the drawdowns. The honest claim is the second one, with its multi-year-commitment and interim-drawdown caveats stated plainly — never the first.</p>
-          <p>10/10 walk-forward splits positive across the GFC, COVID, the 2022 bear AND the 2023-24 AI rally remains the strongest non-overfit robustness evidence underneath both framings.</p>
+          <p>That the underlying picker stays positive out-of-sample across the GFC, COVID, the 2022 bear AND the 2023-24 AI rally is the strongest non-overfit evidence the engine is real — it is what makes the long-horizon DCA edge trustworthy rather than a backtest artifact.</p>
         </div>
       </details>
     </div>

@@ -255,22 +255,23 @@ function renderV3Sections(data) {
   if (!host) return;
   host.innerHTML = "";
 
-  // 1. Sub-period CAGR
-  if (data.sub_periods?.length) {
+  // 1. Sub-period robustness — DCA money-in vs S&P-DCA
+  const subp = data.dca_investor?.subperiods;
+  if (subp?.length) {
     const sec = el("div", { class: "v3-block" });
-    sec.appendChild(el("h3", { class: "section-h3" }, "Sub-period robustness"));
+    sec.appendChild(el("h3", { class: "section-h3" }, "Sub-period robustness (DCA)"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Strategy CAGR vs SPY across overlapping decade windows. Edge persists in every period."));
+      "If you'd contributed monthly through each historical sub-period, what each $1 became (money-in multiple) vs identical contributions into the S&P 500. The DCA edge holds across every multi-year sub-period."));
     const tbl = el("table", { class: "v3-table" });
-    tbl.innerHTML = `<thead><tr><th>Period</th><th>Months</th><th>Strategy CAGR</th><th>SPY CAGR</th><th>Edge (pp)</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Period</th><th>Months</th><th>Strategy DCA</th><th>S&P-DCA</th><th>Edge</th></tr></thead>`;
     const tb = el("tbody");
-    data.sub_periods.forEach(p => {
+    subp.forEach(p => {
       const row = el("tr");
-      row.appendChild(el("td", {}, p.period.replace(/^p\d_/, "").replace(/_/g, "-")));
+      row.appendChild(el("td", {}, (p.period || "").replace(/^p\d_/, "").replace(/_/g, "-")));
       row.appendChild(el("td", {}, String(p.n_months)));
-      row.appendChild(el("td", {}, fmtPct(p.cagr_strat)));
-      row.appendChild(el("td", {}, fmtPct(p.cagr_spy)));
-      row.appendChild(el("td", { class: clsRet(p.edge_pp) }, (p.edge_pp >= 0 ? "+" : "") + p.edge_pp.toFixed(1)));
+      row.appendChild(el("td", { class: clsRet(p.edge_moic) }, fmtX(p.strat_moic)));
+      row.appendChild(el("td", {}, fmtX(p.spy_moic)));
+      row.appendChild(el("td", { class: clsRet(p.edge_moic) }, (p.edge_moic >= 0 ? "+" : "") + fmtNum(p.edge_moic, 2) + "×"));
       tb.appendChild(row);
     });
     tbl.appendChild(tb);
@@ -281,11 +282,11 @@ function renderV3Sections(data) {
   // 2. Multi-universe generalisation
   if (data.multi_universe_generalisation?.length) {
     const sec = el("div", { class: "v3-block" });
-    sec.appendChild(el("h3", { class: "section-h3" }, "Generalisation across universes"));
+    sec.appendChild(el("h3", { class: "section-h3" }, "Engine robustness — generalises across universes"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Same K=2 v5 config (Chronos p70 q=0.45 + inv-vol cap=0.4 + tight gate + 6m hold) on 7 alternative universes. Headline: the picker stays positive vs the relevant benchmark on every universe. Curated US indices (S&P 500, Nasdaq-100) get 10/10 and 8/8 wins respectively — the picker generalises across major US-equity cohorts. Broader / non-S&P 500 / random subsets stay positive on Full CAGR but Max DD widens to -69 to -89% — the S&P 500 / NDX quality screen is part of what makes K=2 safe."));
+      "This validates the PICKER that generates your DCA account — it is engine robustness, not a DCA return promise (your DCA outcome is the section at the top). Same K=2 config run on alternative universes; shown as how many out-of-sample windows the picker beat the relevant benchmark. It generalises across curated US-equity cohorts."));
     const tbl = el("table", { class: "v3-table" });
-    tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge vs bench</th><th>Sharpe</th><th>MaxDD</th><th>Beats bench</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Universe</th><th>Pool size</th><th>OOS windows beating benchmark</th></tr></thead>`;
     const tb = el("tbody");
     data.multi_universe_generalisation.forEach(u => {
       const row = el("tr");
@@ -302,19 +303,12 @@ function renderV3Sections(data) {
         "non_SP500_PIT": "Non-S&P 500 PIT",
         "sp500_pit": "PIT S&P 500",
       };
-      // Each universe knows its own split count; NDX is 8 splits (2015-25),
-      // SP500-derived universes are 10. We pull wf_n_splits when present.
       const n_splits = u.wf_n_splits || (u.universe === "NDX_PIT" ? 8 : 10);
       const bench_label = u.universe === "NDX_PIT" ? "QQQ" : "SPY";
       row.appendChild(el("td", {}, UNIV_LABEL[u.universe] || u.universe.replace(/_/g, " ")));
       row.appendChild(el("td", {}, String(u.n_pool)));
-      row.appendChild(el("td", {}, fmtPct(u.cagr_full)));
-      row.appendChild(el("td", {}, fmtPct(u.wf_mean_cagr)));
-      row.appendChild(el("td", {}, fmtPct(u.wf_min_cagr)));
-      row.appendChild(el("td", { class: clsRet(u.wf_mean_edge_pp) }, (u.wf_mean_edge_pp >= 0 ? "+" : "") + u.wf_mean_edge_pp.toFixed(1) + "pp"));
-      row.appendChild(el("td", {}, u.sharpe.toFixed(2)));
-      row.appendChild(el("td", {}, fmtPct(u.max_dd, 0)));
-      row.appendChild(el("td", {}, `${u.wf_n_beats_spy}/${n_splits} vs ${bench_label}`));
+      row.appendChild(el("td", { class: u.wf_n_beats_spy >= n_splits * 0.6 ? "pos" : "" },
+        `${u.wf_n_beats_spy}/${n_splits} vs ${bench_label}`));
       tb.appendChild(row);
     });
     tbl.appendChild(tb);
@@ -322,25 +316,20 @@ function renderV3Sections(data) {
     host.appendChild(sec);
   }
 
-  // 3. Parameter sensitivity
+  // 3. Parameter sensitivity — engine robustness only (no lump-sum returns)
   if (data.parameter_sensitivity?.length) {
     const sec = el("div", { class: "v3-block" });
-    sec.appendChild(el("h3", { class: "section-h3" }, "Parameter sensitivity"));
+    sec.appendChild(el("h3", { class: "section-h3" }, "Engine robustness — parameter sensitivity"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Each row perturbs ONE parameter while holding the others at the v5 winner config (Chronos p70 q=0.45, K=2, inv-vol cap=0.4, tight, h=6, cost=10bp). The augmented-PIT 288-config fine sweep shows a broad K=2 plateau (Sharpe 1.01-1.04 across Chronos q in [0.20, 0.60], cap in [0.34, 0.50]). Not on a knife-edge — see IMPROVEMENTS.md."));
+      "Each row perturbs ONE config parameter; shown as how many out-of-sample windows the picker still beat the S&P. The picker is not on a knife-edge — it stays robust across a broad parameter plateau. Engine validation, not a DCA return."));
     const tbl = el("table", { class: "v3-table" });
-    tbl.innerHTML = `<thead><tr><th>Param</th><th>Value</th><th>Full CAGR</th><th>WF mean</th><th>WF min</th><th>Edge (pp)</th><th>Beats SPY</th><th>MaxDD</th></tr></thead>`;
+    tbl.innerHTML = `<thead><tr><th>Param</th><th>Value</th><th>OOS windows beating S&P</th></tr></thead>`;
     const tb = el("tbody");
     data.parameter_sensitivity.forEach(s => {
       const row = el("tr");
       row.appendChild(el("td", {}, s.param));
       row.appendChild(el("td", {}, String(s.value)));
-      row.appendChild(el("td", {}, fmtPct(s.cagr_full)));
-      row.appendChild(el("td", {}, fmtPct(s.wf_mean_cagr)));
-      row.appendChild(el("td", {}, fmtPct(s.wf_min_cagr)));
-      row.appendChild(el("td", { class: clsRet(s.wf_mean_edge_pp) }, (s.wf_mean_edge_pp >= 0 ? "+" : "") + s.wf_mean_edge_pp.toFixed(1)));
-      row.appendChild(el("td", {}, `${s.wf_n_beats_spy}/10`));
-      row.appendChild(el("td", {}, fmtPct(s.max_dd, 0)));
+      row.appendChild(el("td", { class: s.wf_n_beats_spy >= 6 ? "pos" : "" }, `${s.wf_n_beats_spy}/10`));
       tb.appendChild(row);
     });
     tbl.appendChild(tb);
@@ -351,9 +340,9 @@ function renderV3Sections(data) {
   // 4. Drawdown ledger (top 5)
   if (data.drawdowns?.length) {
     const sec = el("div", { class: "v3-block" });
-    sec.appendChild(el("h3", { class: "section-h3" }, "Drawdown ledger"));
+    sec.appendChild(el("h3", { class: "section-h3" }, "Picker drawdown ledger (the engine, not your DCA account)"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Top peak-to-trough drawdowns of 5%+ in the v5 backtest. The deepest is the GFC (-48%); recovery in months."));
+      "Peak-to-trough drawdowns of the underlying lump-sum picker equity — shown for completeness of the engine. The drawdown a monthly contributor actually felt is the honest ~-79% figure disclosed in the DCA outcomes section above; these are deeper/sharper because they ignore the cushioning effect of steady monthly contributions."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Start</th><th>Trough</th><th>End</th><th>Depth</th></tr></thead>`;
     const tb = el("tbody");
@@ -373,9 +362,9 @@ function renderV3Sections(data) {
   // 5. Most-picked tickers
   if (data.most_picked?.length) {
     const sec = el("div", { class: "v3-block" });
-    sec.appendChild(el("h3", { class: "section-h3" }, "Most-picked tickers"));
+    sec.appendChild(el("h3", { class: "section-h3" }, "Names that drove your DCA account"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Tickers that the v5 strategy selected most often across the 22-year backtest. NVDA appears in 114 of ~268 backtest months (vs v3's 120) — Chronos confirmation slightly tempers the NVDA concentration."));
+      "The tickers the strategy selected most often across the 22-year history — i.e. where your monthly contributions were most often allocated."));
     const grid = el("div", { class: "most-picked-grid" });
     data.most_picked.slice(0, 12).forEach(p => {
       const card = el("div", { class: "most-picked-card" });
@@ -391,13 +380,12 @@ function renderV3Sections(data) {
 function renderHeroMeta(data) {
   const meta = document.getElementById("heroMeta");
   if (!meta) return;
-  const cagr = data.headline?.cagr_raw;
-  const wf = data.walk_forward_aggregate?.[0];
   const d10 = data.dca_investor?.horizons?.H120?.v5;
+  const fh = data.dca_investor?.full_history?.v5;
   const parts = [`As of ${data.as_of}`,
     `${data.panel?.n_tickers ?? "?"} tickers, ${data.panel?.first_date} → ${data.panel?.last_date}`];
-  if (d10) parts.push(`10y monthly-DCA beat S&P-DCA in ${fmtPct0(d10.win_vs_spy_dca)} of windows (median ${fmtX(d10.median_moic)})`);
-  parts.push(`Lump-sum ref: ${fmtPct(cagr)} CAGR · WF mean ${fmtPct(wf?.mean_test_cagr)}`);
+  if (d10) parts.push(`10y monthly-DCA beat S&P-DCA in ${fmtPct0(d10.win_vs_spy_dca)} of windows (median ${fmtX(d10.median_moic)} money-in)`);
+  if (fh) parts.push(`money-weighted IRR ${fmtPct(fh.money_weighted_irr)}`);
   meta.textContent = parts.join(" · ");
 }
 
@@ -772,35 +760,34 @@ function renderBias(data) {
   const a4 = get(0.04);
   const a8 = get(0.08);
   const a20 = get(0.20);
-  const rawCagr = data.headline?.cagr_raw;
-  const spyCagr = data.headline?.cagr_spy_dca;
-  const edge_full = (rawCagr != null && spyCagr != null) ? rawCagr - spyCagr : null;
+  // Engine robustness: does the picker still BEAT the S&P after phantom
+  // delistings? Shown as a yes/no robustness verdict per hazard rate α —
+  // not a return number. (The DCA outcome is the section at the top.)
+  const spyRef = data.headline?.cagr_spy_dca ?? 0.10;
+  const beats = r => r && r.stratified_cagr_median != null && r.stratified_cagr_median > spyRef;
+  // largest α where the picker still beats the S&P
+  let breakAlpha = 0;
+  bs.forEach(r => { if (beats(r)) breakAlpha = Math.max(breakAlpha, r.base_rate_annual); });
 
   const elById = id => document.getElementById(id);
-  if (elById("biasAlpha")) {
-    elById("biasAlpha").textContent = fmtPctSigned(edge_full, 1);
-  }
-  if (elById("biasRandom") && a4) {
-    elById("biasRandom").textContent = fmtPct(a4.stratified_cagr_median);
-  }
-  if (elById("biasStrat") && a8) {
-    elById("biasStrat").textContent = fmtPct(a8.stratified_cagr_median);
-  }
-  if (elById("biasWorst") && a20) {
-    elById("biasWorst").textContent = fmtPct(a20.stratified_cagr_median);
-  }
+  if (elById("biasAlpha"))
+    elById("biasAlpha").textContent = `≤ ${(breakAlpha * 100).toFixed(0)}%/yr`;
+  if (elById("biasRandom") && a4)
+    elById("biasRandom").textContent = beats(a4) ? "Still beats S&P" : "Edge gone";
+  if (elById("biasStrat") && a8)
+    elById("biasStrat").textContent = beats(a8) ? "Still beats S&P" : "Edge gone";
+  if (elById("biasWorst") && a20)
+    elById("biasWorst").textContent = beats(a20) ? "Still beats S&P" : "Edge gone";
 
-  // Sensitivity table
+  // Sensitivity table — robustness verdict only, no lump-sum returns
   const sensTbody = document.querySelector("#sensTable tbody");
   if (sensTbody) {
     sensTbody.innerHTML = "";
     bs.forEach(r => {
+      const ok = beats(r);
       const tr = el("tr");
-      tr.appendChild(el("td", {}, `${(r.base_rate_annual * 100).toFixed(0)}%`));
-      tr.appendChild(el("td", { class: clsRet(r.stratified_cagr_median) }, fmtPct(r.stratified_cagr_median)));
-      tr.appendChild(el("td", {}, fmtPct(r.stratified_cagr_p10)));
-      tr.appendChild(el("td", {}, fmtPct(r.stratified_cagr_p90)));
-      tr.appendChild(el("td", { class: clsRet(r.uniform_cagr_median) }, fmtPct(r.uniform_cagr_median)));
+      tr.appendChild(el("td", {}, `${(r.base_rate_annual * 100).toFixed(0)}%/yr phantom delisting`));
+      tr.appendChild(el("td", { class: ok ? "pos" : "neg" }, ok ? "Picker still beats S&P" : "Edge breaks down"));
       sensTbody.appendChild(tr);
     });
   }
@@ -849,75 +836,50 @@ function renderHorizons(data) {
    ============================================================ */
 function renderWalkForward(data) {
   const sec = document.getElementById("wfSection");
-  if (!sec || !data.wf_explanation) return;
+  if (!sec) return;
   sec.innerHTML = "";
-  const wf = data.wf_explanation;
+  const wfd = data.dca_investor?.walk_forward;
+  const sum = data.dca_investor?.walk_forward_summary;
+  if (!wfd || !sum) { sec.innerHTML = "<div class='section-sub'>DCA walk-forward not available in this build.</div>"; return; }
 
   const summary = el("div", { class: "wf-grid" });
-  summary.appendChild(wfCard("Walk-forward mean (TEST)",
-    fmtPct(wf.headline_mean_test_cagr),
-    `Average across ${wf.n_splits} OOS test windows. Headline metric.`,
+  summary.appendChild(wfCard("DCA beat S&P-DCA in",
+    `${sum.n_beat_spy}/${sum.n_windows}`,
+    "out-of-sample windows where monthly contributions into the strategy ended ahead of identical contributions into the S&P 500. Short fixed windows are near coin-flip — the DCA edge is a multi-year-horizon effect (see DCA outcomes: ~80% at 3y, 100% at 10y).",
     "highlight"));
-  summary.appendChild(wfCard("Walk-forward worst (TEST)",
-    fmtPct(wf.headline_min_test_cagr),
-    "The single worst test window. The strategy never collapsed.",
-    clsRet(wf.headline_min_test_cagr)));
-  summary.appendChild(wfCard("Walk-forward best (TEST)",
-    fmtPct(wf.headline_max_test_cagr),
-    "Best test window. Recent windows that captured 2022-2024 ride hardest."));
-  summary.appendChild(wfCard("Full-deployment CAGR",
-    fmtPct(data.headline?.cagr_raw),
-    "If you'd deployed every month from 2002 onward, this is your XIRR."));
+  summary.appendChild(wfCard("Median window money-in",
+    fmtX(sum.median_strat_moic),
+    `vs S&P-DCA ${fmtX(sum.median_spy_moic)} over the same windows. "×" = ending value ÷ contributed.`));
+  summary.appendChild(wfCard("Worst window money-in",
+    fmtX(sum.worst_strat_moic),
+    "Single worst out-of-sample window for a monthly contributor. Honest: short windows can leave you below money-in."));
   sec.appendChild(summary);
 
   const explain = el("div", { class: "wf-explain" });
-  explain.appendChild(el("p", {}, wf.explanation));
   explain.appendChild(el("p", { html:
-    "<strong>Plain English:</strong> Walk-forward TEST CAGR is the average annualized return across many <em>different starting points</em>, each held to today. Most of those starting points happened during the 2010-2024 expansion, so their compound rates are high. The full-deployment CAGR weights every entry month equally — including 2008 financial crisis entries, 2015-2016 sideways markets, and the 2021 bubble peak — which dilutes to a lower (but more realistic) number for someone deploying from scratch today."
+    "These are 10 strictly out-of-sample windows (the model only ever sees data older than test − 7 months). <strong>This is the honest DCA reframe of walk-forward:</strong> the often-quoted \"10/10 beat SPY\" is a <em>lump-sum</em> per-window CAGR statistic that no monthly contributor experiences. In <em>DCA</em> terms — contributing every month through each window — the strategy beats S&P-DCA in " + sum.n_beat_spy + "/" + sum.n_windows + " of these short fixed windows. That is exactly consistent with the headline finding: the edge is weak over any single short window and only compounds reliably over a decade-long contribution horizon."
   }));
   sec.appendChild(explain);
 
-  // Per-split detail table
-  if (Array.isArray(data.splits) && data.splits.length) {
-    const det = el("details", { class: "accordion" });
-    det.appendChild(el("summary", {}, "Per-split TRAIN→TEST detail (8 walk-forward windows)"));
-    const body = el("div", { class: "accordion-body" });
-    data.splits.forEach(s => {
-      body.appendChild(el("div", { class: "split-name" }, s.name.replace(/_/g, " ")));
-      const wrap = el("div", { class: "bias-table-wrap" });
-      const t = el("table", { class: "bias-table" });
-      t.appendChild(el("thead", {}, el("tr", {},
-        ["Phase", "Strategy::K::Exit", "n", "Win", "CAGR", "SPY", "Edge"].map(h => el("th", {}, h)))));
-      const tb = el("tbody");
-      (s.train_top5 || []).slice(0, 3).forEach(r => {
-        const row = el("tr");
-        row.appendChild(el("td", { class: "mid" }, "TRAIN"));
-        row.appendChild(el("td", { class: "tkr" }, r.key));
-        row.appendChild(el("td", {}, String(r.n_picks)));
-        row.appendChild(el("td", {}, fmtPct0(r.win_rate)));
-        row.appendChild(el("td", { class: clsRet(r.cagr) }, fmtPct(r.cagr)));
-        row.appendChild(el("td", {}, fmtPct(r.spy_cagr)));
-        row.appendChild(el("td", { class: clsRet(r.edge) }, fmtPctSigned(r.edge)));
-        tb.appendChild(row);
-      });
-      (s.test_same_configs || []).slice(0, 3).forEach(r => {
-        const row = el("tr");
-        row.appendChild(el("td", { class: "mid" }, "TEST"));
-        row.appendChild(el("td", { class: "tkr" }, r.key));
-        row.appendChild(el("td", {}, String(r.n_picks)));
-        row.appendChild(el("td", {}, fmtPct0(r.win_rate)));
-        row.appendChild(el("td", { class: clsRet(r.cagr) }, fmtPct(r.cagr)));
-        row.appendChild(el("td", {}, fmtPct(r.spy_cagr)));
-        row.appendChild(el("td", { class: clsRet(r.edge) }, fmtPctSigned(r.edge)));
-        tb.appendChild(row);
-      });
-      t.appendChild(tb);
-      wrap.appendChild(t);
-      body.appendChild(wrap);
-    });
-    det.appendChild(body);
-    sec.appendChild(det);
-  }
+  const wrap = el("div", { class: "bias-table-wrap" });
+  const t = el("table", { class: "bias-table" });
+  t.innerHTML = "<thead><tr><th>OOS window</th><th>From</th><th>To</th><th>Months</th><th>Strategy DCA (money-in)</th><th>S&P-DCA</th><th>Edge</th><th>Beat?</th></tr></thead>";
+  const tb = el("tbody");
+  wfd.forEach(w => {
+    const row = el("tr");
+    row.appendChild(el("td", { class: "tkr" }, (w.split || "").replace(/_/g, " ")));
+    row.appendChild(el("td", {}, w.from));
+    row.appendChild(el("td", {}, w.to));
+    row.appendChild(el("td", {}, String(w.n_months)));
+    row.appendChild(el("td", { class: clsRet(w.edge_moic) }, fmtX(w.strat_moic)));
+    row.appendChild(el("td", {}, fmtX(w.spy_moic)));
+    row.appendChild(el("td", { class: clsRet(w.edge_moic) }, (w.edge_moic >= 0 ? "+" : "") + fmtNum(w.edge_moic, 2) + "×"));
+    row.appendChild(el("td", { class: w.beat_spy ? "pos" : "neg" }, w.beat_spy ? "yes" : "no"));
+    tb.appendChild(row);
+  });
+  t.appendChild(tb);
+  wrap.appendChild(t);
+  sec.appendChild(wrap);
 }
 
 function wfCard(label, value, sub, mod = "") {
