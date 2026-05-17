@@ -89,7 +89,12 @@ def _topK(df, mode, K, chronos_at_m):
 def run_sim_v2(members_g, preds_wf, preds_live, spy_features,
                monthly_returns, monthly_prices, chronos_preds,
                cost_bps=10.0, K=2,
-               trigger_mode="consensus", select_mode="ml_3plus6"):
+               trigger_mode="consensus", select_mode="ml_3plus6",
+               min_hold=None, max_hold=None, k_by_regime=None):
+    """k_by_regime: optional dict regime->K (e.g. {'bull':2,'normal':2,
+    'recovery':3,'crash':0}). Overrides K per month when set."""
+    min_hold = MIN_HOLD_MONTHS if min_hold is None else min_hold
+    max_hold = MAX_HOLD_MONTHS if max_hold is None else max_hold
     wf_max_asof = preds_wf["asof"].max()
     months = sorted(set(pd.to_datetime(preds_wf["asof"].unique())).union(
         set(pd.to_datetime(preds_live["asof"].unique()))))
@@ -107,21 +112,23 @@ def run_sim_v2(members_g, preds_wf, preds_live, spy_features,
         s = s[~s["ticker"].isin(EXCLUDE)]
         return s[s["ticker"].isin(members_g.get(m_, set()))].copy()
 
-    def _candidate_top(m_, mode):
+    def _candidate_top(m_, mode, k_):
         sub = _sub_at(m_)
         if len(sub) == 0:
             return None
         ch = chronos_preds.get(m_) if chronos_preds else None
-        return _topK(sub, mode, K, ch)
+        return _topK(sub, mode, k_, ch)
 
     for i, m in enumerate(months):
         spy_now = spy_features.loc[m].to_dict() if m in spy_features.index else {}
         regime = bw.classify_regime_tight(spy_now)
+        Km = K if k_by_regime is None else int(k_by_regime.get(regime, K))
+        Km = max(Km, 1)
         do_reb = (i == 0) or (cash != (regime == "crash"))
-        if held_for >= MAX_HOLD_MONTHS:
+        if held_for >= max_hold:
             do_reb = True
-        elif held_for >= MIN_HOLD_MONTHS and cur_picks and regime != "crash":
-            cand = _candidate_top(m, trigger_mode)
+        elif held_for >= min_hold and cur_picks and regime != "crash":
+            cand = _candidate_top(m, trigger_mode, Km)
             if cand is not None and not (set(cur_picks) & set(cand["ticker"])):
                 do_reb = True
 
@@ -132,7 +139,7 @@ def run_sim_v2(members_g, preds_wf, preds_live, spy_features,
             else:
                 sub_pit = _sub_at(m)
                 ch = chronos_preds.get(m) if chronos_preds else None
-                top = _topK(sub_pit, select_mode, K, ch) if len(sub_pit) else None
+                top = _topK(sub_pit, select_mode, Km, ch) if len(sub_pit) else None
                 if top is None:
                     cur_picks, cur_weights, cash = [], np.array([]), True
                 else:
