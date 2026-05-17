@@ -405,6 +405,174 @@ def simulate_hold_forever(close: pd.DataFrame, member: pd.DataFrame,
 
 
 # ===========================================================================
+# WT-Bottom: enhanced "absolute bottom" detector + depth-pyramiding, no sell
+# ===========================================================================
+#
+# Creative enhancements over plain WaveTrend (Part 3):
+#
+#  1. ROLLING-RANGE BOTTOM QUARTILE. A WaveTrend oversold-cross only counts
+#     as a *bottom* if the stock is also in the bottom `q_bottom` of its own
+#     trailing `roll_window` price range:
+#         pos = (close - rollmin) / (rollmax - rollmin)   in [0,1]
+#         require pos <= q_bottom        (e.g. <=0.25 = bottom quartile)
+#     This rejects "oversold but still mid-range" momentum dips and keeps
+#     only genuine relative lows.
+#
+#  2. TREND-REGIME GATE. Only buy when close > SMA(trend_sma) -- accumulate
+#     dips *inside* an uptrend, where buy-and-hold works (Part 3 showed this
+#     gate is the load-bearing, generalising ingredient).
+#
+#  3. WAVETREND CURL confirmation: wt1 must be turning up (1 bar).
+#
+#  4. DEPTH-SCALED PYRAMIDING. One base unit per distinct bottom; extra
+#     units the deeper the drawdown from the rolling high:
+#         extra = min(MAX_ADD, floor((-dd) / dd_step))
+#     so deeper bottoms get more conviction -- but only within an uptrend.
+#
+#  5. RE-ARM. After a buy a name is disarmed until it climbs back above the
+#     mid of its rolling range (pos > REARM), so each bottom is a distinct
+#     event and we don't buy every day of a long oversold stretch.
+#
+# Never sells. Delisted/acquired names frozen at last price. Scale-free
+# time-weighted return stream (same accounting as simulate_hold_forever).
+
+MAX_ADD = 4      # cap on depth-scaled extra units (fixed, not searched)
+REARM = 0.50     # rolling-range pos that re-arms a name (fixed)
+
+
+@dataclass
+class BParams:
+    wt_n1: int = 60
+    wt_n2: int = 60
+    wt_sig_len: int = 4
+    wt_oversold: float = -45.0
+    roll_window: int = 120      # trailing window for the rolling range
+    q_bottom: float = 0.25      # bottom-quartile threshold on rolling pos
+    trend_sma: int = 0          # stock uptrend gate (0 = off)
+    mkt_sma: int = 200          # SPY-regime uptrend gate (0 = off)
+    dd_step: float = 0.10       # extra unit per this much drawdown depth
+
+    def clamp(self) -> "BParams":
+        return BParams(
+            wt_n1=int(np.clip(round(self.wt_n1), 5, 200)),
+            wt_n2=int(np.clip(round(self.wt_n2), 5, 300)),
+            wt_sig_len=int(np.clip(round(self.wt_sig_len), 2, 15)),
+            wt_oversold=float(np.clip(self.wt_oversold, -120.0, -5.0)),
+            roll_window=int(np.clip(round(self.roll_window), 30, 504)),
+            q_bottom=float(np.clip(self.q_bottom, 0.05, 0.6)),
+            trend_sma=int(np.clip(round(self.trend_sma), 0, 250)),
+            mkt_sma=int(np.clip(round(self.mkt_sma), 0, 250)),
+            dd_step=float(np.clip(self.dd_step, 0.03, 0.5)),
+        )
+
+
+def simulate_bottom_accumulate(close: pd.DataFrame, member: pd.DataFrame,
+                               p: BParams, spy: pd.Series | None = None,
+                               unit: float = 1.0):
+    """WT-Bottom accumulation. Never sells. Depth-scaled pyramiding."""
+    p = p.clamp()
+    wt1, wt2 = compute_wavetrend(close, p.wt_n1, p.wt_n2, p.wt_sig_len)
+    prev1, prev2 = wt1.shift(1), wt2.shift(1)
+    cross_up = (prev1 < prev2) & (wt1 >= wt2)
+    curl = (wt1 > wt1.shift(1)).fillna(False)
+    base_sig = (cross_up & (wt1 <= p.wt_oversold) & curl).fillna(False)
+
+    rmax = close.rolling(p.roll_window, min_periods=p.roll_window // 2).max()
+    rmin = close.rolling(p.roll_window, min_periods=p.roll_window // 2).min()
+    span = (rmax - rmin)
+    pos = ((close - rmin) / span.where(span > 0)).clip(0, 1)
+    pos = pos.fillna(0.5)
+    dd = (close / rmax - 1.0).fillna(0.0)            # <= 0
+    if p.trend_sma > 0:
+        trend_ok = (close > close.rolling(
+            p.trend_sma, min_periods=p.trend_sma).mean()).fillna(False)
+    else:
+        trend_ok = pd.DataFrame(True, index=close.index,
+                                columns=close.columns)
+
+    tickers = list(close.columns)
+    dates = close.index
+    px = close.values
+    bs = base_sig.values
+    posv = pos.values
+    ddv = dd.values
+    tk_ok = trend_ok.reindex(index=dates, columns=tickers).fillna(False).values
+    mb = member.reindex(index=dates, columns=tickers).fillna(False).values
+
+    # SPY-regime gate: buy stock dips only when the market is trending up
+    if spy is not None and p.mkt_sma > 0:
+        sp = spy.reindex(dates).ffill()
+        mkt_ok = (sp > sp.rolling(p.mkt_sma,
+                                  min_periods=p.mkt_sma).mean()).fillna(False)
+        mkt_ok = mkt_ok.values
+    else:
+        mkt_ok = np.ones(len(dates), dtype=bool)
+    nT = len(tickers)
+    n = len(dates)
+
+    shares = np.zeros(nT)
+    last_px = np.full(nT, np.nan)
+    armed = np.ones(nT, dtype=bool)
+    entry_log = []
+    ret_d = np.zeros(n)
+    contrib = np.zeros(n)
+    prev_mv = 0.0
+
+    for i in range(n):
+        row = px[i]
+        valid = ~np.isnan(row)
+        last_px[valid] = row[valid]
+
+        c_today = 0.0
+        if i >= 1:
+            s = i - 1
+            for j in np.where(bs[s])[0]:
+                if not (armed[j] and mb[i, j] and valid[j] and row[j] > 0):
+                    continue
+                if posv[s, j] > p.q_bottom or not tk_ok[s, j]:
+                    continue
+                if not mkt_ok[s]:
+                    continue
+                extra = min(MAX_ADD, int((-ddv[s, j]) / p.dd_step))
+                nu = 1 + max(0, extra)
+                amt = unit * nu
+                shares[j] += amt / row[j]
+                c_today += amt
+                armed[j] = False
+                entry_log.append((j, row[j], nu))
+            # re-arm names that have climbed back out of the bottom
+            armed[posv[i] > REARM] = True
+
+        eff = np.where(valid, row, last_px)
+        held = shares > 0
+        mv = float(np.nansum(shares[held] * eff[held])) if held.any() else 0.0
+        contrib[i] = c_today
+        if prev_mv > 0:
+            ret_d[i] = (mv - c_today) / prev_mv - 1.0
+        prev_mv = mv
+
+    ret_s = pd.Series(ret_d, index=dates)
+    eq = (1.0 + ret_s).cumprod()
+    wins = tot = 0
+    units_total = 0
+    for j, ep, nu in entry_log:
+        units_total += nu
+        fp = last_px[j]
+        if not np.isnan(fp) and ep > 0:
+            tot += 1
+            if fp > ep:
+                wins += 1
+    return {
+        "ret_d": ret_s,
+        "equity": eq,
+        "n_events": len(entry_log),
+        "n_units": units_total,
+        "entry_winrate": (wins / tot) if tot else 0.0,
+        "contrib_curve": pd.Series(np.cumsum(contrib), index=dates),
+    }
+
+
+# ===========================================================================
 # Filtered variant: creative trade filters to push win-rate up HONESTLY
 # ===========================================================================
 #

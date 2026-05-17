@@ -229,14 +229,87 @@ long-trend gate; without it the never-sell book is uninvestable
 deployed book. Caveat: it does not beat a momentum index (NDX/QQQ), and
 it is a return/Sharpe story, not the v5-level (~40% CAGR) engine.
 
+---
+
+# Part 4 — WT-Bottom: rolling "absolute-bottom" detector + depth
+# pyramiding, never sell (an honest negative result)
+
+Idea (user): make WaveTrend an *absolute-bottom* detector — only buy when
+it is also in the bottom quartile of the stock's rolling range — gate it
+to trending regimes, **pyramid harder the deeper the bottom**, never sell.
+Implemented as `simulate_bottom_accumulate`: WT oversold-cross **and**
+`pos = (close−rollmin)/(rollmax−rollmin) ≤ q_bottom` **and** SPY-regime
+uptrend gate **and** WT-curl, with depth-scaled pyramiding (up to +4 units
+as drawdown deepens) and a re-arm so each bottom is distinct. Optimised on
+9 params, S&P 500 train-only, full Part-3 gauntlet.
+
+| S&P 500, never-sell | CAGR | Sharpe | Max DD | WF vs SPY |
+|---|---:|---:|---:|---:|
+| **WT-Bottom optimised — full** | 13.4% | **0.48** | **−60%** | — |
+| WT-Bottom optimised — holdout 14+ | 14.3% | 0.57 | −60% | — |
+| WT-Bottom default — full | 13.5% | 0.77 | −59% | — |
+| **Part-3 plain never-sell** | 13.3% | **0.93** | **−47%** | **9/10** |
+| Part-3 plain — holdout 14+ | 14.6% | **1.00** | **−23%** | — |
+| SPY | 11.7% | 0.84 | −51% | 5/10 ← WT-Bottom |
+
+**The enhancement is empirically worse than the simpler Part-3
+never-sell**, and the reasons are instructive:
+
+1. **Depth-pyramiding concentrates risk into crashes.** Adding more units
+   the deeper the bottom means the book carries *maximum* exposure right
+   before/through 2008–09 and 2020 → Max DD −60% (vs Part-3 −47%),
+   Sharpe 0.48 (vs 0.93). "More conviction at the lows" is exactly wrong
+   in a never-sell book — there is no exit to protect the stacked units.
+2. **The bottom-quartile filter removes the winning entries.** Tested
+   *with flat sizing* on the Part-3 winner: adding `q_bottom≤0.25`
+   collapses CAGR to 0.1% (it conflicts with the uptrend gate — an
+   uptrending stock is rarely at its range low); `q_bottom≤0.40` still
+   cuts Sharpe 0.93 → 0.52. The good buy is a *shallow dip in an
+   uptrend*, not a deep range-low.
+3. **Less robust.** Parameter-plateau Sharpe swings 0.46–0.78 under small
+   perturbations (Part-3 was a tight 0.73–0.93) → more overfit-prone.
+4. Optimised < default on Sharpe (0.48 vs 0.77): the extra knobs fit
+   train noise. Beats SPY in only **5/10** WF splits (Part-3: 9/10).
+
+### The one genuine win: cross-universe transfer
+On the PIT Nasdaq-100 (S&P-trained params, unchanged) WT-Bottom posts
+CAGR **19.1%**, Sharpe **0.98**, DD −32%, 5/8 vs QQQ — essentially
+*matching* QQQ (19.4% / 1.05), where Parts 1–3 badly lagged it. The
+**SPY-regime gate** is what travels across universes (it neutralises the
+buy-the-dip-lags-momentum problem). It is also the most v5-orthogonal
+stream found (corr **−0.025**) — but its low standalone Sharpe makes it a
+weaker sleeve (50/50 blend Sharpe 0.84 vs Part-3's 1.13).
+
+### Bottom line
+**Simplicity wins.** "Absolute-bottom precision + averaging-down
+conviction" is intuitively appealing but, in a never-sell book, it
+concentrates risk at the worst times and filters out the dip-in-uptrend
+entries that actually drive returns. The recommended WaveTrend
+configuration remains **Part 3: plain never-sell + a long-trend gate**
+(~80% entry win-rate, 14.6% holdout CAGR, Sharpe 1.00, −23% holdout DD,
+9/10 WF, broad plateau). The only idea worth carrying forward from Part 4
+is the **SPY-regime gate for cross-universe robustness** — not the
+bottom-quartile filter and not depth pyramiding.
+
+## Overall verdict (Parts 1–4)
+- WaveTrend is **not** a standalone replacement for the deployed v5
+  (~40% CAGR); it is a Sharpe/drawdown story (~14–18% CAGR).
+- Maximising **win-rate** directly is a trap (Part 2: 87% win / 5.6%
+  CAGR). Maximising **risk-adjusted return** (Part 1) or **never selling**
+  (Part 3) both give a real, generalising ~70–80%-hit-rate strategy that
+  beats SPY on Sharpe and drawdown.
+- **Best WaveTrend config: Part 3** — never-sell + long-trend gate.
+- Across every variant WaveTrend is a **low-correlation diversifier**
+  (corr to v5 ≈ −0.03…0.07); the Part-1 / Part-3 sleeves lift a 50/50 v5
+  blend's Sharpe to ~1.1–1.2 and roughly halve its tail.
+- Added complexity (Part-4 bottom-quartile + pyramiding) did **not**
+  help on S&P 500 — an honest negative result, reported as such.
+
 ## Files
-- `wavetrend_pit.py` — leakage-free sim + indicators + metrics (Part 1 +
-  filtered/no-pyramiding sim Part 2 + never-sell sim Part 3)
-- `run_wavetrend_pit.py` — Part 1 train/holdout optimiser + sleeve study
-- `explore_winrate.py` — Part 2 constrained win-rate explorer + frontier
-- `hold_forever.py` — Part 3 never-sell optimiser + generalisation gauntlet
-- `wavetrend_pit_results.json`, `winrate_explore_results.json`,
-  `hold_forever_results.json` — metrics
-- `winrate_frontier.csv` — every win-rate config (win-rate/CAGR frontier)
-- `*_monthly_returns.csv`, `*_trades.csv`, `wt_equity.png`
-- `run.log`, `winrate.log`, `holdfwd.log` — full optimisation traces
+- `wavetrend_pit.py` — sim library: Part-1 risk-adjusted, Part-2
+  filtered/no-pyramid, Part-3 never-sell, Part-4 WT-Bottom
+- `run_wavetrend_pit.py` / `explore_winrate.py` / `hold_forever.py` /
+  `bottom_accumulate.py` — Parts 1 / 2 / 3 / 4 runners
+- `*_results.json`, `winrate_frontier.csv`, `*_monthly_returns.csv`,
+  `*_trades.csv`, `wt_equity.png`
+- `run.log`, `winrate.log`, `holdfwd.log`, `bottom.log` — opt traces
