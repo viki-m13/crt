@@ -1,0 +1,286 @@
+"""WaveTrend pyramiding on the PIT-corrected S&P 500 / NDX panels.
+
+This is a SEPARATE experiment from the deployed v5 strategy. It takes the
+WaveTrend pyramiding idea from the repo-root `wavetrend` file and rebuilds it
+honestly on the point-in-time data the repo already has:
+
+  * Universe = PIT index membership (S&P 500 or Nasdaq-100), so no
+    survivorship / look-ahead universe selection. The original file picked
+    "underperformers vs SPY" using FULL-SAMPLE final equity -> that is a
+    look-ahead bug; it is removed here.
+  * Prices = experiments/monthly_dca/cache/v2/sp500_pit/prices_extended_pit.parquet
+    (daily auto-adjusted close, 1994 tickers). The panel has CLOSE ONLY (no
+    High/Low), so the Pine `ap = hlc3` is approximated by adjusted close.
+    This is causal and is exactly the series we would trade on EOD.
+  * Signals are causal (ewm / rolling only look backward). A trade signalled
+    using prices through day i is executed at the close of day i+1.
+  * A monthly return stream is produced so the strategy can be evaluated
+    apples-to-apples against the deployed v5 sleeve framework.
+
+Indicator math is identical to the Pine in the repo-root `wavetrend` file:
+    ap  = close (proxy for hlc3)
+    esa = ema(ap, n1)
+    d   = ema(|ap-esa|, n1)
+    ci  = (ap-esa) / (0.015 d)
+    wt1 = ema(ci, n2)
+    wt2 = sma(wt1, sig_len)
+    BUY  when crossover(wt1, wt2) and wt1 <= oversold and ticker is a member
+    EXIT when RSI(period) > overbought, or membership lost, or delisted
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, asdict
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[2]
+PIT = ROOT / "experiments" / "monthly_dca" / "cache" / "v2" / "sp500_pit"
+QQQ = ROOT / "experiments" / "monthly_dca" / "v5" / "qqq_pit"
+OUT = ROOT / "experiments" / "wavetrend"
+
+INITIAL_CAPITAL = 1_000_000.0
+POSITION_SIZE = 10_000.0  # $ per pyramid unit (faithful to the original)
+
+# ETF / leveraged tickers that may sit in the price panel but are never
+# legitimate single-name picks.
+EXCLUDE = {
+    "SPY", "QQQ", "IWM", "VTI", "RSP", "DIA", "BTC-USD", "ETH-USD",
+    "TQQQ", "SQQQ", "UPRO", "SPXL", "SPXS", "TZA", "TNA", "SOXL", "SOXS",
+    "FAS", "FAZ", "TMF", "TMV", "UGL", "GLL", "BOIL", "KOLD",
+}
+
+
+@dataclass
+class Params:
+    wt_n1: int = 60
+    wt_n2: int = 140
+    wt_sig_len: int = 4
+    wt_oversold: float = -60.0
+    rsi_period: int = 252
+    rsi_overbought: float = 70.0
+
+    def clamp(self) -> "Params":
+        return Params(
+            wt_n1=int(np.clip(round(self.wt_n1), 5, 200)),
+            wt_n2=int(np.clip(round(self.wt_n2), 5, 300)),
+            wt_sig_len=int(np.clip(round(self.wt_sig_len), 2, 15)),
+            wt_oversold=float(np.clip(self.wt_oversold, -120.0, -10.0)),
+            rsi_period=int(np.clip(round(self.rsi_period), 10, 360)),
+            rsi_overbought=float(np.clip(self.rsi_overbought, 52.0, 90.0)),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+
+def load_prices() -> pd.DataFrame:
+    px = pd.read_parquet(PIT / "prices_extended_pit.parquet")
+    px.index = pd.to_datetime(px.index)
+    return px.sort_index()
+
+
+def load_membership(universe: str) -> pd.DataFrame:
+    """Return monthly (asof, ticker) PIT membership for 'sp500' or 'ndx'."""
+    if universe == "sp500":
+        mem = pd.read_parquet(PIT / "sp500_membership_monthly.parquet")
+    elif universe == "ndx":
+        mem = pd.read_parquet(QQQ / "ndx_pit_membership_monthly.parquet")
+    else:
+        raise ValueError(universe)
+    mem["asof"] = pd.to_datetime(mem["asof"])
+    return mem
+
+
+def build_daily_membership(mem: pd.DataFrame, dates: pd.DatetimeIndex,
+                           tickers: list[str]) -> pd.DataFrame:
+    """Boolean (dates x tickers): True when the ticker is an index member.
+
+    Monthly membership is forward-filled to daily: a name is tradable from the
+    month-end it first appears through the month-end it last appears.
+    """
+    monthly_dates = sorted(mem["asof"].unique())
+    grp = mem.groupby("asof")["ticker"].apply(set).to_dict()
+    mask_m = pd.DataFrame(False, index=pd.DatetimeIndex(monthly_dates),
+                          columns=tickers)
+    for d in monthly_dates:
+        present = [t for t in grp[d] if t in mask_m.columns]
+        mask_m.loc[d, present] = True
+    daily = mask_m.reindex(mask_m.index.union(dates)).ffill().reindex(dates)
+    return daily.fillna(False).astype(bool)
+
+
+# ---------------------------------------------------------------------------
+# Indicators (vectorised across the whole panel)
+# ---------------------------------------------------------------------------
+
+def compute_wavetrend(close: pd.DataFrame, n1: int, n2: int, sig_len: int):
+    ap = close
+    esa = ap.ewm(span=n1, adjust=False).mean()
+    d = (ap - esa).abs().ewm(span=n1, adjust=False).mean()
+    ci = (ap - esa) / (0.015 * d.replace(0.0, np.nan))
+    wt1 = ci.ewm(span=n2, adjust=False).mean()
+    wt2 = wt1.rolling(window=sig_len, min_periods=sig_len).mean()
+    return wt1, wt2
+
+
+def compute_rsi(close: pd.DataFrame, period: int) -> pd.DataFrame:
+    delta = close.diff()
+    gain = delta.clip(lower=0.0)
+    loss = -delta.clip(upper=0.0)
+    avg_gain = gain.ewm(alpha=1.0 / period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0 / period, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0.0, np.nan)
+    return 100.0 - 100.0 / (1.0 + rs)
+
+
+# ---------------------------------------------------------------------------
+# Event-driven pyramiding simulation
+# ---------------------------------------------------------------------------
+
+def simulate(close: pd.DataFrame, member: pd.DataFrame, p: Params,
+             cost_bps: float = 10.0):
+    """Run the pyramiding sim. Returns (daily_equity, trades_df).
+
+    Execution: a signal computed from prices through day i is acted on at the
+    close of day i+1 (no same-bar look-ahead). Mark-to-market daily.
+    """
+    p = p.clamp()
+    wt1, wt2 = compute_wavetrend(close, p.wt_n1, p.wt_n2, p.wt_sig_len)
+    rsi = compute_rsi(close, p.rsi_period)
+
+    prev1, prev2 = wt1.shift(1), wt2.shift(1)
+    cross_up = (prev1 < prev2) & (wt1 >= wt2)
+    buy_sig = (cross_up & (wt1 <= p.wt_oversold)).fillna(False)
+    exit_sig = (rsi > p.rsi_overbought).fillna(False)
+
+    tickers = list(close.columns)
+    dates = close.index
+    px = close.values
+    bs = buy_sig.values
+    xs = exit_sig.values
+    mb = member.reindex(index=dates, columns=tickers).fillna(False).values
+    col = {t: j for j, t in enumerate(tickers)}
+    n = len(dates)
+    cf = cost_bps / 10000.0
+
+    cash = INITIAL_CAPITAL
+    positions: dict[int, list] = {}  # col_idx -> list of {entry_price, shares, entry_date}
+    last_valid = np.full(len(tickers), np.nan)
+    trades = []
+    equity = np.empty(n)
+
+    for i in range(n):
+        row_px = px[i]
+        valid = ~np.isnan(row_px)
+        last_valid[valid] = row_px[valid]
+
+        # ---- act on day i-1 signals at today's close ----
+        if i >= 1:
+            sig_buy = np.where(bs[i - 1])[0]
+            sig_exit = set(np.where(xs[i - 1])[0])
+
+            # EXITS: rsi exit, or membership lost, or delisted (price gone)
+            for j in list(positions.keys()):
+                lots = positions[j]
+                if not lots:
+                    continue
+                lost_member = not mb[i, j]
+                delisted = not valid[j]
+                rsi_exit = j in sig_exit
+                if rsi_exit or lost_member or delisted:
+                    exit_px = row_px[j] if valid[j] else last_valid[j]
+                    if np.isnan(exit_px):
+                        continue
+                    for lot in lots:
+                        proceeds = lot["shares"] * exit_px * (1 - cf)
+                        cash += proceeds
+                        trades.append({
+                            "ticker": tickers[j],
+                            "entry_date": lot["entry_date"],
+                            "exit_date": dates[i],
+                            "entry_price": lot["entry_price"],
+                            "exit_price": float(exit_px),
+                            "ret": exit_px / lot["entry_price"] - 1.0,
+                            "reason": "rsi" if rsi_exit else
+                                      ("member" if lost_member else "delist"),
+                        })
+                    positions[j] = []
+
+            # ENTRIES: pyramiding, members only, cash-budget gated
+            for j in sig_buy:
+                if not mb[i, j] or not valid[j] or row_px[j] <= 0:
+                    continue
+                if cash >= POSITION_SIZE:
+                    shares = POSITION_SIZE / row_px[j]
+                    cash -= POSITION_SIZE * (1 + cf)
+                    positions.setdefault(j, []).append({
+                        "entry_date": dates[i],
+                        "entry_price": float(row_px[j]),
+                        "shares": shares,
+                    })
+
+        # ---- mark to market ----
+        mv = 0.0
+        for j, lots in positions.items():
+            if not lots:
+                continue
+            pr = row_px[j] if valid[j] else last_valid[j]
+            if np.isnan(pr):
+                continue
+            for lot in lots:
+                mv += lot["shares"] * pr
+        equity[i] = cash + mv
+
+    eq = pd.Series(equity, index=dates, name="equity")
+    tr = pd.DataFrame(trades)
+    return eq, tr
+
+
+# ---------------------------------------------------------------------------
+# Metrics  (mirrors experiments/monthly_dca/v5/spx_pit/run_v5_winner_aug.py)
+# ---------------------------------------------------------------------------
+
+def monthly_returns_from_equity(eq: pd.Series) -> pd.Series:
+    m = eq.resample("ME").last()
+    return m.pct_change().dropna()
+
+
+def cagr_monthly(ret: pd.Series) -> float:
+    if len(ret) == 0:
+        return 0.0
+    return float((1 + ret).cumprod().iloc[-1] ** (12.0 / len(ret)) - 1)
+
+
+def sharpe_monthly(ret: pd.Series) -> float:
+    r = ret.dropna()
+    if len(r) < 2 or r.std() == 0:
+        return 0.0
+    return float(r.mean() / r.std() * np.sqrt(12))
+
+
+def max_dd_monthly(ret: pd.Series) -> float:
+    eq = (1 + ret).cumprod()
+    if len(eq) == 0:
+        return 0.0
+    peak = eq.cummax()
+    return float(((eq - peak) / peak).min())
+
+
+def metrics_block(ret: pd.Series) -> dict:
+    return {
+        "cagr": cagr_monthly(ret),
+        "vol": float(ret.std() * np.sqrt(12)) if len(ret) > 1 else 0.0,
+        "sharpe": sharpe_monthly(ret),
+        "mdd": max_dd_monthly(ret),
+        "n": int(len(ret)),
+    }
+
+
+def win_rate(tr: pd.DataFrame) -> float:
+    if tr is None or tr.empty:
+        return 0.0
+    return float((tr["ret"] > 0).mean())
