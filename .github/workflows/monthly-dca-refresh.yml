@@ -1,0 +1,111 @@
+name: monthly-dca-refresh
+
+# Heavy monthly refresh of the deployed E2 monthly-DCA strategy.
+#
+# The DAILY cron (creditfloor-daily.yml -> cron_daily_refresh.py) only
+# refreshes prices/features/membership and rebuilds data.json from the
+# EXISTING GBM predictions. The walk-forward GBM (ml_preds.parquet) is a
+# point-in-time model that is NOT regenerated daily, so the live `as_of`
+# is frozen at the last GBM run. This workflow runs the full augmented
+# PIT chain (FNSPID + yfinance download -> features -> panel -> WF GBM
+# retrain -> Chronos) so the live picks advance to the current month,
+# then rebuilds the E2 data.json and commits the refreshed artifacts.
+#
+# Re-running the WF GBM is deterministic on unchanged history: the
+# 2003..last backtest predictions reproduce identically; only the new
+# live months are appended. So the published backtest numbers do not
+# move — this purely advances the current basket / `as_of`.
+
+on:
+  schedule:
+    # 02:00 UTC on the 2nd of each month (after month-end data settles).
+    - cron: "0 2 2 * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual trigger reason"
+        required: false
+        default: "manual"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monthly-dca-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --quiet pandas numpy pyarrow yfinance scikit-learn requests
+
+      - name: Phase 1 — augmented daily PIT panel (FNSPID + yfinance)
+        run: python experiments/monthly_dca/v5/spx_pit/build_sp500_pit_prices.py
+
+      - name: Phase 2 — monthly clean panels
+        run: python experiments/monthly_dca/v5/spx_pit/build_monthly_clean_pit.py
+
+      - name: Phase 3a — base features (augmented)
+        run: python experiments/monthly_dca/v5/spx_pit/cache_features_pit.py
+
+      - name: Phase 3b — alpha + novel features
+        run: python experiments/monthly_dca/v5/spx_pit/add_alpha_features_pit.py
+
+      - name: Phase 3.5 — cross-section panel
+        run: |
+          python experiments/monthly_dca/v5/spx_pit/build_panel_pit.py
+          python experiments/monthly_dca/v5/spx_pit/build_sp500_pit_panel_aug.py
+
+      - name: Phase 4 — walk-forward GBM retrain (ml_preds.parquet)
+        run: python experiments/monthly_dca/v5/spx_pit/train_ml_pit.py
+
+      - name: Phase 5c — Chronos-bolt-tiny on augmented panel
+        continue-on-error: true
+        run: |
+          pip install --quiet torch chronos-forecasting
+          python experiments/monthly_dca/v5/spx_pit/score_chronos_aug.py
+
+      - name: Rebuild E2 data.json
+        run: python -m experiments.monthly_dca.v5.build_webapp_v5_pit
+
+      - name: Commit refreshed artifacts
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          A=experiments/monthly_dca/cache/v2/sp500_pit/augmented
+          git add \
+            "$A/ml_preds.parquet" \
+            "$A/ml_preds_chronos.parquet" \
+            "$A/monthly_prices_clean.parquet" \
+            "$A/monthly_returns_clean.parquet" \
+            "$A/sp500_pit_panel.parquet" \
+            experiments/docs/monthly-dca/data.json || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            TS=$(date -u +"%Y-%m-%d")
+            git commit -m "Monthly E2 refresh ${TS}: advance GBM preds + data.json to current month"
+            for i in 1 2 3 4; do
+              git pull --rebase origin "${GITHUB_REF_NAME}" || true
+              if git push origin HEAD:"${GITHUB_REF_NAME}"; then break; fi
+              sleep $((2 ** i))
+            done
+          fi

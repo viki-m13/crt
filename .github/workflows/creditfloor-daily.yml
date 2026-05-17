@@ -137,7 +137,11 @@ jobs:
         continue-on-error: true
         run: |
           set -e
-          pip install --quiet pyarrow pandas numpy yfinance
+          # scikit-learn is REQUIRED: build_webapp_v5_pit imports the
+          # v2 ml_strategy (HistGradientBoosting) at module load. Without
+          # it the whole monthly-DCA refresh ImportErrors and (being
+          # fail-soft) silently leaves data.json frozen.
+          pip install --quiet pyarrow pandas numpy yfinance scikit-learn
           python experiments/monthly_dca/cron_daily_refresh.py
 
       - name: Summarize results
