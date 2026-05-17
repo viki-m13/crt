@@ -44,7 +44,17 @@ def main():
           f"asofs: {big.reset_index()['asof'].nunique()}")
 
     print(f"[2] fitting walk-forward (HistGBM, 7-month embargo, retrain every Jan) ...")
-    preds = fit_walkforward(big, target_horizons=(1, 3, 6))
+    # fit_walkforward defaults train_end to 2025-12-31; that hard cap
+    # would freeze live predictions. Extend it to the panel's latest
+    # asof so the current/live months are always scored (predictions
+    # need no realized target — only training rows do). This is what
+    # advances the deployed `as_of` to the current month.
+    panel_last = pd.to_datetime(
+        big.reset_index()["asof"]).max().normalize()
+    print(f"    extending train_end -> {panel_last.date()} "
+          f"(was the 2025-12-31 default cap)")
+    preds = fit_walkforward(big, target_horizons=(1, 3, 6),
+                            train_end=panel_last)
     print(f"    predictions: {len(preds)}")
 
     out_path = AUG / "ml_preds.parquet"
