@@ -287,6 +287,124 @@ def win_rate(tr: pd.DataFrame) -> float:
 
 
 # ===========================================================================
+# "Never sell": WaveTrend is ONLY an entry signal. Buy and hold forever.
+# ===========================================================================
+#
+# Each WaveTrend oversold-cross on a current index member adds one equal-$
+# unit of that stock; the unit is NEVER sold. A name that delists / is
+# acquired (price -> NaN) is frozen at its last traded price (the honest
+# cash-payout-at-last-price convention used everywhere else in this repo)
+# and simply stops contributing P&L thereafter -- it is not a forced loss.
+#
+# The reported return stream is the TIME-WEIGHTED return of the
+# accumulating book (new contributions are removed from the daily return
+# so it is scale-free and directly comparable to the v5 / SPY monthly
+# streams). Fully vectorised -> fast enough for wide param search + grids.
+#
+# Few parameters (n1, n2, sig_len, oversold, optional own-trend SMA gate)
+# on purpose: fewer knobs + a plateau check is the anti-overfit lever.
+
+@dataclass
+class HParams:
+    wt_n1: int = 60
+    wt_n2: int = 140
+    wt_sig_len: int = 4
+    wt_oversold: float = -60.0
+    trend_sma: int = 0  # 0 = off; else only buy if close > SMA(trend_sma)
+
+    def clamp(self) -> "HParams":
+        return HParams(
+            wt_n1=int(np.clip(round(self.wt_n1), 5, 200)),
+            wt_n2=int(np.clip(round(self.wt_n2), 5, 300)),
+            wt_sig_len=int(np.clip(round(self.wt_sig_len), 2, 15)),
+            wt_oversold=float(np.clip(self.wt_oversold, -120.0, -10.0)),
+            trend_sma=int(np.clip(round(self.trend_sma), 0, 250)),
+        )
+
+
+def simulate_hold_forever(close: pd.DataFrame, member: pd.DataFrame,
+                          p: HParams, unit: float = 1.0):
+    """Buy-and-hold-forever on WaveTrend entries. Never sells.
+
+    Returns dict with:
+      ret_d   : daily time-weighted return of the accumulating book
+      equity  : scale-free time-weighted equity curve (cumprod(1+ret_d))
+      n_entries : number of units bought
+      entry_winrate : fraction of units above water at end of sample
+      contrib_curve : cumulative $ deployed (for the finite-capital view)
+    """
+    p = p.clamp()
+    wt1, wt2 = compute_wavetrend(close, p.wt_n1, p.wt_n2, p.wt_sig_len)
+    prev1, prev2 = wt1.shift(1), wt2.shift(1)
+    cross_up = (prev1 < prev2) & (wt1 >= wt2)
+    buy_sig = (cross_up & (wt1 <= p.wt_oversold)).fillna(False)
+    if p.trend_sma > 0:
+        trend_ok = (close > close.rolling(p.trend_sma,
+                                          min_periods=p.trend_sma).mean())
+        buy_sig = buy_sig & trend_ok.fillna(False)
+
+    tickers = list(close.columns)
+    dates = close.index
+    px = close.values
+    bs = buy_sig.values
+    mb = member.reindex(index=dates, columns=tickers).fillna(False).values
+    nT = len(tickers)
+    n = len(dates)
+
+    shares = np.zeros(nT)
+    last_px = np.full(nT, np.nan)
+    entry_cost = np.zeros(nT)   # cumulative $ put into each name
+    entry_shares_log = []       # (col, entry_price) per unit, for win-rate
+    ret_d = np.zeros(n)
+    contrib = np.zeros(n)
+    prev_mv = 0.0
+
+    for i in range(n):
+        row = px[i]
+        valid = ~np.isnan(row)
+        last_px[valid] = row[valid]
+
+        c_today = 0.0
+        if i >= 1:
+            for j in np.where(bs[i - 1])[0]:
+                if mb[i, j] and valid[j] and row[j] > 0:
+                    sh = unit / row[j]
+                    shares[j] += sh
+                    entry_cost[j] += unit
+                    c_today += unit
+                    entry_shares_log.append((j, row[j]))
+
+        eff = np.where(valid, row, last_px)
+        held = shares > 0
+        mv = float(np.nansum(shares[held] * eff[held])) if held.any() else 0.0
+        contrib[i] = c_today
+        if prev_mv > 0:
+            ret_d[i] = (mv - c_today) / prev_mv - 1.0
+        prev_mv = mv
+
+    ret_s = pd.Series(ret_d, index=dates)
+    eq = (1.0 + ret_s).cumprod()
+
+    # per-unit win rate at end of sample (never sold -> mark at last price)
+    wins = tot = 0
+    for j, ep in entry_shares_log:
+        fp = last_px[j]
+        if not np.isnan(fp) and ep > 0:
+            tot += 1
+            if fp > ep:
+                wins += 1
+    entry_wr = wins / tot if tot else 0.0
+
+    return {
+        "ret_d": ret_s,
+        "equity": eq,
+        "n_entries": len(entry_shares_log),
+        "entry_winrate": entry_wr,
+        "contrib_curve": pd.Series(np.cumsum(contrib), index=dates),
+    }
+
+
+# ===========================================================================
 # Filtered variant: creative trade filters to push win-rate up HONESTLY
 # ===========================================================================
 #

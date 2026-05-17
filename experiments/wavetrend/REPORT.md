@@ -157,13 +157,86 @@ Sharpe-tuned WaveTrend (≈70% win, 17.6% CAGR) is still the better
 all-round sleeve. Use the win-rate config only as low-correlation ballast
 or a "clip-the-bounce" overlay, never as the return engine.
 
+---
+
+# Part 3 — "Never sell": WaveTrend as a pure entry signal
+
+Idea (user): never sell. WaveTrend only decides what/when to buy; every
+equal-$ unit is held forever (a delisted/acquired name is frozen at its
+last price — the repo's honest cash-payout convention, not a forced loss).
+Never selling is itself the clean resolution of the win-rate/return
+tension: winners run unbounded, so the entry hit-rate is structurally
+high **without** a profit-take capping CAGR.
+
+Optimised with a deliberately small parameter set (n1, n2, sig_len,
+oversold, one optional trend-SMA gate — fewer knobs = less to overfit),
+train-only on S&P 500 2003–2013, then put through a 5-test
+generalisation gauntlet. Selected: `n1=99, n2=40, sig=8, oversold=−30,
+trend_sma=210`.
+
+| S&P 500 never-sell book | CAGR | Sharpe | Max DD | entry win-rate |
+|---|---:|---:|---:|---:|
+| Optimised — full | 13.3% | 0.93 | −47% | **79.9%** |
+| Optimised — train 03–13 | 11.8% | 0.85 | −47% | — |
+| **Optimised — holdout 14–26** | **14.6%** | **1.00** | **−23%** | — |
+| Default WT — full | 13.2% | 0.51 | −93% | 73.2% |
+| Default WT — holdout 14–26 | 2.2% | 0.54 | −85% | — |
+| SPY — full | 11.7% | 0.84 | −51% | — |
+
+The entry win-rate is **~80%** (every individual buy-and-hold-forever
+unit, marked at last price) **while still keeping a 14.6% holdout CAGR
+and Sharpe 1.00** — the opposite of Part 2's 87%-win / 5.6%-CAGR
+negative-skew trap. This is the honest high-win-rate answer: *don't
+engineer the exit, remove it.*
+
+### Generalisation gauntlet (none of this was used for tuning)
+
+- **G1 time-OOS:** holdout (Sharpe 1.00, DD −23%) is *better* than train
+  (0.85, −47%) → not overfit in time.
+- **G2 walk-forward:** **9/10** splits beat SPY.
+- **G3 cross-universe (strongest test):** the S&P-500-trained params,
+  **unchanged**, on the PIT Nasdaq-100 (2015+) → CAGR 14.5%, Sharpe 0.79,
+  DD −33%, 66% entry win-rate. The params *transfer* to a completely
+  different universe and still produce a robust positive, shallow-DD
+  book — but they do **not** beat QQQ (19.4%, only 1/8 splits) because a
+  buy-the-dip-and-hold book structurally lags a momentum mega-cap index.
+  Honest read: the *strategy* generalises; the *edge over the benchmark*
+  is S&P-500-specific (same structural finding as Parts 1–2).
+- **G4 parameter plateau:** perturbing every parameter (±15 on n1, ±40 on
+  n2/trend_sma, ±2 on sig_len, ±15 on oversold) keeps CAGR 10–13% and
+  Sharpe 0.73–0.93 — a broad plateau, not a fragile spike → robust, not
+  curve-fit.
+- **G5 optimised vs default:** default WT never-sell is a disaster OOS
+  (2% holdout CAGR, −85% DD). Optimisation — essentially discovering the
+  **trend-SMA(210) gate** (only buy dips that are still above the long
+  trend) — adds large, real OOS value, not fitted noise.
+
+### Sleeve vs deployed v5
+corr 0.071 (max-split 0.26). A 50/50 v5+never-sell blend → Sharpe **1.13**
+(v5 alone 0.91), Max DD **−57%** (−77%), WF-min Sharpe **0.76** (0.62) —
+on par with the Part-1 Sharpe-tuned sleeve and a better return
+contributor than the Part-2 win-rate stream.
+
+### Bottom line
+**This is the best of the three approaches.** "Never sell" turns
+WaveTrend into a robust, well-generalising **signal-timed accumulation**
+of S&P 500 members: ~80% entry win-rate, 14.6% holdout CAGR, Sharpe 1.00,
+−23% holdout DD — beating SPY on Sharpe and drawdown, passing time-OOS,
+walk-forward, parameter-plateau and (for robustness, not edge)
+cross-universe tests. The single load-bearing ingredient is the
+long-trend gate; without it the never-sell book is uninvestable
+(−85% DD). It is also a clean ~0.07-correlation diversifier for the
+deployed book. Caveat: it does not beat a momentum index (NDX/QQQ), and
+it is a return/Sharpe story, not the v5-level (~40% CAGR) engine.
+
 ## Files
 - `wavetrend_pit.py` — leakage-free sim + indicators + metrics (Part 1 +
-  filtered sim with no-pyramiding for Part 2)
+  filtered/no-pyramiding sim Part 2 + never-sell sim Part 3)
 - `run_wavetrend_pit.py` — Part 1 train/holdout optimiser + sleeve study
 - `explore_winrate.py` — Part 2 constrained win-rate explorer + frontier
-- `wavetrend_pit_results.json`, `winrate_explore_results.json` — metrics
-- `winrate_frontier.csv` — every evaluated config (win-rate/CAGR frontier)
-- `winrate_selected_trades.csv`, `winrate_selected_monthly_returns.csv`
-- `wt_sp500_monthly_returns.csv`, `wt_sp500_trades.csv`, `wt_equity.png`
-- `run.log`, `winrate.log` — full optimisation traces
+- `hold_forever.py` — Part 3 never-sell optimiser + generalisation gauntlet
+- `wavetrend_pit_results.json`, `winrate_explore_results.json`,
+  `hold_forever_results.json` — metrics
+- `winrate_frontier.csv` — every win-rate config (win-rate/CAGR frontier)
+- `*_monthly_returns.csv`, `*_trades.csv`, `wt_equity.png`
+- `run.log`, `winrate.log`, `holdfwd.log` — full optimisation traces
