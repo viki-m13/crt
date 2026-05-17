@@ -2,8 +2,8 @@
  "as_of": "2025-12-31",
  "strategy_version": "v5-pit-sp500",
  "strategy_spec": {
-  "scorer": "multi_horizon_consensus + chronos_p70_filter",
-  "scorer_description": "Multi-horizon CONSENSUS scorer: the walk-forward GBM emits 1m/3m/6m forward-rank predictions; names whose three horizon ranks DISAGREE (cross-sectional rank dispersion above the median) are dropped \u2014 a variance-reduction / ensemble-agreement filter \u2014 then survivors are ranked by mean horizon rank. Gated by HuggingFace Chronos-bolt-tiny zero-shot p70 forecast (must rank top 55%). Deployed 2026-05-16 after full production-harness validation (vs the prior mean(3m,6m) scorer: CAGR 40%->47%, Sharpe 0.87->0.94, Max DD -81%->-69%, recent 2021-26 era now beats S&P-DCA; honest cost: weaker 2010-15 era, 10y DCA-win 100%->~99%). See NOVEL_V9_PROD_FINDINGS.md.",
+  "scorer": "ml_3plus6 selection + blended-consensus drift-trigger + chronos_p70_filter",
+  "scorer_description": "Selection: the walk-forward GBM's mean(3m,6m) forward-rank (ml_3plus6) picks the top 2 from the Chronos-p70-filtered PIT pool. Rebalance-timing (WIN1, deployed 2026-05-17): the score-drift trigger that decides WHEN to rotate ranks the candidate pool by a 50/50 blend of the multi-horizon CONSENSUS rank (1m/3m/6m mean rank) and the ml_3plus6 rank. Gated by HuggingFace Chronos-bolt-tiny zero-shot p70 forecast (must rank top 55%). WIN1 is a strict Pareto improvement on the prior consensus-trigger over the augmented PIT walk-forward: full CAGR 47%->52%, Sharpe 0.94->1.01, Max DD -69%->-66%, WF 8->9/10 beat SPY, all 4 non-overlapping eras beat S&P-DCA, rolling DCA-win up at 3/5/10y, cost-insensitive, and materially more robust out-of-sample (untouched 2013-26 holdout Sharpe 1.04 vs 0.68). See spx_pit/IMPROVE_FINDINGS.md.",
   "K_normal": 2,
   "K_recovery": 2,
   "K_bull": 2,
@@ -16,7 +16,7 @@
   "rebalance_mode": "rule_based_score_drift",
   "cost_bps": 10,
   "universe": "PIT S&P 500 members at each rebalance month-end (iShares IVV current holdings used for live universe)",
-  "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool (i.e., the picker has discovered they're no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT walk-forward (WF mean ~49%, 10/10 splits beat SPY, +45.3pp edge in 2024 vs -10.2pp for fixed h=6) and improves rebalance-timing robustness. HONESTY NOTE: an earlier simplified sweep reported Sharpe 1.10 / Max DD -34.5% for this rule, but that used a NaN-favorable sim; the canonical equity curve (and the dca_investor block) is the honest reference \u2014 Sharpe ~0.9 and deep interim drawdowns (~-72% lump-sum, ~-79% on the accumulating monthly-DCA portfolio). The rule does NOT remove the drawdown.",
+  "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool, where that candidate pool is ranked by the WIN1 50/50 blended-consensus drift scorer (the picker has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT walk-forward and the WIN1 blended drift-trigger is a strict Pareto improvement on the prior consensus trigger (CAGR 47->52%, Sharpe 0.94->1.01, Max DD -69->-66%, WF 8->9/10, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference \u2014 Sharpe ~1.0 and still-deep interim drawdowns (the rule and the trigger NARROW but do NOT remove the drawdown; a monthly-DCA accumulator still sees a brutal interim value drawdown).",
   "chronos_filter": {
    "model": "amazon/chronos-bolt-tiny (HuggingFace)",
    "model_size": "9M params, zero-shot foundation model",
@@ -36,14 +36,14 @@
  "spy_dca_cagr": 0.11630822445076516,
  "headline": {
   "n_picks": 524,
-  "win_rate_raw": 0.5693430656934306,
+  "win_rate_raw": 0.5802919708029197,
   "win_rate_bias_corr": null,
-  "cagr_raw": 0.47031281584251006,
-  "cagr_total": 0.47031281584251006,
+  "cagr_raw": 0.5160070581302851,
+  "cagr_total": 0.5160070581302851,
   "cagr_bias_corr": 0.41621383379761695,
   "cagr_spy_dca": 0.11630822445076516,
-  "edge": 0.3540045913917449,
-  "sharpe": 0.9390370637933909
+  "edge": 0.39969883367951997,
+  "sharpe": 1.0079611352786766
  },
  "current_regime": {
   "regime": "bull",
@@ -235,10 +235,10 @@
   ],
   "cash_position": 0,
   "current_regime": "bull",
-  "basket_id": 44
+  "basket_id": 43
  },
  "recommended_strategy": {
-  "name": "v5_pit_sp500_consensus_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift",
+  "name": "v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift",
   "k": 2,
   "exit_rule": "rule-based (min 6m hold + score-drift; force at 24m)",
   "description": "v5 PIT S&P 500 strategy. Walk-forward Gradient Boosted Trees ranking model (3m+6m forward-rank ensemble) restricted to point-in-time S&P 500 constituents at each rebalance, gated by the HuggingFace Chronos-bolt-tiny zero-shot foundation model (p70 forecast rank \u2265 0.45). Top-2 picks, inverse-volatility weighted with 40% cap per pick, held a minimum of 6 months then rebalanced only on score-drift (force at 24m); 'tight' regime gate goes 100% cash on SPY 21d <= -8% or 6m <= -5%. Lump-sum walk-forward ~49% MEAN OOS CAGR over 10 splits 2003-2025 (10/10 positive, 10/10 beat SPY) \u2014 strong engine evidence, NOT the monthly-DCA experience. The honest investor-facing result is in dca_investor: a 10-year monthly DCA beat the identical S&P-500 DCA in 100% of rolling windows, with deep (~-79%) interim drawdowns disclosed."
@@ -438,295 +438,295 @@
   },
   {
    "date": "2005-03-31",
-   "strat_value": 46.67,
+   "strat_value": 50.8162,
    "spy_value": 28.3624,
    "invested": 25.0,
-   "r": -0.114896,
+   "r": -0.036263,
    "s": -0.018293
   },
   {
    "date": "2005-04-30",
-   "strat_value": 52.0622,
+   "strat_value": 54.1397,
    "spy_value": 28.8123,
    "invested": 26.0,
-   "r": 0.092138,
+   "r": 0.044841,
    "s": -0.018735
   },
   {
    "date": "2005-05-31",
-   "strat_value": 50.7102,
+   "strat_value": 54.8703,
    "spy_value": 30.773,
    "invested": 27.0,
-   "r": -0.044326,
+   "r": -0.004885,
    "s": 0.032224
   },
   {
    "date": "2005-06-30",
-   "strat_value": 65.3393,
+   "strat_value": 59.4606,
    "spy_value": 31.8211,
    "invested": 28.0,
-   "r": 0.263566,
+   "r": 0.06426,
    "s": 0.001515
   },
   {
    "date": "2005-07-31",
-   "strat_value": 65.4427,
+   "strat_value": 58.9889,
    "spy_value": 34.0769,
    "invested": 29.0,
-   "r": -0.013515,
+   "r": -0.02434,
    "s": 0.038261
   },
   {
    "date": "2005-08-31",
-   "strat_value": 65.9935,
+   "strat_value": 60.1524,
    "spy_value": 34.7481,
    "invested": 30.0,
-   "r": -0.006762,
+   "r": 0.002724,
    "s": -0.009375
   },
   {
    "date": "2005-09-30",
-   "strat_value": 70.1831,
+   "strat_value": 58.6623,
    "spy_value": 36.035,
    "invested": 31.0,
-   "r": 0.047612,
+   "r": -0.040719,
    "s": 0.008026
   },
   {
    "date": "2005-10-31",
-   "strat_value": 72.7589,
+   "strat_value": 61.0842,
    "spy_value": 36.1591,
    "invested": 32.0,
-   "r": 0.022137,
+   "r": 0.023833,
    "s": -0.023651
   },
   {
    "date": "2005-11-30",
-   "strat_value": 73.6431,
+   "strat_value": 63.3234,
    "spy_value": 38.7923,
    "invested": 33.0,
-   "r": -0.00157,
+   "r": 0.01996,
    "s": 0.043952
   },
   {
    "date": "2005-12-31",
-   "strat_value": 73.1885,
+   "strat_value": 66.4085,
    "spy_value": 39.7162,
    "invested": 34.0,
-   "r": -0.019488,
+   "r": 0.032415,
    "s": -0.001914
   },
   {
    "date": "2006-01-31",
-   "strat_value": 86.49,
+   "strat_value": 70.1899,
    "spy_value": 41.6939,
    "invested": 35.0,
-   "r": 0.165814,
+   "r": 0.041262,
    "s": 0.024014
   },
   {
    "date": "2006-02-28",
-   "strat_value": 95.2471,
+   "strat_value": 65.7072,
    "spy_value": 42.9384,
    "invested": 36.0,
-   "r": 0.088663,
+   "r": -0.077015,
    "s": 0.005725
   },
   {
    "date": "2006-03-31",
-   "strat_value": 99.3649,
+   "strat_value": 66.5465,
    "spy_value": 44.6635,
    "invested": 37.0,
-   "r": 0.032393,
+   "r": -0.002409,
    "s": 0.016504
   },
   {
    "date": "2006-04-30",
-   "strat_value": 99.0456,
+   "strat_value": 68.1847,
    "spy_value": 46.2404,
    "invested": 38.0,
-   "r": -0.013145,
+   "r": 0.009448,
    "s": 0.012632
   },
   {
    "date": "2006-05-31",
-   "strat_value": 103.3374,
+   "strat_value": 63.8975,
    "spy_value": 45.8174,
    "invested": 39.0,
-   "r": 0.032903,
+   "r": -0.076422,
    "s": -0.030121
   },
   {
    "date": "2006-06-30",
-   "strat_value": 108.3124,
+   "strat_value": 78.1623,
    "spy_value": 46.9395,
    "invested": 40.0,
-   "r": 0.038098,
+   "r": 0.204396,
    "s": 0.002608
   },
   {
    "date": "2006-07-31",
-   "strat_value": 128.758,
+   "strat_value": 94.5663,
    "spy_value": 48.1542,
    "invested": 41.0,
-   "r": 0.17789,
+   "r": 0.194587,
    "s": 0.004479
   },
   {
    "date": "2006-08-31",
-   "strat_value": 129.8104,
+   "strat_value": 95.0804,
    "spy_value": 50.2269,
    "invested": 42.0,
-   "r": 0.000404,
+   "r": -0.005084,
    "s": 0.021823
   },
   {
    "date": "2006-09-30",
-   "strat_value": 152.2599,
+   "strat_value": 84.5086,
    "spy_value": 52.6101,
    "invested": 43.0,
-   "r": 0.163974,
+   "r": -0.120439,
    "s": 0.027001
   },
   {
    "date": "2006-10-31",
-   "strat_value": 158.9808,
+   "strat_value": 97.3155,
    "spy_value": 55.2997,
    "invested": 44.0,
-   "r": 0.037328,
+   "r": 0.138079,
    "s": 0.031516
   },
   {
    "date": "2006-11-30",
-   "strat_value": 164.1455,
+   "strat_value": 103.2385,
    "spy_value": 57.4192,
    "invested": 45.0,
-   "r": 0.026032,
+   "r": 0.050074,
    "s": 0.019885
   },
   {
    "date": "2006-12-31",
-   "strat_value": 168.9504,
+   "strat_value": 106.8686,
    "spy_value": 59.2004,
    "invested": 46.0,
-   "r": 0.02304,
+   "r": 0.025231,
    "s": 0.013371
   },
   {
    "date": "2007-01-31",
-   "strat_value": 155.7162,
+   "strat_value": 106.7349,
    "spy_value": 61.1058,
    "invested": 47.0,
-   "r": -0.083755,
+   "r": -0.01051,
    "s": 0.015041
   },
   {
    "date": "2007-02-28",
-   "strat_value": 198.1776,
+   "strat_value": 106.0294,
    "spy_value": 60.8875,
    "invested": 48.0,
-   "r": 0.264564,
+   "r": -0.01583,
    "s": -0.019618
   },
   {
    "date": "2007-03-31",
-   "strat_value": 195.9808,
+   "strat_value": 109.2549,
    "spy_value": 62.6047,
    "invested": 49.0,
-   "r": -0.01605,
+   "r": 0.020794,
    "s": 0.011589
   },
   {
    "date": "2007-04-30",
-   "strat_value": 215.3136,
+   "strat_value": 115.7363,
    "spy_value": 66.4221,
    "invested": 50.0,
-   "r": 0.093069,
+   "r": 0.049715,
    "s": 0.044296
   },
   {
    "date": "2007-05-31",
-   "strat_value": 249.3916,
+   "strat_value": 129.7776,
    "spy_value": 69.7091,
    "invested": 51.0,
-   "r": 0.152917,
+   "r": 0.111716,
    "s": 0.03392
   },
   {
    "date": "2007-06-30",
-   "strat_value": 282.3964,
+   "strat_value": 133.4608,
    "spy_value": 69.6753,
    "invested": 52.0,
-   "r": 0.127819,
+   "r": 0.020517,
    "s": -0.014621
   },
   {
    "date": "2007-07-31",
-   "strat_value": 302.6467,
+   "strat_value": 140.5307,
    "spy_value": 68.4624,
    "invested": 53.0,
-   "r": 0.067927,
+   "r": 0.045142,
    "s": -0.03131
   },
   {
    "date": "2007-08-31",
-   "strat_value": 338.2352,
+   "strat_value": 150.1619,
    "spy_value": 70.3538,
    "invested": 54.0,
-   "r": 0.11391,
+   "r": 0.060985,
    "s": 0.012833
   },
   {
    "date": "2007-09-30",
-   "strat_value": 327.9396,
+   "strat_value": 149.0807,
    "spy_value": 74.1162,
    "invested": 55.0,
-   "r": -0.033297,
+   "r": -0.013768,
    "s": 0.038714
   },
   {
    "date": "2007-10-31",
-   "strat_value": 313.6078,
+   "strat_value": 119.6279,
    "spy_value": 76.1352,
    "invested": 56.0,
-   "r": -0.04661,
+   "r": -0.20291,
    "s": 0.013566
   },
   {
    "date": "2007-11-30",
-   "strat_value": 330.6248,
+   "strat_value": 159.892,
    "spy_value": 74.1476,
    "invested": 57.0,
-   "r": 0.050911,
+   "r": 0.325498,
    "s": -0.038732
   },
   {
    "date": "2007-12-31",
-   "strat_value": 258.8456,
+   "strat_value": 128.2627,
    "spy_value": 74.3014,
    "invested": 58.0,
-   "r": -0.219462,
+   "r": -0.202803,
    "s": -0.011261
   },
   {
    "date": "2008-01-31",
-   "strat_value": 220.8372,
+   "strat_value": 113.4735,
    "spy_value": 70.7486,
    "invested": 59.0,
-   "r": -0.150121,
+   "r": -0.122148,
    "s": -0.060461
   },
   {
    "date": "2008-02-29",
-   "strat_value": 225.2106,
+   "strat_value": 117.9157,
    "spy_value": 69.8944,
    "invested": 60.0,
-   "r": 0.015207,
+   "r": 0.030069,
    "s": -0.025842
   },
   {
    "date": "2008-03-31",
-   "strat_value": 236.2182,
+   "strat_value": 124.1765,
    "spy_value": 70.2605,
    "invested": 61.0,
    "r": 0.04424,
@@ -734,7 +734,7 @@
   },
   {
    "date": "2008-04-30",
-   "strat_value": 189.0235,
+   "strat_value": 99.7449,
    "spy_value": 74.6569,
    "invested": 62.0,
    "r": -0.203166,
@@ -742,7 +742,7 @@
   },
   {
    "date": "2008-05-31",
-   "strat_value": 108.2247,
+   "strat_value": 57.3776,
    "spy_value": 76.8006,
    "invested": 63.0,
    "r": -0.430467,
@@ -750,7 +750,7 @@
   },
   {
    "date": "2008-06-30",
-   "strat_value": 130.9747,
+   "strat_value": 70.0023,
    "spy_value": 71.2983,
    "invested": 64.0,
    "r": 0.19913,
@@ -758,7 +758,7 @@
   },
   {
    "date": "2008-07-31",
-   "strat_value": 267.4744,
+   "strat_value": 143.9012,
    "spy_value": 71.6487,
    "invested": 65.0,
    "r": 1.02671,
@@ -766,7 +766,7 @@
   },
   {
    "date": "2008-08-31",
-   "strat_value": 210.6949,
+   "strat_value": 113.7164,
    "spy_value": 73.7714,
    "invested": 66.0,
    "r": -0.215214,
@@ -774,7 +774,7 @@
   },
   {
    "date": "2008-09-30",
-   "strat_value": 211.6949,
+   "strat_value": 114.7164,
    "spy_value": 67.7299,
    "invested": 67.0,
    "r": 0.0,
@@ -782,7 +782,7 @@
   },
   {
    "date": "2008-10-31",
-   "strat_value": 212.6949,
+   "strat_value": 115.7164,
    "spy_value": 57.3766,
    "invested": 68.0,
    "r": 0.0,
@@ -790,7 +790,7 @@
   },
   {
    "date": "2008-11-30",
-   "strat_value": 213.6949,
+   "strat_value": 116.7164,
    "spy_value": 54.3132,
    "invested": 69.0,
    "r": 0.0,
@@ -798,7 +798,7 @@
   },
   {
    "date": "2008-12-31",
-   "strat_value": 410.0446,
+   "strat_value": 224.8258,
    "spy_value": 55.8551,
    "invested": 70.0,
    "r": 0.909894,
@@ -806,7 +806,7 @@
   },
   {
    "date": "2009-01-31",
-   "strat_value": 411.0446,
+   "strat_value": 225.8258,
    "spy_value": 52.1865,
    "invested": 71.0,
    "r": 0.0,
@@ -814,7 +814,7 @@
   },
   {
    "date": "2009-02-28",
-   "strat_value": 412.0446,
+   "strat_value": 226.8258,
    "spy_value": 47.4716,
    "invested": 72.0,
    "r": 0.0,
@@ -822,7 +822,7 @@
   },
   {
    "date": "2009-03-31",
-   "strat_value": 649.2781,
+   "strat_value": 358.1268,
    "spy_value": 52.5098,
    "invested": 73.0,
    "r": 0.571932,
@@ -830,7 +830,7 @@
   },
   {
    "date": "2009-04-30",
-   "strat_value": 1114.804,
+   "strat_value": 615.6688,
    "spy_value": 58.8258,
    "invested": 74.0,
    "r": 0.71435,
@@ -838,7 +838,7 @@
   },
   {
    "date": "2009-05-31",
-   "strat_value": 1024.6413,
+   "strat_value": 566.2862,
    "spy_value": 63.3229,
    "invested": 75.0,
    "r": -0.081701,
@@ -846,7 +846,7 @@
   },
   {
    "date": "2009-06-30",
-   "strat_value": 1627.8932,
+   "strat_value": 900.394,
    "spy_value": 64.2807,
    "invested": 76.0,
    "r": 0.587195,
@@ -854,7 +854,7 @@
   },
   {
    "date": "2009-07-31",
-   "strat_value": 2195.6118,
+   "strat_value": 1215.0037,
    "spy_value": 70.1511,
    "invested": 77.0,
    "r": 0.347916,
@@ -862,7 +862,7 @@
   },
   {
    "date": "2009-08-31",
-   "strat_value": 2923.8343,
+   "strat_value": 1618.5806,
    "spy_value": 73.7793,
    "invested": 78.0,
    "r": 0.331066,
@@ -870,7 +870,7 @@
   },
   {
    "date": "2009-09-30",
-   "strat_value": 3659.5642,
+   "strat_value": 2026.4256,
    "spy_value": 77.4308,
    "invested": 79.0,
    "r": 0.251204,
@@ -878,7 +878,7 @@
   },
   {
    "date": "2009-10-31",
-   "strat_value": 4157.1941,
+   "strat_value": 2302.4871,
    "spy_value": 76.923,
    "invested": 80.0,
    "r": 0.13567,
@@ -886,7 +886,7 @@
   },
   {
    "date": "2009-11-30",
-   "strat_value": 4152.6299,
+   "strat_value": 2300.4048,
    "spy_value": 82.7235,
    "invested": 81.0,
    "r": -0.001338,
@@ -894,7 +894,7 @@
   },
   {
    "date": "2009-12-31",
-   "strat_value": 6938.7046,
+   "strat_value": 3844.5331,
    "spy_value": 85.3227,
    "invested": 82.0,
    "r": 0.670516,
@@ -902,7 +902,7 @@
   },
   {
    "date": "2010-01-31",
-   "strat_value": 7205.9492,
+   "strat_value": 3993.0686,
    "spy_value": 83.1856,
    "invested": 83.0,
    "r": 0.038365,
@@ -910,7 +910,7 @@
   },
   {
    "date": "2010-02-28",
-   "strat_value": 7836.7707,
+   "strat_value": 4343.1136,
    "spy_value": 86.8117,
    "invested": 84.0,
    "r": 0.087391,
@@ -918,7 +918,7 @@
   },
   {
    "date": "2010-03-31",
-   "strat_value": 7385.7934,
+   "strat_value": 4093.6035,
    "spy_value": 93.1577,
    "invested": 85.0,
    "r": -0.057667,
@@ -926,7 +926,7 @@
   },
   {
    "date": "2010-04-30",
-   "strat_value": 6648.4091,
+   "strat_value": 3685.3067,
    "spy_value": 95.6143,
    "invested": 86.0,
    "r": -0.09996,
@@ -934,7 +934,7 @@
   },
   {
    "date": "2010-05-31",
-   "strat_value": 6649.4091,
+   "strat_value": 3686.3067,
    "spy_value": 88.9378,
    "invested": 87.0,
    "r": 0.0,
@@ -942,7 +942,7 @@
   },
   {
    "date": "2010-06-30",
-   "strat_value": 6257.8605,
+   "strat_value": 3469.6589,
    "spy_value": 85.2844,
    "invested": 88.0,
    "r": -0.059026,
@@ -950,7 +950,7 @@
   },
   {
    "date": "2010-07-31",
-   "strat_value": 6009.5281,
+   "strat_value": 3332.3993,
    "spy_value": 92.1777,
    "invested": 89.0,
    "r": -0.039837,
@@ -958,7 +958,7 @@
   },
   {
    "date": "2010-08-31",
-   "strat_value": 6949.2785,
+   "strat_value": 3854.0241,
    "spy_value": 88.9865,
    "invested": 90.0,
    "r": 0.156184,
@@ -966,7 +966,7 @@
   },
   {
    "date": "2010-09-30",
-   "strat_value": 6892.4119,
+   "strat_value": 3822.9279,
    "spy_value": 98.0452,
    "invested": 91.0,
    "r": -0.008326,
@@ -974,7 +974,7 @@
   },
   {
    "date": "2010-10-31",
-   "strat_value": 8110.9151,
+   "strat_value": 4499.3038,
    "spy_value": 102.8289,
    "invested": 92.0,
    "r": 0.176618,
@@ -982,7 +982,7 @@
   },
   {
    "date": "2010-11-30",
-   "strat_value": 8954.7571,
+   "strat_value": 4967.8932,
    "spy_value": 103.8289,
    "invested": 93.0,
    "r": 0.103902,
@@ -990,7 +990,7 @@
   },
   {
    "date": "2010-12-31",
-   "strat_value": 13023.3992,
+   "strat_value": 7225.7296,
    "spy_value": 111.837,
    "invested": 94.0,
    "r": 0.454193,
@@ -998,7 +998,7 @@
   },
   {
    "date": "2011-01-31",
-   "strat_value": 14767.608,
+   "strat_value": 8193.968,
    "spy_value": 115.4661,
    "invested": 95.0,
    "r": 0.133842,
@@ -1006,7 +1006,7 @@
   },
   {
    "date": "2011-02-28",
-   "strat_value": 14840.4068,
+   "strat_value": 8234.8085,
    "spy_value": 120.5118,
    "invested": 96.0,
    "r": 0.004862,
@@ -1014,7 +1014,7 @@
   },
   {
    "date": "2011-03-31",
-   "strat_value": 15538.0642,
+   "strat_value": 8622.3984,
    "spy_value": 121.5264,
    "invested": 97.0,
    "r": 0.04694,
@@ -1022,7 +1022,7 @@
   },
   {
    "date": "2011-04-30",
-   "strat_value": 15221.8427,
+   "strat_value": 8447.3564,
    "spy_value": 126.0749,
    "invested": 98.0,
    "r": -0.020414,
@@ -1030,7 +1030,7 @@
   },
   {
    "date": "2011-05-31",
-   "strat_value": 15414.1736,
+   "strat_value": 8554.541,
    "spy_value": 125.6498,
    "invested": 99.0,
    "r": 0.012569,
@@ -1038,7 +1038,7 @@
   },
   {
    "date": "2011-06-30",
-   "strat_value": 14088.8273,
+   "strat_value": 7819.4085,
    "spy_value": 124.5133,
    "invested": 100.0,
    "r": -0.086042,
@@ -1046,7 +1046,7 @@
   },
   {
    "date": "2011-07-31",
-   "strat_value": 13745.476,
+   "strat_value": 7629.28,
    "spy_value": 123.0025,
    "invested": 101.0,
    "r": -0.02444,
@@ -1054,7 +1054,7 @@
   },
   {
    "date": "2011-08-31",
-   "strat_value": 13209.4223,
+   "strat_value": 7332.1767,
    "spy_value": 117.1854,
    "invested": 102.0,
    "r": -0.039068,
@@ -1062,7 +1062,7 @@
   },
   {
    "date": "2011-09-30",
-   "strat_value": 13210.4223,
+   "strat_value": 7333.1767,
    "spy_value": 109.9808,
    "invested": 103.0,
    "r": 0.0,
@@ -1070,7 +1070,7 @@
   },
   {
    "date": "2011-10-31",
-   "strat_value": 13901.5316,
+   "strat_value": 7717.2833,
    "spy_value": 123.0941,
    "invested": 104.0,
    "r": 0.052236,
@@ -1078,7 +1078,7 @@
   },
   {
    "date": "2011-11-30",
-   "strat_value": 14208.4825,
+   "strat_value": 7888.1384,
    "spy_value": 123.5897,
    "invested": 105.0,
    "r": 0.022007,
@@ -1086,7 +1086,7 @@
   },
   {
    "date": "2011-12-31",
-   "strat_value": 16947.4108,
+   "strat_value": 9409.2427,
    "spy_value": 125.8915,
    "invested": 106.0,
    "r": 0.192683,
@@ -1094,7 +1094,7 @@
   },
   {
    "date": "2012-01-31",
-   "strat_value": 19524.4697,
+   "strat_value": 10840.5443,
    "spy_value": 132.7761,
    "invested": 107.0,
    "r": 0.151994,
@@ -1102,7 +1102,7 @@
   },
   {
    "date": "2012-02-29",
-   "strat_value": 18184.6561,
+   "strat_value": 10097.0557,
    "spy_value": 139.5826,
    "invested": 108.0,
    "r": -0.06867,
@@ -1110,7 +1110,7 @@
   },
   {
    "date": "2012-03-31",
-   "strat_value": 13966.0014,
+   "strat_value": 7754.9833,
    "spy_value": 145.1043,
    "invested": 109.0,
    "r": -0.232032,
@@ -1118,7 +1118,7 @@
   },
   {
    "date": "2012-04-30",
-   "strat_value": 14079.1707,
+   "strat_value": 7818.2718,
    "spy_value": 145.129,
    "invested": 110.0,
    "r": 0.008031,
@@ -1126,7 +1126,7 @@
   },
   {
    "date": "2012-05-31",
-   "strat_value": 13439.0906,
+   "strat_value": 7463.2549,
    "spy_value": 137.3531,
    "invested": 111.0,
    "r": -0.045531,
@@ -1134,7 +1134,7 @@
   },
   {
    "date": "2012-06-30",
-   "strat_value": 12258.4706,
+   "strat_value": 6808.0158,
    "spy_value": 143.9677,
    "invested": 112.0,
    "r": -0.087918,
@@ -1142,7 +1142,7 @@
   },
   {
    "date": "2012-07-31",
-   "strat_value": 11873.7779,
+   "strat_value": 6594.7987,
    "spy_value": 146.6826,
    "invested": 113.0,
    "r": -0.031461,
@@ -1150,7 +1150,7 @@
   },
   {
    "date": "2012-08-31",
-   "strat_value": 12734.6639,
+   "strat_value": 7073.419,
    "spy_value": 151.3824,
    "invested": 114.0,
    "r": 0.072413,
@@ -1158,7 +1158,7 @@
   },
   {
    "date": "2012-09-30",
-   "strat_value": 11583.1223,
+   "strat_value": 6434.2041,
    "spy_value": 156.2455,
    "invested": 115.0,
    "r": -0.090497,
@@ -1166,7 +1166,7 @@
   },
   {
    "date": "2012-10-31",
-   "strat_value": 11593.4439,
+   "strat_value": 6440.3824,
    "spy_value": 154.3839,
    "invested": 116.0,
    "r": 0.000805,
@@ -1174,7 +1174,7 @@
   },
   {
    "date": "2012-11-30",
-   "strat_value": 13443.3879,
+   "strat_value": 7468.5775,
    "spy_value": 156.2633,
    "invested": 117.0,
    "r": 0.159468,
@@ -1182,7 +1182,7 @@
   },
   {
    "date": "2012-12-31",
-   "strat_value": 14791.2576,
+   "strat_value": 8217.8858,
    "spy_value": 158.6683,
    "invested": 118.0,
    "r": 0.100181,
@@ -1190,7 +1190,7 @@
   },
   {
    "date": "2013-01-31",
-   "strat_value": 14083.1991,
+   "strat_value": 7824.9181,
    "spy_value": 167.8417,
    "invested": 119.0,
    "r": -0.047934,
@@ -1198,7 +1198,7 @@
   },
   {
    "date": "2013-02-28",
-   "strat_value": 15217.36,
+   "strat_value": 8455.5616,
    "spy_value": 170.996,
    "invested": 120.0,
    "r": 0.080456,
@@ -1206,7 +1206,7 @@
   },
   {
    "date": "2013-03-31",
-   "strat_value": 16053.1744,
+   "strat_value": 8920.4526,
    "spy_value": 178.5269,
    "invested": 121.0,
    "r": 0.054856,
@@ -1214,7 +1214,7 @@
   },
   {
    "date": "2013-04-30",
-   "strat_value": 15732.8528,
+   "strat_value": 8742.8913,
    "spy_value": 182.976,
    "invested": 122.0,
    "r": -0.020015,
@@ -1222,7 +1222,7 @@
   },
   {
    "date": "2013-05-31",
-   "strat_value": 15645.8749,
+   "strat_value": 8694.9986,
    "spy_value": 188.3196,
    "invested": 123.0,
    "r": -0.005592,
@@ -1230,7 +1230,7 @@
   },
   {
    "date": "2013-06-30",
-   "strat_value": 17143.1437,
+   "strat_value": 9527.5737,
    "spy_value": 186.7933,
    "invested": 124.0,
    "r": 0.095627,
@@ -1238,7 +1238,7 @@
   },
   {
    "date": "2013-07-31",
-   "strat_value": 16367.5974,
+   "strat_value": 9096.9757,
    "spy_value": 197.4979,
    "invested": 125.0,
    "r": -0.045295,
@@ -1246,7 +1246,7 @@
   },
   {
    "date": "2013-08-31",
-   "strat_value": 16531.4238,
+   "strat_value": 9188.4776,
    "spy_value": 192.5444,
    "invested": 126.0,
    "r": 0.009947,
@@ -1254,7 +1254,7 @@
   },
   {
    "date": "2013-09-30",
-   "strat_value": 17393.5642,
+   "strat_value": 9668.1389,
    "spy_value": 199.6694,
    "invested": 127.0,
    "r": 0.052088,
@@ -1262,7 +1262,7 @@
   },
   {
    "date": "2013-10-31",
-   "strat_value": 17757.1712,
+   "strat_value": 9870.7017,
    "spy_value": 209.9618,
    "invested": 128.0,
    "r": 0.020846,
@@ -1270,7 +1270,7 @@
   },
   {
    "date": "2013-11-30",
-   "strat_value": 19244.5677,
+   "strat_value": 10697.9841,
    "spy_value": 217.2142,
    "invested": 129.0,
    "r": 0.083702,
@@ -1278,7 +1278,7 @@
   },
   {
    "date": "2013-12-31",
-   "strat_value": 19443.9282,
+   "strat_value": 10809.2565,
    "spy_value": 223.8717,
    "invested": 130.0,
    "r": 0.010307,
@@ -1286,7 +1286,7 @@
   },
   {
    "date": "2014-01-31",
-   "strat_value": 21833.8127,
+   "strat_value": 12138.3383,
    "spy_value": 216.9454,
    "invested": 131.0,
    "r": 0.122854,
@@ -1294,7 +1294,7 @@
   },
   {
    "date": "2014-02-28",
-   "strat_value": 21018.7269,
+   "strat_value": 11685.6251,
    "spy_value": 227.8654,
    "invested": 132.0,
    "r": -0.037375,
@@ -1302,7 +1302,7 @@
   },
   {
    "date": "2014-03-31",
-   "strat_value": 20698.5359,
+   "strat_value": 11508.0481,
    "spy_value": 230.7638,
    "invested": 133.0,
    "r": -0.01528,
@@ -1310,7 +1310,7 @@
   },
   {
    "date": "2014-04-30",
-   "strat_value": 20986.0236,
+   "strat_value": 11668.3368,
    "spy_value": 233.375,
    "invested": 134.0,
    "r": 0.01384,
@@ -1318,447 +1318,447 @@
   },
   {
    "date": "2014-05-31",
-   "strat_value": 21420.3867,
+   "strat_value": 11668.109,
    "spy_value": 239.8139,
    "invested": 135.0,
-   "r": 0.020649,
+   "r": -0.000105,
    "s": 0.023206
   },
   {
    "date": "2014-06-30",
-   "strat_value": 20362.0244,
+   "strat_value": 11124.0462,
    "spy_value": 245.7855,
    "invested": 136.0,
-   "r": -0.049453,
+   "r": -0.04671,
    "s": 0.020645
   },
   {
    "date": "2014-07-31",
-   "strat_value": 22850.5063,
+   "strat_value": 12791.2409,
    "spy_value": 243.4693,
    "invested": 137.0,
-   "r": 0.122157,
+   "r": 0.14977,
    "s": -0.013437
   },
   {
    "date": "2014-08-31",
-   "strat_value": 21637.652,
+   "strat_value": 12870.7208,
    "spy_value": 254.117,
    "invested": 138.0,
-   "r": -0.053119,
+   "r": 0.006135,
    "s": 0.039464
   },
   {
    "date": "2014-09-30",
-   "strat_value": 21170.4967,
+   "strat_value": 13196.4598,
    "spy_value": 253.5554,
    "invested": 139.0,
-   "r": -0.021635,
+   "r": 0.025229,
    "s": -0.006121
   },
   {
    "date": "2014-10-31",
-   "strat_value": 21046.9429,
+   "strat_value": 14257.3693,
    "spy_value": 260.5505,
    "invested": 140.0,
-   "r": -0.005883,
+   "r": 0.080312,
    "s": 0.023551
   },
   {
    "date": "2014-11-30",
-   "strat_value": 20390.3687,
+   "strat_value": 14522.1166,
    "spy_value": 268.7358,
    "invested": 141.0,
-   "r": -0.031242,
+   "r": 0.018498,
    "s": 0.027472
   },
   {
    "date": "2014-12-31",
-   "strat_value": 22457.2513,
+   "strat_value": 14380.5886,
    "spy_value": 269.0516,
    "invested": 142.0,
-   "r": 0.101312,
+   "r": -0.009814,
    "s": -0.002537
   },
   {
    "date": "2015-01-31",
-   "strat_value": 25551.4275,
+   "strat_value": 17213.7321,
    "spy_value": 262.0501,
    "invested": 143.0,
-   "r": 0.13773,
+   "r": 0.196928,
    "s": -0.02963
   },
   {
    "date": "2015-02-28",
-   "strat_value": 25508.0043,
+   "strat_value": 16955.7607,
    "spy_value": 277.8347,
    "invested": 144.0,
-   "r": -0.001739,
+   "r": -0.015044,
    "s": 0.056205
   },
   {
    "date": "2015-03-31",
-   "strat_value": 25638.261,
+   "strat_value": 16796.8478,
    "spy_value": 274.4555,
    "invested": 145.0,
-   "r": 0.005067,
+   "r": -0.009431,
    "s": -0.015705
   },
   {
    "date": "2015-04-30",
-   "strat_value": 28409.2429,
+   "strat_value": 19051.4107,
    "spy_value": 278.1643,
    "invested": 146.0,
-   "r": 0.108037,
+   "r": 0.134158,
    "s": 0.009834
   },
   {
    "date": "2015-05-31",
-   "strat_value": 26397.7629,
+   "strat_value": 18478.5008,
    "spy_value": 282.7533,
    "invested": 147.0,
-   "r": -0.070836,
+   "r": -0.030123,
    "s": 0.012856
   },
   {
    "date": "2015-06-30",
-   "strat_value": 25071.3991,
+   "strat_value": 20106.44,
    "spy_value": 277.9897,
    "invested": 148.0,
-   "r": -0.050281,
+   "r": 0.08804,
    "s": -0.020312
   },
   {
    "date": "2015-07-31",
-   "strat_value": 23667.9486,
+   "strat_value": 21682.8255,
    "spy_value": 285.2918,
    "invested": 149.0,
-   "r": -0.056016,
+   "r": 0.078348,
    "s": 0.022589
   },
   {
    "date": "2015-08-31",
-   "strat_value": 22389.546,
+   "strat_value": 21945.3063,
    "spy_value": 268.8423,
    "invested": 150.0,
-   "r": -0.054054,
+   "r": 0.012059,
    "s": -0.06095
   },
   {
    "date": "2015-09-30",
-   "strat_value": 22535.9391,
+   "strat_value": 24313.617,
    "spy_value": 262.957,
    "invested": 151.0,
-   "r": 0.006494,
+   "r": 0.107868,
    "s": -0.025516
   },
   {
    "date": "2015-10-31",
-   "strat_value": 22019.2642,
+   "strat_value": 27450.2438,
    "spy_value": 286.409,
    "invested": 152.0,
-   "r": -0.02297,
+   "r": 0.128961,
    "s": 0.08506
   },
   {
    "date": "2015-11-30",
-   "strat_value": 17569.4926,
+   "strat_value": 27222.2553,
    "spy_value": 288.4597,
    "invested": 153.0,
-   "r": -0.202122,
+   "r": -0.008342,
    "s": 0.003655
   },
   {
    "date": "2015-12-31",
-   "strat_value": 13868.7552,
+   "strat_value": 23258.9206,
    "spy_value": 284.457,
    "invested": 154.0,
-   "r": -0.210679,
+   "r": -0.145623,
    "s": -0.017283
   },
   {
    "date": "2016-01-31",
-   "strat_value": 10836.3698,
+   "strat_value": 25300.9786,
    "spy_value": 271.2451,
    "invested": 155.0,
-   "r": -0.218705,
+   "r": 0.08775,
    "s": -0.049787
   },
   {
    "date": "2016-02-29",
-   "strat_value": 13134.1109,
+   "strat_value": 29117.0868,
    "spy_value": 272.0202,
    "invested": 156.0,
-   "r": 0.211928,
+   "r": 0.150783,
    "s": -0.000826
   },
   {
    "date": "2016-03-31",
-   "strat_value": 13628.0379,
+   "strat_value": 29018.1378,
    "spy_value": 291.3852,
    "invested": 157.0,
-   "r": 0.037527,
+   "r": -0.003433,
    "s": 0.067266
   },
   {
    "date": "2016-04-30",
-   "strat_value": 14457.9871,
+   "strat_value": 34951.0035,
    "spy_value": 293.5376,
    "invested": 158.0,
-   "r": 0.060822,
+   "r": 0.204412,
    "s": 0.003941
   },
   {
    "date": "2016-05-31",
-   "strat_value": 14092.0869,
+   "strat_value": 34128.3493,
    "spy_value": 299.5481,
    "invested": 159.0,
-   "r": -0.025375,
+   "r": -0.023565,
    "s": 0.017011
   },
   {
    "date": "2016-06-30",
-   "strat_value": 16793.5968,
+   "strat_value": 39777.2491,
    "spy_value": 301.5927,
    "invested": 160.0,
-   "r": 0.191619,
+   "r": 0.165485,
    "s": 0.003476
   },
   {
    "date": "2016-07-31",
-   "strat_value": 18787.7546,
+   "strat_value": 41805.5708,
    "spy_value": 313.6288,
    "invested": 161.0,
-   "r": 0.118679,
+   "r": 0.050966,
    "s": 0.036472
   },
   {
    "date": "2016-08-31",
-   "strat_value": 20909.9646,
+   "strat_value": 46141.614,
    "spy_value": 315.0056,
    "invested": 162.0,
-   "r": 0.112898,
+   "r": 0.103693,
    "s": 0.001198
   },
   {
    "date": "2016-09-30",
-   "strat_value": 21174.1293,
+   "strat_value": 45486.4971,
    "spy_value": 316.0238,
    "invested": 163.0,
-   "r": 0.012585,
+   "r": -0.014219,
    "s": 5.8e-05
   },
   {
    "date": "2016-10-31",
-   "strat_value": 28210.4782,
+   "strat_value": 53684.654,
    "spy_value": 311.5276,
    "invested": 164.0,
-   "r": 0.332246,
+   "r": 0.180207,
    "s": -0.017337
   },
   {
    "date": "2016-11-30",
-   "strat_value": 32952.6064,
+   "strat_value": 57162.5471,
    "spy_value": 324.0406,
    "invested": 165.0,
-   "r": 0.168057,
+   "r": 0.064764,
    "s": 0.036838
   },
   {
    "date": "2016-12-31",
-   "strat_value": 32873.6841,
+   "strat_value": 58221.3665,
    "spy_value": 331.6298,
    "invested": 166.0,
-   "r": -0.002425,
+   "r": 0.018505,
    "s": 0.020272
   },
   {
    "date": "2017-01-31",
-   "strat_value": 28402.1163,
+   "strat_value": 60691.0087,
    "spy_value": 338.582,
    "invested": 167.0,
-   "r": -0.136049,
+   "r": 0.0424,
    "s": 0.017895
   },
   {
    "date": "2017-02-28",
-   "strat_value": 27225.2231,
+   "strat_value": 64052.1003,
    "spy_value": 352.9248,
    "invested": 168.0,
-   "r": -0.041471,
+   "r": 0.055363,
    "s": 0.039292
   },
   {
    "date": "2017-03-31",
-   "strat_value": 25565.2941,
+   "strat_value": 64375.5665,
    "spy_value": 354.3671,
    "invested": 169.0,
-   "r": -0.061005,
+   "r": 0.005034,
    "s": 0.00125
   },
   {
    "date": "2017-04-30",
-   "strat_value": 27508.7475,
+   "strat_value": 76680.771,
    "spy_value": 358.8946,
    "invested": 170.0,
-   "r": 0.075977,
+   "r": 0.191129,
    "s": 0.009926
   },
   {
    "date": "2017-05-31",
-   "strat_value": 27824.936,
+   "strat_value": 74390.4955,
    "spy_value": 364.9737,
    "invested": 171.0,
-   "r": 0.011457,
+   "r": -0.02988,
    "s": 0.014113
   },
   {
    "date": "2017-06-30",
-   "strat_value": 27541.5741,
+   "strat_value": 82457.2833,
    "spy_value": 368.3068,
    "invested": 172.0,
-   "r": -0.010219,
+   "r": 0.108424,
    "s": 0.006375
   },
   {
    "date": "2017-07-31",
-   "strat_value": 24731.9909,
+   "strat_value": 84211.1226,
    "spy_value": 376.8976,
    "invested": 173.0,
-   "r": -0.102045,
+   "r": 0.021257,
    "s": 0.020554
   },
   {
    "date": "2017-08-31",
-   "strat_value": 26770.9031,
+   "strat_value": 88777.9555,
    "spy_value": 379.0002,
    "invested": 174.0,
-   "r": 0.082397,
+   "r": 0.054218,
    "s": 0.002918
   },
   {
    "date": "2017-09-30",
-   "strat_value": 27185.9292,
+   "strat_value": 99277.4594,
    "spy_value": 387.6569,
    "invested": 175.0,
-   "r": 0.015465,
+   "r": 0.118254,
    "s": 0.020149
   },
   {
    "date": "2017-10-31",
-   "strat_value": 23112.9838,
+   "strat_value": 97617.4473,
    "spy_value": 397.8153,
    "invested": 176.0,
-   "r": -0.149849,
+   "r": -0.016731,
    "s": 0.023564
   },
   {
    "date": "2017-11-30",
-   "strat_value": 23722.4346,
+   "strat_value": 95177.9198,
    "spy_value": 411.0055,
    "invested": 177.0,
-   "r": 0.026324,
+   "r": -0.025001,
    "s": 0.030566
   },
   {
    "date": "2017-12-31",
-   "strat_value": 30341.7835,
+   "strat_value": 106083.947,
    "spy_value": 417.0023,
    "invested": 178.0,
-   "r": 0.278979,
+   "r": 0.114574,
    "s": 0.012128
   },
   {
    "date": "2018-01-31",
-   "strat_value": 35006.7782,
+   "strat_value": 104507.6874,
    "spy_value": 441.5604,
    "invested": 179.0,
-   "r": 0.15371,
+   "r": -0.014868,
    "s": 0.056359
   },
   {
    "date": "2018-02-28",
-   "strat_value": 33657.2534,
+   "strat_value": 99054.463,
    "spy_value": 426.4688,
    "invested": 180.0,
-   "r": -0.038578,
+   "r": -0.052189,
    "s": -0.03636
   },
   {
    "date": "2018-03-31",
-   "strat_value": 32995.9847,
+   "strat_value": 96251.0619,
    "spy_value": 415.7517,
    "invested": 181.0,
-   "r": -0.019676,
+   "r": -0.028311,
    "s": -0.027411
   },
   {
    "date": "2018-04-30",
-   "strat_value": 34689.5781,
+   "strat_value": 102136.6922,
    "spy_value": 418.9055,
    "invested": 182.0,
-   "r": 0.051295,
+   "r": 0.061138,
    "s": 0.005168
   },
   {
    "date": "2018-05-31",
-   "strat_value": 32826.6416,
+   "strat_value": 100834.7396,
    "spy_value": 430.113,
    "invested": 183.0,
-   "r": -0.05373,
+   "r": -0.012757,
    "s": 0.024309
   },
   {
    "date": "2018-06-30",
-   "strat_value": 33859.6915,
+   "strat_value": 107718.8965,
    "spy_value": 433.5923,
    "invested": 184.0,
-   "r": 0.031438,
+   "r": 0.068261,
    "s": 0.005751
   },
   {
    "date": "2018-07-31",
-   "strat_value": 36802.1456,
+   "strat_value": 110674.438,
    "spy_value": 450.6926,
    "invested": 185.0,
-   "r": 0.086869,
+   "r": 0.027428,
    "s": 0.037047
   },
   {
    "date": "2018-08-31",
-   "strat_value": 38155.0953,
+   "strat_value": 104240.8723,
    "spy_value": 466.1105,
    "invested": 186.0,
-   "r": 0.036735,
+   "r": -0.058139,
    "s": 0.03192
   },
   {
    "date": "2018-09-30",
-   "strat_value": 29763.4322,
+   "strat_value": 87798.2234,
    "spy_value": 469.8877,
    "invested": 187.0,
-   "r": -0.219956,
+   "r": -0.157745,
    "s": 0.005946
   },
   {
    "date": "2018-10-31",
-   "strat_value": 33791.4564,
+   "strat_value": 82680.8803,
    "spy_value": 438.3472,
    "invested": 188.0,
-   "r": 0.135297,
+   "r": -0.058296,
    "s": -0.069105
   },
   {
    "date": "2018-11-30",
-   "strat_value": 29414.6561,
+   "strat_value": 69881.7545,
    "spy_value": 447.4969,
    "invested": 189.0,
-   "r": -0.12955,
+   "r": -0.154812,
    "s": 0.01855
   },
   {
    "date": "2018-12-31",
-   "strat_value": 29415.6561,
+   "strat_value": 69882.7545,
    "spy_value": 409.0074,
    "invested": 190.0,
    "r": 0.0,
@@ -1766,7 +1766,7 @@
   },
   {
    "date": "2019-01-31",
-   "strat_value": 37529.4732,
+   "strat_value": 89156.9894,
    "spy_value": 442.8349,
    "invested": 191.0,
    "r": 0.27579,
@@ -1774,7 +1774,7 @@
   },
   {
    "date": "2019-02-28",
-   "strat_value": 37747.5197,
+   "strat_value": 89673.6085,
    "spy_value": 458.2222,
    "invested": 192.0,
    "r": 0.005783,
@@ -1782,7 +1782,7 @@
   },
   {
    "date": "2019-03-31",
-   "strat_value": 37834.2113,
+   "strat_value": 89878.1758,
    "spy_value": 467.5342,
    "invested": 193.0,
    "r": 0.00227,
@@ -1790,7 +1790,7 @@
   },
   {
    "date": "2019-04-30",
-   "strat_value": 35348.8965,
+   "strat_value": 83972.8277,
    "spy_value": 487.6751,
    "invested": 194.0,
    "r": -0.065714,
@@ -1798,7 +1798,7 @@
   },
   {
    "date": "2019-05-31",
-   "strat_value": 42218.5083,
+   "strat_value": 100290.2439,
    "spy_value": 457.5116,
    "invested": 195.0,
    "r": 0.194304,
@@ -1806,7 +1806,7 @@
   },
   {
    "date": "2019-06-30",
-   "strat_value": 41111.5122,
+   "strat_value": 97659.2307,
    "spy_value": 490.4179,
    "invested": 196.0,
    "r": -0.026244,
@@ -1814,7 +1814,7 @@
   },
   {
    "date": "2019-07-31",
-   "strat_value": 41653.3795,
+   "strat_value": 98945.0274,
    "spy_value": 498.848,
    "invested": 197.0,
    "r": 0.013156,
@@ -1822,7 +1822,7 @@
   },
   {
    "date": "2019-08-31",
-   "strat_value": 43070.0257,
+   "strat_value": 102308.7607,
    "spy_value": 491.4787,
    "invested": 198.0,
    "r": 0.033986,
@@ -1830,7 +1830,7 @@
   },
   {
    "date": "2019-09-30",
-   "strat_value": 42093.7275,
+   "strat_value": 99988.3127,
    "spy_value": 502.0613,
    "invested": 199.0,
    "r": -0.02269,
@@ -1838,7 +1838,7 @@
   },
   {
    "date": "2019-10-31",
-   "strat_value": 44681.7622,
+   "strat_value": 106134.4011,
    "spy_value": 514.1813,
    "invested": 200.0,
    "r": 0.061457,
@@ -1846,7 +1846,7 @@
   },
   {
    "date": "2019-11-30",
-   "strat_value": 45806.3002,
+   "strat_value": 108804.1519,
    "spy_value": 533.8299,
    "invested": 201.0,
    "r": 0.025145,
@@ -1854,7 +1854,7 @@
   },
   {
    "date": "2019-12-31",
-   "strat_value": 49268.0421,
+   "strat_value": 117025.382,
    "spy_value": 550.3697,
    "invested": 202.0,
    "r": 0.07555,
@@ -1862,7 +1862,7 @@
   },
   {
    "date": "2020-01-31",
-   "strat_value": 49950.8102,
+   "strat_value": 118645.7529,
    "spy_value": 551.1471,
    "invested": 203.0,
    "r": 0.013838,
@@ -1870,7 +1870,7 @@
   },
   {
    "date": "2020-02-29",
-   "strat_value": 49135.6637,
+   "strat_value": 116708.222,
    "spy_value": 508.4358,
    "invested": 204.0,
    "r": -0.016339,
@@ -1878,7 +1878,7 @@
   },
   {
    "date": "2020-03-31",
-   "strat_value": 49136.6637,
+   "strat_value": 116709.222,
    "spy_value": 445.822,
    "invested": 205.0,
    "r": 0.0,
@@ -1886,7 +1886,7 @@
   },
   {
    "date": "2020-04-30",
-   "strat_value": 47898.7765,
+   "strat_value": 113767.6563,
    "spy_value": 503.561,
    "invested": 206.0,
    "r": -0.025213,
@@ -1894,7 +1894,7 @@
   },
   {
    "date": "2020-05-31",
-   "strat_value": 48693.7026,
+   "strat_value": 115654.3417,
    "spy_value": 528.601,
    "invested": 207.0,
    "r": 0.016575,
@@ -1902,7 +1902,7 @@
   },
   {
    "date": "2020-06-30",
-   "strat_value": 55462.8544,
+   "strat_value": 131730.456,
    "spy_value": 538.9932,
    "invested": 208.0,
    "r": 0.138992,
@@ -1910,7 +1910,7 @@
   },
   {
    "date": "2020-07-31",
-   "strat_value": 57904.3773,
+   "strat_value": 137527.9092,
    "spy_value": 571.7945,
    "invested": 209.0,
    "r": 0.044002,
@@ -1918,7 +1918,7 @@
   },
   {
    "date": "2020-08-31",
-   "strat_value": 45348.7153,
+   "strat_value": 107706.0479,
    "spy_value": 612.7737,
    "invested": 210.0,
    "r": -0.216848,
@@ -1926,7 +1926,7 @@
   },
   {
    "date": "2020-09-30",
-   "strat_value": 42565.6123,
+   "strat_value": 101094.7128,
    "spy_value": 590.7917,
    "invested": 211.0,
    "r": -0.061392,
@@ -1934,7 +1934,7 @@
   },
   {
    "date": "2020-10-31",
-   "strat_value": 58369.045,
+   "strat_value": 138626.4937,
    "spy_value": 577.0363,
    "invested": 212.0,
    "r": 0.37124,
@@ -1942,7 +1942,7 @@
   },
   {
    "date": "2020-11-30",
-   "strat_value": 66428.4867,
+   "strat_value": 157766.1046,
    "spy_value": 640.9133,
    "invested": 213.0,
    "r": 0.138058,
@@ -1950,7 +1950,7 @@
   },
   {
    "date": "2020-12-31",
-   "strat_value": 69848.29,
+   "strat_value": 165886.6118,
    "spy_value": 665.6952,
    "invested": 214.0,
    "r": 0.051465,
@@ -1958,7 +1958,7 @@
   },
   {
    "date": "2021-01-31",
-   "strat_value": 79487.7544,
+   "strat_value": 188778.3506,
    "spy_value": 659.9012,
    "invested": 215.0,
    "r": 0.137989,
@@ -1966,7 +1966,7 @@
   },
   {
    "date": "2021-02-28",
-   "strat_value": 85320.8555,
+   "strat_value": 202630.1179,
    "spy_value": 679.2779,
    "invested": 216.0,
    "r": 0.07337,
@@ -1974,7 +1974,7 @@
   },
   {
    "date": "2021-03-31",
-   "strat_value": 92648.7469,
+   "strat_value": 220031.7732,
    "spy_value": 711.1619,
    "invested": 217.0,
    "r": 0.085874,
@@ -1982,7 +1982,7 @@
   },
   {
    "date": "2021-04-30",
-   "strat_value": 88093.7214,
+   "strat_value": 209212.7229,
    "spy_value": 749.8429,
    "invested": 218.0,
    "r": -0.049175,
@@ -1990,7 +1990,7 @@
   },
   {
    "date": "2021-05-31",
-   "strat_value": 103388.8254,
+   "strat_value": 245535.2685,
    "spy_value": 755.7729,
    "invested": 219.0,
    "r": 0.17361,
@@ -1998,7 +1998,7 @@
   },
   {
    "date": "2021-06-30",
-   "strat_value": 100318.2196,
+   "strat_value": 238241.6374,
    "spy_value": 773.7454,
    "invested": 220.0,
    "r": -0.029709,
@@ -2006,7 +2006,7 @@
   },
   {
    "date": "2021-07-31",
-   "strat_value": 108525.7532,
+   "strat_value": 257731.886,
    "spy_value": 793.659,
    "invested": 221.0,
    "r": 0.081804,
@@ -2014,7 +2014,7 @@
   },
   {
    "date": "2021-08-31",
-   "strat_value": 105390.465,
+   "strat_value": 250284.7261,
    "spy_value": 818.3078,
    "invested": 222.0,
    "r": -0.028899,
@@ -2022,7 +2022,7 @@
   },
   {
    "date": "2021-09-30",
-   "strat_value": 113292.7153,
+   "strat_value": 269049.7709,
    "spy_value": 781.1236,
    "invested": 223.0,
    "r": 0.07497,
@@ -2030,7 +2030,7 @@
   },
   {
    "date": "2021-10-31",
-   "strat_value": 107922.7838,
+   "strat_value": 256295.8422,
    "spy_value": 837.0002,
    "invested": 224.0,
    "r": -0.047407,
@@ -2038,7 +2038,7 @@
   },
   {
    "date": "2021-11-30",
-   "strat_value": 111074.7552,
+   "strat_value": 263779.7529,
    "spy_value": 831.267,
    "invested": 225.0,
    "r": 0.029196,
@@ -2046,7 +2046,7 @@
   },
   {
    "date": "2021-12-31",
-   "strat_value": 94189.3539,
+   "strat_value": 223679.2235,
    "spy_value": 870.7575,
    "invested": 226.0,
    "r": -0.152026,
@@ -2054,7 +2054,7 @@
   },
   {
    "date": "2022-01-31",
-   "strat_value": 95630.855,
+   "strat_value": 227101.0791,
    "spy_value": 825.7798,
    "invested": 227.0,
    "r": 0.015294,
@@ -2062,7 +2062,7 @@
   },
   {
    "date": "2022-02-28",
-   "strat_value": 96846.4972,
+   "strat_value": 229986.555,
    "spy_value": 802.3758,
    "invested": 228.0,
    "r": 0.012701,
@@ -2070,7 +2070,7 @@
   },
   {
    "date": "2022-03-31",
-   "strat_value": 82937.9378,
+   "strat_value": 196955.978,
    "spy_value": 833.5749,
    "invested": 229.0,
    "r": -0.143623,
@@ -2078,7 +2078,7 @@
   },
   {
    "date": "2022-04-30",
-   "strat_value": 82938.9378,
+   "strat_value": 196956.978,
    "spy_value": 761.3251,
    "invested": 230.0,
    "r": 0.0,
@@ -2086,7 +2086,7 @@
   },
   {
    "date": "2022-05-31",
-   "strat_value": 65057.1707,
+   "strat_value": 154491.6614,
    "spy_value": 764.0459,
    "invested": 231.0,
    "r": -0.215611,
@@ -2094,7 +2094,7 @@
   },
   {
    "date": "2022-06-30",
-   "strat_value": 65058.1707,
+   "strat_value": 154492.6614,
    "spy_value": 701.9599,
    "invested": 232.0,
    "r": 0.0,
@@ -2102,7 +2102,7 @@
   },
   {
    "date": "2022-07-31",
-   "strat_value": 60998.8282,
+   "strat_value": 144851.7129,
    "spy_value": 767.6936,
    "invested": 233.0,
    "r": -0.06241,
@@ -2110,7 +2110,7 @@
   },
   {
    "date": "2022-08-31",
-   "strat_value": 47201.5072,
+   "strat_value": 112086.6497,
    "spy_value": 737.3294,
    "invested": 234.0,
    "r": -0.226203,
@@ -2118,7 +2118,7 @@
   },
   {
    "date": "2022-09-30",
-   "strat_value": 47202.5072,
+   "strat_value": 112087.6497,
    "spy_value": 670.0739,
    "invested": 235.0,
    "r": 0.0,
@@ -2126,7 +2126,7 @@
   },
   {
    "date": "2022-10-31",
-   "strat_value": 55468.403,
+   "strat_value": 131714.3314,
    "spy_value": 725.6159,
    "invested": 236.0,
    "r": 0.175091,
@@ -2134,7 +2134,7 @@
   },
   {
    "date": "2022-11-30",
-   "strat_value": 46462.29,
+   "strat_value": 110327.4164,
    "spy_value": 767.0096,
    "invested": 237.0,
    "r": -0.16238,
@@ -2142,7 +2142,7 @@
   },
   {
    "date": "2022-12-31",
-   "strat_value": 62244.5506,
+   "strat_value": 147801.4729,
    "spy_value": 723.7505,
    "invested": 238.0,
    "r": 0.33965,
@@ -2150,7 +2150,7 @@
   },
   {
    "date": "2023-01-31",
-   "strat_value": 67530.9847,
+   "strat_value": 160352.7713,
    "spy_value": 770.3282,
    "invested": 239.0,
    "r": 0.084913,
@@ -2158,7 +2158,7 @@
   },
   {
    "date": "2023-02-28",
-   "strat_value": 72678.1342,
+   "strat_value": 172573.2328,
    "spy_value": 751.9349,
    "invested": 240.0,
    "r": 0.076203,
@@ -2166,7 +2166,7 @@
   },
   {
    "date": "2023-03-31",
-   "strat_value": 69277.0684,
+   "strat_value": 164496.1385,
    "spy_value": 780.8521,
    "invested": 241.0,
    "r": -0.046809,
@@ -2174,7 +2174,7 @@
   },
   {
    "date": "2023-04-30",
-   "strat_value": 89464.4261,
+   "strat_value": 212428.5855,
    "spy_value": 794.342,
    "invested": 242.0,
    "r": 0.291382,
@@ -2182,7 +2182,7 @@
   },
   {
    "date": "2023-05-31",
-   "strat_value": 99677.2177,
+   "strat_value": 236676.7922,
    "spy_value": 799.0137,
    "invested": 243.0,
    "r": 0.114142,
@@ -2190,7 +2190,7 @@
   },
   {
    "date": "2023-06-30",
-   "strat_value": 124241.5205,
+   "strat_value": 295001.3498,
    "spy_value": 851.8544,
    "invested": 244.0,
    "r": 0.246426,
@@ -2198,7 +2198,7 @@
   },
   {
    "date": "2023-07-31",
-   "strat_value": 116439.1303,
+   "strat_value": 276473.9229,
    "spy_value": 880.771,
    "invested": 245.0,
    "r": -0.062808,
@@ -2206,7 +2206,7 @@
   },
   {
    "date": "2023-08-31",
-   "strat_value": 104222.6027,
+   "strat_value": 247465.6803,
    "spy_value": 867.4404,
    "invested": 246.0,
    "r": -0.104925,
@@ -2214,7 +2214,7 @@
   },
   {
    "date": "2023-09-30",
-   "strat_value": 94416.3165,
+   "strat_value": 224180.4331,
    "spy_value": 827.2464,
    "invested": 247.0,
    "r": -0.094099,
@@ -2222,7 +2222,7 @@
   },
   {
    "date": "2023-10-31",
-   "strat_value": 111229.6063,
+   "strat_value": 264099.9923,
    "spy_value": 810.2663,
    "invested": 248.0,
    "r": 0.178064,
@@ -2230,7 +2230,7 @@
   },
   {
    "date": "2023-11-30",
-   "strat_value": 134313.0673,
+   "strat_value": 318906.9586,
    "spy_value": 885.3705,
    "invested": 249.0,
    "r": 0.207519,
@@ -2238,7 +2238,7 @@
   },
   {
    "date": "2023-12-31",
-   "strat_value": 125060.4084,
+   "strat_value": 296936.578,
    "spy_value": 926.8381,
    "invested": 250.0,
    "r": -0.068896,
@@ -2246,7 +2246,7 @@
   },
   {
    "date": "2024-01-31",
-   "strat_value": 128784.0239,
+   "strat_value": 305776.3114,
    "spy_value": 942.6153,
    "invested": 251.0,
    "r": 0.029766,
@@ -2254,7 +2254,7 @@
   },
   {
    "date": "2024-02-29",
-   "strat_value": 135313.4608,
+   "strat_value": 321277.9325,
    "spy_value": 992.8594,
    "invested": 252.0,
    "r": 0.050693,
@@ -2262,7 +2262,7 @@
   },
   {
    "date": "2024-03-31",
-   "strat_value": 123315.5829,
+   "strat_value": 292789.8365,
    "spy_value": 1026.3607,
    "invested": 253.0,
    "r": -0.088674,
@@ -2270,7 +2270,7 @@
   },
   {
    "date": "2024-04-30",
-   "strat_value": 125002.4362,
+   "strat_value": 296793.5617,
    "spy_value": 985.9379,
    "invested": 254.0,
    "r": 0.013671,
@@ -2278,7 +2278,7 @@
   },
   {
    "date": "2024-05-31",
-   "strat_value": 120570.2392,
+   "strat_value": 286268.8609,
    "spy_value": 1036.8568,
    "invested": 255.0,
    "r": -0.035465,
@@ -2286,7 +2286,7 @@
   },
   {
    "date": "2024-06-30",
-   "strat_value": 125818.0143,
+   "strat_value": 298727.1731,
    "spy_value": 1074.4726,
    "invested": 256.0,
    "r": 0.043516,
@@ -2294,7 +2294,7 @@
   },
   {
    "date": "2024-07-31",
-   "strat_value": 131070.8624,
+   "strat_value": 311197.4729,
    "spy_value": 1088.4955,
    "invested": 257.0,
    "r": 0.041741,
@@ -2302,7 +2302,7 @@
   },
   {
    "date": "2024-08-31",
-   "strat_value": 136618.0688,
+   "strat_value": 324366.6001,
    "spy_value": 1114.9524,
    "invested": 258.0,
    "r": 0.042314,
@@ -2310,7 +2310,7 @@
   },
   {
    "date": "2024-09-30",
-   "strat_value": 131520.2891,
+   "strat_value": 312261.8307,
    "spy_value": 1139.3925,
    "invested": 259.0,
    "r": -0.037321,
@@ -2318,7 +2318,7 @@
   },
   {
    "date": "2024-10-31",
-   "strat_value": 144251.3553,
+   "strat_value": 342487.0365,
    "spy_value": 1130.216,
    "invested": 260.0,
    "r": 0.096791,
@@ -2326,7 +2326,7 @@
   },
   {
    "date": "2024-11-30",
-   "strat_value": 132088.3549,
+   "strat_value": 313607.9216,
    "spy_value": 1198.6746,
    "invested": 261.0,
    "r": -0.084324,
@@ -2334,7 +2334,7 @@
   },
   {
    "date": "2024-12-31",
-   "strat_value": 136179.0989,
+   "strat_value": 323318.8654,
    "spy_value": 1170.8101,
    "invested": 262.0,
    "r": 0.030962,
@@ -2342,7 +2342,7 @@
   },
   {
    "date": "2025-01-31",
-   "strat_value": 126724.3293,
+   "strat_value": 300869.9026,
    "spy_value": 1203.2808,
    "invested": 263.0,
    "r": -0.069436,
@@ -2350,7 +2350,7 @@
   },
   {
    "date": "2025-02-28",
-   "strat_value": 114126.3173,
+   "strat_value": 270958.3653,
    "spy_value": 1188.9926,
    "invested": 264.0,
    "r": -0.09942,
@@ -2358,7 +2358,7 @@
   },
   {
    "date": "2025-03-31",
-   "strat_value": 109986.7909,
+   "strat_value": 261128.9896,
    "spy_value": 1123.6872,
    "invested": 265.0,
    "r": -0.03628,
@@ -2366,7 +2366,7 @@
   },
   {
    "date": "2025-04-30",
-   "strat_value": 132159.7145,
+   "strat_value": 313769.9612,
    "spy_value": 1114.9359,
    "invested": 266.0,
    "r": 0.201585,
@@ -2374,7 +2374,7 @@
   },
   {
    "date": "2025-05-31",
-   "strat_value": 147457.5692,
+   "strat_value": 350088.1741,
    "spy_value": 1186.0668,
    "invested": 267.0,
    "r": 0.115744,
@@ -2382,7 +2382,7 @@
   },
   {
    "date": "2025-06-30",
-   "strat_value": 144567.7101,
+   "strat_value": 343225.833,
    "spy_value": 1248.0657,
    "invested": 268.0,
    "r": -0.019605,
@@ -2390,7 +2390,7 @@
   },
   {
    "date": "2025-07-31",
-   "strat_value": 155114.1381,
+   "strat_value": 368263.1901,
    "spy_value": 1277.8336,
    "invested": 269.0,
    "r": 0.072944,
@@ -2398,7 +2398,7 @@
   },
   {
    "date": "2025-08-31",
-   "strat_value": 159858.2522,
+   "strat_value": 379524.9806,
    "spy_value": 1305.0746,
    "invested": 270.0,
    "r": 0.030578,
@@ -2406,7 +2406,7 @@
   },
   {
    "date": "2025-09-30",
-   "strat_value": 166479.1476,
+   "strat_value": 395242.4452,
    "spy_value": 1352.5975,
    "invested": 271.0,
    "r": 0.041411,
@@ -2414,7 +2414,7 @@
   },
   {
    "date": "2025-10-31",
-   "strat_value": 160675.964,
+   "strat_value": 381463.6308,
    "spy_value": 1385.8636,
    "invested": 272.0,
    "r": -0.034864,
@@ -2422,7 +2422,7 @@
   },
   {
    "date": "2025-11-30",
-   "strat_value": 154358.6341,
+   "strat_value": 366464.2268,
    "spy_value": 1389.5681,
    "invested": 273.0,
    "r": -0.039323,
@@ -2430,7 +2430,7 @@
   },
   {
    "date": "2025-12-31",
-   "strat_value": 167328.753,
+   "strat_value": 397255.2136,
    "spy_value": 1391.6771,
    "invested": 274.0,
    "r": 0.084019,
@@ -2465,48 +2465,48 @@
    },
    {
     "year": 2005,
-    "strat_moic": 1.137,
+    "strat_moic": 1.069,
     "spy_moic": 1.045,
-    "edge_moic": 0.092,
-    "strat_gain_pct": 0.1374,
+    "edge_moic": 0.024,
+    "strat_gain_pct": 0.0688,
     "spy_gain_pct": 0.0451,
-    "edge_pct": 0.0923,
+    "edge_pct": 0.0237,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2006,
-    "strat_moic": 1.45,
+    "strat_moic": 1.275,
     "spy_moic": 1.099,
-    "edge_moic": 0.351,
-    "strat_gain_pct": 0.4501,
+    "edge_moic": 0.176,
+    "strat_gain_pct": 0.2751,
     "spy_gain_pct": 0.0993,
-    "edge_pct": 0.3508,
+    "edge_pct": 0.1758,
     "n_picks": 24,
-    "win_rate": 0.9167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2007,
-    "strat_moic": 1.054,
+    "strat_moic": 0.977,
     "spy_moic": 1.005,
-    "edge_moic": 0.049,
-    "strat_gain_pct": 0.054,
+    "edge_moic": -0.028,
+    "strat_gain_pct": -0.023,
     "spy_gain_pct": 0.0045,
-    "edge_pct": 0.0494,
+    "edge_pct": -0.0276,
     "n_picks": 24,
     "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2008,
-    "strat_moic": 2.043,
+    "strat_moic": 2.051,
     "spy_moic": 0.741,
-    "edge_moic": 1.302,
-    "strat_gain_pct": 1.0429,
+    "edge_moic": 1.31,
+    "strat_gain_pct": 1.051,
     "spy_gain_pct": -0.2589,
-    "edge_pct": 1.3018,
+    "edge_pct": 1.3099,
     "n_picks": 18,
     "win_rate": 0.4167,
     "months": 12
@@ -2573,62 +2573,62 @@
    },
    {
     "year": 2014,
-    "strat_moic": 1.067,
+    "strat_moic": 1.173,
     "spy_moic": 1.088,
-    "edge_moic": -0.021,
-    "strat_gain_pct": 0.067,
+    "edge_moic": 0.085,
+    "strat_gain_pct": 0.173,
     "spy_gain_pct": 0.0884,
-    "edge_pct": -0.0214,
+    "edge_pct": 0.0845,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2015,
-    "strat_moic": 0.587,
+    "strat_moic": 1.179,
     "spy_moic": 1.007,
-    "edge_moic": -0.42,
-    "strat_gain_pct": -0.4125,
+    "edge_moic": 0.172,
+    "strat_gain_pct": 0.179,
     "spy_gain_pct": 0.007,
-    "edge_pct": -0.4196,
+    "edge_pct": 0.1719,
     "n_picks": 24,
-    "win_rate": 0.3333,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2016,
-    "strat_moic": 1.993,
+    "strat_moic": 1.64,
     "spy_moic": 1.087,
-    "edge_moic": 0.906,
-    "strat_gain_pct": 0.9926,
+    "edge_moic": 0.553,
+    "strat_gain_pct": 0.64,
     "spy_gain_pct": 0.087,
-    "edge_pct": 0.9056,
+    "edge_pct": 0.553,
     "n_picks": 24,
     "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2017,
-    "strat_moic": 1.138,
+    "strat_moic": 1.391,
     "spy_moic": 1.116,
-    "edge_moic": 0.022,
-    "strat_gain_pct": 0.1377,
+    "edge_moic": 0.275,
+    "strat_gain_pct": 0.3911,
     "spy_gain_pct": 0.1159,
-    "edge_pct": 0.0218,
+    "edge_pct": 0.2752,
     "n_picks": 24,
-    "win_rate": 0.5,
+    "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2018,
-    "strat_moic": 0.885,
+    "strat_moic": 0.727,
     "spy_moic": 0.921,
-    "edge_moic": -0.037,
-    "strat_gain_pct": -0.1154,
+    "edge_moic": -0.194,
+    "strat_gain_pct": -0.2727,
     "spy_gain_pct": -0.0785,
-    "edge_pct": -0.0369,
+    "edge_pct": -0.1942,
     "n_picks": 22,
-    "win_rate": 0.5,
+    "win_rate": 0.25,
     "months": 12
    },
    {
@@ -2716,7 +2716,7 @@
     "months": 12
    }
   ],
-  "v5_pit_sp500_consensus_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift": [
+  "v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift": [
    {
     "year": 2003,
     "strat_moic": 1.277,
@@ -2743,48 +2743,48 @@
    },
    {
     "year": 2005,
-    "strat_moic": 1.137,
+    "strat_moic": 1.069,
     "spy_moic": 1.045,
-    "edge_moic": 0.092,
-    "strat_gain_pct": 0.1374,
+    "edge_moic": 0.024,
+    "strat_gain_pct": 0.0688,
     "spy_gain_pct": 0.0451,
-    "edge_pct": 0.0923,
+    "edge_pct": 0.0237,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2006,
-    "strat_moic": 1.45,
+    "strat_moic": 1.275,
     "spy_moic": 1.099,
-    "edge_moic": 0.351,
-    "strat_gain_pct": 0.4501,
+    "edge_moic": 0.176,
+    "strat_gain_pct": 0.2751,
     "spy_gain_pct": 0.0993,
-    "edge_pct": 0.3508,
+    "edge_pct": 0.1758,
     "n_picks": 24,
-    "win_rate": 0.9167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2007,
-    "strat_moic": 1.054,
+    "strat_moic": 0.977,
     "spy_moic": 1.005,
-    "edge_moic": 0.049,
-    "strat_gain_pct": 0.054,
+    "edge_moic": -0.028,
+    "strat_gain_pct": -0.023,
     "spy_gain_pct": 0.0045,
-    "edge_pct": 0.0494,
+    "edge_pct": -0.0276,
     "n_picks": 24,
     "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2008,
-    "strat_moic": 2.043,
+    "strat_moic": 2.051,
     "spy_moic": 0.741,
-    "edge_moic": 1.302,
-    "strat_gain_pct": 1.0429,
+    "edge_moic": 1.31,
+    "strat_gain_pct": 1.051,
     "spy_gain_pct": -0.2589,
-    "edge_pct": 1.3018,
+    "edge_pct": 1.3099,
     "n_picks": 18,
     "win_rate": 0.4167,
     "months": 12
@@ -2851,62 +2851,62 @@
    },
    {
     "year": 2014,
-    "strat_moic": 1.067,
+    "strat_moic": 1.173,
     "spy_moic": 1.088,
-    "edge_moic": -0.021,
-    "strat_gain_pct": 0.067,
+    "edge_moic": 0.085,
+    "strat_gain_pct": 0.173,
     "spy_gain_pct": 0.0884,
-    "edge_pct": -0.0214,
+    "edge_pct": 0.0845,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2015,
-    "strat_moic": 0.587,
+    "strat_moic": 1.179,
     "spy_moic": 1.007,
-    "edge_moic": -0.42,
-    "strat_gain_pct": -0.4125,
+    "edge_moic": 0.172,
+    "strat_gain_pct": 0.179,
     "spy_gain_pct": 0.007,
-    "edge_pct": -0.4196,
+    "edge_pct": 0.1719,
     "n_picks": 24,
-    "win_rate": 0.3333,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2016,
-    "strat_moic": 1.993,
+    "strat_moic": 1.64,
     "spy_moic": 1.087,
-    "edge_moic": 0.906,
-    "strat_gain_pct": 0.9926,
+    "edge_moic": 0.553,
+    "strat_gain_pct": 0.64,
     "spy_gain_pct": 0.087,
-    "edge_pct": 0.9056,
+    "edge_pct": 0.553,
     "n_picks": 24,
     "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2017,
-    "strat_moic": 1.138,
+    "strat_moic": 1.391,
     "spy_moic": 1.116,
-    "edge_moic": 0.022,
-    "strat_gain_pct": 0.1377,
+    "edge_moic": 0.275,
+    "strat_gain_pct": 0.3911,
     "spy_gain_pct": 0.1159,
-    "edge_pct": 0.0218,
+    "edge_pct": 0.2752,
     "n_picks": 24,
-    "win_rate": 0.5,
+    "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2018,
-    "strat_moic": 0.885,
+    "strat_moic": 0.727,
     "spy_moic": 0.921,
-    "edge_moic": -0.037,
-    "strat_gain_pct": -0.1154,
+    "edge_moic": -0.194,
+    "strat_gain_pct": -0.2727,
     "spy_gain_pct": -0.0785,
-    "edge_pct": -0.0369,
+    "edge_pct": -0.1942,
     "n_picks": 22,
-    "win_rate": 0.5,
+    "win_rate": 0.25,
     "months": 12
    },
    {
@@ -3812,7 +3812,7 @@
  "windows_comparison": [
   {
    "window": "Full 2003-2025",
-   "strategy_cagr": 0.47031281584251006,
+   "strategy_cagr": 0.5160070581302851,
    "spy_cagr": 0.11630822445076516
   }
  ],
@@ -3871,30 +3871,30 @@
   {
    "years_back": 10,
    "since_date": "2016-01-31",
-   "strat_moic": 3.762,
+   "strat_moic": 3.673,
    "spy_moic": 2.242,
-   "edge_moic": 1.52,
-   "strat_irr": 0.2536,
+   "edge_moic": 1.431,
+   "strat_irr": 0.2491,
    "spy_irr": 0.1565,
    "beat_spy": 1
   },
   {
    "years_back": 15,
    "since_date": "2011-01-31",
-   "strat_moic": 5.781,
+   "strat_moic": 15.664,
    "spy_moic": 3.293,
-   "edge_moic": 2.488,
-   "strat_irr": 0.2115,
+   "edge_moic": 12.371,
+   "strat_irr": 0.3246,
    "spy_irr": 0.1468,
    "beat_spy": 1
   },
   {
    "years_back": 20,
    "since_date": "2006-01-31",
-   "strat_moic": 149.441,
+   "strat_moic": 545.522,
    "spy_moic": 4.476,
-   "edge_moic": 144.965,
-   "strat_irr": 0.4164,
+   "edge_moic": 541.046,
+   "strat_irr": 0.5261,
    "spy_irr": 0.1336,
    "beat_spy": 1
   }
@@ -3906,24 +3906,24 @@
   "horizons": {
    "H12": {
     "v5": {
-     "win_vs_spy_dca": 0.7376,
+     "win_vs_spy_dca": 0.7795,
      "n_windows": 263,
-     "median_moic": 1.198,
-     "p05_moic": 0.735,
-     "min_moic": 0.4,
-     "median_irr": 0.4644,
-     "p05_irr": -0.5124,
-     "min_irr": -0.923
+     "median_moic": 1.211,
+     "p05_moic": 0.821,
+     "min_moic": 0.425,
+     "median_irr": 0.4952,
+     "p05_irr": -0.361,
+     "min_irr": -0.9037
     },
     "mn_switch": {
-     "win_vs_spy_dca": 0.73,
+     "win_vs_spy_dca": 0.7681,
      "n_windows": 263,
-     "median_moic": 1.198,
-     "p05_moic": 0.691,
-     "min_moic": 0.4,
-     "median_irr": 0.4644,
-     "p05_irr": -0.5834,
-     "min_irr": -0.923
+     "median_moic": 1.205,
+     "p05_moic": 0.731,
+     "min_moic": 0.425,
+     "median_irr": 0.4804,
+     "p05_irr": -0.5187,
+     "min_irr": -0.9037
     },
     "SPY": {
      "win_vs_spy_dca": null,
@@ -3938,24 +3938,24 @@
    },
    "H24": {
     "v5": {
-     "win_vs_spy_dca": 0.7689,
+     "win_vs_spy_dca": 0.7968,
      "n_windows": 251,
-     "median_moic": 1.381,
-     "p05_moic": 0.783,
-     "min_moic": 0.496,
-     "median_irr": 0.3759,
-     "p05_irr": -0.2343,
-     "min_irr": -0.5749
+     "median_moic": 1.483,
+     "p05_moic": 0.86,
+     "min_moic": 0.472,
+     "median_irr": 0.47,
+     "p05_irr": -0.1498,
+     "min_irr": -0.6057
     },
     "mn_switch": {
-     "win_vs_spy_dca": 0.7649,
+     "win_vs_spy_dca": 0.7769,
      "n_windows": 251,
-     "median_moic": 1.369,
-     "p05_moic": 0.783,
-     "min_moic": 0.526,
-     "median_irr": 0.3651,
-     "p05_irr": -0.2343,
-     "min_irr": -0.5376
+     "median_moic": 1.46,
+     "p05_moic": 0.818,
+     "min_moic": 0.472,
+     "median_irr": 0.4492,
+     "p05_irr": -0.1962,
+     "min_irr": -0.6057
     },
     "SPY": {
      "win_vs_spy_dca": null,
@@ -3970,24 +3970,24 @@
    },
    "H36": {
     "v5": {
-     "win_vs_spy_dca": 0.841,
+     "win_vs_spy_dca": 0.9079,
      "n_windows": 239,
-     "median_moic": 1.521,
-     "p05_moic": 0.88,
-     "min_moic": 0.548,
-     "median_irr": 0.3085,
-     "p05_irr": -0.0861,
-     "min_irr": -0.3733
+     "median_moic": 1.686,
+     "p05_moic": 1.018,
+     "min_moic": 0.536,
+     "median_irr": 0.3913,
+     "p05_irr": 0.0125,
+     "min_irr": -0.3856
     },
     "mn_switch": {
-     "win_vs_spy_dca": 0.8703,
+     "win_vs_spy_dca": 0.8828,
      "n_windows": 239,
-     "median_moic": 1.538,
-     "p05_moic": 1.025,
-     "min_moic": 0.741,
-     "median_irr": 0.3175,
-     "p05_irr": 0.0167,
-     "min_irr": -0.1955
+     "median_moic": 1.681,
+     "p05_moic": 1.037,
+     "min_moic": 0.777,
+     "median_irr": 0.3889,
+     "p05_irr": 0.0248,
+     "min_irr": -0.166
     },
     "SPY": {
      "win_vs_spy_dca": null,
@@ -4002,24 +4002,24 @@
    },
    "H60": {
     "v5": {
-     "win_vs_spy_dca": 0.8884,
+     "win_vs_spy_dca": 0.9488,
      "n_windows": 215,
-     "median_moic": 1.927,
-     "p05_moic": 1.096,
-     "min_moic": 0.637,
-     "median_irr": 0.2742,
-     "p05_irr": 0.0374,
-     "min_irr": -0.1817
+     "median_moic": 2.733,
+     "p05_moic": 1.305,
+     "min_moic": 0.851,
+     "median_irr": 0.4283,
+     "p05_irr": 0.1094,
+     "min_irr": -0.0651
     },
     "mn_switch": {
-     "win_vs_spy_dca": 0.9256,
+     "win_vs_spy_dca": 0.9721,
      "n_windows": 215,
-     "median_moic": 2.062,
-     "p05_moic": 1.214,
-     "min_moic": 1.026,
-     "median_irr": 0.3035,
-     "p05_irr": 0.0789,
-     "min_irr": 0.0103
+     "median_moic": 2.574,
+     "p05_moic": 1.35,
+     "min_moic": 1.245,
+     "median_irr": 0.4014,
+     "p05_irr": 0.1233,
+     "min_irr": 0.0897
     },
     "SPY": {
      "win_vs_spy_dca": null,
@@ -4034,24 +4034,24 @@
    },
    "H120": {
     "v5": {
-     "win_vs_spy_dca": 0.9871,
+     "win_vs_spy_dca": 1.0,
      "n_windows": 155,
-     "median_moic": 4.515,
-     "p05_moic": 2.321,
-     "min_moic": 1.646,
-     "median_irr": 0.2877,
-     "p05_irr": 0.163,
-     "min_irr": 0.0978
+     "median_moic": 12.789,
+     "p05_moic": 3.944,
+     "min_moic": 3.275,
+     "median_irr": 0.486,
+     "p05_irr": 0.2624,
+     "min_irr": 0.2276
     },
     "mn_switch": {
-     "win_vs_spy_dca": 0.6065,
+     "win_vs_spy_dca": 0.8839,
      "n_windows": 155,
-     "median_moic": 2.356,
-     "p05_moic": 1.394,
-     "min_moic": 1.144,
-     "median_irr": 0.1658,
-     "p05_irr": 0.0656,
-     "min_irr": 0.0268
+     "median_moic": 12.175,
+     "p05_moic": 1.692,
+     "min_moic": 1.026,
+     "median_irr": 0.4764,
+     "p05_irr": 0.103,
+     "min_irr": 0.0051
     },
     "SPY": {
      "win_vs_spy_dca": null,
@@ -4068,16 +4068,16 @@
   "full_history": {
    "v5": {
     "months": 274,
-    "terminal_moic": 610.69,
-    "money_weighted_irr": 0.4561,
-    "max_value_drawdown": -0.68,
+    "terminal_moic": 1449.84,
+    "money_weighted_irr": 0.5195,
+    "max_value_drawdown": -0.6411,
     "worst_underwater_vs_contrib": -0.0995
    },
    "mn_switch": {
     "months": 274,
-    "terminal_moic": 157.17,
-    "money_weighted_irr": 0.3599,
-    "max_value_drawdown": -0.4185,
+    "terminal_moic": 83.8,
+    "money_weighted_irr": 0.3165,
+    "max_value_drawdown": -0.3572,
     "worst_underwater_vs_contrib": -0.0995
    },
    "SPY": {
@@ -4283,295 +4283,295 @@
    },
    {
     "date": "2005-03-31",
-    "strat_value": 46.67,
+    "strat_value": 50.8162,
     "spy_value": 28.3624,
     "invested": 25.0,
-    "r": -0.114896,
+    "r": -0.036263,
     "s": -0.018293
    },
    {
     "date": "2005-04-30",
-    "strat_value": 52.0622,
+    "strat_value": 54.1397,
     "spy_value": 28.8123,
     "invested": 26.0,
-    "r": 0.092138,
+    "r": 0.044841,
     "s": -0.018735
    },
    {
     "date": "2005-05-31",
-    "strat_value": 50.7102,
+    "strat_value": 54.8703,
     "spy_value": 30.773,
     "invested": 27.0,
-    "r": -0.044326,
+    "r": -0.004885,
     "s": 0.032224
    },
    {
     "date": "2005-06-30",
-    "strat_value": 65.3393,
+    "strat_value": 59.4606,
     "spy_value": 31.8211,
     "invested": 28.0,
-    "r": 0.263566,
+    "r": 0.06426,
     "s": 0.001515
    },
    {
     "date": "2005-07-31",
-    "strat_value": 65.4427,
+    "strat_value": 58.9889,
     "spy_value": 34.0769,
     "invested": 29.0,
-    "r": -0.013515,
+    "r": -0.02434,
     "s": 0.038261
    },
    {
     "date": "2005-08-31",
-    "strat_value": 65.9935,
+    "strat_value": 60.1524,
     "spy_value": 34.7481,
     "invested": 30.0,
-    "r": -0.006762,
+    "r": 0.002724,
     "s": -0.009375
    },
    {
     "date": "2005-09-30",
-    "strat_value": 70.1831,
+    "strat_value": 58.6623,
     "spy_value": 36.035,
     "invested": 31.0,
-    "r": 0.047612,
+    "r": -0.040719,
     "s": 0.008026
    },
    {
     "date": "2005-10-31",
-    "strat_value": 72.7589,
+    "strat_value": 61.0842,
     "spy_value": 36.1591,
     "invested": 32.0,
-    "r": 0.022137,
+    "r": 0.023833,
     "s": -0.023651
    },
    {
     "date": "2005-11-30",
-    "strat_value": 73.6431,
+    "strat_value": 63.3234,
     "spy_value": 38.7923,
     "invested": 33.0,
-    "r": -0.00157,
+    "r": 0.01996,
     "s": 0.043952
    },
    {
     "date": "2005-12-31",
-    "strat_value": 73.1885,
+    "strat_value": 66.4085,
     "spy_value": 39.7162,
     "invested": 34.0,
-    "r": -0.019488,
+    "r": 0.032415,
     "s": -0.001914
    },
    {
     "date": "2006-01-31",
-    "strat_value": 86.49,
+    "strat_value": 70.1899,
     "spy_value": 41.6939,
     "invested": 35.0,
-    "r": 0.165814,
+    "r": 0.041262,
     "s": 0.024014
    },
    {
     "date": "2006-02-28",
-    "strat_value": 95.2471,
+    "strat_value": 65.7072,
     "spy_value": 42.9384,
     "invested": 36.0,
-    "r": 0.088663,
+    "r": -0.077015,
     "s": 0.005725
    },
    {
     "date": "2006-03-31",
-    "strat_value": 99.3649,
+    "strat_value": 66.5465,
     "spy_value": 44.6635,
     "invested": 37.0,
-    "r": 0.032393,
+    "r": -0.002409,
     "s": 0.016504
    },
    {
     "date": "2006-04-30",
-    "strat_value": 99.0456,
+    "strat_value": 68.1847,
     "spy_value": 46.2404,
     "invested": 38.0,
-    "r": -0.013145,
+    "r": 0.009448,
     "s": 0.012632
    },
    {
     "date": "2006-05-31",
-    "strat_value": 103.3374,
+    "strat_value": 63.8975,
     "spy_value": 45.8174,
     "invested": 39.0,
-    "r": 0.032903,
+    "r": -0.076422,
     "s": -0.030121
    },
    {
     "date": "2006-06-30",
-    "strat_value": 108.3124,
+    "strat_value": 78.1623,
     "spy_value": 46.9395,
     "invested": 40.0,
-    "r": 0.038098,
+    "r": 0.204396,
     "s": 0.002608
    },
    {
     "date": "2006-07-31",
-    "strat_value": 128.758,
+    "strat_value": 94.5663,
     "spy_value": 48.1542,
     "invested": 41.0,
-    "r": 0.17789,
+    "r": 0.194587,
     "s": 0.004479
    },
    {
     "date": "2006-08-31",
-    "strat_value": 129.8104,
+    "strat_value": 95.0804,
     "spy_value": 50.2269,
     "invested": 42.0,
-    "r": 0.000404,
+    "r": -0.005084,
     "s": 0.021823
    },
    {
     "date": "2006-09-30",
-    "strat_value": 152.2599,
+    "strat_value": 84.5086,
     "spy_value": 52.6101,
     "invested": 43.0,
-    "r": 0.163974,
+    "r": -0.120439,
     "s": 0.027001
    },
    {
     "date": "2006-10-31",
-    "strat_value": 158.9808,
+    "strat_value": 97.3155,
     "spy_value": 55.2997,
     "invested": 44.0,
-    "r": 0.037328,
+    "r": 0.138079,
     "s": 0.031516
    },
    {
     "date": "2006-11-30",
-    "strat_value": 164.1455,
+    "strat_value": 103.2385,
     "spy_value": 57.4192,
     "invested": 45.0,
-    "r": 0.026032,
+    "r": 0.050074,
     "s": 0.019885
    },
    {
     "date": "2006-12-31",
-    "strat_value": 168.9504,
+    "strat_value": 106.8686,
     "spy_value": 59.2004,
     "invested": 46.0,
-    "r": 0.02304,
+    "r": 0.025231,
     "s": 0.013371
    },
    {
     "date": "2007-01-31",
-    "strat_value": 155.7162,
+    "strat_value": 106.7349,
     "spy_value": 61.1058,
     "invested": 47.0,
-    "r": -0.083755,
+    "r": -0.01051,
     "s": 0.015041
    },
    {
     "date": "2007-02-28",
-    "strat_value": 198.1776,
+    "strat_value": 106.0294,
     "spy_value": 60.8875,
     "invested": 48.0,
-    "r": 0.264564,
+    "r": -0.01583,
     "s": -0.019618
    },
    {
     "date": "2007-03-31",
-    "strat_value": 195.9808,
+    "strat_value": 109.2549,
     "spy_value": 62.6047,
     "invested": 49.0,
-    "r": -0.01605,
+    "r": 0.020794,
     "s": 0.011589
    },
    {
     "date": "2007-04-30",
-    "strat_value": 215.3136,
+    "strat_value": 115.7363,
     "spy_value": 66.4221,
     "invested": 50.0,
-    "r": 0.093069,
+    "r": 0.049715,
     "s": 0.044296
    },
    {
     "date": "2007-05-31",
-    "strat_value": 249.3916,
+    "strat_value": 129.7776,
     "spy_value": 69.7091,
     "invested": 51.0,
-    "r": 0.152917,
+    "r": 0.111716,
     "s": 0.03392
    },
    {
     "date": "2007-06-30",
-    "strat_value": 282.3964,
+    "strat_value": 133.4608,
     "spy_value": 69.6753,
     "invested": 52.0,
-    "r": 0.127819,
+    "r": 0.020517,
     "s": -0.014621
    },
    {
     "date": "2007-07-31",
-    "strat_value": 302.6467,
+    "strat_value": 140.5307,
     "spy_value": 68.4624,
     "invested": 53.0,
-    "r": 0.067927,
+    "r": 0.045142,
     "s": -0.03131
    },
    {
     "date": "2007-08-31",
-    "strat_value": 338.2352,
+    "strat_value": 150.1619,
     "spy_value": 70.3538,
     "invested": 54.0,
-    "r": 0.11391,
+    "r": 0.060985,
     "s": 0.012833
    },
    {
     "date": "2007-09-30",
-    "strat_value": 327.9396,
+    "strat_value": 149.0807,
     "spy_value": 74.1162,
     "invested": 55.0,
-    "r": -0.033297,
+    "r": -0.013768,
     "s": 0.038714
    },
    {
     "date": "2007-10-31",
-    "strat_value": 313.6078,
+    "strat_value": 119.6279,
     "spy_value": 76.1352,
     "invested": 56.0,
-    "r": -0.04661,
+    "r": -0.20291,
     "s": 0.013566
    },
    {
     "date": "2007-11-30",
-    "strat_value": 330.6248,
+    "strat_value": 159.892,
     "spy_value": 74.1476,
     "invested": 57.0,
-    "r": 0.050911,
+    "r": 0.325498,
     "s": -0.038732
    },
    {
     "date": "2007-12-31",
-    "strat_value": 258.8456,
+    "strat_value": 128.2627,
     "spy_value": 74.3014,
     "invested": 58.0,
-    "r": -0.219462,
+    "r": -0.202803,
     "s": -0.011261
    },
    {
     "date": "2008-01-31",
-    "strat_value": 220.8372,
+    "strat_value": 113.4735,
     "spy_value": 70.7486,
     "invested": 59.0,
-    "r": -0.150121,
+    "r": -0.122148,
     "s": -0.060461
    },
    {
     "date": "2008-02-29",
-    "strat_value": 225.2106,
+    "strat_value": 117.9157,
     "spy_value": 69.8944,
     "invested": 60.0,
-    "r": 0.015207,
+    "r": 0.030069,
     "s": -0.025842
    },
    {
     "date": "2008-03-31",
-    "strat_value": 236.2182,
+    "strat_value": 124.1765,
     "spy_value": 70.2605,
     "invested": 61.0,
     "r": 0.04424,
@@ -4579,7 +4579,7 @@
    },
    {
     "date": "2008-04-30",
-    "strat_value": 189.0235,
+    "strat_value": 99.7449,
     "spy_value": 74.6569,
     "invested": 62.0,
     "r": -0.203166,
@@ -4587,7 +4587,7 @@
    },
    {
     "date": "2008-05-31",
-    "strat_value": 108.2247,
+    "strat_value": 57.3776,
     "spy_value": 76.8006,
     "invested": 63.0,
     "r": -0.430467,
@@ -4595,7 +4595,7 @@
    },
    {
     "date": "2008-06-30",
-    "strat_value": 130.9747,
+    "strat_value": 70.0023,
     "spy_value": 71.2983,
     "invested": 64.0,
     "r": 0.19913,
@@ -4603,7 +4603,7 @@
    },
    {
     "date": "2008-07-31",
-    "strat_value": 267.4744,
+    "strat_value": 143.9012,
     "spy_value": 71.6487,
     "invested": 65.0,
     "r": 1.02671,
@@ -4611,7 +4611,7 @@
    },
    {
     "date": "2008-08-31",
-    "strat_value": 210.6949,
+    "strat_value": 113.7164,
     "spy_value": 73.7714,
     "invested": 66.0,
     "r": -0.215214,
@@ -4619,7 +4619,7 @@
    },
    {
     "date": "2008-09-30",
-    "strat_value": 211.6949,
+    "strat_value": 114.7164,
     "spy_value": 67.7299,
     "invested": 67.0,
     "r": 0.0,
@@ -4627,7 +4627,7 @@
    },
    {
     "date": "2008-10-31",
-    "strat_value": 212.6949,
+    "strat_value": 115.7164,
     "spy_value": 57.3766,
     "invested": 68.0,
     "r": 0.0,
@@ -4635,7 +4635,7 @@
    },
    {
     "date": "2008-11-30",
-    "strat_value": 213.6949,
+    "strat_value": 116.7164,
     "spy_value": 54.3132,
     "invested": 69.0,
     "r": 0.0,
@@ -4643,7 +4643,7 @@
    },
    {
     "date": "2008-12-31",
-    "strat_value": 410.0446,
+    "strat_value": 224.8258,
     "spy_value": 55.8551,
     "invested": 70.0,
     "r": 0.909894,
@@ -4651,7 +4651,7 @@
    },
    {
     "date": "2009-01-31",
-    "strat_value": 411.0446,
+    "strat_value": 225.8258,
     "spy_value": 52.1865,
     "invested": 71.0,
     "r": 0.0,
@@ -4659,7 +4659,7 @@
    },
    {
     "date": "2009-02-28",
-    "strat_value": 412.0446,
+    "strat_value": 226.8258,
     "spy_value": 47.4716,
     "invested": 72.0,
     "r": 0.0,
@@ -4667,7 +4667,7 @@
    },
    {
     "date": "2009-03-31",
-    "strat_value": 649.2781,
+    "strat_value": 358.1268,
     "spy_value": 52.5098,
     "invested": 73.0,
     "r": 0.571932,
@@ -4675,7 +4675,7 @@
    },
    {
     "date": "2009-04-30",
-    "strat_value": 1114.804,
+    "strat_value": 615.6688,
     "spy_value": 58.8258,
     "invested": 74.0,
     "r": 0.71435,
@@ -4683,7 +4683,7 @@
    },
    {
     "date": "2009-05-31",
-    "strat_value": 1024.6413,
+    "strat_value": 566.2862,
     "spy_value": 63.3229,
     "invested": 75.0,
     "r": -0.081701,
@@ -4691,7 +4691,7 @@
    },
    {
     "date": "2009-06-30",
-    "strat_value": 1627.8932,
+    "strat_value": 900.394,
     "spy_value": 64.2807,
     "invested": 76.0,
     "r": 0.587195,
@@ -4699,7 +4699,7 @@
    },
    {
     "date": "2009-07-31",
-    "strat_value": 2195.6118,
+    "strat_value": 1215.0037,
     "spy_value": 70.1511,
     "invested": 77.0,
     "r": 0.347916,
@@ -4707,7 +4707,7 @@
    },
    {
     "date": "2009-08-31",
-    "strat_value": 2923.8343,
+    "strat_value": 1618.5806,
     "spy_value": 73.7793,
     "invested": 78.0,
     "r": 0.331066,
@@ -4715,7 +4715,7 @@
    },
    {
     "date": "2009-09-30",
-    "strat_value": 3659.5642,
+    "strat_value": 2026.4256,
     "spy_value": 77.4308,
     "invested": 79.0,
     "r": 0.251204,
@@ -4723,7 +4723,7 @@
    },
    {
     "date": "2009-10-31",
-    "strat_value": 4157.1941,
+    "strat_value": 2302.4871,
     "spy_value": 76.923,
     "invested": 80.0,
     "r": 0.13567,
@@ -4731,7 +4731,7 @@
    },
    {
     "date": "2009-11-30",
-    "strat_value": 4152.6299,
+    "strat_value": 2300.4048,
     "spy_value": 82.7235,
     "invested": 81.0,
     "r": -0.001338,
@@ -4739,7 +4739,7 @@
    },
    {
     "date": "2009-12-31",
-    "strat_value": 6938.7046,
+    "strat_value": 3844.5331,
     "spy_value": 85.3227,
     "invested": 82.0,
     "r": 0.670516,
@@ -4747,7 +4747,7 @@
    },
    {
     "date": "2010-01-31",
-    "strat_value": 7205.9492,
+    "strat_value": 3993.0686,
     "spy_value": 83.1856,
     "invested": 83.0,
     "r": 0.038365,
@@ -4755,7 +4755,7 @@
    },
    {
     "date": "2010-02-28",
-    "strat_value": 7836.7707,
+    "strat_value": 4343.1136,
     "spy_value": 86.8117,
     "invested": 84.0,
     "r": 0.087391,
@@ -4763,7 +4763,7 @@
    },
    {
     "date": "2010-03-31",
-    "strat_value": 7385.7934,
+    "strat_value": 4093.6035,
     "spy_value": 93.1577,
     "invested": 85.0,
     "r": -0.057667,
@@ -4771,7 +4771,7 @@
    },
    {
     "date": "2010-04-30",
-    "strat_value": 6648.4091,
+    "strat_value": 3685.3067,
     "spy_value": 95.6143,
     "invested": 86.0,
     "r": -0.09996,
@@ -4779,7 +4779,7 @@
    },
    {
     "date": "2010-05-31",
-    "strat_value": 6649.4091,
+    "strat_value": 3686.3067,
     "spy_value": 88.9378,
     "invested": 87.0,
     "r": 0.0,
@@ -4787,7 +4787,7 @@
    },
    {
     "date": "2010-06-30",
-    "strat_value": 6257.8605,
+    "strat_value": 3469.6589,
     "spy_value": 85.2844,
     "invested": 88.0,
     "r": -0.059026,
@@ -4795,7 +4795,7 @@
    },
    {
     "date": "2010-07-31",
-    "strat_value": 6009.5281,
+    "strat_value": 3332.3993,
     "spy_value": 92.1777,
     "invested": 89.0,
     "r": -0.039837,
@@ -4803,7 +4803,7 @@
    },
    {
     "date": "2010-08-31",
-    "strat_value": 6949.2785,
+    "strat_value": 3854.0241,
     "spy_value": 88.9865,
     "invested": 90.0,
     "r": 0.156184,
@@ -4811,7 +4811,7 @@
    },
    {
     "date": "2010-09-30",
-    "strat_value": 6892.4119,
+    "strat_value": 3822.9279,
     "spy_value": 98.0452,
     "invested": 91.0,
     "r": -0.008326,
@@ -4819,7 +4819,7 @@
    },
    {
     "date": "2010-10-31",
-    "strat_value": 8110.9151,
+    "strat_value": 4499.3038,
     "spy_value": 102.8289,
     "invested": 92.0,
     "r": 0.176618,
@@ -4827,7 +4827,7 @@
    },
    {
     "date": "2010-11-30",
-    "strat_value": 8954.7571,
+    "strat_value": 4967.8932,
     "spy_value": 103.8289,
     "invested": 93.0,
     "r": 0.103902,
@@ -4835,7 +4835,7 @@
    },
    {
     "date": "2010-12-31",
-    "strat_value": 13023.3992,
+    "strat_value": 7225.7296,
     "spy_value": 111.837,
     "invested": 94.0,
     "r": 0.454193,
@@ -4843,7 +4843,7 @@
    },
    {
     "date": "2011-01-31",
-    "strat_value": 14767.608,
+    "strat_value": 8193.968,
     "spy_value": 115.4661,
     "invested": 95.0,
     "r": 0.133842,
@@ -4851,7 +4851,7 @@
    },
    {
     "date": "2011-02-28",
-    "strat_value": 14840.4068,
+    "strat_value": 8234.8085,
     "spy_value": 120.5118,
     "invested": 96.0,
     "r": 0.004862,
@@ -4859,7 +4859,7 @@
    },
    {
     "date": "2011-03-31",
-    "strat_value": 15538.0642,
+    "strat_value": 8622.3984,
     "spy_value": 121.5264,
     "invested": 97.0,
     "r": 0.04694,
@@ -4867,7 +4867,7 @@
    },
    {
     "date": "2011-04-30",
-    "strat_value": 15221.8427,
+    "strat_value": 8447.3564,
     "spy_value": 126.0749,
     "invested": 98.0,
     "r": -0.020414,
@@ -4875,7 +4875,7 @@
    },
    {
     "date": "2011-05-31",
-    "strat_value": 15414.1736,
+    "strat_value": 8554.541,
     "spy_value": 125.6498,
     "invested": 99.0,
     "r": 0.012569,
@@ -4883,7 +4883,7 @@
    },
    {
     "date": "2011-06-30",
-    "strat_value": 14088.8273,
+    "strat_value": 7819.4085,
     "spy_value": 124.5133,
     "invested": 100.0,
     "r": -0.086042,
@@ -4891,7 +4891,7 @@
    },
    {
     "date": "2011-07-31",
-    "strat_value": 13745.476,
+    "strat_value": 7629.28,
     "spy_value": 123.0025,
     "invested": 101.0,
     "r": -0.02444,
@@ -4899,7 +4899,7 @@
    },
    {
     "date": "2011-08-31",
-    "strat_value": 13209.4223,
+    "strat_value": 7332.1767,
     "spy_value": 117.1854,
     "invested": 102.0,
     "r": -0.039068,
@@ -4907,7 +4907,7 @@
    },
    {
     "date": "2011-09-30",
-    "strat_value": 13210.4223,
+    "strat_value": 7333.1767,
     "spy_value": 109.9808,
     "invested": 103.0,
     "r": 0.0,
@@ -4915,7 +4915,7 @@
    },
    {
     "date": "2011-10-31",
-    "strat_value": 13901.5316,
+    "strat_value": 7717.2833,
     "spy_value": 123.0941,
     "invested": 104.0,
     "r": 0.052236,
@@ -4923,7 +4923,7 @@
    },
    {
     "date": "2011-11-30",
-    "strat_value": 14208.4825,
+    "strat_value": 7888.1384,
     "spy_value": 123.5897,
     "invested": 105.0,
     "r": 0.022007,
@@ -4931,7 +4931,7 @@
    },
    {
     "date": "2011-12-31",
-    "strat_value": 16947.4108,
+    "strat_value": 9409.2427,
     "spy_value": 125.8915,
     "invested": 106.0,
     "r": 0.192683,
@@ -4939,7 +4939,7 @@
    },
    {
     "date": "2012-01-31",
-    "strat_value": 19524.4697,
+    "strat_value": 10840.5443,
     "spy_value": 132.7761,
     "invested": 107.0,
     "r": 0.151994,
@@ -4947,7 +4947,7 @@
    },
    {
     "date": "2012-02-29",
-    "strat_value": 18184.6561,
+    "strat_value": 10097.0557,
     "spy_value": 139.5826,
     "invested": 108.0,
     "r": -0.06867,
@@ -4955,7 +4955,7 @@
    },
    {
     "date": "2012-03-31",
-    "strat_value": 13966.0014,
+    "strat_value": 7754.9833,
     "spy_value": 145.1043,
     "invested": 109.0,
     "r": -0.232032,
@@ -4963,7 +4963,7 @@
    },
    {
     "date": "2012-04-30",
-    "strat_value": 14079.1707,
+    "strat_value": 7818.2718,
     "spy_value": 145.129,
     "invested": 110.0,
     "r": 0.008031,
@@ -4971,7 +4971,7 @@
    },
    {
     "date": "2012-05-31",
-    "strat_value": 13439.0906,
+    "strat_value": 7463.2549,
     "spy_value": 137.3531,
     "invested": 111.0,
     "r": -0.045531,
@@ -4979,7 +4979,7 @@
    },
    {
     "date": "2012-06-30",
-    "strat_value": 12258.4706,
+    "strat_value": 6808.0158,
     "spy_value": 143.9677,
     "invested": 112.0,
     "r": -0.087918,
@@ -4987,7 +4987,7 @@
    },
    {
     "date": "2012-07-31",
-    "strat_value": 11873.7779,
+    "strat_value": 6594.7987,
     "spy_value": 146.6826,
     "invested": 113.0,
     "r": -0.031461,
@@ -4995,7 +4995,7 @@
    },
    {
     "date": "2012-08-31",
-    "strat_value": 12734.6639,
+    "strat_value": 7073.419,
     "spy_value": 151.3824,
     "invested": 114.0,
     "r": 0.072413,
@@ -5003,7 +5003,7 @@
    },
    {
     "date": "2012-09-30",
-    "strat_value": 11583.1223,
+    "strat_value": 6434.2041,
     "spy_value": 156.2455,
     "invested": 115.0,
     "r": -0.090497,
@@ -5011,7 +5011,7 @@
    },
    {
     "date": "2012-10-31",
-    "strat_value": 11593.4439,
+    "strat_value": 6440.3824,
     "spy_value": 154.3839,
     "invested": 116.0,
     "r": 0.000805,
@@ -5019,7 +5019,7 @@
    },
    {
     "date": "2012-11-30",
-    "strat_value": 13443.3879,
+    "strat_value": 7468.5775,
     "spy_value": 156.2633,
     "invested": 117.0,
     "r": 0.159468,
@@ -5027,7 +5027,7 @@
    },
    {
     "date": "2012-12-31",
-    "strat_value": 14791.2576,
+    "strat_value": 8217.8858,
     "spy_value": 158.6683,
     "invested": 118.0,
     "r": 0.100181,
@@ -5035,7 +5035,7 @@
    },
    {
     "date": "2013-01-31",
-    "strat_value": 14083.1991,
+    "strat_value": 7824.9181,
     "spy_value": 167.8417,
     "invested": 119.0,
     "r": -0.047934,
@@ -5043,7 +5043,7 @@
    },
    {
     "date": "2013-02-28",
-    "strat_value": 15217.36,
+    "strat_value": 8455.5616,
     "spy_value": 170.996,
     "invested": 120.0,
     "r": 0.080456,
@@ -5051,7 +5051,7 @@
    },
    {
     "date": "2013-03-31",
-    "strat_value": 16053.1744,
+    "strat_value": 8920.4526,
     "spy_value": 178.5269,
     "invested": 121.0,
     "r": 0.054856,
@@ -5059,7 +5059,7 @@
    },
    {
     "date": "2013-04-30",
-    "strat_value": 15732.8528,
+    "strat_value": 8742.8913,
     "spy_value": 182.976,
     "invested": 122.0,
     "r": -0.020015,
@@ -5067,7 +5067,7 @@
    },
    {
     "date": "2013-05-31",
-    "strat_value": 15645.8749,
+    "strat_value": 8694.9986,
     "spy_value": 188.3196,
     "invested": 123.0,
     "r": -0.005592,
@@ -5075,7 +5075,7 @@
    },
    {
     "date": "2013-06-30",
-    "strat_value": 17143.1437,
+    "strat_value": 9527.5737,
     "spy_value": 186.7933,
     "invested": 124.0,
     "r": 0.095627,
@@ -5083,7 +5083,7 @@
    },
    {
     "date": "2013-07-31",
-    "strat_value": 16367.5974,
+    "strat_value": 9096.9757,
     "spy_value": 197.4979,
     "invested": 125.0,
     "r": -0.045295,
@@ -5091,7 +5091,7 @@
    },
    {
     "date": "2013-08-31",
-    "strat_value": 16531.4238,
+    "strat_value": 9188.4776,
     "spy_value": 192.5444,
     "invested": 126.0,
     "r": 0.009947,
@@ -5099,7 +5099,7 @@
    },
    {
     "date": "2013-09-30",
-    "strat_value": 17393.5642,
+    "strat_value": 9668.1389,
     "spy_value": 199.6694,
     "invested": 127.0,
     "r": 0.052088,
@@ -5107,7 +5107,7 @@
    },
    {
     "date": "2013-10-31",
-    "strat_value": 17757.1712,
+    "strat_value": 9870.7017,
     "spy_value": 209.9618,
     "invested": 128.0,
     "r": 0.020846,
@@ -5115,7 +5115,7 @@
    },
    {
     "date": "2013-11-30",
-    "strat_value": 19244.5677,
+    "strat_value": 10697.9841,
     "spy_value": 217.2142,
     "invested": 129.0,
     "r": 0.083702,
@@ -5123,7 +5123,7 @@
    },
    {
     "date": "2013-12-31",
-    "strat_value": 19443.9282,
+    "strat_value": 10809.2565,
     "spy_value": 223.8717,
     "invested": 130.0,
     "r": 0.010307,
@@ -5131,7 +5131,7 @@
    },
    {
     "date": "2014-01-31",
-    "strat_value": 21833.8127,
+    "strat_value": 12138.3383,
     "spy_value": 216.9454,
     "invested": 131.0,
     "r": 0.122854,
@@ -5139,7 +5139,7 @@
    },
    {
     "date": "2014-02-28",
-    "strat_value": 21018.7269,
+    "strat_value": 11685.6251,
     "spy_value": 227.8654,
     "invested": 132.0,
     "r": -0.037375,
@@ -5147,7 +5147,7 @@
    },
    {
     "date": "2014-03-31",
-    "strat_value": 20698.5359,
+    "strat_value": 11508.0481,
     "spy_value": 230.7638,
     "invested": 133.0,
     "r": -0.01528,
@@ -5155,7 +5155,7 @@
    },
    {
     "date": "2014-04-30",
-    "strat_value": 20986.0236,
+    "strat_value": 11668.3368,
     "spy_value": 233.375,
     "invested": 134.0,
     "r": 0.01384,
@@ -5163,447 +5163,447 @@
    },
    {
     "date": "2014-05-31",
-    "strat_value": 21420.3867,
+    "strat_value": 11668.109,
     "spy_value": 239.8139,
     "invested": 135.0,
-    "r": 0.020649,
+    "r": -0.000105,
     "s": 0.023206
    },
    {
     "date": "2014-06-30",
-    "strat_value": 20362.0244,
+    "strat_value": 11124.0462,
     "spy_value": 245.7855,
     "invested": 136.0,
-    "r": -0.049453,
+    "r": -0.04671,
     "s": 0.020645
    },
    {
     "date": "2014-07-31",
-    "strat_value": 22850.5063,
+    "strat_value": 12791.2409,
     "spy_value": 243.4693,
     "invested": 137.0,
-    "r": 0.122157,
+    "r": 0.14977,
     "s": -0.013437
    },
    {
     "date": "2014-08-31",
-    "strat_value": 21637.652,
+    "strat_value": 12870.7208,
     "spy_value": 254.117,
     "invested": 138.0,
-    "r": -0.053119,
+    "r": 0.006135,
     "s": 0.039464
    },
    {
     "date": "2014-09-30",
-    "strat_value": 21170.4967,
+    "strat_value": 13196.4598,
     "spy_value": 253.5554,
     "invested": 139.0,
-    "r": -0.021635,
+    "r": 0.025229,
     "s": -0.006121
    },
    {
     "date": "2014-10-31",
-    "strat_value": 21046.9429,
+    "strat_value": 14257.3693,
     "spy_value": 260.5505,
     "invested": 140.0,
-    "r": -0.005883,
+    "r": 0.080312,
     "s": 0.023551
    },
    {
     "date": "2014-11-30",
-    "strat_value": 20390.3687,
+    "strat_value": 14522.1166,
     "spy_value": 268.7358,
     "invested": 141.0,
-    "r": -0.031242,
+    "r": 0.018498,
     "s": 0.027472
    },
    {
     "date": "2014-12-31",
-    "strat_value": 22457.2513,
+    "strat_value": 14380.5886,
     "spy_value": 269.0516,
     "invested": 142.0,
-    "r": 0.101312,
+    "r": -0.009814,
     "s": -0.002537
    },
    {
     "date": "2015-01-31",
-    "strat_value": 25551.4275,
+    "strat_value": 17213.7321,
     "spy_value": 262.0501,
     "invested": 143.0,
-    "r": 0.13773,
+    "r": 0.196928,
     "s": -0.02963
    },
    {
     "date": "2015-02-28",
-    "strat_value": 25508.0043,
+    "strat_value": 16955.7607,
     "spy_value": 277.8347,
     "invested": 144.0,
-    "r": -0.001739,
+    "r": -0.015044,
     "s": 0.056205
    },
    {
     "date": "2015-03-31",
-    "strat_value": 25638.261,
+    "strat_value": 16796.8478,
     "spy_value": 274.4555,
     "invested": 145.0,
-    "r": 0.005067,
+    "r": -0.009431,
     "s": -0.015705
    },
    {
     "date": "2015-04-30",
-    "strat_value": 28409.2429,
+    "strat_value": 19051.4107,
     "spy_value": 278.1643,
     "invested": 146.0,
-    "r": 0.108037,
+    "r": 0.134158,
     "s": 0.009834
    },
    {
     "date": "2015-05-31",
-    "strat_value": 26397.7629,
+    "strat_value": 18478.5008,
     "spy_value": 282.7533,
     "invested": 147.0,
-    "r": -0.070836,
+    "r": -0.030123,
     "s": 0.012856
    },
    {
     "date": "2015-06-30",
-    "strat_value": 25071.3991,
+    "strat_value": 20106.44,
     "spy_value": 277.9897,
     "invested": 148.0,
-    "r": -0.050281,
+    "r": 0.08804,
     "s": -0.020312
    },
    {
     "date": "2015-07-31",
-    "strat_value": 23667.9486,
+    "strat_value": 21682.8255,
     "spy_value": 285.2918,
     "invested": 149.0,
-    "r": -0.056016,
+    "r": 0.078348,
     "s": 0.022589
    },
    {
     "date": "2015-08-31",
-    "strat_value": 22389.546,
+    "strat_value": 21945.3063,
     "spy_value": 268.8423,
     "invested": 150.0,
-    "r": -0.054054,
+    "r": 0.012059,
     "s": -0.06095
    },
    {
     "date": "2015-09-30",
-    "strat_value": 22535.9391,
+    "strat_value": 24313.617,
     "spy_value": 262.957,
     "invested": 151.0,
-    "r": 0.006494,
+    "r": 0.107868,
     "s": -0.025516
    },
    {
     "date": "2015-10-31",
-    "strat_value": 22019.2642,
+    "strat_value": 27450.2438,
     "spy_value": 286.409,
     "invested": 152.0,
-    "r": -0.02297,
+    "r": 0.128961,
     "s": 0.08506
    },
    {
     "date": "2015-11-30",
-    "strat_value": 17569.4926,
+    "strat_value": 27222.2553,
     "spy_value": 288.4597,
     "invested": 153.0,
-    "r": -0.202122,
+    "r": -0.008342,
     "s": 0.003655
    },
    {
     "date": "2015-12-31",
-    "strat_value": 13868.7552,
+    "strat_value": 23258.9206,
     "spy_value": 284.457,
     "invested": 154.0,
-    "r": -0.210679,
+    "r": -0.145623,
     "s": -0.017283
    },
    {
     "date": "2016-01-31",
-    "strat_value": 10836.3698,
+    "strat_value": 25300.9786,
     "spy_value": 271.2451,
     "invested": 155.0,
-    "r": -0.218705,
+    "r": 0.08775,
     "s": -0.049787
    },
    {
     "date": "2016-02-29",
-    "strat_value": 13134.1109,
+    "strat_value": 29117.0868,
     "spy_value": 272.0202,
     "invested": 156.0,
-    "r": 0.211928,
+    "r": 0.150783,
     "s": -0.000826
    },
    {
     "date": "2016-03-31",
-    "strat_value": 13628.0379,
+    "strat_value": 29018.1378,
     "spy_value": 291.3852,
     "invested": 157.0,
-    "r": 0.037527,
+    "r": -0.003433,
     "s": 0.067266
    },
    {
     "date": "2016-04-30",
-    "strat_value": 14457.9871,
+    "strat_value": 34951.0035,
     "spy_value": 293.5376,
     "invested": 158.0,
-    "r": 0.060822,
+    "r": 0.204412,
     "s": 0.003941
    },
    {
     "date": "2016-05-31",
-    "strat_value": 14092.0869,
+    "strat_value": 34128.3493,
     "spy_value": 299.5481,
     "invested": 159.0,
-    "r": -0.025375,
+    "r": -0.023565,
     "s": 0.017011
    },
    {
     "date": "2016-06-30",
-    "strat_value": 16793.5968,
+    "strat_value": 39777.2491,
     "spy_value": 301.5927,
     "invested": 160.0,
-    "r": 0.191619,
+    "r": 0.165485,
     "s": 0.003476
    },
    {
     "date": "2016-07-31",
-    "strat_value": 18787.7546,
+    "strat_value": 41805.5708,
     "spy_value": 313.6288,
     "invested": 161.0,
-    "r": 0.118679,
+    "r": 0.050966,
     "s": 0.036472
    },
    {
     "date": "2016-08-31",
-    "strat_value": 20909.9646,
+    "strat_value": 46141.614,
     "spy_value": 315.0056,
     "invested": 162.0,
-    "r": 0.112898,
+    "r": 0.103693,
     "s": 0.001198
    },
    {
     "date": "2016-09-30",
-    "strat_value": 21174.1293,
+    "strat_value": 45486.4971,
     "spy_value": 316.0238,
     "invested": 163.0,
-    "r": 0.012585,
+    "r": -0.014219,
     "s": 5.8e-05
    },
    {
     "date": "2016-10-31",
-    "strat_value": 28210.4782,
+    "strat_value": 53684.654,
     "spy_value": 311.5276,
     "invested": 164.0,
-    "r": 0.332246,
+    "r": 0.180207,
     "s": -0.017337
    },
    {
     "date": "2016-11-30",
-    "strat_value": 32952.6064,
+    "strat_value": 57162.5471,
     "spy_value": 324.0406,
     "invested": 165.0,
-    "r": 0.168057,
+    "r": 0.064764,
     "s": 0.036838
    },
    {
     "date": "2016-12-31",
-    "strat_value": 32873.6841,
+    "strat_value": 58221.3665,
     "spy_value": 331.6298,
     "invested": 166.0,
-    "r": -0.002425,
+    "r": 0.018505,
     "s": 0.020272
    },
    {
     "date": "2017-01-31",
-    "strat_value": 28402.1163,
+    "strat_value": 60691.0087,
     "spy_value": 338.582,
     "invested": 167.0,
-    "r": -0.136049,
+    "r": 0.0424,
     "s": 0.017895
    },
    {
     "date": "2017-02-28",
-    "strat_value": 27225.2231,
+    "strat_value": 64052.1003,
     "spy_value": 352.9248,
     "invested": 168.0,
-    "r": -0.041471,
+    "r": 0.055363,
     "s": 0.039292
    },
    {
     "date": "2017-03-31",
-    "strat_value": 25565.2941,
+    "strat_value": 64375.5665,
     "spy_value": 354.3671,
     "invested": 169.0,
-    "r": -0.061005,
+    "r": 0.005034,
     "s": 0.00125
    },
    {
     "date": "2017-04-30",
-    "strat_value": 27508.7475,
+    "strat_value": 76680.771,
     "spy_value": 358.8946,
     "invested": 170.0,
-    "r": 0.075977,
+    "r": 0.191129,
     "s": 0.009926
    },
    {
     "date": "2017-05-31",
-    "strat_value": 27824.936,
+    "strat_value": 74390.4955,
     "spy_value": 364.9737,
     "invested": 171.0,
-    "r": 0.011457,
+    "r": -0.02988,
     "s": 0.014113
    },
    {
     "date": "2017-06-30",
-    "strat_value": 27541.5741,
+    "strat_value": 82457.2833,
     "spy_value": 368.3068,
     "invested": 172.0,
-    "r": -0.010219,
+    "r": 0.108424,
     "s": 0.006375
    },
    {
     "date": "2017-07-31",
-    "strat_value": 24731.9909,
+    "strat_value": 84211.1226,
     "spy_value": 376.8976,
     "invested": 173.0,
-    "r": -0.102045,
+    "r": 0.021257,
     "s": 0.020554
    },
    {
     "date": "2017-08-31",
-    "strat_value": 26770.9031,
+    "strat_value": 88777.9555,
     "spy_value": 379.0002,
     "invested": 174.0,
-    "r": 0.082397,
+    "r": 0.054218,
     "s": 0.002918
    },
    {
     "date": "2017-09-30",
-    "strat_value": 27185.9292,
+    "strat_value": 99277.4594,
     "spy_value": 387.6569,
     "invested": 175.0,
-    "r": 0.015465,
+    "r": 0.118254,
     "s": 0.020149
    },
    {
     "date": "2017-10-31",
-    "strat_value": 23112.9838,
+    "strat_value": 97617.4473,
     "spy_value": 397.8153,
     "invested": 176.0,
-    "r": -0.149849,
+    "r": -0.016731,
     "s": 0.023564
    },
    {
     "date": "2017-11-30",
-    "strat_value": 23722.4346,
+    "strat_value": 95177.9198,
     "spy_value": 411.0055,
     "invested": 177.0,
-    "r": 0.026324,
+    "r": -0.025001,
     "s": 0.030566
    },
    {
     "date": "2017-12-31",
-    "strat_value": 30341.7835,
+    "strat_value": 106083.947,
     "spy_value": 417.0023,
     "invested": 178.0,
-    "r": 0.278979,
+    "r": 0.114574,
     "s": 0.012128
    },
    {
     "date": "2018-01-31",
-    "strat_value": 35006.7782,
+    "strat_value": 104507.6874,
     "spy_value": 441.5604,
     "invested": 179.0,
-    "r": 0.15371,
+    "r": -0.014868,
     "s": 0.056359
    },
    {
     "date": "2018-02-28",
-    "strat_value": 33657.2534,
+    "strat_value": 99054.463,
     "spy_value": 426.4688,
     "invested": 180.0,
-    "r": -0.038578,
+    "r": -0.052189,
     "s": -0.03636
    },
    {
     "date": "2018-03-31",
-    "strat_value": 32995.9847,
+    "strat_value": 96251.0619,
     "spy_value": 415.7517,
     "invested": 181.0,
-    "r": -0.019676,
+    "r": -0.028311,
     "s": -0.027411
    },
    {
     "date": "2018-04-30",
-    "strat_value": 34689.5781,
+    "strat_value": 102136.6922,
     "spy_value": 418.9055,
     "invested": 182.0,
-    "r": 0.051295,
+    "r": 0.061138,
     "s": 0.005168
    },
    {
     "date": "2018-05-31",
-    "strat_value": 32826.6416,
+    "strat_value": 100834.7396,
     "spy_value": 430.113,
     "invested": 183.0,
-    "r": -0.05373,
+    "r": -0.012757,
     "s": 0.024309
    },
    {
     "date": "2018-06-30",
-    "strat_value": 33859.6915,
+    "strat_value": 107718.8965,
     "spy_value": 433.5923,
     "invested": 184.0,
-    "r": 0.031438,
+    "r": 0.068261,
     "s": 0.005751
    },
    {
     "date": "2018-07-31",
-    "strat_value": 36802.1456,
+    "strat_value": 110674.438,
     "spy_value": 450.6926,
     "invested": 185.0,
-    "r": 0.086869,
+    "r": 0.027428,
     "s": 0.037047
    },
    {
     "date": "2018-08-31",
-    "strat_value": 38155.0953,
+    "strat_value": 104240.8723,
     "spy_value": 466.1105,
     "invested": 186.0,
-    "r": 0.036735,
+    "r": -0.058139,
     "s": 0.03192
    },
    {
     "date": "2018-09-30",
-    "strat_value": 29763.4322,
+    "strat_value": 87798.2234,
     "spy_value": 469.8877,
     "invested": 187.0,
-    "r": -0.219956,
+    "r": -0.157745,
     "s": 0.005946
    },
    {
     "date": "2018-10-31",
-    "strat_value": 33791.4564,
+    "strat_value": 82680.8803,
     "spy_value": 438.3472,
     "invested": 188.0,
-    "r": 0.135297,
+    "r": -0.058296,
     "s": -0.069105
    },
    {
     "date": "2018-11-30",
-    "strat_value": 29414.6561,
+    "strat_value": 69881.7545,
     "spy_value": 447.4969,
     "invested": 189.0,
-    "r": -0.12955,
+    "r": -0.154812,
     "s": 0.01855
    },
    {
     "date": "2018-12-31",
-    "strat_value": 29415.6561,
+    "strat_value": 69882.7545,
     "spy_value": 409.0074,
     "invested": 190.0,
     "r": 0.0,
@@ -5611,7 +5611,7 @@
    },
    {
     "date": "2019-01-31",
-    "strat_value": 37529.4732,
+    "strat_value": 89156.9894,
     "spy_value": 442.8349,
     "invested": 191.0,
     "r": 0.27579,
@@ -5619,7 +5619,7 @@
    },
    {
     "date": "2019-02-28",
-    "strat_value": 37747.5197,
+    "strat_value": 89673.6085,
     "spy_value": 458.2222,
     "invested": 192.0,
     "r": 0.005783,
@@ -5627,7 +5627,7 @@
    },
    {
     "date": "2019-03-31",
-    "strat_value": 37834.2113,
+    "strat_value": 89878.1758,
     "spy_value": 467.5342,
     "invested": 193.0,
     "r": 0.00227,
@@ -5635,7 +5635,7 @@
    },
    {
     "date": "2019-04-30",
-    "strat_value": 35348.8965,
+    "strat_value": 83972.8277,
     "spy_value": 487.6751,
     "invested": 194.0,
     "r": -0.065714,
@@ -5643,7 +5643,7 @@
    },
    {
     "date": "2019-05-31",
-    "strat_value": 42218.5083,
+    "strat_value": 100290.2439,
     "spy_value": 457.5116,
     "invested": 195.0,
     "r": 0.194304,
@@ -5651,7 +5651,7 @@
    },
    {
     "date": "2019-06-30",
-    "strat_value": 41111.5122,
+    "strat_value": 97659.2307,
     "spy_value": 490.4179,
     "invested": 196.0,
     "r": -0.026244,
@@ -5659,7 +5659,7 @@
    },
    {
     "date": "2019-07-31",
-    "strat_value": 41653.3795,
+    "strat_value": 98945.0274,
     "spy_value": 498.848,
     "invested": 197.0,
     "r": 0.013156,
@@ -5667,7 +5667,7 @@
    },
    {
     "date": "2019-08-31",
-    "strat_value": 43070.0257,
+    "strat_value": 102308.7607,
     "spy_value": 491.4787,
     "invested": 198.0,
     "r": 0.033986,
@@ -5675,7 +5675,7 @@
    },
    {
     "date": "2019-09-30",
-    "strat_value": 42093.7275,
+    "strat_value": 99988.3127,
     "spy_value": 502.0613,
     "invested": 199.0,
     "r": -0.02269,
@@ -5683,7 +5683,7 @@
    },
    {
     "date": "2019-10-31",
-    "strat_value": 44681.7622,
+    "strat_value": 106134.4011,
     "spy_value": 514.1813,
     "invested": 200.0,
     "r": 0.061457,
@@ -5691,7 +5691,7 @@
    },
    {
     "date": "2019-11-30",
-    "strat_value": 45806.3002,
+    "strat_value": 108804.1519,
     "spy_value": 533.8299,
     "invested": 201.0,
     "r": 0.025145,
@@ -5699,7 +5699,7 @@
    },
    {
     "date": "2019-12-31",
-    "strat_value": 49268.0421,
+    "strat_value": 117025.382,
     "spy_value": 550.3697,
     "invested": 202.0,
     "r": 0.07555,
@@ -5707,7 +5707,7 @@
    },
    {
     "date": "2020-01-31",
-    "strat_value": 49950.8102,
+    "strat_value": 118645.7529,
     "spy_value": 551.1471,
     "invested": 203.0,
     "r": 0.013838,
@@ -5715,7 +5715,7 @@
    },
    {
     "date": "2020-02-29",
-    "strat_value": 49135.6637,
+    "strat_value": 116708.222,
     "spy_value": 508.4358,
     "invested": 204.0,
     "r": -0.016339,
@@ -5723,7 +5723,7 @@
    },
    {
     "date": "2020-03-31",
-    "strat_value": 49136.6637,
+    "strat_value": 116709.222,
     "spy_value": 445.822,
     "invested": 205.0,
     "r": 0.0,
@@ -5731,7 +5731,7 @@
    },
    {
     "date": "2020-04-30",
-    "strat_value": 47898.7765,
+    "strat_value": 113767.6563,
     "spy_value": 503.561,
     "invested": 206.0,
     "r": -0.025213,
@@ -5739,7 +5739,7 @@
    },
    {
     "date": "2020-05-31",
-    "strat_value": 48693.7026,
+    "strat_value": 115654.3417,
     "spy_value": 528.601,
     "invested": 207.0,
     "r": 0.016575,
@@ -5747,7 +5747,7 @@
    },
    {
     "date": "2020-06-30",
-    "strat_value": 55462.8544,
+    "strat_value": 131730.456,
     "spy_value": 538.9932,
     "invested": 208.0,
     "r": 0.138992,
@@ -5755,7 +5755,7 @@
    },
    {
     "date": "2020-07-31",
-    "strat_value": 57904.3773,
+    "strat_value": 137527.9092,
     "spy_value": 571.7945,
     "invested": 209.0,
     "r": 0.044002,
@@ -5763,7 +5763,7 @@
    },
    {
     "date": "2020-08-31",
-    "strat_value": 45348.7153,
+    "strat_value": 107706.0479,
     "spy_value": 612.7737,
     "invested": 210.0,
     "r": -0.216848,
@@ -5771,7 +5771,7 @@
    },
    {
     "date": "2020-09-30",
-    "strat_value": 42565.6123,
+    "strat_value": 101094.7128,
     "spy_value": 590.7917,
     "invested": 211.0,
     "r": -0.061392,
@@ -5779,7 +5779,7 @@
    },
    {
     "date": "2020-10-31",
-    "strat_value": 58369.045,
+    "strat_value": 138626.4937,
     "spy_value": 577.0363,
     "invested": 212.0,
     "r": 0.37124,
@@ -5787,7 +5787,7 @@
    },
    {
     "date": "2020-11-30",
-    "strat_value": 66428.4867,
+    "strat_value": 157766.1046,
     "spy_value": 640.9133,
     "invested": 213.0,
     "r": 0.138058,
@@ -5795,7 +5795,7 @@
    },
    {
     "date": "2020-12-31",
-    "strat_value": 69848.29,
+    "strat_value": 165886.6118,
     "spy_value": 665.6952,
     "invested": 214.0,
     "r": 0.051465,
@@ -5803,7 +5803,7 @@
    },
    {
     "date": "2021-01-31",
-    "strat_value": 79487.7544,
+    "strat_value": 188778.3506,
     "spy_value": 659.9012,
     "invested": 215.0,
     "r": 0.137989,
@@ -5811,7 +5811,7 @@
    },
    {
     "date": "2021-02-28",
-    "strat_value": 85320.8555,
+    "strat_value": 202630.1179,
     "spy_value": 679.2779,
     "invested": 216.0,
     "r": 0.07337,
@@ -5819,7 +5819,7 @@
    },
    {
     "date": "2021-03-31",
-    "strat_value": 92648.7469,
+    "strat_value": 220031.7732,
     "spy_value": 711.1619,
     "invested": 217.0,
     "r": 0.085874,
@@ -5827,7 +5827,7 @@
    },
    {
     "date": "2021-04-30",
-    "strat_value": 88093.7214,
+    "strat_value": 209212.7229,
     "spy_value": 749.8429,
     "invested": 218.0,
     "r": -0.049175,
@@ -5835,7 +5835,7 @@
    },
    {
     "date": "2021-05-31",
-    "strat_value": 103388.8254,
+    "strat_value": 245535.2685,
     "spy_value": 755.7729,
     "invested": 219.0,
     "r": 0.17361,
@@ -5843,7 +5843,7 @@
    },
    {
     "date": "2021-06-30",
-    "strat_value": 100318.2196,
+    "strat_value": 238241.6374,
     "spy_value": 773.7454,
     "invested": 220.0,
     "r": -0.029709,
@@ -5851,7 +5851,7 @@
    },
    {
     "date": "2021-07-31",
-    "strat_value": 108525.7532,
+    "strat_value": 257731.886,
     "spy_value": 793.659,
     "invested": 221.0,
     "r": 0.081804,
@@ -5859,7 +5859,7 @@
    },
    {
     "date": "2021-08-31",
-    "strat_value": 105390.465,
+    "strat_value": 250284.7261,
     "spy_value": 818.3078,
     "invested": 222.0,
     "r": -0.028899,
@@ -5867,7 +5867,7 @@
    },
    {
     "date": "2021-09-30",
-    "strat_value": 113292.7153,
+    "strat_value": 269049.7709,
     "spy_value": 781.1236,
     "invested": 223.0,
     "r": 0.07497,
@@ -5875,7 +5875,7 @@
    },
    {
     "date": "2021-10-31",
-    "strat_value": 107922.7838,
+    "strat_value": 256295.8422,
     "spy_value": 837.0002,
     "invested": 224.0,
     "r": -0.047407,
@@ -5883,7 +5883,7 @@
    },
    {
     "date": "2021-11-30",
-    "strat_value": 111074.7552,
+    "strat_value": 263779.7529,
     "spy_value": 831.267,
     "invested": 225.0,
     "r": 0.029196,
@@ -5891,7 +5891,7 @@
    },
    {
     "date": "2021-12-31",
-    "strat_value": 94189.3539,
+    "strat_value": 223679.2235,
     "spy_value": 870.7575,
     "invested": 226.0,
     "r": -0.152026,
@@ -5899,7 +5899,7 @@
    },
    {
     "date": "2022-01-31",
-    "strat_value": 95630.855,
+    "strat_value": 227101.0791,
     "spy_value": 825.7798,
     "invested": 227.0,
     "r": 0.015294,
@@ -5907,7 +5907,7 @@
    },
    {
     "date": "2022-02-28",
-    "strat_value": 96846.4972,
+    "strat_value": 229986.555,
     "spy_value": 802.3758,
     "invested": 228.0,
     "r": 0.012701,
@@ -5915,7 +5915,7 @@
    },
    {
     "date": "2022-03-31",
-    "strat_value": 82937.9378,
+    "strat_value": 196955.978,
     "spy_value": 833.5749,
     "invested": 229.0,
     "r": -0.143623,
@@ -5923,7 +5923,7 @@
    },
    {
     "date": "2022-04-30",
-    "strat_value": 82938.9378,
+    "strat_value": 196956.978,
     "spy_value": 761.3251,
     "invested": 230.0,
     "r": 0.0,
@@ -5931,7 +5931,7 @@
    },
    {
     "date": "2022-05-31",
-    "strat_value": 65057.1707,
+    "strat_value": 154491.6614,
     "spy_value": 764.0459,
     "invested": 231.0,
     "r": -0.215611,
@@ -5939,7 +5939,7 @@
    },
    {
     "date": "2022-06-30",
-    "strat_value": 65058.1707,
+    "strat_value": 154492.6614,
     "spy_value": 701.9599,
     "invested": 232.0,
     "r": 0.0,
@@ -5947,7 +5947,7 @@
    },
    {
     "date": "2022-07-31",
-    "strat_value": 60998.8282,
+    "strat_value": 144851.7129,
     "spy_value": 767.6936,
     "invested": 233.0,
     "r": -0.06241,
@@ -5955,7 +5955,7 @@
    },
    {
     "date": "2022-08-31",
-    "strat_value": 47201.5072,
+    "strat_value": 112086.6497,
     "spy_value": 737.3294,
     "invested": 234.0,
     "r": -0.226203,
@@ -5963,7 +5963,7 @@
    },
    {
     "date": "2022-09-30",
-    "strat_value": 47202.5072,
+    "strat_value": 112087.6497,
     "spy_value": 670.0739,
     "invested": 235.0,
     "r": 0.0,
@@ -5971,7 +5971,7 @@
    },
    {
     "date": "2022-10-31",
-    "strat_value": 55468.403,
+    "strat_value": 131714.3314,
     "spy_value": 725.6159,
     "invested": 236.0,
     "r": 0.175091,
@@ -5979,7 +5979,7 @@
    },
    {
     "date": "2022-11-30",
-    "strat_value": 46462.29,
+    "strat_value": 110327.4164,
     "spy_value": 767.0096,
     "invested": 237.0,
     "r": -0.16238,
@@ -5987,7 +5987,7 @@
    },
    {
     "date": "2022-12-31",
-    "strat_value": 62244.5506,
+    "strat_value": 147801.4729,
     "spy_value": 723.7505,
     "invested": 238.0,
     "r": 0.33965,
@@ -5995,7 +5995,7 @@
    },
    {
     "date": "2023-01-31",
-    "strat_value": 67530.9847,
+    "strat_value": 160352.7713,
     "spy_value": 770.3282,
     "invested": 239.0,
     "r": 0.084913,
@@ -6003,7 +6003,7 @@
    },
    {
     "date": "2023-02-28",
-    "strat_value": 72678.1342,
+    "strat_value": 172573.2328,
     "spy_value": 751.9349,
     "invested": 240.0,
     "r": 0.076203,
@@ -6011,7 +6011,7 @@
    },
    {
     "date": "2023-03-31",
-    "strat_value": 69277.0684,
+    "strat_value": 164496.1385,
     "spy_value": 780.8521,
     "invested": 241.0,
     "r": -0.046809,
@@ -6019,7 +6019,7 @@
    },
    {
     "date": "2023-04-30",
-    "strat_value": 89464.4261,
+    "strat_value": 212428.5855,
     "spy_value": 794.342,
     "invested": 242.0,
     "r": 0.291382,
@@ -6027,7 +6027,7 @@
    },
    {
     "date": "2023-05-31",
-    "strat_value": 99677.2177,
+    "strat_value": 236676.7922,
     "spy_value": 799.0137,
     "invested": 243.0,
     "r": 0.114142,
@@ -6035,7 +6035,7 @@
    },
    {
     "date": "2023-06-30",
-    "strat_value": 124241.5205,
+    "strat_value": 295001.3498,
     "spy_value": 851.8544,
     "invested": 244.0,
     "r": 0.246426,
@@ -6043,7 +6043,7 @@
    },
    {
     "date": "2023-07-31",
-    "strat_value": 116439.1303,
+    "strat_value": 276473.9229,
     "spy_value": 880.771,
     "invested": 245.0,
     "r": -0.062808,
@@ -6051,7 +6051,7 @@
    },
    {
     "date": "2023-08-31",
-    "strat_value": 104222.6027,
+    "strat_value": 247465.6803,
     "spy_value": 867.4404,
     "invested": 246.0,
     "r": -0.104925,
@@ -6059,7 +6059,7 @@
    },
    {
     "date": "2023-09-30",
-    "strat_value": 94416.3165,
+    "strat_value": 224180.4331,
     "spy_value": 827.2464,
     "invested": 247.0,
     "r": -0.094099,
@@ -6067,7 +6067,7 @@
    },
    {
     "date": "2023-10-31",
-    "strat_value": 111229.6063,
+    "strat_value": 264099.9923,
     "spy_value": 810.2663,
     "invested": 248.0,
     "r": 0.178064,
@@ -6075,7 +6075,7 @@
    },
    {
     "date": "2023-11-30",
-    "strat_value": 134313.0673,
+    "strat_value": 318906.9586,
     "spy_value": 885.3705,
     "invested": 249.0,
     "r": 0.207519,
@@ -6083,7 +6083,7 @@
    },
    {
     "date": "2023-12-31",
-    "strat_value": 125060.4084,
+    "strat_value": 296936.578,
     "spy_value": 926.8381,
     "invested": 250.0,
     "r": -0.068896,
@@ -6091,7 +6091,7 @@
    },
    {
     "date": "2024-01-31",
-    "strat_value": 128784.0239,
+    "strat_value": 305776.3114,
     "spy_value": 942.6153,
     "invested": 251.0,
     "r": 0.029766,
@@ -6099,7 +6099,7 @@
    },
    {
     "date": "2024-02-29",
-    "strat_value": 135313.4608,
+    "strat_value": 321277.9325,
     "spy_value": 992.8594,
     "invested": 252.0,
     "r": 0.050693,
@@ -6107,7 +6107,7 @@
    },
    {
     "date": "2024-03-31",
-    "strat_value": 123315.5829,
+    "strat_value": 292789.8365,
     "spy_value": 1026.3607,
     "invested": 253.0,
     "r": -0.088674,
@@ -6115,7 +6115,7 @@
    },
    {
     "date": "2024-04-30",
-    "strat_value": 125002.4362,
+    "strat_value": 296793.5617,
     "spy_value": 985.9379,
     "invested": 254.0,
     "r": 0.013671,
@@ -6123,7 +6123,7 @@
    },
    {
     "date": "2024-05-31",
-    "strat_value": 120570.2392,
+    "strat_value": 286268.8609,
     "spy_value": 1036.8568,
     "invested": 255.0,
     "r": -0.035465,
@@ -6131,7 +6131,7 @@
    },
    {
     "date": "2024-06-30",
-    "strat_value": 125818.0143,
+    "strat_value": 298727.1731,
     "spy_value": 1074.4726,
     "invested": 256.0,
     "r": 0.043516,
@@ -6139,7 +6139,7 @@
    },
    {
     "date": "2024-07-31",
-    "strat_value": 131070.8624,
+    "strat_value": 311197.4729,
     "spy_value": 1088.4955,
     "invested": 257.0,
     "r": 0.041741,
@@ -6147,7 +6147,7 @@
    },
    {
     "date": "2024-08-31",
-    "strat_value": 136618.0688,
+    "strat_value": 324366.6001,
     "spy_value": 1114.9524,
     "invested": 258.0,
     "r": 0.042314,
@@ -6155,7 +6155,7 @@
    },
    {
     "date": "2024-09-30",
-    "strat_value": 131520.2891,
+    "strat_value": 312261.8307,
     "spy_value": 1139.3925,
     "invested": 259.0,
     "r": -0.037321,
@@ -6163,7 +6163,7 @@
    },
    {
     "date": "2024-10-31",
-    "strat_value": 144251.3553,
+    "strat_value": 342487.0365,
     "spy_value": 1130.216,
     "invested": 260.0,
     "r": 0.096791,
@@ -6171,7 +6171,7 @@
    },
    {
     "date": "2024-11-30",
-    "strat_value": 132088.3549,
+    "strat_value": 313607.9216,
     "spy_value": 1198.6746,
     "invested": 261.0,
     "r": -0.084324,
@@ -6179,7 +6179,7 @@
    },
    {
     "date": "2024-12-31",
-    "strat_value": 136179.0989,
+    "strat_value": 323318.8654,
     "spy_value": 1170.8101,
     "invested": 262.0,
     "r": 0.030962,
@@ -6187,7 +6187,7 @@
    },
    {
     "date": "2025-01-31",
-    "strat_value": 126724.3293,
+    "strat_value": 300869.9026,
     "spy_value": 1203.2808,
     "invested": 263.0,
     "r": -0.069436,
@@ -6195,7 +6195,7 @@
    },
    {
     "date": "2025-02-28",
-    "strat_value": 114126.3173,
+    "strat_value": 270958.3653,
     "spy_value": 1188.9926,
     "invested": 264.0,
     "r": -0.09942,
@@ -6203,7 +6203,7 @@
    },
    {
     "date": "2025-03-31",
-    "strat_value": 109986.7909,
+    "strat_value": 261128.9896,
     "spy_value": 1123.6872,
     "invested": 265.0,
     "r": -0.03628,
@@ -6211,7 +6211,7 @@
    },
    {
     "date": "2025-04-30",
-    "strat_value": 132159.7145,
+    "strat_value": 313769.9612,
     "spy_value": 1114.9359,
     "invested": 266.0,
     "r": 0.201585,
@@ -6219,7 +6219,7 @@
    },
    {
     "date": "2025-05-31",
-    "strat_value": 147457.5692,
+    "strat_value": 350088.1741,
     "spy_value": 1186.0668,
     "invested": 267.0,
     "r": 0.115744,
@@ -6227,7 +6227,7 @@
    },
    {
     "date": "2025-06-30",
-    "strat_value": 144567.7101,
+    "strat_value": 343225.833,
     "spy_value": 1248.0657,
     "invested": 268.0,
     "r": -0.019605,
@@ -6235,7 +6235,7 @@
    },
    {
     "date": "2025-07-31",
-    "strat_value": 155114.1381,
+    "strat_value": 368263.1901,
     "spy_value": 1277.8336,
     "invested": 269.0,
     "r": 0.072944,
@@ -6243,7 +6243,7 @@
    },
    {
     "date": "2025-08-31",
-    "strat_value": 159858.2522,
+    "strat_value": 379524.9806,
     "spy_value": 1305.0746,
     "invested": 270.0,
     "r": 0.030578,
@@ -6251,7 +6251,7 @@
    },
    {
     "date": "2025-09-30",
-    "strat_value": 166479.1476,
+    "strat_value": 395242.4452,
     "spy_value": 1352.5975,
     "invested": 271.0,
     "r": 0.041411,
@@ -6259,7 +6259,7 @@
    },
    {
     "date": "2025-10-31",
-    "strat_value": 160675.964,
+    "strat_value": 381463.6308,
     "spy_value": 1385.8636,
     "invested": 272.0,
     "r": -0.034864,
@@ -6267,7 +6267,7 @@
    },
    {
     "date": "2025-11-30",
-    "strat_value": 154358.6341,
+    "strat_value": 366464.2268,
     "spy_value": 1389.5681,
     "invested": 273.0,
     "r": -0.039323,
@@ -6275,7 +6275,7 @@
    },
    {
     "date": "2025-12-31",
-    "strat_value": 167328.753,
+    "strat_value": 397255.2136,
     "spy_value": 1391.6771,
     "invested": 274.0,
     "r": 0.084019,
@@ -6309,48 +6309,48 @@
    },
    {
     "year": 2005,
-    "strat_moic": 1.137,
+    "strat_moic": 1.069,
     "spy_moic": 1.045,
-    "edge_moic": 0.092,
-    "strat_gain_pct": 0.1374,
+    "edge_moic": 0.024,
+    "strat_gain_pct": 0.0688,
     "spy_gain_pct": 0.0451,
-    "edge_pct": 0.0923,
+    "edge_pct": 0.0237,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2006,
-    "strat_moic": 1.45,
+    "strat_moic": 1.275,
     "spy_moic": 1.099,
-    "edge_moic": 0.351,
-    "strat_gain_pct": 0.4501,
+    "edge_moic": 0.176,
+    "strat_gain_pct": 0.2751,
     "spy_gain_pct": 0.0993,
-    "edge_pct": 0.3508,
+    "edge_pct": 0.1758,
     "n_picks": 24,
-    "win_rate": 0.9167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2007,
-    "strat_moic": 1.054,
+    "strat_moic": 0.977,
     "spy_moic": 1.005,
-    "edge_moic": 0.049,
-    "strat_gain_pct": 0.054,
+    "edge_moic": -0.028,
+    "strat_gain_pct": -0.023,
     "spy_gain_pct": 0.0045,
-    "edge_pct": 0.0494,
+    "edge_pct": -0.0276,
     "n_picks": 24,
     "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2008,
-    "strat_moic": 2.043,
+    "strat_moic": 2.051,
     "spy_moic": 0.741,
-    "edge_moic": 1.302,
-    "strat_gain_pct": 1.0429,
+    "edge_moic": 1.31,
+    "strat_gain_pct": 1.051,
     "spy_gain_pct": -0.2589,
-    "edge_pct": 1.3018,
+    "edge_pct": 1.3099,
     "n_picks": 18,
     "win_rate": 0.4167,
     "months": 12
@@ -6417,62 +6417,62 @@
    },
    {
     "year": 2014,
-    "strat_moic": 1.067,
+    "strat_moic": 1.173,
     "spy_moic": 1.088,
-    "edge_moic": -0.021,
-    "strat_gain_pct": 0.067,
+    "edge_moic": 0.085,
+    "strat_gain_pct": 0.173,
     "spy_gain_pct": 0.0884,
-    "edge_pct": -0.0214,
+    "edge_pct": 0.0845,
     "n_picks": 24,
-    "win_rate": 0.4167,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2015,
-    "strat_moic": 0.587,
+    "strat_moic": 1.179,
     "spy_moic": 1.007,
-    "edge_moic": -0.42,
-    "strat_gain_pct": -0.4125,
+    "edge_moic": 0.172,
+    "strat_gain_pct": 0.179,
     "spy_gain_pct": 0.007,
-    "edge_pct": -0.4196,
+    "edge_pct": 0.1719,
     "n_picks": 24,
-    "win_rate": 0.3333,
+    "win_rate": 0.5833,
     "months": 12
    },
    {
     "year": 2016,
-    "strat_moic": 1.993,
+    "strat_moic": 1.64,
     "spy_moic": 1.087,
-    "edge_moic": 0.906,
-    "strat_gain_pct": 0.9926,
+    "edge_moic": 0.553,
+    "strat_gain_pct": 0.64,
     "spy_gain_pct": 0.087,
-    "edge_pct": 0.9056,
+    "edge_pct": 0.553,
     "n_picks": 24,
     "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2017,
-    "strat_moic": 1.138,
+    "strat_moic": 1.391,
     "spy_moic": 1.116,
-    "edge_moic": 0.022,
-    "strat_gain_pct": 0.1377,
+    "edge_moic": 0.275,
+    "strat_gain_pct": 0.3911,
     "spy_gain_pct": 0.1159,
-    "edge_pct": 0.0218,
+    "edge_pct": 0.2752,
     "n_picks": 24,
-    "win_rate": 0.5,
+    "win_rate": 0.75,
     "months": 12
    },
    {
     "year": 2018,
-    "strat_moic": 0.885,
+    "strat_moic": 0.727,
     "spy_moic": 0.921,
-    "edge_moic": -0.037,
-    "strat_gain_pct": -0.1154,
+    "edge_moic": -0.194,
+    "strat_gain_pct": -0.2727,
     "spy_gain_pct": -0.0785,
-    "edge_pct": -0.0369,
+    "edge_pct": -0.1942,
     "n_picks": 22,
-    "win_rate": 0.5,
+    "win_rate": 0.25,
     "months": 12
    },
    {
@@ -6614,30 +6614,30 @@
    {
     "years_back": 10,
     "since_date": "2016-01-31",
-    "strat_moic": 3.762,
+    "strat_moic": 3.673,
     "spy_moic": 2.242,
-    "edge_moic": 1.52,
-    "strat_irr": 0.2536,
+    "edge_moic": 1.431,
+    "strat_irr": 0.2491,
     "spy_irr": 0.1565,
     "beat_spy": 1
    },
    {
     "years_back": 15,
     "since_date": "2011-01-31",
-    "strat_moic": 5.781,
+    "strat_moic": 15.664,
     "spy_moic": 3.293,
-    "edge_moic": 2.488,
-    "strat_irr": 0.2115,
+    "edge_moic": 12.371,
+    "strat_irr": 0.3246,
     "spy_irr": 0.1468,
     "beat_spy": 1
    },
    {
     "years_back": 20,
     "since_date": "2006-01-31",
-    "strat_moic": 149.441,
+    "strat_moic": 545.522,
     "spy_moic": 4.476,
-    "edge_moic": 144.965,
-    "strat_irr": 0.4164,
+    "edge_moic": 541.046,
+    "strat_irr": 0.5261,
     "spy_irr": 0.1336,
     "beat_spy": 1
    }
@@ -6645,22 +6645,22 @@
   "walk_forward": [
    {
     "n_months": 95,
-    "strat_moic": 1.557,
+    "strat_moic": 4.853,
     "spy_moic": 1.671,
-    "edge_moic": -0.114,
-    "strat_irr": 0.1114,
+    "edge_moic": 3.182,
+    "strat_irr": 0.3954,
     "spy_irr": 0.129,
-    "beat_spy": 0,
+    "beat_spy": 1,
     "split": "A1",
     "from": "2011-01-01",
     "to": "2018-12-31"
    },
    {
     "n_months": 83,
-    "strat_moic": 3.615,
+    "strat_moic": 4.782,
     "spy_moic": 1.86,
-    "edge_moic": 1.755,
-    "strat_irr": 0.3757,
+    "edge_moic": 2.922,
+    "strat_irr": 0.4603,
     "spy_irr": 0.1803,
     "beat_spy": 1,
     "split": "A2",
@@ -6669,10 +6669,10 @@
    },
    {
     "n_months": 83,
-    "strat_moic": 2.275,
+    "strat_moic": 2.173,
     "spy_moic": 1.78,
-    "edge_moic": 0.495,
-    "strat_irr": 0.239,
+    "edge_moic": 0.393,
+    "strat_irr": 0.2256,
     "spy_irr": 0.1676,
     "beat_spy": 1,
     "split": "A3",
@@ -6681,10 +6681,10 @@
    },
    {
     "n_months": 35,
-    "strat_moic": 18.748,
+    "strat_moic": 18.807,
     "spy_moic": 1.138,
-    "edge_moic": 17.609,
-    "strat_irr": 3.7014,
+    "edge_moic": 17.669,
+    "strat_irr": 3.708,
     "spy_irr": 0.0935,
     "beat_spy": 1,
     "split": "R1_GFC",
@@ -6705,10 +6705,10 @@
    },
    {
     "n_months": 35,
-    "strat_moic": 1.671,
+    "strat_moic": 3.114,
     "spy_moic": 1.13,
-    "edge_moic": 0.54,
-    "strat_irr": 0.3973,
+    "edge_moic": 1.983,
+    "strat_irr": 0.9885,
     "spy_irr": 0.0884,
     "beat_spy": 1,
     "split": "R3",
@@ -6717,10 +6717,10 @@
    },
    {
     "n_months": 35,
-    "strat_moic": 1.431,
+    "strat_moic": 1.248,
     "spy_moic": 1.219,
-    "edge_moic": 0.212,
-    "strat_irr": 0.2698,
+    "edge_moic": 0.029,
+    "strat_irr": 0.1626,
     "spy_irr": 0.1448,
     "beat_spy": 1,
     "split": "R4",
@@ -6766,18 +6766,18 @@
   ],
   "walk_forward_summary": {
    "n_windows": 10,
-   "n_beat_spy": 6,
-   "median_strat_moic": 1.522,
+   "n_beat_spy": 7,
+   "median_strat_moic": 1.83,
    "median_spy_moic": 1.323,
    "worst_strat_moic": 0.696
   },
   "subperiods": [
    {
     "n_months": 111,
-    "strat_moic": 93.514,
+    "strat_moic": 54.314,
     "spy_moic": 1.307,
-    "edge_moic": 92.207,
-    "strat_irr": 1.0039,
+    "edge_moic": 53.006,
+    "strat_irr": 0.8676,
     "spy_irr": 0.0576,
     "beat_spy": 1,
     "period": "p1_03_12",
@@ -6786,10 +6786,10 @@
    },
    {
     "n_months": 119,
-    "strat_moic": 15.489,
+    "strat_moic": 110.61,
     "spy_moic": 2.055,
-    "edge_moic": 13.434,
-    "strat_irr": 0.5289,
+    "edge_moic": 108.554,
+    "strat_irr": 0.9507,
     "spy_irr": 0.1413,
     "beat_spy": 1,
     "period": "p2_08_17",
@@ -6798,22 +6798,22 @@
    },
    {
     "n_months": 119,
-    "strat_moic": 1.631,
+    "strat_moic": 3.598,
     "spy_moic": 1.835,
-    "edge_moic": -0.204,
-    "strat_irr": 0.0969,
+    "edge_moic": 1.763,
+    "strat_irr": 0.2475,
     "spy_irr": 0.1196,
-    "beat_spy": 0,
+    "beat_spy": 1,
     "period": "p3_13_22",
     "from": "2013-01-01",
     "to": "2022-12-31"
    },
    {
     "n_months": 95,
-    "strat_moic": 2.464,
+    "strat_moic": 2.36,
     "spy_moic": 1.928,
-    "edge_moic": 0.536,
-    "strat_irr": 0.2254,
+    "edge_moic": 0.432,
+    "strat_irr": 0.2147,
     "spy_irr": 0.1645,
     "beat_spy": 1,
     "period": "p4_18_25",
@@ -6822,10 +6822,10 @@
    },
    {
     "n_months": 191,
-    "strat_moic": 6.382,
+    "strat_moic": 19.433,
     "spy_moic": 3.606,
-    "edge_moic": 2.776,
-    "strat_irr": 0.2086,
+    "edge_moic": 15.827,
+    "strat_irr": 0.3261,
     "spy_irr": 0.1476,
     "beat_spy": 1,
     "period": "modern_10_25",
@@ -6836,30 +6836,30 @@
   "by_era": [
    {
     "n_months": 81,
-    "strat_moic": 51.267,
+    "strat_moic": 28.4,
     "spy_moic": 1.021,
-    "edge_moic": 50.246,
-    "strat_irr": 1.3335,
+    "edge_moic": 27.379,
+    "strat_irr": 1.095,
     "spy_irr": 0.0063,
     "beat_spy": 1,
     "era": "2003\u20132009"
    },
    {
     "n_months": 71,
-    "strat_moic": 1.278,
+    "strat_moic": 3.449,
     "spy_moic": 1.516,
-    "edge_moic": -0.238,
-    "strat_irr": 0.0841,
+    "edge_moic": 1.933,
+    "strat_irr": 0.4354,
     "spy_irr": 0.1431,
-    "beat_spy": 0,
+    "beat_spy": 1,
     "era": "2010\u20132015"
    },
    {
     "n_months": 59,
-    "strat_moic": 2.322,
+    "strat_moic": 2.249,
     "spy_moic": 1.472,
-    "edge_moic": 0.849,
-    "strat_irr": 0.3626,
+    "edge_moic": 0.777,
+    "strat_irr": 0.3483,
     "spy_irr": 0.1626,
     "beat_spy": 1,
     "era": "2016\u20132020"
@@ -7002,17 +7002,17 @@
    "asof": "2004-09-30",
    "ticker": "WMB",
    "regime": "normal",
-   "next_month_ret": 0.5304862565449648,
+   "next_month_ret": 0.5637395837721353,
    "entry_px": 4.118719156329784,
-   "exit_date": "2005-05-31",
-   "exit_px": 6.303643063331207,
+   "exit_date": "2005-03-31",
+   "exit_px": 6.440604179193457,
    "years": 0.5,
-   "return": 0.5304862565449648,
-   "ret": 0.5304862565449648,
-   "ret_strat": 0.5304862565449648,
-   "ret_spy": 0.0815410999126005,
-   "cagr": 1.3423881814730199,
-   "spy_return": 0.0815410999126005,
+   "return": 0.5637395837721353,
+   "ret": 0.5637395837721353,
+   "ret_strat": 0.5637395837721353,
+   "ret_spy": 0.0677818966468362,
+   "cagr": 1.4452814858558507,
+   "spy_return": 0.0677818966468362,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
@@ -7022,219 +7022,219 @@
    "asof": "2004-09-30",
    "ticker": "AAPL",
    "regime": "normal",
-   "next_month_ret": 1.0521302085777147,
+   "next_month_ret": 1.1507103843875708,
    "entry_px": 0.586573553124652,
-   "exit_date": "2005-05-31",
-   "exit_px": 1.2037253079198633,
+   "exit_date": "2005-03-31",
+   "exit_px": 1.2615498319123035,
    "years": 0.5,
-   "return": 1.0521302085777147,
-   "ret": 1.0521302085777147,
-   "ret_strat": 1.0521302085777147,
-   "ret_spy": 0.0815410999126005,
-   "cagr": 3.211238392957215,
-   "spy_return": 0.0815410999126005,
+   "return": 1.1507103843875708,
+   "ret": 1.1507103843875708,
+   "ret_strat": 1.1507103843875708,
+   "ret_spy": 0.0677818966468362,
+   "cagr": 3.625555157512532,
+   "spy_return": 0.0677818966468362,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
    "basket_id": 4
   },
   {
-   "asof": "2005-05-31",
-   "ticker": "UVN",
-   "regime": "normal",
-   "next_month_ret": 0.9594594986443972,
-   "entry_px": 0.7400000095367432,
-   "exit_date": "2005-12-31",
-   "exit_px": 1.4500000476837158,
-   "years": 0.5,
-   "return": 0.9594594986443972,
-   "ret": 0.9594594986443972,
-   "ret_strat": 0.9594594986443972,
-   "ret_spy": 0.056328807585385166,
-   "cagr": 2.8394815268277522,
-   "spy_return": 0.056328807585385166,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 5
-  },
-  {
-   "asof": "2005-05-31",
+   "asof": "2005-03-31",
    "ticker": "BLL",
    "regime": "normal",
-   "next_month_ret": 0.07971216248167079,
-   "entry_px": 6.746084690093994,
-   "exit_date": "2005-12-31",
-   "exit_px": 7.283829689025879,
+   "next_month_ret": -0.09521923954981448,
+   "entry_px": 7.373482704162598,
+   "exit_date": "2005-09-30",
+   "exit_px": 6.671385288238525,
    "years": 0.5,
-   "return": 0.07971216248167079,
-   "ret": 0.07971216248167079,
-   "ret_strat": 0.07971216248167079,
-   "ret_spy": 0.056328807585385166,
-   "cagr": 0.16577835381084594,
-   "spy_return": 0.056328807585385166,
+   "return": -0.09521923954981448,
+   "ret": -0.09521923954981448,
+   "ret_strat": -0.09521923954981448,
+   "ret_spy": 0.05173339509416586,
+   "cagr": -0.18137177551918404,
+   "spy_return": 0.05173339509416586,
+   "win": 0,
+   "beat_spy": 0,
+   "status": "exited",
+   "basket_id": 5
+  },
+  {
+   "asof": "2005-03-31",
+   "ticker": "WEN",
+   "regime": "normal",
+   "next_month_ret": 0.19389926539965718,
+   "entry_px": 7.996599318374457,
+   "exit_date": "2005-09-30",
+   "exit_px": 9.547134051902663,
+   "years": 0.5,
+   "return": 0.19389926539965718,
+   "ret": 0.19389926539965718,
+   "ret_strat": 0.19389926539965718,
+   "ret_spy": 0.05173339509416586,
+   "cagr": 0.42539545592184114,
+   "spy_return": 0.05173339509416586,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
    "basket_id": 5
   },
   {
-   "asof": "2005-12-31",
-   "ticker": "BOL",
-   "regime": "normal",
-   "next_month_ret": 0.10204081434053669,
-   "entry_px": 1.225000023841858,
-   "exit_date": "2006-06-30",
-   "exit_px": 1.350000023841858,
-   "years": 0.5,
-   "return": 0.10204081434053669,
-   "ret": 0.10204081434053669,
-   "ret_strat": 0.10204081434053669,
-   "ret_spy": 0.030848461528807825,
-   "cagr": 0.21449395647235336,
-   "spy_return": 0.030848461528807825,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 6
-  },
-  {
-   "asof": "2005-12-31",
-   "ticker": "CSX",
-   "regime": "normal",
-   "next_month_ret": 0.3934618003132715,
-   "entry_px": 1.9103762577936307,
-   "exit_date": "2006-06-30",
-   "exit_px": 2.662036339460843,
-   "years": 0.5,
-   "return": 0.3934618003132715,
-   "ret": 0.3934618003132715,
-   "ret_strat": 0.3934618003132715,
-   "ret_spy": 0.030848461528807825,
-   "cagr": 0.9417357889323037,
-   "spy_return": 0.030848461528807825,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 6
-  },
-  {
-   "asof": "2006-06-30",
-   "ticker": "KMG",
-   "regime": "normal",
-   "next_month_ret": 0.3012300872851865,
-   "entry_px": 7.167865753173828,
-   "exit_date": "2006-12-31",
-   "exit_px": 9.327042579650879,
-   "years": 0.5,
-   "return": 0.3012300872851865,
-   "ret": 0.3012300872851865,
-   "ret_strat": 0.3012300872851865,
-   "ret_spy": 0.12378543661942154,
-   "cagr": 0.6931997400562142,
-   "spy_return": 0.12378543661942154,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 7
-  },
-  {
-   "asof": "2006-06-30",
-   "ticker": "NVDA",
-   "regime": "normal",
-   "next_month_ret": 0.7383745452773154,
-   "entry_px": 0.3147716481540889,
-   "exit_date": "2006-12-31",
-   "exit_px": 0.5471910207260554,
-   "years": 0.5,
-   "return": 0.7383745452773154,
-   "ret": 0.7383745452773154,
-   "ret_strat": 0.7383745452773154,
-   "ret_spy": 0.12378543661942154,
-   "cagr": 2.021946059668113,
-   "spy_return": 0.12378543661942154,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 7
-  },
-  {
-   "asof": "2006-12-31",
-   "ticker": "CSX",
+   "asof": "2005-09-30",
+   "ticker": "CCU",
    "regime": "bull",
-   "next_month_ret": 0.31684661482795673,
-   "entry_px": 2.618092500108729,
-   "exit_date": "2007-06-30",
-   "exit_px": 3.4476262460746416,
+   "next_month_ret": -0.012944139085529716,
+   "entry_px": 4.804495334625244,
+   "exit_date": "2006-04-30",
+   "exit_px": 4.742305278778076,
    "years": 0.5,
-   "return": 0.31684661482795673,
-   "ret": 0.31684661482795673,
-   "ret_strat": 0.31684661482795673,
-   "ret_spy": 0.07101849626565016,
-   "cagr": 0.7340850069838489,
-   "spy_return": 0.07101849626565016,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 8
-  },
-  {
-   "asof": "2006-12-31",
-   "ticker": "BOL",
-   "regime": "bull",
-   "next_month_ret": 0.5267176239385367,
-   "entry_px": 0.6549999713897705,
-   "exit_date": "2007-06-30",
-   "exit_px": 1.0,
-   "years": 0.5,
-   "return": 0.5267176239385367,
-   "ret": 0.5267176239385367,
-   "ret_strat": 0.5267176239385367,
-   "ret_spy": 0.07101849626565016,
-   "cagr": 1.3308667032445314,
-   "spy_return": 0.07101849626565016,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 8
-  },
-  {
-   "asof": "2007-06-30",
-   "ticker": "NVDA",
-   "regime": "bull",
-   "next_month_ret": -0.281408774771166,
-   "entry_px": 0.6107667128646288,
-   "exit_date": "2008-03-31",
-   "exit_px": 0.43889160052638104,
-   "years": 0.5,
-   "return": -0.281408774771166,
-   "ret": -0.281408774771166,
-   "ret_strat": -0.281408774771166,
-   "ret_spy": -0.10948830596776105,
-   "cagr": -0.48362665102412317,
-   "spy_return": -0.10948830596776105,
+   "return": -0.012944139085529716,
+   "ret": -0.012944139085529716,
+   "ret_strat": -0.012944139085529716,
+   "ret_spy": 0.07845021169942656,
+   "cagr": -0.02572072743439391,
+   "spy_return": 0.07845021169942656,
    "win": 0,
    "beat_spy": 0,
+   "status": "exited",
+   "basket_id": 6
+  },
+  {
+   "asof": "2005-09-30",
+   "ticker": "PEG",
+   "regime": "bull",
+   "next_month_ret": -0.009178389547023103,
+   "entry_px": 15.236268560571094,
+   "exit_date": "2006-04-30",
+   "exit_px": 15.096424152479113,
+   "years": 0.5,
+   "return": -0.009178389547023103,
+   "ret": -0.009178389547023103,
+   "ret_strat": -0.009178389547023103,
+   "ret_spy": 0.07845021169942656,
+   "cagr": -0.01827253625936931,
+   "spy_return": 0.07845021169942656,
+   "win": 0,
+   "beat_spy": 0,
+   "status": "exited",
+   "basket_id": 6
+  },
+  {
+   "asof": "2006-04-30",
+   "ticker": "NVDA",
+   "regime": "bull",
+   "next_month_ret": 0.265913659973249,
+   "entry_px": 0.4320165637351044,
+   "exit_date": "2006-11-30",
+   "exit_px": 0.5468956693669724,
+   "years": 0.5,
+   "return": 0.265913659973249,
+   "ret": 0.265913659973249,
+   "ret_strat": 0.265913659973249,
+   "ret_spy": 0.07835916980182223,
+   "cagr": 0.6025373945068666,
+   "spy_return": 0.07835916980182223,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 7
+  },
+  {
+   "asof": "2006-04-30",
+   "ticker": "EP",
+   "regime": "bull",
+   "next_month_ret": -0.11111107840623069,
+   "entry_px": 6.480000019073486,
+   "exit_date": "2006-11-30",
+   "exit_px": 5.760000228881836,
+   "years": 0.5,
+   "return": -0.11111107840623069,
+   "ret": -0.11111107840623069,
+   "ret_strat": -0.11111107840623069,
+   "ret_spy": 0.07835916980182223,
+   "cagr": -0.20987648506786583,
+   "spy_return": 0.07835916980182223,
+   "win": 0,
+   "beat_spy": 0,
+   "status": "exited",
+   "basket_id": 7
+  },
+  {
+   "asof": "2006-11-30",
+   "ticker": "GPS",
+   "regime": "bull",
+   "next_month_ret": -0.002198814742098376,
+   "entry_px": 12.567094802856444,
+   "exit_date": "2007-05-31",
+   "exit_px": 12.539462089538574,
+   "years": 0.5,
+   "return": -0.002198814742098376,
+   "ret": -0.002198814742098376,
+   "ret_strat": -0.002198814742098376,
+   "ret_spy": 0.10144330500519039,
+   "cagr": -0.004392794697926639,
+   "spy_return": 0.10144330500519039,
+   "win": 0,
+   "beat_spy": 0,
+   "status": "exited",
+   "basket_id": 8
+  },
+  {
+   "asof": "2006-11-30",
+   "ticker": "T",
+   "regime": "bull",
+   "next_month_ret": 0.2512103763294815,
+   "entry_px": 6.592274324399722,
+   "exit_date": "2007-05-31",
+   "exit_px": 8.248322038299355,
+   "years": 0.5,
+   "return": 0.2512103763294815,
+   "ret": 0.2512103763294815,
+   "ret_strat": 0.2512103763294815,
+   "ret_spy": 0.10144330500519039,
+   "cagr": 0.5655274058345627,
+   "spy_return": 0.10144330500519039,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 8
+  },
+  {
+   "asof": "2007-05-31",
+   "ticker": "EP",
+   "regime": "bull",
+   "next_month_ret": -0.06000001986821413,
+   "entry_px": 4.800000190734863,
+   "exit_date": "2008-03-31",
+   "exit_px": 4.51200008392334,
+   "years": 0.5,
+   "return": -0.06000001986821413,
+   "ret": -0.06000001986821413,
+   "ret_strat": -0.06000001986821413,
+   "ret_spy": -0.12250818203082603,
+   "cagr": -0.11640003735224214,
+   "spy_return": -0.12250818203082603,
+   "win": 0,
+   "beat_spy": 1,
    "status": "exited",
    "basket_id": 9
   },
   {
-   "asof": "2007-06-30",
-   "ticker": "AMZN",
+   "asof": "2007-05-31",
+   "ticker": "NVDA",
    "regime": "bull",
-   "next_month_ret": 0.04224529030084234,
-   "entry_px": 3.389954443737474,
+   "next_month_ret": -0.1430418434213474,
+   "entry_px": 0.5121505608612514,
    "exit_date": "2008-03-31",
-   "exit_px": 3.533164053319794,
+   "exit_px": 0.43889160052638104,
    "years": 0.5,
-   "return": 0.04224529030084234,
-   "ret": 0.04224529030084234,
-   "ret_strat": 0.04224529030084234,
-   "ret_spy": -0.10948830596776105,
-   "cagr": 0.0862752451542872,
-   "spy_return": -0.10948830596776105,
-   "win": 1,
-   "beat_spy": 1,
+   "return": -0.1430418434213474,
+   "ret": -0.1430418434213474,
+   "ret_strat": -0.1430418434213474,
+   "ret_spy": -0.12250818203082603,
+   "cagr": -0.2656227178733176,
+   "spy_return": -0.12250818203082603,
+   "win": 0,
+   "beat_spy": 0,
    "status": "exited",
    "basket_id": 9
   },
@@ -7722,17 +7722,17 @@
    "asof": "2013-10-31",
    "ticker": "ORLY",
    "regime": "bull",
-   "next_month_ret": 0.21637997510325313,
+   "next_month_ret": 0.1949761442763478,
    "entry_px": 8.273214082402317,
-   "exit_date": "2014-06-30",
-   "exit_px": 10.063371939576413,
+   "exit_date": "2014-05-31",
+   "exit_px": 9.886293464961904,
    "years": 0.5,
-   "return": 0.21637997510325313,
-   "ret": 0.21637997510325313,
-   "ret_strat": 0.21637997510325313,
-   "ret_spy": 0.1297465552756789,
-   "cagr": 0.4795802438321908,
-   "spy_return": 0.1297465552756789,
+   "return": 0.1949761442763478,
+   "ret": 0.1949761442763478,
+   "ret_strat": 0.1949761442763478,
+   "ret_spy": 0.1068948637603524,
+   "cagr": 0.4279679853895668,
+   "spy_return": 0.1068948637603524,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
@@ -7742,261 +7742,221 @@
    "asof": "2013-10-31",
    "ticker": "MNST",
    "regime": "bull",
-   "next_month_ret": 0.2411323032450492,
+   "next_month_ret": 0.21230120938839492,
    "entry_px": 9.567463846331615,
-   "exit_date": "2014-06-30",
-   "exit_px": 11.874488439811294,
+   "exit_date": "2014-05-31",
+   "exit_px": 11.598647991687562,
    "years": 0.5,
-   "return": 0.2411323032450492,
-   "ret": 0.2411323032450492,
-   "ret_strat": 0.2411323032450492,
-   "ret_spy": 0.1297465552756789,
-   "cagr": 0.5404093941583608,
-   "spy_return": 0.1297465552756789,
+   "return": 0.21230120938839492,
+   "ret": 0.21230120938839492,
+   "ret_strat": 0.21230120938839492,
+   "ret_spy": 0.1068948637603524,
+   "cagr": 0.4696742222845649,
+   "spy_return": 0.1068948637603524,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
    "basket_id": 22
   },
   {
-   "asof": "2014-06-30",
-   "ticker": "NVDA",
-   "regime": "bull",
-   "next_month_ret": 0.0445819283157014,
-   "entry_px": 0.42672985515188583,
-   "exit_date": "2015-01-31",
-   "exit_px": 0.44575429496443686,
-   "years": 0.5,
-   "return": 0.0445819283157014,
-   "ret": 0.0445819283157014,
-   "ret_strat": 0.0445819283157014,
-   "ret_spy": 0.03748421998314777,
-   "cagr": 0.09115140496374918,
-   "spy_return": 0.03748421998314777,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 23
-  },
-  {
-   "asof": "2014-06-30",
-   "ticker": "NFLX",
-   "regime": "bull",
-   "next_month_ret": 0.0027236210948513584,
-   "entry_px": 6.245789906360076,
-   "exit_date": "2015-01-31",
-   "exit_px": 6.262801071503048,
-   "years": 0.5,
-   "return": 0.0027236210948513584,
-   "ret": 0.0027236210948513584,
-   "ret_strat": 0.0027236210948513584,
-   "ret_spy": 0.03748421998314777,
-   "cagr": 0.005454660301571046,
-   "spy_return": 0.03748421998314777,
-   "win": 1,
-   "beat_spy": 0,
-   "status": "exited",
-   "basket_id": 23
-  },
-  {
-   "asof": "2015-01-31",
-   "ticker": "CSX",
-   "regime": "bull",
-   "next_month_ret": -0.1278436733080638,
-   "entry_px": 8.932789239817742,
-   "exit_date": "2015-08-31",
-   "exit_px": 7.790788650512695,
-   "years": 0.5,
-   "return": -0.1278436733080638,
-   "ret": -0.1278436733080638,
-   "ret_strat": -0.1278436733080638,
-   "ret_spy": 0.0003419014394503428,
-   "cagr": -0.23934334181122863,
-   "spy_return": 0.0003419014394503428,
-   "win": 0,
-   "beat_spy": 0,
-   "status": "exited",
-   "basket_id": 24
-  },
-  {
-   "asof": "2015-01-31",
+   "asof": "2014-05-31",
    "ticker": "AVGO",
    "regime": "bull",
-   "next_month_ret": 0.22098572685698925,
-   "entry_px": 7.8381315079804414,
-   "exit_date": "2015-08-31",
-   "exit_px": 9.570246696472168,
+   "next_month_ret": 1.1072202989835036,
+   "entry_px": 5.323384369162041,
+   "exit_date": "2015-05-31",
+   "exit_px": 11.217543601989746,
    "years": 0.5,
-   "return": 0.22098572685698925,
-   "ret": 0.22098572685698925,
-   "ret_strat": 0.22098572685698925,
-   "ret_spy": 0.0003419014394503428,
-   "cagr": 0.4908061451884904,
-   "spy_return": 0.0003419014394503428,
+   "return": 1.1072202989835036,
+   "ret": 1.1072202989835036,
+   "ret_strat": 1.1072202989835036,
+   "ret_spy": 0.12597061172479052,
+   "cagr": 3.440377388448126,
+   "spy_return": 0.12597061172479052,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 23
+  },
+  {
+   "asof": "2014-05-31",
+   "ticker": "NVDA",
+   "regime": "bull",
+   "next_month_ret": 0.22447356955933984,
+   "entry_px": 0.4373175467688937,
+   "exit_date": "2015-05-31",
+   "exit_px": 0.5354837775230408,
+   "years": 0.5,
+   "return": 0.22447356955933984,
+   "ret": 0.22447356955933984,
+   "ret_strat": 0.22447356955933984,
+   "ret_spy": 0.12597061172479052,
+   "cagr": 0.4993355225493914,
+   "spy_return": 0.12597061172479052,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 23
+  },
+  {
+   "asof": "2015-05-31",
+   "ticker": "NFLX",
+   "regime": "normal",
+   "next_month_ret": 0.28298555712032414,
+   "entry_px": 8.915143013000488,
+   "exit_date": "2015-12-31",
+   "exit_px": 11.437999725341797,
+   "years": 0.5,
+   "return": 0.28298555712032414,
+   "ret": 0.28298555712032414,
+   "ret_strat": 0.28298555712032414,
+   "ret_spy": -0.018886891848077125,
+   "cagr": 0.6460519397793485,
+   "spy_return": -0.018886891848077125,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
    "basket_id": 24
   },
   {
-   "asof": "2015-08-31",
-   "ticker": "COL",
-   "regime": "normal",
-   "next_month_ret": -0.5,
-   "entry_px": 0.4000000059604645,
-   "exit_date": "2016-02-29",
-   "exit_px": 0.20000000298023224,
-   "years": 0.5,
-   "return": -0.5,
-   "ret": -0.5,
-   "ret_strat": -0.5,
-   "ret_spy": -0.009843506804015911,
-   "cagr": -0.75,
-   "spy_return": -0.009843506804015911,
-   "win": 0,
-   "beat_spy": 0,
-   "status": "exited",
-   "basket_id": 25
-  },
-  {
-   "asof": "2015-08-31",
-   "ticker": "GNW",
-   "regime": "normal",
-   "next_month_ret": -0.5907335992636455,
-   "entry_px": 5.179999828338623,
-   "exit_date": "2016-02-29",
-   "exit_px": 2.119999885559082,
-   "years": 0.5,
-   "return": -0.5907335992636455,
-   "ret": -0.5907335992636455,
-   "ret_strat": -0.5907335992636455,
-   "ret_spy": -0.009843506804015911,
-   "cagr": -0.8325010132283097,
-   "spy_return": -0.009843506804015911,
-   "win": 0,
-   "beat_spy": 0,
-   "status": "exited",
-   "basket_id": 25
-  },
-  {
-   "asof": "2016-02-29",
+   "asof": "2015-05-31",
    "ticker": "NVDA",
    "regime": "normal",
-   "next_month_ret": 6.79782743672674,
-   "entry_px": 0.7676964402198792,
-   "exit_date": "2018-02-28",
-   "exit_px": 5.986364364624023,
+   "next_month_ret": 0.5013260904724626,
+   "entry_px": 0.5354837775230408,
+   "exit_date": "2015-12-31",
+   "exit_px": 0.8039357662200928,
    "years": 0.5,
-   "return": 6.79782743672674,
-   "ret": 6.79782743672674,
-   "ret_strat": 6.79782743672674,
-   "ret_spy": 0.46144906838994837,
-   "cagr": 59.806112732968316,
-   "spy_return": 0.46144906838994837,
+   "return": 0.5013260904724626,
+   "ret": 0.5013260904724626,
+   "ret_strat": 0.5013260904724626,
+   "ret_spy": -0.018886891848077125,
+   "cagr": 1.253980029933329,
+   "spy_return": -0.018886891848077125,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 24
+  },
+  {
+   "asof": "2015-12-31",
+   "ticker": "NVDA",
+   "regime": "normal",
+   "next_month_ret": 4.950282195678407,
+   "entry_px": 0.8039357662200928,
+   "exit_date": "2017-12-31",
+   "exit_px": 4.783644676208496,
+   "years": 0.5,
+   "return": 4.950282195678407,
+   "ret": 4.950282195678407,
+   "ret_strat": 4.950282195678407,
+   "ret_spy": 0.363075290474985,
+   "cagr": 34.40585820820745,
+   "spy_return": 0.363075290474985,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 25
+  },
+  {
+   "asof": "2015-12-31",
+   "ticker": "HPQ",
+   "regime": "normal",
+   "next_month_ret": 0.896219058735344,
+   "entry_px": 8.3690824508667,
+   "exit_date": "2017-12-31",
+   "exit_px": 15.869613647460938,
+   "years": 0.5,
+   "return": 0.896219058735344,
+   "ret": 0.896219058735344,
+   "ret_strat": 0.896219058735344,
+   "ret_spy": 0.363075290474985,
+   "cagr": 2.595646718711154,
+   "spy_return": 0.363075290474985,
+   "win": 1,
+   "beat_spy": 1,
+   "status": "exited",
+   "basket_id": 25
+  },
+  {
+   "asof": "2017-12-31",
+   "ticker": "NVDA",
+   "regime": "bull",
+   "next_month_ret": 0.22580793717722125,
+   "entry_px": 4.783644676208496,
+   "exit_date": "2018-06-30",
+   "exit_px": 5.863829612731934,
+   "years": 0.5,
+   "return": 0.22580793717722125,
+   "ret": 0.22580793717722125,
+   "ret_strat": 0.22580793717722125,
+   "ret_spy": 0.02521709795001903,
+   "cagr": 0.5026050988466744,
+   "spy_return": 0.02521709795001903,
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
    "basket_id": 26
   },
   {
-   "asof": "2016-02-29",
-   "ticker": "SYMC",
-   "regime": "normal",
-   "next_month_ret": -0.2528089526445778,
-   "entry_px": 1.7799999713897705,
-   "exit_date": "2018-02-28",
-   "exit_px": 1.3300000429153442,
+   "asof": "2017-12-31",
+   "ticker": "APH",
+   "regime": "bull",
+   "next_month_ret": -0.0028333055641008853,
+   "entry_px": 20.342409133911133,
+   "exit_date": "2018-06-30",
+   "exit_px": 20.284772872924805,
    "years": 0.5,
-   "return": -0.2528089526445778,
-   "ret": -0.2528089526445778,
-   "ret_strat": -0.2528089526445778,
-   "ret_spy": 0.46144906838994837,
-   "cagr": -0.4417055387519072,
-   "spy_return": 0.46144906838994837,
+   "return": -0.0028333055641008853,
+   "ret": -0.0028333055641008853,
+   "ret_strat": -0.0028333055641008853,
+   "ret_spy": 0.02521709795001903,
+   "cagr": -0.0056585835077822555,
+   "spy_return": 0.02521709795001903,
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
    "basket_id": 26
   },
   {
-   "asof": "2018-02-28",
+   "asof": "2018-06-30",
    "ticker": "NVDA",
    "regime": "bull",
-   "next_month_ret": 0.16118671857550826,
-   "entry_px": 5.986364364624023,
-   "exit_date": "2018-08-31",
-   "exit_px": 6.951286792755127,
-   "years": 0.5,
-   "return": 0.16118671857550826,
-   "ret": 0.16118671857550826,
-   "ret_strat": 0.16118671857550826,
-   "ret_spy": 0.07778964232599139,
-   "cagr": 0.34835459539615665,
-   "spy_return": 0.07778964232599139,
-   "win": 1,
-   "beat_spy": 1,
-   "status": "exited",
-   "basket_id": 27
-  },
-  {
-   "asof": "2018-02-28",
-   "ticker": "CFG",
-   "regime": "bull",
-   "next_month_ret": -0.04207562881549409,
-   "entry_px": 31.127872467041016,
-   "exit_date": "2018-08-31",
-   "exit_px": 29.818147659301758,
-   "years": 0.5,
-   "return": -0.04207562881549409,
-   "ret": -0.04207562881549409,
-   "ret_strat": -0.04207562881549409,
-   "ret_spy": 0.07778964232599139,
-   "cagr": -0.08238089909076896,
-   "spy_return": 0.07778964232599139,
-   "win": 0,
-   "beat_spy": 0,
-   "status": "exited",
-   "basket_id": 27
-  },
-  {
-   "asof": "2018-08-31",
-   "ticker": "AMD",
-   "regime": "bull",
-   "next_month_ret": -0.2665872455892847,
-   "entry_px": 25.170000076293945,
+   "next_month_ret": -0.43559864399965453,
+   "entry_px": 5.863829612731934,
    "exit_date": "2018-12-31",
-   "exit_px": 18.459999084472656,
+   "exit_px": 3.309553384780884,
    "years": 0.5,
-   "return": -0.2665872455892847,
-   "ret": -0.2665872455892847,
-   "ret_strat": -0.2665872455892847,
-   "ret_spy": -0.1301801723385526,
-   "cagr": -0.46210573166768776,
-   "spy_return": -0.1301801723385526,
+   "return": -0.43559864399965453,
+   "ret": -0.43559864399965453,
+   "ret_strat": -0.43559864399965453,
+   "ret_spy": -0.06916302027115828,
+   "cagr": -0.6814511093449713,
+   "spy_return": -0.06916302027115828,
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 28
+   "basket_id": 27
   },
   {
-   "asof": "2018-08-31",
+   "asof": "2018-06-30",
    "ticker": "LRCX",
    "regime": "bull",
-   "next_month_ret": -0.20238577091310417,
-   "entry_px": 15.550701141357422,
+   "next_month_ret": -0.20127860804278497,
+   "entry_px": 15.529145240783691,
    "exit_date": "2018-12-31",
    "exit_px": 12.403460502624512,
    "years": 0.5,
-   "return": -0.20238577091310417,
-   "ret": -0.20238577091310417,
-   "ret_strat": -0.20238577091310417,
-   "ret_spy": -0.1301801723385526,
-   "cagr": -0.3638115415581169,
-   "spy_return": -0.1301801723385526,
+   "return": -0.20127860804278497,
+   "ret": -0.20127860804278497,
+   "ret_strat": -0.20127860804278497,
+   "ret_spy": -0.06916302027115828,
+   "cagr": -0.36204413802992885,
+   "spy_return": -0.06916302027115828,
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 28
+   "basket_id": 27
   },
   {
    "asof": "2019-01-31",
@@ -8016,7 +7976,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 29
+   "basket_id": 28
   },
   {
    "asof": "2019-01-31",
@@ -8036,7 +7996,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 29
+   "basket_id": 28
   },
   {
    "asof": "2019-07-31",
@@ -8056,7 +8016,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 30
+   "basket_id": 29
   },
   {
    "asof": "2019-07-31",
@@ -8076,7 +8036,7 @@
    "win": 1,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 30
+   "basket_id": 29
   },
   {
    "asof": "2020-01-31",
@@ -8096,7 +8056,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 31
+   "basket_id": 30
   },
   {
    "asof": "2020-01-31",
@@ -8116,7 +8076,7 @@
    "win": 0,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 31
+   "basket_id": 30
   },
   {
    "asof": "2020-04-30",
@@ -8136,7 +8096,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 32
+   "basket_id": 31
   },
   {
    "asof": "2020-04-30",
@@ -8156,7 +8116,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 32
+   "basket_id": 31
   },
   {
    "asof": "2020-10-31",
@@ -8176,7 +8136,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 33
+   "basket_id": 32
   },
   {
    "asof": "2020-10-31",
@@ -8196,7 +8156,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 33
+   "basket_id": 32
   },
   {
    "asof": "2021-04-30",
@@ -8216,7 +8176,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 34
+   "basket_id": 33
   },
   {
    "asof": "2021-04-30",
@@ -8236,7 +8196,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 34
+   "basket_id": 33
   },
   {
    "asof": "2021-10-31",
@@ -8256,7 +8216,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 35
+   "basket_id": 34
   },
   {
    "asof": "2021-10-31",
@@ -8276,7 +8236,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 35
+   "basket_id": 34
   },
   {
    "asof": "2022-05-31",
@@ -8296,7 +8256,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 36
+   "basket_id": 35
   },
   {
    "asof": "2022-05-31",
@@ -8316,7 +8276,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 36
+   "basket_id": 35
   },
   {
    "asof": "2022-07-31",
@@ -8336,7 +8296,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 37
+   "basket_id": 36
   },
   {
    "asof": "2022-07-31",
@@ -8356,7 +8316,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 37
+   "basket_id": 36
   },
   {
    "asof": "2022-10-31",
@@ -8376,7 +8336,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 38
+   "basket_id": 37
   },
   {
    "asof": "2022-10-31",
@@ -8396,7 +8356,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 38
+   "basket_id": 37
   },
   {
    "asof": "2023-05-31",
@@ -8416,7 +8376,7 @@
    "win": 1,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 39
+   "basket_id": 38
   },
   {
    "asof": "2023-05-31",
@@ -8436,7 +8396,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 39
+   "basket_id": 38
   },
   {
    "asof": "2023-11-30",
@@ -8456,7 +8416,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 40
+   "basket_id": 39
   },
   {
    "asof": "2023-11-30",
@@ -8476,7 +8436,7 @@
    "win": 1,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 40
+   "basket_id": 39
   },
   {
    "asof": "2024-05-31",
@@ -8496,7 +8456,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 41
+   "basket_id": 40
   },
   {
    "asof": "2024-05-31",
@@ -8516,7 +8476,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 41
+   "basket_id": 40
   },
   {
    "asof": "2024-12-31",
@@ -8536,7 +8496,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 42
+   "basket_id": 41
   },
   {
    "asof": "2024-12-31",
@@ -8556,7 +8516,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 42
+   "basket_id": 41
   },
   {
    "asof": "2025-06-30",
@@ -8576,7 +8536,7 @@
    "win": 0,
    "beat_spy": 0,
    "status": "exited",
-   "basket_id": 43
+   "basket_id": 42
   },
   {
    "asof": "2025-06-30",
@@ -8596,7 +8556,7 @@
    "win": 1,
    "beat_spy": 1,
    "status": "exited",
-   "basket_id": 43
+   "basket_id": 42
   },
   {
    "asof": "2025-12-31",
@@ -8616,7 +8576,7 @@
    "win": 0,
    "beat_spy": null,
    "status": "open",
-   "basket_id": 44
+   "basket_id": 43
   },
   {
    "asof": "2025-12-31",
@@ -8636,7 +8596,7 @@
    "win": 0,
    "beat_spy": null,
    "status": "open",
-   "basket_id": 44
+   "basket_id": 43
   }
  ],
  "sweep_top40": []

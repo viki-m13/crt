@@ -1,20 +1,21 @@
 """Build v5 webapp data.json for the PIT-S&P-500 strategy with Chronos confidence filter.
 
-v5 = v3 baseline (ml_3plus6, tight gate, h=6) + two additions:
-  1. Chronos-bolt-tiny zero-shot p70 forecast filter (require rank >= 0.45)
-  2. Inverse-volatility weighting with cap=0.4 per pick
+v5 = v3 baseline (ml_3plus6, tight gate) + Chronos-bolt-tiny zero-shot p70
+forecast filter (rank >= 0.45) + inverse-vol weighting (cap 0.4) +
+rule-based rebalance (min-hold 6m + score-drift) + WIN1 blended drift
+trigger (deployed 2026-05-17).
 
-Backtest (PIT S&P 500 2003-2025):
-  - Full CAGR: 43.86% (vs v3 39.77%)
-  - Walk-forward mean OOS CAGR: 49.39% on augmented PIT panel (was 47.16% K=3 on biased v2 panel)
-  - WF min OOS CAGR: 23.08% (vs v3 14.49%)
-  - All 10/10 splits beat SPY (vs v3's 9/10)
-  - Sharpe 1.06 (vs 0.96); MaxDD -48.4% (vs -49.8%)
+Selection: ml_3plus6 (mean of GBM 3m & 6m forward-rank) picks top 2 from
+the Chronos-filtered PIT pool. Rebalance timing: the score-drift trigger
+ranks the candidate pool by a 50/50 blend of the multi-horizon consensus
+rank and the ml_3plus6 rank (SCORER_MODE='blend', SCORER_BLEND_W=0.5).
 
-Generalization (same config on other universes):
-  - Broader 1833-ticker: 57.82% WF mean (+6pp vs v3)
-  - Non-S&P 500 PIT: 62.72% WF mean (+12pp vs v3)
-  - Random 500 subsets: 46-67% WF mean
+WIN1 vs the prior consensus-trigger, augmented PIT walk-forward (canonical
+production sim, 10 bps): full CAGR 47.3->51.9%, Sharpe 0.94->1.01, Max DD
+-69->-66%, WF 8->9/10 beat SPY, all 4 non-overlapping eras beat S&P-DCA,
+rolling DCA-win up at 3/5/10y. Validated cost-insensitive, wide
+blend-weight plateau (0.3-0.8), and stronger TRUE OOS (untouched 2013-26
+holdout Sharpe 1.04 vs 0.68). Full gauntlet: spx_pit/IMPROVE_FINDINGS.md.
 
 Schema is backward-compatible with `docs/monthly_dca.js`.
 
@@ -46,18 +47,21 @@ WEBAPP_OUT = ROOT / "experiments" / "docs" / "monthly-dca"
 WEBAPP_OUT.mkdir(parents=True, exist_ok=True)
 
 STRATEGY_SPEC = {
-    "scorer": "multi_horizon_consensus + chronos_p70_filter",
+    "scorer": "ml_3plus6 selection + blended-consensus drift-trigger + chronos_p70_filter",
     "scorer_description": (
-        "Multi-horizon CONSENSUS scorer: the walk-forward GBM emits 1m/3m/6m "
-        "forward-rank predictions; names whose three horizon ranks DISAGREE "
-        "(cross-sectional rank dispersion above the median) are dropped — a "
-        "variance-reduction / ensemble-agreement filter — then survivors are "
-        "ranked by mean horizon rank. Gated by HuggingFace Chronos-bolt-tiny "
-        "zero-shot p70 forecast (must rank top 55%). Deployed 2026-05-16 after "
-        "full production-harness validation (vs the prior mean(3m,6m) scorer: "
-        "CAGR 40%->47%, Sharpe 0.87->0.94, Max DD -81%->-69%, recent 2021-26 "
-        "era now beats S&P-DCA; honest cost: weaker 2010-15 era, 10y DCA-win "
-        "100%->~99%). See NOVEL_V9_PROD_FINDINGS.md."
+        "Selection: the walk-forward GBM's mean(3m,6m) forward-rank "
+        "(ml_3plus6) picks the top 2 from the Chronos-p70-filtered PIT pool. "
+        "Rebalance-timing (WIN1, deployed 2026-05-17): the score-drift "
+        "trigger that decides WHEN to rotate ranks the candidate pool by a "
+        "50/50 blend of the multi-horizon CONSENSUS rank (1m/3m/6m mean "
+        "rank) and the ml_3plus6 rank. Gated by HuggingFace Chronos-bolt-tiny "
+        "zero-shot p70 forecast (must rank top 55%). WIN1 is a strict Pareto "
+        "improvement on the prior consensus-trigger over the augmented PIT "
+        "walk-forward: full CAGR 47%->52%, Sharpe 0.94->1.01, Max DD "
+        "-69%->-66%, WF 8->9/10 beat SPY, all 4 non-overlapping eras beat "
+        "S&P-DCA, rolling DCA-win up at 3/5/10y, cost-insensitive, and "
+        "materially more robust out-of-sample (untouched 2013-26 holdout "
+        "Sharpe 1.04 vs 0.68). See spx_pit/IMPROVE_FINDINGS.md."
     ),
     "K_normal": 2,
     "K_recovery": 2,
@@ -75,7 +79,7 @@ STRATEGY_SPEC = {
     "rebalance_mode": "rule_based_score_drift",
     "cost_bps": 10,
     "universe": "PIT S&P 500 members at each rebalance month-end (iShares IVV current holdings used for live universe)",
-    "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool (i.e., the picker has discovered they're no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT walk-forward (WF mean ~49%, 10/10 splits beat SPY, +45.3pp edge in 2024 vs -10.2pp for fixed h=6) and improves rebalance-timing robustness. HONESTY NOTE: an earlier simplified sweep reported Sharpe 1.10 / Max DD -34.5% for this rule, but that used a NaN-favorable sim; the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~0.9 and deep interim drawdowns (~-72% lump-sum, ~-79% on the accumulating monthly-DCA portfolio). The rule does NOT remove the drawdown.",
+    "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool, where that candidate pool is ranked by the WIN1 50/50 blended-consensus drift scorer (the picker has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT walk-forward and the WIN1 blended drift-trigger is a strict Pareto improvement on the prior consensus trigger (CAGR 47->52%, Sharpe 0.94->1.01, Max DD -69->-66%, WF 8->9/10, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~1.0 and still-deep interim drawdowns (the rule and the trigger NARROW but do NOT remove the drawdown; a monthly-DCA accumulator still sees a brutal interim value drawdown).",
     "chronos_filter": {
         "model": "amazon/chronos-bolt-tiny (HuggingFace)",
         "model_size": "9M params, zero-shot foundation model",
@@ -93,7 +97,7 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_consensus_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+WINNER_NAME = "v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -114,13 +118,21 @@ K_PICKS = 2
 REBALANCE_MODE = "rule_based"   # 'fixed' or 'rule_based'
 MIN_HOLD_MONTHS = 6
 MAX_HOLD_MONTHS = 24
-# Scorer: 'ml_3plus6' = deployed mean(pred_3m,pred_6m).
-# 'consensus' = multi-horizon variance-reduction (novel-v9): drop names
-# whose pred_1m/3m/6m cross-sectional ranks disagree (dispersion above
-# the cross-sectional median), then rank survivors by mean horizon rank.
-# Default stays 'ml_3plus6' — consensus is opt-in until it clears the
-# full production gauntlet (see NOVEL_V9_FINDINGS.md).
-SCORER_MODE = "consensus"
+# Scorer modes (this only drives the score-drift REBALANCE trigger — the
+# basket is always FORMED with ml_3plus6 in the basket-forming branch):
+#   'ml_3plus6' = mean(pred_3m,pred_6m).
+#   'consensus' = multi-horizon variance-reduction: drop names whose
+#                 pred_1m/3m/6m ranks disagree, rank rest by mean rank.
+#   'blend'     = WIN1 (deployed 2026-05-17): 50/50 rank-blend of the
+#                 consensus rank and the ml_3plus6 rank on the full pool.
+# WIN1 is a strict Pareto improvement on 'consensus' over the augmented
+# PIT walk-forward: full CAGR 47.3->51.9%, Sharpe 0.94->1.01, max DD
+# -69->-66%, WF 8->9/10 beat SPY, all 4 eras beat S&P-DCA, rolling
+# DCA-win up at 3/5/10y, cost-insensitive, wide blend-weight plateau
+# (0.3-0.8), and materially stronger TRUE OOS (untouched 2013-26 holdout
+# Sharpe 1.04 vs 0.68). See spx_pit/IMPROVE_FINDINGS.md.
+SCORER_MODE = "blend"
+SCORER_BLEND_W = 0.50            # weight on consensus rank ('blend' mode)
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
@@ -338,6 +350,18 @@ def run_full_sim(
                 sub_pit_ = sub_pit_[keep]
                 r1, r3, r6 = r1[keep], r3[keep], r6[keep]
             sub_pit_["score"] = (r1 + r3 + r6) / 3.0
+        elif SCORER_MODE == "blend" and len(sub_pit_) >= 4:
+            # WIN1 drift trigger: 50/50 rank-blend of the multi-horizon
+            # consensus rank and the ml_3plus6 rank, computed on the FULL
+            # eligible pool (no dispersion sub-selection — keeps breadth).
+            # Selection itself stays ml_3plus6 (basket-forming branch below);
+            # this only governs WHEN the score-drift rebalance fires.
+            r1 = sub_pit_["pred_1m"].rank(pct=True)
+            r3 = sub_pit_["pred_3m"].rank(pct=True)
+            r6 = sub_pit_["pred_6m"].rank(pct=True)
+            cons = (r1 + r3 + r6) / 3.0
+            mlr = ((sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2.0).rank(pct=True)
+            sub_pit_["score"] = SCORER_BLEND_W * cons + (1 - SCORER_BLEND_W) * mlr
         else:
             sub_pit_["score"] = (sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2
         if chronos_preds is not None and m_ in chronos_preds:

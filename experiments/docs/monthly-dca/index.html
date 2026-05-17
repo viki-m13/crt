@@ -188,7 +188,7 @@
        parameter sensitivity, survivorship bias sweep, methodology.
     */
     const DATA_URL = "./data.json";
-    const STRAT_KEY = "v5_pit_sp500_ml_3plus6_chronos_p70_k3_invvol_cap0.4_h6";
+    const STRAT_KEY = "v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift";
 
     const fmtPct = (x, d=1) => x == null ? "—" : `${(x * 100).toFixed(d)}%`;
     const fmtPct0 = x => x == null ? "—" : `${(x * 100).toFixed(0)}%`;
@@ -500,7 +500,7 @@
       const sec = el("section", { class: "section" });
       sec.appendChild(el("div", { class: "section-title" }, "Drawdown ledger"));
       sec.appendChild(el("div", { class: "section-sub" },
-        "Top peak-to-trough drawdowns of 5%+ in the v5 backtest. Each entry shows when the strategy peaked, when it bottomed, and when it fully recovered. The deepest is the GFC at -48%."));
+        "Top peak-to-trough drawdowns of 5%+ in the v5 lump-sum picker backtest. Each entry shows when the strategy peaked, when it bottomed, and when it fully recovered. The deepest is the 2007–2009 GFC at ~-77% (the accumulating monthly-DCA account felt ~-64%)."));
       const wrap = el("div", { class: "table-wrap" });
       const t = el("table");
       t.appendChild(el("thead", {}, el("tr", {},
@@ -638,7 +638,10 @@
         target. At inference the final score is the mean of the two predicted ranks
         (the <code>ml_3plus6</code> scorer). Each model is re-fit annually using
         all data older than the rebalance date minus the 7-month embargo, so there
-        is no leakage from the test window.`));
+        is no leakage from the test window. Stock <em>selection</em> uses this
+        <code>ml_3plus6</code> score; <em>when</em> the basket rotates is governed
+        by a separate 50/50 blended-consensus drift trigger (WIN1, deployed
+        May 2026) — see IMPROVE_FINDINGS.md.`));
 
       sec.appendChild(makeAccordion("Confirmation filter — HuggingFace Chronos-bolt-tiny", `
         Amazon Chronos-bolt-tiny is a 9M-parameter zero-shot time-series foundation
