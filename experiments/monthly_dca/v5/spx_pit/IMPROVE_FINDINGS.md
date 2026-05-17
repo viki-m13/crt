@@ -188,3 +188,37 @@ README fully synced; cron auto-regenerates via the same builder.
 - `improve_phase4.py` — consistency levers (E1 + ensembles)
 - `improve_phase4b.py` — E1 overfit gauntlet (plateau/OOS/cost/MC)
 - `augmented/improve_*.json` — raw results
+
+## Phase 5 — does a 3rd sleeve beat E1? NO (honest negative)
+
+`improve_phase5.py`. Tested 3-way / 4-way equal-weight sleeve
+ensembles adding a consensus-based sleeve to E1's {A,B}, plus a
+phase-offset twin.
+
+| variant | CAGR | Sharpe | MaxDD | WF | worst-5y | CAGRx0309 |
+|---|--:|--:|--:|--:|--:|--:|
+| **E1 (deployed)** | **52.2%** | **1.04** | **-56%** | **10/10** | **+11.9%** | **33.7%** |
+| 1/3 {A,B,C=cons/ml} | 51.4% | 1.03 | -60% | 10/10 | +8.2% | 30.2% |
+| 1/3 {A,B,D=ml/cons} | 47.6% | 0.99 | -56% | 9/10 | +9.4% | 30.7% |
+| 1/3 {A,B,E=cons/bl} | 51.9% | 1.02 | -56% | 10/10 | +10.5% | 32.1% |
+| 1/4 {A,B,C,D} | 48.3% | 1.00 | -59% | 9/10 | +5.9% | 29.0% |
+
+**No third sleeve improves on E1.** Every consensus-based addition
+either drags CAGR or widens drawdown / lowers the ex-2003-09 CAGR and
+worst-5y. This is the expected consequence of the repo-wide finding
+that there is essentially ONE independent alpha here: you can
+decorrelate the *same* ml+blend edge across two role-swapped
+implementations (E1), but a third sleeve necessarily leans on the
+weaker consensus variant and dilutes. **E1 (2-sleeve) is the
+consistency optimum and the correct stopping point.**
+
+The `P1` phase-offset row in the raw JSON is a **methodological
+artifact** (shifting a realized return stream by one month and
+averaging spuriously smooths variance and misaligns returns/dates) —
+explicitly NOT a finding and not pursued. A genuine rebalance-luck
+time-diversification test would need a real staggered-entry sim, which
+the event-driven (not calendar) rule-based rebalance does not cleanly
+admit; flagged for honesty.
+
+**Net:** E1 stands as the deployed strategy; no further sleeve change
+is warranted on this data.
