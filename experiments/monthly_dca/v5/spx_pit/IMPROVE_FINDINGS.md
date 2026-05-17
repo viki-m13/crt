@@ -222,3 +222,63 @@ admit; flagged for honesty.
 
 **Net:** E1 stands as the deployed strategy; no further sleeve change
 is warranted on this data.
+
+## Phase 6 — E1 SUPERSEDED: E2 (LEAD-CAGR) deployed 2026-05-17
+
+Phase 5's "E1 is the correct stopping point" held only for *adding a
+third consensus sleeve*. It did **not** consider upgrading a sleeve
+with orthogonal stock-picking levers. Two new selection levers,
+developed and overfit-screened on this branch
+(`IMPROVE_PICK_RCD_FINDINGS.md`, `IMPROVE_PICK_RCE1_FINDINGS.md`):
+
+1. **Regime-conditional select-blend weight** — Sleeve B's consensus/ml
+   blend weight is a function of the audited `classify_regime_tight`
+   label: momentum-lean (consensus w=0.30) in a confirmed bull,
+   consensus-stable (0.60) in normal/recovery. Recovers WIN1's
+   bull-market CAGR while keeping WIN2/blend's shallow drawdown.
+2. **Conviction-adaptive breadth** — hold 2 names when the
+   cross-sectional score gap signals genuine conviction, widen to 3
+   when scores are bunched (the picker is guessing — historically the
+   bad years).
+
+E1's free-consistency decorrelation lever is **orthogonal** to these,
+so they **stack**. **E2 = 0.5·WIN1 + 0.5·(RC D + adaptive-breadth)** —
+i.e. Sleeve A unchanged (WIN1), Sleeve B = WIN2 upgraded with both
+levers — measured on the canonical production pipeline:
+
+| | E1 (prior) | **E2 (deployed)** |
+|---|--:|--:|
+| Full CAGR (lump-sum) | 51.9% | **56.6%** |
+| Sharpe | 1.03 | **1.10** |
+| Max DD (accum. DCA) | -56% | **-56%** (unchanged) |
+| WF beats SPY | 10/10 | **10/10** |
+| Eras beat S&P-DCA | 4/4 | **4/4** |
+| Worst rolling-5y DCA | +11.7%/yr | **+13.6%/yr** |
+| Forward CAGR ex-2003-09 | 33.4% | **38.2%** |
+| TRUE-OOS holdout Sharpe | 1.08 | **~1.24** |
+
+Strict Pareto improvement on E1: +4.7pp CAGR, +0.07 Sharpe, better
+worst-5y and a +4.8pp higher forward (ex-front-load) CAGR, at E1's
+*identical* drawdown, WF 10/10, 4/4 eras, 100% 10y DCA-win. Passes the
+full battery: cost-insensitive (0-30 bps), wide 50/50 mix-weight
+plateau, more delisting-robust than E1, strongest TRUE-OOS holdout of
+any variant. The production sim reproduces the validated stream
+bit-exactly (sleeve-B max|Δ ret_m| = 0.0; WIN1/E1 paths unchanged,
+max|Δ| = 0.0).
+
+**Honest caveat:** the -56% drawdown is the 2008 GFC systemic event; a
+stock-picking lever cannot move it. E2 raises return and consistency
+*at* E1's drawdown — it does not make the strategy low-risk. Lowering
+the -56% floor is a regime-timing research program, not a picking knob.
+
+**DEPLOYED 2026-05-17** (user-approved). `build_webapp_v5_pit.py`:
+`run_full_sim` extended with `regime_blend_w` + `adaptive_k` (E1/WIN1
+fallback bit-exact); new `run_e2_blend` + shared `_combine_5050`;
+`STRATEGY_VARIANT='E2'`, `WINNER_NAME`, `STRATEGY_SPEC`, docstring
+updated. `data.json` regenerated (headline CAGR 56.6%, Sharpe 1.10,
+accumulating DCA Max DD -56%, 10y/5y/3y DCA-win 100%/99.5%/96%, 4/4
+eras, combined live book RTX·PH·ETN·UBER). Homepage
+(`docs/index.html`), the `/experiments/monthly-dca` dashboard, the
+`STRAT_KEY`, and README fully synced; cron auto-regenerates via the
+same builder. Full gauntlet: `IMPROVE_PICK_RCD_FINDINGS.md` +
+`IMPROVE_PICK_RCE1_FINDINGS.md`.

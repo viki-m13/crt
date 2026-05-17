@@ -5,21 +5,26 @@ forecast filter (rank >= 0.45) + inverse-vol weighting (cap 0.4) +
 rule-based rebalance (min-hold 6m + score-drift) + WIN1 blended drift
 trigger (deployed 2026-05-17).
 
-E1 (deployed 2026-05-17, STRATEGY_VARIANT='E1'): a 50/50 portfolio of
-two sleeves of the same ml+consensus alpha with the two scorers swapped
-between the selection and drift-trigger roles — Sleeve A/WIN1
-(select=ml_3plus6, trigger=blend) + Sleeve B/WIN2 (select=blend,
-trigger=ml_3plus6). The sleeves rebalance on different dates so their
-2-stock idiosyncratic variance decorrelates while the shared alpha
-compounds. Combined live book = up to 4 names at 0.5x each sleeve's
-inverse-vol weights.
+E2 (deployed 2026-05-17, STRATEGY_VARIANT='E2', 'LEAD-CAGR'): a 50/50
+portfolio of Sleeve A = WIN1 (select=ml_3plus6, trigger=blend, the
+unchanged single-sleeve winner) + Sleeve B = RC D + adaptive-breadth
+(trigger=ml_3plus6, select = a consensus/ml blend whose weight is
+regime-conditional — momentum-lean in a confirmed bull, consensus in
+normal/recovery — with conviction-adaptive basket breadth 2->3). The
+sleeves rebalance on different dates so their idiosyncratic variance
+decorrelates (E1's free-consistency lever) while Sleeve B's
+regime-timed blend + adaptive breadth add forward return and
+year-to-year consistency (orthogonal levers that stack). Combined live
+book = up to ~6 names at 0.5x each sleeve's inverse-vol weights.
 
-E1 vs single-sleeve WIN1, augmented PIT walk-forward (canonical sim,
-10 bps): full CAGR 51.9->52.2%, Sharpe 1.01->1.04, Max DD -66->-56%, WF
-9->10/10 beat SPY, all 4 eras beat S&P-DCA, worst rolling-5y DCA
-+2.5->+11.9%/yr, % rolling-3y beat SPY 86->90%. Cost-insensitive, wide
-mix-weight plateau (0.3-0.7), strongest TRUE-OOS holdout of any variant
-(untouched 2013-26 Sharpe 1.08). Full gauntlet: spx_pit/IMPROVE_FINDINGS.md.
+E2 vs the prior single-deploy E1, canonical pipeline (10 bps): full
+CAGR 51.9->56.6%, Sharpe 1.03->1.10, Max DD -56% (unchanged — the 2008
+GFC floor), WF 10/10 beat SPY, all 4 eras beat S&P-DCA, worst
+rolling-5y DCA +11.7->+13.6%/yr, forward CAGR ex-2003-09
+33.4->38.2%. Cost-insensitive, wide mix-weight plateau, strongest
+TRUE-OOS holdout of any variant (untouched 2013-26 Sharpe ~1.24). Full
+gauntlet: spx_pit/IMPROVE_PICK_RCD_FINDINGS.md +
+IMPROVE_PICK_RCE1_FINDINGS.md.
 
 Schema is backward-compatible with `docs/monthly_dca.js`.
 
@@ -51,28 +56,37 @@ WEBAPP_OUT = ROOT / "experiments" / "docs" / "monthly-dca"
 WEBAPP_OUT.mkdir(parents=True, exist_ok=True)
 
 STRATEGY_SPEC = {
-    "scorer": "E1: 50/50 of (ml_3plus6-select / blend-trigger) + (blend-select / ml_3plus6-trigger), chronos_p70_filter",
+    "scorer": "E2 (LEAD-CAGR): 50/50 of WIN1 (ml_3plus6-select / blend-trigger) + RC-D (regime-conditional-blend-select / ml_3plus6-trigger + conviction-adaptive breadth), chronos_p70_filter",
     "scorer_description": (
-        "E1 (deployed 2026-05-17) is a 50/50 monthly-rebalanced portfolio "
-        "of two sleeves of the SAME GBM ml+consensus alpha, with the two "
-        "scorers swapped between the stock-SELECTION and rebalance-TIMING "
-        "roles. Sleeve A (WIN1): selection = mean(3m,6m) forward-rank "
-        "(ml_3plus6); drift-trigger = 50/50 blend of the multi-horizon "
-        "consensus rank and the ml_3plus6 rank. Sleeve B (WIN2): selection "
-        "= the blend; drift-trigger = ml_3plus6. Both sleeves pick the top "
-        "2 from the Chronos-p70-filtered PIT pool (Chronos-bolt-tiny "
-        "zero-shot, must rank top 55%); the combined live book is up to 4 "
-        "names at 0.5x each sleeve's inverse-vol weights. The two sleeves "
-        "rebalance at different times / sometimes hold different names, so "
-        "their idiosyncratic 2-stock variance decorrelates while the "
-        "shared alpha compounds. E1 is a strict improvement on the "
-        "single-sleeve WIN1 over the augmented PIT walk-forward: full CAGR "
-        "51.9%->52.2%, Sharpe 1.01->1.04, Max DD -66%->-56%, WF 9->10/10 "
-        "beat SPY, all 4 eras beat S&P-DCA, worst rolling-5y DCA "
-        "+2.5%->+11.9%/yr, % rolling-3y beating SPY 86%->90%, "
-        "cost-insensitive, strongest out-of-sample holdout of any variant "
-        "(untouched 2013-26 Sharpe 1.08). See spx_pit/IMPROVE_FINDINGS.md "
-        "Phase 4."
+        "E2 (deployed 2026-05-17, 'LEAD-CAGR') is a 50/50 "
+        "monthly-rebalanced portfolio of two sleeves of the SAME GBM "
+        "ml+consensus alpha. Sleeve A (WIN1, unchanged): stock-SELECTION "
+        "= mean(3m,6m) forward-rank (ml_3plus6); rebalance-TIMING trigger "
+        "= 50/50 blend of the multi-horizon consensus rank and the "
+        "ml_3plus6 rank. Sleeve B (RC D + adaptive breadth): TIMING "
+        "trigger = ml_3plus6; SELECTION = the consensus/ml blend whose "
+        "weight is REGIME-CONDITIONAL — momentum-leaning (consensus "
+        "weight 0.30) in a confirmed SPY bull, consensus-stable (0.60) in "
+        "normal/recovery — AND the basket breadth is "
+        "CONVICTION-ADAPTIVE: hold the top 2 when the cross-sectional "
+        "score gap signals genuine conviction, widen to the top 3 when "
+        "scores are bunched (the picker is guessing). Both sleeves pick "
+        "from the Chronos-p70-filtered PIT pool (Chronos-bolt-tiny "
+        "zero-shot, must rank top 55%); the combined live book is up to "
+        "~6 names at 0.5x each sleeve's inverse-vol weights. The two "
+        "sleeves rebalance at different times / hold different names, so "
+        "their idiosyncratic variance decorrelates while the shared alpha "
+        "compounds (E1's free-consistency lever) AND Sleeve B adds "
+        "regime-timed return + adaptive-breadth consistency (orthogonal "
+        "levers that stack). E2 is a STRICT improvement on the prior "
+        "single-deploy E1 over the canonical pipeline: full CAGR "
+        "51.9%->56.6%, Sharpe 1.03->1.10, Max DD -56% (unchanged), WF "
+        "10/10 beat SPY, all 4 eras beat S&P-DCA, worst rolling-5y DCA "
+        "+11.7%->+13.6%/yr, forward CAGR excluding 2003-09 "
+        "33.4%->38.2%, cost-insensitive, wide mix-weight plateau, "
+        "strongest out-of-sample holdout of any variant (untouched "
+        "2013-26 Sharpe ~1.24). See spx_pit/IMPROVE_PICK_RCD_FINDINGS.md "
+        "and IMPROVE_PICK_RCE1_FINDINGS.md."
     ),
     "K_normal": 2,
     "K_recovery": 2,
@@ -90,7 +104,7 @@ STRATEGY_SPEC = {
     "rebalance_mode": "rule_based_score_drift",
     "cost_bps": 10,
     "universe": "PIT S&P 500 members at each rebalance month-end (iShares IVV current holdings used for live universe)",
-    "rebalance_rule": "Each of the two E1 sleeves holds its basket at least 6 months, then rebalances ONLY when neither current pick is still in that sleeve's new top-K eligible pool (its own drift scorer has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each sleeve's rebalance, weights = 1/vol_1y per pick, capped at 40% and renormalized; the two sleeves are held 50/50 and rebalanced to parity monthly, so the live book is up to 4 names. Because the two sleeves use different drift/selection scorers they rebalance on different dates — this desynchronisation is what decorrelates their 2-stock variance. E1 is a strict improvement on the single-sleeve WIN1 (CAGR 51.9->52.2%, Sharpe 1.01->1.04, Max DD -66->-56%, WF 9->10/10, worst rolling-5y DCA +2.5->+11.9%/yr, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~1.0 and still-deep interim drawdowns. E1 NARROWS the dispersion materially but does NOT make the strategy low-risk; a monthly-DCA accumulator still sees a deep interim value drawdown and the edge magnitude is still front-loaded in 2003-2009.",
+    "rebalance_rule": "Each of the two E2 sleeves holds its basket at least 6 months, then rebalances ONLY when none of its current picks is still in that sleeve's new top-K eligible pool (its own drift scorer has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each sleeve's rebalance, weights = 1/vol_1y per pick, capped at 40% and renormalized; the two sleeves are held 50/50 and rebalanced to parity monthly, so the live book is up to ~6 names. Sleeve A is the unchanged WIN1 (select=ml_3plus6, trigger=blend). Sleeve B selects the top 2-3 (conviction-adaptive) by a regime-conditional consensus/ml blend (consensus weight 0.30 in confirmed bull, 0.60 in normal/recovery) with trigger=ml_3plus6. Because the two sleeves use different drift/selection scorers they rebalance on different dates — this desynchronisation decorrelates their idiosyncratic variance while Sleeve B's regime-timed blend adds forward return and adaptive breadth adds year-to-year consistency. E2 is a strict improvement on the prior E1 (CAGR 51.9->56.6%, Sharpe 1.03->1.10, Max DD -56% unchanged, WF 10/10, worst rolling-5y DCA +11.7->+13.6%/yr, forward CAGR ex-2003-09 33.4->38.2%, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~1.1 and still-deep interim drawdowns. The -56% drawdown is the 2008 GFC systemic event; a stock-picking lever cannot move it — E2 raises return and consistency AT E1's drawdown, it does NOT make the strategy low-risk. A monthly-DCA accumulator still sees a deep interim value drawdown and the edge magnitude is still front-loaded in 2003-2009.",
     "chronos_filter": {
         "model": "amazon/chronos-bolt-tiny (HuggingFace)",
         "model_size": "9M params, zero-shot foundation model",
@@ -108,15 +122,19 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_E1_win1_win2_5050_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+WINNER_NAME = "v5_pit_sp500_E2_win1_rcdadaptk_5050_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
 
-# Strategy variant. "E1" = deployed 2026-05-17: 50/50 portfolio of two
-# sleeves of the same ml+consensus alpha with the two scorers swapped
-# between the selection and drift-trigger roles (WIN1 trig=blend/sel=ml
-# + WIN2 trig=ml/sel=blend). Strict improvement on the single-sleeve
-# WIN1 — same CAGR, materially more consistent, less drawdown. Set to
-# "WIN1" to fall back to the single-sleeve blended-trigger strategy.
-STRATEGY_VARIANT = "E1"
+# Strategy variant. "E2" = deployed 2026-05-17 (LEAD-CAGR): 50/50
+# portfolio of Sleeve A = WIN1 (trig=blend/sel=ml_3plus6, unchanged) and
+# Sleeve B = RC D + adaptive-breadth (trig=ml_3plus6/sel=blend with a
+# regime-conditional blend weight + conviction-adaptive K). E2 stacks
+# E1's free-consistency decorrelation with two orthogonal,
+# OOS-validated stock-picking levers, and is a STRICT Pareto improvement
+# on the prior single-deploy E1: higher CAGR & Sharpe, materially higher
+# forward (ex-2003-09) CAGR and worst-rolling-5y DCA, at E1's identical
+# drawdown. Set to "E1" for the prior WIN1+WIN2 portfolio, or "WIN1" for
+# the single-sleeve blended-trigger strategy.
+STRATEGY_VARIANT = "E2"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -152,6 +170,23 @@ MAX_HOLD_MONTHS = 24
 # Sharpe 1.04 vs 0.68). See spx_pit/IMPROVE_FINDINGS.md.
 SCORER_MODE = "blend"
 SCORER_BLEND_W = 0.50            # weight on consensus rank ('blend' mode)
+
+# E2 (deployed 2026-05-17): LEAD-CAGR = 0.5*WIN1 + 0.5*(RC D + adaptive
+# breadth). Sleeve B upgrades WIN2 with two orthogonal, OOS-validated
+# stock-picking levers (spx_pit/IMPROVE_PICK_RCD_FINDINGS.md +
+# IMPROVE_PICK_RCE1_FINDINGS.md):
+#   1. regime-conditional blend weight — lean momentum (low consensus
+#      weight) in a confirmed bull, consensus stability in normal/
+#      recovery. crash never reaches selection (cash).
+#   2. conviction-adaptive breadth — hold 2 when the cross-sectional
+#      score gap signals genuine conviction, widen to 3 when scores are
+#      bunched (the picker is guessing).
+# Validated on the canonical pipeline as a STRICT Pareto improvement on
+# the prior single-deploy E1 (WIN1+WIN2 50/50).
+E2_REGIME_BLEND_W = {"bull": 0.30, "recovery": 0.60,
+                     "normal": 0.60, "crash": 0.50}
+E2_ADAPTIVE_K = {"conv_lo": 0.08, "conv_hi": 0.18,
+                 "k_lo": 2, "k_mid": 3, "k_hi": 3}
 CHRONOS_MODEL = "amazon/chronos-bolt-tiny"
 CHRONOS_CONTEXT_DAYS = 252
 CHRONOS_HORIZON_DAYS = 64
@@ -222,6 +257,39 @@ def _score_pool(df: pd.DataFrame, mode: str, K: int,
     else:
         d["score"] = ml
     return d
+
+
+def _resolve_blend_w(regime: str, regime_blend_w: dict | None) -> float:
+    """Regime-conditional 'blend' weight (consensus-rank weight). When
+    regime_blend_w is None, falls back to the static SCORER_BLEND_W so the
+    E1/WIN1 paths are bit-exactly unchanged. Deployed E2 sleeve B (RC D)
+    leans momentum (low w) in confirmed bull, consensus (high w) in
+    normal/recovery — see STRATEGY_SPEC."""
+    if regime_blend_w is None:
+        return SCORER_BLEND_W
+    return float(regime_blend_w.get(regime, SCORER_BLEND_W))
+
+
+def _adaptive_keff(pool_sorted: pd.DataFrame, adaptive_k: dict | None,
+                   K: int) -> int:
+    """Conviction-adaptive basket breadth. pool_sorted = the
+    Chronos-filtered candidate pool already sorted by score descending.
+    Wide top-vs-median score gap = genuine conviction -> concentrate
+    (k_lo); bunched scores = the picker is guessing -> widen (k_hi) so one
+    bad low-conviction name cannot dominate the year. Bit-exact mirror of
+    spx_pit/improve_pick_v3._select. Returns K unchanged when adaptive_k
+    is None (E1/WIN1 fidelity)."""
+    if adaptive_k is None or len(pool_sorted) < 5:
+        return K
+    s = pool_sorted["score"].to_numpy()
+    conv = float(s[0] - np.median(s))
+    if conv >= adaptive_k["conv_hi"]:
+        keff = adaptive_k["k_lo"]
+    elif conv >= adaptive_k["conv_lo"]:
+        keff = adaptive_k["k_mid"]
+    else:
+        keff = adaptive_k["k_hi"]
+    return int(min(keff, len(pool_sorted)))
 
 
 # ---------------------------------------------------------------------------
@@ -340,6 +408,8 @@ def run_full_sim(
     K: int = K_PICKS,
     trigger_mode: str | None = None,
     select_mode: str = "ml_3plus6",
+    regime_blend_w: dict | None = None,
+    adaptive_k: dict | None = None,
 ) -> tuple[list, pd.DataFrame, dict]:
     """Run the v3 strategy honestly across the full window.
 
@@ -385,11 +455,13 @@ def run_full_sim(
     trade_log_closed: list[dict] = []
     mr_idx = monthly_returns.index
 
-    def _compute_candidate_top(m_):
+    def _compute_candidate_top(m_, regime_="normal"):
         """Peek at the would-be top-K at month-end m (PIT members + Chronos
         filter applied). Returns the top-K DataFrame, or None if no eligible
         basket can be formed. Used by the rule-based score_drift trigger AND
-        the actual basket-forming branch when do_reb=True."""
+        the actual basket-forming branch when do_reb=True. regime_ drives
+        the regime-conditional blend weight (E2 sleeve B); ignored when
+        regime_blend_w is None."""
         if m_ <= wf_max_asof:
             sub_ = preds_wf[preds_wf["asof"] == m_].copy()
         else:
@@ -399,14 +471,19 @@ def run_full_sim(
         sub_pit_ = sub_[sub_["ticker"].isin(sp_set_)].copy()
         if len(sub_pit_) == 0:
             return None
-        sub_pit_ = _score_pool(sub_pit_, trigger_mode, K, SCORER_BLEND_W)
+        sub_pit_ = _score_pool(sub_pit_, trigger_mode, K,
+                               _resolve_blend_w(regime_, regime_blend_w))
         if chronos_preds is not None and m_ in chronos_preds:
             chronos_at_m_ = chronos_preds[m_]
             sub_pit_["chr_p70"] = sub_pit_["ticker"].map(chronos_at_m_)
             sub_pit_["chr_p70_rk"] = sub_pit_["chr_p70"].rank(pct=True)
             sub_pit_ = sub_pit_[sub_pit_["chr_p70_rk"] >= CHRONOS_FILTER_Q]
-        top_ = sub_pit_.sort_values("score", ascending=False).head(K)
-        return top_ if len(top_) >= K else None
+        pool_ = sub_pit_.sort_values(
+            "score", ascending=False).reset_index(drop=True)
+        keff_ = _adaptive_keff(pool_, adaptive_k, K)
+        top_ = pool_.head(keff_)
+        min_need_ = 2 if adaptive_k is not None else K
+        return top_ if len(top_) >= min_need_ else None
 
     for i, m in enumerate(months):
         spy_now = spy_features.loc[m].to_dict() if m in spy_features.index else {}
@@ -423,7 +500,7 @@ def run_full_sim(
                 do_reb = True
             elif held_for >= MIN_HOLD_MONTHS and cur_picks and regime != "crash":
                 # Peek at would-be top-K and check overlap
-                _candidate = _compute_candidate_top(m)
+                _candidate = _compute_candidate_top(m, regime)
                 if _candidate is not None:
                     new_top_set = set(_candidate["ticker"])
                     if not (set(cur_picks) & new_top_set):
@@ -496,8 +573,9 @@ def run_full_sim(
                 if len(sub_pit) == 0:
                     cur_picks, cur_weights, cash = [], np.array([]), True
                 else:
-                    sub_pit = _score_pool(sub_pit, select_mode, K,
-                                          SCORER_BLEND_W)
+                    sub_pit = _score_pool(
+                        sub_pit, select_mode, K,
+                        _resolve_blend_w(regime, regime_blend_w))
                     # v5: apply Chronos confidence filter (rank >= 0.45)
                     if chronos_preds is not None and m in chronos_preds:
                         chronos_at_m = chronos_preds[m]  # dict ticker -> chronos_p70_3m
@@ -505,9 +583,13 @@ def run_full_sim(
                         # Cross-sectional rank within S&P 500 cohort
                         sub_pit["chr_p70_rk"] = sub_pit["chr_p70"].rank(pct=True)
                         sub_pit = sub_pit[sub_pit["chr_p70_rk"] >= CHRONOS_FILTER_Q]
-                    # Pick top-K by ml_3plus6 score from filtered pool
-                    top = sub_pit.sort_values("score", ascending=False).head(K)
-                    if len(top) < K:
+                    # Pick top-K by score; K adapts to conviction (E2)
+                    pool_sorted = sub_pit.sort_values(
+                        "score", ascending=False).reset_index(drop=True)
+                    keff = _adaptive_keff(pool_sorted, adaptive_k, K)
+                    top = pool_sorted.head(keff)
+                    min_need = 2 if adaptive_k is not None else K
+                    if len(top) < min_need:
                         cur_picks, cur_weights, cash = [], np.array([]), True
                     else:
                         prev_basket = list(cur_picks)
@@ -637,43 +719,16 @@ def run_full_sim(
     return rets_log, pd.DataFrame(trades), live_state
 
 
-def run_e1_blend(members_g, preds_wf, preds_live, spy_features,
-                 monthly_returns, monthly_prices, chronos_preds=None,
-                 cost_bps: float = 10.0, hold_months: int = HOLD_MONTHS,
-                 K: int = K_PICKS):
-    """E1 = 50/50 monthly-rebalanced portfolio of two sleeves of the SAME
-    ml+consensus alpha with the two scorers swapped between the selection
-    and drift-trigger roles:
-
-      Sleeve A (WIN1): trigger='blend',     selection='ml_3plus6'
-      Sleeve B (WIN2): trigger='ml_3plus6', selection='blend'
-
-    They rebalance at different times / sometimes hold different names, so
-    the idiosyncratic 2-stock variance partially decorrelates while the
-    shared alpha compounds. Validated strict improvement on WIN1 (CAGR
-    +0.3pp, Sharpe +0.03, Max DD +10pp, WF 9->10/10, worst rolling-5y
-    +2.5%->+11.9%/yr) — see spx_pit/IMPROVE_FINDINGS.md Phase 4.
-
-    Returns the SAME (rets_log, trade_log_df, live_state) schema as
-    run_full_sim so the entire downstream main() pipeline is unchanged;
-    monthly returns are net (derived from each post-cost sleeve equity)
-    then 50/50-blended and re-compounded.
-    """
-    common = dict(chronos_preds=chronos_preds, cost_bps=cost_bps,
-                  hold_months=hold_months, K=K)
-    rlA, tlA, lsA = run_full_sim(members_g, preds_wf, preds_live,
-                                 spy_features, monthly_returns,
-                                 monthly_prices,
-                                 trigger_mode="blend",
-                                 select_mode="ml_3plus6", **common)
-    rlB, tlB, lsB = run_full_sim(members_g, preds_wf, preds_live,
-                                 spy_features, monthly_returns,
-                                 monthly_prices,
-                                 trigger_mode="ml_3plus6",
-                                 select_mode="blend", **common)
+def _combine_5050(rlA, tlA, lsA, rlB, tlB, lsB,
+                  sleeve_keys=("A_win1", "B_win2")):
+    """50/50 monthly-rebalanced combination of two run_full_sim sleeves.
+    Net monthly returns (derived from each post-cost sleeve equity) are
+    0.5/0.5-blended and re-compounded. Returns the SAME (rets_log,
+    trade_log_df, live_state) schema as run_full_sim so the entire
+    downstream main() pipeline is unchanged. Shared by E1 and E2."""
     assert len(rlA) == len(rlB) and all(
         a["date"] == b["date"] for a, b in zip(rlA, rlB)), \
-        "E1 sleeves must share the month grid"
+        "two-sleeve portfolio: sleeves must share the month grid"
 
     def net_series(rl):
         eq = [r["equity"] for r in rl]
@@ -713,7 +768,6 @@ def run_e1_blend(members_g, preds_wf, preds_live, spy_features,
         set(lsB.get("previous_basket_picks") or [])
     prev_comb = prevA | prevB
     cur_comb = set(comb_picks)
-    # Most recent rebalance across the two sleeves (display only).
     lr = [d for d in (lsA.get("last_rebalance_date"),
                       lsB.get("last_rebalance_date")) if d]
     nr = [d for d in (lsA.get("next_rebalance_date"),
@@ -734,14 +788,78 @@ def run_e1_blend(members_g, preds_wf, preds_live, spy_features,
                               and lsB.get("cash_position")),
         "current_regime": lsA.get("current_regime"),
         "basket_id": f'{lsA.get("basket_id")}-{lsB.get("basket_id")}',
-        "sleeves": {"A_win1": lsA, "B_win2": lsB},
+        "sleeves": {sleeve_keys[0]: lsA, sleeve_keys[1]: lsB},
     }
-    for df_, nm in ((tlA, "A_win1"), (tlB, "B_win2")):
+    for df_, nm in ((tlA, sleeve_keys[0]), (tlB, sleeve_keys[1])):
         if len(df_):
             df_["sleeve"] = nm
     trade_log = pd.concat([tlA, tlB], ignore_index=True) \
         if (len(tlA) or len(tlB)) else tlA
     return rets_log, trade_log, live_state
+
+
+def run_e1_blend(members_g, preds_wf, preds_live, spy_features,
+                 monthly_returns, monthly_prices, chronos_preds=None,
+                 cost_bps: float = 10.0, hold_months: int = HOLD_MONTHS,
+                 K: int = K_PICKS):
+    """E1 = 50/50 portfolio of WIN1 (trigger=blend, select=ml_3plus6) and
+    WIN2 (trigger=ml_3plus6, select=blend). Superseded as the deployed
+    variant by E2 (run_e2_blend) but kept for back-compat / comparison."""
+    common = dict(chronos_preds=chronos_preds, cost_bps=cost_bps,
+                  hold_months=hold_months, K=K)
+    rlA, tlA, lsA = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices, trigger_mode="blend",
+                                 select_mode="ml_3plus6", **common)
+    rlB, tlB, lsB = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices, trigger_mode="ml_3plus6",
+                                 select_mode="blend", **common)
+    return _combine_5050(rlA, tlA, lsA, rlB, tlB, lsB,
+                         sleeve_keys=("A_win1", "B_win2"))
+
+
+def run_e2_blend(members_g, preds_wf, preds_live, spy_features,
+                 monthly_returns, monthly_prices, chronos_preds=None,
+                 cost_bps: float = 10.0, hold_months: int = HOLD_MONTHS,
+                 K: int = K_PICKS):
+    """E2 (DEPLOYED 2026-05-17) = LEAD-CAGR = 50/50 portfolio of:
+
+      Sleeve A (WIN1)      : trigger='blend', select='ml_3plus6'
+                             (unchanged — the already-validated WIN1)
+      Sleeve B (RC D + aK) : trigger='ml_3plus6', select='blend' with a
+                             REGIME-CONDITIONAL blend weight
+                             (E2_REGIME_BLEND_W: momentum-lean in bull,
+                             consensus in normal/recovery) AND
+                             CONVICTION-ADAPTIVE breadth (E2_ADAPTIVE_K).
+
+    E1's free-consistency decorrelation lever is orthogonal to RC D's
+    regime + adaptive-breadth picking levers, so they STACK. E2 strictly
+    dominates the prior single-deploy E1 on the canonical pipeline:
+    higher CAGR, higher Sharpe, better worst-rolling-5y DCA and a much
+    higher forward (ex-2003-09) CAGR, at E1's identical drawdown, WF
+    10/10, eras 4/4, cost-insensitive, wide mix-weight plateau, strongest
+    TRUE-OOS holdout of any variant. Full gauntlet:
+    spx_pit/IMPROVE_PICK_RCD_FINDINGS.md + IMPROVE_PICK_RCE1_FINDINGS.md.
+
+    HONESTY NOTE: the deep interim drawdown is the 2008 GFC systemic
+    event — a stock-picking lever cannot move it. E2 raises return and
+    consistency AT E1's drawdown; it does not make the strategy low-risk.
+    """
+    common = dict(chronos_preds=chronos_preds, cost_bps=cost_bps,
+                  hold_months=hold_months, K=K)
+    rlA, tlA, lsA = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices, trigger_mode="blend",
+                                 select_mode="ml_3plus6", **common)
+    rlB, tlB, lsB = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices, trigger_mode="ml_3plus6",
+                                 select_mode="blend",
+                                 regime_blend_w=E2_REGIME_BLEND_W,
+                                 adaptive_k=E2_ADAPTIVE_K, **common)
+    return _combine_5050(rlA, tlA, lsA, rlB, tlB, lsB,
+                         sleeve_keys=("A_win1", "B_rcd_adaptk"))
 
 
 # ---------------------------------------------------------------------------
@@ -1115,7 +1233,13 @@ def main():
 
     print(f"\n=== Running v5 simulation over live window "
           f"(variant={STRATEGY_VARIANT}) ===")
-    if STRATEGY_VARIANT == "E1":
+    if STRATEGY_VARIANT == "E2":
+        rets_log, trade_log, live_state = run_e2_blend(
+            members_g, preds_wf, preds_live, spy_features, monthly_returns,
+            monthly_prices, chronos_preds=chronos_preds,
+            cost_bps=10.0, hold_months=HOLD_MONTHS, K=K_PICKS,
+        )
+    elif STRATEGY_VARIANT == "E1":
         rets_log, trade_log, live_state = run_e1_blend(
             members_g, preds_wf, preds_live, spy_features, monthly_returns,
             monthly_prices, chronos_preds=chronos_preds,
