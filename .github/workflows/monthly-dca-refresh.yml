@@ -85,6 +85,30 @@ jobs:
       - name: Rebuild E2 data.json
         run: python -m experiments.monthly_dca.v5.build_webapp_v5_pit
 
+      - name: Regression guard — refuse to ship a degraded model
+        run: |
+          # The augmented feature/panel pipeline is NOT bit-reproducible
+          # (data-vendor history restatements + uncommitted panel), so a
+          # full regen can silently shift the K=2 picks and tank the
+          # backtest (observed 56.6% -> 38% CAGR). NEVER auto-deploy a
+          # materially different model: abort the whole job (no commit)
+          # if the rebuilt full-window CAGR drifts > 5pp from the
+          # deployed reference. A human must then re-validate + re-freeze.
+          python - <<'PY'
+          import json, sys
+          d = json.load(open("experiments/docs/monthly-dca/data.json"))
+          cagr = float(d["headline"]["cagr_total"])
+          REF, TOL = 0.566, 0.05
+          print(f"rebuilt full-window CAGR={cagr:.4f} (ref {REF}, tol {TOL})")
+          if abs(cagr - REF) > TOL:
+              print(f"REGRESSION GUARD TRIPPED: |{cagr:.3f}-{REF}| > {TOL}. "
+                    f"Pipeline is non-reproducible; refusing to commit a "
+                    f"changed model. Re-validate + update REF manually.",
+                    file=sys.stderr)
+              sys.exit(1)
+          print("guard passed — model consistent with deployed reference")
+          PY
+
       - name: Commit refreshed artifacts
         run: |
           set -e
