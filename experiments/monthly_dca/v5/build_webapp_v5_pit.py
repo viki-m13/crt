@@ -5,17 +5,21 @@ forecast filter (rank >= 0.45) + inverse-vol weighting (cap 0.4) +
 rule-based rebalance (min-hold 6m + score-drift) + WIN1 blended drift
 trigger (deployed 2026-05-17).
 
-Selection: ml_3plus6 (mean of GBM 3m & 6m forward-rank) picks top 2 from
-the Chronos-filtered PIT pool. Rebalance timing: the score-drift trigger
-ranks the candidate pool by a 50/50 blend of the multi-horizon consensus
-rank and the ml_3plus6 rank (SCORER_MODE='blend', SCORER_BLEND_W=0.5).
+E1 (deployed 2026-05-17, STRATEGY_VARIANT='E1'): a 50/50 portfolio of
+two sleeves of the same ml+consensus alpha with the two scorers swapped
+between the selection and drift-trigger roles — Sleeve A/WIN1
+(select=ml_3plus6, trigger=blend) + Sleeve B/WIN2 (select=blend,
+trigger=ml_3plus6). The sleeves rebalance on different dates so their
+2-stock idiosyncratic variance decorrelates while the shared alpha
+compounds. Combined live book = up to 4 names at 0.5x each sleeve's
+inverse-vol weights.
 
-WIN1 vs the prior consensus-trigger, augmented PIT walk-forward (canonical
-production sim, 10 bps): full CAGR 47.3->51.9%, Sharpe 0.94->1.01, Max DD
--69->-66%, WF 8->9/10 beat SPY, all 4 non-overlapping eras beat S&P-DCA,
-rolling DCA-win up at 3/5/10y. Validated cost-insensitive, wide
-blend-weight plateau (0.3-0.8), and stronger TRUE OOS (untouched 2013-26
-holdout Sharpe 1.04 vs 0.68). Full gauntlet: spx_pit/IMPROVE_FINDINGS.md.
+E1 vs single-sleeve WIN1, augmented PIT walk-forward (canonical sim,
+10 bps): full CAGR 51.9->52.2%, Sharpe 1.01->1.04, Max DD -66->-56%, WF
+9->10/10 beat SPY, all 4 eras beat S&P-DCA, worst rolling-5y DCA
++2.5->+11.9%/yr, % rolling-3y beat SPY 86->90%. Cost-insensitive, wide
+mix-weight plateau (0.3-0.7), strongest TRUE-OOS holdout of any variant
+(untouched 2013-26 Sharpe 1.08). Full gauntlet: spx_pit/IMPROVE_FINDINGS.md.
 
 Schema is backward-compatible with `docs/monthly_dca.js`.
 
@@ -47,21 +51,28 @@ WEBAPP_OUT = ROOT / "experiments" / "docs" / "monthly-dca"
 WEBAPP_OUT.mkdir(parents=True, exist_ok=True)
 
 STRATEGY_SPEC = {
-    "scorer": "ml_3plus6 selection + blended-consensus drift-trigger + chronos_p70_filter",
+    "scorer": "E1: 50/50 of (ml_3plus6-select / blend-trigger) + (blend-select / ml_3plus6-trigger), chronos_p70_filter",
     "scorer_description": (
-        "Selection: the walk-forward GBM's mean(3m,6m) forward-rank "
-        "(ml_3plus6) picks the top 2 from the Chronos-p70-filtered PIT pool. "
-        "Rebalance-timing (WIN1, deployed 2026-05-17): the score-drift "
-        "trigger that decides WHEN to rotate ranks the candidate pool by a "
-        "50/50 blend of the multi-horizon CONSENSUS rank (1m/3m/6m mean "
-        "rank) and the ml_3plus6 rank. Gated by HuggingFace Chronos-bolt-tiny "
-        "zero-shot p70 forecast (must rank top 55%). WIN1 is a strict Pareto "
-        "improvement on the prior consensus-trigger over the augmented PIT "
-        "walk-forward: full CAGR 47%->52%, Sharpe 0.94->1.01, Max DD "
-        "-69%->-66%, WF 8->9/10 beat SPY, all 4 non-overlapping eras beat "
-        "S&P-DCA, rolling DCA-win up at 3/5/10y, cost-insensitive, and "
-        "materially more robust out-of-sample (untouched 2013-26 holdout "
-        "Sharpe 1.04 vs 0.68). See spx_pit/IMPROVE_FINDINGS.md."
+        "E1 (deployed 2026-05-17) is a 50/50 monthly-rebalanced portfolio "
+        "of two sleeves of the SAME GBM ml+consensus alpha, with the two "
+        "scorers swapped between the stock-SELECTION and rebalance-TIMING "
+        "roles. Sleeve A (WIN1): selection = mean(3m,6m) forward-rank "
+        "(ml_3plus6); drift-trigger = 50/50 blend of the multi-horizon "
+        "consensus rank and the ml_3plus6 rank. Sleeve B (WIN2): selection "
+        "= the blend; drift-trigger = ml_3plus6. Both sleeves pick the top "
+        "2 from the Chronos-p70-filtered PIT pool (Chronos-bolt-tiny "
+        "zero-shot, must rank top 55%); the combined live book is up to 4 "
+        "names at 0.5x each sleeve's inverse-vol weights. The two sleeves "
+        "rebalance at different times / sometimes hold different names, so "
+        "their idiosyncratic 2-stock variance decorrelates while the "
+        "shared alpha compounds. E1 is a strict improvement on the "
+        "single-sleeve WIN1 over the augmented PIT walk-forward: full CAGR "
+        "51.9%->52.2%, Sharpe 1.01->1.04, Max DD -66%->-56%, WF 9->10/10 "
+        "beat SPY, all 4 eras beat S&P-DCA, worst rolling-5y DCA "
+        "+2.5%->+11.9%/yr, % rolling-3y beating SPY 86%->90%, "
+        "cost-insensitive, strongest out-of-sample holdout of any variant "
+        "(untouched 2013-26 Sharpe 1.08). See spx_pit/IMPROVE_FINDINGS.md "
+        "Phase 4."
     ),
     "K_normal": 2,
     "K_recovery": 2,
@@ -79,7 +90,7 @@ STRATEGY_SPEC = {
     "rebalance_mode": "rule_based_score_drift",
     "cost_bps": 10,
     "universe": "PIT S&P 500 members at each rebalance month-end (iShares IVV current holdings used for live universe)",
-    "rebalance_rule": "Hold each basket at least 6 months. After 6 months, rebalance ONLY when neither current pick is still in the new top-K eligible pool, where that candidate pool is ranked by the WIN1 50/50 blended-consensus drift scorer (the picker has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each rebalance, weights = 1/vol_1y of each pick, capped at 40% per name and re-normalized. This rule-based 'min hold 6m + score_drift' schedule beats fixed h=6 on the augmented PIT walk-forward and the WIN1 blended drift-trigger is a strict Pareto improvement on the prior consensus trigger (CAGR 47->52%, Sharpe 0.94->1.01, Max DD -69->-66%, WF 8->9/10, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~1.0 and still-deep interim drawdowns (the rule and the trigger NARROW but do NOT remove the drawdown; a monthly-DCA accumulator still sees a brutal interim value drawdown).",
+    "rebalance_rule": "Each of the two E1 sleeves holds its basket at least 6 months, then rebalances ONLY when neither current pick is still in that sleeve's new top-K eligible pool (its own drift scorer has discovered the held names are no longer best). Force rebalance at 24 months max. Always rebalance on regime crash transition. Within each sleeve's rebalance, weights = 1/vol_1y per pick, capped at 40% and renormalized; the two sleeves are held 50/50 and rebalanced to parity monthly, so the live book is up to 4 names. Because the two sleeves use different drift/selection scorers they rebalance on different dates — this desynchronisation is what decorrelates their 2-stock variance. E1 is a strict improvement on the single-sleeve WIN1 (CAGR 51.9->52.2%, Sharpe 1.01->1.04, Max DD -66->-56%, WF 9->10/10, worst rolling-5y DCA +2.5->+11.9%/yr, 4/4 eras beat S&P-DCA). HONESTY NOTE: the canonical equity curve (and the dca_investor block) is the honest reference — Sharpe ~1.0 and still-deep interim drawdowns. E1 NARROWS the dispersion materially but does NOT make the strategy low-risk; a monthly-DCA accumulator still sees a deep interim value drawdown and the edge magnitude is still front-loaded in 2003-2009.",
     "chronos_filter": {
         "model": "amazon/chronos-bolt-tiny (HuggingFace)",
         "model_size": "9M params, zero-shot foundation model",
@@ -97,7 +108,15 @@ STRATEGY_SPEC = {
     },
 }
 
-WINNER_NAME = "v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+WINNER_NAME = "v5_pit_sp500_E1_win1_win2_5050_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift"
+
+# Strategy variant. "E1" = deployed 2026-05-17: 50/50 portfolio of two
+# sleeves of the same ml+consensus alpha with the two scorers swapped
+# between the selection and drift-trigger roles (WIN1 trig=blend/sel=ml
+# + WIN2 trig=ml/sel=blend). Strict improvement on the single-sleeve
+# WIN1 — same CAGR, materially more consistent, less drawdown. Set to
+# "WIN1" to fall back to the single-sleeve blended-trigger strategy.
+STRATEGY_VARIANT = "E1"
 
 # v5 strategy hyperparameters.
 # K_PICKS was updated 2026-05-12: K=3 -> K=2 after the augmented-PIT
@@ -169,6 +188,40 @@ def _calc_invvol_weights(top: pd.DataFrame, monthly_returns: pd.DataFrame,
         w = np.minimum(w, cap)
         w = w / w.sum()
     return w
+
+
+def _score_pool(df: pd.DataFrame, mode: str, K: int,
+                blend_w: float = 0.50) -> pd.DataFrame:
+    """Attach a 'score' column (and apply the consensus dispersion filter
+    when mode == 'consensus'). Bit-exact with the historical inline logic:
+      - 'ml_3plus6' : mean(pred_3m, pred_6m)            (selection default)
+      - 'consensus' : drop horizon-disagreeing names, mean horizon rank
+      - 'blend'     : blend_w * consensus-rank + (1-blend_w) * ml-rank,
+                      on the FULL pool (no dispersion sub-selection)
+    Used by BOTH the score-drift trigger and the basket-forming branch so
+    trigger and selection scorers can be set independently (E1)."""
+    d = df.copy()
+    ml = (d["pred_3m"] + d["pred_6m"]) / 2.0
+    if mode == "consensus" and len(d) >= 4:
+        r1 = d["pred_1m"].rank(pct=True)
+        r3 = d["pred_3m"].rank(pct=True)
+        r6 = d["pred_6m"].rank(pct=True)
+        disp = pd.concat([r1, r3, r6], axis=1).std(axis=1)
+        keep = disp <= disp.median()
+        if keep.sum() >= K:
+            d = d[keep]
+            r1, r3, r6 = r1[keep], r3[keep], r6[keep]
+        d["score"] = (r1 + r3 + r6) / 3.0
+    elif mode == "blend" and len(d) >= 4:
+        r1 = d["pred_1m"].rank(pct=True)
+        r3 = d["pred_3m"].rank(pct=True)
+        r6 = d["pred_6m"].rank(pct=True)
+        cons = (r1 + r3 + r6) / 3.0
+        mlr = ml.rank(pct=True)
+        d["score"] = blend_w * cons + (1 - blend_w) * mlr
+    else:
+        d["score"] = ml
+    return d
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +338,8 @@ def run_full_sim(
     cost_bps: float = 10.0,
     hold_months: int = HOLD_MONTHS,
     K: int = K_PICKS,
+    trigger_mode: str | None = None,
+    select_mode: str = "ml_3plus6",
 ) -> tuple[list, pd.DataFrame, dict]:
     """Run the v3 strategy honestly across the full window.
 
@@ -299,6 +354,10 @@ def run_full_sim(
         trade_log:   per-pick records with entry/exit/return
         live_state:  current basket info (last_rebalance, next_rebalance, picks, weights, regime)
     """
+    # trigger_mode drives the score-drift rebalance trigger; select_mode
+    # drives basket formation. Defaults preserve historical behaviour
+    # (trigger = module SCORER_MODE, selection = ml_3plus6).
+    trigger_mode = SCORER_MODE if trigger_mode is None else trigger_mode
     wf_max_asof = preds_wf["asof"].max()
     # Months: union of WF and LIVE asofs (LIVE extends past WF cutoff for the latest month)
     months = sorted(set(pd.to_datetime(preds_wf["asof"].unique())).union(
@@ -340,30 +399,7 @@ def run_full_sim(
         sub_pit_ = sub_[sub_["ticker"].isin(sp_set_)].copy()
         if len(sub_pit_) == 0:
             return None
-        if SCORER_MODE == "consensus" and len(sub_pit_) >= 4:
-            r1 = sub_pit_["pred_1m"].rank(pct=True)
-            r3 = sub_pit_["pred_3m"].rank(pct=True)
-            r6 = sub_pit_["pred_6m"].rank(pct=True)
-            disp = pd.concat([r1, r3, r6], axis=1).std(axis=1)
-            keep = disp <= disp.median()          # multi-horizon agreement
-            if keep.sum() >= K:
-                sub_pit_ = sub_pit_[keep]
-                r1, r3, r6 = r1[keep], r3[keep], r6[keep]
-            sub_pit_["score"] = (r1 + r3 + r6) / 3.0
-        elif SCORER_MODE == "blend" and len(sub_pit_) >= 4:
-            # WIN1 drift trigger: 50/50 rank-blend of the multi-horizon
-            # consensus rank and the ml_3plus6 rank, computed on the FULL
-            # eligible pool (no dispersion sub-selection — keeps breadth).
-            # Selection itself stays ml_3plus6 (basket-forming branch below);
-            # this only governs WHEN the score-drift rebalance fires.
-            r1 = sub_pit_["pred_1m"].rank(pct=True)
-            r3 = sub_pit_["pred_3m"].rank(pct=True)
-            r6 = sub_pit_["pred_6m"].rank(pct=True)
-            cons = (r1 + r3 + r6) / 3.0
-            mlr = ((sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2.0).rank(pct=True)
-            sub_pit_["score"] = SCORER_BLEND_W * cons + (1 - SCORER_BLEND_W) * mlr
-        else:
-            sub_pit_["score"] = (sub_pit_["pred_3m"] + sub_pit_["pred_6m"]) / 2
+        sub_pit_ = _score_pool(sub_pit_, trigger_mode, K, SCORER_BLEND_W)
         if chronos_preds is not None and m_ in chronos_preds:
             chronos_at_m_ = chronos_preds[m_]
             sub_pit_["chr_p70"] = sub_pit_["ticker"].map(chronos_at_m_)
@@ -460,7 +496,8 @@ def run_full_sim(
                 if len(sub_pit) == 0:
                     cur_picks, cur_weights, cash = [], np.array([]), True
                 else:
-                    sub_pit["score"] = (sub_pit["pred_3m"] + sub_pit["pred_6m"]) / 2
+                    sub_pit = _score_pool(sub_pit, select_mode, K,
+                                          SCORER_BLEND_W)
                     # v5: apply Chronos confidence filter (rank >= 0.45)
                     if chronos_preds is not None and m in chronos_preds:
                         chronos_at_m = chronos_preds[m]  # dict ticker -> chronos_p70_3m
@@ -598,6 +635,113 @@ def run_full_sim(
     }
     trades = trade_log_closed + trade_log_open
     return rets_log, pd.DataFrame(trades), live_state
+
+
+def run_e1_blend(members_g, preds_wf, preds_live, spy_features,
+                 monthly_returns, monthly_prices, chronos_preds=None,
+                 cost_bps: float = 10.0, hold_months: int = HOLD_MONTHS,
+                 K: int = K_PICKS):
+    """E1 = 50/50 monthly-rebalanced portfolio of two sleeves of the SAME
+    ml+consensus alpha with the two scorers swapped between the selection
+    and drift-trigger roles:
+
+      Sleeve A (WIN1): trigger='blend',     selection='ml_3plus6'
+      Sleeve B (WIN2): trigger='ml_3plus6', selection='blend'
+
+    They rebalance at different times / sometimes hold different names, so
+    the idiosyncratic 2-stock variance partially decorrelates while the
+    shared alpha compounds. Validated strict improvement on WIN1 (CAGR
+    +0.3pp, Sharpe +0.03, Max DD +10pp, WF 9->10/10, worst rolling-5y
+    +2.5%->+11.9%/yr) — see spx_pit/IMPROVE_FINDINGS.md Phase 4.
+
+    Returns the SAME (rets_log, trade_log_df, live_state) schema as
+    run_full_sim so the entire downstream main() pipeline is unchanged;
+    monthly returns are net (derived from each post-cost sleeve equity)
+    then 50/50-blended and re-compounded.
+    """
+    common = dict(chronos_preds=chronos_preds, cost_bps=cost_bps,
+                  hold_months=hold_months, K=K)
+    rlA, tlA, lsA = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices,
+                                 trigger_mode="blend",
+                                 select_mode="ml_3plus6", **common)
+    rlB, tlB, lsB = run_full_sim(members_g, preds_wf, preds_live,
+                                 spy_features, monthly_returns,
+                                 monthly_prices,
+                                 trigger_mode="ml_3plus6",
+                                 select_mode="blend", **common)
+    assert len(rlA) == len(rlB) and all(
+        a["date"] == b["date"] for a, b in zip(rlA, rlB)), \
+        "E1 sleeves must share the month grid"
+
+    def net_series(rl):
+        eq = [r["equity"] for r in rl]
+        prev = 1.0
+        out = []
+        for e in eq:
+            out.append(e / prev - 1.0 if prev else 0.0)
+            prev = e
+        return out
+
+    netA, netB = net_series(rlA), net_series(rlB)
+    rets_log = []
+    eq = 1.0
+    for i, (a, b) in enumerate(zip(rlA, rlB)):
+        rm = 0.5 * netA[i] + 0.5 * netB[i]
+        eq *= (1.0 + rm)
+        pa, pb = a.get("picks") or [], b.get("picks") or []
+        comb = list(dict.fromkeys(list(pa) + list(pb)))  # ordered union
+        rets_log.append({
+            "date": a["date"], "regime": a["regime"], "ret_m": float(rm),
+            "n_picks": len(comb), "picks": comb,
+            "basket_id": f'{a.get("basket_id")}-{b.get("basket_id")}',
+            "equity": float(eq),
+            "rebalanced": bool(a.get("rebalanced") or b.get("rebalanced")),
+        })
+
+    # Combined live basket: 0.5*wA + 0.5*wB merged by ticker.
+    cw = {}
+    for ls in (lsA, lsB):
+        picks = ls.get("current_basket_picks") or []
+        wts = ls.get("current_basket_weights") or []
+        for tk, w in zip(picks, wts):
+            cw[tk] = cw.get(tk, 0.0) + 0.5 * float(w)
+    comb_picks = sorted(cw, key=lambda t: -cw[t])
+    comb_w = [cw[t] for t in comb_picks]
+    prevA, prevB = set(lsA.get("previous_basket_picks") or []), \
+        set(lsB.get("previous_basket_picks") or [])
+    prev_comb = prevA | prevB
+    cur_comb = set(comb_picks)
+    # Most recent rebalance across the two sleeves (display only).
+    lr = [d for d in (lsA.get("last_rebalance_date"),
+                      lsB.get("last_rebalance_date")) if d]
+    nr = [d for d in (lsA.get("next_rebalance_date"),
+                      lsB.get("next_rebalance_date")) if d]
+    live_state = {
+        "last_rebalance_date": max(lr) if lr else None,
+        "next_rebalance_date": min(nr) if nr else None,
+        "months_since_rebalance": min(
+            int(lsA.get("months_since_rebalance", 0)),
+            int(lsB.get("months_since_rebalance", 0))),
+        "current_basket_picks": comb_picks,
+        "current_basket_weights": comb_w,
+        "previous_basket_picks": sorted(prev_comb),
+        "last_rebalance_to_hold": sorted(prev_comb & cur_comb),
+        "last_rebalance_to_buy": sorted(cur_comb - prev_comb),
+        "last_rebalance_to_sell": sorted(prev_comb - cur_comb),
+        "cash_position": bool(lsA.get("cash_position")
+                              and lsB.get("cash_position")),
+        "current_regime": lsA.get("current_regime"),
+        "basket_id": f'{lsA.get("basket_id")}-{lsB.get("basket_id")}',
+        "sleeves": {"A_win1": lsA, "B_win2": lsB},
+    }
+    for df_, nm in ((tlA, "A_win1"), (tlB, "B_win2")):
+        if len(df_):
+            df_["sleeve"] = nm
+    trade_log = pd.concat([tlA, tlB], ignore_index=True) \
+        if (len(tlA) or len(tlB)) else tlA
+    return rets_log, trade_log, live_state
 
 
 # ---------------------------------------------------------------------------
@@ -969,12 +1113,20 @@ def main():
     feature_files = sorted((CACHE / "features").glob("*.parquet"))
     feature_by_asof = {pd.Timestamp(f.stem): f for f in feature_files}
 
-    print("\n=== Running v5 simulation over live window ===")
-    rets_log, trade_log, live_state = run_full_sim(
-        members_g, preds_wf, preds_live, spy_features, monthly_returns,
-        monthly_prices, chronos_preds=chronos_preds,
-        cost_bps=10.0, hold_months=HOLD_MONTHS, K=K_PICKS,
-    )
+    print(f"\n=== Running v5 simulation over live window "
+          f"(variant={STRATEGY_VARIANT}) ===")
+    if STRATEGY_VARIANT == "E1":
+        rets_log, trade_log, live_state = run_e1_blend(
+            members_g, preds_wf, preds_live, spy_features, monthly_returns,
+            monthly_prices, chronos_preds=chronos_preds,
+            cost_bps=10.0, hold_months=HOLD_MONTHS, K=K_PICKS,
+        )
+    else:
+        rets_log, trade_log, live_state = run_full_sim(
+            members_g, preds_wf, preds_live, spy_features, monthly_returns,
+            monthly_prices, chronos_preds=chronos_preds,
+            cost_bps=10.0, hold_months=HOLD_MONTHS, K=K_PICKS,
+        )
     print(f"  months: {len(rets_log)}, last basket id: {live_state['basket_id']}")
     print(f"  current basket: {live_state['current_basket_picks']}")
     print(f"  last rebalance: {live_state['last_rebalance_date']}, next: {live_state['next_rebalance_date']}")
@@ -990,6 +1142,14 @@ def main():
         sub_live = preds_live[preds_live["asof"] == last_reb_ts]
         for tk in live_state["current_basket_picks"]:
             row = sub_live[sub_live["ticker"] == tk]
+            if len(row) == 0:
+                # E1: a pick may belong to the other sleeve and have been
+                # entered at a different month — fall back to its most
+                # recent prediction row.
+                tk_rows = preds_live[(preds_live["ticker"] == tk)
+                                     & (preds_live["asof"] <= last_reb_ts)]
+                if len(tk_rows):
+                    row = tk_rows.sort_values("asof").tail(1)
             score = float(row["pred_3m"].iloc[0] + row["pred_6m"].iloc[0]) / 2 if len(row) else None
             r = feat_df.loc[tk] if (feat_df is not None and tk in feat_df.index) else None
             item = {

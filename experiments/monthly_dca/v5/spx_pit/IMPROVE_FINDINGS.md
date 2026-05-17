@@ -165,10 +165,18 @@ lever that adds consistency for free.
 
 E1 is the strongest answer to "same CAGR, more consistently": it raises
 CAGR and Sharpe, cuts Max DD by 10pp, takes WF to 10/10, and roughly
-**doubles the worst-5-year DCA outcome**, fully overfit-screened. It is
-offered for sign-off — deploying it changes the live product's public
-numbers again and requires the two-sleeve refactor above, so it is a
-user decision, not auto-shipped.
+**doubles the worst-5-year DCA outcome**, fully overfit-screened.
+
+**DEPLOYED 2026-05-17** (user-approved). `build_webapp_v5_pit.py`:
+`run_full_sim` parametrized with `trigger_mode`/`select_mode` (WIN1
+fallback is bit-exact, max|Δ|=0.0); new `run_e1_blend` runs both
+sleeves and 50/50-blends net monthly returns; `STRATEGY_VARIANT='E1'`,
+`WINNER_NAME`, `STRATEGY_SPEC`, docstring updated. `data.json`
+regenerated (canonical headline CAGR 51.9%, Sharpe 1.03, accumulating
+DCA Max DD -56%, 10y/5y/3y DCA-win 100%/99%/91%, 4/4 eras, combined
+live book PH·ETN·UBER·SYF @ 25%). Homepage (`docs/index.html`,
+`docs/monthly_dca.js`), the `/experiments/monthly-dca` dashboard and
+README fully synced; cron auto-regenerates via the same builder.
 
 ## Files
 
