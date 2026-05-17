@@ -284,3 +284,203 @@ def win_rate(tr: pd.DataFrame) -> float:
     if tr is None or tr.empty:
         return 0.0
     return float((tr["ret"] > 0).mean())
+
+
+# ===========================================================================
+# Filtered variant: creative trade filters to push win-rate up HONESTLY
+# ===========================================================================
+#
+# A high win-rate is trivial if you allow "sell winners fast, hold losers
+# forever" (that is the Result-1 trap). The honest lever is *trade
+# selection*: enter only high-probability dips and bound each trade so the
+# loss tail is small. Filters available (each 0/off-able):
+#
+#   trend_sma   only buy if close > its own SMA(trend_sma)  -> no falling knives
+#   mkt_sma     only buy if SPY > SMA(mkt_sma)              -> no bear-market dips
+#   rs_lookback only buy if stock's N-day return > SPY's    -> relative strength
+#   confirm     require wt1 to have risen `confirm` bars    -> turn confirmation
+#   profit_take per-lot exit at +profit_take                -> bank the bounce
+#   stop_loss   per-lot exit at -stop_loss                  -> cap the loss tail
+#   max_hold    per-lot time stop in trading days           -> no dead money
+#
+# RSI / membership-loss / delist still force a whole-ticker exit.
+
+@dataclass
+class FParams:
+    wt_n1: int = 45
+    wt_n2: int = 80
+    wt_sig_len: int = 4
+    wt_oversold: float = -50.0
+    rsi_period: int = 200
+    rsi_overbought: float = 75.0
+    trend_sma: int = 0          # 0 = off
+    mkt_sma: int = 0            # 0 = off
+    rs_lookback: int = 0        # 0 = off
+    confirm: int = 0            # 0 = off
+    profit_take: float = 0.0    # 0 = off
+    stop_loss: float = 0.0      # 0 = off (value is the positive loss fraction)
+    max_hold: int = 0           # 0 = off
+    no_pyramid: int = 0         # 1 = at most one open lot per ticker
+
+    def clamp(self) -> "FParams":
+        def i(v, lo, hi):
+            return int(np.clip(round(v), lo, hi))
+        return FParams(
+            wt_n1=i(self.wt_n1, 5, 200),
+            wt_n2=i(self.wt_n2, 5, 300),
+            wt_sig_len=i(self.wt_sig_len, 2, 15),
+            wt_oversold=float(np.clip(self.wt_oversold, -120.0, -10.0)),
+            rsi_period=i(self.rsi_period, 10, 360),
+            rsi_overbought=float(np.clip(self.rsi_overbought, 52.0, 92.0)),
+            trend_sma=i(self.trend_sma, 0, 250),
+            mkt_sma=i(self.mkt_sma, 0, 250),
+            rs_lookback=i(self.rs_lookback, 0, 252),
+            confirm=i(self.confirm, 0, 5),
+            profit_take=float(np.clip(self.profit_take, 0.0, 1.0)),
+            stop_loss=float(np.clip(self.stop_loss, 0.0, 0.9)),
+            max_hold=i(self.max_hold, 0, 756),
+            no_pyramid=i(self.no_pyramid, 0, 1),
+        )
+
+
+def simulate_filtered(close: pd.DataFrame, member: pd.DataFrame,
+                      spy: pd.Series, p: FParams, cost_bps: float = 10.0):
+    """Pyramiding sim with entry filters + per-lot risk exits.
+
+    `spy` is the daily SPY close (for the market-trend and RS filters).
+    Execution: signal through day i-1 acted on at close of day i (no
+    same-bar look-ahead). Returns (daily_equity, trades_df).
+    """
+    p = p.clamp()
+    wt1, wt2 = compute_wavetrend(close, p.wt_n1, p.wt_n2, p.wt_sig_len)
+    rsi = compute_rsi(close, p.rsi_period)
+
+    prev1, prev2 = wt1.shift(1), wt2.shift(1)
+    cross_up = (prev1 < prev2) & (wt1 >= wt2)
+    buy_sig = (cross_up & (wt1 <= p.wt_oversold)).fillna(False)
+    if p.confirm > 0:
+        rising = (wt1 > wt1.shift(1))
+        for k in range(1, p.confirm):
+            rising = rising & (wt1.shift(k) > wt1.shift(k + 1))
+        buy_sig = buy_sig & rising.fillna(False)
+    exit_sig = (rsi > p.rsi_overbought).fillna(False)
+
+    tickers = list(close.columns)
+    dates = close.index
+    px = close.values
+    bs = buy_sig.values
+    xs = exit_sig.values
+    mb = member.reindex(index=dates, columns=tickers).fillna(False).values
+
+    # Entry-quality filter masks (all causal, shifted by 1 day at use)
+    if p.trend_sma > 0:
+        trend_ok = (close > close.rolling(p.trend_sma,
+                                          min_periods=p.trend_sma).mean())
+        trend_ok = trend_ok.fillna(False).values
+    else:
+        trend_ok = None
+    spy_d = spy.reindex(dates).ffill()
+    if p.mkt_sma > 0:
+        mkt_ok = (spy_d > spy_d.rolling(p.mkt_sma,
+                                        min_periods=p.mkt_sma).mean())
+        mkt_ok = mkt_ok.fillna(False).values
+    else:
+        mkt_ok = None
+    if p.rs_lookback > 0:
+        stk_mom = close.pct_change(p.rs_lookback)
+        spy_mom = spy_d.pct_change(p.rs_lookback)
+        rs_ok = stk_mom.sub(spy_mom, axis=0).gt(0.0).fillna(False).values
+    else:
+        rs_ok = None
+
+    n = len(dates)
+    cf = cost_bps / 10000.0
+    cash = INITIAL_CAPITAL
+    positions: dict[int, list] = {}
+    last_valid = np.full(len(tickers), np.nan)
+    trades = []
+    equity = np.empty(n)
+
+    for i in range(n):
+        row_px = px[i]
+        valid = ~np.isnan(row_px)
+        last_valid[valid] = row_px[valid]
+
+        if i >= 1:
+            s = i - 1
+            sig_exit = set(np.where(xs[s])[0])
+            sig_buy = np.where(bs[s])[0]
+
+            for j in list(positions.keys()):
+                lots = positions[j]
+                if not lots:
+                    continue
+                lost_member = not mb[i, j]
+                delisted = not valid[j]
+                rsi_exit = j in sig_exit
+                cur_px = row_px[j] if valid[j] else last_valid[j]
+                if np.isnan(cur_px):
+                    continue
+                keep = []
+                for lot in lots:
+                    r = cur_px / lot["entry_price"] - 1.0
+                    held = i - lot["entry_idx"]
+                    reason = None
+                    if delisted:
+                        reason = "delist"
+                    elif lost_member:
+                        reason = "member"
+                    elif p.stop_loss > 0 and r <= -p.stop_loss:
+                        reason = "stop"
+                    elif p.profit_take > 0 and r >= p.profit_take:
+                        reason = "take"
+                    elif p.max_hold > 0 and held >= p.max_hold:
+                        reason = "time"
+                    elif rsi_exit:
+                        reason = "rsi"
+                    if reason is None:
+                        keep.append(lot)
+                        continue
+                    cash += lot["shares"] * cur_px * (1 - cf)
+                    trades.append({
+                        "ticker": tickers[j],
+                        "entry_date": lot["entry_date"],
+                        "exit_date": dates[i],
+                        "entry_price": lot["entry_price"],
+                        "exit_price": float(cur_px),
+                        "ret": r, "reason": reason,
+                    })
+                positions[j] = keep
+
+            for j in sig_buy:
+                if not mb[i, j] or not valid[j] or row_px[j] <= 0:
+                    continue
+                if p.no_pyramid and positions.get(j):
+                    continue
+                if trend_ok is not None and not trend_ok[s, j]:
+                    continue
+                if mkt_ok is not None and not mkt_ok[s]:
+                    continue
+                if rs_ok is not None and not rs_ok[s, j]:
+                    continue
+                if cash >= POSITION_SIZE:
+                    cash -= POSITION_SIZE * (1 + cf)
+                    positions.setdefault(j, []).append({
+                        "entry_date": dates[i],
+                        "entry_idx": i,
+                        "entry_price": float(row_px[j]),
+                        "shares": POSITION_SIZE / row_px[j],
+                    })
+
+        mv = 0.0
+        for j, lots in positions.items():
+            if not lots:
+                continue
+            pr = row_px[j] if valid[j] else last_valid[j]
+            if np.isnan(pr):
+                continue
+            for lot in lots:
+                mv += lot["shares"] * pr
+        equity[i] = cash + mv
+
+    return pd.Series(equity, index=dates, name="equity"), pd.DataFrame(trades)

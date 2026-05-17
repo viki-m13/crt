@@ -1,0 +1,218 @@
+{
+  "selected_params": {
+    "wt_n1": 34,
+    "wt_n2": 31,
+    "wt_sig_len": 3,
+    "wt_oversold": -40.899000144848294,
+    "rsi_period": 155,
+    "rsi_overbought": 80.30427830268559,
+    "trend_sma": 195,
+    "mkt_sma": 0,
+    "rs_lookback": 0,
+    "confirm": 1,
+    "profit_take": 0.1474589356367361,
+    "stop_loss": 0.47647323894187454,
+    "max_hold": 0,
+    "no_pyramid": 1
+  },
+  "selected_full": {
+    "cagr": 0.05635479622144679,
+    "vol": 0.08217730442479804,
+    "sharpe": 0.7098655052216813,
+    "mdd": -0.2980820610789681,
+    "n": 280
+  },
+  "selected_full_win_rate": 0.8704074816299265,
+  "selected_full_trades": 2994,
+  "selected_holdout_win_rate": 0.8586839266450917,
+  "selected_holdout_cagr": 0.052663897265427195,
+  "selected_holdout_sharpe": 0.8033807662320346,
+  "selected_train_win_rate": 0.8894736842105263,
+  "exit_reason_counts": {
+    "take": 2589,
+    "stop": 260,
+    "delist": 128,
+    "member": 17
+  },
+  "n_feasible": 4,
+  "sleeve_vs_v5": {
+    "overlap_months": 253,
+    "overlap_start": "2003-02-28",
+    "overlap_end": "2026-02-28",
+    "wt_full": {
+      "cagr": 0.057856651820578975,
+      "vol": 0.08318595339047123,
+      "sharpe": 0.7194267868489822,
+      "mdd": -0.2980820610789681,
+      "n": 253
+    },
+    "v5_full": {
+      "cagr": 0.3980939525892333,
+      "vol": 0.4870663974078141,
+      "sharpe": 0.9106515410938231,
+      "mdd": -0.7705718272969202,
+      "n": 253
+    },
+    "corr_full": 0.0290664444891041,
+    "max_abs_corr_across_splits": 0.1805782100667962,
+    "corr_stable": true,
+    "blends": [
+      {
+        "cagr": 0.3980939525892333,
+        "vol": 0.4870663974078141,
+        "sharpe": 0.9106515410938231,
+        "mdd": -0.7705718272969202,
+        "n": 253,
+        "name": "v5 alone",
+        "wf_mean_sharpe": 1.2030476006055297,
+        "wf_min_sharpe": 0.6151082811628125
+      },
+      {
+        "cagr": 0.3720300234359566,
+        "vol": 0.43868036191091553,
+        "sharpe": 0.9236283279786905,
+        "mdd": -0.7256181745968139,
+        "n": 253,
+        "name": "90% v5 + 9% wt",
+        "wf_mean_sharpe": 1.2219312527075752,
+        "wf_min_sharpe": 0.6205795547675974
+      },
+      {
+        "cagr": 0.34380456259418457,
+        "vol": 0.3904909838062011,
+        "sharpe": 0.9393493529298337,
+        "mdd": -0.6768150128512599,
+        "n": 253,
+        "name": "80% v5 + 19% wt",
+        "wf_mean_sharpe": 1.2444355918216778,
+        "wf_min_sharpe": 0.6271191099631447
+      },
+      {
+        "cagr": 0.3135864852760124,
+        "vol": 0.3425812619025676,
+        "sharpe": 0.9587135470098249,
+        "mdd": -0.6247819758463836,
+        "n": 253,
+        "name": "70% v5 + 30% wt",
+        "wf_mean_sharpe": 1.2715051683813423,
+        "wf_min_sharpe": 0.6350072856495389
+      },
+      {
+        "cagr": 0.2815308572435651,
+        "vol": 0.29508744067607207,
+        "sharpe": 0.9829870761275563,
+        "mdd": -0.5703677674170611,
+        "n": 253,
+        "name": "60% v5 + 40% wt",
+        "wf_mean_sharpe": 1.3042596969108176,
+        "wf_min_sharpe": 0.6445521394554509
+      },
+      {
+        "cagr": 0.24778074670859507,
+        "vol": 0.24824834007084698,
+        "sharpe": 1.0138919124886312,
+        "mdd": -0.514667728242925,
+        "n": 253,
+        "name": "50% v5 + 50% wt",
+        "wf_mean_sharpe": 1.3437536064444053,
+        "wf_min_sharpe": 0.6559120867258911
+      },
+      {
+        "cagr": 0.21246827845932503,
+        "vol": 0.2025187475674421,
+        "sharpe": 1.0533682961373303,
+        "mdd": -0.45903767957401503,
+        "n": 253,
+        "name": "40% v5 + 60% wt",
+        "wf_mean_sharpe": 1.3899777644434592,
+        "wf_min_sharpe": 0.6682930244526561
+      },
+      {
+        "cagr": 0.17571501503196862,
+        "vol": 0.1588597241273496,
+        "sharpe": 1.1013280603153521,
+        "mdd": -0.4066176004252728,
+        "n": 253,
+        "name": "30% v5 + 70% wt",
+        "wf_mean_sharpe": 1.4380591508391676,
+        "wf_min_sharpe": 0.6763501192142954
+      }
+    ],
+    "oos_design_2003_2012": {
+      "cagr": 0.04219274899171577,
+      "vol": 0.10100090172231103,
+      "sharpe": 0.46029411226818695,
+      "mdd": -0.2980820610789681,
+      "n": 114
+    },
+    "oos_holdout_2013_2026": {
+      "cagr": 0.07087886688470202,
+      "vol": 0.06527519301994691,
+      "sharpe": 1.084640419837666,
+      "mdd": -0.12277430959818679,
+      "n": 139
+    }
+  },
+  "top5_feasible_by_train_wr": [
+    {
+      "train_wr": 0.8895,
+      "holdout_wr": 0.8587,
+      "full_wr": 0.8704,
+      "full_ntr": 2994,
+      "full_cagr": 0.0564,
+      "full_sharpe": 0.7099,
+      "full_mdd": -0.2981,
+      "profit_take": 0.1475,
+      "stop_loss": 0.4765,
+      "trend_sma": 195,
+      "mkt_sma": 0,
+      "max_hold": 0,
+      "no_pyramid": 1
+    },
+    {
+      "train_wr": 0.6879,
+      "holdout_wr": 0.5576,
+      "full_wr": 0.5807,
+      "full_ntr": 8964,
+      "full_cagr": 0.129,
+      "full_sharpe": 0.2591,
+      "full_mdd": -0.4793,
+      "profit_take": 0.5075,
+      "stop_loss": 0.4423,
+      "trend_sma": 0,
+      "mkt_sma": 170,
+      "max_hold": 0,
+      "no_pyramid": 0
+    },
+    {
+      "train_wr": 0.6486,
+      "holdout_wr": 0.5703,
+      "full_wr": 0.5977,
+      "full_ntr": 2227,
+      "full_cagr": 0.0551,
+      "full_sharpe": 0.8302,
+      "full_mdd": -0.1787,
+      "profit_take": 0.3583,
+      "stop_loss": 0.2171,
+      "trend_sma": 0,
+      "mkt_sma": 130,
+      "max_hold": 0,
+      "no_pyramid": 0
+    },
+    {
+      "train_wr": 0.322,
+      "holdout_wr": 0.4077,
+      "full_wr": 0.345,
+      "full_ntr": 484,
+      "full_cagr": 0.0842,
+      "full_sharpe": 0.6433,
+      "full_mdd": -0.5097,
+      "profit_take": 0.0,
+      "stop_loss": 0.2457,
+      "trend_sma": 0,
+      "mkt_sma": 0,
+      "max_hold": 0,
+      "no_pyramid": 0
+    }
+  ]
+}
