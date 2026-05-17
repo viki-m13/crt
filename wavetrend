@@ -1,0 +1,557 @@
+#!/usr/bin/env python3
+"""
+WaveTrend Pyramiding on Stocks + Bayesian Optimization for MAX WIN RATE
+
+Signal (from your Pine):
+    ap  = hlc3
+    esa = ema(ap, n1)
+    d   = ema(abs(ap-esa), n1)
+    ci  = (ap-esa)/(0.015*d)
+    tci = ema(ci, n2)
+    wt1 = tci
+    wt2 = sma(wt1, 4)
+    BUY when crossover(wt1, wt2) and wt1 <= oversold
+
+Exit:
+    RSI(period) > overbought (default: 252 & 70).
+
+Pyramiding:
+    Each BUY adds a new $10,000 position in that stock (if cash available).
+    All units in that stock are closed together on an RSI exit.
+
+Universe:
+    Diverse large/mega cap US + ADR stocks.
+    SPY is used only as benchmark and (optionally) for an "underperformers only" filter.
+
+Optimization:
+    Bayesian (Gaussian-process) optimization over:
+        WT_N1, WT_N2, WT_SIG_LEN, WT_OVERSOLD,
+        RSI_PERIOD, RSI_OVERBOUGHT,
+        USE_UNDERPERFORMERS_ONLY (bool)
+    Objective: MAXIMIZE TRADE WIN RATE (minimize -win_rate).
+"""
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import yfinance as yf
+import matplotlib.pyplot as plt
+
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern, WhiteKernel, ConstantKernel
+
+
+# =========================
+# Global config
+# =========================
+
+START = "2005-01-01"
+END   = None
+
+INITIAL_CAPITAL = 1_000_000.0
+POSITION_SIZE   = 10_000.0
+
+BENCH_TICKER = "SPY"
+
+STOCK_TICKERS = [
+    # Mega/large-cap US growth
+    "AAPL", "MSFT", "AMZN", "GOOGL", "META", "NVDA", "TSLA",
+    # Value / cyclicals / industrials
+    "BRK-B", "CAT", "DE", "GE", "UNP", "MMM",
+    # Financials
+    "JPM", "BAC", "WFC", "GS", "MS", "C",
+    # Defensives / staples
+    "PG", "KO", "PEP", "WMT", "COST", "MDLZ",
+    # Healthcare
+    "JNJ", "PFE", "MRK", "LLY", "UNH", "ABBV",
+    # Discretionary / consumer
+    "HD", "MCD", "NKE", "SBUX", "DIS", "LOW",
+    # Tech / semis / software
+    "INTC", "AMD", "CSCO", "ORCL", "CRM", "ADBE",
+    # Payments
+    "V", "MA", "PYPL",
+    # ADRs / others
+    "BABA", "TSM", "SAP", "RIO", "TOT",
+]
+
+# ---- Bayesian-optimization controls ----
+N_INIT = 15   # initial random evaluations
+N_ITER = 35   # bayes-opt iterations
+N_CAND = 200  # random candidate points per BO step
+KAPPA  = 2.0  # exploration weight for UCB
+
+RUN_OPTIMIZATION = True
+
+# Fallback params if you skip optimization
+DEFAULT_PARAMS = dict(
+    WT_N1=60,
+    WT_N2=140,
+    WT_SIG_LEN=4,
+    WT_OVERSOLD=-60,
+    RSI_PERIOD=252,
+    RSI_OVERBOUGHT=70,
+    USE_UNDERPERFORMERS_ONLY=True,
+)
+
+# Continuous bounds for parameters (we'll round ints where needed)
+BO_BOUNDS = dict(
+    WT_N1=(20, 120),             # channel length
+    WT_N2=(40, 260),             # EMA smoothing
+    WT_SIG_LEN=(2, 10),          # SMA length
+    WT_OVERSOLD=(-90, -40),      # oversold threshold
+    RSI_PERIOD=(126, 315),       # ~0.5y to ~1.25y
+    RSI_OVERBOUGHT=(60, 85),     # RSI exit level
+    USE_UNDERPERFORMERS_ONLY=(0, 1),  # 0/1
+)
+
+PARAM_KEYS = [
+    "WT_N1", "WT_N2", "WT_SIG_LEN", "WT_OVERSOLD",
+    "RSI_PERIOD", "RSI_OVERBOUGHT", "USE_UNDERPERFORMERS_ONLY",
+]
+
+
+# =========================
+# Indicator helpers
+# =========================
+
+def compute_wavetrend(high_df, low_df, close_df, n1, n2, sig_len):
+    ap  = (high_df + low_df + close_df) / 3.0
+    esa = ap.ewm(span=n1, adjust=False).mean()
+    d   = (ap - esa).abs().ewm(span=n1, adjust=False).mean()
+    ci  = (ap - esa) / (0.015 * d)
+    wt1 = ci.ewm(span=n2, adjust=False).mean()
+    wt2 = wt1.rolling(window=sig_len, min_periods=sig_len).mean()
+    return wt1, wt2
+
+
+def compute_wavetrend_buys(wt1, wt2, oversold):
+    prev_wt1 = wt1.shift(1)
+    prev_wt2 = wt2.shift(1)
+    cross_up = (prev_wt1 < prev_wt2) & (wt1 >= wt2)
+    cond_os  = wt1 <= oversold
+    buys = cross_up & cond_os
+    return buys.fillna(False)
+
+
+def compute_rsi(price_df, period):
+    delta = price_df.diff()
+    gain  = delta.clip(lower=0.0)
+    loss  = -delta.clip(upper=0.0)
+
+    avg_gain = gain.ewm(alpha=1.0/period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0/period, adjust=False).mean()
+
+    rs  = avg_gain / avg_loss
+    rsi = 100.0 - 100.0 / (1.0 + rs)
+    return rsi
+
+
+# =========================
+# Data prep
+# =========================
+
+def prepare_data():
+    all_tickers = [BENCH_TICKER] + STOCK_TICKERS
+    print("Downloading data from yfinance...")
+    data = yf.download(all_tickers, start=START, end=END,
+                       auto_adjust=False, progress=False)
+
+    if isinstance(data.columns, pd.MultiIndex):
+        adj_close = data["Adj Close"].copy()
+        close     = data["Close"].copy()
+        high      = data["High"].copy()
+        low       = data["Low"].copy()
+    else:
+        adj_close = data["Adj Close"].to_frame(all_tickers[0])
+        close     = data["Close"].to_frame(all_tickers[0])
+        high      = data["High"].to_frame(all_tickers[0])
+        low       = data["Low"].to_frame(all_tickers[0])
+
+    available = [t for t in all_tickers if t in adj_close.columns]
+    if BENCH_TICKER not in available:
+        raise ValueError("SPY benchmark not available.")
+
+    adj_close = adj_close[available].dropna(how="all")
+    close     = close.reindex(adj_close.index)[available]
+    high      = high.reindex(adj_close.index)[available]
+    low       = low.reindex(adj_close.index)[available]
+
+    dates = adj_close.index
+    print(f"Data range: {dates[0].date()} → {dates[-1].date()}")
+    print(f"Trading days: {len(dates)}")
+    print(f"Available tickers: {available}")
+
+    stocks_available = [t for t in STOCK_TICKERS if t in available]
+    print(f"Stocks available: {stocks_available}")
+
+    # Underperformance flags vs SPY
+    all_returns = adj_close.pct_change()
+    equity_all  = (1.0 + all_returns).cumprod().fillna(1.0)
+    final_vals  = equity_all.iloc[-1]
+    spy_final   = final_vals[BENCH_TICKER]
+
+    underperf_flags = {
+        t: (t in final_vals.index and final_vals[t] < spy_final)
+        for t in stocks_available
+    }
+
+    return dict(
+        adj_close=adj_close,
+        close=close,
+        high=high,
+        low=low,
+        dates=dates,
+        stocks_available=stocks_available,
+        underperf_flags=underperf_flags,
+    )
+
+
+# =========================
+# Strategy runner (single param set)
+# =========================
+
+def run_strategy(data, params, capture_trades=False):
+    """Run strategy and return metrics; optionally also equity, spy_equity, trades_df, universe."""
+
+    WT_N1        = int(round(params["WT_N1"]))
+    WT_N2        = int(round(params["WT_N2"]))
+    WT_SIG_LEN   = int(round(params["WT_SIG_LEN"]))
+    WT_OVERSOLD  = int(round(params["WT_OVERSOLD"]))
+    RSI_PERIOD   = int(round(params["RSI_PERIOD"]))
+    RSI_OB_LEVEL = float(params["RSI_OVERBOUGHT"])
+    USE_UNDER    = bool(round(params["USE_UNDERPERFORMERS_ONLY"]))
+
+    adj_close = data["adj_close"]
+    close     = data("close") if False else data["close"]  # keep same object, avoid typo
+    close     = data["close"]
+    high      = data["high"]
+    low       = data["low"]
+    dates     = data["dates"]
+    stocks_available = data["stocks_available"]
+    underperf_flags  = data["underperf_flags"]
+
+    # Universe selection
+    if USE_UNDER:
+        universe = [t for t in stocks_available if underperf_flags.get(t, False)]
+        if not universe:
+            universe = stocks_available
+    else:
+        universe = stocks_available
+
+    adj_close_univ = adj_close[[BENCH_TICKER] + universe]
+    close_univ     = close[[BENCH_TICKER] + universe]
+    high_univ      = high[[BENCH_TICKER] + universe]
+    low_univ       = low[[BENCH_TICKER] + universe]
+
+    # Indicators
+    wt1_all, wt2_all = compute_wavetrend(
+        high_univ, low_univ, close_univ,
+        n1=WT_N1, n2=WT_N2, sig_len=WT_SIG_LEN
+    )
+    wt1 = wt1_all[universe]
+    wt2 = wt2_all[universe]
+    buy_signals = compute_wavetrend_buys(wt1, wt2, oversold=WT_OVERSOLD)
+
+    rsi = compute_rsi(adj_close_univ[universe], period=RSI_PERIOD)
+
+    # Portfolio state
+    cash = INITIAL_CAPITAL
+    positions = {t: [] for t in universe}
+    trades = []  # always record trades (we need win rate)
+
+    equity = pd.Series(index=dates, dtype=float)
+    equity.iloc[0] = INITIAL_CAPITAL
+
+    for i in range(1, len(dates)):
+        prev_date = dates[i - 1]
+        date      = dates[i]
+
+        price_prev = adj_close_univ.loc[prev_date]
+        price_curr = adj_close_univ.loc[date]
+
+        buy_row = buy_signals.loc[prev_date]
+        rsi_row = rsi.loc[prev_date]
+
+        # Exits & entries at prev close
+        for t in universe:
+            rsi_val = rsi_row.get(t, np.nan)
+
+            # EXIT: RSI > overbought
+            if not np.isnan(rsi_val) and rsi_val > RSI_OB_LEVEL:
+                if positions[t]:
+                    exit_price = price_prev[t]
+                    if not np.isnan(exit_price):
+                        for pos in positions[t]:
+                            shares      = pos["shares"]
+                            entry_price = pos["entry_price"]
+                            cash += shares * exit_price
+                            trade_ret = (exit_price / entry_price - 1.0) if entry_price > 0 else np.nan
+                            trades.append({
+                                "ticker": t,
+                                "entry_date": pos["entry_date"],
+                                "entry_price": entry_price,
+                                "exit_date": prev_date,
+                                "exit_price": float(exit_price),
+                                "shares": shares,
+                                "return": trade_ret,
+                            })
+                        positions[t] = []
+
+            # ENTRY: WT BUY (pyramiding)
+            if bool(buy_row.get(t, False)):
+                buy_price = price_prev[t]
+                if not np.isnan(buy_price) and buy_price > 0 and cash >= POSITION_SIZE:
+                    shares = POSITION_SIZE / buy_price
+                    positions[t].append({
+                        "entry_date": prev_date,
+                        "entry_price": float(buy_price),
+                        "shares": shares,
+                    })
+                    cash -= POSITION_SIZE
+
+        # Mark-to-market
+        total_pos_val = 0.0
+        for t in universe:
+            p = price_curr[t]
+            if np.isnan(p):
+                continue
+            for pos in positions[t]:
+                total_pos_val += pos["shares"] * p
+
+        equity[date] = cash + total_pos_val
+
+    # Close remaining positions at final date for win-rate stats (equity already MTM)
+    last_date = dates[-1]
+    last_prices = adj_close_univ.loc[last_date]
+    for t in universe:
+        if positions[t]:
+            exit_price = last_prices[t]
+            if not np.isnan(exit_price):
+                for pos in positions[t]:
+                    shares      = pos["shares"]
+                    entry_price = pos["entry_price"]
+                    trade_ret   = (exit_price / entry_price - 1.0) if entry_price > 0 else np.nan
+                    trades.append({
+                        "ticker": t,
+                        "entry_date": pos["entry_date"],
+                        "entry_price": entry_price,
+                        "exit_date": last_date,
+                        "exit_price": float(exit_price),
+                        "shares": shares,
+                        "return": trade_ret,
+                    })
+            positions[t] = []
+
+    port_rets = equity.pct_change().fillna(0.0)
+
+    # Benchmark SPY
+    spy_prices = adj_close_univ[BENCH_TICKER]
+    spy_shares = INITIAL_CAPITAL / spy_prices.iloc[0]
+    spy_equity = spy_shares * spy_prices
+    spy_rets   = spy_equity.pct_change().fillna(0.0)
+
+    n_years = (equity.index[-1] - equity.index[0]).days / 365.25
+
+    def cagr(eq):
+        return eq.iloc[-1] ** (1.0 / n_years) - 1.0
+
+    def sharpe(rets, rf=0.0, periods_per_year=252):
+        if rets.std() == 0:
+            return 0.0
+        excess = rets - rf / periods_per_year
+        return np.sqrt(periods_per_year) * excess.mean() / excess.std()
+
+    def max_drawdown(eq):
+        roll_max = eq.cummax()
+        dd       = eq / roll_max - 1.0
+        return dd.min()
+
+    strat_cagr   = cagr(equity)
+    strat_sharpe = sharpe(port_rets)
+    strat_mdd    = max_drawdown(equity)
+
+    spy_cagr   = cagr(spy_equity)
+    spy_sharpe = sharpe(spy_rets)
+    spy_mdd    = max_drawdown(spy_equity)
+
+    # ---- win rate ----
+    num_trades = len(trades)
+    if num_trades > 0:
+        wins = sum(1 for tr in trades if tr["return"] > 0)
+        win_rate = wins / num_trades
+    else:
+        win_rate = 0.0
+
+    metrics = dict(
+        strat_cagr=strat_cagr,
+        strat_sharpe=strat_sharpe,
+        strat_mdd=strat_mdd,
+        spy_cagr=spy_cagr,
+        spy_sharpe=spy_sharpe,
+        spy_mdd=spy_mdd,
+        win_rate=win_rate,
+        num_trades=num_trades,
+    )
+
+    if capture_trades:
+        trades_df = pd.DataFrame(trades)
+        if not trades_df.empty:
+            trades_df["return_pct"] = trades_df["return"] * 100.0
+            trades_df.sort_values(["ticker", "entry_date"], inplace=True)
+        return metrics, equity, spy_equity, trades_df, universe
+    else:
+        return metrics
+
+
+# =========================
+# Bayesian optimization helpers
+# =========================
+
+def sample_random_params():
+    p = {}
+    for k in PARAM_KEYS:
+        lo, hi = BO_BOUNDS[k]
+        if k == "USE_UNDERPERFORMERS_ONLY":
+            p[k] = np.random.randint(0, 2)
+        else:
+            p[k] = np.random.uniform(lo, hi)
+    return p
+
+
+def params_to_vector(p):
+    return np.array([p[k] for k in PARAM_KEYS], dtype=float)
+
+
+def bayesian_optimize(data, n_init=N_INIT, n_iter=N_ITER,
+                      n_cand=N_CAND, kappa=KAPPA):
+    X = []
+    y = []   # objective = -win_rate (we minimize)
+
+    best_params = None
+    best_metrics = None
+    best_obj = None
+
+    # ----- initial random evaluations -----
+    for i in range(n_init):
+        p = sample_random_params()
+        m = run_strategy(data, p, capture_trades=False)
+        win = m["win_rate"]
+        obj = -win
+        X.append(params_to_vector(p))
+        y.append(obj)
+
+        if best_obj is None or obj < best_obj:
+            best_obj = obj
+            best_params = p
+            best_metrics = m
+
+        print(f"[INIT {i+1}/{n_init}] "
+              f"WinRate={win*100:5.2f}%  Trades={m['num_trades']:4d}  params={p}")
+
+    X = np.vstack(X)
+    y = np.array(y)
+
+    d = X.shape[1]
+    kernel = (ConstantKernel(1.0, (1e-3, 1e3)) *
+              Matern(length_scale=np.ones(d), nu=2.5) +
+              WhiteKernel(noise_level=1e-6, noise_level_bounds=(1e-8, 1e-2)))
+    gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True,
+                                  n_restarts_optimizer=3)
+
+    # ----- BO iterations -----
+    for it in range(n_iter):
+        gp.fit(X, y)
+
+        # propose candidates
+        cand_params = [sample_random_params() for _ in range(n_cand)]
+        cand_vecs   = np.vstack([params_to_vector(p) for p in cand_params])
+
+        mu, std = gp.predict(cand_vecs, return_std=True)
+        acq = mu - kappa * std      # UCB-style for minimization
+        idx_best = np.argmin(acq)
+
+        p_new = cand_params[idx_best]
+        m_new = run_strategy(data, p_new, capture_trades=False)
+        win_new = m_new["win_rate"]
+        obj_new = -win_new
+
+        X = np.vstack([X, params_to_vector(p_new)])
+        y = np.append(y, obj_new)
+
+        if best_obj is None or obj_new < best_obj:
+            best_obj = obj_new
+            best_params = p_new
+            best_metrics = m_new
+
+        print(f"[BO {it+1}/{n_iter}] "
+              f"WinRate={win_new*100:5.2f}% (best {best_metrics['win_rate']*100:5.2f}%)  "
+              f"Trades={m_new['num_trades']:4d}  params={p_new}")
+
+    return best_params, best_metrics
+
+
+# =========================
+# Main
+# =========================
+
+def main():
+    data = prepare_data()
+
+    if RUN_OPTIMIZATION:
+        best_params, best_metrics = bayesian_optimize(data)
+        print("\n==== BEST PARAMS (BAYES-OPT, WIN-RATE) ====")
+        for k in PARAM_KEYS:
+            print(f"{k}: {best_params[k]}")
+        print("Best strategy metrics:")
+        print(f"Win rate : {best_metrics['win_rate']*100:5.2f}%")
+        print(f"Trades   : {best_metrics['num_trades']}")
+        print(f"CAGR     : {best_metrics['strat_cagr']*100:6.2f}%")
+        print(f"Sharpe   : {best_metrics['strat_sharpe']:6.2f}")
+        print(f"Max DD   : {best_metrics['strat_mdd']*100:6.2f}%")
+    else:
+        best_params = DEFAULT_PARAMS
+
+    # Re-run best config with full trade log
+    print("\nRe-running best configuration with full trade log...")
+    metrics, equity, spy_equity, trades_df, universe = run_strategy(
+        data, best_params, capture_trades=True
+    )
+
+    print("\n==================== FINAL STRATEGY PERFORMANCE ====================")
+    print(f"Backtest period: {equity.index[0].date()} → {equity.index[-1].date()}")
+    print(f"Universe used  : {universe}")
+    print("---- Strategy ----")
+    print(f"Win rate        : {metrics['win_rate']*100:5.2f}%")
+    print(f"Trades          : {metrics['num_trades']}")
+    print(f"CAGR            : {metrics['strat_cagr']*100:6.2f}%")
+    print(f"Sharpe (rf=0)   : {metrics['strat_sharpe']:6.2f}")
+    print(f"Max Drawdown    : {metrics['strat_mdd']*100:6.2f}%")
+    print("---- Buy & Hold SPY ----")
+    print(f"CAGR            : {metrics['spy_cagr']*100:6.2f}%")
+    print(f"Sharpe (rf=0)   : {metrics['spy_sharpe']:6.2f}")
+    print(f"Max Drawdown    : {metrics['spy_mdd']*100:6.2f}%")
+
+    print("\n==================== TRADE SUMMARY ====================")
+    print(f"Closed 10k units: {len(trades_df)}")
+    if len(trades_df) > 0:
+        print("\nSample trades:")
+        print(trades_df.head(15))
+
+    # Plot equity vs SPY
+    plt.figure(figsize=(10, 6))
+    plt.plot(equity.index, equity, label="WaveTrend Pyramiding (Stocks)")
+    plt.plot(spy_equity.index, spy_equity, label="Buy & Hold SPY", linestyle="--")
+    plt.yscale("log")
+    plt.title("WaveTrend Pyramiding (Win-Rate–Optimized) vs Buy & Hold SPY")
+    plt.xlabel("Date")
+    plt.ylabel("Equity (log scale)")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
