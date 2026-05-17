@@ -360,7 +360,7 @@ function renderV3Sections(data) {
     const sec = el("div", { class: "v3-block" });
     sec.appendChild(el("h3", { class: "section-h3" }, "Picker drawdown ledger (the engine, not your DCA account)"));
     sec.appendChild(el("p", { class: "section-sub" },
-      "Peak-to-trough drawdowns of the underlying lump-sum picker equity (worst ~-77%) — shown for completeness of the engine. The drawdown a monthly contributor actually felt is the honest ~-64% figure disclosed in the DCA outcomes section above; these are deeper/sharper because they ignore the cushioning effect of steady monthly contributions."));
+      "Peak-to-trough drawdowns of the underlying lump-sum picker equity (worst ~-77%) — shown for completeness of the engine. The drawdown a monthly contributor actually felt is the honest ~-56% figure disclosed in the DCA outcomes section above; these are deeper/sharper because they ignore the cushioning effect of steady monthly contributions."));
     const tbl = el("table", { class: "v3-table" });
     tbl.innerHTML = `<thead><tr><th>Start</th><th>Trough</th><th>End</th><th>Depth</th></tr></thead>`;
     const tb = el("tbody");

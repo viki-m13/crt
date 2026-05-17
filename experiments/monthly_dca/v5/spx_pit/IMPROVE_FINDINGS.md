@@ -97,10 +97,128 @@ is the shallowest drawdown. Both are honest, plateau-stable,
 cost-free, and OOS-validated. Deploying either is a one-line change to
 the trigger/selection scorer; it is offered for sign-off, not shipped.
 
+## Phase 4 — same CAGR, MORE CONSISTENTLY: E1 = WIN1 ⊕ WIN2
+
+**Ask:** keep the ~52% CAGR but deliver it *more consistently* (the edge
+was still front-loaded and short/mid-horizon paths noisy).
+
+Levers that de-risk (vol-target, DD-breaker) were already proven to bleed
+CAGR. The winning idea instead **diversifies the same alpha across two
+implementations**: WIN1 (trigger=blend, select=ml_3plus6) and WIN2
+(trigger=ml_3plus6, select=blend) are the *same* ml+consensus edge with
+the two scorers swapped between the selection and drift-trigger roles.
+They rebalance at different times and sometimes hold different names, so
+their idiosyncratic 2-stock variance partially decorrelates while the
+shared alpha compounds. **E1 = 50/50 monthly-rebalanced portfolio of the
+two.**
+
+| metric | WIN1 (deployed) | **E1 (WIN1⊕WIN2 50/50)** |
+|---|--:|--:|
+| Full CAGR | 51.9% | **52.2%** |
+| Sharpe | 1.01 | **1.04** |
+| Max DD | -66% | **-56%** |
+| WF beats SPY | 9/10 | **10/10** |
+| Eras beat S&P-DCA | 4/4 | 4/4 |
+| DCA-win 3y / 5y | .912 / .953 | **.941 / .995** |
+| **Worst rolling 5-yr CAGR** | **+2.5%/yr** | **+11.9%/yr** |
+| % rolling-3y beat SPY | 86% | **90%** |
+| Yearly-return stdev | 314% | **280%** |
+| CAGR excl. 2003-09 | 33.5% | 33.7% |
+
+Not a trade-off — E1 is **strictly better on return, risk, AND every
+consistency metric**. The standout: a DCA investor's *worst* 5-year
+window improves from +2.5%/yr to **+11.9%/yr**.
+
+Hyperparameter ensembles (min-hold {5,6,7}, blend-weight {.4,.5,.6},
+mega-grid, regime-conditioned K) were also tested — they either bled
+CAGR (min-hold/mega: 42-45%) or did nothing (blend-weight/regime-K
+≈ WIN1). Decorrelating the *two scorer-role implementations* is the only
+lever that adds consistency for free.
+
+### Overfit gauntlet (all pass)
+
+- **Mix-weight plateau:** w1 ∈ 0.3-0.7 all give CAGR 51-52.5%, Sharpe
+  1.02-1.04, **10/10 WF**, 4/4 eras, worst-5y +8 to +13%/yr. A wide flat
+  plateau; 50/50 is the un-tuned equal-weight choice inside it.
+- **TRUE OOS** (design 2003-12 | untouched holdout 2013-26): E1 holdout
+  **CAGR 35.4% / Sharpe 1.08** — the strongest holdout of any variant
+  (WIN1 34.7%/1.04; original consensus 20.5%/0.68).
+- **Cost-insensitive:** identical 0/10/20/30 bps (both sleeves low-turn).
+- **MC delisting:** more robust than WIN1 alone — α=4% median CAGR
+  39.6% (WIN1 27.8%), α=8% 14.0% (WIN1 5.0%). Two decorrelated 2-stock
+  sleeves are rarely wiped simultaneously.
+
+### Honest caveats
+
+1. E1 is a **two-sleeve portfolio**, so production deployment is a real
+   refactor (run two sims — selection ml_3plus6 / trigger blend, AND
+   selection blend / trigger ml_3plus6 — then 50/50 the monthly returns
+   and present a combined ≤4-name basket), not a one-line flag like WIN1.
+2. Same residual data caveat as the rest of the repo (213 OTC
+   bankruptcy-Q tickers absent). Relative improvement uses the identical
+   universe/pipeline so it should survive a CRSP correction.
+3. The edge magnitude is still front-loaded in 2003-09 and drawdowns are
+   still deep (-56%). E1 narrows the dispersion materially; it does not
+   make the strategy low-risk. Disclosed, not hidden.
+
+### Recommendation
+
+E1 is the strongest answer to "same CAGR, more consistently": it raises
+CAGR and Sharpe, cuts Max DD by 10pp, takes WF to 10/10, and roughly
+**doubles the worst-5-year DCA outcome**, fully overfit-screened.
+
+**DEPLOYED 2026-05-17** (user-approved). `build_webapp_v5_pit.py`:
+`run_full_sim` parametrized with `trigger_mode`/`select_mode` (WIN1
+fallback is bit-exact, max|Δ|=0.0); new `run_e1_blend` runs both
+sleeves and 50/50-blends net monthly returns; `STRATEGY_VARIANT='E1'`,
+`WINNER_NAME`, `STRATEGY_SPEC`, docstring updated. `data.json`
+regenerated (canonical headline CAGR 51.9%, Sharpe 1.03, accumulating
+DCA Max DD -56%, 10y/5y/3y DCA-win 100%/99%/91%, 4/4 eras, combined
+live book PH·ETN·UBER·SYF @ 25%). Homepage (`docs/index.html`,
+`docs/monthly_dca.js`), the `/experiments/monthly-dca` dashboard and
+README fully synced; cron auto-regenerates via the same builder.
+
 ## Files
 
 - `improve_main_strategy.py` — overlay battery (vol-target, DD-breaker)
-- `improve_sim_v2.py` — bit-exact parametrized sim (trigger × select)
+- `improve_sim_v2.py` — bit-exact parametrized sim (trigger × select ×
+  min-hold × regime-K)
 - `improve_phase2.py` — scorer matrix + book-blends (fidelity-checked)
-- `improve_phase3.py` / `improve_phase3b.py` — full overfit gauntlet
+- `improve_phase3.py` / `improve_phase3b.py` — WIN1/WIN2 overfit gauntlet
+- `improve_phase4.py` — consistency levers (E1 + ensembles)
+- `improve_phase4b.py` — E1 overfit gauntlet (plateau/OOS/cost/MC)
 - `augmented/improve_*.json` — raw results
+
+## Phase 5 — does a 3rd sleeve beat E1? NO (honest negative)
+
+`improve_phase5.py`. Tested 3-way / 4-way equal-weight sleeve
+ensembles adding a consensus-based sleeve to E1's {A,B}, plus a
+phase-offset twin.
+
+| variant | CAGR | Sharpe | MaxDD | WF | worst-5y | CAGRx0309 |
+|---|--:|--:|--:|--:|--:|--:|
+| **E1 (deployed)** | **52.2%** | **1.04** | **-56%** | **10/10** | **+11.9%** | **33.7%** |
+| 1/3 {A,B,C=cons/ml} | 51.4% | 1.03 | -60% | 10/10 | +8.2% | 30.2% |
+| 1/3 {A,B,D=ml/cons} | 47.6% | 0.99 | -56% | 9/10 | +9.4% | 30.7% |
+| 1/3 {A,B,E=cons/bl} | 51.9% | 1.02 | -56% | 10/10 | +10.5% | 32.1% |
+| 1/4 {A,B,C,D} | 48.3% | 1.00 | -59% | 9/10 | +5.9% | 29.0% |
+
+**No third sleeve improves on E1.** Every consensus-based addition
+either drags CAGR or widens drawdown / lowers the ex-2003-09 CAGR and
+worst-5y. This is the expected consequence of the repo-wide finding
+that there is essentially ONE independent alpha here: you can
+decorrelate the *same* ml+blend edge across two role-swapped
+implementations (E1), but a third sleeve necessarily leans on the
+weaker consensus variant and dilutes. **E1 (2-sleeve) is the
+consistency optimum and the correct stopping point.**
+
+The `P1` phase-offset row in the raw JSON is a **methodological
+artifact** (shifting a realized return stream by one month and
+averaging spuriously smooths variance and misaligns returns/dates) —
+explicitly NOT a finding and not pursued. A genuine rebalance-luck
+time-diversification test would need a real staggered-entry sim, which
+the event-driven (not calendar) rule-based rebalance does not cleanly
+admit; flagged for honesty.
+
+**Net:** E1 stands as the deployed strategy; no further sleeve change
+is warranted on this data.

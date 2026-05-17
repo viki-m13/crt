@@ -20,38 +20,42 @@ training, validation gauntlets, web frontend, and assorted experiments.
 
 ## Honest performance numbers
 
-The deployed v5 strategy (as of 2026-05-17) is
-`v5_pit_sp500_blendtrig_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift`
-— **K=2**, ml_3plus6 selection, Chronos p70 filter, inverse-vol cap
-0.4, **rule-based rebalance** (min 6-month hold + score-drift), with
-the **WIN1 50/50 blended-consensus drift trigger** (deployed May 2026,
-replacing the consensus trigger). Validated on the augmented PIT panel
-with the canonical production sim — see
+The deployed v5 strategy (as of 2026-05-17) is **E1**
+(`v5_pit_sp500_E1_win1_win2_5050_chronos_p70_k2_invvol_cap0.4_minhold6_scoredrift`)
+— a **50/50 portfolio of two 2-stock sleeves** of the same GBM+Chronos
+alpha (K=2, Chronos p70 filter, inverse-vol cap 0.4, rule-based
+rebalance min-6m/score-drift) that swap which scorer drives stock
+**selection** vs rebalance **timing**: Sleeve A/WIN1 (select=ml_3plus6,
+trigger=blend) + Sleeve B/WIN2 (select=blend, trigger=ml_3plus6). The
+sleeves rebalance on different dates so their 2-stock variance
+decorrelates while the shared alpha compounds; the combined live book
+is up to 4 names. Validated on the augmented PIT panel with the
+canonical production sim — see
 [`experiments/monthly_dca/v5/spx_pit/IMPROVE_FINDINGS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVE_FINDINGS.md).
 
-Canonical production sim (augmented PIT 2003–2025, 10 bps), prior
-consensus trigger vs the now-deployed **WIN1** blended trigger:
+Canonical production sim (augmented PIT 2003–2025, 10 bps): the prior
+single-sleeve WIN1 vs the now-deployed **E1** two-sleeve portfolio:
 
-| | consensus (prior) | **WIN1 (deployed)** |
+| | WIN1 (prior) | **E1 (deployed)** |
 |---|---:|---:|
-| Full-window CAGR (lump-sum) | 47.3% | **51.9%** |
-| Sharpe (monthly)            | 0.94  | **1.01** |
-| Max DD (lump-sum picker)    | -69%  | **-66%** |
-| WF splits beating SPY       | 8/10  | **9/10** (CAGR-WF 10/10) |
-| Non-overlapping eras beating S&P-DCA | 3/4 | **4/4** |
-| Rolling 10y DCA-win vs S&P-DCA | ~99% | **100% (155/155)** |
-| Recent 2021–25 era vs S&P-DCA | beats | **beats** |
+| Full-window CAGR (lump-sum) | 51.9% | **51.9%** |
+| Sharpe (monthly)            | 1.01  | **1.03** |
+| Max DD (accumulating DCA)   | -64%  | **-56%** |
+| WF splits beating SPY (CAGR)| 10/10 | **10/10** |
+| Non-overlapping eras beating S&P-DCA | 4/4 | **4/4** |
+| Rolling 10y / 5y / 3y DCA-win | 100% / 99% / 86% | **100% / 99% / 91%** |
+| Worst rolling 5-yr DCA CAGR | +2.5%/yr | **+11.9%/yr** |
 
-**WIN1** is a strict Pareto improvement on the prior consensus trigger:
-every headline metric improves, it beats S&P-DCA in **all four**
-non-overlapping eras (fixing the previously-losing 2010–2015 era:
-~44%/yr vs ~14%/yr), the rolling-10-year DCA win rate returns to a
-literal 100%, and it is cost-insensitive, sits on a wide blend-weight
-plateau (0.3–0.8), and is materially stronger on a truly out-of-sample
-holdout (untouched 2013–2026 Sharpe 1.04 vs 0.68). It changes *when*
-the basket rotates, not *which* stocks are selected. The edge is still
-heavily front-loaded in 2003–2009 and the interim drawdowns are still
-deep — narrowed, not removed.
+**E1** is a strict improvement on single-sleeve WIN1: same CAGR,
+higher Sharpe, ~8–10pp shallower interim drawdown, WF 10/10, all four
+eras beat S&P-DCA, and the *worst* rolling 5-year DCA outcome roughly
+doubles — i.e. the same edge delivered far more consistently. It is
+cost-insensitive, sits on a wide 50/50 mix-weight plateau (0.3–0.7),
+is more delisting-robust than either sleeve alone, and has the
+strongest truly-out-of-sample holdout of any variant (untouched
+2013–2026 Sharpe 1.08). The edge is still heavily front-loaded in
+2003–2009 and the interim drawdowns are still deep — narrowed, not
+removed.
 
 The PIT correction adds 161 acquired/renamed large-caps (AGN, ANTM,
 ABMD, CELG, ATVI, AET, …) that the original v2 panel omitted. See
