@@ -161,40 +161,65 @@ def score_chronos_incremental(asof: pd.Timestamp) -> bool:
         return False
 
 
-def main() -> int:
+def _step(label: str, fn) -> bool:
+    """Run one refresh step in isolation. Steps 0-4 are *optional*
+    data-freshening; a failure in any of them must NOT prevent Step 5
+    (the E2 data.json rebuild) from running on whatever data is present.
+    Returns True on success, False on handled failure."""
+    print(f"\n=== {label} ===")
     try:
-        print("=== Step 0: Refreshing IVV holdings ===")
-        refresh_ivv_holdings()
+        fn()
+        return True
+    except Exception as e:  # noqa: BLE001 — deliberately fail-soft per step
+        print(f"  WARN: '{label}' failed ({e}); continuing with existing "
+              f"data.", file=sys.stderr)
+        traceback.print_exc()
+        return False
 
-        print("\n=== Step 1: Rebuilding prices panel ===")
-        panel = run_load(force=True)
-        print(f"  panel shape={panel.shape}  date range={panel.index.min().date()} → {panel.index.max().date()}")
 
-        print("\n=== Step 2: Refreshing features for recent month-ends ===")
+def main() -> int:
+    panel_box = {}
+
+    def _load():
+        panel_box["panel"] = run_load(force=True)
+        p = panel_box["panel"]
+        print(f"  panel shape={p.shape}  range={p.index.min().date()} → "
+              f"{p.index.max().date()}")
+
+    def _features():
         run_features(start="2017-01-01", end="2099-01-01")
         run_extras(start="2017-01-01", end="2099-01-01")
-        refresh_recent_months(panel, lookback_months=3)
+        if "panel" in panel_box:
+            refresh_recent_months(panel_box["panel"], lookback_months=3)
 
-        print("\n=== Step 3: Refreshing PIT S&P 500 membership ===")
-        refresh_pit_membership()
-
-        print("\n=== Step 4: Scoring Chronos-bolt-tiny for latest asof ===")
-        # Use latest features asof
+    def _chronos():
         feat_dir = ROOT / "experiments" / "monthly_dca" / "cache" / "features"
-        feat_files = sorted(feat_dir.glob("*.parquet"))
-        if feat_files:
-            latest_asof = pd.Timestamp(feat_files[-1].stem)
-            score_chronos_incremental(latest_asof)
+        ff = sorted(feat_dir.glob("*.parquet"))
+        if ff:
+            score_chronos_incremental(pd.Timestamp(ff[-1].stem))
 
-        print("\n=== Step 5: Rebuilding webapp data.json (v5 PIT-S&P-500) ===")
+    # Steps 0-4: optional, independently fail-soft.
+    _step("Step 0: Refreshing IVV holdings", refresh_ivv_holdings)
+    _step("Step 1: Rebuilding prices panel", _load)
+    _step("Step 2: Refreshing features (recent month-ends)", _features)
+    _step("Step 3: Refreshing PIT S&P 500 membership",
+          refresh_pit_membership)
+    _step("Step 4: Scoring Chronos-bolt-tiny for latest asof", _chronos)
+
+    # Step 5: the deliverable — the E2 data.json the website renders.
+    # This MUST run even if any optional step above failed, so the
+    # public page is never left frozen on a stale build.
+    print("\n=== Step 5: Rebuilding webapp data.json (v5 PIT-S&P-500, "
+          "variant=E2) ===")
+    try:
         load_features_long.cache_clear()
-        from experiments.monthly_dca.v5.build_webapp_v5_pit import main as build_v5
+        from experiments.monthly_dca.v5.build_webapp_v5_pit import (
+            main as build_v5)
         build_v5()
-
-        print("\nDaily refresh complete (v5).")
+        print("\nDaily refresh complete (v5 / E2).")
         return 0
     except Exception as e:
-        print(f"ERROR during daily refresh: {e}", file=sys.stderr)
+        print(f"FATAL: E2 data.json rebuild failed: {e}", file=sys.stderr)
         traceback.print_exc()
         return 1
 
