@@ -32,6 +32,23 @@ sys.path.insert(0, str(HERE))
 import experiments.monthly_dca.v5.build_webapp_v5_pit as bw  # noqa
 from improve_sim_v2 import _score_pool  # noqa
 
+
+def _score_pool_w(df, mode, K, blend_w):
+    """Mirror improve_sim_v2._score_pool but with an explicit blend weight
+    for mode=='blend' (blend_w on consensus-rank, 1-blend_w on ml-rank).
+    Falls back to the shared _score_pool for non-blend modes."""
+    if mode != "blend":
+        return _score_pool(df, mode, K)
+    d = df.copy()
+    ml = (d["pred_3m"] + d["pred_6m"]) / 2.0
+    r1 = d["pred_1m"].rank(pct=True)
+    r3 = d["pred_3m"].rank(pct=True)
+    r6 = d["pred_6m"].rank(pct=True)
+    cons = (r1 + r3 + r6) / 3.0
+    mlr = ml.rank(pct=True)
+    d["score"] = blend_w * cons + (1 - blend_w) * mlr
+    return d
+
 EXCLUDE = bw.EXCLUDE
 CHRONOS_FILTER_Q = bw.CHRONOS_FILTER_Q
 CAP_PER_PICK = bw.CAP_PER_PICK
@@ -65,9 +82,9 @@ def _trailing_corr(mr, asof, a, b, nmonths=12):
     return 1.0 if np.isnan(c) else float(c)
 
 
-def _pool_scored(df, mode, K, chronos_at_m):
+def _pool_scored(df, mode, K, chronos_at_m, blend_w=0.5):
     """Chronos-filtered, score-sorted candidate pool (descending)."""
-    d = _score_pool(df, mode, K)
+    d = _score_pool_w(df, mode, K, blend_w)
     if chronos_at_m is not None:
         d["chr_p70"] = d["ticker"].map(chronos_at_m)
         d["chr_p70_rk"] = d["chr_p70"].rank(pct=True)
@@ -77,9 +94,13 @@ def _pool_scored(df, mode, K, chronos_at_m):
 
 def _select(df, mode, K, chronos_at_m, mr, asof, *,
             adaptive_k=False, conv_hi=0.18, conv_lo=0.08, k_lo=2, k_mid=3,
-            k_hi=4, decorr2=False, rho_max=0.6, knife_q=0.0):
+            k_hi=4, decorr2=False, rho_max=0.6, knife_q=0.0,
+            blend_w=0.5, regime=None, regime_w=None):
     """Return the chosen pick DataFrame (>=2 rows) or None."""
-    d = _pool_scored(df, mode, K, chronos_at_m)
+    bw_ = blend_w
+    if regime_w is not None and regime is not None:
+        bw_ = regime_w.get(regime, blend_w)
+    d = _pool_scored(df, mode, K, chronos_at_m, blend_w=bw_)
     if len(d) < 2:
         return None
 
@@ -143,12 +164,13 @@ def run_sim_v3(members_g, preds_wf, preds_live, spy_features,
         s = s[~s["ticker"].isin(EXCLUDE)]
         return s[s["ticker"].isin(members_g.get(m_, set()))].copy()
 
-    def _cand(m_, mode):
+    def _cand(m_, mode, regime_=None):
         sub = _sub_at(m_)
         if len(sub) == 0:
             return None
         ch = chronos_preds.get(m_) if chronos_preds else None
-        return _select(sub, mode, K, ch, monthly_returns, m_, **selkw)
+        return _select(sub, mode, K, ch, monthly_returns, m_,
+                       regime=regime_, **selkw)
 
     for i, m in enumerate(months):
         spy_now = spy_features.loc[m].to_dict() if m in spy_features.index else {}
@@ -157,7 +179,7 @@ def run_sim_v3(members_g, preds_wf, preds_live, spy_features,
         if held_for >= MAX_HOLD_MONTHS:
             do_reb = True
         elif held_for >= MIN_HOLD_MONTHS and cur_picks and regime != "crash":
-            cand = _cand(m, trigger_mode)
+            cand = _cand(m, trigger_mode, regime)
             if cand is not None and not (set(cur_picks)
                                          & set(cand["ticker"])):
                 do_reb = True
@@ -167,7 +189,7 @@ def run_sim_v3(members_g, preds_wf, preds_live, spy_features,
                 cur_picks, cur_weights, cash = [], np.array([]), True
                 held_for = 0
             else:
-                top = _cand(m, select_mode)
+                top = _cand(m, select_mode, regime)
                 if top is None:
                     cur_picks, cur_weights, cash = [], np.array([]), True
                 else:
