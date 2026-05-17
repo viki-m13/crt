@@ -73,8 +73,15 @@ jobs:
           python experiments/monthly_dca/v5/spx_pit/build_panel_pit.py
           python experiments/monthly_dca/v5/spx_pit/build_sp500_pit_panel_aug.py
 
-      - name: Phase 4 — walk-forward GBM retrain (ml_preds.parquet)
-        run: python experiments/monthly_dca/v5/spx_pit/train_ml_pit.py
+      - name: Phase 4 — APPEND-ONLY live extension (reproducible)
+        # NOT a full retrain. The augmented feature/panel pipeline is not
+        # bit-reproducible (vendor restatements + uncommitted panel), so
+        # a full regen silently degrades the deployed model (56.6%->38%).
+        # extend_ml_preds_live.py freezes the committed/validated history
+        # (read from git) and appends ONLY new live months, asserting the
+        # <=cutoff slice is byte-identical. The published backtest can
+        # never change; only the live as_of/basket advances.
+        run: python experiments/monthly_dca/v5/spx_pit/extend_ml_preds_live.py
 
       - name: Phase 5c — Chronos-bolt-tiny on augmented panel
         continue-on-error: true
@@ -85,28 +92,29 @@ jobs:
       - name: Rebuild E2 data.json
         run: python -m experiments.monthly_dca.v5.build_webapp_v5_pit
 
-      - name: Regression guard — refuse to ship a degraded model
+      - name: Regression guard — catastrophic-degradation backstop
         run: |
-          # The augmented feature/panel pipeline is NOT bit-reproducible
-          # (data-vendor history restatements + uncommitted panel), so a
-          # full regen can silently shift the K=2 picks and tank the
-          # backtest (observed 56.6% -> 38% CAGR). NEVER auto-deploy a
-          # materially different model: abort the whole job (no commit)
-          # if the rebuilt full-window CAGR drifts > 5pp from the
-          # deployed reference. A human must then re-validate + re-freeze.
+          # Primary protection is extend_ml_preds_live.py's hard
+          # byte-identity assertion on the frozen backtest history (it
+          # exits non-zero and writes nothing if violated). This is a
+          # secondary backstop: the full-window CAGR legitimately drifts
+          # as real live months accrue (e.g. 56.6% over 2003-2025 ->
+          # ~55% with 2026 added), so only abort on a CATASTROPHIC
+          # collapse (< 45% — the signature of a non-reproducible full
+          # regen, observed at 38%), never on normal live drift.
           python - <<'PY'
           import json, sys
           d = json.load(open("experiments/docs/monthly-dca/data.json"))
           cagr = float(d["headline"]["cagr_total"])
-          REF, TOL = 0.566, 0.05
-          print(f"rebuilt full-window CAGR={cagr:.4f} (ref {REF}, tol {TOL})")
-          if abs(cagr - REF) > TOL:
-              print(f"REGRESSION GUARD TRIPPED: |{cagr:.3f}-{REF}| > {TOL}. "
-                    f"Pipeline is non-reproducible; refusing to commit a "
-                    f"changed model. Re-validate + update REF manually.",
+          FLOOR = 0.45
+          print(f"rebuilt full-window CAGR={cagr:.4f} (catastrophe floor {FLOOR})")
+          if cagr < FLOOR:
+              print(f"REGRESSION GUARD TRIPPED: {cagr:.3f} < {FLOOR} — "
+                    f"signature of a non-reproducible full regen. "
+                    f"Refusing to commit. Investigate the extender.",
                     file=sys.stderr)
               sys.exit(1)
-          print("guard passed — model consistent with deployed reference")
+          print("guard passed — consistent with frozen-history + live drift")
           PY
 
       - name: Commit refreshed artifacts

@@ -41,8 +41,12 @@ the canonical production sim — see
 and
 [`IMPROVE_PICK_RCE1_FINDINGS.md`](experiments/monthly_dca/v5/spx_pit/IMPROVE_PICK_RCE1_FINDINGS.md).
 
-Canonical production sim (augmented PIT 2003–2025, 10 bps): the prior
-single-deploy **E1** (WIN1+WIN2 50/50) vs the now-deployed **E2**:
+Validation gauntlet (augmented PIT **2003–2025**, 10 bps) that
+justified deploying **E2** over the prior single-deploy **E1**
+(WIN1+WIN2 50/50). The deployed live track now extends through
+2026-04 — the backtest history is **byte-identical** (frozen,
+append-only), so these validation numbers stand; the current
+full-window figure is ~55% CAGR with the four 2026 live months added:
 
 | | E1 (prior) | **E2 (deployed)** |
 |---|---:|---:|
