@@ -243,7 +243,9 @@ function renderCaseStudies(data) {
       : `${entry} → ${exit}`;
     card.appendChild(el("div", { class: "case-label" }, dateLabel));
 
-    const tickers = basket.map(p => p.ticker).join(" · ");
+    // E2 unions two sleeves; the same name can be held by both — show
+    // each unique ticker once (order preserved).
+    const tickers = [...new Set(basket.map(p => p.ticker))].join(" · ");
     card.appendChild(el("div", { class: "case-tickers" }, tickers));
 
     if (isOpen) {
