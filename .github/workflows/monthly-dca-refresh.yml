@@ -17,9 +17,11 @@ name: monthly-dca-refresh
 # move — this purely advances the current basket / `as_of`.
 
 on:
-  schedule:
-    # 02:00 UTC on the 2nd of each month (after month-end data settles).
-    - cron: "0 2 2 * *"
+  # PAUSED: scheduled trigger disabled. Re-enable by uncommenting the
+  # cron below. Still runnable on demand via workflow_dispatch.
+  # schedule:
+  #   # 02:00 UTC on the 2nd of each month (after month-end data settles).
+  #   - cron: "0 2 2 * *"
   workflow_dispatch:
     inputs:
       reason:

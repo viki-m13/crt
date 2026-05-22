@@ -98,7 +98,8 @@ jobs:
         # Separate engine: triggered by touch-prediction regimes.
         # Fetches fresh OHLCV for liquid universe + publishes
         # spreads/docs/data/option_c_signals.json.
-        if: steps.gate.outputs.skip != 'true'
+        # PAUSED: remove `false &&` below to re-enable.
+        if: false && steps.gate.outputs.skip != 'true'
         run: |
           set -e
           python strategies/touch_predict/option_c_scan.py
@@ -108,7 +109,8 @@ jobs:
         # conformal q-quantile under stillness regime gate.
         # Reuses docs/data/tickers/*.json refreshed by the backfill
         # step; publishes spreads/docs/data/stillpoint_signals.json.
-        if: steps.gate.outputs.skip != 'true'
+        # PAUSED: remove `false &&` below to re-enable.
+        if: false && steps.gate.outputs.skip != 'true'
         run: |
           set -e
           python strategies/stillpoint/scan.py
@@ -118,7 +120,8 @@ jobs:
         # Universal IC, Robust UIC) to the immutable live log AND
         # resolve any pending signals whose expiry has now passed.
         # This is the survivorship-bias-free scoreboard for live WR.
-        if: steps.gate.outputs.skip != 'true'
+        # PAUSED: remove `false &&` below to re-enable.
+        if: false && steps.gate.outputs.skip != 'true'
         run: |
           set -e
           python strategies/stillpoint/live_log.py
@@ -133,7 +136,8 @@ jobs:
         # ~30-60s, idempotent, fail-soft (catches & logs all errors so
         # this step never blocks the credit-spread / Stillpoint
         # commits above).
-        if: steps.gate.outputs.skip != 'true'
+        # PAUSED: remove `false &&` below to re-enable.
+        if: false && steps.gate.outputs.skip != 'true'
         continue-on-error: true
         run: |
           set -e
