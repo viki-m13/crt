@@ -64,6 +64,7 @@ Leakage controls (identical both sides)
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
@@ -83,8 +84,10 @@ from common import (
     WARMUP_DAYS,
     Features,
     TickerSeries,
+    _nyse_valid_days_big,
     actual_options_expiry,
     compute_features,
+    covered_options_expiry,
     expiry_date,
     fold_mask,
     list_tickers,
@@ -95,11 +98,87 @@ from common import (
     worst_buffer_path,
     worst_buffer_path_up,
 )
-from pricing import estimate_profit, realized_vol
+from pricing import MIN_TRADEABLE_FILL, STRESS_IV_MULT, estimate_profit, realized_vol
 
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# --------------------------- v3 publication layer ---------------------------
+#
+# "Sigma-Clear": the walk-forward conformal machinery below decides
+# WHICH (ticker, side, horizon) combos are stable enough to consider
+# (folds 100% OOS at the certified buffer, >=50 pooled tests, certified
+# buffer <= 25%). The v3 layer then decides WHAT strike is actually
+# published and whether the rung is tradeable at all. Frozen on the
+# 2008-2018 design window of the deep daily replay and validated once,
+# untouched, on 2019-2026 (see VALIDATION.md):
+#
+#   published buffer  b = K_SIGMA * sigma60_daily * sqrt(h) + 1%
+#   gates:            b >= HIST_CLEAR * (worst h-day move in history)
+#                     b <= 25% (h <= 21)  /  45% (h >= 42)
+#                     expiry snapped DOWN to a covered standard expiry
+#                     conservative net fill >= $0.05/share (after
+#                       commissions, tenor haircut, bid-ask)
+#                     underlying has listed options (optionable.json)
+#                     >= ~10 years of listed price history
+#                     series fresh (<= 5 sessions stale)
+#
+# Honest performance of this exact rule in the deep replay (1 contract
+# per deduped trade, conservative fills): 2008-2018 design 0 losses /
+# 554 trades; 2019-2026 validation 9 losses / 1,508 trades (99.4%),
+# net P&L positive overall and in 7 of 8 validation years. This is NOT
+# a 100% guarantee and is never published as one.
+ENGINE_VERSION = "v3-sigmaclear"
+K_SIGMA = 2.5
+HIST_CLEAR = 0.8
+CAP_SHORT = 0.25          # h <= 21
+CAP_LONG = 0.45           # h >= 42
+MIN_HISTORY_CAL_DAYS = 3652   # ~10 years listed
+MAX_STALE_SESSIONS = 5
+
+OPTIONABLE_PATH = os.path.join(OUTPUT_DIR, "optionable.json")
+
+
+def load_optionable() -> dict[str, bool]:
+    """Fail-closed map of ticker -> has listed options."""
+    try:
+        with open(OPTIONABLE_PATH) as fh:
+            return json.load(fh).get("optionable", {})
+    except (OSError, json.JSONDecodeError):
+        print(f"[WARN] {OPTIONABLE_PATH} missing/unreadable — "
+              "publishing NOTHING (fail-closed). Run fetch_optionable.py.",
+              file=sys.stderr)
+        return {}
+
+
+def series_fresh(end_date: str) -> bool:
+    """True iff end_date is within MAX_STALE_SESSIONS NYSE sessions of
+    the latest completed session (delisted/stale series fail closed)."""
+    import pandas as pd
+    from datetime import datetime, timezone
+    sessions = _nyse_valid_days_big()
+    today = pd.Timestamp(datetime.now(timezone.utc).date())
+    i_today = int(sessions.searchsorted(today, side="right")) - 1
+    i_end = int(sessions.searchsorted(pd.Timestamp(end_date[:10]), side="right")) - 1
+    return (i_today - i_end) <= MAX_STALE_SESSIONS
+
+
+def v3_cap(h: int) -> float:
+    return CAP_LONG if h >= 42 else CAP_SHORT
+
+
+def v3_published_buffer(sigma: float | None, hist_max: float, h: int) -> float | None:
+    """The Sigma-Clear published buffer, or None if the rung fails the
+    structural gates (history clearance / cap)."""
+    if sigma is None or sigma <= 0 or not np.isfinite(hist_max):
+        return None
+    b = K_SIGMA * (sigma / math.sqrt(252.0)) * math.sqrt(h) + 0.01
+    if b < HIST_CLEAR * hist_max:
+        return None
+    if b > v3_cap(h):
+        return None
+    return b
 
 
 class Side(str, Enum):
@@ -365,25 +444,90 @@ def process_ticker(ticker: str) -> TickerResult | None:
 # ----------------------------- serialization -----------------------------
 
 
+def _profit_block(prof) -> dict[str, Any]:
+    return {
+        "realized_vol_pct":       prof.realized_vol * 100.0,
+        "implied_vol_pct":        prof.implied_vol  * 100.0,
+        "short_iv_pct":           prof.short_iv * 100.0,
+        "long_iv_pct":            prof.long_iv  * 100.0,
+        "short_strike":           prof.short_strike,
+        "long_strike":            prof.long_strike,
+        "spread_width":           prof.width,
+        "mid_credit_per_share":   prof.mid_credit,
+        "est_credit_per_share":   prof.credit,
+        "net_credit_per_share":   prof.net_credit,
+        "bid_ask_per_share":      prof.bid_ask_estimate,
+        "est_max_loss_per_share": prof.max_loss,
+        "return_on_risk_pct":     prof.return_on_risk * 100.0,
+        "annualized_ror_pct":     prof.annualized_ror * 100.0,
+        "credit_quality":         prof.quality,
+        "tradeable":              prof.tradeable,
+    }
+
+
 def _rung_dict(
     r: TickerResult, sr: SideResult, e: dict[str, Any],
-) -> dict[str, Any]:
-    """Build a full rung record: walk-forward stats + actual options
-    expiry + profit estimate (BS)."""
-    exp_iso, kind, cal_days = actual_options_expiry(r.end_date, e["horizon"])
+) -> dict[str, Any] | None:
+    """Build a full PUBLISHED rung record, applying the v3 Sigma-Clear
+    publication layer. Returns None when the rung fails any publication
+    gate (no covered expiry, history clearance, cap, or conservative
+    net fill below the tradeable minimum)."""
+    h = e["horizon"]
+    hist_max = e["history_worst_buffer"]
+    b_pub = v3_published_buffer(r.realized_vol, hist_max, h)
+    if b_pub is None:
+        return None
+    snap = covered_options_expiry(r.end_date, h)
+    if snap is None:
+        return None
+    exp_iso, kind, cal_days, sessions_to_exp = snap
+
+    # Conservative fill at the PUBLISHED strike. Tradeability gate is
+    # on the net (post-commission) credit.
+    prof = estimate_profit(
+        side=sr.side,
+        spot=r.today_close,
+        buffer=b_pub,
+        horizon_sessions=h,
+        realized_sigma=r.realized_vol,
+        calendar_days_to_expiry=cal_days,
+    )
+    if prof is None or prof.net_credit < MIN_TRADEABLE_FILL:
+        return None
+    # Stress pricing: bare realized vol, zero volatility risk premium.
+    stress = estimate_profit(
+        side=sr.side,
+        spot=r.today_close,
+        buffer=b_pub,
+        horizon_sessions=h,
+        realized_sigma=r.realized_vol,
+        calendar_days_to_expiry=cal_days,
+        iv_mult=STRESS_IV_MULT,
+    )
+
+    spot = r.today_close
+    strike = spot * (1.0 - b_pub) if sr.side == "put" else spot * (1.0 + b_pub)
     base = {
-        "horizon": e["horizon"],
+        "engine": ENGINE_VERSION,
+        "horizon": h,
         "expiry_date": exp_iso,
         "expiry_type": kind,
         "calendar_days_to_expiry": cal_days,
-        "strike": e["strike"],
-        "buffer_pct": e["buffer_pct"],
+        "sessions_to_expiry": sessions_to_exp,
+        # Published (Sigma-Clear) strike — what a user would trade.
+        "strike": strike,
+        "buffer_pct": b_pub * 100.0,
+        # Certified conformal stats for transparency: the walk-forward
+        # machinery's own never-breached buffer and strike.
+        "certified_buffer_pct": e["buffer_pct"],
+        "certified_strike": e["strike"],
+        "history_worst_buffer_pct": hist_max * 100.0,
+        "sigma_distance": K_SIGMA,
         "variant": e["variant"],
         "n_test": e["n_test"],
         "n_folds": e["n_folds"],
         "pooled_wins": e["pooled_wins"],
         "pooled_losses": e["pooled_losses"],
-        "history_worst_buffer_pct": e["history_worst_buffer"] * 100.0,
         "folds": [
             {
                 "year": f.year,
@@ -396,53 +540,34 @@ def _rung_dict(
             }
             for f in sr.variants[e["variant"]][e["horizon"]].folds
         ],
+        "profit": _profit_block(prof),
+        "stress_profit": _profit_block(stress) if stress is not None else None,
     }
-    # Profit estimate (may be None if vol unavailable or long leg invalid)
-    prof = estimate_profit(
-        side=sr.side,
-        spot=r.today_close,
-        buffer=e["buffer"],
-        horizon_sessions=e["horizon"],
-        realized_sigma=r.realized_vol,
-        calendar_days_to_expiry=cal_days,
-    )
-    if prof is not None:
-        base["profit"] = {
-            "realized_vol_pct":       prof.realized_vol * 100.0,
-            "implied_vol_pct":        prof.implied_vol  * 100.0,
-            "short_iv_pct":           prof.short_iv * 100.0,
-            "long_iv_pct":            prof.long_iv  * 100.0,
-            "short_strike":           prof.short_strike,
-            "long_strike":            prof.long_strike,
-            "spread_width":           prof.width,
-            "mid_credit_per_share":   prof.mid_credit,
-            "est_credit_per_share":   prof.credit,
-            "bid_ask_per_share":      prof.bid_ask_estimate,
-            "est_max_loss_per_share": prof.max_loss,
-            "return_on_risk_pct":     prof.return_on_risk * 100.0,
-            "annualized_ror_pct":     prof.annualized_ror * 100.0,
-            "credit_quality":         prof.quality,
-            "tradeable":              prof.tradeable,
-        }
-    else:
-        base["profit"] = None
     return base
 
 
-def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any]:
+def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any] | None:
+    """Assemble the published signal for one (ticker, side): the ladder
+    of rungs that clear the v3 publication layer. Returns None when no
+    rung clears (the combo stays certified-but-unpublishable)."""
     assert sr.best is not None
-    best = sr.best
-    primary_rung = _rung_dict(r, sr, best)
-    ladder = [_rung_dict(r, sr, e) for e in sr.all_eligible]
+    ladder = [d for d in (_rung_dict(r, sr, e) for e in sr.all_eligible)
+              if d is not None]
+    if not ladder:
+        return None
+    # Primary pick: highest net return-on-risk among published rungs.
+    primary_rung = max(ladder, key=lambda d: d["profit"]["return_on_risk_pct"])
     return {
         "ticker": r.ticker,
         "today_close": r.today_close,
         "end_date": r.end_date,
         "side": sr.side,
+        "engine": ENGINE_VERSION,
         "realized_vol_pct": (r.realized_vol * 100.0) if r.realized_vol else None,
-        # primary (tightest-buffer) pick
+        # primary (highest net-ROR) pick
         "strike": primary_rung["strike"],
         "buffer_pct": primary_rung["buffer_pct"],
+        "certified_buffer_pct": primary_rung["certified_buffer_pct"],
         "horizon": primary_rung["horizon"],
         "expiry_date": primary_rung["expiry_date"],
         "expiry_type": primary_rung["expiry_type"],
@@ -453,8 +578,9 @@ def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any]:
         "pooled_wins": primary_rung["pooled_wins"],
         "pooled_losses": primary_rung["pooled_losses"],
         "history_worst_buffer_pct": primary_rung["history_worst_buffer_pct"],
-        "regime_ok_today": best["regime_ok_today"],
+        "regime_ok_today": sr.best["regime_ok_today"],
         "profit": primary_rung["profit"],
+        "stress_profit": primary_rung["stress_profit"],
         "folds": primary_rung["folds"],
         "ladder": ladder,
     }
@@ -480,19 +606,37 @@ def main() -> int:
     if limit:
         tickers = tickers[: int(limit)]
 
+    optionable = load_optionable()
+
     t0 = time.time()
     results: list[TickerResult] = []
     put_elig: list[tuple[TickerResult, SideResult]] = []
     call_elig: list[tuple[TickerResult, SideResult]] = []
     put_watch: list[tuple[TickerResult, SideResult]] = []
     call_watch: list[tuple[TickerResult, SideResult]] = []
+    n_not_optionable = n_stale = n_young = 0
     for i, t in enumerate(tickers, 1):
+        # Ticker-level publication gates (fail-closed):
+        #   1. underlying must have a listed options chain;
+        if not optionable.get(t, False):
+            n_not_optionable += 1
+            continue
         try:
             r = process_ticker(t)
         except Exception as exc:  # noqa: BLE001
             print(f"[ERR] {t}: {exc}", file=sys.stderr)
             continue
         if r is None:
+            continue
+        #   2. series must be fresh (delisted/stale series fail closed);
+        if not series_fresh(r.end_date):
+            n_stale += 1
+            continue
+        #   3. >= ~10 years of listed history (a conformal max learned
+        #      on a bull-market-only IPO history is not trustworthy).
+        if (np.datetime64(r.end_date[:10], "D")
+                - np.datetime64(r.start_date[:10], "D")).astype(int) < MIN_HISTORY_CAL_DAYS:
+            n_young += 1
             continue
         results.append(r)
         if r.put.best is not None:
@@ -516,52 +660,93 @@ def main() -> int:
     pool_wins = put_wins + call_wins
     pool_losses = put_losses + call_losses
 
-    print()
-    print(f"Tickers processed:       {len(results)}")
-    print(f"Put-side eligible:       {len(put_elig)}  "
-          f"({put_wins}/{put_wins+put_losses} OOS, losses={put_losses})")
-    print(f"Call-side eligible:      {len(call_elig)} "
-          f"({call_wins}/{call_wins+call_losses} OOS, losses={call_losses})")
-    print(f"Combined OOS tests:      {pool_wins + pool_losses}")
-    print(f"Combined OOS win rate:   "
-          f"{(pool_wins/(pool_wins+pool_losses)*100) if pool_wins+pool_losses else 0:.3f}%")
-
-    # Sort: tightest buffer first, tie-break on larger test sample count.
+    # Sort: tightest certified buffer first, tie-break on larger sample.
     put_elig.sort(key=lambda x: (x[1].best["buffer"], -x[1].best["n_test"]))
     call_elig.sort(key=lambda x: (x[1].best["buffer"], -x[1].best["n_test"]))
     # Watchlists sort by tightest buffer too.
     put_watch.sort(key=lambda x: x[1].watchlist[0]["buffer"])
     call_watch.sort(key=lambda x: x[1].watchlist[0]["buffer"])
 
+    # Apply the v3 publication layer: only signals with >=1 rung that
+    # clears every gate (history clearance, cap, covered expiry,
+    # conservative net fill) are published.
+    put_signals = [p for p in (_signal_payload(r, sr) for r, sr in put_elig)
+                   if p is not None]
+    call_signals = [p for p in (_signal_payload(r, sr) for r, sr in call_elig)
+                    if p is not None]
+
+    print()
+    print(f"Tickers processed:       {len(results)}  "
+          f"(skipped: {n_not_optionable} non-optionable, {n_stale} stale, "
+          f"{n_young} <10y history)")
+    print(f"Put-side certified:      {len(put_elig)}  "
+          f"({put_wins}/{put_wins+put_losses} OOS, losses={put_losses})")
+    print(f"Call-side certified:     {len(call_elig)} "
+          f"({call_wins}/{call_wins+call_losses} OOS, losses={call_losses})")
+    print(f"Published (v3 layer):    puts={len(put_signals)} calls={len(call_signals)}")
+
     lean = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "engine": ENGINE_VERSION,
         "summary": {
             "n_tickers_processed": len(results),
             "horizons": HORIZONS,
             "fold_years": FOLD_YEARS,
             "safety_eps": SAFETY_EPS,
             "max_buffer": MAX_BUFFER,
+            "engine": ENGINE_VERSION,
+            "v3_layer": {
+                "k_sigma": K_SIGMA,
+                "hist_clear": HIST_CLEAR,
+                "cap_short": CAP_SHORT,
+                "cap_long": CAP_LONG,
+                "min_net_fill_per_share": MIN_TRADEABLE_FILL,
+                "min_history_cal_days": MIN_HISTORY_CAL_DAYS,
+            },
+            # Honest, replay-derived expectations for this exact rule
+            # set (deduped independent trades, conservative fills; see
+            # strategies/credit_spread/VALIDATION.md). The fold stats
+            # below describe the conformal certification machinery,
+            # NOT a forward win-rate claim.
+            "validated": {
+                "design_window": "2008-2018",
+                "design_trades": 554,
+                "design_losses": 0,
+                "validation_window": "2019-2026",
+                "validation_trades": 1508,
+                "validation_losses": 9,
+                "validation_win_rate": 0.994,
+                "note": ("Win rate is NOT 100%. Residual tail risk is "
+                          "real: systemic crashes (Mar 2020) and "
+                          "single-name events (M&A, earnings) can and "
+                          "do breach published strikes ~0.5% of the "
+                          "time out-of-sample. Defined-risk spreads "
+                          "cap each loss at width minus credit."),
+            },
             "put": {
-                "n_eligible": len(put_elig),
+                "n_certified": len(put_elig),
+                "n_published": len(put_signals),
                 "pooled_wins": put_wins,
                 "pooled_losses": put_losses,
                 "pooled_win_rate": put_wins/(put_wins+put_losses) if put_wins+put_losses else None,
             },
             "call": {
-                "n_eligible": len(call_elig),
+                "n_certified": len(call_elig),
+                "n_published": len(call_signals),
                 "pooled_wins": call_wins,
                 "pooled_losses": call_losses,
                 "pooled_win_rate": call_wins/(call_wins+call_losses) if call_wins+call_losses else None,
             },
             "combined": {
-                "n_eligible": len(put_elig) + len(call_elig),
+                "n_certified": len(put_elig) + len(call_elig),
+                "n_published": len(put_signals) + len(call_signals),
                 "pooled_wins": pool_wins,
                 "pooled_losses": pool_losses,
                 "pooled_win_rate": pool_wins/(pool_wins+pool_losses) if pool_wins+pool_losses else None,
             },
         },
-        "put_signals":  [_signal_payload(r, sr) for r, sr in put_elig],
-        "call_signals": [_signal_payload(r, sr) for r, sr in call_elig],
+        "put_signals":  put_signals,
+        "call_signals": call_signals,
         # Watchlist: tickers whose backtest passes but today's regime
         # gate fails. Surface so users can see what's about to turn on.
         "put_watchlist": [
@@ -597,7 +782,7 @@ def main() -> int:
     with open(lean_path, "w") as fh:
         json.dump(lean, fh, indent=2)
     print(f"Wrote {lean_path}  "
-          f"(puts={len(put_elig)}, calls={len(call_elig)})")
+          f"(published puts={len(put_signals)}, calls={len(call_signals)})")
 
     return 0
 

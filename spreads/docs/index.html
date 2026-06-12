@@ -11,9 +11,9 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>CreditFloor — 100% Walk-Forward Credit Spread Signals</title>
-  <meta name="description" content="CreditFloor is a walk-forward, conformal-guaranteed credit-spread signal engine. For each eligible stock it publishes a short-strike and expiry at which every single one of 33,000+ historical out-of-sample tests closed a winner." />
-  <meta name="keywords" content="credit spread screener, high win rate options, walk forward validation, 100% win rate strategy, conformal prediction options" />
+  <title>CreditFloor — Replay-Validated Credit Spread Signals</title>
+  <meta name="description" content="CreditFloor v3 (Sigma-Clear) is a walk-forward credit-spread signal engine validated with an 18-year point-in-time daily replay: zero losses across the 2008-2018 design window and a 99.4% win rate with positive conservative-fill P&L on untouched 2019-2026 data. Not 100% — and it says so." />
+  <meta name="keywords" content="credit spread screener, high win rate options, walk forward validation, point-in-time replay, conformal prediction options" />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -561,19 +561,24 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">
-        A short strike, an expiry, and a historical&nbsp;100% win rate.
+        A short strike, an expiry, and an honestly&#8209;measured&nbsp;99.4%.
       </h1>
       <p class="hero-sub">
-        <strong>CreditFloor</strong> hunts for (stock, expiry, strike) triples
-        where every one of thousands of historical out-of-sample tests closed a
-        winner. The engine runs in both directions: a <strong>put-credit floor</strong>
-        below spot where the stock's close never once fell below the strike
-        before expiry, and a <strong>call-credit ceiling</strong> above spot
-        where the close never once rose above it. We're deliberately selective:
-        most stocks, most days, there&rsquo;s no trade. When the engine does
-        publish, it publishes a lot: the exact strike, the exact expiry, the
-        fold-by-fold walk-forward breakdown, and the worst-case buffer ever
-        touched on the test set.
+        <strong>CreditFloor v3 (&ldquo;Sigma-Clear&rdquo;)</strong> publishes
+        vertical credit spreads in both directions — a <strong>put-credit
+        floor</strong> below spot and a <strong>call-credit ceiling</strong>
+        above it — where the strike clears 2.5&sigma; of current volatility
+        <em>and</em> at least 80% of the worst move in the stock's entire
+        listed history, the underlying is conformally certified on 20 years of
+        walk-forward folds, and the spread still pays a conservative net
+        credit after slippage and commissions. Validated with an 18-year
+        point-in-time daily replay of the live protocol: <strong>zero losses
+        across the 2008&ndash;2018 design window</strong> (GFC included) and a
+        <strong>99.4% win rate with positive P&amp;L on untouched
+        2019&ndash;2026 data</strong>. That residual ~0.6% — COVID-class
+        crashes and single-name M&amp;A/earnings shocks — is real, irreducible
+        at tradeable premium, and disclosed on every card. Anyone selling the
+        same trade as &ldquo;100%&rdquo; is grading their own homework.
         <strong>Not financial advice.</strong>
       </p>
     </div>
@@ -583,12 +588,12 @@
   <section id="validation">
     <div class="cf-stats-grid" id="cf-stats">
       <div class="cf-stat">
-        <span class="num good" id="stat-pooled-win">&mdash;</span>
-        <span class="lbl">Pooled out-of-sample win rate</span>
+        <span class="num good" id="stat-validated">&mdash;</span>
+        <span class="lbl" id="stat-validated-lbl">Replay-validated win rate (untouched 2019&ndash;2026)</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-pooled-n">&mdash;</span>
-        <span class="lbl">Walk-forward OOS tests, 7 folds</span>
+        <span class="lbl">Walk-forward certification tests (selection filter, not a forward claim)</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-signals">&mdash;</span>
@@ -649,12 +654,16 @@
     <div class="section-inner">
       <div class="section-title">Today&rsquo;s CreditFloor signals</div>
       <p class="section-note">
-        Each card is a ticker whose walk-forward, cross-fold, out-of-sample
-        win rate is <strong>exactly 100%</strong>. Multiple expiries ("rungs")
-        may be eligible; each rung shows its own strike and buffer. Smaller
-        buffer = strike closer to spot = richer credit with the same
-        historical guarantee. Sections below start collapsed &mdash; tap
-        to expand.
+        Each card is a ticker that passed conformal certification (every
+        walk-forward fold clean) <em>and</em> the v3 Sigma-Clear publication
+        gates: strike at 2.5&sigma; of current vol, clearing &ge;80% of the
+        worst move in the stock's full listed history, snapped-down covered
+        expiry, listed options, &ge;10 years of history, and a conservative
+        net credit &ge; $0.05/share after commissions. Multiple expiries
+        ("rungs") may publish; each shows its own strike, buffer, and both
+        the realistic and stress fill estimates. The forward expectation is
+        the replay-validated ~99.4%, <strong>not 100%</strong>. Sections
+        below start collapsed &mdash; tap to expand.
       </p>
 
       <!-- ===== TOP SIGNALS (>=5% ROR) ===== -->
@@ -671,10 +680,13 @@
             The highest-conviction opportunities from today&rsquo;s scan &mdash; pulled
             from both the put and call sides, filtered to rungs with estimated
             per-trade return-on-risk at <strong>5% or higher</strong>, and sorted
-            biggest to smallest. Every one of these rungs has a 100% walk-forward
-            out-of-sample win rate. Credit, max loss, and ROR are Black-Scholes
-            estimates (r=0, IV = realized &times; 1.30, 20% haircut for bid-ask,
-            5%-of-spot spread width) &mdash; real market fills will differ.
+            biggest to smallest. Every rung passed certification and the v3
+            publication gates; the forward expectation is the replay-validated
+            ~99.4%, not 100%. Credit, max loss, and ROR are Black-Scholes
+            estimates (r=0, IV = realized &times; 1.30, tenor-dependent fill
+            haircut, commissions netted, 5%-of-spot spread width) &mdash; real
+            market fills will differ, and a stress estimate at bare realized
+            vol is published per rung.
           </p>
           <div id="cf-top-list"></div>
         </div>
@@ -1158,18 +1170,35 @@
           covers American-style early-exercise risk.
         </p>
 
-        <h3>2. Walk-forward conformal strike</h3>
+        <h3>2. Walk-forward conformal certification</h3>
         <p>
-          For each fold year <code>Y &isin; {2020&hellip;2026}</code> we hold
+          For each fold year <code>Y &isin; {2006&hellip;2026}</code> we hold
           that calendar year out as test. Training uses only samples whose
           forward window <em>closed</em> before Jan 1 of year <code>Y</code>
           (a purged gap equal to the horizon &mdash; no overlap with test
-          dates). Our conformal strike buffer is
+          dates). The certified conformal buffer is
           <code>b̂ = max(b&lowast; on train) + 1%</code> &mdash; the largest
-          buffer ever needed in training, plus a flat safety margin.
-          By the order-statistic bound this has 100% empirical coverage on
-          training; we then measure how often it also covers the test year.
-          The method and the 1% safety margin are identical for both sides.
+          buffer ever needed in training, plus a flat safety margin. A
+          combo is certified only when every fold's test year stayed inside
+          it. Certification selects conformally-stable names; it is
+          <strong>not</strong> the published strike and not a forward
+          win-rate claim.
+        </p>
+
+        <h3>2b. The v3 Sigma-Clear published strike</h3>
+        <p>
+          The published buffer is <code>b = 2.5&sigma;&radic;h + 1%</code>
+          (&sigma; = 60-day realized daily vol), required to clear
+          <strong>&ge;80% of the worst h-day move in the stock&rsquo;s entire
+          listed history</strong>, capped at 25% (&le;1 month) / 45%
+          (&ge;2 months), with the expiry snapped <em>down</em> to the latest
+          standard expiry the certified window covers, a listed options
+          chain, &ge;10 years of history, a fresh series, and a conservative
+          net credit &ge; $0.05/share after commissions. This exact rule was
+          frozen on a 2008&ndash;2018 design replay (zero losses, GFC
+          included) and validated once on untouched 2019&ndash;2026 data:
+          99.4% win rate, positive P&amp;L net of all losses. Full protocol:
+          <code>strategies/credit_spread/VALIDATION.md</code>.
         </p>
 
         <h3>3. Regime gate (proprietary, symmetric)</h3>
@@ -1184,19 +1213,20 @@
         <p>
           The regime-gated variant is only deployable when today&rsquo;s features
           also satisfy the gate. Per ticker we keep whichever variant produces
-          a <em>smaller</em> final buffer &mdash; <em>never</em> the one with a
-          better win rate, because both must already be 100%.
+          a <em>smaller</em> certified buffer &mdash; <em>never</em> the one
+          with a better win rate, because both must already be fold-clean.
         </p>
 
-        <h3>4. Eligibility &mdash; fail-closed</h3>
+        <h3>4. Certification &mdash; fail-closed</h3>
         <p>
-          A (ticker, horizon) combo is eligible only if <strong>every</strong>
-          walk-forward fold has a 100% win rate with &ge;1 test sample,
-          at least 50 pooled OOS tests, and the final live buffer is &le;25%.
-          After per-ticker filtering we pool every remaining OOS prediction
-          across the entire universe and require the aggregate win rate to
-          still be 100%. If a single historical trade failed, the entire
-          signal is rejected.
+          A (ticker, horizon) combo is certified only if <strong>every</strong>
+          walk-forward fold is clean at the certified buffer with &ge;1 test
+          sample, at least 50 pooled OOS tests, and the certified buffer is
+          &le;25%. If a single fold sample failed, the combo is rejected.
+          Certification is necessary but not sufficient: the v3 publication
+          gates above decide what is actually published, and the honest
+          forward expectation comes from the point-in-time replay, not from
+          the fold table.
         </p>
 
         <h3>5. Leakage controls</h3>
@@ -1211,11 +1241,18 @@
 
         <h3>6. What this does <em>not</em> guarantee</h3>
         <p>
-          A 100% historical OOS win rate does not promise the future. Regime
-          shifts, a bigger-than-2020 crash, or a ticker-specific catastrophe
-          can all breach any strike. Position-size accordingly, trade as a
-          portfolio, and assume future drawdowns can exceed the worst
-          historical one we trained on.
+          The replay-validated 99.4% is an estimate, not a floor. The
+          residual ~0.6% of trades that lose are concentrated in exactly the
+          events no price-history rule can rule out in advance: systemic
+          crashes (March 2020), M&amp;A pops, earnings collapses. We measured
+          this three ways &mdash; the live scoreboard, a 2021&ndash;2026
+          replay of the legacy engine (99.25%), and the deep 2008&ndash;2026
+          replay &mdash; and the repository documents why a strategy that is
+          simultaneously &ldquo;100% safe against its own full history&rdquo;
+          and &ldquo;profitable under conservative fills&rdquo; selects an
+          empty set. Defined-risk spreads cap each loss at width minus
+          credit. Position-size accordingly, trade as a portfolio, and assume
+          future drawdowns can exceed the worst historical one.
         </p>
       </div>
     </div>

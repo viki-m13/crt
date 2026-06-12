@@ -45,18 +45,33 @@
     const win = combined.pooled_win_rate == null
       ? "—"
       : fmtPct(100 * combined.pooled_win_rate, 2);
-    $("#stat-pooled-win").textContent = win;
+    const pooledEl = $("#stat-pooled-win");
+    if (pooledEl) pooledEl.textContent = win;
     const tests = (combined.pooled_wins || 0) + (combined.pooled_losses || 0);
     $("#stat-pooled-n").textContent = fmtInt(tests);
-    $("#stat-signals").textContent = fmtInt(combined.n_eligible || 0);
+    $("#stat-signals").textContent =
+      fmtInt(combined.n_published != null ? combined.n_published : combined.n_eligible || 0);
     $("#stat-universe").textContent = fmtInt(s.n_tickers_processed || 0);
+    // Replay-validated forward expectation (v3): honest, NOT 100%.
+    const v = s.validated;
+    if (v) {
+      const el = $("#stat-validated");
+      if (el) {
+        el.textContent = fmtPct(100 * (v.validation_win_rate || 0), 1);
+        const lbl = $("#stat-validated-lbl");
+        if (lbl) lbl.textContent =
+          `Replay-validated win rate ${v.validation_window} (${fmtInt(v.validation_trades)} trades, ${fmtInt(v.validation_losses)} losses)`;
+      }
+    }
     // section badges
     const put = s.put || {};
     const call = s.call || {};
+    const nPut = put.n_published != null ? put.n_published : put.n_eligible || 0;
+    const nCall = call.n_published != null ? call.n_published : call.n_eligible || 0;
     $("#cf-put-badge").textContent =
-      `${fmtInt(put.n_eligible || 0)} signal${put.n_eligible === 1 ? "" : "s"} · ${fmtInt((put.pooled_wins || 0) + (put.pooled_losses || 0))} OOS tests · 100% win`;
+      `${fmtInt(nPut)} signal${nPut === 1 ? "" : "s"} · ${fmtInt((put.pooled_wins || 0) + (put.pooled_losses || 0))} certification tests`;
     $("#cf-call-badge").textContent =
-      `${fmtInt(call.n_eligible || 0)} signal${call.n_eligible === 1 ? "" : "s"} · ${fmtInt((call.pooled_wins || 0) + (call.pooled_losses || 0))} OOS tests · 100% win`;
+      `${fmtInt(nCall)} signal${nCall === 1 ? "" : "s"} · ${fmtInt((call.pooled_wins || 0) + (call.pooled_losses || 0))} certification tests`;
   }
 
   function renderLastRun(d) {
@@ -158,7 +173,8 @@
           <br/>
           Worst test-set ${worstLabel} ever touched:
           <strong>${fmtPct(worst, 2)}</strong>.
-          All folds 100% win rate.
+          All certification folds clean; forward expectation is the
+          replay-validated ~99.4%, not 100%.
         </div>
       </div>
     `;
@@ -225,8 +241,10 @@
           <div class="cf-footnote" style="margin-top:12px">
             Each cell is the walk-forward test outcome for that calendar year
             and horizon. "Worst" is the largest ${side === "put" ? "drawdown" : "rally"}-to-expiry
-            <em>on the held-out test set</em> — always strictly inside our
-            conformal strike buffer, which is why every fold is a 100% win.
+            <em>on the held-out test set</em> — strictly inside the certified
+            conformal buffer for every fold shown. Certification is a
+            selection filter, not a forward win-rate claim: the honest forward
+            number is the replay-validated ~99.4% (see the methodology notes).
           </div>
         </div>
       </div>
@@ -258,7 +276,7 @@
       </div>
       <div class="cf-watch-body">
         <div class="cf-watch-note">
-          These names' walk-forward backtest <strong>passes at 100%</strong> — but today's features don't match
+          These names' walk-forward certification <strong>passes every fold</strong> — but today's features don't match
           the ${side} regime gate (${gateLabel}), so the rule can't be deployed. They will auto-join the live list
           the moment their regime gate flips.
         </div>

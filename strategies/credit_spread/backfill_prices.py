@@ -15,10 +15,20 @@ Semantics
     not shrunk, it is left alone (idempotent).
   - If a fetch fails for a ticker, that ticker's series is left intact
     and the run continues. Failures are counted and printed.
-  - Fetches from the first existing date of the series so we only
-    ever append; we never rewrite historical closes. This avoids the
-    classic "yfinance changed a split/div adjustment so everything
-    moved 0.3%" leakage into the model.
+  - Fetches from the last existing date of the series (inclusive) so we
+    normally only append; we don't rewrite historical closes on every
+    run. This avoids the classic "yfinance changed a split/div
+    adjustment so everything moved 0.3%" leakage into the model.
+  - EXCEPTION — seam integrity check: the fetch window includes the
+    last stored date, and the freshly-fetched adjusted close for that
+    overlap day is compared against the stored value. If they disagree
+    by more than SEAM_TOLERANCE (a split, or a large dividend/spinoff
+    re-adjustment), appending would stitch incompatible adjustment
+    bases together and fabricate a giant fake price jump (observed
+    live: BKNG 25:1 and KLAC 10:1 splits in 2026-03 produced fake -96%
+    and -90% "moves" in the stored series). In that case the ticker's
+    ENTIRE series is re-fetched (period="max") on a consistent
+    adjustment basis and rewritten from scratch.
 
 Run
 ---
@@ -44,6 +54,12 @@ from common import TICKERS_DIR, list_tickers
 CHUNK_SIZE = 60
 RETRIES = 3
 SLEEP_BETWEEN = 0.5  # seconds between chunk fetches; yfinance is rate-limited
+
+# Max tolerated relative difference between the stored close and the
+# freshly-fetched adjusted close for the SAME (overlap) day. Bigger ->
+# the adjustment basis changed (split / big dividend / spinoff) and the
+# series must be rebuilt from scratch instead of appended to.
+SEAM_TOLERANCE = 0.03
 
 
 def _read_series(path: str) -> tuple[dict, list[str], list[float]]:
@@ -131,6 +147,41 @@ def _fetch_chunk(tickers: list[str], start: str, end: str) -> pd.DataFrame | Non
     return None
 
 
+def _fetch_full(ticker: str) -> tuple[list[str], list[float]] | None:
+    """Re-fetch a ticker's entire history on a consistent adjustment
+    basis. Used when the seam integrity check fails (split / large
+    re-adjustment since the series was last written)."""
+    last_err = None
+    for attempt in range(RETRIES):
+        try:
+            df = yf.download(
+                tickers=ticker,
+                period="max",
+                interval="1d",
+                auto_adjust=True,
+                progress=False,
+                threads=False,
+                group_by="column",
+            )
+            if df is None or df.empty:
+                last_err = RuntimeError("empty dataframe")
+                continue
+            close = df["Close"]
+            if hasattr(close, "columns"):  # MultiIndex leftover
+                close = close[ticker]
+            close.index = pd.to_datetime(close.index).tz_localize(None).normalize()
+            close = close.dropna()
+            close = close[close > 0]
+            dates = [idx.strftime("%Y-%m-%d") for idx in close.index]
+            prices = [float(v) for v in close.values]
+            return dates, prices
+        except Exception as exc:  # noqa: BLE001
+            last_err = exc
+            time.sleep(2 ** attempt)
+    print(f"  full refetch failed for {ticker}: {last_err}", file=sys.stderr)
+    return None
+
+
 def main() -> int:
     tickers = list_tickers()
     limit = os.environ.get("CS_LIMIT")
@@ -147,13 +198,15 @@ def main() -> int:
     updated = 0
     unchanged = 0
     failed = 0
+    rebuilt = 0
 
     for chunk_start in range(0, len(tickers), CHUNK_SIZE):
         chunk = tickers[chunk_start : chunk_start + CHUNK_SIZE]
-        # Choose fetch start = earliest *missing* day across the chunk.
-        # In practice we key off each ticker's own series — compute a
-        # global min start, fetch once, then per-ticker slice+append.
+        # Fetch start = earliest *stored last day* across the chunk so the
+        # fetch window overlaps each series by one day (seam check). The
+        # short-circuit below still keys off the earliest missing day.
         chunk_starts = []
+        fetch_starts = []
         existing = {}
         for t in chunk:
             p = os.path.join(TICKERS_DIR, f"{t}.json")
@@ -163,11 +216,14 @@ def main() -> int:
             blob, dates, prices = _read_series(p)
             if dates:
                 last = dates[-1]
-                # start fetching from the day AFTER last recorded date
+                # day AFTER last recorded date (for the no-op short-circuit)
                 nxt = (np.datetime64(last, "D") + 1).astype(str)
                 chunk_starts.append(nxt)
+                # fetch from the last recorded date itself (overlap day)
+                fetch_starts.append(last)
             else:
                 chunk_starts.append("2015-01-02")
+                fetch_starts.append("2015-01-02")
             existing[t] = (p, blob, dates, prices)
 
         if not existing:
@@ -179,7 +235,7 @@ def main() -> int:
             unchanged += len(existing)
             continue
 
-        close_df = _fetch_chunk(list(existing.keys()), min_start, fetch_end)
+        close_df = _fetch_chunk(list(existing.keys()), min(fetch_starts), fetch_end)
         if close_df is None:
             failed += len(existing)
             continue
@@ -195,6 +251,32 @@ def main() -> int:
                 unchanged += 1
                 continue
             last_existing = dates[-1] if dates else ""
+
+            # Seam integrity check: the freshly-fetched adjusted close
+            # for the stored last day must (approximately) equal the
+            # stored value. A big difference means the adjustment basis
+            # moved (split/dividend/spinoff) and appending would create
+            # a fake price jump — rebuild the whole series instead.
+            if dates:
+                overlap = col[col.index == pd.Timestamp(last_existing)]
+                if len(overlap):
+                    fetched_last = float(overlap.iloc[-1])
+                    stored_last = float(prices[-1])
+                    if stored_last > 0 and abs(fetched_last / stored_last - 1.0) > SEAM_TOLERANCE:
+                        full = _fetch_full(t)
+                        if full is None:
+                            failed += 1
+                            continue
+                        f_dates, f_prices = full
+                        _write_series(p, blob, f_dates, f_prices)
+                        rebuilt += 1
+                        print(
+                            f"  [seam] {t}: stored {stored_last:.4f} vs fetched "
+                            f"{fetched_last:.4f} on {last_existing} — series rebuilt "
+                            f"({len(f_dates)} days)"
+                        )
+                        continue
+
             new_dates, new_prices = [], []
             for idx, val in col.items():
                 ds = idx.strftime("%Y-%m-%d")
@@ -212,13 +294,13 @@ def main() -> int:
 
         print(
             f"  chunk {chunk_start // CHUNK_SIZE + 1}  "
-            f"updated={updated} unchanged={unchanged} failed={failed}  "
+            f"updated={updated} unchanged={unchanged} failed={failed} rebuilt={rebuilt}  "
             f"elapsed={time.time()-t0:.1f}s"
         )
         time.sleep(SLEEP_BETWEEN)
 
     print()
-    print(f"Done. updated={updated} unchanged={unchanged} failed={failed}")
+    print(f"Done. updated={updated} unchanged={unchanged} failed={failed} rebuilt={rebuilt}")
     return 0 if failed == 0 else 0  # non-fatal; partial success is OK
 
 

@@ -77,18 +77,13 @@ jobs:
         env:
           FORCE_RUN: ${{ github.event.inputs.force == 'true' && '1' || '' }}
 
-      - name: Backfill price series
-        # Lightweight batched yfinance fetch that appends any missing
-        # trading days (weekend/holiday/failed-run coverage) to every
-        # ticker's price series. Idempotent — no-op if already current.
-        if: steps.gate.outputs.skip != 'true'
-        run: |
-          set -e
-          python strategies/credit_spread/backfill_prices.py
-
-      - name: Run CreditFloor walk-forward scan
-        # Reads docs/data/tickers/*.json (just refreshed above) and
-        # emits spreads/docs/data/signals.json + the audit dump.
+      - name: Run CreditFloor v3 scan
+        # scan.py refreshes the full-history price panel from yfinance
+        # (period=max, single consistent adjustment basis — no
+        # split/dividend seams), refreshes the listed-options map
+        # weekly, runs the v3 Sigma-Clear research, publishes
+        # spreads/docs/data/signals.json and updates the append-only
+        # live log.
         if: steps.gate.outputs.skip != 'true'
         run: |
           set -e
@@ -162,9 +157,10 @@ jobs:
           combined = s.get('combined', {})
           put  = s.get('put', {})
           call = s.get('call', {})
-          print(f"put:       elig={put.get('n_eligible')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} losses={put.get('pooled_losses',0)}")
-          print(f"call:      elig={call.get('n_eligible')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses',0)}")
-          print(f"combined:  elig={combined.get('n_eligible')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses',0)} win_rate={combined.get('pooled_win_rate')}")
+          print(f"put:       certified={put.get('n_certified')} published={put.get('n_published')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} losses={put.get('pooled_losses',0)}")
+          print(f"call:      certified={call.get('n_certified')} published={call.get('n_published')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses',0)}")
+          print(f"combined:  certified={combined.get('n_certified')} published={combined.get('n_published')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses',0)}")
+          print(f"engine:        {d.get('engine')}")
           print(f"generated_at:  {d.get('generated_at')}")
           # Fail-closed on backtest
           if put.get('pooled_losses', 0) or call.get('pooled_losses', 0):
@@ -204,6 +200,7 @@ jobs:
             spreads/docs/data/stillpoint_signals.json \
             spreads/docs/data/stillpoint_live_log.json \
             strategies/credit_spread/results/signals.json \
+            strategies/credit_spread/results/optionable.json \
             strategies/touch_predict/results/option_c_signals.json \
             strategies/touch_predict/results/option_c_certified_cells.json \
             strategies/stillpoint/results/stillpoint_signals.json \

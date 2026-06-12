@@ -1,6 +1,16 @@
-"""Convenience driver: run the research pipeline and publish the lean
-signal file into the /spreads/ webapp data directory so the page can
-load it. Intended to be called daily after the main daily_scan.
+"""Convenience driver: refresh data, run the research pipeline, and
+publish the lean signal file into the /spreads/ webapp data directory
+so the page can load it. Intended to be called daily.
+
+Pipeline (all fail-closed):
+  1. fetch_full_history.py CS_REFRESH=1 — rebuild the full-history
+     panel from yfinance on one consistent adjustment basis (~3 min).
+  2. fetch_optionable.py — refresh the listed-options map if it is
+     older than 7 days (~8 min when it runs; otherwise instant).
+  3. research.py with CS_DATA_DIR=cache_full — the v3 Sigma-Clear scan.
+  4. Publish signals.json + update the append-only live log.
+
+Set CS_SKIP_FETCH=1 to skip steps 1-2 (data already fresh).
 """
 from __future__ import annotations
 
@@ -15,14 +25,47 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 RESULTS = os.path.join(HERE, "results")
 WEB_DATA = os.path.join(REPO, "spreads", "docs", "data")
+CACHE_FULL = os.path.join(HERE, "cache_full")
+OPTIONABLE = os.path.join(RESULTS, "optionable.json")
 
 
 def main() -> int:
     os.makedirs(WEB_DATA, exist_ok=True)
     env = os.environ.copy()
+
+    if env.get("CS_SKIP_FETCH") != "1":
+        rc = subprocess.call(
+            [sys.executable, os.path.join(HERE, "fetch_full_history.py")],
+            env={**env, "CS_REFRESH": "1"},
+        )
+        if rc != 0:
+            print(f"fetch_full_history.py exited non-zero: {rc}", file=sys.stderr)
+            return rc
+        # Optionability map: refresh weekly (listings are sticky). Age
+        # comes from the embedded as_of stamp, not file mtime — CI
+        # checkouts reset mtimes on every run.
+        age_days = 999.0
+        if os.path.exists(OPTIONABLE):
+            try:
+                with open(OPTIONABLE) as fh:
+                    as_of = json.load(fh).get("as_of")
+                if as_of:
+                    age_days = (time.time() - time.mktime(
+                        time.strptime(as_of, "%Y-%m-%dT%H:%M:%SZ"))) / 86400.0
+            except (OSError, json.JSONDecodeError, ValueError):
+                pass
+        if age_days > 7:
+            rc = subprocess.call(
+                [sys.executable, os.path.join(HERE, "fetch_optionable.py")],
+                env=env,
+            )
+            if rc != 0:
+                print(f"fetch_optionable.py exited non-zero: {rc}", file=sys.stderr)
+                return rc
+
     rc = subprocess.call(
         [sys.executable, os.path.join(HERE, "research.py")],
-        env=env,
+        env={**env, "CS_DATA_DIR": CACHE_FULL},
     )
     if rc != 0:
         print(f"research.py exited non-zero: {rc}", file=sys.stderr)
@@ -35,9 +78,11 @@ def main() -> int:
 
     # Update the live signal log — append any new signal rungs (dedup
     # on publish_date+ticker+side+horizon) and resolve any whose expiry
-    # date has now been reached.
-    # Import lazily so the scan.py module can be imported without numpy
-    # when used just for summary printing.
+    # date has now been reached. Resolution must read the same fresh
+    # full-history panel the scan used (the legacy docs/data/tickers
+    # panel is no longer refreshed by this pipeline), so CS_DATA_DIR is
+    # set BEFORE live_log/common are imported.
+    os.environ["CS_DATA_DIR"] = CACHE_FULL
     sys.path.insert(0, HERE)
     from live_log import update_live_log  # noqa: E402
     log_path = os.path.join(WEB_DATA, "live_log.json")
@@ -55,16 +100,16 @@ def main() -> int:
     put = s.get("put", {})
     call = s.get("call", {})
     print(
-        f"  put:      elig={put.get('n_eligible')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} "
-        f"losses={put.get('pooled_losses')}"
+        f"  put:      certified={put.get('n_certified')} published={put.get('n_published')} "
+        f"tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} losses={put.get('pooled_losses')}"
     )
     print(
-        f"  call:     elig={call.get('n_eligible')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} "
-        f"losses={call.get('pooled_losses')}"
+        f"  call:     certified={call.get('n_certified')} published={call.get('n_published')} "
+        f"tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses')}"
     )
     print(
-        f"  combined: elig={combined.get('n_eligible')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} "
-        f"losses={combined.get('pooled_losses')} win_rate={combined.get('pooled_win_rate')}"
+        f"  combined: certified={combined.get('n_certified')} published={combined.get('n_published')} "
+        f"tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses')}"
     )
     return 0
 
