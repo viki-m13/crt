@@ -1,10 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Site password gate (client-side). See /gate.js -->
+  <!-- Pre-paint gate (prevents flash of content before gate.js decides) -->
   <style id="cf-gate-init">html{visibility:hidden!important}</style>
   <script src="/gate.js"></script>
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
@@ -18,7 +18,6 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css" />
-
   <style>
     /* Page-specific: CreditFloor layout */
     .cf-stats-grid {
@@ -58,7 +57,7 @@
       .cf-stat { border-bottom: 1px solid var(--rule-light); }
     }
 
-    /* signal cards list */
+    /* filter / sort button rows */
     .cf-filters {
       display: flex;
       flex-wrap: wrap;
@@ -85,11 +84,19 @@
       border-radius: 2px;
     }
     .cf-filters button.active { background: var(--ink); color: var(--bg); }
-
-    .cf-list {
-      display: grid;
-      gap: 14px;
+    .cf-filters input[type="text"] {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      width: 110px;
+      text-transform: uppercase;
     }
+    .cf-filters input[type="text"]:focus { outline: none; border-color: var(--ink); }
+
+    /* trade cards */
+    .cf-list { display: grid; gap: 14px; }
     .cf-card {
       border: 1px solid var(--rule);
       border-radius: 4px;
@@ -114,91 +121,74 @@
       font-size: 13px;
       color: var(--muted);
     }
-    .cf-card-price strong {
-      color: var(--ink);
-      font-size: 15px;
-      font-weight: 600;
+    .cf-card-price strong { color: var(--ink); font-size: 15px; font-weight: 600; }
+    .cf-side-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 2px 7px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      margin-left: 8px;
+      vertical-align: middle;
     }
-    .cf-ladder {
-      margin-top: 14px;
+    .cf-side-badge.put  { color: #1a7a3e; border: 1px solid #1a7a3e; }
+    .cf-side-badge.call { color: var(--orange); border: 1px solid var(--orange); }
+
+    .cf-trade-line {
+      font-family: var(--mono);
+      font-size: 14px;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+    .cf-trade-line strong { font-weight: 600; }
+    .cf-trade-nums {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    @media (max-width: 720px) { .cf-ladder { grid-template-columns: 1fr; } }
-    .cf-rung {
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      margin-top: 12px;
       border: 1px solid var(--rule-light);
       border-radius: 3px;
-      padding: 12px 14px;
       background: #fafafa;
     }
-    .cf-rung-h {
+    @media (max-width: 860px) { .cf-trade-nums { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 520px) { .cf-trade-nums { grid-template-columns: repeat(2, 1fr); } }
+    .cf-num {
+      padding: 10px 12px;
+      border-right: 1px solid var(--rule-light);
+    }
+    .cf-num:last-child { border-right: none; }
+    @media (max-width: 860px) { .cf-num { border-bottom: 1px solid var(--rule-light); } }
+    .cf-num .v {
+      display: block;
       font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.10em;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .cf-num .v.good { color: var(--green); }
+    .cf-num .k {
+      display: block;
+      font-size: 9px;
       color: var(--muted);
       text-transform: uppercase;
-      margin-bottom: 6px;
+      letter-spacing: 0.10em;
+      margin-top: 3px;
     }
-    .cf-rung-k {
-      font-family: var(--mono);
-      font-size: 20px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .cf-rung-b {
+    .cf-wing-line {
+      margin-top: 10px;
+      padding: 8px 12px;
       font-family: var(--mono);
       font-size: 12px;
-      color: var(--green);
-      margin-top: 4px;
-    }
-    .cf-rung-m {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.4;
-    }
-    .cf-rung-m .tag {
-      display: inline-block;
-      border: 1px solid var(--rule-light);
-      padding: 1px 5px;
-      margin-right: 4px;
-      border-radius: 2px;
-      font-size: 10px;
-    }
-    .cf-rung-h .tag.tag-expiry {
-      display: inline-block;
-      border: 1px solid var(--rule-light);
-      padding: 1px 5px;
-      margin-left: 4px;
-      border-radius: 2px;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-    }
-    .cf-rung-profit {
-      margin: 8px 0 2px;
-      padding: 6px 8px;
+      color: #333;
       background: #f2f8f5;
       border-left: 2px solid var(--green);
       border-radius: 2px;
+      line-height: 1.55;
     }
-    .cf-rung-profit-main {
-      display: block;
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--green);
-    }
-    .cf-rung-profit-main strong { font-weight: 600; }
-    .cf-rung-profit-sub {
-      display: block;
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
+    .cf-wing-line strong { color: var(--green); }
+
     .cf-fold-tbl {
       width: 100%;
       border-collapse: collapse;
@@ -216,10 +206,7 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
-    .cf-fold-tbl td {
-      padding: 4px 6px;
-      border-bottom: 1px solid var(--rule-light);
-    }
+    .cf-fold-tbl td { padding: 4px 6px; border-bottom: 1px solid var(--rule-light); }
     .cf-fold-tbl td.win { color: var(--green); font-weight: 600; }
     .cf-fold-tbl td.loss { color: #a8321a; font-weight: 600; }
     .cf-card-expand {
@@ -233,6 +220,13 @@
     .cf-card-expand:hover { color: var(--ink); }
     .cf-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule-light); }
     .cf-card.open .cf-detail { display: block; }
+    .cf-detail-kv {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #333;
+      line-height: 1.8;
+    }
+    .cf-detail-kv strong { font-weight: 600; }
 
     .cf-footnote {
       font-size: 12px;
@@ -243,7 +237,6 @@
       background: #f5f5f5;
       border-left: 3px solid var(--muted);
     }
-
     .cf-empty {
       padding: 40px 20px;
       text-align: center;
@@ -254,85 +247,7 @@
       border-radius: 4px;
     }
 
-    .cf-regime-badge {
-      display: inline-block;
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      padding: 2px 6px;
-      border: 1px solid var(--rule-light);
-      border-radius: 2px;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-left: 8px;
-    }
-    .cf-regime-badge.regime { color: var(--green); border-color: var(--green); }
-
-    /* collapsible sections */
-    .cf-section {
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      margin: 18px 0;
-      background: var(--bg);
-    }
-    .cf-section-head {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 18px;
-      background: var(--bg);
-      border: none;
-      border-bottom: 1px solid transparent;
-      cursor: pointer;
-      text-align: left;
-      font-family: var(--sans);
-      transition: background 0.15s ease;
-    }
-    .cf-section-head:hover { background: #fafafa; }
-    .cf-section-head[aria-expanded="true"] { border-bottom: 1px solid var(--rule-light); }
-    .cf-section-arrow {
-      display: inline-block;
-      font-size: 10px;
-      color: var(--muted);
-      transition: transform 0.18s ease;
-      width: 12px;
-    }
-    .cf-section-head[aria-expanded="true"] .cf-section-arrow { transform: rotate(90deg); }
-    .cf-section-title {
-      flex: 1;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-    }
-    .cf-section-subtitle {
-      font-weight: 400;
-      font-size: 13px;
-      color: var(--muted);
-      margin-left: 6px;
-    }
-    .cf-section-subtitle strong { color: var(--ink); font-weight: 600; }
-    .cf-section-badge {
-      font-family: var(--mono);
-      font-size: 12px;
-      padding: 3px 10px;
-      border: 1px solid var(--rule-light);
-      border-radius: 2px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .cf-section-body { padding: 14px 18px 20px; }
-    .cf-section-body[hidden] { display: none; }
-
-    /* live track record panel */
-    .section-title-sub {
-      font-weight: 400;
-      font-size: 14px;
-      color: var(--muted);
-      letter-spacing: 0;
-      margin-left: 8px;
-    }
+    /* history */
     .cf-live-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -383,23 +298,6 @@
     }
     .cf-live-sub strong { color: var(--ink); }
 
-    .cf-live-log-details {
-      margin-top: 16px;
-      border: 1px solid var(--rule-light);
-      border-radius: 4px;
-      padding: 0;
-      overflow: hidden;
-    }
-    .cf-live-log-details summary {
-      cursor: pointer;
-      padding: 12px 16px;
-      background: #fafafa;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .cf-live-log-details[open] summary { border-bottom: 1px solid var(--rule-light); }
-    #cf-live-log { padding: 10px 0; }
     .cf-live-tbl {
       width: 100%;
       border-collapse: collapse;
@@ -416,106 +314,52 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       background: #fafafa;
+      white-space: nowrap;
     }
-    .cf-live-tbl td {
-      padding: 6px 12px;
-      border-bottom: 1px solid var(--rule-light);
-    }
+    .cf-live-tbl td { padding: 6px 12px; border-bottom: 1px solid var(--rule-light); white-space: nowrap; }
     .cf-live-tbl td.win { color: var(--green); font-weight: 600; }
     .cf-live-tbl td.loss { color: #a8321a; font-weight: 600; }
     .cf-live-tbl td.pending { color: var(--muted); }
-
-    /* regime watchlist */
-    .cf-watch { margin-top: 18px; }
-    .cf-watch-head {
+    .cf-live-tbl td.tkr { font-weight: 600; }
+    .cf-tbl-scroll { overflow-x: auto; border: 1px solid var(--rule-light); border-radius: 4px; }
+    .cf-show-more {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
       font-family: var(--mono);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.10em;
-      color: var(--muted);
-      padding: 10px 0 8px;
-      border-top: 1px solid var(--rule-light);
+      font-size: 12px;
+      padding: 10px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
       cursor: pointer;
     }
-    .cf-watch-head:hover { color: var(--ink); }
-    .cf-watch-head .arrow {
-      display: inline-block;
-      font-size: 9px;
-      margin-right: 6px;
-      transition: transform 0.18s;
-    }
-    .cf-watch-open .cf-watch-head .arrow { transform: rotate(90deg); }
-    .cf-watch-body { display: none; padding: 8px 0 6px; }
-    .cf-watch-open .cf-watch-body { display: block; }
-    .cf-watch-note {
-      font-size: 12px;
-      color: var(--muted);
-      margin: 4px 0 10px;
-      line-height: 1.5;
-    }
-    .cf-watch-tbl {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-    .cf-watch-tbl th {
-      text-align: left;
-      padding: 6px 10px;
-      font-weight: 500;
-      color: var(--muted);
-      border-bottom: 1px solid var(--rule);
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      background: #fafafa;
-    }
-    .cf-watch-tbl td {
-      padding: 6px 10px;
-      border-bottom: 1px solid var(--rule-light);
-    }
-    .cf-watch-tbl td.tkr { font-weight: 600; }
+    .cf-show-more:hover { background: #fafafa; }
 
-    /* Top signals table */
-    .cf-top-tbl {
+    /* validated record table */
+    .cf-val-tbl {
       width: 100%;
       border-collapse: collapse;
       font-family: var(--mono);
       font-size: 12px;
-      margin-top: 6px;
+      margin-top: 10px;
     }
-    .cf-top-tbl th {
-      text-align: left;
-      padding: 8px 10px;
+    .cf-val-tbl th {
+      text-align: right;
+      padding: 6px 10px;
       font-weight: 500;
       color: var(--muted);
       border-bottom: 1px solid var(--rule);
       font-size: 10px;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       background: #fafafa;
-      white-space: nowrap;
     }
-    .cf-top-tbl td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--rule-light);
-      white-space: nowrap;
-    }
-    .cf-top-tbl td.tkr { font-weight: 600; font-size: 13px; }
-    .cf-top-tbl td.good { color: var(--green); font-size: 13px; }
-    .cf-top-tbl td.side-put  { color: #1a7a3e; font-size: 10px; letter-spacing: 0.06em; }
-    .cf-top-tbl td.side-call { color: #b35900; font-size: 10px; letter-spacing: 0.06em; }
-    .cf-top-exptype {
-      display: inline-block;
-      margin-left: 6px;
-      font-size: 9px;
-      padding: 1px 5px;
-      border: 1px solid var(--rule-light);
-      border-radius: 2px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
+    .cf-val-tbl th:first-child, .cf-val-tbl td:first-child { text-align: left; }
+    .cf-val-tbl td { padding: 6px 10px; border-bottom: 1px solid var(--rule-light); text-align: right; }
+    .cf-val-tbl td.good { color: var(--green); font-weight: 600; }
+    .cf-val-tbl td.bad { color: #a8321a; font-weight: 600; }
+    .cf-val-tbl tr.era td { background: #fafafa; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; text-align: left; }
 
     .cf-method {
       border: 1px solid var(--rule-light);
@@ -523,11 +367,7 @@
       padding: 20px 22px;
       background: #fafafa;
     }
-    .cf-method h3 {
-      font-size: 15px;
-      font-weight: 600;
-      margin: 14px 0 6px;
-    }
+    .cf-method h3 { font-size: 15px; font-weight: 600; margin: 14px 0 6px; }
     .cf-method h3:first-child { margin-top: 0; }
     .cf-method p, .cf-method li { font-size: 14px; color: #333; line-height: 1.65; }
     .cf-method code {
@@ -546,10 +386,9 @@
     <div class="nav-inner">
       <a href="/" class="nav-logo"><span class="nav-logo-dot" style="background:var(--orange)"></span>CreditFloor</a>
       <div class="nav-links">
-        <a href="#signals">Today's signals</a>
-        <a href="#stillpoint">Stillpoint</a>
+        <a href="#trades">Today&rsquo;s trades</a>
+        <a href="#history">History</a>
         <a href="#method">Method</a>
-        <a href="#validation">Validation</a>
         <a href="#disclosures">Disclosures</a>
         <a href="/">Main</a>
         <a href="/max/" class="nav-experiments">Max</a>
@@ -561,30 +400,27 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">
-        A short strike, an expiry, and an honestly&#8209;measured&nbsp;99.4%.
+        One strategy. Every trade spelled out. An honestly&#8209;measured&nbsp;99.4%.
       </h1>
       <p class="hero-sub">
-        <strong>CreditFloor v3 (&ldquo;Sigma-Clear&rdquo;)</strong> publishes
-        vertical credit spreads in both directions — a <strong>put-credit
-        floor</strong> below spot and a <strong>call-credit ceiling</strong>
-        above it — where the strike clears 2.5&sigma; of current volatility
-        <em>and</em> at least 80% of the worst move in the stock's entire
-        listed history, the underlying is conformally certified on 20 years of
-        walk-forward folds, and the spread still pays a conservative net
-        credit after slippage and commissions. Validated with an 18-year
-        point-in-time daily replay of the live protocol: <strong>zero losses
-        across the 2008&ndash;2018 design window</strong> (GFC included) and a
-        <strong>99.4% win rate with positive P&amp;L on untouched
-        2019&ndash;2026 data</strong>. That residual ~0.6% — COVID-class
-        crashes and single-name M&amp;A/earnings shocks — is real, irreducible
-        at tradeable premium, and disclosed on every card. Anyone selling the
-        same trade as &ldquo;100%&rdquo; is grading their own homework.
-        <strong>Not financial advice.</strong>
+        <strong>CreditFloor v3 (&ldquo;Sigma-Clear&rdquo;)</strong> publishes vertical
+        credit spreads — exact strikes, exact expiry dates, estimated credit and
+        max loss per contract — on stocks that pass 20 years of walk-forward
+        certification, with strikes at 2.5&sigma; of current volatility that also
+        clear at least 80% of the worst move in the stock&rsquo;s entire listed
+        history. Validated with an 18-year point-in-time daily replay:
+        <strong>zero losses across the 2008&ndash;2018 design window</strong> (GFC
+        included) and a <strong>99.4% win rate with positive P&amp;L net of all
+        losses on untouched 2019&ndash;2026 data</strong>. The residual ~0.6% —
+        crashes and single-name shocks — is real, and every published trade
+        carries an optional <strong>crash wing</strong> that makes the deepest
+        losses convex. Every signal ever published is logged below, wins and
+        losses alike, forever. <strong>Not financial advice.</strong>
       </p>
     </div>
   </section>
 
-  <!-- ===== VALIDATION STATS BAND ===== -->
+  <!-- ===== STATS BAND ===== -->
   <section id="validation">
     <div class="cf-stats-grid" id="cf-stats">
       <div class="cf-stat">
@@ -592,556 +428,154 @@
         <span class="lbl" id="stat-validated-lbl">Replay-validated win rate (untouched 2019&ndash;2026)</span>
       </div>
       <div class="cf-stat">
-        <span class="num" id="stat-pooled-n">&mdash;</span>
-        <span class="lbl">Walk-forward certification tests (selection filter, not a forward claim)</span>
+        <span class="num good" id="stat-pnl">+$18,174</span>
+        <span class="lbl">Validated P&amp;L 2019&ndash;26, 1 contract/trade, net of losses &amp; commissions</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-signals">&mdash;</span>
-        <span class="lbl">Eligible signals today</span>
+        <span class="lbl">Tradeable signals today</span>
       </div>
       <div class="cf-stat">
-        <span class="num" id="stat-universe">&mdash;</span>
-        <span class="lbl">Stocks scanned (~11 years each)</span>
+        <span class="num" id="stat-asof" style="font-size:22px">&mdash;</span>
+        <span class="lbl">Latest scan (market close, New York)</span>
       </div>
     </div>
   </section>
 
-  <!-- ===== LIVE TRACK RECORD ===== -->
-  <section id="live-track" class="content-section">
+  <!-- ===== TODAY'S TRADES ===== -->
+  <section class="content-section" id="trades">
     <div class="section-inner">
-      <div class="section-title">Live track record <span class="section-title-sub">&mdash; every signal ever published, resolved at expiry</span></div>
+      <div class="section-title">Today&rsquo;s trades</div>
       <p class="section-note">
-        Every cron run appends every (ticker, side, horizon) signal it
-        publishes to an immutable log. When a signal's expiry date
-        arrives, we look up the actual close on that day and mark the
-        outcome &mdash; <strong>win if the close is on the safe side of
-        the strike, loss otherwise</strong>. Signals for tickers that
-        later drop off today&rsquo;s list <em>stay in the log</em> and
-        still resolve at their expiry: this is the anti-survivorship
-        machinery. A signal published on the day a ticker dropped off
-        is still held through its full horizon and graded honestly.
+        Each card is one complete trade: <strong>sell</strong> the short leg,
+        <strong>buy</strong> the long leg, same expiry, and hold to expiry. The
+        trade wins if the stock closes on the safe side of the short strike on
+        the expiry date — the cushion column shows how far the stock would have
+        to move for that to fail. Credit and max loss are per contract (100
+        shares), estimated conservatively: below-mid fill, bid-ask, and
+        commissions already subtracted. Where the credit can afford it, an
+        optional <strong>crash wing</strong> is listed — it costs part of the
+        credit and turns a crash-sized move into a profit instead of a maximum
+        loss. Most days publish a handful of trades; some days none qualify —
+        no trade is a result, not an error.
       </p>
 
-      <div class="cf-live-grid">
-        <div class="cf-live-stat">
-          <span class="num good" id="live-win-rate">&mdash;</span>
-          <span class="lbl">Live win rate (resolved signals)</span>
-        </div>
-        <div class="cf-live-stat">
-          <span class="num" id="live-resolved">&mdash;</span>
-          <span class="lbl">Signals resolved at expiry</span>
-        </div>
-        <div class="cf-live-stat">
-          <span class="num" id="live-pending">&mdash;</span>
-          <span class="lbl">Pending (awaiting expiry)</span>
-        </div>
-        <div class="cf-live-stat">
-          <span class="num" id="live-losses">&mdash;</span>
-          <span class="lbl">Confirmed losses</span>
-        </div>
+      <div class="cf-filters" id="trade-sort">
+        <span class="lbl">Sort</span>
+        <button data-sort="credit" class="active">Highest credit</button>
+        <button data-sort="ror">Highest return on risk</button>
+        <button data-sort="expiry">Soonest expiry</button>
       </div>
 
-      <div class="cf-live-sub">
-        <div>Puts: <span id="live-put-summary">&mdash;</span></div>
-        <div>Calls: <span id="live-call-summary">&mdash;</span></div>
-        <div>First signal logged: <span id="live-first">&mdash;</span></div>
+      <div class="cf-list" id="trade-list">
+        <div class="cf-empty">Loading&hellip;</div>
+      </div>
+
+      <div class="cf-footnote">
+        Estimates use Black-Scholes with a put-skew smile at IV = 1.3&times;
+        realized volatility, a tenor-dependent fill haircut below mid, a
+        $0.05 minimum bid-ask, and $0.66/contract/leg commissions. A stress
+        estimate priced at bare realized volatility (no volatility risk
+        premium at all) is shown inside each card&rsquo;s details — real fills
+        should land between the two. Forward expectation for these trades is
+        the replay-validated ~99.4%, <strong>not 100%</strong>.
       </div>
     </div>
   </section>
 
-  <!-- ===== SIGNALS ===== -->
-  <section class="content-section" id="signals">
+  <!-- ===== HISTORY ===== -->
+  <section class="content-section" id="history">
     <div class="section-inner">
-      <div class="section-title">Today&rsquo;s CreditFloor signals</div>
+      <div class="section-title">History</div>
       <p class="section-note">
-        Each card is a ticker that passed conformal certification (every
-        walk-forward fold clean) <em>and</em> the v3 Sigma-Clear publication
-        gates: strike at 2.5&sigma; of current vol, clearing &ge;80% of the
-        worst move in the stock's full listed history, snapped-down covered
-        expiry, listed options, &ge;10 years of history, and a conservative
-        net credit &ge; $0.05/share after commissions. Multiple expiries
-        ("rungs") may publish; each shows its own strike, buffer, and both
-        the realistic and stress fill estimates. The forward expectation is
-        the replay-validated ~99.4%, <strong>not 100%</strong>. Sections
-        below start collapsed &mdash; tap to expand.
+        Two records, kept separate on purpose. The <strong>live log</strong> is
+        the unbiased one: every signal ever published on this page is recorded
+        the day it is published and resolved at its expiry close — losses stay
+        forever, including all 36 from the legacy engine that this strategy
+        replaced. The <strong>replay record</strong> is the 19-year
+        point-in-time simulation that validated the current rule set before it
+        went live.
       </p>
 
-      <!-- ===== TOP SIGNALS (>=5% ROR) ===== -->
-      <div class="cf-section" id="cf-section-top">
-        <button type="button" class="cf-section-head" data-target="top" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Top signals today <span class="cf-section-subtitle">&mdash; &ge;5% per-trade ROR, across both sides</span>
-          </span>
-          <span class="cf-section-badge" id="cf-top-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="top" hidden>
-          <p class="cf-watch-note">
-            The highest-conviction opportunities from today&rsquo;s scan &mdash; pulled
-            from both the put and call sides, filtered to rungs with estimated
-            per-trade return-on-risk at <strong>5% or higher</strong>, and sorted
-            biggest to smallest. Every rung passed certification and the v3
-            publication gates; the forward expectation is the replay-validated
-            ~99.4%, not 100%. Credit, max loss, and ROR are Black-Scholes
-            estimates (r=0, IV = realized &times; 1.30, tenor-dependent fill
-            haircut, commissions netted, 5%-of-spot spread width) &mdash; real
-            market fills will differ, and a stress estimate at bare realized
-            vol is published per rung.
-          </p>
-          <div id="cf-top-list"></div>
-        </div>
+      <h3 style="font-size:16px;font-weight:600;margin:26px 0 4px">Live log — every signal ever published</h3>
+      <div class="cf-live-grid" id="live-grid">
+        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved signals</span></div>
+        <div class="cf-live-stat"><span class="num good" id="live-wins">&mdash;</span><span class="lbl">Wins</span></div>
+        <div class="cf-live-stat"><span class="num bad" id="live-losses">&mdash;</span><span class="lbl">Losses</span></div>
+        <div class="cf-live-stat"><span class="num" id="live-wr">&mdash;</span><span class="lbl">Live win rate</span></div>
       </div>
+      <div class="cf-live-sub" id="live-sub"></div>
 
-      <!-- ===== PUT-SIDE SECTION (below spot) ===== -->
-      <div class="cf-section" id="cf-section-put">
-        <button type="button" class="cf-section-head" data-target="put" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Put credit floors <span class="cf-section-subtitle">&mdash; short strike <strong>below</strong> spot (bullish-bounded)</span>
-          </span>
-          <span class="cf-section-badge" id="cf-put-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="put" hidden>
-          <div class="cf-filters">
-            <span class="lbl">Sort</span>
-            <button data-side="put" data-sort="profit" class="active">Most profitable</button>
-            <button data-side="put" data-sort="buffer">Tightest buffer</button>
-            <button data-side="put" data-sort="tests">Most OOS tests</button>
-            <button data-side="put" data-sort="ticker">Ticker A&ndash;Z</button>
-            <span class="lbl" style="margin-left: 18px;">Horizon</span>
-            <button data-side="put" data-hfilter="all" class="active">All</button>
-            <button data-side="put" data-hfilter="7">7d</button>
-            <button data-side="put" data-hfilter="10">10d</button>
-            <button data-side="put" data-hfilter="14">14d</button>
-            <button data-side="put" data-hfilter="21">21d</button>
-            <button data-side="put" data-hfilter="42">42d</button>
-            <button data-side="put" data-hfilter="63">63d</button>
-            <button data-side="put" data-hfilter="126">126d</button>
-          </div>
-          <div class="cf-list" id="cf-list-put">
-            <div class="cf-empty">Loading signals&hellip;</div>
-          </div>
-          <div class="cf-watch" id="cf-watch-put"></div>
-        </div>
+      <div class="cf-filters" id="log-filters">
+        <span class="lbl">Show</span>
+        <button data-status="all" class="active">All</button>
+        <button data-status="win">Wins</button>
+        <button data-status="loss">Losses</button>
+        <button data-status="pending">Pending</button>
+        <span class="lbl" style="margin-left:10px">Engine</span>
+        <button data-engine="all" class="active">All</button>
+        <button data-engine="v3">v3 (current)</button>
+        <button data-engine="v1">Legacy</button>
+        <input type="text" id="log-ticker" placeholder="TICKER" maxlength="6" />
       </div>
-
-      <!-- ===== CALL-SIDE SECTION (above spot) ===== -->
-      <div class="cf-section" id="cf-section-call">
-        <button type="button" class="cf-section-head" data-target="call" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Call credit ceilings <span class="cf-section-subtitle">&mdash; short strike <strong>above</strong> spot (bearish-bounded)</span>
-          </span>
-          <span class="cf-section-badge" id="cf-call-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="call" hidden>
-          <div class="cf-filters">
-            <span class="lbl">Sort</span>
-            <button data-side="call" data-sort="profit" class="active">Most profitable</button>
-            <button data-side="call" data-sort="buffer">Tightest buffer</button>
-            <button data-side="call" data-sort="tests">Most OOS tests</button>
-            <button data-side="call" data-sort="ticker">Ticker A&ndash;Z</button>
-            <span class="lbl" style="margin-left: 18px;">Horizon</span>
-            <button data-side="call" data-hfilter="all" class="active">All</button>
-            <button data-side="call" data-hfilter="7">7d</button>
-            <button data-side="call" data-hfilter="10">10d</button>
-            <button data-side="call" data-hfilter="14">14d</button>
-            <button data-side="call" data-hfilter="21">21d</button>
-            <button data-side="call" data-hfilter="42">42d</button>
-            <button data-side="call" data-hfilter="63">63d</button>
-            <button data-side="call" data-hfilter="126">126d</button>
-          </div>
-          <div class="cf-list" id="cf-list-call">
-            <div class="cf-empty">Loading signals&hellip;</div>
-          </div>
-          <div class="cf-watch" id="cf-watch-call"></div>
-        </div>
+      <div class="cf-tbl-scroll">
+        <table class="cf-live-tbl">
+          <thead>
+            <tr>
+              <th>Published</th><th>Ticker</th><th>Trade</th><th>Short strike</th>
+              <th>Spot at publish</th><th>Expiry</th><th>Close at expiry</th><th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
       </div>
+      <button class="cf-show-more" id="log-more" hidden>Show 200 more</button>
 
-      <div class="cf-footnote" id="cf-last-run">As of &mdash;.</div>
-    </div>
-  </section>
-
-  <!-- ===== OPTION C — EVENT-TRIGGERED CONDITIONAL SPREADS ===== -->
-  <section class="content-section" id="option-c">
-    <div class="section-inner">
-      <div class="section-title">
-        Event-triggered spreads <span class="section-title-sub">&mdash; conditional on touch-prediction regimes (Option C)</span>
-      </div>
-      <p class="section-note">
-        A <em>separate strategy</em> from the credit floors/ceilings above. These
-        spreads fire only when a stock enters a specific oversold/overbought
-        regime (SPY-relative weakness, multi-stack mean-reversion, etc.),
-        targeting <strong>short-dated (5-21 day)</strong> credit spreads with a
-        fixed 3% spread-width. Win condition: stock's close at expiry stays on
-        the safe side of the short strike. Historical accuracy 83-91% per rule,
-        tested on 94 liquid-options names. All three sections below start
-        collapsed; tap to expand.
+      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Replay record — how this exact rule set performed, 2008&ndash;2026</h3>
+      <p class="section-note" style="margin-top:4px">
+        Point-in-time daily replay of the live protocol on full price history
+        (one independent trade per ticker/direction/expiry, 1 contract each,
+        conservative fills, commissions included). The rule was frozen on
+        2008&ndash;2018 and then run once, untouched, on 2019&ndash;2026.
+        Full protocol: <code style="font-family:var(--mono);font-size:12px">strategies/credit_spread/VALIDATION.md</code>.
       </p>
-
-      <div class="cf-stats-grid" id="cf-oc-stats">
-        <div class="cf-stat"><span class="num good" id="oc-winrate">&mdash;</span><span class="lbl">Pooled win rate across rules</span></div>
-        <div class="cf-stat"><span class="num" id="oc-roi">&mdash;</span><span class="lbl">ROI per trade on max-loss</span></div>
-        <div class="cf-stat"><span class="num" id="oc-rules">&mdash;</span><span class="lbl">Eligible rules</span></div>
-        <div class="cf-stat"><span class="num" id="oc-live">&mdash;</span><span class="lbl">Live fires today</span></div>
+      <div class="cf-tbl-scroll">
+        <table class="cf-val-tbl">
+          <thead><tr><th>Year</th><th>Trades</th><th>Losses</th><th>P&amp;L (1 contract/trade)</th></tr></thead>
+          <tbody>
+            <tr class="era"><td colspan="4">Design window 2008&ndash;2018 (rule fitted here &mdash; GFC included)</td></tr>
+            <tr><td>2008</td><td>151</td><td class="good">0</td><td class="good">+$2,097</td></tr>
+            <tr><td>2009</td><td>70</td><td class="good">0</td><td class="good">+$521</td></tr>
+            <tr><td>2010</td><td>10</td><td class="good">0</td><td class="good">+$65</td></tr>
+            <tr><td>2011</td><td>12</td><td class="good">0</td><td class="good">+$105</td></tr>
+            <tr><td>2012</td><td>24</td><td class="good">0</td><td class="good">+$216</td></tr>
+            <tr><td>2013</td><td>9</td><td class="good">0</td><td class="good">+$84</td></tr>
+            <tr><td>2014</td><td>1</td><td class="good">0</td><td class="good">+$6</td></tr>
+            <tr><td>2015</td><td>27</td><td class="good">0</td><td class="good">+$193</td></tr>
+            <tr><td>2016</td><td>86</td><td class="good">0</td><td class="good">+$847</td></tr>
+            <tr><td>2017</td><td>44</td><td class="good">0</td><td class="good">+$352</td></tr>
+            <tr><td>2018</td><td>120</td><td class="good">0</td><td class="good">+$1,445</td></tr>
+            <tr class="era"><td colspan="4">Validation window 2019&ndash;2026 (untouched &mdash; the honest numbers)</td></tr>
+            <tr><td>2019</td><td>196</td><td class="bad">2</td><td class="good">+$351</td></tr>
+            <tr><td>2020</td><td>206</td><td class="bad">3</td><td class="bad">&minus;$1,386</td></tr>
+            <tr><td>2021</td><td>149</td><td class="bad">1</td><td class="good">+$1,581</td></tr>
+            <tr><td>2022</td><td>285</td><td class="bad">1</td><td class="good">+$4,557</td></tr>
+            <tr><td>2023</td><td>136</td><td class="good">0</td><td class="good">+$2,245</td></tr>
+            <tr><td>2024</td><td>169</td><td class="good">0</td><td class="good">+$5,237</td></tr>
+            <tr><td>2025</td><td>213</td><td class="good">0</td><td class="good">+$4,275</td></tr>
+            <tr><td>2026</td><td>154</td><td class="bad">2</td><td class="good">+$1,314</td></tr>
+            <tr class="era"><td><strong>Total</strong></td><td><strong>2,062</strong></td><td><strong>9</strong></td><td class="good"><strong>+$24,105</strong></td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <!-- Recommended (top picks across both sides) -->
-      <div class="cf-section" id="oc-section-rec">
-        <button type="button" class="cf-section-head" data-target="oc-rec" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Top recommended <span class="cf-section-subtitle">&mdash; best combined ROI across puts + calls</span>
-          </span>
-          <span class="cf-section-badge" id="oc-rec-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="oc-rec" hidden>
-          <div class="cf-list" id="oc-list-rec"></div>
-        </div>
-      </div>
-
-      <!-- Short puts -->
-      <div class="cf-section" id="oc-section-puts">
-        <button type="button" class="cf-section-head" data-target="oc-puts" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Bullish plays (short puts) <span class="cf-section-subtitle">&mdash; sell put credit spread when stock is oversold / expected to bounce</span>
-          </span>
-          <span class="cf-section-badge" id="oc-puts-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="oc-puts" hidden>
-          <div class="cf-list" id="oc-list-puts"></div>
-        </div>
-      </div>
-
-      <!-- Short calls -->
-      <div class="cf-section" id="oc-section-calls">
-        <button type="button" class="cf-section-head" data-target="oc-calls" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Bearish plays (short calls) <span class="cf-section-subtitle">&mdash; sell call credit spread when stock is overbought / expected to pull back</span>
-          </span>
-          <span class="cf-section-badge" id="oc-calls-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="oc-calls" hidden>
-          <div class="cf-list" id="oc-list-calls"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== STILLPOINT — TIGHT-STRIKE SHORT-DTE ===== -->
-  <section class="content-section" id="stillpoint">
-    <div class="section-inner">
-      <div class="section-title">
-        Stillpoint <span class="section-title-sub">&mdash; tight strikes, &lt;21 day expiries, compression-conditioned (proprietary)</span>
-      </div>
-      <p class="section-note">
-        Iron-condor credit spreads with proprietary 6-layer robustness
-        (two-stage walk-forward, stress-pricing eligibility, regime σ
-        envelope, immutable live log) covering all four corners of
-        the {WR, ROR, liquidity, frequency} Pareto. Pick the tier that
-        matches your tradeoff. Each section starts collapsed; tap to
-        expand. Live track record below shows live vs backtest WR
-        per tier.
-      </p>
-
-      <div class="cf-stats-grid" id="sp-stats">
-        <div class="cf-stat"><span class="num good" id="sp-lfic-winrate">&mdash;</span><span class="lbl">Liquid + 95% WR (LFIC)</span></div>
-        <div class="cf-stat"><span class="num good" id="sp-laic-winrate">&mdash;</span><span class="lbl">Liquid + 50%+ ROR (LAIC)</span></div>
-        <div class="cf-stat"><span class="num" id="sp-uic-winrate">&mdash;</span><span class="lbl">Universal 95% + 50%+ (UIC)</span></div>
-        <div class="cf-stat"><span class="num" id="sp-ruic-winrate">&mdash;</span><span class="lbl">Strict liquid (RUIC)</span></div>
-      </div>
-
-      <!-- ====== STILLPOINT LIVE LOG ====== -->
-      <div class="cf-section" id="sp-section-livelog">
-        <button type="button" class="cf-section-head" data-target="sp-livelog" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Live track record <span class="cf-section-subtitle">&mdash; live WR vs backtest WR per tier (immutable, survivorship-bias-free)</span>
-          </span>
-          <span class="cf-section-badge" id="sp-livelog-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-livelog" hidden>
-          <div id="sp-livelog-table"></div>
-        </div>
-      </div>
-
-      <!-- ====== TIER 1: LFIC — Liquid + 95% WR + frequent (sacrifice 50% ROR) ====== -->
-      <div class="cf-section" id="sp-section-lfic">
-        <button type="button" class="cf-section-head" data-target="sp-lfic" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Liquid Frequent IC (LFIC) <span class="cf-section-subtitle">&mdash; SPY/AAPL/etc. at 95%+ backtest WR, 10-50% ROR, frequent</span>
-          </span>
-          <span class="cf-section-badge" id="sp-lfic-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-lfic" hidden>
-          <div class="cf-list" id="sp-list-lfic"></div>
-        </div>
-      </div>
-
-      <!-- ====== TIER 2: LAIC — Liquid + 50% ROR + frequent (sacrifice 95% WR) ====== -->
-      <div class="cf-section" id="sp-section-laic">
-        <button type="button" class="cf-section-head" data-target="sp-laic" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Liquid Active IC (LAIC) <span class="cf-section-subtitle">&mdash; liquid universe + 50%+ ROR + ~85% backtest WR (~80% live target)</span>
-          </span>
-          <span class="cf-section-badge" id="sp-laic-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-laic" hidden>
-          <div class="cf-list" id="sp-list-laic"></div>
-        </div>
-      </div>
-
-      <!-- ====== TIER 3: UIC — Universal 95% + 50% ROR + frequent (sacrifice liquid) ====== -->
-      <div class="cf-section" id="sp-section-uic">
-        <button type="button" class="cf-section-head" data-target="sp-uic" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Universal IC (UIC) <span class="cf-section-subtitle">&mdash; mid-cap universe + 95%+ WR + 50%+ ROR (sacrifice liquidity)</span>
-          </span>
-          <span class="cf-section-badge" id="sp-uic-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-uic" hidden>
-          <div class="cf-list" id="sp-list-uic"></div>
-        </div>
-      </div>
-
-      <!-- ====== TIER 4: RUIC — Liquid + 95% + 50% (sacrifice frequency) ====== -->
-      <div class="cf-section" id="sp-section-ruic">
-        <button type="button" class="cf-section-head" data-target="sp-ruic" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Robust UIC (RUIC) <span class="cf-section-subtitle">&mdash; liquid + 95%+ WR + 50%+ ROR, full 6-layer defense (rare)</span>
-          </span>
-          <span class="cf-section-badge" id="sp-ruic-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-ruic" hidden>
-          <div class="cf-list" id="sp-list-ruic"></div>
-        </div>
-      </div>
-
-      <!-- ====== LEGACY: ATOMIC IRON CONDOR (regime-gated, path-strict, original) ====== -->
-      <div class="cf-section" id="sp-section-ic">
-        <button type="button" class="cf-section-head" data-target="sp-ic" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Atomic Iron Condor (AIC) <span class="cf-section-subtitle">&mdash; legacy regime-gated path-strict variant</span>
-          </span>
-          <span class="cf-section-badge" id="sp-ic-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-ic" hidden>
-          <div class="cf-list" id="sp-list-ic"></div>
-        </div>
-      </div>
-
-      <!-- ====== TIGHT TIER (vol-adaptive, sub-3% buffer) ====== -->
-      <div class="cf-section" id="sp-section-tight-pin">
-        <button type="button" class="cf-section-head" data-target="sp-tight-pin" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Tight Pinpoint <span class="cf-section-subtitle">&mdash; both-sides eligible, sub-3% buffer iron-condor at 95%+ OOS</span>
-          </span>
-          <span class="cf-section-badge" id="sp-tight-pin-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-tight-pin" hidden>
-          <div class="cf-list" id="sp-list-tight-pin"></div>
-        </div>
-      </div>
-
-      <div class="cf-section" id="sp-section-tight-puts">
-        <button type="button" class="cf-section-head" data-target="sp-tight-puts" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Tight put credit spreads <span class="cf-section-subtitle">&mdash; sub-3% buffer, vol-adaptive, 2-5 day expiry</span>
-          </span>
-          <span class="cf-section-badge" id="sp-tight-puts-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-tight-puts" hidden>
-          <div class="cf-list" id="sp-list-tight-puts"></div>
-        </div>
-      </div>
-
-      <div class="cf-section" id="sp-section-tight-calls">
-        <button type="button" class="cf-section-head" data-target="sp-tight-calls" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Tight call credit spreads <span class="cf-section-subtitle">&mdash; sub-3% buffer, vol-adaptive, 2-5 day expiry</span>
-          </span>
-          <span class="cf-section-badge" id="sp-tight-calls-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-tight-calls" hidden>
-          <div class="cf-list" id="sp-list-tight-calls"></div>
-        </div>
-      </div>
-
-      <!-- ====== CORE TIER (static conformal, sub-5% buffer) ====== -->
-      <div class="cf-section" id="sp-section-pin">
-        <button type="button" class="cf-section-head" data-target="sp-pin" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Core Pinpoint <span class="cf-section-subtitle">&mdash; both-sides eligible, sub-5% buffer iron-condor</span>
-          </span>
-          <span class="cf-section-badge" id="sp-pin-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-pin" hidden>
-          <div class="cf-list" id="sp-list-pin"></div>
-        </div>
-      </div>
-
-      <div class="cf-section" id="sp-section-puts">
-        <button type="button" class="cf-section-head" data-target="sp-puts" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Core put credit spreads <span class="cf-section-subtitle">&mdash; sub-5% buffer, static conformal, 5-21 day expiry</span>
-          </span>
-          <span class="cf-section-badge" id="sp-puts-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-puts" hidden>
-          <div class="cf-list" id="sp-list-puts"></div>
-        </div>
-      </div>
-
-      <div class="cf-section" id="sp-section-calls">
-        <button type="button" class="cf-section-head" data-target="sp-calls" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            Core call credit spreads <span class="cf-section-subtitle">&mdash; sub-5% buffer, static conformal, 5-21 day expiry</span>
-          </span>
-          <span class="cf-section-badge" id="sp-calls-badge">&mdash;</span>
-        </button>
-        <div class="cf-section-body" data-body="sp-calls" hidden>
-          <div class="cf-list" id="sp-list-calls"></div>
-        </div>
-      </div>
-
-      <!-- Method blurb -->
-      <div class="cf-section" id="sp-section-method">
-        <button type="button" class="cf-section-head" data-target="sp-method" aria-expanded="false">
-          <span class="cf-section-arrow" aria-hidden="true">&#9654;</span>
-          <span class="cf-section-title">
-            How Stillpoint works <span class="cf-section-subtitle">&mdash; the proprietary novel method</span>
-          </span>
-        </button>
-        <div class="cf-section-body" data-body="sp-method" hidden>
-          <div class="cf-method">
-            <h3>1. Stillness regime gate (proprietary, conjunctive)</h3>
-            <p>
-              At time <code>t</code>, the stock is <em>in regime</em> iff every
-              one of these causal features clears its threshold:
-            </p>
-            <ul>
-              <li><strong>Absolute calm:</strong> <code>vol<sub>20</sub> &lt; 40%</code> (annualized stdev of log returns).</li>
-              <li><strong>Vol compression:</strong> <code>vol<sub>5</sub> / vol<sub>20</sub> &lt; 1.05</code> &mdash; recent vol at or below trailing vol.</li>
-              <li><strong>Tight range:</strong> 20-day high/low spread <code>&lt; 15%</code> of spot.</li>
-              <li><strong>Trend-flat:</strong> <code>|close / SMA<sub>20</sub> &minus; 1| &lt; 4%</code>.</li>
-              <li><strong>Momentum-neutral:</strong> <code>RSI<sub>14</sub> &isin; [25, 75]</code>.</li>
-              <li><strong>No surprise:</strong> <code>|5d return| &lt; 8%</code>.</li>
-            </ul>
-            <p>
-              Conditioned on this regime, the empirical distribution of next
-              <code>h</code>-day path moves (for <code>h &isin; {5, 7, 10, 14, 21}</code>)
-              has a 97th-percentile materially smaller than the unconditional
-              distribution. That is the entire edge.
-            </p>
-
-            <h3>2. Two strike-setting methods</h3>
-            <p><strong>Core tier (static conformal)</strong> &mdash; for each (ticker, side, horizon &isin; {5,7,10,14,21}):</p>
-            <p style="text-align:center"><code>b&#770;<sub>core</sub> = quantile<sub>0.97</sub>(b&lowast; on training) + 0.5%</code></p>
-            <p>
-              By the order-statistic interpretation, this targets ~97% in-sample
-              coverage. Capped at 5% buffer.
-            </p>
-            <p><strong>Tight tier (vol-adaptive conformal, novel)</strong> &mdash; for each (ticker, side, horizon &isin; {2,3,5}):</p>
-            <p style="text-align:center"><code>b&#770;<sub>tight</sub> = z<sub>0.95</sub> &times; &sigma;<sub>today</sub> &times; &radic;(h/252) + 0.5%</code></p>
-            <p>
-              where <code>z = b&lowast; / (&sigma; &times; &radic;(h/252))</code>
-              is the path buffer normalized by an instantaneous vol estimate
-              (<code>vol<sub>20</sub></code>) at each historical day. The
-              quantile is taken on these normalized values, then re-scaled by
-              <em>today's</em> &sigma; at publish time. When current vol is below
-              regime-historical levels, this collapses the buffer to a fraction
-              of the static-quantile floor &mdash; producing strikes
-              <strong>as tight as 0.86% from spot</strong> on 2-day expiries
-              while preserving 95%+ accuracy. Capped at 3% buffer; uses a
-              stricter "tight" gate (<code>vol<sub>20</sub> &lt; 30%</code>,
-              compression &lt; 0.95, range &lt; 10%, flat &lt; 2.5%, RSI in
-              [35, 65], |5d ret| &lt; 5%).
-            </p>
-
-            <h3>3. Walk-forward fold validation (purged)</h3>
-            <ul>
-              <li>Test years 2020-2026; one annual fold each.</li>
-              <li>Training set: <em>only</em> in-regime days whose forward
-                  window <code>(t, t+h]</code> closes strictly before Jan 1 of
-                  the test year &mdash; purged gap, no overlap.</li>
-              <li>Test set: in-regime days within the calendar year.</li>
-              <li>Win iff <code>b&lowast;(t,h) &le; b&#770;</code>.</li>
-            </ul>
-
-            <h3>4. Eligibility (fail-closed, both tiers)</h3>
-            <ul>
-              <li>Pooled OOS win rate <strong>&ge; 95%</strong>.</li>
-              <li>Every individual fold &ge; 85% win rate.</li>
-              <li>&ge; 4 distinct fold years tested, &ge; 40 pooled tests.</li>
-              <li>Final live buffer <code>b&#770;</code> &le; 5% (core) / 3% (tight).</li>
-              <li>Today's features must satisfy the relevant regime gate &mdash; we
-                  publish only when the live state matches the conditional
-                  distribution we trained on.</li>
-            </ul>
-
-            <h3>5. Pinpoint &mdash; tight iron-condor</h3>
-            <p>
-              When BOTH sides clear all gates simultaneously, the resulting
-              short-put + short-call combination forms a tight
-              <strong>iron-condor-equivalent pin trade</strong>: spot is
-              expected to "pin" within a narrow band through expiry. Both
-              sides each carry their own &ge;95% historical win rate; the
-              combined credit can offset two-way risk.
-            </p>
-
-            <h3>6. Atomic Iron Condor &mdash; 50%+ ROR target (proprietary novel)</h3>
-            <p>
-              The two single-side tiers max out at ~15% per-trade ROR
-              because credit-spread math constrains it: short-strike
-              delta is essentially <code>1 &minus; WR</code>, so 95% WR
-              implies ~5% delta which means thin credit. <strong>Iron
-              condors break this constraint by stacking credits</strong>:
-              put-breach and call-breach are mutually exclusive at expiry,
-              so combined credit is <em>both</em> legs while max-loss is
-              still bounded by one width minus combined credit. Per-leg
-              ROR of 20% becomes combined ROR of 50%+.
-            </p>
-            <p>
-              Joint walk-forward validation: a fold-day counts as a win
-              <strong>only</strong> if BOTH the put-side path-min stays
-              above <code>K<sub>put,short</sub></code> AND the call-side
-              path-max stays below <code>K<sub>call,short</sub></code>.
-              Per-leg conformal at quantile <code>q &isin; {0.97, 0.975, 0.98}</code>
-              — the engine picks the smallest passing <code>q</code> per
-              ticker (tightest strikes that still validate). Spread width
-              is also swept across <code>{1%, 2%, 3%, 5%}</code> of spot
-              and the engine keeps the width that maximizes combined ROR.
-            </p>
-            <ul>
-              <li>Joint pooled OOS WR &ge; 95%, every individual fold &ge; 80%.</li>
-              <li>Combined per-trade ROR &ge; 50%.</li>
-              <li>Per-leg buffer &le; 30%; horizons in {21, 30, 42, 63, 90, 126}.</li>
-              <li>Today's stillness gate must be active.</li>
-            </ul>
-
-            <h3>7. What this does <em>not</em> guarantee</h3>
-            <p>
-              Walk-forward 95%+ OOS accuracy is empirical; future paths can
-              break the conditional bound. The regime gate is the entire
-              defense &mdash; if a stock is no longer in stillness today, we
-              do not publish. Position-size as you would any short-vol
-              strategy.
-            </p>
-          </div>
-        </div>
+      <div class="cf-footnote">
+        The nine validation losses, with dates: MKTX (Sep 2019), MA, TDG, GNRC
+        (Mar 2020 — COVID), DKS (Nov 2021), EOG (Jun 2022), GWRE call (Feb 2026,
+        +38% acquisition pop), AVGO (Jun 2026). With the optional crash wing
+        attached where affordable, the validation record becomes 8 losses /
+        99.47%, the worst trade improves from &minus;$2,218 to &minus;$1,585,
+        and TDG&rsquo;s &minus;44% COVID move flips to <strong>+$1,209</strong>.
+        Replay caveats: today&rsquo;s surviving universe, modeled fills.
       </div>
     </div>
   </section>
@@ -1149,110 +583,75 @@
   <!-- ===== METHOD ===== -->
   <section class="content-section" id="method">
     <div class="section-inner">
-      <div class="section-title">How CreditFloor works</div>
+      <div class="section-title">Method — the whole thing, no hand-waving</div>
       <div class="cf-method">
-        <h3>1. Forward path buffer &mdash; both directions</h3>
+        <h3>1. What a trade is</h3>
         <p>
-          For every historical day <code>t</code> and every horizon
-          <code>h &isin; {21, 42, 63, 126}</code> trading days we compute two
-          path statistics:
+          A vertical credit spread: sell one option at the short strike, buy one
+          at the long strike (5% of spot further out), same expiry. Maximum loss
+          is capped at the width between strikes minus the credit received, no
+          matter what the stock does. A <strong>put</strong> spread wins if the
+          stock closes at or above the short strike at expiry; a
+          <strong>call</strong> spread wins if it closes at or below.
         </p>
-        <ul>
-          <li><strong>Put side</strong> (floor, below spot): <code>b&lowast;&sub;put(t, h) = 1 &minus; min(close[t+1..t+h]) / close[t]</code> &mdash; how far <em>below</em> the entry price the stock ever traveled.</li>
-          <li><strong>Call side</strong> (ceiling, above spot): <code>b&lowast;&sub;call(t, h) = max(close[t+1..t+h]) / close[t] &minus; 1</code> &mdash; how far <em>above</em> the entry price it ever traveled.</li>
-        </ul>
+        <h3>2. Certification — which stocks are even considered</h3>
         <p>
-          A put-credit spread with short strike <code>K = close[t] &times; (1 &minus; b)</code>
-          is safe iff <code>b &ge; b&lowast;&sub;put</code>; a call-credit spread with
-          short strike <code>K = close[t] &times; (1 + b)</code> is safe iff
-          <code>b &ge; b&lowast;&sub;call</code>. Both are strictly tighter than
-          "close inside the strike at expiry" &mdash; a passing signal also
-          covers American-style early-exercise risk.
+          Per stock, direction, and duration (1 week to 1 year), walk-forward
+          calendar-year folds <code>2006&hellip;2026</code> with purged gaps: the certified
+          buffer is the worst move ever seen in training plus 1%, and the combo
+          is certified only if every held-out test year stayed inside it, with
+          &ge;50 pooled out-of-sample tests. Certification is a stability
+          filter, <strong>not</strong> a forward win-rate claim.
         </p>
-
-        <h3>2. Walk-forward conformal certification</h3>
+        <h3>3. The published strike (Sigma-Clear)</h3>
         <p>
-          For each fold year <code>Y &isin; {2006&hellip;2026}</code> we hold
-          that calendar year out as test. Training uses only samples whose
-          forward window <em>closed</em> before Jan 1 of year <code>Y</code>
-          (a purged gap equal to the horizon &mdash; no overlap with test
-          dates). The certified conformal buffer is
-          <code>b̂ = max(b&lowast; on train) + 1%</code> &mdash; the largest
-          buffer ever needed in training, plus a flat safety margin. A
-          combo is certified only when every fold's test year stayed inside
-          it. Certification selects conformally-stable names; it is
-          <strong>not</strong> the published strike and not a forward
-          win-rate claim.
+          Published buffer = <code>2.5&sigma;&radic;h + 1%</code> (60-day realized vol),
+          required to clear <strong>&ge;80% of the worst move in the stock&rsquo;s
+          entire listed history</strong> — decades, not just recent years — capped
+          at 25% (&le;1 month) / 45% (&ge;2 months). The expiry is snapped
+          <em>down</em> to the latest standard weekly/monthly expiry the certified
+          window covers. The underlying must have listed options, &ge;10 years of
+          history, and a fresh price series. Finally the spread must still pay a
+          conservative net credit &ge; $0.05/share after slippage and commissions —
+          if the market won&rsquo;t pay for the distance, nothing is published.
         </p>
-
-        <h3>2b. The v3 Sigma-Clear published strike</h3>
+        <h3>4. The crash wing (optional, listed per trade)</h3>
         <p>
-          The published buffer is <code>b = 2.5&sigma;&radic;h + 1%</code>
-          (&sigma; = 60-day realized daily vol), required to clear
-          <strong>&ge;80% of the worst h-day move in the stock&rsquo;s entire
-          listed history</strong>, capped at 25% (&le;1 month) / 45%
-          (&ge;2 months), with the expiry snapped <em>down</em> to the latest
-          standard expiry the certified window covers, a listed options
-          chain, &ge;10 years of history, a fresh series, and a conservative
-          net credit &ge; $0.05/share after commissions. This exact rule was
-          frozen on a 2008&ndash;2018 design replay (zero losses, GFC
-          included) and validated once on untouched 2019&ndash;2026 data:
-          99.4% win rate, positive P&amp;L net of all losses. Full protocol:
-          <code>strategies/credit_spread/VALIDATION.md</code>.
+          Half a unit of a long option one width past the long leg, same expiry,
+          attached only when the credit can afford it. It costs ~7% of long-run
+          P&amp;L and converts crash-sized breaches into profits: in the replay,
+          the deepest validation loss (TDG, &minus;44% in March 2020) flips from
+          &minus;$2,218 to +$1,209.
         </p>
-
-        <h3>3. Regime gate (proprietary, symmetric)</h3>
+        <h3>5. How it was validated — and what we tried that failed</h3>
         <p>
-          We run each ticker twice on each side: unrestricted, and restricted
-          to a side-specific regime.
+          The validation instrument is a point-in-time daily replay of the live
+          protocol (as-of-date eligibility, publish, resolve at the snapped
+          expiry close), verified to reproduce the actual live log exactly. The
+          rule set was frozen on 2008&ndash;2018 and run once on untouched
+          2019&ndash;2026. Things we tested that do <em>not</em> work, with
+          receipts in the repository: claiming 100% from fold backtests (the
+          legacy engine&rsquo;s &ldquo;100%&rdquo; replayed at 99.25%), stop-losses
+          (win rate falls — every stop near the strike is itself a realized
+          loss), GTC take-profits (gives up 77% of P&amp;L to rescue 2 losses),
+          GTC resting entries at richer credit (pure adverse selection: all 9
+          losers fill, most winners don&rsquo;t, total P&amp;L goes negative),
+          and liquidity filters (the losers that survive a $1B/day filter are
+          Mastercard and Broadcom). A strategy that is simultaneously
+          &ldquo;100% safe against its own full history&rdquo; and
+          &ldquo;profitable under conservative fills&rdquo; selects an empty
+          set — measured across 18 years &times; 960 optionable names &times; 8
+          durations.
         </p>
-        <ul>
-          <li><strong>Put regime</strong> (uptrend): <code>close &ge; SMA<sub>200</sub></code> AND 252-day drawdown &le; 20%.</li>
-          <li><strong>Call regime</strong> (below-trend, no post-bottom rally): <code>close &le; SMA<sub>200</sub></code> AND &le; 20% rally off the 252-day low.</li>
-        </ul>
-        <p>
-          The regime-gated variant is only deployable when today&rsquo;s features
-          also satisfy the gate. Per ticker we keep whichever variant produces
-          a <em>smaller</em> certified buffer &mdash; <em>never</em> the one
-          with a better win rate, because both must already be fold-clean.
-        </p>
-
-        <h3>4. Certification &mdash; fail-closed</h3>
-        <p>
-          A (ticker, horizon) combo is certified only if <strong>every</strong>
-          walk-forward fold is clean at the certified buffer with &ge;1 test
-          sample, at least 50 pooled OOS tests, and the certified buffer is
-          &le;25%. If a single fold sample failed, the combo is rejected.
-          Certification is necessary but not sufficient: the v3 publication
-          gates above decide what is actually published, and the honest
-          forward expectation comes from the point-in-time replay, not from
-          the fold table.
-        </p>
-
-        <h3>5. Leakage controls</h3>
-        <ul>
-          <li>Features at <code>t</code> use only <code>close[0..t]</code>; RSI, SMA, volatility, drawdown, momentum all causal.</li>
-          <li>Targets use only <code>(t, t+h]</code>; never mixed into features.</li>
-          <li>Training samples are purged to exclude any forward window overlapping the test year.</li>
-          <li>Safety margin (1%) and buffer cap (25%) are fixed constants, never tuned on test data.</li>
-          <li>The only per-ticker choice (plain vs regime variant) is made on buffer size, not on test-fold win rate.</li>
-          <li>Warmup window of 252 days dropped per ticker before any feature is consumed.</li>
-        </ul>
-
         <h3>6. What this does <em>not</em> guarantee</h3>
         <p>
-          The replay-validated 99.4% is an estimate, not a floor. The
-          residual ~0.6% of trades that lose are concentrated in exactly the
-          events no price-history rule can rule out in advance: systemic
-          crashes (March 2020), M&amp;A pops, earnings collapses. We measured
-          this three ways &mdash; the live scoreboard, a 2021&ndash;2026
-          replay of the legacy engine (99.25%), and the deep 2008&ndash;2026
-          replay &mdash; and the repository documents why a strategy that is
-          simultaneously &ldquo;100% safe against its own full history&rdquo;
-          and &ldquo;profitable under conservative fills&rdquo; selects an
-          empty set. Defined-risk spreads cap each loss at width minus
-          credit. Position-size accordingly, trade as a portfolio, and assume
-          future drawdowns can exceed the worst historical one.
+          The replay-validated 99.4% is an estimate, not a floor. The residual
+          ~0.6% of trades lose on exactly the events no price-history rule can
+          rule out in advance: systemic crashes, M&amp;A pops, earnings
+          collapses. Defined-risk spreads cap each loss at width minus credit;
+          the crash wing makes the deepest of those convex. Position-size to
+          survive the worst trade, trade it as a portfolio, and assume future
+          drawdowns can exceed historical ones.
         </p>
       </div>
     </div>
@@ -1263,32 +662,26 @@
     <div class="section-inner">
       <div class="section-title">Disclosures</div>
       <p class="section-note">
-        This page is a quantitative research artifact, not financial advice.
-        Past performance, including the walk-forward out-of-sample results
-        shown here, does not guarantee future results. Options trading
-        involves substantial risk, including the possibility of total loss
-        of premium collected and losses beyond the premium if the spread is
-        breached. The short-strike prices published are derived from the
-        empirical worst historical drawdown plus a fixed safety margin;
-        future drawdowns can exceed anything observed in training or
-        validation. Consult a licensed financial advisor before trading.
+        This page is research output, not investment advice, and not a
+        solicitation. Options involve substantial risk and are not suitable for
+        all investors. Estimated credits, losses, and returns are model outputs
+        from conservative assumptions, not quotes; real fills will differ.
+        Backtest and replay results are hypothetical, computed on today&rsquo;s
+        surviving universe, and do not guarantee future results. The live log
+        is append-only and includes every signal ever published on this page,
+        including all losses. Past performance does not predict future results.
+        Do your own research.
       </p>
     </div>
   </section>
 
+  <!-- ===== FOOTER ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-col">
-        <span class="footer-heading">Legal</span>
-        <a href="/terms.html" class="footer-link">Terms of Service</a>
-        <a href="/privacy.html" class="footer-link">Privacy Policy</a>
-        <a href="/disclaimer.html" class="footer-link">Disclaimer</a>
-      </div>
-      <div class="footer-col">
-        <span class="footer-heading">Navigate</span>
-        <a href="#signals" class="footer-link">Today&rsquo;s Signals</a>
+        <a href="#trades" class="footer-link">Today&rsquo;s Trades</a>
+        <a href="#history" class="footer-link">History</a>
         <a href="#method" class="footer-link">Method</a>
-        <a href="#validation" class="footer-link">Validation</a>
         <a href="#disclosures" class="footer-link">Disclosures</a>
         <a href="/" class="footer-link">Main Site</a>
         <a href="/max/" class="footer-link">Max Strategy</a>
@@ -1296,7 +689,7 @@
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot" style="background:var(--orange)"></span>CreditFloor</span>
-        <span class="footer-text">Walk-forward conformal credit-spread engine. Updated once daily after market close, New York time.</span>
+        <span class="footer-text">v3 &ldquo;Sigma-Clear&rdquo; — replay-validated credit-spread engine. Updated once daily after market close, New York time.</span>
         <span class="footer-text footnote-text">Past performance does not predict future results.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>
