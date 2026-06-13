@@ -144,6 +144,41 @@ def run_exit_sim(T: dict, series: dict, trigger_g: float | None) -> tuple[np.nda
     return pnl, stopped
 
 
+def run_tp_sim(T: dict, series: dict, tp_frac: float) -> tuple[np.ndarray, np.ndarray]:
+    """GTC buy-to-close limit at tp_frac x entry credit. The resting
+    order fills when the model mid trades through the limit by half the
+    bid-ask; otherwise the trade rides to expiry."""
+    from pricing import COMMISSION_PER_SHARE
+    n = len(T["ticker"])
+    pnl = np.zeros(n)
+    tp_filled = np.zeros(n, bool)
+    for i in range(n):
+        ds, ps = series[T["ticker"][i]]
+        d0 = np.datetime64(T["date"][i], "D")
+        de = np.datetime64(T["expiry"][i], "D")
+        j0 = int(np.searchsorted(ds, d0))
+        je = int(np.searchsorted(ds, de))
+        side = T["side"][i]
+        b, width = float(T["b"][i]), float(T["width"][i])
+        Ks = T["spot"][i] * (1 - b) if side == "put" else T["spot"][i] * (1 + b)
+        Kl = Ks - width if side == "put" else Ks + width
+        credit = float(T["net"][i]) + COMMISSION_PER_SHARE  # gross fill credit
+        thr = tp_frac * credit
+        for j in range(j0 + 1, min(je, len(ps) - 1) + 1):
+            Trem = max(int((de - ds[j]).astype(int)), 0) / 365.0
+            v = spread_value(side, ps[j], Ks, Kl, Trem, float(T["sigma"][i]) * 1.3)
+            if v + max(0.05, 0.10 * v) / 2.0 <= thr:
+                pnl[i] = (credit - thr - 2 * COMMISSION_PER_SHARE) * 100.0
+                tp_filled[i] = True
+                break
+        if not tp_filled[i]:
+            S_T = float(T["close_exp"][i])
+            intr = (min(max(Ks - S_T, 0), width) if side == "put"
+                    else min(max(S_T - Ks, 0), width))
+            pnl[i] = (credit - COMMISSION_PER_SHARE - intr) * 100.0
+    return pnl, tp_filled
+
+
 def adv_map(tickers: list[str]) -> dict[str, float]:
     """90-day average daily dollar volume (today's; liquidity proxy)."""
     import yfinance as yf
@@ -182,6 +217,15 @@ def main() -> int:
               f"(win {100 * float((pnl[val] >= 0).mean()):.2f}%) "
               f"pnl ${pnl[val].sum():.0f} worst ${pnl.min():.0f} "
               f"whipsaws {int(whip.sum())} (${pnl[whip].sum():.0f})")
+
+    for f in (0.50, 0.25):
+        pnl, tp = run_tp_sim(T, series, f)
+        rescued = (pnl0 < 0) & (pnl >= 0)
+        print(f"GTC TP @{f:.0%} credit: val losing "
+              f"{int((pnl[val] < 0).sum())}/{int(val.sum())} "
+              f"(win {100 * float((pnl[val] >= 0).mean()):.2f}%) "
+              f"pnl ${pnl[val].sum():.0f} fills {int(tp[val].sum())} "
+              f"rescued {int((rescued & val).sum())} worst ${pnl.min():.0f}")
 
     adv = adv_map(uniq)
     adv_arr = np.array([adv.get(t, 0.0) for t in T["ticker"]])

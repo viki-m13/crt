@@ -209,6 +209,23 @@ thinner tail): a legitimate *risk-sizing* overlay, not a win-rate one.
 Gap events (GWRE's +38% M&A pop) move straight through any close-based
 trigger.
 
+**GTC take-profit buybacks** (resting buy-to-close limit at a fraction
+of the entry credit, filled when the model mid trades through the limit
+by half the bid-ask): at 50% of credit the order fills on 1,501 of
+1,508 validation trades and rescues just **2 of the 9 losses**
+(99.40% → 99.54%) while **destroying 77% of the P&L**
+(+$18,174 → +$4,164) — every thin far-OTM credit is halved and pays a
+second round of commissions, while the actual losses (immediate
+adverse moves: MA/TDG Mar-2020, AVGO, GWRE) never decay through the
+take-profit zone first. At 25% of credit: zero rescues, P&L +$10,731.
+Worst trade unchanged (−$2,218) in both. GTC *stop* orders are the
+early-exit rows above with worse real-world fills (options stops
+trigger off stressed wide quotes and fill at the ask; gaps open beyond
+the stop). GTC *entry* orders (resting sell-to-open at a richer
+credit) are adverse selection by construction: they fill exactly when
+the spread richens — the stock moving toward the strike or vol
+exploding — so they concentrate fills in the eventual losers.
+
 **Liquidity filter** (90-day average daily dollar volume): shrinks the
 book faster than it removes losses, and the loss *rate* worsens at the
 strictest cut:
