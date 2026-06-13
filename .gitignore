@@ -46,3 +46,9 @@ experiments/monthly_dca/cache/v2/sp500_pit/augmented/panel_cross_section_v3.parq
 
 # Python virtualenv (local research env)
 .venv/
+
+# CreditFloor v3 full-history price panel (rebuilt from yfinance every
+# scan; ~1 GB of JSON) and replay row tables (regenerable via replay.py).
+strategies/credit_spread/cache_full/
+strategies/credit_spread/results/replay_rows*.csv.gz
+strategies/credit_spread/results/breadth_full.json

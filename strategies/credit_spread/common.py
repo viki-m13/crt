@@ -14,7 +14,11 @@ from typing import Iterable
 import numpy as np
 
 
-TICKERS_DIR = os.path.join(
+# Price-series directory. Default: the main site's ticker JSONs
+# (2015+, append-maintained). Override with CS_DATA_DIR to run the
+# engine/replay on an alternate panel (e.g. the full-history cache
+# written by fetch_full_history.py for deep replay validation).
+TICKERS_DIR = os.environ.get("CS_DATA_DIR") or os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "docs",
     "data",
@@ -22,11 +26,13 @@ TICKERS_DIR = os.path.join(
 )
 
 # Horizons in trading days. 7 ~ 1 week, 10 ~ bi-weekly, 14 ~ 2 weeks,
-# 21 ~ 1 month, 42 ~ 2 months, 63 ~ 3 months, 126 ~ 6 months. The short
-# end lets higher-vol names (AAPL, NVDA, DIS, BA, etc.) qualify — in
-# shorter windows their worst historical move is much smaller than in
-# 21d+ windows, so they can often fit inside the 25% buffer cap.
-HORIZONS = [7, 10, 14, 21, 42, 63, 126]
+# 21 ~ 1 month, 42 ~ 2 months, 63 ~ 3 months, 126 ~ 6 months, 252 ~ 1
+# year. The short end lets higher-vol names (AAPL, NVDA, DIS, BA, etc.)
+# qualify — in shorter windows their worst historical move is much
+# smaller than in 21d+ windows, so they can often fit inside the 25%
+# buffer cap. Long horizons rarely clear the v3 publication gates but
+# are evaluated so any duration can qualify when conditions allow.
+HORIZONS = [7, 10, 14, 21, 42, 63, 126, 252]
 
 # Minimum training samples per (ticker, horizon) before a fold is usable.
 # Keeps us from "learning" a 100% buffer on a handful of rows.
@@ -46,8 +52,12 @@ SAFETY_EPS = 0.01
 
 # Walk-forward fold boundaries (start of test year, UTC). Training is
 # everything strictly before; testing is the year. We also enforce a
-# purge gap equal to the horizon so train windows cannot overlap test dates.
-FOLD_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026]
+# purge gap equal to the horizon so train windows cannot overlap test
+# dates. Folds run from 2006 (the engine runs on the full-history panel
+# and per-ticker MIN_TRAIN_SAMPLES auto-skips folds a young ticker
+# can't support); this matches the deep-replay validation configuration
+# exactly (see VALIDATION.md).
+FOLD_YEARS = list(range(2006, 2027))
 
 # Warmup: drop the first 252 days of each ticker to let long SMAs /
 # features stabilize.
@@ -90,13 +100,14 @@ import functools
 @functools.lru_cache(maxsize=1)
 def _nyse_valid_days_big():
     """Cache a big window of NYSE trading days once per process (covers
-    2014-01-01 through 2028-12-31, ~15 years). Individual call sites then
-    filter in-memory instead of rebuilding holidays on every call.
+    1980-01-01 through 2028-12-31 so deep-history replays resolve
+    correct expiries). Individual call sites then filter in-memory
+    instead of rebuilding holidays on every call.
     """
     import pandas as pd
     import pandas_market_calendars as mcal
     nyse = mcal.get_calendar("NYSE")
-    sessions = nyse.valid_days(start_date="2014-01-01", end_date="2028-12-31")
+    sessions = nyse.valid_days(start_date="1980-01-01", end_date="2028-12-31")
     # Strip tz → naive Timestamps (cheaper comparisons downstream)
     return pd.DatetimeIndex([pd.Timestamp(s.tz_localize(None) if s.tzinfo else s)
                              for s in sessions])
@@ -187,6 +198,103 @@ def actual_options_expiry(
     exp_naive = pd.Timestamp(exp)
     cal_days = (exp_naive.normalize() - d.normalize()).days
     return exp_naive.strftime("%Y-%m-%d"), kind, int(cal_days)
+
+
+@functools.lru_cache(maxsize=4096)
+def covered_options_expiry(
+    last_trading_day: str | np.datetime64,
+    horizon_sessions: int,
+) -> tuple[str, str, int, int] | None:
+    """Snap a session-count horizon DOWN to the latest STANDARD options
+    expiry that the certified window still covers.
+
+    The legacy ``actual_options_expiry`` snapped *up* (first expiry
+    on-or-after the session-projected date), which meant the engine
+    certified an h-session window but sold an expiry up to ~18 sessions
+    further out — e.g. an h=21 signal published 2020-01-23 was assigned
+    the 2020-03-20 expiry and rode straight into the COVID crash that
+    its 21-session validation never covered. Snapping down closes that
+    hole: the expiry returned here is always at most ``horizon_sessions``
+    NYSE sessions after the publish date, so the conformal buffer's
+    guarantee window is a superset of the actual trade window.
+
+    Rules:
+      - Horizons <= 20 sessions → latest weekly (Friday) expiry within
+        the window (publish, target].
+      - Horizons >= 21 sessions → latest monthly (3rd-Friday) expiry
+        within the window; if a monthly doesn't fit, fall back to the
+        latest weekly Friday.
+      - Good-Friday style holidays: expiry rolls to the trading day
+        before the canonical Friday (matching exchange practice).
+
+    Returns (expiry_iso, kind, calendar_days_to_expiry,
+    sessions_to_expiry), or None if no standard expiry exists at all in
+    the window (can only happen for very short horizons over exchange
+    holidays — callers should skip the rung).
+    """
+    import pandas as pd
+
+    sessions = _nyse_valid_days_big()
+    d = pd.Timestamp(str(last_trading_day)[:10])
+    idx = int(sessions.searchsorted(d, side="left"))
+    tgt_idx = min(idx + horizon_sessions, len(sessions) - 1)
+
+    def _friday_roll_slot(ts: pd.Timestamp) -> pd.Timestamp | None:
+        """If ts stands in for a holiday Friday (ts is the last session
+        strictly before a non-trading calendar Friday in the same week),
+        return that Friday; else None."""
+        nxt = ts + pd.Timedelta(days=1)
+        while nxt.weekday() != 4:
+            nxt += pd.Timedelta(days=1)
+        if (nxt - ts).days > 6:
+            return None
+        sidx = sessions.searchsorted(nxt)
+        is_trading = sidx < len(sessions) and sessions[sidx] == nxt
+        if is_trading:
+            return None
+        prev_sess = sessions[max(sessions.searchsorted(nxt) - 1, 0)]
+        return nxt if prev_sess == ts else None
+
+    def _is_weekly_slot(ts: pd.Timestamp) -> bool:
+        # Regular Friday, or the session standing in for a holiday Friday
+        # (e.g. Maundy Thursday before Good Friday).
+        return ts.weekday() == 4 or _friday_roll_slot(ts) is not None
+
+    def _is_third_friday_slot(ts: pd.Timestamp) -> bool:
+        # ts is a trading day; it is a "monthly expiry" if it's the 3rd
+        # Friday of its month, OR the trading day standing in for a 3rd
+        # Friday that is a holiday (Good Friday case).
+        if ts.weekday() == 4 and 15 <= ts.day <= 21:
+            return True
+        rolled = _friday_roll_slot(ts)
+        return rolled is not None and 15 <= rolled.day <= 21 and rolled.month == ts.month
+
+    best = None
+    for j in range(tgt_idx, idx, -1):  # latest first, strictly after publish day
+        s = sessions[j]
+        if horizon_sessions <= 20:
+            if _is_weekly_slot(s):
+                best = (j, s, "weekly")
+                break
+        else:
+            if _is_third_friday_slot(s):
+                best = (j, s, "monthly")
+                break
+    if best is None and horizon_sessions >= 21:
+        for j in range(tgt_idx, idx, -1):
+            s = sessions[j]
+            if s.weekday() == 4:
+                best = (j, s, "weekly")
+                break
+    if best is None:
+        return None
+    j, exp, kind = best
+    exp_naive = pd.Timestamp(exp)
+    cal_days = (exp_naive.normalize() - d.normalize()).days
+    sessions_to_exp = j - idx
+    if sessions_to_exp <= 0 or cal_days <= 0:
+        return None
+    return exp_naive.strftime("%Y-%m-%d"), kind, int(cal_days), int(sessions_to_exp)
 
 
 def list_tickers() -> list[str]:

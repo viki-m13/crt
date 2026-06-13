@@ -68,6 +68,16 @@ NET_BID_ASK_FRAC  = 0.10      # $/share bid-ask fraction of mid above floor
 # get the credit the model is suggesting in any reasonable market).
 MIN_TRADEABLE_FILL = 0.05     # $/share
 
+# Round-trip commissions per share for a 2-leg vertical opened once and
+# left to expire (no closing cost when it expires worthless):
+# 2 legs x ~$0.66/contract.
+COMMISSION_PER_SHARE = 0.0132
+
+# Stress-pricing IV multiplier: options priced at bare realized vol
+# (no volatility risk premium at all). Real markets virtually always
+# price above this; it is a lower bound on the credit, not an estimate.
+STRESS_IV_MULT = 1.00
+
 # Quality bucket thresholds (in $/share fill credit).
 QUALITY_THIN_MAX  = 0.10
 QUALITY_MODEST_MAX = 0.30
@@ -213,12 +223,13 @@ class ProfitEstimate:
     long_price: float
     mid_credit: float        # short - long, before slippage
     credit: float            # expected limit-order fill (post slippage)
+    net_credit: float        # credit - commissions
     bid_ask_estimate: float  # net spread bid-ask, $/share
     max_loss: float          # width - credit
-    return_on_risk: float    # credit / max_loss  (per-trade)
+    return_on_risk: float    # net_credit / max_loss  (per-trade)
     annualized_ror: float    # ror * (365 / calendar_days_to_expiry)
     quality: str             # 'rich' | 'modest' | 'thin'
-    tradeable: bool          # fill >= MIN_TRADEABLE_FILL
+    tradeable: bool          # net_credit >= MIN_TRADEABLE_FILL
 
 
 def estimate_profit(
@@ -276,11 +287,12 @@ def estimate_profit(
 
     mid_credit = max(p_short - p_long, 0.0)
     fill_credit, bid_ask = expected_fill_credit(mid_credit, T)
+    net_credit = fill_credit - COMMISSION_PER_SHARE
     max_loss = max(width - fill_credit, 0.01)
-    ror = fill_credit / max_loss
+    ror = net_credit / max_loss
     ann_ror = ror * (CALENDAR_DAYS_PER_YEAR / calendar_days_to_expiry)
     quality = credit_quality(fill_credit)
-    tradeable = fill_credit >= MIN_TRADEABLE_FILL
+    tradeable = net_credit >= MIN_TRADEABLE_FILL
 
     return ProfitEstimate(
         side=side,
@@ -299,6 +311,7 @@ def estimate_profit(
         long_price=p_long,
         mid_credit=mid_credit,
         credit=fill_credit,
+        net_credit=net_credit,
         bid_ask_estimate=bid_ask,
         max_loss=max_loss,
         return_on_risk=ror,

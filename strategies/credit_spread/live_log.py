@@ -149,6 +149,8 @@ def _make_signal(publish_date: str, ticker: str, side: str, rung: dict, spot: fl
         "strike": rung["strike"],
         "buffer_pct": rung["buffer_pct"],
         "variant": rung["variant"],
+        # Engine that produced the signal ("v1" = legacy CreditFloor).
+        "engine": rung.get("engine", "v1"),
         "status": "pending",
         "resolved_at": None,
         "close_at_expiry": None,
@@ -285,6 +287,10 @@ def _summarize(log: dict) -> dict:
     put = tally([s for s in signals if s["side"] == "put"])
     call = tally([s for s in signals if s["side"] == "call"])
     overall = tally(signals)
+    by_engine = {
+        eng: tally([s for s in signals if s.get("engine", "v1") == eng])
+        for eng in sorted({s.get("engine", "v1") for s in signals})
+    }
 
     # First publish date (earliest) + most recent resolution
     first_pub = signals[0]["publish_date"] if signals else None
@@ -295,6 +301,7 @@ def _summarize(log: dict) -> dict:
         **overall,
         "put":  put,
         "call": call,
+        "by_engine": by_engine,
         "first_publish_date": first_pub,
         "last_resolved_at":   last_resolved,
     }
