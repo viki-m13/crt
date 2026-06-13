@@ -180,7 +180,53 @@ conservative fills, commissions included (full table in
   possible. The certified (never-breached) strike is published
   alongside for transparency; it is usually untradeable.
 
-## 7. Reproduction
+## 7. Early-exit and liquidity overlays (tested 2026-06-13)
+
+Two natural proposals for pushing the win rate to 100% were simulated
+on the frozen validation trade set (`exit_sim.py`):
+
+**Early exit ("sell before it goes in the money").** Rule: close the
+spread when the underlying's close crosses a trigger near the short
+strike; filled at the *next* session's close (a close can't be acted
+on before it prints), paying BS spread value at 1.5×-stressed IV plus
+15% slippage. Result on 2019–2026 (1,508 trades):
+
+| Exit rule | Losing trades | Win rate | P&L | Worst trade |
+|---|---|---|---|---|
+| Hold to expiry | 9 | 99.40% | +$18,174 | −$2,218 |
+| Exit at strike touch | **16** | 98.94% | +$16,945 | −$1,680 |
+| Exit at strike +3% | **24** | 98.41% | +$17,069 | −$1,680 |
+| Exit at strike +5% | **32** | 97.88% | +$17,001 | −$1,634 |
+
+Early exit moves the win rate **away** from 100%, not toward it. The
+mechanism is option pricing, not an execution detail: by the time spot
+reaches the short strike, buying the vertical back costs ~0.3–0.5× the
+width versus the few cents of credit collected — **every stop is a
+realized loss** — and stops also fire on trades that would have
+expired worthless (11–53 whipsaws costing $3.9k–$6.5k of P&L). What
+stops do buy is severity capping (worst trade −$2,218 → −$1,680, a
+thinner tail): a legitimate *risk-sizing* overlay, not a win-rate one.
+Gap events (GWRE's +38% M&A pop) move straight through any close-based
+trigger.
+
+**Liquidity filter** (90-day average daily dollar volume): shrinks the
+book faster than it removes losses, and the loss *rate* worsens at the
+strictest cut:
+
+| ADV filter | Validation trades | Losses | Loss rate |
+|---|---|---|---|
+| none | 1,508 | 9 | 0.60% |
+| ≥ $300M/day | 793 | 4 | 0.50% |
+| ≥ $1B/day | 246 | 2 | **0.81%** |
+
+The two losers surviving the strictest filter are **Mastercard**
+(COVID, Mar 2020) and **Broadcom** (−20% in days, Jun 2026) — among
+the most liquid stocks and options markets on earth. Liquidity buys
+better fills (it is why the optionability gate exists); it does not
+buy immunity from events. The combination (≥$300M ADV + strike-touch
+stop) lands at 98.61% with lower P&L than holding to expiry.
+
+## 8. Reproduction
 
 ```bash
 cd strategies/credit_spread
@@ -192,3 +238,4 @@ CS_DATA_DIR=$PWD/cache_full CS_FOLD_START=2006 CS_REPLAY_START=2008-01-02 \
 python3 validate_v3.py                   # design/validation/P&L tables
 python3 scan.py                          # live scan + publish
 ```
+python3 exit_sim.py                      # early-exit / liquidity overlays (§7)
