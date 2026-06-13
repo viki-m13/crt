@@ -41,6 +41,16 @@ def main() -> int:
         if rc != 0:
             print(f"fetch_full_history.py exited non-zero: {rc}", file=sys.stderr)
             return rc
+        # Fail-safe: if the fetch produced too few series (yfinance
+        # outage / rate-limiting on the runner), abort WITHOUT running
+        # the scan — better to keep yesterday's published signals than
+        # to overwrite them with output from a crippled panel.
+        n_cached = len([f for f in os.listdir(CACHE_FULL) if f.endswith(".json")]) \
+            if os.path.isdir(CACHE_FULL) else 0
+        if n_cached < 500:
+            print(f"ABORT: only {n_cached} series in {CACHE_FULL} (<500); "
+                  "keeping previous signals.", file=sys.stderr)
+            return 1
         # Optionability map: refresh weekly (listings are sticky). Age
         # comes from the embedded as_of stamp, not file mtime — CI
         # checkouts reset mtimes on every run.
