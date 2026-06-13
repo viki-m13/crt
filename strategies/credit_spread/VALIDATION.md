@@ -226,6 +226,52 @@ credit) are adverse selection by construction: they fill exactly when
 the spread richens — the stock moving toward the strike or vol
 exploding — so they concentrate fills in the eventual losers.
 
+**GTC entry at a richer credit** (resting sell-to-open at a limit above
+the publish-day fill, same strike and expiry): the cleanest adverse-
+selection measurement in the project. Because strike and expiry are
+fixed, the expiry outcome of a filled order is identical to the
+original trade's — only *which* trades fill changes. **All 9 losers
+fill at every limit level** (a spread richens precisely when the stock
+moves toward the strike or vol explodes — i.e. on its way to losing),
+while most winners never richen enough to fill:
+
+| Entry rule | Fills | Losses | Win rate | P&L |
+|---|---|---|---|---|
+| At publish (market) | 1,508 | 9 | 99.40% | +$18,174 |
+| GTC limit @ 1.25× credit | 271 | 9 | 96.68% | **−$3,140** |
+| GTC limit @ 1.50× credit | 185 | 9 | 95.14% | −$4,247 |
+| GTC limit @ 2.00× credit | 122 | 9 | 92.62% | −$4,838 |
+
+The resting order is a machine for selecting exactly the trades that
+are about to go wrong; "more credit per trade" is the market charging
+fair freight for risk that has already arrived.
+
+**Crash wing (the structure that actually helps).** Instead of trying
+to exit a loss after it starts (always pays the repriced threat), make
+deep breaches convex: buy **half a unit** of a long option one width
+past the long leg (same expiry), attached only when the net credit
+still clears the $0.05 floor after paying for it (wings priced at ask
++ commission, credited only expiry intrinsic — conservative, since
+mid-crash marks would be far higher):
+
+| Structure | Design 08–18 | Validation losses | Win rate | P&L | Worst trade |
+|---|---|---|---|---|---|
+| Plain vertical | 0 / 554 | 9 / 1,508 | 99.40% | +$18,174 | −$2,218 |
+| + conditional half-wing | **0 / 554** | **8** | **99.47%** | +$16,809 | **−$1,585** |
+
+The design-window zero-loss invariant is preserved (no new losses
+anywhere), the worst case drops 29%, and the deepest breach in the
+validation set — TDG's −44% COVID move — flips from −$2,218 to
+**+$1,209** (a 2008/2020-style systemic crash makes the wing book
+anti-fragile rather than maximally damaged). Cost: 7.5% of P&L.
+Shallow breaches (stock pinned between the strikes, e.g. MKTX, DKS)
+remain small losses — no overlay reaches 100%, for the §4 reasons.
+Published rungs now carry the wing as `crash_wing` metadata (strike,
+ratio, cost, net credit after wing) whenever it is affordable. Full
+ratio-1.0 wings or wings at the long leg (1×2 backspreads) were also
+tested and rejected: their drag floods the thin credits with new small
+losses (up to 743 of them) for little extra protection.
+
 **Liquidity filter** (90-day average daily dollar volume): shrinks the
 book faster than it removes losses, and the loss *rate* worsens at the
 strictest cut:

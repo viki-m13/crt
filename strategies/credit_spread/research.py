@@ -98,7 +98,16 @@ from common import (
     worst_buffer_path,
     worst_buffer_path_up,
 )
-from pricing import MIN_TRADEABLE_FILL, STRESS_IV_MULT, estimate_profit, realized_vol
+from pricing import (
+    IV_MULT,
+    MIN_TRADEABLE_FILL,
+    STRESS_IV_MULT,
+    bs_call,
+    bs_put,
+    estimate_profit,
+    iv_at_strike,
+    realized_vol,
+)
 
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
@@ -505,6 +514,32 @@ def _rung_dict(
         iv_mult=STRESS_IV_MULT,
     )
 
+    # Optional crash-wing overlay (VALIDATION.md §7): half a unit of a
+    # long option one width past the long leg, same expiry — attached
+    # only when the net credit still clears the tradeability floor
+    # after paying for it. Cuts the worst case ~29% and makes deep
+    # breaches convex (a COVID-size move flips to a profit) for ~7.5%
+    # of P&L; design-window zero-loss invariant preserved.
+    wing = None
+    wing_ratio = 0.5
+    k_wing = (prof.long_strike - prof.width if sr.side == "put"
+              else prof.long_strike + prof.width)
+    if k_wing > 0:
+        T_yrs = cal_days / 365.0
+        atm_iv = r.realized_vol * IV_MULT
+        iv_w = iv_at_strike(r.today_close, k_wing, T_yrs, atm_iv, sr.side)
+        mid_w = (bs_put(r.today_close, k_wing, T_yrs, iv_w) if sr.side == "put"
+                 else bs_call(r.today_close, k_wing, T_yrs, iv_w))
+        ask_w = mid_w + max(0.05, 0.10 * mid_w) / 2.0 + 0.0066
+        net_after = prof.net_credit - wing_ratio * ask_w
+        if net_after >= MIN_TRADEABLE_FILL:
+            wing = {
+                "strike": k_wing,
+                "ratio": wing_ratio,
+                "est_cost_per_share": wing_ratio * ask_w,
+                "net_credit_after_wing": net_after,
+            }
+
     spot = r.today_close
     strike = spot * (1.0 - b_pub) if sr.side == "put" else spot * (1.0 + b_pub)
     base = {
@@ -542,6 +577,7 @@ def _rung_dict(
         ],
         "profit": _profit_block(prof),
         "stress_profit": _profit_block(stress) if stress is not None else None,
+        "crash_wing": wing,
     }
     return base
 

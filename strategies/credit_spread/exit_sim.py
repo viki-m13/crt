@@ -179,6 +179,80 @@ def run_tp_sim(T: dict, series: dict, tp_frac: float) -> tuple[np.ndarray, np.nd
     return pnl, tp_filled
 
 
+def run_gtc_entry_sim(T: dict, series: dict, mult: float) -> tuple[np.ndarray, np.ndarray]:
+    """Resting GTC sell-to-open at `mult` x the publish-day fill, same
+    strike/expiry. Because strike and expiry are fixed, the expiry
+    outcome of a filled order equals the original trade's — this
+    isolates pure adverse selection in which trades fill."""
+    from pricing import COMMISSION_PER_SHARE, expected_fill_credit
+    n = len(T["ticker"])
+    pnl = np.zeros(n)
+    filled = np.zeros(n, bool)
+    for i in range(n):
+        ds, ps = series[T["ticker"][i]]
+        d0 = np.datetime64(T["date"][i], "D")
+        de = np.datetime64(T["expiry"][i], "D")
+        j0 = int(np.searchsorted(ds, d0))
+        je = int(np.searchsorted(ds, de))
+        side = T["side"][i]
+        b, width = float(T["b"][i]), float(T["width"][i])
+        Ks = T["spot"][i] * (1 - b) if side == "put" else T["spot"][i] * (1 + b)
+        Kl = Ks - width if side == "put" else Ks + width
+        limit = (float(T["net"][i]) + COMMISSION_PER_SHARE) * mult
+        for j in range(j0 + 1, min(je - 1, len(ps) - 1) + 1):
+            Trem = max(int((de - ds[j]).astype(int)), 1) / 365.0
+            mid = spread_value(side, ps[j], Ks, Kl, Trem, float(T["sigma"][i]) * 1.3)
+            fill, _ = expected_fill_credit(mid, Trem)
+            if fill >= limit:
+                S_T = float(T["close_exp"][i])
+                intr = (min(max(Ks - S_T, 0), width) if side == "put"
+                        else min(max(S_T - Ks, 0), width))
+                pnl[i] = (limit - COMMISSION_PER_SHARE - intr) * 100.0
+                filled[i] = True
+                break
+    return pnl, filled
+
+
+def run_wing_sim(T: dict, ratio: float = 0.5,
+                 min_net_after: float = 0.05) -> tuple[np.ndarray, np.ndarray]:
+    """Conditional crash wing: buy `ratio` extra long options one width
+    past the long leg (same expiry), attached only when the net credit
+    after the wing's ask still clears `min_net_after`. Wings credited
+    expiry intrinsic only (conservative)."""
+    from pricing import bs_call, bs_put, iv_at_strike
+    n = len(T["ticker"])
+    S0 = T["spot"].astype(float)
+    b = T["b"].astype(float)
+    width = T["width"].astype(float)
+    S_T = T["close_exp"].astype(float)
+    net = T["net"].astype(float)
+    sig = T["sigma"].astype(float)
+    side_put = T["side"] == "put"
+    Ks = np.where(side_put, S0 * (1 - b), S0 * (1 + b))
+    Kl = np.where(side_put, Ks - width, Ks + width)
+    intr = np.where(side_put, np.minimum(np.maximum(Ks - S_T, 0), width),
+                    np.minimum(np.maximum(S_T - Ks, 0), width))
+    cal = (T["expiry"].astype("datetime64[D]")
+           - T["date"].astype("datetime64[D]")).astype(int)
+    pnl = (net - intr) * 100.0
+    attached = np.zeros(n, bool)
+    for i in range(n):
+        Kw = Kl[i] - width[i] if side_put[i] else Kl[i] + width[i]
+        if Kw <= 0:
+            continue
+        Trem = max(int(cal[i]), 1) / 365.0
+        s = "put" if side_put[i] else "call"
+        iv = iv_at_strike(S0[i], Kw, Trem, sig[i] * 1.3, s)
+        mid_w = bs_put(S0[i], Kw, Trem, iv) if side_put[i] else bs_call(S0[i], Kw, Trem, iv)
+        ask = mid_w + max(0.05, 0.10 * mid_w) / 2.0 + 0.0066
+        if net[i] - ratio * ask < min_net_after:
+            continue
+        pay = max(Kw - S_T[i], 0.0) if side_put[i] else max(S_T[i] - Kw, 0.0)
+        pnl[i] = (net[i] - intr[i] - ratio * ask + ratio * pay) * 100.0
+        attached[i] = True
+    return pnl, attached
+
+
 def adv_map(tickers: list[str]) -> dict[str, float]:
     """90-day average daily dollar volume (today's; liquidity proxy)."""
     import yfinance as yf
@@ -226,6 +300,23 @@ def main() -> int:
               f"(win {100 * float((pnl[val] >= 0).mean()):.2f}%) "
               f"pnl ${pnl[val].sum():.0f} fills {int(tp[val].sum())} "
               f"rescued {int((rescued & val).sum())} worst ${pnl.min():.0f}")
+
+    for mult in (1.25, 1.5, 2.0):
+        pnl, f = run_gtc_entry_sim(T, series, mult)
+        fv = f & val
+        if fv.any():
+            print(f"GTC ENTRY @{mult}x credit: fills {int(fv.sum())}/{int(val.sum())} "
+                  f"losing {int((pnl[fv] < 0).sum())} "
+                  f"(win {100 * float((pnl[fv] >= 0).mean()):.2f}%) "
+                  f"pnl ${pnl[fv].sum():.0f}")
+
+    pnl, att = run_wing_sim(T)
+    des = ~val
+    print(f"CRASH HALF-WING: design losing {int((pnl[des] < 0).sum())}/{int(des.sum())} "
+          f"pnl ${pnl[des].sum():.0f} | val losing {int((pnl[val] < 0).sum())}/{int(val.sum())} "
+          f"(win {100 * float((pnl[val] >= 0).mean()):.2f}%) "
+          f"pnl ${pnl[val].sum():.0f} worst ${pnl[val].min():.0f} "
+          f"wings {int(att[val].sum())}")
 
     adv = adv_map(uniq)
     adv_arr = np.array([adv.get(t, 0.0) for t in T["ticker"]])
