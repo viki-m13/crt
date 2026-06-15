@@ -116,9 +116,61 @@ idiosyncratic 2-stock draws).
 
 **The only path to a materially higher win-rate is a genuinely orthogonal
 alpha, which requires a new data family** (PIT fundamentals / earnings
-revisions — see `SECOND_SLEEVE_SCOPE.md`), outside the price-only
-S&P-500 constraint. That is the recommended next program if the constraint
-can be relaxed.
+revisions — see `SECOND_SLEEVE_SCOPE.md`). Tested next (Finding 4).
+
+## Finding 4 — PIT-fundamentals quality sleeve: tested, fails orthogonality
+
+`build_fundamentals_pit.py` + `build_quality_sleeve_pit.py`. Built a
+gross-profitability sleeve (Novy-Marx quality = GrossProfit/Assets) from
+**SEC EDGAR XBRL facts, strictly lagged to filing date** (653k facts, 605
+S&P-500 names, 2009–2026; ~73% CIK coverage — delisted/renamed names absent
+from SEC's current ticker file). Same K=2 / inv-vol / crash-gate sleeve
+engine. This is a genuine *fundamental* driver, not a price proxy.
+
+| metric | value |
+|---|--:|
+| standalone sleeve (≥2011) | CAGR 15.9%, Sharpe 0.94, MaxDD −28.5% |
+| **corr → E2 per split** | +0.22 … **+0.44** (full +0.30) |
+| corr → E2, crash-gate OFF | +0.21 … +0.41 (full +0.27) |
+| 80/20 blend, frozen holdout 1/3/5y | 65/80/100 (vs E2 69/89/100) |
+
+It **fails the |ρ|<0.25 stability bar** (max 0.44), and removing the shared
+crash gate barely helps (0.44→0.41) — proving the correlation is **shared
+market beta, not the gate**. The blend lowers the win-rate (3y 89→80%) while
+only improving drawdown (−56%→−49%) and the worst-1y floor (0.65→0.71).
+
+**This empirically confirms (with real PIT fundamentals) the
+`SECOND_SLEEVE_SCOPE` thesis:** every *long-only* S&P-500 sleeve carries
+market beta and co-moves with the core exactly in the windows that matter.
+Decorrelation below ρ≈0.25 needs either a **market-neutral / long-short**
+construction (strips beta → real ρ≈0, but adds shorting — a different
+product) or a **non-equity asset class**. Neither fits "long-only DCA into
+S&P 500."
+
+## Final synthesis — the honest frontier
+
+Across four pre-registered levers (off-switch, staggering, price-defensive
+blend, fundamental-quality sleeve), **no within-constraint change
+materially raises the dual-benchmark win-rate** above E2's
+~77/94/99/100% (1/3/5/10y). The 1-year ceiling (~78%) is structural: a
+long-only concentrated equity book loses some 1y windows to QQQ in
+tech-melt-up years, and removing those windows requires forfeiting the
+recovery (off-switch) or diluting/over-correlating the alpha (blends).
+
+**Shippable improvement that survives every honest test:** the 15–20%
+**price-quality blend** (Finding 3) — equal win-rate, worst-1y MOIC
+0.66→0.74, drawdown −56%→−50%, Sharpe 1.09→1.15, ~45% CAGR (frozen-holdout
+validated, plateau-stable).
+
+**To exceed the ceiling requires a product decision** (not a tuning knob):
+(a) allow a market-neutral long-short orthogonal sleeve, or (b) relax the
+universe to Nasdaq-100 / a QQQ-beta core. Both change the product mandate.
+
+## Files (Finding 4)
+- `build_fundamentals_pit.py` — SEC EDGAR PIT fundamentals fetcher (filing-date lagged)
+- `build_quality_sleeve_pit.py` — gross-profitability sleeve + corr-stability + holdout blend
+- `augmented/fundamentals_pit_facts.parquet` — PIT facts (filed/end/val per tag)
+- `augmented/fundamental_quality_sleeve{.json,_returns.csv}` — sleeve outputs
 
 ## Files
 - `improve_consistency_dca.py` — dual-benchmark + frozen-holdout harness, off-switch menu

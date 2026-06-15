@@ -194,10 +194,11 @@ def main():
           f"{cov[cov.index>='2011-01-01'].mean():.0f} | "
           f"first {cov[cov>0].index.min().date()}")
 
+    T11 = pd.Timestamp('2011-01-01')
     log = run_quality_sleeve(panel, members_g, spyf, mr, dates)
     rQ = np.array([x["ret_m"] for x in log])
-    fQ = lump_metrics(rQ[[i for i, d in enumerate(dates) if d >= '2011-01-01']],
-                      [d for d in dates if d >= pd.Timestamp('2011-01-01')])
+    fQ = lump_metrics(rQ[[i for i, d in enumerate(dates) if d >= T11]],
+                      [d for d in dates if d >= T11])
     print(f"quality sleeve (>=2011): CAGR {fQ['cagr']*100:.1f}% "
           f"Sharpe {fQ['sharpe']:.2f} DD {fQ['max_dd']*100:.1f}%")
 
@@ -226,7 +227,7 @@ def main():
     for w in (0.0, 0.10, 0.15, 0.20, 0.30):
         r = (1 - w) * rE2 + w * rQ
         H = dual_dca(r, spv, qqv, d0, lo=HOLDOUT_START)
-        m11 = [i for i, d in enumerate(dates) if d >= pd.Timestamp('2011-01-01')]
+        m11 = [i for i, d in enumerate(dates) if d >= T11]
         f = lump_metrics(r[m11], [dates[i] for i in m11])
         out["blends"][f"w={w:.2f}"] = dict(full_ge2011=f, holdout=H)
         print(f"{w:>5.2f} {f['cagr']*100:8.1f}% {f['max_dd']*100:6.1f}% | "
