@@ -125,6 +125,51 @@ variant (no upside tilt).
    HF time-series foundation models it tried — Moirai, TTM — so a different
    HF model is unlikely to change this conclusion.)
 
+## Being *more* selective — where it helps and where it doesn't
+
+A natural follow-up: can we tighten the net and get closer to "never below the
+purchase price"? We tested two kinds of extra selectivity
+(`explore_selectivity.py`).
+
+**Per-name selectivity plateaus.** Concentrating from top-20 down to top-1 by
+FloorScore, or adding strict conviction gates (predicted underwater ≤ 0.38,
+predicted dip ≥ −4.5%, low vol, positive Chronos drift — which sits out ~24%
+of months), barely moves how *often* a single buy is underwater (3m `uw_frac`
+stays ~0.39–0.42) and leaves the "literally never dipped below" rate stuck near
+**10%**. Stricter gates only shallow the worst *dip* (mean maxdd −9.9% → −6.3%)
+and cost return; extreme concentration (top-1) actually *raises* 12-month tail
+risk. **You cannot select your way to "never underwater" with one stock** — any
+single name is volatile enough to spend ~40% of early days below entry.
+
+**The selectivity that works is diversification + regime timing**
+(`explore_portfolio.py`, measured at the *portfolio* level — the basket's value
+vs its own cost basis):
+
+| basket | 3m underwater | 3m ends-below | 3m worst dip | 3m mean ret |
+|---|---:|---:|---:|---:|
+| SPY buy & hold | 31.4% | 27.3% | −4.6% | +2.8% |
+| FloorScore top-10 | 32.6% | 26.9% | −4.3% | +31.8% |
+| **FloorScore top-10 + regime** | 30.8% | **24.1%** | **−3.8%** | **+38.8%** |
+
+| basket | 12m underwater | 12m ends-below | 12m worst dip | 12m "never dipped" |
+|---|---:|---:|---:|---:|
+| SPY buy & hold | 22.6% | 13.1% | −8.6% | 10.7% |
+| SPY + regime | 20.2% | 10.8% | −6.9% | 9.8% |
+| FloorScore top-10 | 23.1% | 14.8% | −7.4% | 11.1% |
+| **FloorScore top-10 + regime** | **19.9%** | **10.3%** | **−5.4%** | 9.8% |
+
+(Regime gate = only buy when SPY is above its 200-day SMA; it sits out ~20–24%
+of months — the bad ones. Full grid in `floor_portfolio_results.json`.)
+
+The equal-weight basket cuts time-underwater from ~40% (single name) to ~20%
+(12m) because idiosyncratic dips cancel, and the regime gate avoids buying into
+broad drawdowns. The result: **a FloorScore top-10 basket bought only in SPY
+uptrends matches or beats just-buying-the-index on every downside metric
+(time-underwater, ends-below, worst dip) while keeping the picker's return** —
+below its cost only ~10% of the time at 12 months, with a shallower worst dip
+than SPY. That is the honest ceiling for "rarely below the purchase price":
+diversify the selection and time the entry; don't over-concentrate.
+
 ## Today's safest buys
 
 `score_today.py` ranks the latest available asof. As of 2026-02-27 the top
@@ -141,6 +186,8 @@ python3 experiments/downside_floor/score_chronos_floor.py     # ~5 min, Chronos 
 python3 experiments/downside_floor/floor_lib.py               # ~9 min, walk-forward GBMs -> floor_scored.parquet
 python3 experiments/downside_floor/backtest_floor.py          # pooled + by-era/by-year validation
 python3 experiments/downside_floor/explore_signals.py         # signal sweep (read-only)
+python3 experiments/downside_floor/explore_selectivity.py     # how much selectivity buys you
+python3 experiments/downside_floor/explore_portfolio.py       # basket + regime-gate (the real lever)
 python3 experiments/downside_floor/score_today.py             # current safest-buys ranking
 ```
 
@@ -152,5 +199,7 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `score_chronos_floor.py` | Chronos-Bolt full-path downside forecasts |
 | `floor_lib.py` | merge + walk-forward downside GBMs → `floor_scored.parquet` |
 | `explore_signals.py` | candidate-signal sweep |
+| `explore_selectivity.py` | concentration & conviction-gate sweep (the plateau) |
+| `explore_portfolio.py` | basket + regime-gate portfolio underwater (the breakthrough) |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
