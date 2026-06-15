@@ -293,6 +293,44 @@ additive, consistent with the literature. The robust, repeatable edge is:
 **rank and weight stocks by forecast volatility, which we predict with t=126
 skill, and never stake the outcome on guessing which one rises.**
 
+## Predicted-covariance minimum-variance — exploiting predictable correlations
+
+Volatility is predictable; correlations are nearly as persistent. A predicted
+**covariance** matrix lets us solve for the long-only minimum-variance weights
+(`min_variance.py`), which exploit not just each name's vol but how names
+co-move — actively diversifying correlated risk. Each month: take a candidate
+pool of low-risk FloorScore names, estimate Sigma from 252 trailing daily
+returns with **Ledoit-Wolf shrinkage** (essential for stability), and solve
+`min w'Σw s.t. Σw = 1, 0 ≤ w ≤ cap`.
+
+**The covariance forecast is well-calibrated** — the min-var book's *predicted*
+annualized vol (10.1%) lands close to its *realized* vol (11.0%), so the matrix
+is genuinely informative, not noise.
+
+**But min-variance only helps when there is correlation structure to exploit:**
+
+| narrow pre-screened pool (N=50) | Sharpe | maxDD | | broad heterogeneous pool (N=150) | Sharpe | maxDD |
+|---|---:|---:|---|---|---:|---:|
+| equal-weight | **1.13** | −23% | | equal-weight | 1.09 | −26% |
+| inverse-vol | 1.12 | −21% | | inverse-vol | 1.09 | −24% |
+| min-variance | 1.00 | −19% | | **min-variance** | **1.12** | **−18%** |
+| min-var + vol-target | 0.97 | −15% | | min-var + vol-target | 1.10 | **−15%** |
+
+On a *narrow* pool that FloorScore has already screened to homogeneous low-vol
+names, full optimization has nothing left to diversify and loses to plain 1/N
+(the classic DeMiguel-Garlappi-Uppal result). On a *broad, heterogeneous* pool
+it wins — Sharpe 1.12 vs 1.09 and, more importantly, **max drawdown −18% vs
+−24/−26%**, because it actively cancels correlated risk. Layering the vol-target
+overlay on the broad min-var book gives the lowest-risk portfolio of all:
+**Sharpe 1.10, vol 9.9%, max drawdown −15% — less than half of SPY's −34%** at
+a comparable return.
+
+**Bottom line of the whole risk thread:** by forecasting *risk* (which we do
+with t=126 skill) and never forecasting *direction*, a broad low-risk pool
+allocated by predicted covariance and scaled to a vol target turns the S&P into
+a portfolio with ~1.1 Sharpe and a −15% worst drawdown — the honest, durable way
+to "rarely be far below what you paid."
+
 ## Today's safest buys
 
 `score_today.py` ranks the latest available asof. As of 2026-02-27 the top
@@ -327,5 +365,6 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `score_ttm_floor.py` | second independent HF model (IBM Granite TTM) trend forecasts |
 | `ensemble_analysis.py` | per-signal IC, correlation matrix, correlation-neutral blend |
 | `risk_engine.py` | volatility predictability + risk-targeted portfolio (Sharpe/DD) |
+| `min_variance.py` | predicted-covariance long-only minimum-variance portfolio |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
