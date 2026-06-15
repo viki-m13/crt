@@ -11,6 +11,7 @@ training, validation gauntlets, web frontend, and assorted experiments.
 | Topic | Entry point |
 |---|---|
 | The deployed strategy (v5) | [`experiments/monthly_dca/v5/`](experiments/monthly_dca/v5/) |
+| Floor picker (downside-avoidance, Chronos-Bolt) | [`experiments/downside_floor/REPORT.md`](experiments/downside_floor/REPORT.md) |
 | Point-in-time S&P 500 dataset | [`data/sp500_pit/README.md`](data/sp500_pit/README.md) |
 | Engine audit (leakage, survivorship) | [`research/01_engine_audit.md`](research/01_engine_audit.md) |
 | Final validation (v8 exp_02 winner) | [`reports/final_validation.md`](reports/final_validation.md) |
