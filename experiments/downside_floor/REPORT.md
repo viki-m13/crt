@@ -170,6 +170,78 @@ below its cost only ~10% of the time at 12 months, with a shallower worst dip
 than SPY. That is the honest ceiling for "rarely below the purchase price":
 diversify the selection and time the entry; don't over-concentrate.
 
+## Multi-model orthogonal ensemble — does asking each model "what it's good at" help?
+
+The directional results above suggest a sharper design (proposed by the
+project owner): **don't ask a foundation model which stock goes up** — it
+can't. Instead extract from several independent models/factors the thing each
+is genuinely good at, confirm they're de-correlated, and blend them
+**correlation-neutrally** so redundant signals don't double-count.
+`ensemble_analysis.py` does exactly this, adding a second, architecturally
+independent HF model — **IBM Granite TTM** (`score_ttm_floor.py`,
+805K-param MLP-Mixer point forecaster) — alongside Chronos-Bolt.
+
+### 1. What each signal actually predicts (cross-sectional IC, t-stat)
+
+| | IC vs *which stock goes UP* | IC vs *drawdown depth* |
+|---|---:|---:|
+| momentum 12-1 | −0.00 (t−0.1) | +0.05 (t 3.8) |
+| **Chronos drift** (FM direction) | **+0.03 (t 3.5)** | −0.05 (t−6.0) |
+| **TTM trend** (FM direction) | −0.01 (t−0.5) | −0.06 (t−5.8) |
+| realized low-vol | −0.01 (t−0.8) | **+0.27 (t 20.1)** |
+| **Chronos downside** (FM risk) | −0.01 (t−1.0) | **+0.22 (t 18.7)** |
+| quality 5y | +0.02 (t 1.2) | +0.17 (t 14.5) |
+
+**This is the whole story in one table.** *Which stock goes up* is essentially
+unpredictable — every signal's directional IC is ~0; the best (Chronos drift,
+IC 0.027) is economically negligible. *Drawdown depth* is enormously
+predictable — t-stats up to 20. And the foundation models' **directional**
+reads have **negative** downside IC: forecasting "up" actively selects the
+volatile names that dip deepest. So the only useful thing to ask these models
+is a **risk** question, and Chronos's risk read (downside trough, t 18.7) is
+indeed one of the strongest signals — second only to free realized volatility.
+
+### 2. Are the signals orthogonal? (avg cross-sectional correlation)
+
+The signals do split into independent blocks — and TTM's point forecast is
+genuinely orthogonal (negatively correlated, ≈ −0.4 to −0.5, with momentum and
+pullback). **But** Chronos's risk read is **0.69 correlated with free realized
+low-vol** — i.e. it is largely *re-deriving volatility*. Orthogonality where it
+exists (the FMs' directional axes) is orthogonal information with the *wrong
+sign* for this objective.
+
+### 3. Correlation-neutral blend (walk-forward `w = (C+λI)⁻¹·IC`, 120-day embargo)
+
+| ensemble (top-10, 3m) | uw_frac | P(ends<) | maxdd | safe% |
+|---|---:|---:|---:|---:|
+| naive equal-weight | 0.415 | 0.394 | −0.074 | 33.5% |
+| **correlation-neutral (factors only)** | **0.399** | **0.373** | −0.074 | **36.1%** |
+| correlation-neutral (+ both HF models) | 0.400 | 0.376 | −0.076 | 36.0% |
+
+**Two honest takeaways:**
+
+1. **The correlation-neutral method works.** Optimally weighting by `(C+λI)⁻¹·IC`
+   — which down-weights the redundant momentum cluster and the counterproductive
+   directional signals — beats naive equal-weighting (underwater 0.415 → 0.399,
+   safe-rate 33.5% → 36.1%). The idea is sound and is the right way to combine
+   signals.
+2. **The HF foundation models add ~no incremental value *for the downside
+   objective*.** Adding Chronos + TTM to the correlation-neutral blend does not
+   improve it (0.399 → 0.400). The reason is exactly the IC/correlation tables:
+   the FMs are good at *risk*, but risk is already captured by a free
+   realized-volatility factor they correlate 0.69 with; and they are bad at
+   *direction*, so their orthogonal axes hurt. This matches the GBM result
+   (`floor_noChr` ≈ `floor_final` on downside): the HF models' real marginal
+   contribution is a mild **return/upside tilt**, not extra downside protection.
+
+So: the ensemble design you proposed is methodologically correct and we built
+it properly (independent models, IC-checked, correlation-neutral weighting).
+The empirical verdict for *"rarely below the purchase price"* is that the
+expensive foundation models are **redundant with cheap volatility factors** —
+the edge comes from the correlation-neutral *weighting*, not from the models.
+Where the HF models do earn their keep is return: keeping the upside that
+naive low-vol throws away.
+
 ## Today's safest buys
 
 `score_today.py` ranks the latest available asof. As of 2026-02-27 the top
@@ -201,5 +273,7 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `explore_signals.py` | candidate-signal sweep |
 | `explore_selectivity.py` | concentration & conviction-gate sweep (the plateau) |
 | `explore_portfolio.py` | basket + regime-gate portfolio underwater (the breakthrough) |
+| `score_ttm_floor.py` | second independent HF model (IBM Granite TTM) trend forecasts |
+| `ensemble_analysis.py` | per-signal IC, correlation matrix, correlation-neutral blend |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
