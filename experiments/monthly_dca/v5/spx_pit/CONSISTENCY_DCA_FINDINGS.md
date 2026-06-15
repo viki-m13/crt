@@ -57,21 +57,71 @@ recovery that is the edge. The deployed E2 is already the win-rate optimum
 among off-switch overlays. The losing windows are dominated by
 **idiosyncratic 2-stock entry-timing luck in normal markets**, not crashes.
 
-## Next iteration (pre-registered)
+## Finding 2 — staggered entry does NOT help either (honest negative)
 
-**Time-diversification (staggered monthly entry).** The repo's 2024
-diagnosis (`TIMING_LUCK.md`) showed staggering swings a bad-luck year from
-−25pp to +56pp by removing entry-date luck — *without* going to cash, so
-market exposure (and CAGR) is preserved. Hypothesis: a 6-tranche staggered
-E2 lifts 1y win-both from 77% and 3y from 92% with ≤3pp CAGR cost. To be
-implemented as a correct calendar-tranche sim (not stream-shifting, which
-`IMPROVE_FINDINGS.md` Phase 5 flagged as a methodological artifact),
-developed on DESIGN ≤2015 and scored once on the frozen HOLDOUT.
+`improve_consistency_staggered.py` builds a correct calendar-tranche
+staggered E2 (N monthly tranches, H-month hold; NOT stream-shifting).
+Validation: single-tranche reconstruction reproduces the fixed-6m sleeve
+(CAGR 43.4% vs true 44.4%).
 
-**Honest expectation:** a long-only concentrated S&P-500 equity strategy
-has a structural ceiling on 1y win-rate vs QQQ in tech-melt-up years; the
-realistic honest target is ~85% (1y) / ~97% (3y), not 100%.
+| variant | CAGR | MaxDD | win-both 1/3/5/10y |
+|---|--:|--:|--:|
+| E2 baseline (fixed) | 56.0% | −55.9% | 77/92/99/100 |
+| E2 staggered N=6 | 34.8% | −57.9% | 68/79/89/98 |
+| E2 staggered N=12 | 32.9% | −48.0% | 71/80/90/99 |
+
+Staggering N tranches holds ~N×K names (N=6 → ~6.8 distinct names vs the
+baseline's ~4): it is **de-concentration in disguise**, which dilutes the
+concentrated momentum alpha → lower CAGR AND lower win-rate. The 2024
+timing-luck benefit (`TIMING_LUCK.md`) is real for that one year but does
+not generalize to a higher full-sample win-rate.
+
+## Finding 3 — quality-sleeve blend: the one within-constraint improvement
+
+`improve_consistency_qualityblend.py`. Blending E2 with the **price-only
+quality sleeve** (S&P-500, no ETF; `second_sleeve_streams.csv::quality`)
+is the only lever that does **not** lower the win-rate. Frozen-holdout
+(≥2016, never tuned) + weight plateau:
+
+| w_quality | CAGR | MaxDD | Sharpe | HOLDOUT 1/3/5y | HOLDOUT worst-1y |
+|---|--:|--:|--:|--:|--:|
+| 0.00 (E2) | 52% | −55.9% | 1.09 | 70/90/100 | 0.66/0.72 |
+| **0.15** | 47% | −51.3% | 1.13 | **72/89/100** | **0.72/0.78** |
+| **0.20** | 45% | −49.7% | 1.15 | **72/89/100** | **0.74/0.80** |
+| 0.35 | 40% | −44.7% | 1.20 | 70/88/100 | 0.80/0.84 |
+
+Smooth plateau (not a spike); the gains hold out-of-sample. Honest reading:
+the **win-rate itself is near its ceiling** (holdout 1y only +2pp, 3y flat).
+What improves robustly OOS is the **severity of the losing windows**
+(worst-1y MOIC 0.66→0.74) and **drawdown** (−56%→−50%), plus Sharpe
+(1.09→1.15), at a ~5–7pp CAGR cost (still ~45%, "high"). Quality works
+where low-vol/low-beta fail because it is a genuine modest alpha that is
+positively-but-imperfectly correlated — it cushions bad windows without
+forfeiting good ones.
+
+## Bottom line
+
+For a long-only, concentrated, **price-only PIT-S&P-500** strategy, the
+deployed E2 (win-both 77/94/99/100% at 1/3/5/10y) is **already near the
+achievable frontier** for the dual-benchmark objective. No within-constraint
+lever materially raises the win-rate:
+- off-switches forfeit the post-crash recovery that *is* the edge;
+- staggering / defensive blends dilute the concentrated alpha.
+
+The honest, OOS-validated improvement is a **15–20% quality blend**: equal
+win-rate, materially softer worst-case windows and drawdown, higher Sharpe,
+~45% CAGR. It does NOT make 1-year DCA-beats-both reach ~100% — that has a
+structural ceiling (~77–78%; tech-melt-up years where QQQ rips, plus
+idiosyncratic 2-stock draws).
+
+**The only path to a materially higher win-rate is a genuinely orthogonal
+alpha, which requires a new data family** (PIT fundamentals / earnings
+revisions — see `SECOND_SLEEVE_SCOPE.md`), outside the price-only
+S&P-500 constraint. That is the recommended next program if the constraint
+can be relaxed.
 
 ## Files
 - `improve_consistency_dca.py` — dual-benchmark + frozen-holdout harness, off-switch menu
-- `augmented/improve_consistency_dca.json` — raw results
+- `improve_consistency_staggered.py` — correct calendar-tranche staggered sim
+- `improve_consistency_qualityblend.py` — quality-blend plateau + holdout
+- `augmented/improve_consistency_{dca,staggered,qualityblend}.json` — raw results
