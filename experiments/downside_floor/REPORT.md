@@ -325,6 +325,31 @@ overlay on the broad min-var book gives the lowest-risk portfolio of all:
 **Sharpe 1.10, vol 9.9%, max drawdown −15% — less than half of SPY's −34%** at
 a comparable return.
 
+### Hierarchical Risk Parity (Lopez de Prado) — robustness vs aggressiveness
+
+Min-variance inverts the covariance matrix, which can be fragile out of
+sample. **HRP** (`hrp.py`) avoids the inversion: it clusters names by
+correlation distance, quasi-diagonalizes the covariance by the cluster order,
+and allocates top-down by recursive inverse-variance bisection. Head to head on
+the same broad pool and covariance each month:
+
+| broad pool (N=150) | CAGR | vol | Sharpe | maxDD | pos-mo |
+|---|---:|---:|---:|---:|---:|
+| equal-weight | 13.8% | 12.7% | 1.09 | −26% | 66% |
+| inverse-vol | 13.3% | 12.1% | 1.09 | −24% | 67% |
+| **min-variance** | 12.3% | 11.0% | 1.12 | **−18%** | 65% |
+| **HRP** | 13.3% | 11.9% | 1.12 | −23% | **68%** |
+| HRP + vol-target | 11.1% | 10.6% | 1.05 | −19% | 68% |
+
+**Honest result: HRP did not beat min-variance for *this* (drawdown) objective.**
+HRP matches min-var's Sharpe (1.12) and keeps *more* return (13.3% vs 12.3%)
+with the most positive months (68%) — it is the better *balanced* allocator —
+but min-variance keeps the **lowest drawdown** (−18% vs −23%). The reason HRP's
+usual robustness edge is muted here is that **Ledoit-Wolf shrinkage plus the 6%
+weight cap already de-fragilize min-variance**, so the matrix-inversion problem
+HRP is designed to dodge isn't biting. They are complementary: **min-variance
+for minimum drawdown, HRP for return at low risk.**
+
 **Bottom line of the whole risk thread:** by forecasting *risk* (which we do
 with t=126 skill) and never forecasting *direction*, a broad low-risk pool
 allocated by predicted covariance and scaled to a vol target turns the S&P into
@@ -366,5 +391,6 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `ensemble_analysis.py` | per-signal IC, correlation matrix, correlation-neutral blend |
 | `risk_engine.py` | volatility predictability + risk-targeted portfolio (Sharpe/DD) |
 | `min_variance.py` | predicted-covariance long-only minimum-variance portfolio |
+| `hrp.py` | Hierarchical Risk Parity vs min-variance head to head |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
