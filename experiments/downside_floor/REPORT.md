@@ -242,6 +242,57 @@ the edge comes from the correlation-neutral *weighting*, not from the models.
 Where the HF models do earn their keep is return: keeping the upside that
 naive low-vol throws away.
 
+## What we can predict *very* well — and a strategy built only on that
+
+The IC study points to a sharper strategy than trying to dodge every dip:
+stop betting on direction (unpredictable) and build the entire portfolio on
+the one quantity we forecast with real skill — **volatility / drawdown.**
+`risk_engine.py` first quantifies that skill, then monetizes it.
+
+### How predictable is risk? (cross-sectional, per month)
+
+| we try to predict… | information coefficient |
+|---|---:|
+| which stock goes **up** (best signal, Chronos drift) | 0.03 |
+| a stock's **forward 3-month volatility** | **0.744  (t = 126)** |
+| a stock's **forward drawdown depth** | 0.256  (t = 18) |
+
+Forward volatility is ~**25× more predictable than direction** — about the most
+forecastable thing in equities (vol clusters and persists). That is the edge to
+press.
+
+### Monetizing it — select, size, and time on volatility (never on direction)
+
+Monthly rebalance, 2003-2026, honest delisting:
+
+| strategy | CAGR | vol | **Sharpe** | **max DD** |
+|---|---:|---:|---:|---:|
+| SPY buy & hold | 12.4% | 14.5% | 0.88 | −34% |
+| Floor basket, equal weight | 15.4% | 12.7% | **1.20** | −21% |
+| Floor basket, inverse-vol sizing | 14.3% | 12.0% | 1.19 | −20% |
+| Floor + vol-target 10% (cash when our vol is high) | 12.5% | 10.4% | 1.19 | **−16%** |
+| SPY + vol-target 10% | 8.5% | 11.5% | 0.77 | −30% |
+
+Three stacked uses of the volatility forecast:
+
+1. **Select** the low-future-risk names (FloorScore) — this alone takes Sharpe
+   from 0.88 to **1.20** and cuts max drawdown from −34% to −21%, *while
+   beating* SPY's return. The selection edge is real because it rests on the
+   t=126 signal, not on a direction call.
+2. **Size** inverse to predicted vol (risk parity) — trims vol and drawdown a
+   touch more at similar Sharpe.
+3. **Time** total exposure to a constant 10% target vol — converts the surplus
+   return into safety: same Sharpe, but max drawdown down to **−16%** (less
+   than half of SPY's) and the lowest portfolio volatility.
+
+**Honest notes.** The heavy lifting is the volatility-based *selection and
+sizing*; the vol-*timing* overlay mainly trades return for a shallower drawdown
+(cash earns 0% here, so it's conservative). And vol-timing on SPY *alone*
+slightly hurts (Sharpe 0.88 → 0.77) — monthly index vol-timing is not reliably
+additive, consistent with the literature. The robust, repeatable edge is:
+**rank and weight stocks by forecast volatility, which we predict with t=126
+skill, and never stake the outcome on guessing which one rises.**
+
 ## Today's safest buys
 
 `score_today.py` ranks the latest available asof. As of 2026-02-27 the top
@@ -275,5 +326,6 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `explore_portfolio.py` | basket + regime-gate portfolio underwater (the breakthrough) |
 | `score_ttm_floor.py` | second independent HF model (IBM Granite TTM) trend forecasts |
 | `ensemble_analysis.py` | per-signal IC, correlation matrix, correlation-neutral blend |
+| `risk_engine.py` | volatility predictability + risk-targeted portfolio (Sharpe/DD) |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
