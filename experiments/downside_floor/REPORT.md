@@ -356,6 +356,53 @@ allocated by predicted covariance and scaled to a vol target turns the S&P into
 a portfolio with ~1.1 Sharpe and a −15% worst drawdown — the honest, durable way
 to "rarely be far below what you paid."
 
+## Tie-in: network momentum (Pu et al., L2GMOM)
+
+The Oxford-Man "Learning to Learn Financial Networks" paper proposes
+**network momentum** — a stock's signal is the momentum of its network
+*neighbours*, propagated over a learned asset graph, then vol-scaled to 15%
+(their Fig 1b). It maps directly onto our two findings: own-momentum has ~0
+directional IC, but the correlation **network** is the predictable object. So
+network momentum is an attempt to turn the predictable graph into a *return*
+signal. We tested it (`network_momentum.py`) on our S&P universe with a
+transparent, database-free graph (Ledoit-Wolf correlation, top-20 neighbours,
+row-normalised) and vol-normalised 12-1 momentum.
+
+**Part A — cross-sectional IC (does the network add directional skill?)**
+
+| signal | IC vs fwd 1m | IC vs fwd 3m |
+|---|---:|---:|
+| own-momentum | −0.00 (t−0.3) | −0.01 (t−0.7) |
+| network-momentum | −0.01 (t−0.3) | −0.02 (t−1.4) |
+
+**Part B — long-only top-quintile, 15% vol target (their Fig 1 style)**
+
+| strategy | CAGR | Sharpe | maxDD |
+|---|---:|---:|---:|
+| SPY (long only) | 12.4% | **0.88** | −34% |
+| universe avg | 12.6% | 0.75 | −41% |
+| own-momentum | 10.4% | 0.66 | −39% |
+| network-momentum | 11.3% | 0.71 | **−31%** |
+
+**Honest synthesis.** On single-asset-class US large-cap equities, network
+momentum gives **no directional edge** (IC ≈ 0, same as own-momentum) and does
+not beat long-only SPY. What the network *does* do is shallow momentum's
+drawdown (−31% vs −39%) — i.e. it again helps **risk**, not return. This is not
+a refutation of the paper; it locates its edge: L2GMOM is run on a
+**cross-asset-class futures** universe (commodities, FX, rates, equity indices)
+where time-series momentum is strong and lead-lag network effects are real, and
+its graph is **learned end-to-end** for the signal. Neither transfers to
+US single names, where one market factor dominates the correlation graph so
+"neighbours' momentum" ≈ market momentum and adds little cross-sectional info.
+
+The transferable agreement is the deeper point of this whole experiment: **the
+asset network is the valuable, learnable object — and the lever that always
+works is vol-targeting.** The paper monetizes the network for *return* on
+futures; on equities the network's information is about *risk*, which is why our
+predicted-covariance min-variance book (and not a momentum signal) is what
+delivers the Sharpe and drawdown improvement. (See `network_momentum.png` for
+the raw-vs-vol-targeted cumulative curves mirroring their Fig 1.)
+
 ## Today's safest buys
 
 `score_today.py` ranks the latest available asof. As of 2026-02-27 the top
@@ -392,5 +439,7 @@ python3 experiments/downside_floor/score_today.py             # current safest-b
 | `risk_engine.py` | volatility predictability + risk-targeted portfolio (Sharpe/DD) |
 | `min_variance.py` | predicted-covariance long-only minimum-variance portfolio |
 | `hrp.py` | Hierarchical Risk Parity vs min-variance head to head |
+| `build_equity_curves.py` | equity-curve + drawdown chart vs SPY (`equity_curves.png`) |
+| `network_momentum.py` | network momentum (L2GMOM tie-in) IC + paper-style figure |
 | `backtest_floor.py` | locked FloorScore vs SPY/universe/low-vol, by era & year |
 | `score_today.py` | live "safest buys" ranking |
