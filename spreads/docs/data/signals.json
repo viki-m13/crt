@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-26T23:46:20Z",
+  "generated_at": "2026-06-29T21:51:03Z",
   "engine": "v3-sigmaclear",
   "summary": {
-    "n_tickers_processed": 815,
+    "n_tickers_processed": 816,
     "horizons": [
       7,
       10,
@@ -59,951 +59,81 @@
     },
     "put": {
       "n_certified": 43,
-      "n_published": 3,
-      "pooled_wins": 142882,
+      "n_published": 1,
+      "pooled_wins": 142919,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     },
     "call": {
       "n_certified": 14,
       "n_published": 0,
-      "pooled_wins": 43894,
+      "pooled_wins": 43908,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     },
     "combined": {
       "n_certified": 57,
-      "n_published": 3,
-      "pooled_wins": 186776,
+      "n_published": 1,
+      "pooled_wins": 186827,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     }
   },
   "put_signals": [
     {
-      "ticker": "LEA",
-      "today_close": 136.83999633789062,
-      "end_date": "2026-06-26",
-      "side": "put",
-      "engine": "v3-sigmaclear",
-      "realized_vol_pct": 35.03707096823399,
-      "strike": 111.59455098505505,
-      "buffer_pct": 18.448879003546985,
-      "certified_buffer_pct": 22.31842227696741,
-      "horizon": 10,
-      "expiry_date": "2026-07-10",
-      "expiry_type": "weekly",
-      "calendar_days_to_expiry": 14,
-      "variant": "regime",
-      "n_test": 2033,
-      "n_folds": 14,
-      "pooled_wins": 2033,
-      "pooled_losses": 0,
-      "history_worst_buffer_pct": 21.318422276967407,
-      "regime_ok_today": true,
-      "profit": {
-        "realized_vol_pct": 35.03707096823399,
-        "implied_vol_pct": 45.54819225870419,
-        "short_iv_pct": 55.034259664030685,
-        "long_iv_pct": 57.977260432959596,
-        "short_strike": 111.59455098505505,
-        "long_strike": 104.75255116816052,
-        "spread_width": 6.841999816894532,
-        "mid_credit_per_share": 0.10762783459167347,
-        "est_credit_per_share": 0.08262783459167347,
-        "net_credit_per_share": 0.06942783459167347,
-        "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 6.759371982302858,
-        "return_on_risk_pct": 1.027134396116191,
-        "annualized_ror_pct": 26.778861041600692,
-        "credit_quality": "thin",
-        "tradeable": true
-      },
-      "stress_profit": {
-        "realized_vol_pct": 35.03707096823399,
-        "implied_vol_pct": 35.03707096823399,
-        "short_iv_pct": 42.33404589540822,
-        "long_iv_pct": 44.59789264073815,
-        "short_strike": 111.59455098505505,
-        "long_strike": 104.75255116816052,
-        "spread_width": 6.841999816894532,
-        "mid_credit_per_share": 0.019993130085814548,
-        "est_credit_per_share": 0.0,
-        "net_credit_per_share": -0.0132,
-        "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 6.841999816894532,
-        "return_on_risk_pct": -0.19292605017916029,
-        "annualized_ror_pct": -5.029857736813822,
-        "credit_quality": "thin",
-        "tradeable": false
-      },
-      "folds": [
-        {
-          "year": 2013,
-          "n_train": 253,
-          "n_test": 252,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 252,
-          "losses": 0,
-          "worst_test_buf_pct": 7.275371975411316
-        },
-        {
-          "year": 2014,
-          "n_train": 505,
-          "n_test": 239,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 239,
-          "losses": 0,
-          "worst_test_buf_pct": 14.139478677305695
-        },
-        {
-          "year": 2015,
-          "n_train": 744,
-          "n_test": 212,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 212,
-          "losses": 0,
-          "worst_test_buf_pct": 15.753455852080222
-        },
-        {
-          "year": 2016,
-          "n_train": 956,
-          "n_test": 171,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 171,
-          "losses": 0,
-          "worst_test_buf_pct": 16.8354908496963
-        },
-        {
-          "year": 2017,
-          "n_train": 1127,
-          "n_test": 251,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 251,
-          "losses": 0,
-          "worst_test_buf_pct": 10.597230304735195
-        },
-        {
-          "year": 2018,
-          "n_train": 1378,
-          "n_test": 137,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 137,
-          "losses": 0,
-          "worst_test_buf_pct": 9.804343302168627
-        },
-        {
-          "year": 2019,
-          "n_train": 1525,
-          "n_test": 13,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 13,
-          "losses": 0,
-          "worst_test_buf_pct": 3.884715037131392
-        },
-        {
-          "year": 2020,
-          "n_train": 1528,
-          "n_test": 131,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 131,
-          "losses": 0,
-          "worst_test_buf_pct": 15.491688947139348
-        },
-        {
-          "year": 2021,
-          "n_train": 1659,
-          "n_test": 197,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 197,
-          "losses": 0,
-          "worst_test_buf_pct": 15.734185605890493
-        },
-        {
-          "year": 2022,
-          "n_train": 1858,
-          "n_test": 17,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 17,
-          "losses": 0,
-          "worst_test_buf_pct": 17.982443208417976
-        },
-        {
-          "year": 2023,
-          "n_train": 1883,
-          "n_test": 140,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 140,
-          "losses": 0,
-          "worst_test_buf_pct": 12.29999419127471
-        },
-        {
-          "year": 2024,
-          "n_train": 2013,
-          "n_test": 38,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 38,
-          "losses": 0,
-          "worst_test_buf_pct": 9.371111485977423
-        },
-        {
-          "year": 2025,
-          "n_train": 2061,
-          "n_test": 124,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 124,
-          "losses": 0,
-          "worst_test_buf_pct": 14.578545390275888
-        },
-        {
-          "year": 2026,
-          "n_train": 2175,
-          "n_test": 111,
-          "b_hat_pct": 22.31842227696741,
-          "wins": 111,
-          "losses": 0,
-          "worst_test_buf_pct": 12.509421068590253
-        }
-      ],
-      "ladder": [
-        {
-          "engine": "v3-sigmaclear",
-          "horizon": 10,
-          "expiry_date": "2026-07-10",
-          "expiry_type": "weekly",
-          "calendar_days_to_expiry": 14,
-          "sessions_to_expiry": 9,
-          "strike": 111.59455098505505,
-          "buffer_pct": 18.448879003546985,
-          "certified_buffer_pct": 22.31842227696741,
-          "certified_strike": 106.29946811141346,
-          "history_worst_buffer_pct": 21.318422276967407,
-          "sigma_distance": 2.5,
-          "variant": "regime",
-          "n_test": 2033,
-          "n_folds": 14,
-          "pooled_wins": 2033,
-          "pooled_losses": 0,
-          "folds": [
-            {
-              "year": 2013,
-              "n_train": 253,
-              "n_test": 252,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 252,
-              "losses": 0,
-              "worst_test_buf_pct": 7.275371975411316
-            },
-            {
-              "year": 2014,
-              "n_train": 505,
-              "n_test": 239,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 239,
-              "losses": 0,
-              "worst_test_buf_pct": 14.139478677305695
-            },
-            {
-              "year": 2015,
-              "n_train": 744,
-              "n_test": 212,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 212,
-              "losses": 0,
-              "worst_test_buf_pct": 15.753455852080222
-            },
-            {
-              "year": 2016,
-              "n_train": 956,
-              "n_test": 171,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 171,
-              "losses": 0,
-              "worst_test_buf_pct": 16.8354908496963
-            },
-            {
-              "year": 2017,
-              "n_train": 1127,
-              "n_test": 251,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 251,
-              "losses": 0,
-              "worst_test_buf_pct": 10.597230304735195
-            },
-            {
-              "year": 2018,
-              "n_train": 1378,
-              "n_test": 137,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 137,
-              "losses": 0,
-              "worst_test_buf_pct": 9.804343302168627
-            },
-            {
-              "year": 2019,
-              "n_train": 1525,
-              "n_test": 13,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 13,
-              "losses": 0,
-              "worst_test_buf_pct": 3.884715037131392
-            },
-            {
-              "year": 2020,
-              "n_train": 1528,
-              "n_test": 131,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 131,
-              "losses": 0,
-              "worst_test_buf_pct": 15.491688947139348
-            },
-            {
-              "year": 2021,
-              "n_train": 1659,
-              "n_test": 197,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 197,
-              "losses": 0,
-              "worst_test_buf_pct": 15.734185605890493
-            },
-            {
-              "year": 2022,
-              "n_train": 1858,
-              "n_test": 17,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 17,
-              "losses": 0,
-              "worst_test_buf_pct": 17.982443208417976
-            },
-            {
-              "year": 2023,
-              "n_train": 1883,
-              "n_test": 140,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 140,
-              "losses": 0,
-              "worst_test_buf_pct": 12.29999419127471
-            },
-            {
-              "year": 2024,
-              "n_train": 2013,
-              "n_test": 38,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 38,
-              "losses": 0,
-              "worst_test_buf_pct": 9.371111485977423
-            },
-            {
-              "year": 2025,
-              "n_train": 2061,
-              "n_test": 124,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 124,
-              "losses": 0,
-              "worst_test_buf_pct": 14.578545390275888
-            },
-            {
-              "year": 2026,
-              "n_train": 2175,
-              "n_test": 111,
-              "b_hat_pct": 22.31842227696741,
-              "wins": 111,
-              "losses": 0,
-              "worst_test_buf_pct": 12.509421068590253
-            }
-          ],
-          "profit": {
-            "realized_vol_pct": 35.03707096823399,
-            "implied_vol_pct": 45.54819225870419,
-            "short_iv_pct": 55.034259664030685,
-            "long_iv_pct": 57.977260432959596,
-            "short_strike": 111.59455098505505,
-            "long_strike": 104.75255116816052,
-            "spread_width": 6.841999816894532,
-            "mid_credit_per_share": 0.10762783459167347,
-            "est_credit_per_share": 0.08262783459167347,
-            "net_credit_per_share": 0.06942783459167347,
-            "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 6.759371982302858,
-            "return_on_risk_pct": 1.027134396116191,
-            "annualized_ror_pct": 26.778861041600692,
-            "credit_quality": "thin",
-            "tradeable": true
-          },
-          "stress_profit": {
-            "realized_vol_pct": 35.03707096823399,
-            "implied_vol_pct": 35.03707096823399,
-            "short_iv_pct": 42.33404589540822,
-            "long_iv_pct": 44.59789264073815,
-            "short_strike": 111.59455098505505,
-            "long_strike": 104.75255116816052,
-            "spread_width": 6.841999816894532,
-            "mid_credit_per_share": 0.019993130085814548,
-            "est_credit_per_share": 0.0,
-            "net_credit_per_share": -0.0132,
-            "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 6.841999816894532,
-            "return_on_risk_pct": -0.19292605017916029,
-            "annualized_ror_pct": -5.029857736813822,
-            "credit_quality": "thin",
-            "tradeable": false
-          },
-          "crash_wing": null
-        }
-      ]
-    },
-    {
-      "ticker": "BIO",
-      "today_close": 300.7900085449219,
-      "end_date": "2026-06-26",
-      "side": "put",
-      "engine": "v3-sigmaclear",
-      "realized_vol_pct": 47.195536603759926,
-      "strike": 238.63233404977632,
-      "buffer_pct": 20.664806918233303,
-      "certified_buffer_pct": 24.75886731089958,
-      "horizon": 7,
-      "expiry_date": "2026-07-02",
-      "expiry_type": "weekly",
-      "calendar_days_to_expiry": 6,
-      "variant": "regime",
-      "n_test": 3104,
-      "n_folds": 21,
-      "pooled_wins": 3104,
-      "pooled_losses": 0,
-      "history_worst_buffer_pct": 23.75886731089958,
-      "regime_ok_today": true,
-      "profit": {
-        "realized_vol_pct": 47.195536603759926,
-        "implied_vol_pct": 61.354197584887906,
-        "short_iv_pct": 83.50932436963869,
-        "long_iv_pct": 89.73961389227834,
-        "short_strike": 238.63233404977632,
-        "long_strike": 223.59283362253024,
-        "spread_width": 15.039500427246095,
-        "mid_credit_per_share": 0.10908167928325452,
-        "est_credit_per_share": 0.08408167928325452,
-        "net_credit_per_share": 0.07088167928325452,
-        "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 14.95541874796284,
-        "return_on_risk_pct": 0.4739531568977947,
-        "annualized_ror_pct": 28.83215037794918,
-        "credit_quality": "thin",
-        "tradeable": true
-      },
-      "stress_profit": {
-        "realized_vol_pct": 47.195536603759926,
-        "implied_vol_pct": 47.195536603759926,
-        "short_iv_pct": 64.23794182279899,
-        "long_iv_pct": 69.03047222482948,
-        "short_strike": 238.63233404977632,
-        "long_strike": 223.59283362253024,
-        "spread_width": 15.039500427246095,
-        "mid_credit_per_share": 0.013789535433351305,
-        "est_credit_per_share": 0.0,
-        "net_credit_per_share": -0.0132,
-        "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 15.039500427246095,
-        "return_on_risk_pct": -0.087768872801695,
-        "annualized_ror_pct": -5.339273095436446,
-        "credit_quality": "thin",
-        "tradeable": false
-      },
-      "folds": [
-        {
-          "year": 2006,
-          "n_train": 3148,
-          "n_test": 235,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 235,
-          "losses": 0,
-          "worst_test_buf_pct": 12.888011356328011
-        },
-        {
-          "year": 2007,
-          "n_train": 3383,
-          "n_test": 156,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 156,
-          "losses": 0,
-          "worst_test_buf_pct": 17.775967742805886
-        },
-        {
-          "year": 2008,
-          "n_train": 3539,
-          "n_test": 95,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 95,
-          "losses": 0,
-          "worst_test_buf_pct": 18.647996915037556
-        },
-        {
-          "year": 2009,
-          "n_train": 3641,
-          "n_test": 85,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 85,
-          "losses": 0,
-          "worst_test_buf_pct": 5.507123580296658
-        },
-        {
-          "year": 2010,
-          "n_train": 3719,
-          "n_test": 130,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 130,
-          "losses": 0,
-          "worst_test_buf_pct": 14.239198007803433
-        },
-        {
-          "year": 2011,
-          "n_train": 3849,
-          "n_test": 142,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 142,
-          "losses": 0,
-          "worst_test_buf_pct": 12.136338816563885
-        },
-        {
-          "year": 2012,
-          "n_train": 3998,
-          "n_test": 146,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 146,
-          "losses": 0,
-          "worst_test_buf_pct": 7.976071541963725
-        },
-        {
-          "year": 2013,
-          "n_train": 4137,
-          "n_test": 228,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 228,
-          "losses": 0,
-          "worst_test_buf_pct": 7.527947277756208
-        },
-        {
-          "year": 2014,
-          "n_train": 4365,
-          "n_test": 93,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 93,
-          "losses": 0,
-          "worst_test_buf_pct": 7.417112832336025
-        },
-        {
-          "year": 2015,
-          "n_train": 4458,
-          "n_test": 192,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 192,
-          "losses": 0,
-          "worst_test_buf_pct": 10.28223720916973
-        },
-        {
-          "year": 2016,
-          "n_train": 4657,
-          "n_test": 184,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 184,
-          "losses": 0,
-          "worst_test_buf_pct": 6.660447448026375
-        },
-        {
-          "year": 2017,
-          "n_train": 4834,
-          "n_test": 251,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 251,
-          "losses": 0,
-          "worst_test_buf_pct": 11.259699074106145
-        },
-        {
-          "year": 2018,
-          "n_train": 5085,
-          "n_test": 200,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 200,
-          "losses": 0,
-          "worst_test_buf_pct": 10.085242704396213
-        },
-        {
-          "year": 2019,
-          "n_train": 5292,
-          "n_test": 212,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 212,
-          "losses": 0,
-          "worst_test_buf_pct": 6.149149632754158
-        },
-        {
-          "year": 2020,
-          "n_train": 5497,
-          "n_test": 244,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 244,
-          "losses": 0,
-          "worst_test_buf_pct": 17.241642746708365
-        },
-        {
-          "year": 2021,
-          "n_train": 5741,
-          "n_test": 252,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 252,
-          "losses": 0,
-          "worst_test_buf_pct": 12.586838225344055
-        },
-        {
-          "year": 2022,
-          "n_train": 5993,
-          "n_test": 2,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 2,
-          "losses": 0,
-          "worst_test_buf_pct": 9.825679400181976
-        },
-        {
-          "year": 2023,
-          "n_train": 6002,
-          "n_test": 24,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 24,
-          "losses": 0,
-          "worst_test_buf_pct": 21.454747586870425
-        },
-        {
-          "year": 2024,
-          "n_train": 6026,
-          "n_test": 99,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 99,
-          "losses": 0,
-          "worst_test_buf_pct": 16.016306488253107
-        },
-        {
-          "year": 2025,
-          "n_train": 6118,
-          "n_test": 87,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 87,
-          "losses": 0,
-          "worst_test_buf_pct": 21.023536292821266
-        },
-        {
-          "year": 2026,
-          "n_train": 6205,
-          "n_test": 47,
-          "b_hat_pct": 24.75886731089958,
-          "wins": 47,
-          "losses": 0,
-          "worst_test_buf_pct": 16.12945319462383
-        }
-      ],
-      "ladder": [
-        {
-          "engine": "v3-sigmaclear",
-          "horizon": 7,
-          "expiry_date": "2026-07-02",
-          "expiry_type": "weekly",
-          "calendar_days_to_expiry": 6,
-          "sessions_to_expiry": 4,
-          "strike": 238.63233404977632,
-          "buffer_pct": 20.664806918233303,
-          "certified_buffer_pct": 24.75886731089958,
-          "certified_strike": 226.31780944484117,
-          "history_worst_buffer_pct": 23.75886731089958,
-          "sigma_distance": 2.5,
-          "variant": "regime",
-          "n_test": 3104,
-          "n_folds": 21,
-          "pooled_wins": 3104,
-          "pooled_losses": 0,
-          "folds": [
-            {
-              "year": 2006,
-              "n_train": 3148,
-              "n_test": 235,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 235,
-              "losses": 0,
-              "worst_test_buf_pct": 12.888011356328011
-            },
-            {
-              "year": 2007,
-              "n_train": 3383,
-              "n_test": 156,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 156,
-              "losses": 0,
-              "worst_test_buf_pct": 17.775967742805886
-            },
-            {
-              "year": 2008,
-              "n_train": 3539,
-              "n_test": 95,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 95,
-              "losses": 0,
-              "worst_test_buf_pct": 18.647996915037556
-            },
-            {
-              "year": 2009,
-              "n_train": 3641,
-              "n_test": 85,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 85,
-              "losses": 0,
-              "worst_test_buf_pct": 5.507123580296658
-            },
-            {
-              "year": 2010,
-              "n_train": 3719,
-              "n_test": 130,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 130,
-              "losses": 0,
-              "worst_test_buf_pct": 14.239198007803433
-            },
-            {
-              "year": 2011,
-              "n_train": 3849,
-              "n_test": 142,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 142,
-              "losses": 0,
-              "worst_test_buf_pct": 12.136338816563885
-            },
-            {
-              "year": 2012,
-              "n_train": 3998,
-              "n_test": 146,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 146,
-              "losses": 0,
-              "worst_test_buf_pct": 7.976071541963725
-            },
-            {
-              "year": 2013,
-              "n_train": 4137,
-              "n_test": 228,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 228,
-              "losses": 0,
-              "worst_test_buf_pct": 7.527947277756208
-            },
-            {
-              "year": 2014,
-              "n_train": 4365,
-              "n_test": 93,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 93,
-              "losses": 0,
-              "worst_test_buf_pct": 7.417112832336025
-            },
-            {
-              "year": 2015,
-              "n_train": 4458,
-              "n_test": 192,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 192,
-              "losses": 0,
-              "worst_test_buf_pct": 10.28223720916973
-            },
-            {
-              "year": 2016,
-              "n_train": 4657,
-              "n_test": 184,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 184,
-              "losses": 0,
-              "worst_test_buf_pct": 6.660447448026375
-            },
-            {
-              "year": 2017,
-              "n_train": 4834,
-              "n_test": 251,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 251,
-              "losses": 0,
-              "worst_test_buf_pct": 11.259699074106145
-            },
-            {
-              "year": 2018,
-              "n_train": 5085,
-              "n_test": 200,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 200,
-              "losses": 0,
-              "worst_test_buf_pct": 10.085242704396213
-            },
-            {
-              "year": 2019,
-              "n_train": 5292,
-              "n_test": 212,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 212,
-              "losses": 0,
-              "worst_test_buf_pct": 6.149149632754158
-            },
-            {
-              "year": 2020,
-              "n_train": 5497,
-              "n_test": 244,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 244,
-              "losses": 0,
-              "worst_test_buf_pct": 17.241642746708365
-            },
-            {
-              "year": 2021,
-              "n_train": 5741,
-              "n_test": 252,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 252,
-              "losses": 0,
-              "worst_test_buf_pct": 12.586838225344055
-            },
-            {
-              "year": 2022,
-              "n_train": 5993,
-              "n_test": 2,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 2,
-              "losses": 0,
-              "worst_test_buf_pct": 9.825679400181976
-            },
-            {
-              "year": 2023,
-              "n_train": 6002,
-              "n_test": 24,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 24,
-              "losses": 0,
-              "worst_test_buf_pct": 21.454747586870425
-            },
-            {
-              "year": 2024,
-              "n_train": 6026,
-              "n_test": 99,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 99,
-              "losses": 0,
-              "worst_test_buf_pct": 16.016306488253107
-            },
-            {
-              "year": 2025,
-              "n_train": 6118,
-              "n_test": 87,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 87,
-              "losses": 0,
-              "worst_test_buf_pct": 21.023536292821266
-            },
-            {
-              "year": 2026,
-              "n_train": 6205,
-              "n_test": 47,
-              "b_hat_pct": 24.75886731089958,
-              "wins": 47,
-              "losses": 0,
-              "worst_test_buf_pct": 16.12945319462383
-            }
-          ],
-          "profit": {
-            "realized_vol_pct": 47.195536603759926,
-            "implied_vol_pct": 61.354197584887906,
-            "short_iv_pct": 83.50932436963869,
-            "long_iv_pct": 89.73961389227834,
-            "short_strike": 238.63233404977632,
-            "long_strike": 223.59283362253024,
-            "spread_width": 15.039500427246095,
-            "mid_credit_per_share": 0.10908167928325452,
-            "est_credit_per_share": 0.08408167928325452,
-            "net_credit_per_share": 0.07088167928325452,
-            "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 14.95541874796284,
-            "return_on_risk_pct": 0.4739531568977947,
-            "annualized_ror_pct": 28.83215037794918,
-            "credit_quality": "thin",
-            "tradeable": true
-          },
-          "stress_profit": {
-            "realized_vol_pct": 47.195536603759926,
-            "implied_vol_pct": 47.195536603759926,
-            "short_iv_pct": 64.23794182279899,
-            "long_iv_pct": 69.03047222482948,
-            "short_strike": 238.63233404977632,
-            "long_strike": 223.59283362253024,
-            "spread_width": 15.039500427246095,
-            "mid_credit_per_share": 0.013789535433351305,
-            "est_credit_per_share": 0.0,
-            "net_credit_per_share": -0.0132,
-            "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 15.039500427246095,
-            "return_on_risk_pct": -0.087768872801695,
-            "annualized_ror_pct": -5.339273095436446,
-            "credit_quality": "thin",
-            "tradeable": false
-          },
-          "crash_wing": null
-        }
-      ]
-    },
-    {
       "ticker": "CHRW",
-      "today_close": 179.3300018310547,
-      "end_date": "2026-06-26",
+      "today_close": 184.75,
+      "end_date": "2026-06-29",
       "side": "put",
       "engine": "v3-sigmaclear",
-      "realized_vol_pct": 40.13485539655288,
-      "strike": 141.69287305966117,
-      "buffer_pct": 20.987636417274533,
-      "certified_buffer_pct": 24.790330030976136,
+      "realized_vol_pct": 40.469182241772074,
+      "strike": 145.66773527055108,
+      "buffer_pct": 21.154135171555573,
+      "certified_buffer_pct": 24.790319801872506,
       "horizon": 10,
       "expiry_date": "2026-07-10",
       "expiry_type": "weekly",
-      "calendar_days_to_expiry": 14,
+      "calendar_days_to_expiry": 11,
       "variant": "regime",
-      "n_test": 3087,
+      "n_test": 3088,
       "n_folds": 21,
-      "pooled_wins": 3087,
+      "pooled_wins": 3088,
       "pooled_losses": 0,
-      "history_worst_buffer_pct": 23.790330030976136,
+      "history_worst_buffer_pct": 23.790319801872506,
       "regime_ok_today": true,
       "profit": {
-        "realized_vol_pct": 40.13485539655288,
-        "implied_vol_pct": 52.175312015518735,
-        "short_iv_pct": 64.72664311267671,
-        "long_iv_pct": 68.20977947002332,
-        "short_strike": 141.69287305966117,
-        "long_strike": 132.72637296810842,
-        "spread_width": 8.966500091552735,
-        "mid_credit_per_share": 0.16195634526542602,
-        "est_credit_per_share": 0.1295650762123408,
-        "net_credit_per_share": 0.11636507621234081,
+        "realized_vol_pct": 40.469182241772074,
+        "implied_vol_pct": 52.6099369143037,
+        "short_iv_pct": 67.01555673236987,
+        "long_iv_pct": 70.98644486645959,
+        "short_strike": 145.66773527055108,
+        "long_strike": 136.43023527055107,
+        "spread_width": 9.2375,
+        "mid_credit_per_share": 0.09988650639574348,
+        "est_credit_per_share": 0.07488650639574349,
+        "net_credit_per_share": 0.06168650639574348,
         "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 8.836935015340394,
-        "return_on_risk_pct": 1.316803575112162,
-        "annualized_ror_pct": 34.33095035113852,
-        "credit_quality": "modest",
+        "est_max_loss_per_share": 9.162613493604256,
+        "return_on_risk_pct": 0.6732413894660325,
+        "annualized_ror_pct": 22.339373377736532,
+        "credit_quality": "thin",
         "tradeable": true
       },
       "stress_profit": {
-        "realized_vol_pct": 40.13485539655288,
-        "implied_vol_pct": 40.13485539655288,
-        "short_iv_pct": 49.78972547128978,
-        "long_iv_pct": 52.469061130787175,
-        "short_strike": 141.69287305966117,
-        "long_strike": 132.72637296810842,
-        "spread_width": 8.966500091552735,
-        "mid_credit_per_share": 0.032509402207889115,
-        "est_credit_per_share": 0.007509402207889114,
-        "net_credit_per_share": -0.005690597792110886,
+        "realized_vol_pct": 40.469182241772074,
+        "implied_vol_pct": 40.469182241772074,
+        "short_iv_pct": 51.550428255669125,
+        "long_iv_pct": 54.6049575895843,
+        "short_strike": 145.66773527055108,
+        "long_strike": 136.43023527055107,
+        "spread_width": 9.2375,
+        "mid_credit_per_share": 0.015149482913336038,
+        "est_credit_per_share": 0.0,
+        "net_credit_per_share": -0.0132,
         "bid_ask_per_share": 0.05,
-        "est_max_loss_per_share": 8.958990689344846,
-        "return_on_risk_pct": -0.06351829117178186,
-        "annualized_ror_pct": -1.6560125912643129,
+        "est_max_loss_per_share": 9.2375,
+        "return_on_risk_pct": -0.1428958051420839,
+        "annualized_ror_pct": -4.741542625169147,
         "credit_quality": "thin",
         "tradeable": false
       },
@@ -1012,151 +142,151 @@
           "year": 2006,
           "n_train": 1541,
           "n_test": 179,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 179,
           "losses": 0,
-          "worst_test_buf_pct": 16.81431686110909
+          "worst_test_buf_pct": 16.81425231419228
         },
         {
           "year": 2007,
           "n_train": 1730,
           "n_test": 195,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 195,
           "losses": 0,
-          "worst_test_buf_pct": 13.08496286001174
+          "worst_test_buf_pct": 13.084966507928197
         },
         {
           "year": 2008,
           "n_train": 1915,
           "n_test": 123,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 123,
           "losses": 0,
-          "worst_test_buf_pct": 18.638364692241804
+          "worst_test_buf_pct": 18.63832700173562
         },
         {
           "year": 2009,
           "n_train": 2047,
           "n_test": 169,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 169,
           "losses": 0,
-          "worst_test_buf_pct": 16.409300366559176
+          "worst_test_buf_pct": 16.409305623545922
         },
         {
           "year": 2010,
           "n_train": 2207,
           "n_test": 212,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 212,
           "losses": 0,
-          "worst_test_buf_pct": 9.780721109951973
+          "worst_test_buf_pct": 9.780730756004552
         },
         {
           "year": 2011,
           "n_train": 2419,
           "n_test": 145,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 145,
           "losses": 0,
-          "worst_test_buf_pct": 20.87180444444563
+          "worst_test_buf_pct": 20.87178205607859
         },
         {
           "year": 2012,
           "n_train": 2574,
           "n_test": 43,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 43,
           "losses": 0,
-          "worst_test_buf_pct": 6.7109553903044965
+          "worst_test_buf_pct": 6.71099797834569
         },
         {
           "year": 2013,
           "n_train": 2607,
           "n_test": 120,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 120,
           "losses": 0,
-          "worst_test_buf_pct": 13.774054700409
+          "worst_test_buf_pct": 13.774061423494544
         },
         {
           "year": 2014,
           "n_train": 2735,
           "n_test": 187,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 187,
           "losses": 0,
-          "worst_test_buf_pct": 11.738315507654818
+          "worst_test_buf_pct": 11.738318487812482
         },
         {
           "year": 2015,
           "n_train": 2914,
           "n_test": 136,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 136,
           "losses": 0,
-          "worst_test_buf_pct": 12.126069899343793
+          "worst_test_buf_pct": 12.126037792791955
         },
         {
           "year": 2016,
           "n_train": 3060,
           "n_test": 189,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 189,
           "losses": 0,
-          "worst_test_buf_pct": 6.445635317102449
+          "worst_test_buf_pct": 6.445653231235937
         },
         {
           "year": 2017,
           "n_train": 3239,
           "n_test": 165,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 165,
           "losses": 0,
-          "worst_test_buf_pct": 8.803076676334188
+          "worst_test_buf_pct": 8.803139758892542
         },
         {
           "year": 2018,
           "n_train": 3404,
           "n_test": 195,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 195,
           "losses": 0,
-          "worst_test_buf_pct": 12.681702799821636
+          "worst_test_buf_pct": 12.681735498051028
         },
         {
           "year": 2019,
           "n_train": 3609,
           "n_test": 57,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 57,
           "losses": 0,
-          "worst_test_buf_pct": 17.47679184145462
+          "worst_test_buf_pct": 17.476839138272805
         },
         {
           "year": 2020,
           "n_train": 3666,
           "n_test": 161,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 161,
           "losses": 0,
-          "worst_test_buf_pct": 15.734391169825379
+          "worst_test_buf_pct": 15.73442166082354
         },
         {
           "year": 2021,
           "n_train": 3817,
           "n_test": 155,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 155,
           "losses": 0,
-          "worst_test_buf_pct": 13.854202109042523
+          "worst_test_buf_pct": 13.854225821950195
         },
         {
           "year": 2022,
           "n_train": 3972,
           "n_test": 157,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 157,
           "losses": 0,
           "worst_test_buf_pct": 17.521850424933728
@@ -1165,35 +295,35 @@
           "year": 2023,
           "n_train": 4139,
           "n_test": 63,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 63,
           "losses": 0,
-          "worst_test_buf_pct": 9.3490629087003
+          "worst_test_buf_pct": 9.349054036489079
         },
         {
           "year": 2024,
           "n_train": 4202,
           "n_test": 162,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 162,
           "losses": 0,
-          "worst_test_buf_pct": 8.91635790804849
+          "worst_test_buf_pct": 8.91636417695958
         },
         {
           "year": 2025,
           "n_train": 4354,
           "n_test": 164,
-          "b_hat_pct": 24.790330030976136,
+          "b_hat_pct": 24.790319801872506,
           "wins": 164,
           "losses": 0,
-          "worst_test_buf_pct": 15.415286197993916
+          "worst_test_buf_pct": 15.415285028477921
         },
         {
           "year": 2026,
           "n_train": 4518,
-          "n_test": 110,
-          "b_hat_pct": 24.790330030976136,
-          "wins": 110,
+          "n_test": 111,
+          "b_hat_pct": 24.790319801872506,
+          "wins": 111,
           "losses": 0,
           "worst_test_buf_pct": 16.356750819908182
         }
@@ -1204,169 +334,169 @@
           "horizon": 10,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly",
-          "calendar_days_to_expiry": 14,
-          "sessions_to_expiry": 9,
-          "strike": 141.69287305966117,
-          "buffer_pct": 20.987636417274533,
-          "certified_buffer_pct": 24.790330030976136,
-          "certified_strike": 134.8735025325807,
-          "history_worst_buffer_pct": 23.790330030976136,
+          "calendar_days_to_expiry": 11,
+          "sessions_to_expiry": 8,
+          "strike": 145.66773527055108,
+          "buffer_pct": 21.154135171555573,
+          "certified_buffer_pct": 24.790319801872506,
+          "certified_strike": 138.94988416604053,
+          "history_worst_buffer_pct": 23.790319801872506,
           "sigma_distance": 2.5,
           "variant": "regime",
-          "n_test": 3087,
+          "n_test": 3088,
           "n_folds": 21,
-          "pooled_wins": 3087,
+          "pooled_wins": 3088,
           "pooled_losses": 0,
           "folds": [
             {
               "year": 2006,
               "n_train": 1541,
               "n_test": 179,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 179,
               "losses": 0,
-              "worst_test_buf_pct": 16.81431686110909
+              "worst_test_buf_pct": 16.81425231419228
             },
             {
               "year": 2007,
               "n_train": 1730,
               "n_test": 195,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 195,
               "losses": 0,
-              "worst_test_buf_pct": 13.08496286001174
+              "worst_test_buf_pct": 13.084966507928197
             },
             {
               "year": 2008,
               "n_train": 1915,
               "n_test": 123,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 123,
               "losses": 0,
-              "worst_test_buf_pct": 18.638364692241804
+              "worst_test_buf_pct": 18.63832700173562
             },
             {
               "year": 2009,
               "n_train": 2047,
               "n_test": 169,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 169,
               "losses": 0,
-              "worst_test_buf_pct": 16.409300366559176
+              "worst_test_buf_pct": 16.409305623545922
             },
             {
               "year": 2010,
               "n_train": 2207,
               "n_test": 212,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 212,
               "losses": 0,
-              "worst_test_buf_pct": 9.780721109951973
+              "worst_test_buf_pct": 9.780730756004552
             },
             {
               "year": 2011,
               "n_train": 2419,
               "n_test": 145,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 145,
               "losses": 0,
-              "worst_test_buf_pct": 20.87180444444563
+              "worst_test_buf_pct": 20.87178205607859
             },
             {
               "year": 2012,
               "n_train": 2574,
               "n_test": 43,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 43,
               "losses": 0,
-              "worst_test_buf_pct": 6.7109553903044965
+              "worst_test_buf_pct": 6.71099797834569
             },
             {
               "year": 2013,
               "n_train": 2607,
               "n_test": 120,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 120,
               "losses": 0,
-              "worst_test_buf_pct": 13.774054700409
+              "worst_test_buf_pct": 13.774061423494544
             },
             {
               "year": 2014,
               "n_train": 2735,
               "n_test": 187,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 187,
               "losses": 0,
-              "worst_test_buf_pct": 11.738315507654818
+              "worst_test_buf_pct": 11.738318487812482
             },
             {
               "year": 2015,
               "n_train": 2914,
               "n_test": 136,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 136,
               "losses": 0,
-              "worst_test_buf_pct": 12.126069899343793
+              "worst_test_buf_pct": 12.126037792791955
             },
             {
               "year": 2016,
               "n_train": 3060,
               "n_test": 189,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 189,
               "losses": 0,
-              "worst_test_buf_pct": 6.445635317102449
+              "worst_test_buf_pct": 6.445653231235937
             },
             {
               "year": 2017,
               "n_train": 3239,
               "n_test": 165,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 165,
               "losses": 0,
-              "worst_test_buf_pct": 8.803076676334188
+              "worst_test_buf_pct": 8.803139758892542
             },
             {
               "year": 2018,
               "n_train": 3404,
               "n_test": 195,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 195,
               "losses": 0,
-              "worst_test_buf_pct": 12.681702799821636
+              "worst_test_buf_pct": 12.681735498051028
             },
             {
               "year": 2019,
               "n_train": 3609,
               "n_test": 57,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 57,
               "losses": 0,
-              "worst_test_buf_pct": 17.47679184145462
+              "worst_test_buf_pct": 17.476839138272805
             },
             {
               "year": 2020,
               "n_train": 3666,
               "n_test": 161,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 161,
               "losses": 0,
-              "worst_test_buf_pct": 15.734391169825379
+              "worst_test_buf_pct": 15.73442166082354
             },
             {
               "year": 2021,
               "n_train": 3817,
               "n_test": 155,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 155,
               "losses": 0,
-              "worst_test_buf_pct": 13.854202109042523
+              "worst_test_buf_pct": 13.854225821950195
             },
             {
               "year": 2022,
               "n_train": 3972,
               "n_test": 157,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 157,
               "losses": 0,
               "worst_test_buf_pct": 17.521850424933728
@@ -1375,81 +505,76 @@
               "year": 2023,
               "n_train": 4139,
               "n_test": 63,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 63,
               "losses": 0,
-              "worst_test_buf_pct": 9.3490629087003
+              "worst_test_buf_pct": 9.349054036489079
             },
             {
               "year": 2024,
               "n_train": 4202,
               "n_test": 162,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 162,
               "losses": 0,
-              "worst_test_buf_pct": 8.91635790804849
+              "worst_test_buf_pct": 8.91636417695958
             },
             {
               "year": 2025,
               "n_train": 4354,
               "n_test": 164,
-              "b_hat_pct": 24.790330030976136,
+              "b_hat_pct": 24.790319801872506,
               "wins": 164,
               "losses": 0,
-              "worst_test_buf_pct": 15.415286197993916
+              "worst_test_buf_pct": 15.415285028477921
             },
             {
               "year": 2026,
               "n_train": 4518,
-              "n_test": 110,
-              "b_hat_pct": 24.790330030976136,
-              "wins": 110,
+              "n_test": 111,
+              "b_hat_pct": 24.790319801872506,
+              "wins": 111,
               "losses": 0,
               "worst_test_buf_pct": 16.356750819908182
             }
           ],
           "profit": {
-            "realized_vol_pct": 40.13485539655288,
-            "implied_vol_pct": 52.175312015518735,
-            "short_iv_pct": 64.72664311267671,
-            "long_iv_pct": 68.20977947002332,
-            "short_strike": 141.69287305966117,
-            "long_strike": 132.72637296810842,
-            "spread_width": 8.966500091552735,
-            "mid_credit_per_share": 0.16195634526542602,
-            "est_credit_per_share": 0.1295650762123408,
-            "net_credit_per_share": 0.11636507621234081,
+            "realized_vol_pct": 40.469182241772074,
+            "implied_vol_pct": 52.6099369143037,
+            "short_iv_pct": 67.01555673236987,
+            "long_iv_pct": 70.98644486645959,
+            "short_strike": 145.66773527055108,
+            "long_strike": 136.43023527055107,
+            "spread_width": 9.2375,
+            "mid_credit_per_share": 0.09988650639574348,
+            "est_credit_per_share": 0.07488650639574349,
+            "net_credit_per_share": 0.06168650639574348,
             "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 8.836935015340394,
-            "return_on_risk_pct": 1.316803575112162,
-            "annualized_ror_pct": 34.33095035113852,
-            "credit_quality": "modest",
+            "est_max_loss_per_share": 9.162613493604256,
+            "return_on_risk_pct": 0.6732413894660325,
+            "annualized_ror_pct": 22.339373377736532,
+            "credit_quality": "thin",
             "tradeable": true
           },
           "stress_profit": {
-            "realized_vol_pct": 40.13485539655288,
-            "implied_vol_pct": 40.13485539655288,
-            "short_iv_pct": 49.78972547128978,
-            "long_iv_pct": 52.469061130787175,
-            "short_strike": 141.69287305966117,
-            "long_strike": 132.72637296810842,
-            "spread_width": 8.966500091552735,
-            "mid_credit_per_share": 0.032509402207889115,
-            "est_credit_per_share": 0.007509402207889114,
-            "net_credit_per_share": -0.005690597792110886,
+            "realized_vol_pct": 40.469182241772074,
+            "implied_vol_pct": 40.469182241772074,
+            "short_iv_pct": 51.550428255669125,
+            "long_iv_pct": 54.6049575895843,
+            "short_strike": 145.66773527055108,
+            "long_strike": 136.43023527055107,
+            "spread_width": 9.2375,
+            "mid_credit_per_share": 0.015149482913336038,
+            "est_credit_per_share": 0.0,
+            "net_credit_per_share": -0.0132,
             "bid_ask_per_share": 0.05,
-            "est_max_loss_per_share": 8.958990689344846,
-            "return_on_risk_pct": -0.06351829117178186,
-            "annualized_ror_pct": -1.6560125912643129,
+            "est_max_loss_per_share": 9.2375,
+            "return_on_risk_pct": -0.1428958051420839,
+            "annualized_ror_pct": -4.741542625169147,
             "credit_quality": "thin",
             "tradeable": false
           },
-          "crash_wing": {
-            "strike": 123.75987287655569,
-            "ratio": 0.5,
-            "est_cost_per_share": 0.0296162673660191,
-            "net_credit_after_wing": 0.08674880884632172
-          }
+          "crash_wing": null
         }
       ]
     }
@@ -1458,23 +583,23 @@
   "put_watchlist": [
     {
       "ticker": "ABT",
-      "today_close": 94.12000274658203,
-      "end_date": "2026-06-26",
+      "today_close": 92.70999908447266,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.20629579639967532,
-          "buffer_pct": 20.62957963996753,
-          "strike": 74.70344182283627,
-          "today_close": 94.12000274658203,
+          "buffer": 0.2062965026999799,
+          "buffer_pct": 20.62965026999799,
+          "strike": 73.58425050802761,
+          "today_close": 92.70999908447266,
           "regime_ok_today": false,
           "pooled_wins": 3674,
           "pooled_losses": 0,
           "n_test": 3674,
           "n_folds": 20,
-          "history_worst_buffer": 0.19629579639967532,
+          "history_worst_buffer": 0.1962965026999799,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         },
@@ -1482,16 +607,16 @@
           "side": "put",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24770544753024115,
-          "buffer_pct": 24.770544753024115,
-          "strike": 70.8059653446924,
-          "today_close": 94.12000274658203,
+          "buffer": 0.24770518853682622,
+          "buffer_pct": 24.77051885368262,
+          "strike": 69.74525128200438,
+          "today_close": 92.70999908447266,
           "regime_ok_today": false,
           "pooled_wins": 3674,
           "pooled_losses": 0,
           "n_test": 3674,
           "n_folds": 20,
-          "history_worst_buffer": 0.23770544753024114,
+          "history_worst_buffer": 0.2377051885368262,
           "expiry_date": "2026-07-17",
           "expiry_type": "weekly"
         }
@@ -1499,23 +624,23 @@
     },
     {
       "ticker": "MA",
-      "today_close": 499.0199890136719,
-      "end_date": "2026-06-26",
+      "today_close": 509.6400146484375,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.21250301990667453,
-          "buffer_pct": 21.250301990667452,
-          "strike": 392.97673435447103,
-          "today_close": 499.0199890136719,
+          "buffer": 0.2125027659666472,
+          "buffer_pct": 21.25027659666472,
+          "strike": 401.3401018883619,
+          "today_close": 509.6400146484375,
           "regime_ok_today": false,
           "pooled_wins": 3521,
           "pooled_losses": 0,
           "n_test": 3521,
           "n_folds": 18,
-          "history_worst_buffer": 0.20250301990667452,
+          "history_worst_buffer": 0.20250276596664718,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1523,23 +648,23 @@
     },
     {
       "ticker": "MCK",
-      "today_close": 763.510009765625,
-      "end_date": "2026-06-26",
+      "today_close": 747.530029296875,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2157789471418482,
-          "buffer_pct": 21.57789471418482,
-          "strike": 598.7606237261361,
-          "today_close": 763.510009765625,
+          "buffer": 0.2157789347004342,
+          "buffer_pct": 21.57789347004342,
+          "strike": 586.2287959186109,
+          "today_close": 747.530029296875,
           "regime_ok_today": false,
           "pooled_wins": 3592,
           "pooled_losses": 0,
           "n_test": 3592,
           "n_folds": 21,
-          "history_worst_buffer": 0.2057789471418482,
+          "history_worst_buffer": 0.20577893470043418,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1547,8 +672,8 @@
     },
     {
       "ticker": "WDAY",
-      "today_close": 124.20999908447266,
-      "end_date": "2026-06-26",
+      "today_close": 123.58000183105469,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
@@ -1556,8 +681,8 @@
           "horizon": 7,
           "buffer": 0.21633917175266282,
           "buffer_pct": 21.633917175266284,
-          "strike": 97.33851075913884,
-          "today_close": 124.20999908447266,
+          "strike": 96.84480658973176,
+          "today_close": 123.58000183105469,
           "regime_ok_today": false,
           "pooled_wins": 1402,
           "pooled_losses": 0,
@@ -1571,23 +696,23 @@
     },
     {
       "ticker": "JLL",
-      "today_close": 315.05999755859375,
-      "end_date": "2026-06-26",
+      "today_close": 313.0799865722656,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2233058089536034,
-          "buffer_pct": 22.33058089536034,
-          "strike": 244.70526993485166,
-          "today_close": 315.05999755859375,
+          "buffer": 0.22330591357170415,
+          "buffer_pct": 22.330591357170416,
+          "strike": 243.16737414972897,
+          "today_close": 313.0799865722656,
           "regime_ok_today": false,
           "pooled_wins": 3018,
           "pooled_losses": 0,
           "n_test": 3018,
           "n_folds": 19,
-          "history_worst_buffer": 0.2133058089536034,
+          "history_worst_buffer": 0.21330591357170414,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1595,23 +720,23 @@
     },
     {
       "ticker": "PFE",
-      "today_close": 24.290000915527344,
-      "end_date": "2026-06-26",
+      "today_close": 24.3700008392334,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.22440385523535278,
-          "buffer_pct": 22.440385523535276,
-          "strike": 18.839231066412758,
-          "today_close": 24.290000915527344,
+          "buffer": 0.22440531188790402,
+          "buffer_pct": 22.440531188790402,
+          "strike": 18.901243200196745,
+          "today_close": 24.3700008392334,
           "regime_ok_today": false,
-          "pooled_wins": 3131,
+          "pooled_wins": 3132,
           "pooled_losses": 0,
-          "n_test": 3131,
+          "n_test": 3132,
           "n_folds": 20,
-          "history_worst_buffer": 0.21440385523535277,
+          "history_worst_buffer": 0.21440531188790402,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1619,23 +744,23 @@
     },
     {
       "ticker": "TMO",
-      "today_close": 513.030029296875,
-      "end_date": "2026-06-26",
+      "today_close": 506.4200134277344,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.22642838717503977,
-          "buffer_pct": 22.642838717503977,
-          "strike": 396.8654671908202,
-          "today_close": 513.030029296875,
+          "buffer": 0.2264286316296027,
+          "buffer_pct": 22.642863162960268,
+          "strike": 391.75202275744743,
+          "today_close": 506.4200134277344,
           "regime_ok_today": false,
           "pooled_wins": 3781,
           "pooled_losses": 0,
           "n_test": 3781,
           "n_folds": 21,
-          "history_worst_buffer": 0.21642838717503976,
+          "history_worst_buffer": 0.21642863162960269,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1643,23 +768,23 @@
     },
     {
       "ticker": "AVY",
-      "today_close": 165.75999450683594,
-      "end_date": "2026-06-26",
+      "today_close": 163.32000732421875,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.22733977159388263,
-          "buffer_pct": 22.733977159388264,
-          "strike": 128.07615521624862,
-          "today_close": 165.75999450683594,
+          "buffer": 0.22733940503377836,
+          "buffer_pct": 22.733940503377838,
+          "strike": 126.19093402901854,
+          "today_close": 163.32000732421875,
           "regime_ok_today": false,
           "pooled_wins": 3157,
           "pooled_losses": 0,
           "n_test": 3157,
           "n_folds": 21,
-          "history_worst_buffer": 0.21733977159388262,
+          "history_worst_buffer": 0.21733940503377835,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1667,23 +792,23 @@
     },
     {
       "ticker": "OXY",
-      "today_close": 49.9900016784668,
-      "end_date": "2026-06-26",
+      "today_close": 49.09000015258789,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.22785679335591336,
-          "buffer_pct": 22.785679335591336,
-          "strike": 38.599440196154625,
-          "today_close": 49.9900016784668,
+          "buffer": 0.22785748896732028,
+          "buffer_pct": 22.785748896732027,
+          "strike": 37.90447598441384,
+          "today_close": 49.09000015258789,
           "regime_ok_today": false,
-          "pooled_wins": 2649,
+          "pooled_wins": 2650,
           "pooled_losses": 0,
-          "n_test": 2649,
+          "n_test": 2650,
           "n_folds": 19,
-          "history_worst_buffer": 0.21785679335591335,
+          "history_worst_buffer": 0.21785748896732027,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1691,8 +816,8 @@
     },
     {
       "ticker": "AN",
-      "today_close": 191.63999938964844,
-      "end_date": "2026-06-26",
+      "today_close": 188.88999938964844,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
@@ -1700,8 +825,8 @@
           "horizon": 7,
           "buffer": 0.23702703130731417,
           "buffer_pct": 23.702703130731418,
-          "strike": 146.21613925458456,
-          "today_close": 191.63999938964844,
+          "strike": 144.1179635906797,
+          "today_close": 188.88999938964844,
           "regime_ok_today": false,
           "pooled_wins": 3146,
           "pooled_losses": 0,
@@ -1715,8 +840,8 @@
     },
     {
       "ticker": "MTD",
-      "today_close": 1263.75,
-      "end_date": "2026-06-26",
+      "today_close": 1258.8199462890625,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
@@ -1724,8 +849,8 @@
           "horizon": 7,
           "buffer": 0.2372727272727273,
           "buffer_pct": 23.72727272727273,
-          "strike": 963.8965909090908,
-          "today_close": 1263.75,
+          "strike": 960.1363044877486,
+          "today_close": 1258.8199462890625,
           "regime_ok_today": false,
           "pooled_wins": 3518,
           "pooled_losses": 0,
@@ -1741,8 +866,8 @@
           "horizon": 10,
           "buffer": 0.24823109843081315,
           "buffer_pct": 24.823109843081316,
-          "strike": 950.0479493580599,
-          "today_close": 1263.75,
+          "strike": 946.3416882951113,
+          "today_close": 1258.8199462890625,
           "regime_ok_today": false,
           "pooled_wins": 3518,
           "pooled_losses": 0,
@@ -1756,23 +881,23 @@
     },
     {
       "ticker": "FNF",
-      "today_close": 46.709999084472656,
-      "end_date": "2026-06-26",
+      "today_close": 47.59000015258789,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24044496188112685,
-          "buffer_pct": 24.044496188112685,
-          "strike": 35.47881513513916,
-          "today_close": 46.709999084472656,
+          "buffer": 0.2404450753921532,
+          "buffer_pct": 24.04450753921532,
+          "strike": 36.14721897798631,
+          "today_close": 47.59000015258789,
           "regime_ok_today": false,
           "pooled_wins": 2834,
           "pooled_losses": 0,
           "n_test": 2834,
           "n_folds": 17,
-          "history_worst_buffer": 0.23044496188112684,
+          "history_worst_buffer": 0.2304450753921532,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         },
@@ -1780,16 +905,16 @@
           "side": "put",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24044496188112685,
-          "buffer_pct": 24.044496188112685,
-          "strike": 35.47881513513916,
-          "today_close": 46.709999084472656,
+          "buffer": 0.2404450753921532,
+          "buffer_pct": 24.04450753921532,
+          "strike": 36.14721897798631,
+          "today_close": 47.59000015258789,
           "regime_ok_today": false,
           "pooled_wins": 2834,
           "pooled_losses": 0,
           "n_test": 2834,
           "n_folds": 17,
-          "history_worst_buffer": 0.23044496188112684,
+          "history_worst_buffer": 0.2304450753921532,
           "expiry_date": "2026-07-17",
           "expiry_type": "weekly"
         }
@@ -1797,23 +922,23 @@
     },
     {
       "ticker": "ATR",
-      "today_close": 125.9800033569336,
-      "end_date": "2026-06-26",
+      "today_close": 125.29000091552734,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24170754285483953,
-          "buffer_pct": 24.17075428548395,
-          "strike": 95.52968629668474,
-          "today_close": 125.9800033569336,
+          "buffer": 0.2417072595862938,
+          "buffer_pct": 24.17072595862938,
+          "strike": 95.00649814067098,
+          "today_close": 125.29000091552734,
           "regime_ok_today": false,
           "pooled_wins": 3566,
           "pooled_losses": 0,
           "n_test": 3566,
           "n_folds": 21,
-          "history_worst_buffer": 0.23170754285483952,
+          "history_worst_buffer": 0.2317072595862938,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1821,23 +946,23 @@
     },
     {
       "ticker": "CLX",
-      "today_close": 97.54000091552734,
-      "end_date": "2026-06-26",
+      "today_close": 97.08999633789062,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2434628931848697,
-          "buffer_pct": 24.346289318486967,
-          "strike": 73.79263009137821,
-          "today_close": 97.54000091552734,
+          "buffer": 0.24346293469741354,
+          "buffer_pct": 24.346293469741354,
+          "strike": 73.45218089970665,
+          "today_close": 97.08999633789062,
           "regime_ok_today": false,
           "pooled_wins": 3341,
           "pooled_losses": 0,
           "n_test": 3341,
           "n_folds": 21,
-          "history_worst_buffer": 0.23346289318486968,
+          "history_worst_buffer": 0.23346293469741353,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1845,23 +970,23 @@
     },
     {
       "ticker": "GGG",
-      "today_close": 76.41999816894531,
-      "end_date": "2026-06-26",
+      "today_close": 75.7699966430664,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24529551854380993,
-          "buffer_pct": 24.529551854380994,
-          "strike": 57.67451509097687,
-          "today_close": 76.41999816894531,
+          "buffer": 0.2452958122017469,
+          "buffer_pct": 24.52958122017469,
+          "strike": 57.1839337759818,
+          "today_close": 75.7699966430664,
           "regime_ok_today": false,
           "pooled_wins": 3277,
           "pooled_losses": 0,
           "n_test": 3277,
           "n_folds": 21,
-          "history_worst_buffer": 0.23529551854380992,
+          "history_worst_buffer": 0.2352958122017469,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1869,8 +994,8 @@
     },
     {
       "ticker": "FIVE",
-      "today_close": 188.3699951171875,
-      "end_date": "2026-06-26",
+      "today_close": 178.22999572753906,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "put",
@@ -1878,8 +1003,8 @@
           "horizon": 7,
           "buffer": 0.24905569676453698,
           "buffer_pct": 24.9055696764537,
-          "strike": 141.45537473374395,
-          "today_close": 188.3699951171875,
+          "strike": 133.84079995727637,
+          "today_close": 178.22999572753906,
           "regime_ok_today": false,
           "pooled_wins": 1440,
           "pooled_losses": 0,
@@ -1895,23 +1020,23 @@
   "call_watchlist": [
     {
       "ticker": "CHD",
-      "today_close": 99.58000183105469,
-      "end_date": "2026-06-26",
+      "today_close": 97.9000015258789,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.21930375859901896,
-          "buffer_pct": 21.930375859901897,
-          "strike": 121.41827051390217,
-          "today_close": 99.58000183105469,
+          "buffer": 0.21930353010473658,
+          "buffer_pct": 21.93035301047366,
+          "strike": 119.36981745776325,
+          "today_close": 97.9000015258789,
           "regime_ok_today": false,
           "pooled_wins": 1102,
           "pooled_losses": 0,
           "n_test": 1102,
           "n_folds": 20,
-          "history_worst_buffer": 0.20930375859901895,
+          "history_worst_buffer": 0.20930353010473657,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1919,23 +1044,23 @@
     },
     {
       "ticker": "LLY",
-      "today_close": 1208.1199951171875,
-      "end_date": "2026-06-26",
+      "today_close": 1229.9300537109375,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.21976059259574243,
-          "buffer_pct": 21.976059259574242,
-          "strike": 1473.617161170906,
-          "today_close": 1208.1199951171875,
+          "buffer": 0.21976080377978513,
+          "buffer_pct": 21.976080377978512,
+          "strike": 1500.2204709073674,
+          "today_close": 1229.9300537109375,
           "regime_ok_today": false,
           "pooled_wins": 1010,
           "pooled_losses": 0,
           "n_test": 1010,
           "n_folds": 15,
-          "history_worst_buffer": 0.20976059259574242,
+          "history_worst_buffer": 0.20976080377978512,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1943,23 +1068,23 @@
     },
     {
       "ticker": "VIRT",
-      "today_close": 60.709999084472656,
-      "end_date": "2026-06-26",
+      "today_close": 58.150001525878906,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24595488331529536,
-          "buffer_pct": 24.595488331529538,
-          "strike": 75.64191982536582,
-          "today_close": 60.709999084472656,
+          "buffer": 0.24595520870727294,
+          "buffer_pct": 24.595520870727295,
+          "strike": 72.45229728750469,
+          "today_close": 58.150001525878906,
           "regime_ok_today": false,
           "pooled_wins": 544,
           "pooled_losses": 0,
           "n_test": 544,
           "n_folds": 7,
-          "history_worst_buffer": 0.23595488331529535,
+          "history_worst_buffer": 0.23595520870727293,
           "expiry_date": "2026-07-10",
           "expiry_type": "weekly"
         }
@@ -1967,8 +1092,8 @@
     },
     {
       "ticker": "MSGS",
-      "today_close": 392.9800109863281,
-      "end_date": "2026-06-26",
+      "today_close": 403.0299987792969,
+      "end_date": "2026-06-29",
       "rungs": [
         {
           "side": "call",
@@ -1976,8 +1101,8 @@
           "horizon": 7,
           "buffer": 0.24708434353778896,
           "buffer_pct": 24.708434353778898,
-          "strike": 490.0792190243581,
-          "today_close": 392.9800109863281,
+          "strike": 502.61240145371534,
+          "today_close": 403.0299987792969,
           "regime_ok_today": false,
           "pooled_wins": 403,
           "pooled_losses": 0,
@@ -1993,8 +1118,8 @@
           "horizon": 10,
           "buffer": 0.24708434353778896,
           "buffer_pct": 24.708434353778898,
-          "strike": 490.0792190243581,
-          "today_close": 392.9800109863281,
+          "strike": 502.61240145371534,
+          "today_close": 403.0299987792969,
           "regime_ok_today": false,
           "pooled_wins": 403,
           "pooled_losses": 0,
