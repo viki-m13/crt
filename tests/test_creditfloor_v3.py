@@ -48,8 +48,51 @@ def test_v3_buffer_gates():
     assert b >= HIST_CLEAR * 0.20 and K_SIGMA == 2.5
 
 
+
+
+def test_reality_snapping_safe_direction():
+    # Fake chain: verify strikes snap in the safe direction and the
+    # natural credit is bid-minus-ask with gates enforced.
+    import pandas as pd
+    from reality import ChainCache, verify_rung
+
+    class FakeCache(ChainCache):
+        def expirations(self, ticker):
+            return ["2026-07-10", "2026-07-17", "2026-08-21"]
+        def chain(self, ticker, expiry, side):
+            return pd.DataFrame({
+                "strike":       [95.0, 100.0, 105.0, 110.0, 115.0],
+                "bid":          [0.10, 0.30, 0.80, 1.90, 4.00],
+                "ask":          [0.20, 0.45, 1.00, 2.20, 4.40],
+                "openInterest": [500, 400, 300, 200, 100],
+                "volume":       [5, 5, 5, 5, 5],
+            })
+
+    rs = verify_rung(FakeCache(), "FAKE", "put", spot=130.0,
+                     publish_date="2026-07-02", horizon_sessions=10,
+                     model_short=111.7, model_long=104.2,
+                     wing_model_strike=97.0)
+    assert rs is not None
+    assert rs.short_strike == 110.0     # put short rounds DOWN (safer)
+    assert rs.long_strike == 105.0      # nearest to model protection
+    assert abs(rs.natural_credit - (1.90 - 1.00)) < 1e-9
+    assert rs.expiry in ("2026-07-10", "2026-07-17")
+    assert rs.sessions_to_expiry <= 10
+    assert rs.wing is not None and rs.wing["strike"] == 95.0
+
+    # zero-bid short leg -> not publishable
+    class ZeroBid(FakeCache):
+        def chain(self, ticker, expiry, side):
+            df = FakeCache.chain(self, ticker, expiry, side).copy()
+            df["bid"] = 0.0
+            return df
+    assert verify_rung(ZeroBid(), "FAKE", "put", 130.0, "2026-07-02", 10,
+                       111.7, 104.2, None) is None
+
+
 if __name__ == "__main__":
     test_snap_down_never_exceeds_horizon()
     test_covid_protocol_bug_is_fixed()
     test_v3_buffer_gates()
+    test_reality_snapping_safe_direction()
     print("all tests passed")

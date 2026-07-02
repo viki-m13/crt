@@ -331,3 +331,37 @@ trade against each other on a fixed frontier that no strike, width,
 structure, order type, or exit rule escapes. The honest lever for
 total profitability at fixed accuracy is capital redeployment across
 the 7–21-day cycles (~15–150% annualized per rung), not per-trade ROR.
+
+## 10. The reality layer (added 2026-07-02)
+
+Fair critique received: the engine published *modeled* contracts —
+theoretical Friday expirations, exact-dollar strikes (e.g. $266.18)
+that aren't listed, Black-Scholes credits. Many names list only
+monthly expirations; strikes are discrete; far-OTM options often carry
+a ZERO bid, meaning the modeled credit is not collectible at all.
+
+`reality.py` now verifies every rung against the ACTUAL listed chain
+before publication, fail-closed:
+
+- expiration: the latest expiration the ticker really lists inside the
+  certified h-session window (no listed expiration inside → dropped);
+- strikes: snapped to real listed strikes in the SAFE direction (put
+  short rounds down, call short rounds up — the real cushion is always
+  ≥ the certified one); long leg to the listed strike nearest the
+  model's protection level;
+- quotes: published credit = the NATURAL credit (sell at the short
+  leg's bid, buy at the long leg's ask, commissions subtracted) — the
+  fill available without negotiating; mid reported alongside;
+- liquidity: short bid > 0, long ask > 0, open interest ≥ 10 per leg;
+- the crash wing is re-quoted from the real chain (real ask) and only
+  attached when real quotes can afford it.
+
+The live log now records the real contract (real strike, real
+expiration), so live resolution grades what a user could actually
+trade. Honest caveats: quotes are exchange-delayed and fetched at scan
+time (after the close), so live prices at the next open will differ —
+that is why the natural credit, not the mid, is the published number;
+and historical validation (§5) necessarily used modeled fills, because
+historical chains are not available — the reality layer guarantees
+existence and collectibility of today's published contracts, not a
+re-validation of history.

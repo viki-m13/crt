@@ -472,13 +472,18 @@
       </div>
 
       <div class="cf-footnote">
-        Estimates use Black-Scholes with a put-skew smile at IV = 1.3&times;
-        realized volatility, a tenor-dependent fill haircut below mid, a
-        $0.05 minimum bid-ask, and $0.66/contract/leg commissions. A stress
-        estimate priced at bare realized volatility (no volatility risk
-        premium at all) is shown inside each card&rsquo;s details — real fills
-        should land between the two. Forward expectation for these trades is
-        the replay-validated ~99.4%, <strong>not 100%</strong>.
+        Cards marked <strong>verified live chain</strong> are real listed
+        contracts: the expiration is one the ticker actually lists (inside
+        the certified window), the strikes are real listed strikes snapped in
+        the safe direction, both legs have live bids and open interest, and
+        the published credit is the <strong>natural credit</strong> — sell at
+        the bid, buy at the ask, commissions subtracted — the fill available
+        without negotiating. Quotes are exchange-delayed; anything that can&rsquo;t
+        be verified against the live chain is not published at all. Model
+        estimates (Black-Scholes at IV = 1.3&times; realized, with a stress
+        variant at bare realized vol inside each card&rsquo;s details) are shown
+        for reference. Forward expectation for these trades is the
+        replay-validated ~99.4%, <strong>not 100%</strong>.
       </div>
     </div>
   </section>

@@ -58,6 +58,7 @@
     for (const s of (d.put_signals || []).concat(d.call_signals || [])) {
       for (const r of s.ladder || []) {
         const p = r.profit || {};
+        const re = r.real || null;
         out.push({
           ticker: s.ticker,
           side: s.side,
@@ -67,16 +68,20 @@
           expiry: r.expiry_date,
           expiryType: r.expiry_type,
           calDays: r.calendar_days_to_expiry,
-          shortK: p.short_strike,
-          longK: p.long_strike,
-          width: p.spread_width,
+          real: re,
+          shortK: re ? re.short_strike : p.short_strike,
+          longK: re ? re.long_strike : p.long_strike,
+          width: re ? re.width : p.spread_width,
           buffer: r.buffer_pct,
           certBuffer: r.certified_buffer_pct,
           histWorst: r.history_worst_buffer_pct,
-          credit: (p.net_credit_per_share || 0) * 100,
-          maxLoss: (p.est_max_loss_per_share || 0) * 100,
-          ror: p.return_on_risk_pct || 0,
-          annRor: p.annualized_ror_pct || 0,
+          credit: re ? re.net_natural_credit * 100 : (p.net_credit_per_share || 0) * 100,
+          maxLoss: re ? re.max_loss * 100 : (p.est_max_loss_per_share || 0) * 100,
+          ror: re ? re.ror_natural * 100 : (p.return_on_risk_pct || 0),
+          annRor: re
+            ? (re.ror_natural * 100) * (365 / Math.max(re.cal_days_to_expiry, 1))
+            : (p.annualized_ror_pct || 0),
+          modelCredit: (p.net_credit_per_share || 0) * 100,
           rv: p.realized_vol_pct,
           stress: r.stress_profit ? (r.stress_profit.net_credit_per_share || 0) * 100 : null,
           wing: r.crash_wing || null,
@@ -127,6 +132,9 @@
           <span>
             <span class="cf-card-ticker">${t.ticker}</span>
             <span class="cf-side-badge ${t.side}">${t.side} credit spread</span>
+            ${t.real
+              ? `<span class="cf-side-badge" style="color:var(--green);border-color:var(--green)">verified live chain</span>`
+              : `<span class="cf-side-badge">model estimate</span>`}
           </span>
           <span class="cf-card-price">last close <strong>${fmt$(t.spot)}</strong> · ${t.asof}</span>
         </div>
@@ -148,6 +156,14 @@
         ${wing}
         <div class="cf-card-expand" data-toggle="${idx}">Show full details &amp; certification record</div>
         <div class="cf-detail">
+          ${t.real ? `<div class="cf-detail-kv" style="margin-bottom:8px">
+            <strong>Live-chain quotes</strong> (delayed; as of ${t.real.quote_time}):
+            short ${fmt$(t.real.short_strike)} bid ${fmt$(t.real.short_bid)} / ask ${fmt$(t.real.short_ask)} (OI ${fmtInt(t.real.short_oi)}) ·
+            long ${fmt$(t.real.long_strike)} bid ${fmt$(t.real.long_bid)} / ask ${fmt$(t.real.long_ask)} (OI ${fmtInt(t.real.long_oi)})<br/>
+            Natural credit (sell bid / buy ask) <strong>${fmt$(t.real.natural_credit)}</strong>/share ·
+            mid ${fmt$(t.real.mid_credit)}/share · model estimate ${fmt$(t.modelCredit / 100)}/share —
+            the published number is the natural credit, the fill you can get without negotiating.
+          </div>` : ""}
           <div class="cf-detail-kv">
             Published <strong>${t.asof}</strong> · expiry <strong>${t.expiry}</strong> (${t.calDays} calendar days, ${t.horizon}-session certified window) ·
             spread width <strong>${fmt$(t.width)}</strong><br/>

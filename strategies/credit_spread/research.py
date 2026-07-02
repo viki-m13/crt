@@ -148,6 +148,24 @@ MAX_STALE_SESSIONS = 5
 
 OPTIONABLE_PATH = os.path.join(OUTPUT_DIR, "optionable.json")
 
+# Reality layer (reality.py): every rung that passes the model gates is
+# verified against the ACTUAL listed options chain — real expiration
+# inside the certified window, real strikes snapped in the safe
+# direction, real bid/ask with open-interest floors, natural credit
+# above the tradeability floor. Rungs that don't exist in reality are
+# not published. CS_SKIP_REALITY=1 disables the layer (offline tests
+# and replay work only — never production).
+SKIP_REALITY = os.environ.get("CS_SKIP_REALITY") == "1"
+_CHAIN_CACHE = None
+
+
+def _chain_cache():
+    global _CHAIN_CACHE
+    if _CHAIN_CACHE is None:
+        from reality import ChainCache
+        _CHAIN_CACHE = ChainCache()
+    return _CHAIN_CACHE
+
 
 def load_optionable() -> dict[str, bool]:
     """Fail-closed map of ticker -> has listed options."""
@@ -542,16 +560,52 @@ def _rung_dict(
 
     spot = r.today_close
     strike = spot * (1.0 - b_pub) if sr.side == "put" else spot * (1.0 + b_pub)
+
+    # Reality verification: the rung must exist on the live chain with
+    # a collectible natural credit, or it is not published.
+    real = None
+    if not SKIP_REALITY:
+        from dataclasses import asdict as _asdict
+        from reality import verify_rung
+        rs = verify_rung(
+            _chain_cache(), r.ticker, sr.side, spot, r.end_date, h,
+            prof.short_strike, prof.long_strike, k_wing if k_wing > 0 else None,
+            min_net=MIN_TRADEABLE_FILL,
+        )
+        if rs is None:
+            return None
+        real = _asdict(rs)
+
+    # When the reality layer is active, the PUBLISHED contract is the
+    # real one (real expiration, real short strike — snapped in the
+    # safe direction, so the real cushion >= the certified one). The
+    # model values stay alongside for transparency. The live log
+    # records these primary fields, so it tracks the real contract.
+    if real is not None:
+        pub_strike = real["short_strike"]
+        pub_expiry = real["expiry"]
+        pub_cal = real["cal_days_to_expiry"]
+        pub_sess = real["sessions_to_expiry"]
+        pub_buffer_pct = real["real_buffer_pct"]
+        pub_kind = kind
+    else:
+        pub_strike, pub_expiry = strike, exp_iso
+        pub_cal, pub_sess = cal_days, sessions_to_exp
+        pub_buffer_pct, pub_kind = b_pub * 100.0, kind
+
     base = {
         "engine": ENGINE_VERSION,
         "horizon": h,
-        "expiry_date": exp_iso,
-        "expiry_type": kind,
-        "calendar_days_to_expiry": cal_days,
-        "sessions_to_expiry": sessions_to_exp,
-        # Published (Sigma-Clear) strike — what a user would trade.
-        "strike": strike,
-        "buffer_pct": b_pub * 100.0,
+        "expiry_date": pub_expiry,
+        "expiry_type": pub_kind,
+        "calendar_days_to_expiry": pub_cal,
+        "sessions_to_expiry": pub_sess,
+        # Published strike — the contract a user would actually trade.
+        "strike": pub_strike,
+        "buffer_pct": pub_buffer_pct,
+        "model_strike": strike,
+        "model_expiry_date": exp_iso,
+        "model_buffer_pct": b_pub * 100.0,
         # Certified conformal stats for transparency: the walk-forward
         # machinery's own never-breached buffer and strike.
         "certified_buffer_pct": e["buffer_pct"],
@@ -577,7 +631,12 @@ def _rung_dict(
         ],
         "profit": _profit_block(prof),
         "stress_profit": _profit_block(stress) if stress is not None else None,
-        "crash_wing": wing,
+        # With the reality layer active, the wing quote comes from the
+        # real chain too (or is absent when real quotes can't pay for it).
+        "crash_wing": (real["wing"] if real is not None else wing),
+        # Verified live-chain contract (real expiration, real strikes,
+        # real quotes; the natural credit is the collectible one).
+        "real": real,
     }
     return base
 
@@ -591,8 +650,13 @@ def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any] | None:
               if d is not None]
     if not ladder:
         return None
-    # Primary pick: highest net return-on-risk among published rungs.
-    primary_rung = max(ladder, key=lambda d: d["profit"]["return_on_risk_pct"])
+    # Primary pick: highest net return-on-risk among published rungs
+    # (real natural-credit ROR when the reality layer priced the rung).
+    def _ror(d):
+        if d.get("real"):
+            return d["real"]["ror_natural"] * 100.0
+        return d["profit"]["return_on_risk_pct"]
+    primary_rung = max(ladder, key=_ror)
     return {
         "ticker": r.ticker,
         "today_close": r.today_close,
@@ -617,6 +681,7 @@ def _signal_payload(r: TickerResult, sr: SideResult) -> dict[str, Any] | None:
         "regime_ok_today": sr.best["regime_ok_today"],
         "profit": primary_rung["profit"],
         "stress_profit": primary_rung["stress_profit"],
+        "real": primary_rung.get("real"),
         "folds": primary_rung["folds"],
         "ladder": ladder,
     }
@@ -720,6 +785,15 @@ def main() -> int:
     print(f"Call-side certified:     {len(call_elig)} "
           f"({call_wins}/{call_wins+call_losses} OOS, losses={call_losses})")
     print(f"Published (v3 layer):    puts={len(put_signals)} calls={len(call_signals)}")
+    if not SKIP_REALITY and _CHAIN_CACHE is not None:
+        nf = len(_CHAIN_CACHE.failures)
+        print(f"Reality layer:           chain fetch failures={nf}")
+        for f in _CHAIN_CACHE.failures[:10]:
+            print(f"  [chain] {f}", file=sys.stderr)
+        if nf and not (put_signals or call_signals):
+            print("WARNING: zero signals AND chain failures — Yahoo options "
+                  "API may be down; treat today's empty book as unverified.",
+                  file=sys.stderr)
 
     lean = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
