@@ -302,3 +302,32 @@ python3 validate_v3.py                   # design/validation/P&L tables
 python3 scan.py                          # live scan + publish
 ```
 python3 exit_sim.py                      # early-exit / liquidity overlays (§7)
+
+## 9. The ROR-vs-accuracy frontier (tested 2026-06-13)
+
+Request: ≥50% return-on-risk per spread at the current 99.4% accuracy.
+Measured on the 1,508 validation trades by solving, per trade, for the
+strike that prices at each target ROR under conservative fills and
+resolving it against the realized path:
+
+| Target ROR/trade | Win rate | Median cushion | Note |
+|---|---|---|---|
+| 2% | 98.67% | 17.6% OTM | |
+| 5% | 96.22% | 13.0% | P&L negative under stress (IV=1.0) fills |
+| 10% | 91.98% | 9.2% | barely positive under stress fills |
+| 20% | 80.31% | 5.0% | survives stress fills; loses in 2022 |
+| 30% | 66.25% | 2.3% | |
+| **50%** | **not quotable** | — | no OTM vertical nets ≥50% of max loss under conservative fills, anywhere |
+
+Win rate tracks 1/(1+ROR) almost exactly — the option-pricing identity,
+confirmed on our own certified inventory. Structural levers at FIXED
+accuracy (same short strike) were also exhausted: width sweep
+2.5%→20% of spot moves median ROR only 1.52%→0.48% (bid-ask floor vs
+credit dilution; absolute P&L moves the other way); iron-condor
+pairing has no inventory (34 of 4,675 published rows, 0.7%, have both
+sides quotable the same day). Conclusion: at ~99.4% accuracy the
+per-spread ROR is structurally ~1–1.5%; per-trade profit and win rate
+trade against each other on a fixed frontier that no strike, width,
+structure, order type, or exit rule escapes. The honest lever for
+total profitability at fixed accuracy is capital redeployment across
+the 7–21-day cycles (~15–150% annualized per rung), not per-trade ROR.
