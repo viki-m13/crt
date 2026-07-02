@@ -365,3 +365,33 @@ and historical validation (§5) necessarily used modeled fills, because
 historical chains are not available — the reality layer guarantees
 existence and collectibility of today's published contracts, not a
 re-validation of history.
+
+## 11. Technical timing signals (ai-trader port, tested 2026-07-02)
+
+Five strategies from github.com/whchien/ai-trader (close-based
+adaptations) were used to TIME spread placement — bull signal → put
+spread below, bear → call spread above, buffer k·σ√h — and benchmarked
+against UNCONDITIONAL entries (every 5th session) at identical strikes,
+2008–2018 design / 2019–2026 validation, full universe, conservative
+fills (`tech_spreads.py`). Net pooled return-on-risk per trade:
+
+| Signal | k=1.0 h=14 des/val | k=1.5 h=7 des/val | vs baseline |
+|---|---|---|---|
+| unconditional baseline | 2.25% / 2.53% | 1.19% / 1.17% | — |
+| **rsi_bb** (RSI14 + Bollinger MR) | **2.69% / 2.71%** | **1.48% / 1.26%** | **+0.2–0.5pp, both windows** |
+| bbands | 2.10% / 2.43% | 1.09% / 1.04% | ≈ baseline |
+| momentum | 1.45% / 1.85% | 0.90% / 0.98% | worse |
+| donchian (turtle) | 1.20% / 1.90% | 0.84% / 1.01% | worse |
+| sma_cross (5/37) | 0.94% / 1.66% | 0.47% / 0.83% | **anti-alpha everywhere** |
+
+Conclusions: (a) only oversold mean-reversion (rsi_bb) carries
+measurable timing alpha for premium selling, ~+0.3pp of risk per trade,
+consistent across design and validation; trend-crossover timing is
+systematically worse than random. (b) Early profit-taking at 50% of
+credit flips EVERY cell negative (double commissions + slippage +
+winner truncation) — hold-to-expiry dominates for the fourth time.
+(c) Even at 1σ strikes (≈88% win rate, credit ≈10–12% of width), net
+expectancy is 2–2.7% of risk per trade; timing changes WHEN, the market
+still prices WHERE. Absolute P&L here leans on the IV=1.3×realized fill
+model; the signal-vs-baseline comparison does not (both priced
+identically).
