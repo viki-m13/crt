@@ -395,3 +395,43 @@ expectancy is 2–2.7% of risk per trade; timing changes WHEN, the market
 still prices WHERE. Absolute P&L here leans on the IV=1.3×realized fill
 model; the signal-vs-baseline comparison does not (both priced
 identically).
+
+## 12. The Vol-Crush edge (systematic feature scan, 2026-07-02)
+
+A systematic conditional-alpha scan (`feature_scan.py`: ~1.53M
+candidate trades 2008–2026, unconditional 1.5σ/14-session verticals
+both sides, 14 causal features, design-window selection only) found
+one substantial, replicating edge. Sell premium only when:
+
+```
+vr_60_252 = sigma60/sigma252 >= 1.183   (vol ELEVATED vs its own long-run; design p80)
+vr_10_60  = sigma10/sigma60  <= 0.858   (and already CALMING; design p50)
+```
+
+— the post-spike **vol-crush** regime: strikes and credits are set off
+inflated trailing vol while forward vol mean-reverts. Frozen on design,
+validated once on 2019–2026:
+
+| (net ROR/trade, win rate) | Design 08–18 | Validation 19–26 |
+|---|---|---|
+| Baseline puts | 1.64% / 95.2% | 1.91% / 94.8% |
+| Baseline calls | 1.47% / 93.8% | 1.79% / 93.4% |
+| **Vol-crush puts** | 4.02% / 97.8% | **5.23% / 98.3%** |
+| **Vol-crush calls** | 4.46% / 97.6% | **5.27% / 97.6%** |
+
+Deduped validation trades (one per ticker/side/expiry): **63,121, 97.6%
+win, 5.37% net ROR/trade, +$2.17M at 1 contract each, positive in all
+8 years** (2020: +7.4% at 98.7% — the edge pays MOST in crisis
+aftermath), max cumulative drawdown −$19.0k on ~$277k average deployed
+risk (≈7%), ≈105%/yr on deployed capital at model fills. Worst single
+trade −$8.3k. The signal is symmetric across puts and calls (a
+volatility phenomenon, not directional luck) and fires on ~83% of days.
+
+Caveats: absolute levels use the IV = 1.3×σ60 fill model; in vol-crush
+regimes real IV typically sits ABOVE that (post-spike fear premium), so
+the model error is likely in the strategy's favor — but this must be
+confirmed live through the reality layer before any of it is published
+as a tier. Entries at 3-session stride overlap within ticker;
+dedup-by-expiry is reported. Other scanned features (trend, RSI,
+breadth, day-of-week, earnings-gap age): small or non-replicating
+spreads; sigma60 level and vol ratios dominate.
