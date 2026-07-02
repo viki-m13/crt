@@ -85,6 +85,11 @@ class ChainCache:
         self._expirations: dict[str, list[str]] = {}
         self._chains: dict[tuple[str, str], object] = {}
         self.failures: list[str] = []
+        # why model-passing rungs were dropped by reality verification
+        self.drops: dict[str, int] = {}
+
+    def drop(self, reason: str) -> None:
+        self.drops[reason] = self.drops.get(reason, 0) + 1
 
     def _t(self, ticker: str):
         import yfinance as yf
@@ -155,6 +160,7 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
     in reality with a collectible credit."""
     exps = cache.expirations(ticker)
     if not exps:
+        cache.drop("chain_unavailable")
         return None
     # latest listed expiration within the certified window
     best = None
@@ -166,10 +172,12 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
             if best is None or e > best[0]:
                 best = (e, sess)
     if best is None:
+        cache.drop("no_listed_expiration_in_window")
         return None
     expiry, sessions = best
     tab = cache.chain(ticker, expiry, side)
     if tab is None or tab.empty:
+        cache.drop("chain_unavailable")
         return None
     strikes = tab["strike"].tolist()
 
@@ -179,6 +187,7 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
     else:
         i = bisect.bisect_left(strikes, model_short)
     if i < 0 or i >= len(strikes):
+        cache.drop("no_listed_strike_near_model")
         return None
     ks = float(strikes[i])
     # long leg: listed strike nearest the model's protection level,
@@ -187,21 +196,26 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
     kl = float(strikes[j])
     if side == "put" and kl >= ks:
         if i - 1 < 0:
+            cache.drop("no_listed_strike_near_model")
             return None
         kl = float(strikes[i - 1])
     if side == "call" and kl <= ks:
         if i + 1 >= len(strikes):
+            cache.drop("no_listed_strike_near_model")
             return None
         kl = float(strikes[i + 1])
 
     s_leg = _leg(tab, ks)
     l_leg = _leg(tab, kl)
     if s_leg is None or l_leg is None:
+        cache.drop("no_listed_strike_near_model")
         return None
     # liquidity gates
     if s_leg["bid"] <= 0 or l_leg["ask"] <= 0:
+        cache.drop("zero_bid_or_no_ask")
         return None
     if s_leg["oi"] < MIN_OI or l_leg["oi"] < MIN_OI:
+        cache.drop("open_interest_below_min")
         return None
 
     natural = s_leg["bid"] - l_leg["ask"]
@@ -209,6 +223,7 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
     net = natural - COMMISSION_PER_SHARE
     width = abs(ks - kl)
     if net < min_net or width <= 0:
+        cache.drop("natural_credit_below_floor")
         return None
     max_loss = max(width - natural, 0.01)
 

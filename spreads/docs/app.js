@@ -188,9 +188,19 @@
     const list = $("#trade-list");
     const t = sortTrades();
     if (!t.length) {
-      list.innerHTML = `<div class="cf-empty">No trades qualify today. The gates are strict
+      const re = state.reality;
+      let why = "";
+      if (re && re.drops && Object.keys(re.drops).length) {
+        const parts = Object.entries(re.drops)
+          .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`);
+        why = `<br/><br/>Candidates passed the model gates today but failed
+          live-chain verification — ${parts.join(" · ")}. A signal that
+          doesn't exist as a real, liquid contract is not published.`;
+      }
+      list.innerHTML = `<div class="cf-empty">No tradeable trades today. The gates are strict
         on purpose — most stocks, most days, the market doesn't pay enough for a
-        strike this safe. Check back after the next market close.</div>`;
+        strike this safe, or the real chain can't fill it.${why}<br/><br/>
+        Check back after the next market close.</div>`;
       return;
     }
     list.innerHTML = t.map((x, i) => tradeCard(x, i)).join("");
@@ -304,6 +314,7 @@
     try {
       const d = await fetchJSON("data/signals.json");
       state.trades = flattenTrades(d);
+      state.reality = (d.summary || {}).reality || null;
       renderStats(d);
       renderTrades();
       wireSort();

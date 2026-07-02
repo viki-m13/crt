@@ -785,9 +785,15 @@ def main() -> int:
     print(f"Call-side certified:     {len(call_elig)} "
           f"({call_wins}/{call_wins+call_losses} OOS, losses={call_losses})")
     print(f"Published (v3 layer):    puts={len(put_signals)} calls={len(call_signals)}")
+    reality_summary = None
     if not SKIP_REALITY and _CHAIN_CACHE is not None:
         nf = len(_CHAIN_CACHE.failures)
-        print(f"Reality layer:           chain fetch failures={nf}")
+        reality_summary = {
+            "chain_fetch_failures": nf,
+            "drops": dict(sorted(_CHAIN_CACHE.drops.items())),
+        }
+        print(f"Reality layer:           chain fetch failures={nf} "
+              f"drops={reality_summary['drops']}")
         for f in _CHAIN_CACHE.failures[:10]:
             print(f"  [chain] {f}", file=sys.stderr)
         if nf and not (put_signals or call_signals):
@@ -813,6 +819,9 @@ def main() -> int:
                 "min_net_fill_per_share": MIN_TRADEABLE_FILL,
                 "min_history_cal_days": MIN_HISTORY_CAL_DAYS,
             },
+            # Why model-passing rungs were dropped by live-chain
+            # verification today (None when the layer was skipped).
+            "reality": reality_summary,
             # Honest, replay-derived expectations for this exact rule
             # set (deduped independent trades, conservative fills; see
             # strategies/credit_spread/VALIDATION.md). The fold stats
