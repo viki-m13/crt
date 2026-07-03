@@ -135,11 +135,19 @@ def _iter_signal_rungs(signals_blob: dict[str, Any]):
             spot = s["today_close"]
             for rung in s.get("ladder", []):
                 yield publish_date, ticker, side_name, rung, spot
+    # Tier 2 (Vol-Alpha GBM puts) — same append-only tracking, its own
+    # engine tag so the scoreboard reports the tiers separately.
+    for s in signals_blob.get("tier2_signals", []):
+        for rung in s.get("ladder", []):
+            yield s["end_date"], s["ticker"], "put", rung, s["today_close"]
 
 
 def _make_signal(publish_date: str, ticker: str, side: str, rung: dict, spot: float) -> dict:
+    # Tier 2 rungs get an engine-suffixed id so a Tier 1 rung on the
+    # same (date, ticker, side, horizon) can't collide with them.
+    _suffix = ":t2" if str(rung.get("engine", "")).startswith("t2") else ""
     return {
-        "id": f"{publish_date}:{ticker}:{side}:{rung['horizon']}",
+        "id": f"{publish_date}:{ticker}:{side}:{rung['horizon']}{_suffix}",
         "publish_date": publish_date,
         "ticker": ticker,
         "side": side,

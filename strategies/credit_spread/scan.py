@@ -81,6 +81,16 @@ def main() -> int:
         print(f"research.py exited non-zero: {rc}", file=sys.stderr)
         return rc
 
+    # Tier 2 ("Vol-Alpha" GBM puts) — additive; a tier2 failure must
+    # never block the Tier 1 publication, so this step is fail-soft.
+    rc2 = subprocess.call(
+        [sys.executable, os.path.join(HERE, "tier2.py"), "scan"],
+        env={**env, "CS_DATA_DIR": CACHE_FULL},
+    )
+    if rc2 != 0:
+        print(f"[WARN] tier2.py scan exited non-zero: {rc2} — "
+              "publishing Tier 1 only.", file=sys.stderr)
+
     src = os.path.join(RESULTS, "signals.json")
     dst = os.path.join(WEB_DATA, "signals.json")
     shutil.copyfile(src, dst)

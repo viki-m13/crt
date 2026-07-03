@@ -460,3 +460,38 @@ accuracy) sits ~20 points above the best achievable point at the 50%-
 ROR distance. 95%+ accuracy first appears at ~1.2σ, where fair credit
 commands ~11–15% ROR. The achievable validated menu on weekly cadence:
 ~75% @ 50% ROR, ~83% @ 33%, ~90% @ 22%, ~95–97% @ 11–16%.
+
+## 14. Tier 2 — "Vol-Alpha" GBM put spreads (productionized 2026-07-03)
+
+The frontier work in §13 was hardened into a second published tier
+(`tier2.py`, engine `t2-volalpha-gbm`):
+
+```
+trade       PUT vertical, short strike 0.6·σ60·√14 below spot,
+            width 2.5% of spot, expiry snapped DOWN within 14 sessions,
+            hold to expiry
+selection   HistGradientBoosting over the 13-feature causal library,
+            fit ONLY on 2008–2018 (committed artifact
+            results/tier2_model.joblib), publish when confidence ≥ the
+            frozen deep cut (0.9561 — the design-99%-accuracy cut)
+hygiene     optionable, ≥10y history, fresh series, reality layer
+            (real expiration/strikes/quotes, natural credit ≥ $0.05)
+```
+
+Validation 2019–2026 (deduped by ticker/expiry, conservative fills,
+single frozen pass): **2,599 trades · 98.2% accuracy · 24.3% net
+ROR/trade · 19.7% ROR under zero-vol-premium stress pricing · ~7
+trades/week · worst trade −$516/contract · positive in 2020 (+24%) and
+2022 (+17%)**. Width sweep and c-sweep documented in the session
+experiments; c=0.6/width 2.5% is the max-ROR cell with volume. The
+stress-pricing robustness is the key property: the conditional-breach
+alpha (1.8% realized vs ~24% unconditional at that distance) dominates
+any fill-model assumption.
+
+Honest limits: ~1.8 of every 100 trades lose (this tier is NOT the
+99.4% tier); calibration decays across regimes (a design-95% cut
+delivers ~88–92% out-of-sample — hence the deepest cut is used);
+live natural credits at 0.6σ must confirm the modeled ~25% ROR (the
+reality layer records them); losses cluster in vol episodes. Live-log
+entries carry engine `t2-volalpha-gbm` with `:t2`-suffixed ids so the
+tiers are scored separately, forever.

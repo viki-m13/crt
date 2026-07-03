@@ -85,6 +85,29 @@
       "pooled_wins": 190134,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
+    },
+    "tier2": {
+      "engine": "t2-volalpha-gbm",
+      "n_scored": 816,
+      "n_above_threshold": 1,
+      "n_published": 1,
+      "spec": {
+        "c_sigma": 0.6,
+        "width_pct": 0.025,
+        "horizon": 14,
+        "threshold": 0.9561276491076253,
+        "design_target": 0.99
+      },
+      "validated": {
+        "window": "2019-2026",
+        "accuracy": 0.982,
+        "ror_per_trade": 0.243,
+        "ror_per_trade_stress": 0.197,
+        "trades_per_week": 7,
+        "worst_trade_usd": -516,
+        "note": "Deduped validation trades under conservative fills; stress = zero volatility risk premium. NOT a guarantee; ~1.8% of trades lose."
+      },
+      "reality": null
     }
   },
   "put_signals": [],
@@ -661,6 +684,39 @@
           "history_worst_buffer": 0.23708434353778896,
           "expiry_date": "2026-07-17",
           "expiry_type": "weekly"
+        }
+      ]
+    }
+  ],
+  "tier2_signals": [
+    {
+      "engine": "t2-volalpha-gbm",
+      "ticker": "CAR",
+      "side": "put",
+      "today_close": 185.8000030517578,
+      "end_date": "2026-06-12",
+      "horizon": 14,
+      "buffer_pct": 29.17513016828737,
+      "model_strike": 131.59261030872557,
+      "model_long_strike": 126.94761023243163,
+      "expiry_date": "2026-07-02",
+      "expiry_type": "weekly",
+      "calendar_days_to_expiry": 20,
+      "sessions_to_expiry": 13,
+      "gbm_confidence": 0.9832490539341254,
+      "gbm_threshold": 0.9561276491076253,
+      "sigma60_pct": 206.29932383996223,
+      "strike": 131.59261030872557,
+      "real": null,
+      "variant": "gbm",
+      "ladder": [
+        {
+          "engine": "t2-volalpha-gbm",
+          "horizon": 14,
+          "expiry_date": "2026-07-02",
+          "strike": 131.59261030872557,
+          "buffer_pct": 29.17513016828737,
+          "variant": "gbm"
         }
       ]
     }

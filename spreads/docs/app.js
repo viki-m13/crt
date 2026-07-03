@@ -55,6 +55,42 @@
 
   function flattenTrades(d) {
     const out = [];
+    // Tier 2 (Vol-Alpha GBM puts): reality-verified single-rung trades.
+    for (const s of d.tier2_signals || []) {
+      const re = s.real;
+      if (!re) continue;
+      out.push({
+        tier: 2,
+        ticker: s.ticker,
+        side: "put",
+        spot: s.today_close,
+        asof: s.end_date,
+        horizon: s.horizon,
+        expiry: re.expiry,
+        expiryType: "listed",
+        calDays: re.cal_days_to_expiry,
+        real: re,
+        shortK: re.short_strike,
+        longK: re.long_strike,
+        width: re.width,
+        buffer: re.real_buffer_pct,
+        certBuffer: null,
+        histWorst: null,
+        credit: re.net_natural_credit * 100,
+        maxLoss: re.max_loss * 100,
+        ror: re.ror_natural * 100,
+        annRor: (re.ror_natural * 100) * (365 / Math.max(re.cal_days_to_expiry, 1)),
+        modelCredit: null,
+        rv: s.sigma60_pct,
+        stress: null,
+        wing: null,
+        nTest: null,
+        nFolds: null,
+        variant: "gbm",
+        gbm: s.gbm_confidence,
+        folds: [],
+      });
+    }
     for (const s of (d.put_signals || []).concat(d.call_signals || [])) {
       for (const r of s.ladder || []) {
         const p = r.profit || {};
@@ -108,7 +144,9 @@
   function tradeCard(t, idx) {
     const dir = t.side === "put" ? "below" : "above";
     const winWord = t.side === "put" ? "at or above" : "at or below";
-    const wing = t.wing
+    const wing = t.tier === 2
+      ? ""
+      : t.wing
       ? `<div class="cf-wing-line">
            <strong>Optional crash wing:</strong> also buy ${t.wing.ratio} &times;
            the ${fmt$(t.wing.strike)} ${optWord(t.side)} (same expiry)
@@ -132,6 +170,9 @@
           <span>
             <span class="cf-card-ticker">${t.ticker}</span>
             <span class="cf-side-badge ${t.side}">${t.side} credit spread</span>
+            ${t.tier === 2
+              ? `<span class="cf-side-badge" style="color:#6b21a8;border-color:#6b21a8">tier 2 · vol-alpha · validated 98% / 24% ROR</span>`
+              : `<span class="cf-side-badge">tier 1 · max accuracy · validated 99.4%</span>`}
             ${t.real
               ? `<span class="cf-side-badge" style="color:var(--green);border-color:var(--green)">verified live chain</span>`
               : `<span class="cf-side-badge">model estimate</span>`}
@@ -164,7 +205,16 @@
             mid ${fmt$(t.real.mid_credit)}/share · model estimate ${fmt$(t.modelCredit / 100)}/share —
             the published number is the natural credit, the fill you can get without negotiating.
           </div>` : ""}
-          <div class="cf-detail-kv">
+          ${t.tier === 2 ? `<div class="cf-detail-kv">
+            Published <strong>${t.asof}</strong> · expiry <strong>${t.expiry}</strong> (${t.calDays} calendar days) ·
+            spread width <strong>${fmt$(t.width)}</strong><br/>
+            Strike sits 0.6&sigma; below spot (60-day realized vol ${t.rv != null ? fmtPct(t.rv, 0) : "—"});
+            selection: gradient-boosted model confidence <strong>${(t.gbm * 100).toFixed(1)}%</strong>
+            above the frozen deep-confidence threshold. Validated on untouched 2019&ndash;2026:
+            98.2% accuracy, 24.3% ROR/trade (19.7% under zero-vol-premium stress),
+            ~7 trades/week, worst trade &minus;$516/contract. <strong>~1.8 of every 100
+            trades lose</strong> — size accordingly.
+          </div>` : `<div class="cf-detail-kv">
             Published <strong>${t.asof}</strong> · expiry <strong>${t.expiry}</strong> (${t.calDays} calendar days, ${t.horizon}-session certified window) ·
             spread width <strong>${fmt$(t.width)}</strong><br/>
             Cushion math: short strike sits <strong>${fmtPct(t.buffer, 2)}</strong> ${dir} spot
@@ -175,11 +225,11 @@
             Stress credit (options priced at bare realized vol, no premium at all):
             <strong>${t.stress != null ? fmt$(t.stress, 0) : "—"}</strong>/contract —
             real fills should land between this and the estimate above.
-          </div>
-          <table class="cf-fold-tbl">
+          </div>`}
+          ${t.folds.length ? `<table class="cf-fold-tbl">
             <thead><tr><th>Test year</th><th>Train</th><th>Test</th><th>Certified buffer</th><th>Worst test move</th><th>Result</th></tr></thead>
             <tbody>${foldRows}</tbody>
-          </table>
+          </table>` : ""}
         </div>
       </div>`;
   }

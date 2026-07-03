@@ -58,7 +58,8 @@ def emit() -> int:
 
     win_cols = [f"win_c{c}" for c in CS]
     cols: dict[str, list] = {k: [] for k in
-                             ["date", "ticker", "side"] + win_cols + FEATURES}
+                             ["date", "ticker", "side", "expiry", "spot",
+                              "s_exp", "cal_days"] + win_cols + FEATURES}
     expiry_cache: dict = {}
     t0 = time.time()
     for ti, t in enumerate(tickers, 1):
@@ -105,7 +106,7 @@ def emit() -> int:
             snap = expiry_cache[dkey]
             if snap is None:
                 continue
-            exp_iso = snap[0]
+            exp_iso, _kind, cal_days, _sess = snap
             exp_d = np.datetime64(exp_iso)
             if dates[-1] < exp_d:
                 continue
@@ -116,6 +117,10 @@ def emit() -> int:
                 cols["date"].append(str(dates[j]))
                 cols["ticker"].append(t)
                 cols["side"].append(side)
+                cols["expiry"].append(exp_iso)
+                cols["spot"].append(close[j])
+                cols["s_exp"].append(close[ke])
+                cols["cal_days"].append(cal_days)
                 for c in CS:
                     b = c * sig_h
                     ok = move >= -b if side == "put" else move <= b
