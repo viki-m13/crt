@@ -1,4 +1,6 @@
-/* CreditFloor v3 ("Sigma-Clear") — single-strategy page.
+/* CreditFloor — two-tier credit-spread page.
+ *   Tier 1 "Sigma-Clear"  (max accuracy, put_signals/call_signals)
+ *   Tier 2 "Vol-Alpha"    (max profit at high accuracy, tier2_signals)
  *
  * Data: data/signals.json (today's published trades, hold-to-expiry),
  *       data/live_log.json (append-only record of every signal ever
@@ -20,6 +22,7 @@
   const state = {
     trades: [],            // flattened rungs, one per tradeable signal
     sort: "credit",
+    tierFilter: "all",     // "all" | 1 | 2
     log: null,             // live_log signals array
     logFiltered: [],
     logShown: 0,
@@ -132,7 +135,11 @@
   }
 
   function sortTrades() {
-    const t = state.trades.slice();
+    let t = state.trades.slice();
+    if (state.tierFilter !== "all") {
+      const want = Number(state.tierFilter);
+      t = t.filter((x) => (x.tier === 2 ? 2 : 1) === want);
+    }
     if (state.sort === "credit") t.sort((a, b) => b.credit - a.credit);
     else if (state.sort === "ror") t.sort((a, b) => b.ror - a.ror);
     else t.sort((a, b) => (a.expiry < b.expiry ? -1 : a.expiry > b.expiry ? 1 : b.credit - a.credit));
@@ -263,23 +270,37 @@
 
   function renderLiveStats(log) {
     const s = log.summary || {};
-    $("#live-resolved").textContent = fmtInt(s.resolved || 0);
-    $("#live-wins").textContent = fmtInt(s.wins || 0);
-    $("#live-losses").textContent = fmtInt(s.losses || 0);
-    $("#live-wr").textContent = s.win_rate != null ? fmtPct(100 * s.win_rate, 2) : "—";
     const be = s.by_engine || {};
     const v3 = be["v3-sigmaclear"] || {};
     const t2 = be["t2-volalpha-gbm"] || {};
     const v1 = be["v1"] || {};
+    // The big tiles reflect the CURRENT strategy (Tier 1 + Tier 2) — the
+    // live record of what the page publishes today. The legacy engine's
+    // large resolved count would otherwise drown it out; it stays visible
+    // below, clearly marked retired.
+    const cur = {
+      resolved: (v3.resolved || 0) + (t2.resolved || 0),
+      wins: (v3.wins || 0) + (t2.wins || 0),
+      losses: (v3.losses || 0) + (t2.losses || 0),
+      pending: (v3.pending || 0) + (t2.pending || 0),
+    };
+    const curWR = cur.resolved > 0 ? cur.wins / cur.resolved : null;
+    $("#live-resolved").textContent = fmtInt(cur.resolved);
+    $("#live-wins").textContent = fmtInt(cur.wins);
+    $("#live-losses").textContent = fmtInt(cur.losses);
+    $("#live-wr").textContent = curWR != null ? fmtPct(100 * curWR, 2)
+      : "building";
     $("#live-sub").innerHTML =
-      `<span>First signal: <strong>${s.first_publish_date || "—"}</strong></span>` +
-      `<span>Pending: <strong>${fmtInt(s.pending || 0)}</strong></span>` +
-      `<span>Tier 1 (v3): <strong>${fmtInt(v3.total || 0)}</strong> published · ` +
-      `<strong>${fmtInt(v3.wins || 0)}</strong> wins · <strong>${fmtInt(v3.losses || 0)}</strong> losses</span>` +
-      `<span>Tier 2 (vol-alpha): <strong>${fmtInt(t2.total || 0)}</strong> published · ` +
-      `<strong>${fmtInt(t2.wins || 0)}</strong> wins · <strong>${fmtInt(t2.losses || 0)}</strong> losses</span>` +
-      `<span>Legacy engine (v1, retired 2026-06-12): <strong>${fmtInt(v1.resolved || 0)}</strong> resolved · ` +
-      `<strong>${fmtInt(v1.losses || 0)}</strong> losses kept on the record</span>`;
+      `<span>First current-strategy signal: <strong>2026-06-12</strong></span>` +
+      `<span>Pending: <strong>${fmtInt(cur.pending)}</strong></span>` +
+      `<span>Tier 1 &ldquo;Sigma-Clear&rdquo;: <strong>${fmtInt(v3.total || 0)}</strong> published · ` +
+      `<strong>${fmtInt(v3.wins || 0)}</strong> wins · <strong>${fmtInt(v3.losses || 0)}</strong> losses` +
+      `${(v3.pending || 0) ? ` · ${fmtInt(v3.pending)} pending` : ""}</span>` +
+      `<span>Tier 2 &ldquo;Vol-Alpha&rdquo;: <strong>${fmtInt(t2.total || 0)}</strong> published · ` +
+      `<strong>${fmtInt(t2.wins || 0)}</strong> wins · <strong>${fmtInt(t2.losses || 0)}</strong> losses` +
+      `${(t2.pending || 0) ? ` · ${fmtInt(t2.pending)} pending` : ""}</span>` +
+      `<span style="opacity:.75">Retired legacy engine (v1, before 2026-06-12): <strong>${fmtInt(v1.resolved || 0)}</strong> resolved · ` +
+      `<strong>${fmtInt(v1.losses || 0)}</strong> losses — kept on the record, not part of the current strategy</span>`;
   }
 
   function applyLogFilters() {
@@ -355,11 +376,19 @@
   /* ---------------- boot ---------------- */
 
   function wireSort() {
-    $$("#trade-sort button").forEach((b) => {
+    $$("#trade-sort button[data-sort]").forEach((b) => {
       b.addEventListener("click", () => {
-        $$("#trade-sort button").forEach((x) => x.classList.remove("active"));
+        $$("#trade-sort button[data-sort]").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         state.sort = b.dataset.sort;
+        renderTrades();
+      });
+    });
+    $$("#trade-tier button[data-tier]").forEach((b) => {
+      b.addEventListener("click", () => {
+        $$("#trade-tier button[data-tier]").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        state.tierFilter = b.dataset.tier;
         renderTrades();
       });
     });

@@ -468,6 +468,12 @@
         none qualify — no trade is a result, not an error.
       </p>
 
+      <div class="cf-filters" id="trade-tier">
+        <span class="lbl">Tier</span>
+        <button data-tier="all" class="active">All</button>
+        <button data-tier="1">Tier 1 · max accuracy</button>
+        <button data-tier="2">Tier 2 · max profit</button>
+      </div>
       <div class="cf-filters" id="trade-sort">
         <span class="lbl">Sort</span>
         <button data-sort="credit" class="active">Highest credit</button>
@@ -502,22 +508,31 @@
       <div class="section-title">History</div>
       <p class="section-note">
         Two records, kept separate on purpose. The <strong>live log</strong> is
-        the unbiased one: every signal ever published on this page is recorded
-        the day it is published and resolved at its expiry close — losses stay
-        forever, including all 36 from the legacy engine that this strategy
-        replaced. The <strong>replay record</strong> is the 19-year
-        point-in-time simulation that validated the current rule set before it
-        went live.
+        the unbiased one: every signal is recorded the day it&rsquo;s published and
+        resolved at its expiry close — losses stay forever. The current
+        two-tier strategy went live 2026-06-12; the numbers below track it from
+        that day. The engine it replaced (v1) stays on the record with all its
+        losses, clearly marked retired. The <strong>replay record</strong> is
+        the 19-year point-in-time simulation that validated both tiers before
+        they went live.
       </p>
 
-      <h3 style="font-size:16px;font-weight:600;margin:26px 0 4px">Live log — every signal ever published</h3>
+      <h3 style="font-size:16px;font-weight:600;margin:26px 0 4px">Live log — current strategy (Tier 1 + Tier 2), since 2026-06-12</h3>
       <div class="cf-live-grid" id="live-grid">
-        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved signals</span></div>
+        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved (current strategy)</span></div>
         <div class="cf-live-stat"><span class="num good" id="live-wins">&mdash;</span><span class="lbl">Wins</span></div>
         <div class="cf-live-stat"><span class="num bad" id="live-losses">&mdash;</span><span class="lbl">Losses</span></div>
         <div class="cf-live-stat"><span class="num" id="live-wr">&mdash;</span><span class="lbl">Live win rate</span></div>
       </div>
       <div class="cf-live-sub" id="live-sub"></div>
+      <p class="section-note" style="font-size:12px;margin-top:4px">
+        The current strategy has a short live track record on purpose — it
+        replaced the prior engine only on 2026-06-12. Its validated expectations
+        (Tier 1 99.4%, Tier 2 98.2% at 24.3% ROR) come from the 19-year replay
+        below, not from these still-accumulating live counts. Use the
+        <strong>Legacy</strong> filter to browse the retired engine&rsquo;s full
+        history.
+      </p>
 
       <div class="cf-filters" id="log-filters">
         <span class="lbl">Show</span>
@@ -743,7 +758,7 @@
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot" style="background:var(--orange)"></span>CreditFloor</span>
-        <span class="footer-text">v3 &ldquo;Sigma-Clear&rdquo; — replay-validated credit-spread engine. Updated once daily after market close, New York time.</span>
+        <span class="footer-text">Two-tier reality-verified credit-spread engine — Tier 1 &ldquo;Sigma-Clear&rdquo; (max accuracy) and Tier 2 &ldquo;Vol-Alpha&rdquo; (max profit at high accuracy). Updated once daily after market close, New York time.</span>
         <span class="footer-text footnote-text">Past performance does not predict future results.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>
