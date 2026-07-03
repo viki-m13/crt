@@ -657,7 +657,21 @@
           conservative net credit &ge; $0.05/share after slippage and commissions —
           if the market won&rsquo;t pay for the distance, nothing is published.
         </p>
-        <h3>4. The crash wing (optional, listed per trade)</h3>
+        <h3>4. The liquidity gate — will it actually trade?</h3>
+        <p>
+          A listed contract is not the same as a tradeable one. Every published
+          spread must clear three liquidity tests against the live chain, or it
+          is not shown: the underlying trades at least <strong>$50M/day</strong>
+          in dollar volume (real, continuous options market — not a thin name);
+          both legs carry at least <strong>25 contracts of open interest</strong>;
+          and the short leg&rsquo;s bid/ask spread is a small fraction of the
+          trade width (a wide short-leg quote means the bid the credit relies on
+          is stale). The published credit is always the <em>natural</em> credit —
+          sell the bid, buy the ask — the fill available without negotiating.
+          Each card&rsquo;s details show the underlying volume, open interest, and
+          short-leg spread so you can judge for yourself.
+        </p>
+        <h3>5. The crash wing (optional, listed per trade)</h3>
         <p>
           Half a unit of a long option one width past the long leg, same expiry,
           attached only when the credit can afford it. It costs ~7% of long-run
@@ -665,7 +679,7 @@
           the deepest validation loss (TDG, &minus;44% in March 2020) flips from
           &minus;$2,218 to +$1,209.
         </p>
-        <h3>5. How it was validated — and what we tried that failed</h3>
+        <h3>6. How it was validated — and what we tried that failed</h3>
         <p>
           The validation instrument is a point-in-time daily replay of the live
           protocol (as-of-date eligibility, publish, resolve at the snapped
@@ -685,7 +699,7 @@
           set — measured across 18 years &times; 960 optionable names &times; 8
           durations.
         </p>
-        <h3>6. Tier 2 — Vol-Alpha (max profit at high accuracy)</h3>
+        <h3>7. Tier 2 — Vol-Alpha (max profit at high accuracy)</h3>
         <p>
           A systematic scan of 1.5M+ candidate trades against 14 causal
           technical features found one substantial, out-of-sample-replicating
@@ -700,7 +714,7 @@
           the shipped cell dominates every neighbor. Validated once on
           untouched 2019&ndash;2026: 98.2% / 24.3% ROR per trade.
         </p>
-        <h3>7. Why hold to expiry — exits were tested to destruction</h3>
+        <h3>8. Why hold to expiry — exits were tested to destruction</h3>
         <p>
           Five kinds of exit management were tested with the same design/
           validation discipline: fixed stops, fixed take-profits, GTC resting
@@ -712,7 +726,7 @@
           already-repriced threat — hold-to-maturity is the optimum, not a
           simplification.
         </p>
-        <h3>8. What this does <em>not</em> guarantee</h3>
+        <h3>9. What this does <em>not</em> guarantee</h3>
         <p>
           The replay-validated 99.4% is an estimate, not a floor. The residual
           ~0.6% of trades lose on exactly the events no price-history rule can

@@ -33,6 +33,7 @@ not exist in reality is a bug.
 from __future__ import annotations
 
 import bisect
+import os
 import time
 from dataclasses import dataclass
 
@@ -40,7 +41,18 @@ import numpy as np
 
 from common import _nyse_valid_days_big
 
-MIN_OI = 10               # minimum open interest per leg
+# Liquidity gates. These are the difference between "a contract exists"
+# and "you can actually trade it near the quoted credit". Tunable via
+# env for experiments; defaults chosen to keep real S&P-500-caliber
+# names while removing thin ones and phantom quotes.
+MIN_OI = int(os.environ.get("CS_MIN_OI", "25"))          # open interest per leg
+# Short-leg bid/ask spread must be a small fraction of the spread width
+# — a wide short-leg market means the quoted bid is unreliable/stale and
+# the natural credit will not fill.
+MAX_SHORT_SPREAD_FRAC = float(os.environ.get("CS_MAX_SHORT_SPREAD_FRAC", "0.40"))
+# Underlying average daily dollar volume floor (from results/adv.json).
+# 0 disables the underlying gate (e.g. if the ADV map is unavailable).
+MIN_ADV_USD = float(os.environ.get("CS_MIN_ADV_USD", str(50e6)))
 CHAIN_RETRIES = 3
 COMMISSION_PER_SHARE = 0.0132
 
@@ -59,6 +71,8 @@ class RealSpread:
     long_ask: float
     short_oi: int
     long_oi: int
+    short_spread_frac: float   # (short_ask-short_bid)/width
+    adv_usd: float             # underlying avg daily $ volume (0 if unknown)
     natural_credit: float      # short_bid - long_ask (per share)
     mid_credit: float
     net_natural_credit: float  # natural - commissions
@@ -87,6 +101,15 @@ class ChainCache:
         self.failures: list[str] = []
         # why model-passing rungs were dropped by reality verification
         self.drops: dict[str, int] = {}
+        # underlying average daily $ volume map (results/adv.json)
+        self.adv: dict[str, float] = {}
+        _adv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "results", "adv.json")
+        try:
+            import json as _json
+            self.adv = _json.load(open(_adv_path)).get("adv_usd", {})
+        except Exception:  # noqa: BLE001
+            self.adv = {}
 
     def drop(self, reason: str) -> None:
         self.drops[reason] = self.drops.get(reason, 0) + 1
@@ -157,7 +180,14 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
                 wing_model_strike: float | None,
                 min_net: float = 0.05) -> RealSpread | None:
     """Snap a model rung onto the real chain; None if it doesn't exist
-    in reality with a collectible credit."""
+    in reality with a collectible, liquid credit."""
+    # Underlying liquidity floor (coarse): structurally thin names have
+    # no continuous options market regardless of listed strikes. Only
+    # gated when the ADV map is present and has this ticker.
+    adv = float(cache.adv.get(ticker, 0.0))
+    if MIN_ADV_USD > 0 and cache.adv and ticker in cache.adv and adv < MIN_ADV_USD:
+        cache.drop("underlying_adv_below_floor")
+        return None
     exps = cache.expirations(ticker)
     if not exps:
         cache.drop("chain_unavailable")
@@ -218,10 +248,19 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
         cache.drop("open_interest_below_min")
         return None
 
+    width = abs(ks - kl)
+    # Short-leg market must be tight relative to the spread width — a
+    # wide short-leg quote means the bid the natural credit relies on is
+    # unreliable/stale (phantom liquidity).
+    short_spread = s_leg["ask"] - s_leg["bid"]
+    short_spread_frac = short_spread / width if width > 0 else 9.99
+    if short_spread_frac > MAX_SHORT_SPREAD_FRAC:
+        cache.drop("short_leg_spread_too_wide")
+        return None
+
     natural = s_leg["bid"] - l_leg["ask"]
     mid = (s_leg["bid"] + s_leg["ask"]) / 2 - (l_leg["bid"] + l_leg["ask"]) / 2
     net = natural - COMMISSION_PER_SHARE
-    width = abs(ks - kl)
     if net < min_net or width <= 0:
         cache.drop("natural_credit_below_floor")
         return None
@@ -250,6 +289,7 @@ def verify_rung(cache: ChainCache, ticker: str, side: str, spot: float,
         short_bid=s_leg["bid"], short_ask=s_leg["ask"],
         long_bid=l_leg["bid"], long_ask=l_leg["ask"],
         short_oi=s_leg["oi"], long_oi=l_leg["oi"],
+        short_spread_frac=round(short_spread_frac, 4), adv_usd=adv,
         natural_credit=natural, mid_credit=mid, net_natural_credit=net,
         max_loss=max_loss, ror_natural=net / max_loss,
         real_buffer_pct=buffer_pct, wing=wing,

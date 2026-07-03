@@ -37,6 +37,15 @@ Two stages, both fail-closed:
      with a stress estimate at bare realized vol published per rung,
    - listed options chain required, ≥10 years of history, series ≤5
      sessions stale.
+3. **Reality + liquidity gate** (`reality.py`, both tiers): the rung is
+   snapped onto the ACTUAL live chain — real listed expiration in the
+   certified window, real strikes in the safe direction, priced at the
+   **natural credit** (sell bid / buy ask). It is published only if it
+   also clears the liquidity discipline: underlying average dollar
+   volume ≥ **$50M/day** (`adv.json`, refreshed weekly), open interest
+   ≥ **25** per leg, and short-leg bid/ask spread ≤ **40% of width**
+   (phantom-bid protection). Env-tunable via `CS_MIN_ADV_USD`,
+   `CS_MIN_OI`, `CS_MAX_SHORT_SPREAD_FRAC`.
 
 ## Files
 

@@ -27,6 +27,23 @@ RESULTS = os.path.join(HERE, "results")
 WEB_DATA = os.path.join(REPO, "spreads", "docs", "data")
 CACHE_FULL = os.path.join(HERE, "cache_full")
 OPTIONABLE = os.path.join(RESULTS, "optionable.json")
+ADV = os.path.join(RESULTS, "adv.json")
+
+
+def _map_age_days(path: str) -> float:
+    """Age of a fetched map from its embedded as_of stamp (CI resets
+    file mtimes, so mtime is unreliable)."""
+    if not os.path.exists(path):
+        return 999.0
+    try:
+        with open(path) as fh:
+            as_of = json.load(fh).get("as_of")
+        if as_of:
+            return (time.time() - time.mktime(
+                time.strptime(as_of, "%Y-%m-%dT%H:%M:%SZ"))) / 86400.0
+    except (OSError, json.JSONDecodeError, ValueError):
+        pass
+    return 999.0
 
 
 def main() -> int:
@@ -51,20 +68,10 @@ def main() -> int:
             print(f"ABORT: only {n_cached} series in {CACHE_FULL} (<500); "
                   "keeping previous signals.", file=sys.stderr)
             return 1
-        # Optionability map: refresh weekly (listings are sticky). Age
-        # comes from the embedded as_of stamp, not file mtime — CI
+        # Optionability + ADV maps: refresh weekly (both are sticky).
+        # Age comes from the embedded as_of stamp, not file mtime — CI
         # checkouts reset mtimes on every run.
-        age_days = 999.0
-        if os.path.exists(OPTIONABLE):
-            try:
-                with open(OPTIONABLE) as fh:
-                    as_of = json.load(fh).get("as_of")
-                if as_of:
-                    age_days = (time.time() - time.mktime(
-                        time.strptime(as_of, "%Y-%m-%dT%H:%M:%SZ"))) / 86400.0
-            except (OSError, json.JSONDecodeError, ValueError):
-                pass
-        if age_days > 7:
+        if _map_age_days(OPTIONABLE) > 7:
             rc = subprocess.call(
                 [sys.executable, os.path.join(HERE, "fetch_optionable.py")],
                 env=env,
@@ -72,6 +79,18 @@ def main() -> int:
             if rc != 0:
                 print(f"fetch_optionable.py exited non-zero: {rc}", file=sys.stderr)
                 return rc
+        # ADV (underlying dollar-volume liquidity) map, weekly. Fail-soft:
+        # if it can't refresh, reality.py simply skips the underlying
+        # gate for missing names rather than blocking the whole scan.
+        if _map_age_days(ADV) > 7:
+            rc = subprocess.call(
+                [sys.executable, os.path.join(HERE, "fetch_adv.py")],
+                env=env,
+            )
+            if rc != 0:
+                print(f"[WARN] fetch_adv.py exited non-zero: {rc} — "
+                      "underlying-liquidity gate degraded this run.",
+                      file=sys.stderr)
 
     rc = subprocess.call(
         [sys.executable, os.path.join(HERE, "research.py")],

@@ -209,8 +209,14 @@
             short ${fmt$(t.real.short_strike)} bid ${fmt$(t.real.short_bid)} / ask ${fmt$(t.real.short_ask)} (OI ${fmtInt(t.real.short_oi)}) ·
             long ${fmt$(t.real.long_strike)} bid ${fmt$(t.real.long_bid)} / ask ${fmt$(t.real.long_ask)} (OI ${fmtInt(t.real.long_oi)})<br/>
             Natural credit (sell bid / buy ask) <strong>${fmt$(t.real.natural_credit)}</strong>/share ·
-            mid ${fmt$(t.real.mid_credit)}/share · model estimate ${fmt$(t.modelCredit / 100)}/share —
-            the published number is the natural credit, the fill you can get without negotiating.
+            mid ${fmt$(t.real.mid_credit)}/share${t.modelCredit != null ? ` · model estimate ${fmt$(t.modelCredit / 100)}/share` : ""} —
+            the published number is the natural credit, the fill you can get without negotiating.<br/>
+            <strong>Liquidity:</strong>
+            underlying ${t.real.adv_usd ? "$" + (t.real.adv_usd / 1e6).toFixed(0) + "M/day volume" : "volume n/a"} ·
+            short-leg bid/ask spread ${t.real.short_spread_frac != null ? fmtPct(t.real.short_spread_frac * 100, 0) + " of width" : "n/a"} ·
+            open interest ${fmtInt(t.real.short_oi)}/${fmtInt(t.real.long_oi)}. Only contracts passing
+            an underlying dollar-volume floor, an open-interest floor, and a tight-short-leg-spread
+            test are published.
           </div>` : ""}
           ${t.tier === 2 ? `<div class="cf-detail-kv">
             Published <strong>${t.asof}</strong> · expiry <strong>${t.expiry}</strong> (${t.calDays} calendar days) ·
