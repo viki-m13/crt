@@ -435,3 +435,28 @@ as a tier. Entries at 3-session stride overlap within ticker;
 dedup-by-expiry is reported. Other scanned features (trend, RSI,
 breadth, day-of-week, earnings-gap age): small or non-replicating
 spreads; sigma60 level and vol ratios dominate.
+
+## 13. The accuracy-vs-distance frontier, stock-outcome-only (2026-07-02)
+
+Per the "assume the credit, grade on the stock" framing: weekly entry
+candidates, both directions, strikes at c·σ60·√14, outcome = closed on
+the safe side at the snapped expiry. 1.43M candidates 2008–2026.
+Conditioning: the frozen §12 vol-crush gate, and a
+HistGradientBoosting composite of all 13 features (fit 2008–2018,
+scored once on 2019–2026, most-confident decile). Validation-window
+no-breach rates (`sigma_distance_scan.py`):
+
+| Distance | Fair credit ≈ (of width) | Uncond. | Vol-crush | GBM top-10% |
+|---|---|---|---|---|
+| 0.4σ | ~33% → **50% ROR** | 68.0% | 74.4% | **75.1%** |
+| 0.6σ | ~25% → 33% ROR | 75.5% | 82.9% | 83.3% |
+| 0.8σ | ~18% → 22% ROR | 81.6% | 89.0% | 90.2% |
+| 1.0σ | ~14% → 16% ROR | 86.5% | 93.0% | 94.4% |
+| 1.2σ | ~10% → 11–15% ROR | 90.1% | 95.7% | **96.7%** |
+
+Conditioning lifts accuracy ~7–9pp at every distance — real, validated
+selection alpha — but the frontier is continuous: (50% ROR, 95%
+accuracy) sits ~20 points above the best achievable point at the 50%-
+ROR distance. 95%+ accuracy first appears at ~1.2σ, where fair credit
+commands ~11–15% ROR. The achievable validated menu on weekly cadence:
+~75% @ 50% ROR, ~83% @ 33%, ~90% @ 22%, ~95–97% @ 11–16%.
