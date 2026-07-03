@@ -495,3 +495,29 @@ live natural credits at 0.6σ must confirm the modeled ~25% ROR (the
 reality layer records them); losses cluster in vol episodes. Live-log
 entries carry engine `t2-volalpha-gbm` with `:t2`-suffixed ids so the
 tiers are scored separately, forever.
+
+## 15. Learned adaptive exits (tested 2026-07-03)
+
+The strongest version of "close early when needed": a second GBM
+trained on 181,829 design-window trade-days of open Tier-2 positions
+(state: time elapsed, cushion in σ-units, P&L captured, normalized
+return since entry, current vol ratio/RSI/momentum) to score whether
+exiting at next-day modeled cost beats holding to expiry
+(`exit_policy.py`). Design-selected threshold, one validation pass:
+
+| Policy | Validation ROR | Accuracy | Worst trade | Exits |
+|---|---|---|---|---|
+| Hold to maturity | 24.34% | 98.58% | −$516 | — |
+| Learned exits τ=0.5 | 24.13% | 98.35% | −$452 | 0.7% |
+| Learned exits τ=0.9 (frozen) | 24.34% | 98.58% | −$516 | **0.0%** |
+
+The learned policy converges to **never exiting**: given full position
+state and 11 years of examples, the model itself concludes that early
+exits are net-negative at every confidence level — looser thresholds
+strictly reduce both ROR and accuracy. The mechanism generalizes the
+§7 fixed-trigger result: at 2-week tenors, an exit pays slippage,
+commissions, and the market's already-repriced threat, while
+threatened-but-recoverable positions dominate true failures at these
+distances; the true failures (gaps) outrun any close-resolution
+signal. Hold-to-maturity is not a simplification — it is the optimum
+of the adaptive family on daily data.
