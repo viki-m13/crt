@@ -607,18 +607,52 @@
         Replay caveats: today&rsquo;s surviving universe, modeled fills.
       </div>
 
-      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Tier 2 replay record — Vol-Alpha, 2019&ndash;2026</h3>
+      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Tier 2 backtest history — Vol-Alpha, 2019&ndash;2026 (high-liquidity subset)</h3>
       <p class="section-note" style="margin-top:4px">
-        Machine-selected put spreads (0.6&sigma; strikes, 2.5%-of-spot width,
-        ~2-week listed expiry, hold to expiry; model fit only on
-        2008&ndash;2018, frozen deep-confidence threshold). Untouched
-        2019&ndash;2026 validation, deduped, conservative fills:
-        <strong>2,599 trades · 98.2% win rate · 24.3% net return-on-risk per
-        trade · 19.7% even assuming zero volatility premium · ~7 trades/week ·
-        worst trade &minus;$516/contract · positive in 2020 and 2022</strong>.
-        ~1.8 of every 100 trades lose; losses cluster in volatility episodes.
-        Full protocol: <code style="font-family:var(--mono);font-size:12px">strategies/credit_spread/VALIDATION.md</code> §12&ndash;§16.
+        Tier 2 went live only recently, so its <em>live</em> record above is
+        still building (and the last few days were a market holiday). Below is
+        its full <strong>validated backtest</strong> — every machine-selected
+        put spread the frozen model would have taken on the same high-liquidity
+        (&ge;$250M/day) names it trades in production, 2019&ndash;2026 untouched,
+        deduped, priced with conservative fills, held to expiry. Vol-Alpha is
+        <strong>opportunistic, not steady</strong>: it fires mostly in the
+        aftermath of volatility spikes, so trade counts are lumpy (heavy in
+        2020, sparse in calm years) — that concentration is the edge, not a bug.
       </p>
+      <div class="cf-live-grid" id="t2-grid">
+        <div class="cf-live-stat"><span class="num" id="t2-trades">&mdash;</span><span class="lbl">Backtest trades</span></div>
+        <div class="cf-live-stat"><span class="num good" id="t2-wr">&mdash;</span><span class="lbl">Win rate</span></div>
+        <div class="cf-live-stat"><span class="num good" id="t2-ror">&mdash;</span><span class="lbl">Avg return on risk / trade</span></div>
+        <div class="cf-live-stat"><span class="num" id="t2-pnl">&mdash;</span><span class="lbl">P&amp;L, 1 contract/trade</span></div>
+      </div>
+      <div class="cf-tbl-scroll">
+        <table class="cf-val-tbl">
+          <thead><tr><th>Year</th><th>Trades</th><th>Losses</th><th>Win rate</th><th>P&amp;L (1 contract/trade)</th></tr></thead>
+          <tbody id="t2-year-body"></tbody>
+        </table>
+      </div>
+      <p class="section-note" style="font-size:12px;margin:12px 0 4px">
+        Every backtested Tier 2 trade (newest first) — the actual strikes,
+        expiries, credits and outcomes the model produced:
+      </p>
+      <div class="cf-tbl-scroll">
+        <table class="cf-live-tbl">
+          <thead>
+            <tr><th>Published</th><th>Ticker</th><th>Trade</th><th>Short strike</th>
+            <th>Long strike</th><th>Expiry</th><th>Credit</th><th>ROR</th><th>Close@exp</th><th>Result</th></tr>
+          </thead>
+          <tbody id="t2-trade-body"></tbody>
+        </table>
+      </div>
+      <button class="cf-show-more" id="t2-more" hidden>Show 200 more</button>
+      <div class="cf-footnote">
+        Backtest, not live: conservative modeled fills on today&rsquo;s surviving
+        high-liquidity universe. ~1.5 of every 100 trades lose; losses cluster
+        in volatility episodes (worst single trade about &minus;$400/contract).
+        The live Tier 2 log above is the unbiased forward measure and will
+        populate as the strategy publishes. Full protocol:
+        <code style="font-family:var(--mono);font-size:12px">VALIDATION.md</code> §12&ndash;§17.
+      </div>
     </div>
   </section>
 

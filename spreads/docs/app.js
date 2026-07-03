@@ -422,6 +422,60 @@
       $("#log-body").innerHTML =
         `<tr><td colspan="8" style="color:var(--muted)">Live log unavailable.</td></tr>`;
     }
+    try {
+      const h = await fetchJSON("data/tier2_history.json");
+      renderTier2History(h);
+    } catch (e) {
+      const b = $("#t2-trade-body");
+      if (b) b.innerHTML =
+        `<tr><td colspan="10" style="color:var(--muted)">Tier 2 backtest history unavailable.</td></tr>`;
+    }
+  }
+
+  /* ---------------- Tier 2 backtest history ---------------- */
+
+  function renderTier2History(h) {
+    const s = h.summary || {};
+    $("#t2-trades").textContent = fmtInt(s.trades || 0);
+    $("#t2-wr").textContent = s.win_rate != null ? fmtPct(s.win_rate, 2) : "—";
+    $("#t2-ror").textContent = s.avg_ror != null ? fmtPct(s.avg_ror, 1) : "—";
+    $("#t2-pnl").textContent = s.pnl != null
+      ? (s.pnl >= 0 ? "+" : "") + "$" + fmtInt(Math.round(s.pnl)) : "—";
+    $("#t2-year-body").innerHTML = (h.by_year || []).map((y) =>
+      `<tr><td>${y.year}</td><td>${fmtInt(y.trades)}</td>
+       <td class="${y.losses ? "bad" : "good"}">${y.losses}</td>
+       <td>${fmtPct(y.win_rate, 1)}</td>
+       <td class="${y.pnl >= 0 ? "good" : "bad"}">${y.pnl >= 0 ? "+" : "−"}$${fmtInt(Math.abs(Math.round(y.pnl)))}</td></tr>`
+    ).join("");
+    state.t2trades = h.trades || [];
+    state.t2shown = 0;
+    $("#t2-trade-body").innerHTML = "";
+    renderMoreT2();
+    $("#t2-more").addEventListener("click", renderMoreT2);
+  }
+
+  function renderMoreT2() {
+    const CHUNK = 200;
+    const rows = state.t2trades.slice(state.t2shown, state.t2shown + CHUNK);
+    const html = rows.map((t) => {
+      const cls = t.outcome === "win" ? "win" : "loss";
+      return `<tr>
+        <td>${t.date}</td><td class="tkr">${t.ticker}</td>
+        <td>PUT ${t.expiry ? "" : ""}spread</td>
+        <td>${fmt$(t.short_strike)}</td><td>${fmt$(t.long_strike)}</td>
+        <td>${t.expiry}</td><td>$${fmtInt(Math.round(t.credit))}</td>
+        <td>${fmtPct(t.ror, 0)}</td>
+        <td>${t.close_at_expiry != null ? fmt$(t.close_at_expiry) : "—"}</td>
+        <td class="${cls}">${t.outcome.toUpperCase()}</td>
+      </tr>`;
+    }).join("");
+    $("#t2-trade-body").insertAdjacentHTML("beforeend", html);
+    state.t2shown += rows.length;
+    const more = $("#t2-more");
+    if (more) {
+      more.hidden = state.t2shown >= state.t2trades.length;
+      more.textContent = `Show 200 more (${fmtInt(state.t2trades.length - state.t2shown)} remaining)`;
+    }
   }
 
   if (document.readyState === "loading") {
