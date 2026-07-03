@@ -34,9 +34,11 @@ from common import covered_options_expiry, list_tickers, load_series, _rolling_m
 from tech_spreads import rolling_std, rsi
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "results", "sigma_distance_rows.npz")
+HORIZON = int(os.environ.get("SD_H", "14"))
+OUT = os.path.join(HERE, "results",
+                   "sigma_distance_rows.npz" if HORIZON == 14
+                   else f"sigma_distance_rows_h{HORIZON}.npz")
 CS = [0.4, 0.6, 0.8, 1.0, 1.2]
-HORIZON = 14
 STRIDE = 5                     # weekly cadence
 START = np.datetime64("2008-01-02")
 DESIGN_END = np.datetime64("2018-12-31")

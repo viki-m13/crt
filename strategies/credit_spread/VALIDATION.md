@@ -521,3 +521,34 @@ threatened-but-recoverable positions dominate true failures at these
 distances; the true failures (gaps) outrun any close-resolution
 signal. Hold-to-maturity is not a simplification — it is the optimum
 of the adaptive family on daily data.
+
+## 16. The (horizon × distance) grid confirms Tier 2 is a genuine peak (2026-07-03)
+
+Same protocol (per-cell GBM, design-only fit, d99 cut, one validation
+pass, conservative fills), across horizons 7/14/21 and distances
+0.6σ/0.8σ, put side:
+
+| Cell | Validation acc | ROR/trade | Trades/wk |
+|---|---|---|---|
+| h=7, c=0.6 | 87.5% | 6.0% | 11 |
+| h=7, c=0.8 | 92.7% | 6.9% | 19 |
+| **h=14, c=0.6 (Tier 2)** | **98.2%** | **24.3%** | 7 |
+| h=14, c=0.8 | 96.9% | 16.7% | 19 |
+| h=21, c=0.6 | 93.2% | 13.5% | 22 |
+| h=21, c=0.8 | 94.5% | 9.6% | 43 |
+
+The shipped cell dominates every neighbor by wide margins, and a
+union ensemble of all cells dilutes to 92.5% / 10.0% — concentration
+in the peak beats diversification across weaker cells. Together with
+§15 (exits: hold optimal), the cross-sectional feature test (richer
+features degrade OOS), the width sweep (2.5% optimal), and the side
+split (puts ≫ calls here), every axis around the Tier 2 operating
+point has now been searched and the point is a sharp, genuine optimum:
+the alpha is specifically a ~2-week vol-crush persistence phenomenon.
+
+**Research-budget note:** this panel has now been examined across
+entries, exits, features, horizons, distances, widths, sides and
+structures. Any further "discovery" from the same data carries high
+false-positive risk (multiple comparisons). The correct next evidence
+is LIVE: Tier 2's natural credits and outcomes accrue nightly in the
+live log under engine `t2-volalpha-gbm`.
