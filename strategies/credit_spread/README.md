@@ -56,6 +56,20 @@ Two stages, both fail-closed:
 | `live_log.py` | append-only, survivorship-bias-free live scoreboard |
 | `VALIDATION.md` | the full validation report — read this first |
 
+## Tier 2 — "Vol-Alpha" (`tier2.py`, engine `t2-volalpha-gbm`)
+
+A second published tier for maximum profit at high accuracy: put
+verticals at 0.6·σ60·√14 below spot, 2.5%-of-spot width, ~2-week listed
+expiry, hold to expiry, selected by a gradient-boosted model over the
+13-feature causal library (fit only on 2008–2018, committed artifact
+`results/tier2_model.joblib`, frozen deep-confidence threshold).
+Untouched 2019–2026 validation: **98.2% win rate, 24.3% net ROR/trade
+(19.7% under zero-vol-premium stress), ~7 trades/week, worst trade
+−$516**. Runs fail-soft after the Tier 1 scan inside `scan.py`;
+reality-verified; live-log entries carry the `t2` engine tag with
+`:t2`-suffixed ids. See VALIDATION.md §12–§16 (including why exits
+were rejected: a learned exit policy converges to never exiting).
+
 ## Live scoreboard
 
 `live_log.py` keeps an append-only record of every rung ever published

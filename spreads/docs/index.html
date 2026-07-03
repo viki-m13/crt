@@ -12,7 +12,7 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>CreditFloor — Replay-Validated Credit Spread Signals</title>
-  <meta name="description" content="CreditFloor v3 (Sigma-Clear) is a walk-forward credit-spread signal engine validated with an 18-year point-in-time daily replay: zero losses across the 2008-2018 design window and a 99.4% win rate with positive conservative-fill P&L on untouched 2019-2026 data. Not 100% — and it says so." />
+  <meta name="description" content="CreditFloor publishes reality-verified vertical credit spreads in two validated tiers: Tier 1 Sigma-Clear (99.4% win rate, max accuracy) and Tier 2 Vol-Alpha (98.2% win rate at 24.3% return-on-risk per trade). Frozen on 2008-2018, validated once on untouched 2019-2026, tracked forever in an append-only live log." />
   <meta name="keywords" content="credit spread screener, high win rate options, walk forward validation, point-in-time replay, conformal prediction options" />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -400,22 +400,26 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">
-        One strategy. Every trade spelled out. An honestly&#8209;measured&nbsp;99.4%.
+        Two tiers. Every trade a real contract. Honestly&#8209;measured numbers.
       </h1>
       <p class="hero-sub">
-        <strong>CreditFloor v3 (&ldquo;Sigma-Clear&rdquo;)</strong> publishes vertical
-        credit spreads — exact strikes, exact expiry dates, estimated credit and
-        max loss per contract — on stocks that pass 20 years of walk-forward
-        certification, with strikes at 2.5&sigma; of current volatility that also
-        clear at least 80% of the worst move in the stock&rsquo;s entire listed
-        history. Validated with an 18-year point-in-time daily replay:
-        <strong>zero losses across the 2008&ndash;2018 design window</strong> (GFC
-        included) and a <strong>99.4% win rate with positive P&amp;L net of all
-        losses on untouched 2019&ndash;2026 data</strong>. The residual ~0.6% —
-        crashes and single-name shocks — is real, and every published trade
-        carries an optional <strong>crash wing</strong> that makes the deepest
-        losses convex. Every signal ever published is logged below, wins and
-        losses alike, forever. <strong>Not financial advice.</strong>
+        <strong>CreditFloor</strong> publishes vertical credit spreads as
+        real, verified contracts — actual listed expirations and strikes, live
+        bid/ask, collectible natural credit — in two validated tiers.
+        <strong>Tier&nbsp;1 &ldquo;Sigma-Clear&rdquo;</strong> is maximum accuracy:
+        strikes at 2.5&sigma; that also clear &ge;80% of the stock&rsquo;s worst
+        move in decades of history — <strong>99.4% win rate</strong> on untouched
+        2019&ndash;2026 validation at ~1% return-on-risk per trade, with an
+        optional crash wing. <strong>Tier&nbsp;2 &ldquo;Vol-Alpha&rdquo;</strong> is
+        maximum profit at high accuracy: machine-selected put spreads at
+        0.6&sigma; sold into the post-spike vol-crush regime —
+        <strong>98.2% win rate at 24.3% return-on-risk per ~2-week
+        trade</strong> (19.7% even assuming zero volatility premium), ~7
+        trades/week. Both tiers were frozen on 2008&ndash;2018 (GFC included)
+        and validated once on untouched 2019&ndash;2026; both hold to expiry —
+        five kinds of exit management were tested and every one lost to
+        holding. Every signal ever published is logged below, wins and losses
+        alike, forever. <strong>Not financial advice.</strong>
       </p>
     </div>
   </section>
@@ -425,11 +429,11 @@
     <div class="cf-stats-grid" id="cf-stats">
       <div class="cf-stat">
         <span class="num good" id="stat-validated">&mdash;</span>
-        <span class="lbl" id="stat-validated-lbl">Replay-validated win rate (untouched 2019&ndash;2026)</span>
+        <span class="lbl" id="stat-validated-lbl">Tier 1 validated win rate (untouched 2019&ndash;2026)</span>
       </div>
       <div class="cf-stat">
-        <span class="num good" id="stat-pnl">+$18,174</span>
-        <span class="lbl">Validated P&amp;L 2019&ndash;26, 1 contract/trade, net of losses &amp; commissions</span>
+        <span class="num good" id="stat-t2">98.2% / 24.3%</span>
+        <span class="lbl">Tier 2 validated win rate / return-on-risk per trade (2019&ndash;26)</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-signals">&mdash;</span>
@@ -456,8 +460,12 @@
         commissions already subtracted. Where the credit can afford it, an
         optional <strong>crash wing</strong> is listed — it costs part of the
         credit and turns a crash-sized move into a profit instead of a maximum
-        loss. Most days publish a handful of trades; some days none qualify —
-        no trade is a result, not an error.
+        loss. Cards are labeled by tier: <strong>Tier&nbsp;1</strong> (max
+        accuracy, 99.4% validated, far-OTM strikes) and
+        <strong>Tier&nbsp;2</strong> (max profit at high accuracy, 98.2%
+        validated at 24.3% ROR, machine-selected 0.6&sigma; put spreads,
+        ~7/week on average). Most days publish a handful of trades; some days
+        none qualify — no trade is a result, not an error.
       </p>
 
       <div class="cf-filters" id="trade-sort">
@@ -519,7 +527,8 @@
         <button data-status="pending">Pending</button>
         <span class="lbl" style="margin-left:10px">Engine</span>
         <button data-engine="all" class="active">All</button>
-        <button data-engine="v3">v3 (current)</button>
+        <button data-engine="v3">Tier 1</button>
+        <button data-engine="t2">Tier 2</button>
         <button data-engine="v1">Legacy</button>
         <input type="text" id="log-ticker" placeholder="TICKER" maxlength="6" />
       </div>
@@ -582,6 +591,19 @@
         and TDG&rsquo;s &minus;44% COVID move flips to <strong>+$1,209</strong>.
         Replay caveats: today&rsquo;s surviving universe, modeled fills.
       </div>
+
+      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Tier 2 replay record — Vol-Alpha, 2019&ndash;2026</h3>
+      <p class="section-note" style="margin-top:4px">
+        Machine-selected put spreads (0.6&sigma; strikes, 2.5%-of-spot width,
+        ~2-week listed expiry, hold to expiry; model fit only on
+        2008&ndash;2018, frozen deep-confidence threshold). Untouched
+        2019&ndash;2026 validation, deduped, conservative fills:
+        <strong>2,599 trades · 98.2% win rate · 24.3% net return-on-risk per
+        trade · 19.7% even assuming zero volatility premium · ~7 trades/week ·
+        worst trade &minus;$516/contract · positive in 2020 and 2022</strong>.
+        ~1.8 of every 100 trades lose; losses cluster in volatility episodes.
+        Full protocol: <code style="font-family:var(--mono);font-size:12px">strategies/credit_spread/VALIDATION.md</code> §12&ndash;§16.
+      </p>
     </div>
   </section>
 
@@ -648,7 +670,34 @@
           set — measured across 18 years &times; 960 optionable names &times; 8
           durations.
         </p>
-        <h3>6. What this does <em>not</em> guarantee</h3>
+        <h3>6. Tier 2 — Vol-Alpha (max profit at high accuracy)</h3>
+        <p>
+          A systematic scan of 1.5M+ candidate trades against 14 causal
+          technical features found one substantial, out-of-sample-replicating
+          edge: premium sold when a stock&rsquo;s volatility is elevated versus
+          its own long-run level <em>and</em> already calming (the post-spike
+          &ldquo;vol-crush&rdquo; regime) wins far more often than the market
+          prices at that distance. Tier&nbsp;2 industrializes it: a
+          gradient-boosted model over the feature library (fit only on
+          2008&ndash;2018, committed artifact, frozen deep-confidence
+          threshold) selects put spreads at 0.6&sigma; with 2.5%-of-spot
+          width. The (horizon&nbsp;&times;&nbsp;distance) grid was searched —
+          the shipped cell dominates every neighbor. Validated once on
+          untouched 2019&ndash;2026: 98.2% / 24.3% ROR per trade.
+        </p>
+        <h3>7. Why hold to expiry — exits were tested to destruction</h3>
+        <p>
+          Five kinds of exit management were tested with the same design/
+          validation discipline: fixed stops, fixed take-profits, GTC resting
+          entries, GTC exits, and a fully <em>learned</em> exit policy (a
+          second model watching every open position daily). Every one reduced
+          both win rate and P&amp;L; the learned policy, given eleven years of
+          examples, converged to <strong>never exiting</strong>. At two-week
+          tenors an exit pays slippage, commissions, and the market&rsquo;s
+          already-repriced threat — hold-to-maturity is the optimum, not a
+          simplification.
+        </p>
+        <h3>8. What this does <em>not</em> guarantee</h3>
         <p>
           The replay-validated 99.4% is an estimate, not a floor. The residual
           ~0.6% of trades lose on exactly the events no price-history rule can

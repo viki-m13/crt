@@ -269,12 +269,15 @@
     $("#live-wr").textContent = s.win_rate != null ? fmtPct(100 * s.win_rate, 2) : "—";
     const be = s.by_engine || {};
     const v3 = be["v3-sigmaclear"] || {};
+    const t2 = be["t2-volalpha-gbm"] || {};
     const v1 = be["v1"] || {};
     $("#live-sub").innerHTML =
       `<span>First signal: <strong>${s.first_publish_date || "—"}</strong></span>` +
       `<span>Pending: <strong>${fmtInt(s.pending || 0)}</strong></span>` +
-      `<span>Current engine (v3): <strong>${fmtInt(v3.total || 0)}</strong> published · ` +
+      `<span>Tier 1 (v3): <strong>${fmtInt(v3.total || 0)}</strong> published · ` +
       `<strong>${fmtInt(v3.wins || 0)}</strong> wins · <strong>${fmtInt(v3.losses || 0)}</strong> losses</span>` +
+      `<span>Tier 2 (vol-alpha): <strong>${fmtInt(t2.total || 0)}</strong> published · ` +
+      `<strong>${fmtInt(t2.wins || 0)}</strong> wins · <strong>${fmtInt(t2.losses || 0)}</strong> losses</span>` +
       `<span>Legacy engine (v1, retired 2026-06-12): <strong>${fmtInt(v1.resolved || 0)}</strong> resolved · ` +
       `<strong>${fmtInt(v1.losses || 0)}</strong> losses kept on the record</span>`;
   }
@@ -284,7 +287,8 @@
     const tk = state.logTicker.trim().toUpperCase();
     state.logFiltered = sig.filter((s) => {
       if (state.logStatus !== "all" && s.status !== state.logStatus) return false;
-      const eng = s.engine === "v3-sigmaclear" ? "v3" : "v1";
+      const eng = s.engine === "v3-sigmaclear" ? "v3"
+        : (s.engine || "").startsWith("t2") ? "t2" : "v1";
       if (state.logEngine !== "all" && eng !== state.logEngine) return false;
       if (tk && s.ticker !== tk) return false;
       return true;
@@ -304,7 +308,8 @@
     const html = rows.map((s) => {
       const cls = s.status === "win" ? "win" : s.status === "loss" ? "loss" : "pending";
       const res = s.status === "win" ? "WIN" : s.status === "loss" ? "LOSS" : "pending";
-      const eng = s.engine === "v3-sigmaclear" ? " · v3" : "";
+      const eng = s.engine === "v3-sigmaclear" ? " · T1"
+        : (s.engine || "").startsWith("t2") ? " · T2" : "";
       return `<tr>
         <td>${s.publish_date}</td>
         <td class="tkr">${s.ticker}</td>

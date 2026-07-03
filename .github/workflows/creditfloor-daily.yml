@@ -160,6 +160,8 @@ jobs:
           print(f"put:       certified={put.get('n_certified')} published={put.get('n_published')} tests={put.get('pooled_wins',0)+put.get('pooled_losses',0)} losses={put.get('pooled_losses',0)}")
           print(f"call:      certified={call.get('n_certified')} published={call.get('n_published')} tests={call.get('pooled_wins',0)+call.get('pooled_losses',0)} losses={call.get('pooled_losses',0)}")
           print(f"combined:  certified={combined.get('n_certified')} published={combined.get('n_published')} tests={combined.get('pooled_wins',0)+combined.get('pooled_losses',0)} losses={combined.get('pooled_losses',0)}")
+          t2 = s.get('tier2') or {}
+          print(f"tier2:     scored={t2.get('n_scored')} above_thr={t2.get('n_above_threshold')} published={t2.get('n_published')}")
           print(f"engine:        {d.get('engine')}")
           print(f"generated_at:  {d.get('generated_at')}")
           # Fail-closed on backtest
