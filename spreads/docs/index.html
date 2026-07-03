@@ -661,15 +661,19 @@
         <p>
           A listed contract is not the same as a tradeable one. Every published
           spread must clear three liquidity tests against the live chain, or it
-          is not shown: the underlying trades at least <strong>$50M/day</strong>
-          in dollar volume (real, continuous options market — not a thin name);
-          both legs carry at least <strong>25 contracts of open interest</strong>;
-          and the short leg&rsquo;s bid/ask spread is a small fraction of the
-          trade width (a wide short-leg quote means the bid the credit relies on
-          is stale). The published credit is always the <em>natural</em> credit —
-          sell the bid, buy the ask — the fill available without negotiating.
-          Each card&rsquo;s details show the underlying volume, open interest, and
-          short-leg spread so you can judge for yourself.
+          is not shown: the underlying trades at least <strong>$100M/day</strong>
+          in dollar volume (a genuinely liquid, continuous options market — not
+          a thin name); both legs carry at least <strong>25 contracts of open
+          interest</strong>; and the short leg&rsquo;s bid/ask spread is a small
+          fraction of the trade width (a wide short-leg quote means the bid the
+          credit relies on is stale). The published credit is always the
+          <em>natural</em> credit — sell the bid, buy the ask — the fill available
+          without negotiating. Each card&rsquo;s details show the underlying
+          volume, open interest, and short-leg spread so you can judge for
+          yourself. Applying this liquidity floor to the full validation history
+          <strong>does not cost accuracy or return</strong> — both tiers hold
+          (and slightly improve) their numbers, because the most liquid names
+          have the cleanest behavior. Filtering to tradeable names is free.
         </p>
         <h3>5. The crash wing (optional, listed per trade)</h3>
         <p>

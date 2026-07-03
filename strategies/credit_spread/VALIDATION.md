@@ -552,3 +552,29 @@ structures. Any further "discovery" from the same data carries high
 false-positive risk (multiple comparisons). The correct next evidence
 is LIVE: Tier 2's natural credits and outcomes accrue nightly in the
 live log under engine `t2-volalpha-gbm`.
+
+## 17. Liquidity-filter impact — it's free (2026-07-03)
+
+The reality-layer liquidity gate has three parts; only the underlying
+average-dollar-volume floor can be applied to HISTORY (current ADV per
+name in `results/adv.json`; historical option OI / bid-ask don't
+exist). The OI≥25 and short-leg-spread≤40%-of-width gates only ever
+remove MORE, and act at publication, not on the historical outcome
+distribution. Restricting each tier's untouched 2019–2026 validation
+set to names clearing the ADV floor (`liquidity_impact.py`):
+
+| ADV floor | Tier 1 acc / ROR (trades) | Tier 2 acc / ROR (trades) |
+|---|---|---|
+| none | 99.40% / 0.86% (1,509) | 98.19% / 24.34% (2,599) |
+| ≥ $50M/day | 99.40% / 0.86% (1,509) | 98.15% / 24.33% (2,487) |
+| **≥ $100M/day** | **99.43% / 0.95% (1,232)** | **98.21% / 24.38% (2,065)** |
+| ≥ $250M/day | 99.46% / 0.89% (923) | 98.51% / 24.63% (1,277) |
+
+Filtering does **not** degrade either tier — accuracy and ROR are held
+or slightly improved at every floor, and both rise as you demand more
+liquidity (the most liquid names have the cleanest vol-crush
+dynamics). Tier 1's certified far-OTM universe is already entirely
+≥$50M (60 names). Production floor set to **$100M/day** ("very liquid")
+since it costs nothing: Tier 1 keeps 51 names, Tier 2 keeps 79% of
+trades (~5/week) at 98.2% / 24.4%. The headline validated numbers are
+unchanged by the filter.
