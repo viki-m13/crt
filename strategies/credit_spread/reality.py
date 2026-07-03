@@ -52,11 +52,13 @@ MIN_OI = int(os.environ.get("CS_MIN_OI", "25"))          # open interest per leg
 MAX_SHORT_SPREAD_FRAC = float(os.environ.get("CS_MAX_SHORT_SPREAD_FRAC", "0.40"))
 # Underlying average daily dollar volume floor (from results/adv.json).
 # 0 disables the underlying gate (e.g. if the ADV map is unavailable).
-# $100M/day = "very liquid". The liquidity-impact study (VALIDATION.md
-# §17) shows filtering to this floor holds accuracy and ROR on both
-# tiers (and both improve slightly vs no filter), so it is effectively
-# free — hence the default sits here rather than at a permissive $50M.
-MIN_ADV_USD = float(os.environ.get("CS_MIN_ADV_USD", str(100e6)))
+# $250M/day = high liquidity (top ~450 names). The liquidity-impact
+# study (VALIDATION.md §17) shows accuracy and ROR do not fall as the
+# floor rises — both tiers post their BEST numbers at this floor
+# (Tier 1 99.46%, Tier 2 98.51% / 24.63% ROR) — because the most liquid
+# names have the cleanest behavior. So we publish only high-liquidity
+# names at no cost to performance.
+MIN_ADV_USD = float(os.environ.get("CS_MIN_ADV_USD", str(250e6)))
 CHAIN_RETRIES = 3
 COMMISSION_PER_SHARE = 0.0132
 

@@ -42,7 +42,7 @@ Two stages, both fail-closed:
    certified window, real strikes in the safe direction, priced at the
    **natural credit** (sell bid / buy ask). It is published only if it
    also clears the liquidity discipline: underlying average dollar
-   volume ≥ **$100M/day** (`adv.json`, refreshed weekly), open interest
+   volume ≥ **$250M/day** (high liquidity) (`adv.json`, refreshed weekly), open interest
    ≥ **25** per leg, and short-leg bid/ask spread ≤ **40% of width**
    (phantom-bid protection). Env-tunable via `CS_MIN_ADV_USD`,
    `CS_MIN_OI`, `CS_MAX_SHORT_SPREAD_FRAC`.

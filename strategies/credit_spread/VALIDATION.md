@@ -574,7 +574,8 @@ Filtering does **not** degrade either tier — accuracy and ROR are held
 or slightly improved at every floor, and both rise as you demand more
 liquidity (the most liquid names have the cleanest vol-crush
 dynamics). Tier 1's certified far-OTM universe is already entirely
-≥$50M (60 names). Production floor set to **$100M/day** ("very liquid")
-since it costs nothing: Tier 1 keeps 51 names, Tier 2 keeps 79% of
-trades (~5/week) at 98.2% / 24.4%. The headline validated numbers are
+≥$50M (60 names). Production floor set to **$250M/day** (high liquidity — top ~450 names)
+since accuracy and ROR are highest there: Tier 1 99.46% (36 names),
+Tier 2 98.51% / 24.63% ROR (~3/week). Publishing only high-liquidity
+names costs nothing. The headline validated numbers are
 unchanged by the filter.
