@@ -140,12 +140,19 @@ def _iter_signal_rungs(signals_blob: dict[str, Any]):
     for s in signals_blob.get("tier2_signals", []):
         for rung in s.get("ladder", []):
             yield s["end_date"], s["ticker"], "put", rung, s["today_close"]
+    # The Conviction Pick — the single headline trade. Tracked on its
+    # own engine tag so its live win rate stands alone.
+    cp = signals_blob.get("conviction_pick")
+    if cp:
+        for rung in cp.get("ladder", []):
+            yield cp["end_date"], cp["ticker"], "put", rung, cp["today_close"]
 
 
 def _make_signal(publish_date: str, ticker: str, side: str, rung: dict, spot: float) -> dict:
-    # Tier 2 rungs get an engine-suffixed id so a Tier 1 rung on the
-    # same (date, ticker, side, horizon) can't collide with them.
-    _suffix = ":t2" if str(rung.get("engine", "")).startswith("t2") else ""
+    # Engine-suffixed ids so rungs from different engines on the same
+    # (date, ticker, side, horizon) can't collide.
+    _eng = str(rung.get("engine", ""))
+    _suffix = ":cp" if _eng.startswith("conviction") else (":t2" if _eng.startswith("t2") else "")
     return {
         "id": f"{publish_date}:{ticker}:{side}:{rung['horizon']}{_suffix}",
         "publish_date": publish_date,

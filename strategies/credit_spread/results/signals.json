@@ -87,8 +87,8 @@
     },
     "tier2": {
       "engine": "t2-volalpha-gbm",
-      "n_scored": 816,
-      "n_above_threshold": 2,
+      "n_scored": 69,
+      "n_above_threshold": 0,
       "n_published": 0,
       "spec": {
         "c_sigma": 0.6,
@@ -106,12 +106,21 @@
         "worst_trade_usd": -516,
         "note": "Deduped validation trades under conservative fills; stress = zero volatility risk premium. NOT a guarantee; ~1.8% of trades lose."
       },
-      "reality": {
-        "chain_fetch_failures": 0,
-        "drops": {
-          "underlying_adv_below_floor": 1,
-          "zero_bid_or_no_ask": 1
-        }
+      "reality": null
+    },
+    "conviction": {
+      "engine": "conviction-pick",
+      "threshold": 0.940472,
+      "min_adv_usd": 250000000.0,
+      "published_today": false,
+      "ticker": null,
+      "validated": {
+        "window": "2019-2026",
+        "accuracy": 0.969,
+        "avg_ror_per_trade": 0.247,
+        "per_year": 21,
+        "worst_trade_usd": -160,
+        "note": "One highest-confidence high-liquidity put spread per week when the bar is met; ~1 every 2-3 weeks. NOT a guarantee; ~3% of trades lose."
       }
     }
   },
@@ -693,5 +702,6 @@
       ]
     }
   ],
-  "tier2_signals": []
+  "tier2_signals": [],
+  "conviction_pick": null
 }

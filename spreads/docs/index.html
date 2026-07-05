@@ -11,8 +11,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>CreditFloor — Replay-Validated Credit Spread Signals</title>
-  <meta name="description" content="CreditFloor publishes reality-verified vertical credit spreads in two validated tiers: Tier 1 Sigma-Clear (99.4% win rate, max accuracy) and Tier 2 Vol-Alpha (98.2% win rate at 24.3% return-on-risk per trade). Frozen on 2008-2018, validated once on untouched 2019-2026, tracked forever in an append-only live log." />
+  <title>CreditFloor — The Conviction Pick (one validated credit spread)</title>
+  <meta name="description" content="CreditFloor publishes one conviction pick at a time: the single highest-confidence put credit spread on a highly liquid stock, validated at 96.9% accuracy and ~24.7% return-on-risk per trade on untouched 2019-2026 data. Fires about once every 2-3 weeks. Real verified contracts, held to expiry, logged forever." />
   <meta name="keywords" content="credit spread screener, high win rate options, walk forward validation, point-in-time replay, conformal prediction options" />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -386,8 +386,9 @@
     <div class="nav-inner">
       <a href="/" class="nav-logo"><span class="nav-logo-dot" style="background:var(--orange)"></span>CreditFloor</a>
       <div class="nav-links">
-        <a href="#trades">Today&rsquo;s trades</a>
-        <a href="#history">History</a>
+        <a href="#pick">The Pick</a>
+        <a href="#history">Track record</a>
+        <a href="#trades">Advanced</a>
         <a href="#method">Method</a>
         <a href="#disclosures">Disclosures</a>
         <a href="/">Main</a>
@@ -400,26 +401,21 @@
   <section class="hero">
     <div class="hero-inner">
       <h1 class="hero-headline">
-        Two tiers. Every trade a real contract. Honestly&#8209;measured numbers.
+        One conviction pick. Most liquid, highest return, 96.9%&nbsp;validated.
       </h1>
       <p class="hero-sub">
-        <strong>CreditFloor</strong> publishes vertical credit spreads as
-        real, verified contracts — actual listed expirations and strikes, live
-        bid/ask, collectible natural credit — in two validated tiers.
-        <strong>Tier&nbsp;1 &ldquo;Sigma-Clear&rdquo;</strong> is maximum accuracy:
-        strikes at 2.5&sigma; that also clear &ge;80% of the stock&rsquo;s worst
-        move in decades of history — <strong>99.4% win rate</strong> on untouched
-        2019&ndash;2026 validation at ~1% return-on-risk per trade, with an
-        optional crash wing. <strong>Tier&nbsp;2 &ldquo;Vol-Alpha&rdquo;</strong> is
-        maximum profit at high accuracy: machine-selected put spreads at
-        0.6&sigma; sold into the post-spike vol-crush regime —
-        <strong>98.2% win rate at 24.3% return-on-risk per ~2-week
-        trade</strong> (19.7% even assuming zero volatility premium), ~7
-        trades/week. Both tiers were frozen on 2008&ndash;2018 (GFC included)
-        and validated once on untouched 2019&ndash;2026; both hold to expiry —
-        five kinds of exit management were tested and every one lost to
-        holding. Every signal ever published is logged below, wins and losses
-        alike, forever. <strong>Not financial advice.</strong>
+        <strong>CreditFloor</strong> publishes <strong>one trade at a
+        time</strong>: the single highest-conviction put credit spread on a
+        highly liquid stock (&ge;$250M/day — deep, fillable options markets),
+        machine-selected and published only when it clears a bar validated at
+        <strong>96.9% accuracy and ~24.7% return-on-risk per trade</strong> on
+        untouched 2019&ndash;2026 data. No firehose — it fires only when a
+        genuine setup appears, about <strong>once every 2&ndash;3 weeks</strong>.
+        Every pick is a real, verified contract (actual strikes, expiry, live
+        bid/ask, collectible natural credit), held to expiry, logged forever
+        wins and losses alike. Weekly cadence at this accuracy is impossible —
+        forcing more trades drops below 95% — so the pick waits for
+        conviction. <strong>Not financial advice.</strong>
       </p>
     </div>
   </section>
@@ -428,16 +424,16 @@
   <section id="validation">
     <div class="cf-stats-grid" id="cf-stats">
       <div class="cf-stat">
-        <span class="num good" id="stat-validated">&mdash;</span>
-        <span class="lbl" id="stat-validated-lbl">Tier 1 validated win rate (untouched 2019&ndash;2026)</span>
+        <span class="num good">96.9%</span>
+        <span class="lbl">Validated win rate — Conviction Pick (untouched 2019&ndash;2026)</span>
       </div>
       <div class="cf-stat">
-        <span class="num good" id="stat-t2">98.2% / 24.3%</span>
-        <span class="lbl">Tier 2 validated win rate / return-on-risk per trade (2019&ndash;26)</span>
+        <span class="num good">24.7%</span>
+        <span class="lbl">Avg return on risk per trade</span>
       </div>
       <div class="cf-stat">
-        <span class="num" id="stat-signals">&mdash;</span>
-        <span class="lbl">Tradeable signals today</span>
+        <span class="num" id="stat-freq">~21 / yr</span>
+        <span class="lbl">Picks per year (one every 2&ndash;3 weeks)</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-asof" style="font-size:22px">&mdash;</span>
@@ -446,26 +442,34 @@
     </div>
   </section>
 
+  <!-- ===== CONVICTION PICK ===== -->
+  <section class="content-section" id="pick">
+    <div class="section-inner">
+      <div class="section-title">The Conviction Pick</div>
+      <p class="section-note">
+        The one trade, right now. Sell the put spread shown, hold to expiry;
+        it wins if the stock closes at or above the short strike. Published
+        only when the highest-confidence, high-liquidity setup clears the
+        96.9%-validated bar — otherwise nothing, which is most days.
+      </p>
+      <div id="pick-card"><div class="cf-empty">Loading&hellip;</div></div>
+    </div>
+  </section>
+
   <!-- ===== TODAY'S TRADES ===== -->
   <section class="content-section" id="trades">
     <div class="section-inner">
-      <div class="section-title">Today&rsquo;s trades</div>
+      <div class="section-title">Advanced — all qualifying spreads today</div>
       <p class="section-note">
-        Each card is one complete trade: <strong>sell</strong> the short leg,
-        <strong>buy</strong> the long leg, same expiry, and hold to expiry. The
-        trade wins if the stock closes on the safe side of the short strike on
-        the expiry date — the cushion column shows how far the stock would have
-        to move for that to fail. Credit and max loss are per contract (100
-        shares), estimated conservatively: below-mid fill, bid-ask, and
-        commissions already subtracted. Where the credit can afford it, an
-        optional <strong>crash wing</strong> is listed — it costs part of the
-        credit and turns a crash-sized move into a profit instead of a maximum
-        loss. Cards are labeled by tier: <strong>Tier&nbsp;1</strong> (max
-        accuracy, 99.4% validated, far-OTM strikes) and
-        <strong>Tier&nbsp;2</strong> (max profit at high accuracy, 98.2%
-        validated at 24.3% ROR, machine-selected 0.6&sigma; put spreads,
-        ~7/week on average). Most days publish a handful of trades; some days
-        none qualify — no trade is a result, not an error.
+        Optional, for those who want more than the one Conviction Pick above.
+        These are all spreads clearing the underlying validated engines today,
+        labeled by tier: <strong>Tier&nbsp;1</strong> (maximum accuracy, 99.4%
+        validated, far-OTM strikes at ~1% ROR) and <strong>Tier&nbsp;2</strong>
+        (the broader machine-selected set the Conviction Pick is drawn from,
+        98.2% validated at 24.3% ROR). Each card is one complete trade — sell
+        the short leg, buy the long leg, same expiry, hold to expiry; credit
+        and max loss are per contract, conservatively estimated. Most days this
+        is short or empty — no trade is a result, not an error.
       </p>
 
       <div class="cf-filters" id="trade-tier">
@@ -505,7 +509,48 @@
   <!-- ===== HISTORY ===== -->
   <section class="content-section" id="history">
     <div class="section-inner">
-      <div class="section-title">History</div>
+      <div class="section-title">Conviction Pick track record</div>
+      <p class="section-note">
+        Every Conviction Pick the frozen rule would have made on the same
+        high-liquidity names it trades in production, over the untouched
+        2019&ndash;2026 validation window (one per week when the bar was met,
+        conservative fills, held to expiry). This is the backtest; the
+        <em>live</em> record starts accruing now and is shown further below.
+      </p>
+      <div class="cf-live-grid" id="cp-grid">
+        <div class="cf-live-stat"><span class="num" id="cp-trades">&mdash;</span><span class="lbl">Backtest picks</span></div>
+        <div class="cf-live-stat"><span class="num good" id="cp-wr">&mdash;</span><span class="lbl">Win rate</span></div>
+        <div class="cf-live-stat"><span class="num good" id="cp-ror">&mdash;</span><span class="lbl">Avg return on risk / trade</span></div>
+        <div class="cf-live-stat"><span class="num" id="cp-pnl">&mdash;</span><span class="lbl">P&amp;L, 1 contract/trade</span></div>
+      </div>
+      <div class="cf-tbl-scroll">
+        <table class="cf-val-tbl">
+          <thead><tr><th>Year</th><th>Picks</th><th>Losses</th><th>Win rate</th><th>P&amp;L (1 contract/trade)</th></tr></thead>
+          <tbody id="cp-year-body"></tbody>
+        </table>
+      </div>
+      <p class="section-note" style="font-size:12px;margin:12px 0 4px">
+        Every backtested Conviction Pick (newest first) — actual strikes,
+        expiries, model confidence, credits and outcomes:
+      </p>
+      <div class="cf-tbl-scroll">
+        <table class="cf-live-tbl">
+          <thead>
+            <tr><th>Published</th><th>Ticker</th><th>Short strike</th><th>Long strike</th>
+            <th>Expiry</th><th>Credit</th><th>ROR</th><th>Conf.</th><th>Close@exp</th><th>Result</th></tr>
+          </thead>
+          <tbody id="cp-trade-body"></tbody>
+        </table>
+      </div>
+      <button class="cf-show-more" id="cp-more" hidden>Show 200 more</button>
+      <div class="cf-footnote">
+        Backtest, not live: conservative modeled fills on today&rsquo;s surviving
+        high-liquidity universe; ~3 of every 100 picks lose (worst single pick
+        about &minus;$160/contract), losses spread across years. The live log
+        below is the unbiased forward measure.
+      </div>
+
+      <div class="section-title" style="margin-top:40px">Live &amp; full history</div>
       <p class="section-note">
         Two records, kept separate on purpose. The <strong>live log</strong> is
         the unbiased one: every signal is recorded the day it&rsquo;s published and

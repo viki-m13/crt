@@ -40,18 +40,10 @@
   /* ---------------- stats band ---------------- */
 
   function renderStats(d) {
-    const s = d.summary || {};
-    const v = s.validated || {};
-    if (v.validation_win_rate) {
-      $("#stat-validated").textContent = fmtPct(100 * v.validation_win_rate, 1);
-      $("#stat-validated-lbl").textContent =
-        `Replay-validated win rate ${v.validation_window || ""} ` +
-        `(${fmtInt(v.validation_trades || 0)} trades, ${fmtInt(v.validation_losses || 0)} losses)`;
-    }
-    $("#stat-signals").textContent = fmtInt(state.trades.length);
     const asof = (d.put_signals || []).concat(d.call_signals || [])[0]?.end_date
       || (d.generated_at || "").slice(0, 10);
-    $("#stat-asof").textContent = asof || "—";
+    const el = $("#stat-asof");
+    if (el) el.textContent = asof || "—";
   }
 
   /* ---------------- today's trades ---------------- */
@@ -406,6 +398,7 @@
       state.trades = flattenTrades(d);
       state.reality = (d.summary || {}).reality || null;
       renderStats(d);
+      renderConvictionPick(d);
       renderTrades();
       wireSort();
     } catch (e) {
@@ -429,6 +422,112 @@
       const b = $("#t2-trade-body");
       if (b) b.innerHTML =
         `<tr><td colspan="10" style="color:var(--muted)">Tier 2 backtest history unavailable.</td></tr>`;
+    }
+    try {
+      const c = await fetchJSON("data/conviction_history.json");
+      renderConvictionHistory(c);
+    } catch (e) {
+      const b = $("#cp-trade-body");
+      if (b) b.innerHTML =
+        `<tr><td colspan="10" style="color:var(--muted)">Conviction Pick history unavailable.</td></tr>`;
+    }
+  }
+
+  /* ---------------- Conviction Pick (the headline trade) ---------------- */
+
+  function renderConvictionPick(d) {
+    const el = $("#pick-card");
+    const cp = d.conviction_pick;
+    const asof = ((d.put_signals || []).concat(d.call_signals || [])[0]
+      || {}).end_date || (d.generated_at || "").slice(0, 10);
+    if (!cp || !cp.real) {
+      el.innerHTML = `<div class="cf-empty">
+        No Conviction Pick right now — no setup cleared the 96.9%-validated
+        bar at the last scan${asof ? " (" + asof + ")" : ""}. That&rsquo;s
+        expected: the pick fires only about once every 2&ndash;3 weeks. Waiting
+        for conviction beats forcing a weaker trade. Check back after the next
+        market close.
+      </div>`;
+      return;
+    }
+    const r = cp.real;
+    const annRor = (r.ror_natural * 100) * (365 / Math.max(r.cal_days_to_expiry, 1));
+    el.innerHTML = `
+      <div class="cf-card" style="border-width:2px;border-color:#6b21a8">
+        <div class="cf-card-head">
+          <span>
+            <span class="cf-card-ticker">${cp.ticker}</span>
+            <span class="cf-side-badge" style="color:#6b21a8;border-color:#6b21a8">conviction pick</span>
+            <span class="cf-side-badge" style="color:var(--green);border-color:var(--green)">verified live chain</span>
+          </span>
+          <span class="cf-card-price">last close <strong>${fmt$(cp.today_close)}</strong> · ${cp.end_date}</span>
+        </div>
+        <div class="cf-trade-line">
+          <strong>SELL</strong> the ${fmt$(r.short_strike)} put ·
+          <strong>BUY</strong> the ${fmt$(r.long_strike)} put ·
+          expires <strong>${r.expiry}</strong> (${r.cal_days_to_expiry} days) · hold to expiry.
+          Wins if ${cp.ticker} closes at or above ${fmt$(r.short_strike)} on ${r.expiry}.
+        </div>
+        <div class="cf-trade-nums">
+          <div class="cf-num"><span class="v good">${fmt$(r.net_natural_credit * 100, 0)}</span><span class="k">Credit / contract</span></div>
+          <div class="cf-num"><span class="v">${fmt$(r.max_loss * 100, 0)}</span><span class="k">Max loss / contract</span></div>
+          <div class="cf-num"><span class="v good">${fmtPct(r.ror_natural * 100, 1)}</span><span class="k">Return on risk</span></div>
+          <div class="cf-num"><span class="v">${fmtPct(annRor, 0)}</span><span class="k">Annualized</span></div>
+          <div class="cf-num"><span class="v">${fmtPct(cp.gbm_confidence * 100, 1)}</span><span class="k">Model confidence</span></div>
+          <div class="cf-num"><span class="v">$${fmtInt(Math.round((r.adv_usd || 0) / 1e6))}M</span><span class="k">Underlying volume/day</span></div>
+        </div>
+        <div class="cf-detail-kv" style="margin-top:10px">
+          Live-chain quotes (delayed, as of ${r.quote_time}): short ${fmt$(r.short_strike)}
+          bid ${fmt$(r.short_bid)} / ask ${fmt$(r.short_ask)} (OI ${fmtInt(r.short_oi)}) ·
+          long ${fmt$(r.long_strike)} bid ${fmt$(r.long_bid)} / ask ${fmt$(r.long_ask)} (OI ${fmtInt(r.long_oi)}).
+          Published credit is the natural credit (sell bid / buy ask), the fill available without
+          negotiating. Validated 96.9% win rate, ~24.7% ROR per trade on untouched 2019&ndash;2026 —
+          <strong>not a guarantee</strong>; ~3 of 100 lose.
+        </div>
+      </div>`;
+  }
+
+  function renderConvictionHistory(h) {
+    const s = h.summary || {};
+    if ($("#cp-trades")) $("#cp-trades").textContent = fmtInt(s.trades || 0);
+    if ($("#cp-wr")) $("#cp-wr").textContent = s.win_rate != null ? fmtPct(s.win_rate, 2) : "—";
+    if ($("#cp-ror")) $("#cp-ror").textContent = s.avg_ror != null ? fmtPct(s.avg_ror, 1) : "—";
+    if ($("#cp-pnl")) $("#cp-pnl").textContent = s.pnl != null
+      ? (s.pnl >= 0 ? "+" : "") + "$" + fmtInt(Math.round(s.pnl)) : "—";
+    const yb = $("#cp-year-body");
+    if (yb) yb.innerHTML = (h.by_year || []).map((y) =>
+      `<tr><td>${y.year}</td><td>${fmtInt(y.trades)}</td>
+       <td class="${y.losses ? "bad" : "good"}">${y.losses}</td>
+       <td>${fmtPct(y.win_rate, 1)}</td>
+       <td class="${y.pnl >= 0 ? "good" : "bad"}">${y.pnl >= 0 ? "+" : "−"}$${fmtInt(Math.abs(Math.round(y.pnl)))}</td></tr>`
+    ).join("");
+    state.cptrades = h.trades || [];
+    state.cpshown = 0;
+    if ($("#cp-trade-body")) $("#cp-trade-body").innerHTML = "";
+    renderMoreCP();
+    if ($("#cp-more")) $("#cp-more").addEventListener("click", renderMoreCP);
+  }
+
+  function renderMoreCP() {
+    const CHUNK = 200;
+    const rows = (state.cptrades || []).slice(state.cpshown, state.cpshown + CHUNK);
+    const html = rows.map((t) => {
+      const cls = t.outcome === "win" ? "win" : "loss";
+      return `<tr>
+        <td>${t.date}</td><td class="tkr">${t.ticker}</td>
+        <td>${fmt$(t.short_strike)}</td><td>${fmt$(t.long_strike)}</td>
+        <td>${t.expiry}</td><td>$${fmtInt(Math.round(t.credit))}</td>
+        <td>${fmtPct(t.ror, 0)}</td><td>${fmtPct(t.confidence, 1)}</td>
+        <td>${t.close_at_expiry != null ? fmt$(t.close_at_expiry) : "—"}</td>
+        <td class="${cls}">${t.outcome.toUpperCase()}</td>
+      </tr>`;
+    }).join("");
+    $("#cp-trade-body").insertAdjacentHTML("beforeend", html);
+    state.cpshown += rows.length;
+    const more = $("#cp-more");
+    if (more) {
+      more.hidden = state.cpshown >= state.cptrades.length;
+      more.textContent = `Show 200 more (${fmtInt(state.cptrades.length - state.cpshown)} remaining)`;
     }
   }
 

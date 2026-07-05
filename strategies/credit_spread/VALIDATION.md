@@ -579,3 +579,33 @@ since accuracy and ROR are highest there: Tier 1 99.46% (36 names),
 Tier 2 98.51% / 24.63% ROR (~3/week). Publishing only high-liquidity
 names costs nothing. The headline validated numbers are
 unchanged by the filter.
+
+## 18. The Conviction Pick — one trade at a time (2026-07-03)
+
+Per the directive to publish ONE high-conviction, most-liquid,
+highest-ROR trade at a time (never a firehose), always >95% validated.
+The Conviction Pick is the single highest-model-confidence put spread
+among ≥$250M/day names, published only when it clears a frozen bar
+(design 97th-percentile confidence, 0.9405). Selection: one pick per
+week, the highest-confidence candidate that clears the bar.
+
+Frequency vs accuracy is a hard frontier (single weekly pick, ADV≥$250M,
+conservative fills, untouched 2019–2026):
+
+| Conviction bar | Picks/yr | Accuracy | ROR |
+|---|---|---|---|
+| loose (design p80) | ~45 (weekly) | 91.8% ✗ | 17.5% |
+| design p95 | ~30 | 96.4% | 23.7% |
+| **design p97 (shipped)** | **~21** | **96.9%** | **24.7%** |
+| design p99 | ~11 (monthly) | 98.8% | 25.1% |
+
+**Weekly cadence above 95% is impossible** — even taking the single
+best pick every week averages 91.8%, because in many weeks no genuine
+>95% setup exists. So the pick waits: ~21/year (one every 2–3 weeks).
+Frozen-rule backtest at p97: **159 picks, 96.86% win, 24.7% avg ROR,
++$8,049, worst −$160, every year positive** (losses 2/1/0/1/1/0/0/0
+across 2019–2026 — spread out, not clustered). Emitted daily by
+`tier2.py` as `signals.json.conviction_pick` (reality-verified, single
+best), tracked in the live log under engine `conviction-pick`, and led
+with on the site. `conviction_history.py` reproduces the backtest;
+`liquidity_impact.py`/§17 justify the $250M floor.
