@@ -146,6 +146,11 @@ def _iter_signal_rungs(signals_blob: dict[str, Any]):
     if cp:
         for rung in cp.get("ladder", []):
             yield cp["end_date"], cp["ticker"], "put", rung, cp["today_close"]
+    # Currently-open Conviction Picks (published recently, expiry not yet
+    # reached) — logged so they show as pending and resolve at expiry.
+    for op in signals_blob.get("conviction_open", []):
+        for rung in op.get("ladder", []):
+            yield op["end_date"], op["ticker"], "put", rung, op["today_close"]
 
 
 def _make_signal(publish_date: str, ticker: str, side: str, rung: dict, spot: float) -> dict:

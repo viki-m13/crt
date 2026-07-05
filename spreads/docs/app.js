@@ -294,19 +294,19 @@
     const resolved = all.filter((r) => r.status === "win" || r.status === "loss");
     const wins = resolved.filter((r) => r.status === "win").length;
     const losses = resolved.length - wins;
+    const pending = all.filter((r) => r.status === "pending");
     const live = all.filter((r) => r.kind === "live");
-    const liveRes = live.filter((r) => r.status === "win" || r.status === "loss").length;
     $("#live-resolved").textContent = fmtInt(resolved.length);
     $("#live-wins").textContent = fmtInt(wins);
     $("#live-losses").textContent = fmtInt(losses);
     $("#live-wr").textContent = resolved.length
       ? fmtPct(100 * wins / resolved.length, 2) : "—";
     $("#live-sub").innerHTML =
-      `<span><span style="color:var(--green)">LIVE</span> published: ` +
-      `<strong>${fmtInt(live.length)}</strong> (${fmtInt(liveRes)} resolved)</span>` +
+      `<span>Open now (pending): <strong>${fmtInt(pending.length)}</strong></span>` +
+      `<span><span style="color:var(--green)">LIVE</span>: <strong>${fmtInt(live.length)}</strong></span>` +
       `<span><span style="color:var(--muted)">BACKTEST</span>: ` +
       `<strong>${fmtInt(all.length - live.length)}</strong> picks, 2019&ndash;2026</span>` +
-      `<span style="opacity:.8">Live picks append in real time and are marked LIVE.</span>`;
+      `<span style="opacity:.8">Open picks resolve at their expiry close.</span>`;
   }
 
   function applyLogFilters() {

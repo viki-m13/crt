@@ -110,6 +110,15 @@ def main() -> int:
         print(f"[WARN] tier2.py scan exited non-zero: {rc2} — "
               "publishing Tier 1 only.", file=sys.stderr)
 
+    # Currently-open Conviction Picks (pending) — fail-soft.
+    rc3 = subprocess.call(
+        [sys.executable, os.path.join(HERE, "conviction_open.py")],
+        env={**env, "CS_DATA_DIR": CACHE_FULL},
+    )
+    if rc3 != 0:
+        print(f"[WARN] conviction_open.py exited non-zero: {rc3}",
+              file=sys.stderr)
+
     src = os.path.join(RESULTS, "signals.json")
     dst = os.path.join(WEB_DATA, "signals.json")
     shutil.copyfile(src, dst)
