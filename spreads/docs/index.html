@@ -509,19 +509,21 @@
         below is the unbiased forward measure.
       </div>
 
-      <div class="section-title" style="margin-top:40px">Live log</div>
+      <div class="section-title" style="margin-top:40px">Full pick log — backtest &amp; live</div>
       <p class="section-note">
-        The unbiased forward record: every Conviction Pick is logged the day
-        it&rsquo;s published and resolved at its expiry close &mdash; wins and
-        losses stay forever. This strategy publishes its first picks now, so
-        the live counts start small; the validated expectation is the
-        backtest above.
+        Every Conviction Pick the frozen rule produced, back to 2019, resolved
+        at its actual expiry close — so the record isn&rsquo;t empty while the
+        forward run is young. Picks marked <span style="color:var(--muted)">BACKTEST</span>
+        are the frozen rule (model fit only on 2008&ndash;2018) applied to real
+        market history; picks marked <span style="color:var(--green)">LIVE</span>
+        were published here in real time before their outcome was known and
+        append going forward. Same rule, same strikes — only the clock differs.
       </p>
       <div class="cf-live-grid" id="live-grid">
-        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved picks</span></div>
+        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved picks (all)</span></div>
         <div class="cf-live-stat"><span class="num good" id="live-wins">&mdash;</span><span class="lbl">Wins</span></div>
         <div class="cf-live-stat"><span class="num bad" id="live-losses">&mdash;</span><span class="lbl">Losses</span></div>
-        <div class="cf-live-stat"><span class="num" id="live-wr">&mdash;</span><span class="lbl">Live win rate</span></div>
+        <div class="cf-live-stat"><span class="num good" id="live-wr">&mdash;</span><span class="lbl">Win rate</span></div>
       </div>
       <div class="cf-live-sub" id="live-sub"></div>
       <div class="cf-filters" id="log-filters">
@@ -530,13 +532,17 @@
         <button data-status="win">Wins</button>
         <button data-status="loss">Losses</button>
         <button data-status="pending">Pending</button>
+        <span class="lbl" style="margin-left:10px">Kind</span>
+        <button data-kind="all" class="active">All</button>
+        <button data-kind="live">Live only</button>
+        <button data-kind="backtest">Backtest only</button>
         <input type="text" id="log-ticker" placeholder="TICKER" maxlength="6" />
       </div>
       <div class="cf-tbl-scroll">
         <table class="cf-live-tbl">
           <thead>
             <tr>
-              <th>Published</th><th>Ticker</th><th>Trade</th><th>Short strike</th>
+              <th>Published</th><th>Kind</th><th>Ticker</th><th>Short strike</th>
               <th>Spot at publish</th><th>Expiry</th><th>Close at expiry</th><th>Result</th>
             </tr>
           </thead>

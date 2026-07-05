@@ -82,6 +82,7 @@ def main() -> int:
         intr = min(max(Ks - s_exp[i], 0), width)
         trades.append({
             "date": str(d["date"][i]), "ticker": str(d["ticker"][i]), "side": "put",
+            "spot": round(float(spot[i]), 2),
             "short_strike": round(float(Ks), 2), "long_strike": round(float(Kl), 2),
             "expiry": str(d["expiry"][i]), "credit": round(net * 100.0, 0),
             "ror": round(net / max(width - net, 0.01) * 100.0, 1),

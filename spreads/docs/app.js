@@ -24,10 +24,11 @@
     sort: "credit",
     tierFilter: "all",     // "all" | 1 | 2
     log: null,             // live_log signals array
+    cphistoryAll: [],      // conviction backtest picks
     logFiltered: [],
     logShown: 0,
     logStatus: "all",
-    logEngine: "all",
+    logKind: "all",
     logTicker: "",
   };
 
@@ -266,36 +267,56 @@
 
   /* ---------------- history: live log ---------------- */
 
-  function renderLiveStats(log) {
-    const be = (log.summary || {}).by_engine || {};
-    const cp = be["conviction-pick"] || {};
-    const resolved = cp.resolved || 0;
-    const wr = resolved > 0 ? cp.wins / resolved : null;
-    $("#live-resolved").textContent = fmtInt(resolved);
-    $("#live-wins").textContent = fmtInt(cp.wins || 0);
-    $("#live-losses").textContent = fmtInt(cp.losses || 0);
-    $("#live-wr").textContent = wr != null ? fmtPct(100 * wr, 2) : "building";
+  // Combined log = backtest picks (from conviction_history) + genuine
+  // live conviction-pick entries (from live_log). Backfills the display
+  // without touching the append-only live_log.json.
+  function buildCombinedLog() {
+    const bt = (state.cphistoryAll || []).map((t) => ({
+      publish_date: t.date, ticker: t.ticker, strike: t.short_strike,
+      spot_at_publish: t.spot, expiry_date: t.expiry,
+      close_at_expiry: t.close_at_expiry,
+      status: t.outcome, kind: "backtest",
+    }));
+    const live = (state.log || [])
+      .filter((s) => (s.engine || "") === "conviction-pick" && !s.backtest)
+      .map((s) => ({
+        publish_date: s.publish_date, ticker: s.ticker, strike: s.strike,
+        spot_at_publish: s.spot_at_publish, expiry_date: s.expiry_date,
+        close_at_expiry: s.close_at_expiry, status: s.status, kind: "live",
+      }));
+    return live.concat(bt).sort((a, b) =>
+      a.publish_date < b.publish_date ? 1 : a.publish_date > b.publish_date ? -1 :
+      a.kind < b.kind ? -1 : 1);
+  }
+
+  function renderLiveStats() {
+    const all = buildCombinedLog();
+    const resolved = all.filter((r) => r.status === "win" || r.status === "loss");
+    const wins = resolved.filter((r) => r.status === "win").length;
+    const losses = resolved.length - wins;
+    const live = all.filter((r) => r.kind === "live");
+    const liveRes = live.filter((r) => r.status === "win" || r.status === "loss").length;
+    $("#live-resolved").textContent = fmtInt(resolved.length);
+    $("#live-wins").textContent = fmtInt(wins);
+    $("#live-losses").textContent = fmtInt(losses);
+    $("#live-wr").textContent = resolved.length
+      ? fmtPct(100 * wins / resolved.length, 2) : "—";
     $("#live-sub").innerHTML =
-      `<span>Published: <strong>${fmtInt(cp.total || 0)}</strong></span>` +
-      `<span>Pending: <strong>${fmtInt(cp.pending || 0)}</strong></span>` +
-      `<span style="opacity:.8">Live record accrues as the Conviction Pick publishes; ` +
-      `the validated expectation is the backtest above.</span>`;
+      `<span><span style="color:var(--green)">LIVE</span> published: ` +
+      `<strong>${fmtInt(live.length)}</strong> (${fmtInt(liveRes)} resolved)</span>` +
+      `<span><span style="color:var(--muted)">BACKTEST</span>: ` +
+      `<strong>${fmtInt(all.length - live.length)}</strong> picks, 2019&ndash;2026</span>` +
+      `<span style="opacity:.8">Live picks append in real time and are marked LIVE.</span>`;
   }
 
   function applyLogFilters() {
-    const sig = state.log || [];
     const tk = state.logTicker.trim().toUpperCase();
-    state.logFiltered = sig.filter((s) => {
-      // Conviction-only page: show just the Conviction Pick engine.
-      if ((s.engine || "") !== "conviction-pick") return false;
-      if (state.logStatus !== "all" && s.status !== state.logStatus) return false;
-      if (tk && s.ticker !== tk) return false;
+    state.logFiltered = buildCombinedLog().filter((r) => {
+      if (state.logStatus !== "all" && r.status !== state.logStatus) return false;
+      if (state.logKind !== "all" && r.kind !== state.logKind) return false;
+      if (tk && r.ticker !== tk) return false;
       return true;
     });
-    // newest first
-    state.logFiltered.sort((a, b) =>
-      a.publish_date < b.publish_date ? 1 : a.publish_date > b.publish_date ? -1 :
-      a.ticker < b.ticker ? -1 : 1);
     state.logShown = 0;
     $("#log-body").innerHTML = "";
     renderMoreLog();
@@ -304,9 +325,7 @@
   function renderMoreLog() {
     const CHUNK = 200;
     if (state.logShown === 0 && state.logFiltered.length === 0) {
-      const msg = (state.logStatus === "all" && !state.logTicker.trim())
-        ? "No live picks yet — the first Conviction Pick will appear here the day it publishes (about once every 2–3 weeks). The validated expectation is the backtest above."
-        : "No picks match this filter.";
+      const msg = "No picks match this filter.";
       $("#log-body").innerHTML =
         `<tr><td colspan="8" style="color:var(--muted);padding:16px 12px">${msg}</td></tr>`;
       const more0 = $("#log-more");
@@ -314,17 +333,20 @@
       return;
     }
     const rows = state.logFiltered.slice(state.logShown, state.logShown + CHUNK);
-    const html = rows.map((s) => {
-      const cls = s.status === "win" ? "win" : s.status === "loss" ? "loss" : "pending";
-      const res = s.status === "win" ? "WIN" : s.status === "loss" ? "LOSS" : "pending";
+    const html = rows.map((r) => {
+      const cls = r.status === "win" ? "win" : r.status === "loss" ? "loss" : "pending";
+      const res = r.status === "win" ? "WIN" : r.status === "loss" ? "LOSS" : "pending";
+      const kind = r.kind === "live"
+        ? `<span style="color:var(--green);font-weight:600">LIVE</span>`
+        : `<span style="color:var(--muted)">backtest</span>`;
       return `<tr>
-        <td>${s.publish_date}</td>
-        <td class="tkr">${s.ticker}</td>
-        <td>${s.side.toUpperCase()} ${s.horizon}d</td>
-        <td>${fmt$(s.strike)}</td>
-        <td>${fmt$(s.spot_at_publish)}</td>
-        <td>${s.expiry_date}</td>
-        <td>${s.close_at_expiry != null ? fmt$(s.close_at_expiry) : "—"}</td>
+        <td>${r.publish_date}</td>
+        <td>${kind}</td>
+        <td class="tkr">${r.ticker}</td>
+        <td>${fmt$(r.strike)}</td>
+        <td>${r.spot_at_publish != null ? fmt$(r.spot_at_publish) : "—"}</td>
+        <td>${r.expiry_date}</td>
+        <td>${r.close_at_expiry != null ? fmt$(r.close_at_expiry) : "—"}</td>
         <td class="${cls}">${res}</td>
       </tr>`;
     }).join("");
@@ -344,11 +366,11 @@
         applyLogFilters();
       });
     });
-    $$("#log-filters button[data-engine]").forEach((b) => {
+    $$("#log-filters button[data-kind]").forEach((b) => {
       b.addEventListener("click", () => {
-        $$("#log-filters button[data-engine]").forEach((x) => x.classList.remove("active"));
+        $$("#log-filters button[data-kind]").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
-        state.logEngine = b.dataset.engine;
+        state.logKind = b.dataset.kind;
         applyLogFilters();
       });
     });
@@ -390,16 +412,8 @@
       if (el) el.innerHTML =
         `<div class="cf-empty">Could not load the pick. Try a hard refresh.</div>`;
     }
-    try {
-      const log = await fetchJSON("data/live_log.json");
-      state.log = log.signals || [];
-      renderLiveStats(log);
-      wireLogFilters();
-      applyLogFilters();
-    } catch (e) {
-      $("#log-body").innerHTML =
-        `<tr><td colspan="8" style="color:var(--muted)">Live log unavailable.</td></tr>`;
-    }
+    // Load the backtest history first — the combined (backtest + live)
+    // log below depends on it.
     try {
       const c = await fetchJSON("data/conviction_history.json");
       renderConvictionHistory(c);
@@ -408,6 +422,15 @@
       if (b) b.innerHTML =
         `<tr><td colspan="10" style="color:var(--muted)">Conviction Pick history unavailable.</td></tr>`;
     }
+    try {
+      const log = await fetchJSON("data/live_log.json");
+      state.log = log.signals || [];
+    } catch (e) {
+      state.log = [];
+    }
+    renderLiveStats();
+    wireLogFilters();
+    applyLogFilters();
   }
 
   /* ---------------- Conviction Pick (the headline trade) ---------------- */
@@ -484,6 +507,7 @@
        <td class="${y.pnl >= 0 ? "good" : "bad"}">${y.pnl >= 0 ? "+" : "−"}$${fmtInt(Math.abs(Math.round(y.pnl)))}</td></tr>`
     ).join("");
     state.cptradesAll = h.trades || [];
+    state.cphistoryAll = h.trades || [];   // source for the combined log
     state.cpEliteOnly = false;
     resetCP();
     $$("#cp-filter button[data-cp]").forEach((b) => {
