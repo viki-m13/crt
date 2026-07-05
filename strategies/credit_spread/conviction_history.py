@@ -42,6 +42,7 @@ def main() -> int:
     adv = json.load(open(os.path.join(HERE, "results", "adv.json")))["adv_usd"]
     FE, C, WP = meta["features"], meta["c_sigma"], meta["width_pct"]
     thr = meta["conviction_threshold"]
+    elite_thr = meta.get("elite_threshold", 0.9662)
     min_adv = meta.get("conviction_min_adv_usd", 250e6)
 
     dates = d["date"].astype("datetime64[D]")
@@ -85,6 +86,7 @@ def main() -> int:
             "expiry": str(d["expiry"][i]), "credit": round(net * 100.0, 0),
             "ror": round(net / max(width - net, 0.01) * 100.0, 1),
             "confidence": round(float(p[i]) * 100.0, 1),
+            "elite": bool(p[i] >= elite_thr),
             "adv_usd": round(float(advarr[i]), 0),
             "close_at_expiry": round(float(s_exp[i]), 2),
             "outcome": "win" if intr == 0 else "loss",
@@ -102,6 +104,8 @@ def main() -> int:
                 "pnl": round(a["pnl"], 0)} for y, a in sorted(yrs.items())]
     n = len(trades)
     losses = sum(t["outcome"] == "loss" for t in trades)
+    el = [t for t in trades if t["elite"]]
+    el_losses = sum(t["outcome"] == "loss" for t in el)
     summary = {
         "trades": n, "losses": losses,
         "win_rate": round(100 * (n - losses) / n, 2) if n else None,
@@ -109,6 +113,13 @@ def main() -> int:
         "pnl": round(sum(t["pnl"] for t in trades), 0),
         "worst_trade": round(min((t["pnl"] for t in trades), default=0), 0),
         "per_year": round(n / 7.5, 1),
+        "elite": {
+            "trades": len(el), "losses": el_losses,
+            "win_rate": round(100 * (len(el) - el_losses) / len(el), 2) if el else None,
+            "avg_ror": round(float(np.mean([t["ror"] for t in el])), 1) if el else None,
+            "per_year": round(len(el) / 7.5, 1),
+            "threshold_confidence": round(elite_thr * 100, 1),
+        },
     }
     trades.sort(key=lambda t: (t["date"], t["ticker"]), reverse=True)
     blob = {

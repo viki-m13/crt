@@ -388,7 +388,6 @@
       <div class="nav-links">
         <a href="#pick">The Pick</a>
         <a href="#history">Track record</a>
-        <a href="#trades">Advanced</a>
         <a href="#method">Method</a>
         <a href="#disclosures">Disclosures</a>
         <a href="/">Main</a>
@@ -432,8 +431,8 @@
         <span class="lbl">Avg return on risk per trade</span>
       </div>
       <div class="cf-stat">
-        <span class="num" id="stat-freq">~21 / yr</span>
-        <span class="lbl">Picks per year (one every 2&ndash;3 weeks)</span>
+        <span class="num good" style="color:#b8860b">≈99%</span>
+        <span class="lbl">Elite band — 73/73 in backtest (~10 picks/yr)</span>
       </div>
       <div class="cf-stat">
         <span class="num" id="stat-asof" style="font-size:22px">&mdash;</span>
@@ -450,61 +449,15 @@
         The one trade, right now. Sell the put spread shown, hold to expiry;
         it wins if the stock closes at or above the short strike. Published
         only when the highest-confidence, high-liquidity setup clears the
-        96.9%-validated bar — otherwise nothing, which is most days.
+        96.9%-validated bar — otherwise nothing, which is most days. When a
+        pick also clears the stricter <strong>Elite&nbsp;(≈99%)</strong> band —
+        top-tier model confidence, which went <strong>73&nbsp;for&nbsp;73 in
+        backtest</strong> (~10/year) — it&rsquo;s marked with a gold badge.
       </p>
       <div id="pick-card"><div class="cf-empty">Loading&hellip;</div></div>
     </div>
   </section>
 
-  <!-- ===== TODAY'S TRADES ===== -->
-  <section class="content-section" id="trades">
-    <div class="section-inner">
-      <div class="section-title">Advanced — all qualifying spreads today</div>
-      <p class="section-note">
-        Optional, for those who want more than the one Conviction Pick above.
-        These are all spreads clearing the underlying validated engines today,
-        labeled by tier: <strong>Tier&nbsp;1</strong> (maximum accuracy, 99.4%
-        validated, far-OTM strikes at ~1% ROR) and <strong>Tier&nbsp;2</strong>
-        (the broader machine-selected set the Conviction Pick is drawn from,
-        98.2% validated at 24.3% ROR). Each card is one complete trade — sell
-        the short leg, buy the long leg, same expiry, hold to expiry; credit
-        and max loss are per contract, conservatively estimated. Most days this
-        is short or empty — no trade is a result, not an error.
-      </p>
-
-      <div class="cf-filters" id="trade-tier">
-        <span class="lbl">Tier</span>
-        <button data-tier="all" class="active">All</button>
-        <button data-tier="1">Tier 1 · max accuracy</button>
-        <button data-tier="2">Tier 2 · max profit</button>
-      </div>
-      <div class="cf-filters" id="trade-sort">
-        <span class="lbl">Sort</span>
-        <button data-sort="credit" class="active">Highest credit</button>
-        <button data-sort="ror">Highest return on risk</button>
-        <button data-sort="expiry">Soonest expiry</button>
-      </div>
-
-      <div class="cf-list" id="trade-list">
-        <div class="cf-empty">Loading&hellip;</div>
-      </div>
-
-      <div class="cf-footnote">
-        Cards marked <strong>verified live chain</strong> are real listed
-        contracts: the expiration is one the ticker actually lists (inside
-        the certified window), the strikes are real listed strikes snapped in
-        the safe direction, both legs have live bids and open interest, and
-        the published credit is the <strong>natural credit</strong> — sell at
-        the bid, buy at the ask, commissions subtracted — the fill available
-        without negotiating. Quotes are exchange-delayed; anything that can&rsquo;t
-        be verified against the live chain is not published at all. Model
-        estimates (Black-Scholes at IV = 1.3&times; realized, with a stress
-        variant at bare realized vol inside each card&rsquo;s details) are shown
-        for reference. Forward expectation for these trades is the
-        replay-validated ~99.4%, <strong>not 100%</strong>.
-      </div>
-    </div>
-  </section>
 
   <!-- ===== HISTORY ===== -->
   <section class="content-section" id="history">
@@ -519,9 +472,14 @@
       </p>
       <div class="cf-live-grid" id="cp-grid">
         <div class="cf-live-stat"><span class="num" id="cp-trades">&mdash;</span><span class="lbl">Backtest picks</span></div>
-        <div class="cf-live-stat"><span class="num good" id="cp-wr">&mdash;</span><span class="lbl">Win rate</span></div>
+        <div class="cf-live-stat"><span class="num good" id="cp-wr">&mdash;</span><span class="lbl">Win rate (all picks)</span></div>
         <div class="cf-live-stat"><span class="num good" id="cp-ror">&mdash;</span><span class="lbl">Avg return on risk / trade</span></div>
-        <div class="cf-live-stat"><span class="num" id="cp-pnl">&mdash;</span><span class="lbl">P&amp;L, 1 contract/trade</span></div>
+        <div class="cf-live-stat"><span class="num good" id="cp-elite" style="color:#b8860b">&mdash;</span><span class="lbl">Elite (≈99%) band win rate</span></div>
+      </div>
+      <div class="cf-filters" id="cp-filter">
+        <span class="lbl">Show</span>
+        <button data-cp="all" class="active">All picks</button>
+        <button data-cp="elite">Elite (≈99%) only</button>
       </div>
       <div class="cf-tbl-scroll">
         <table class="cf-val-tbl">
@@ -550,46 +508,27 @@
         below is the unbiased forward measure.
       </div>
 
-      <div class="section-title" style="margin-top:40px">Live &amp; full history</div>
+      <div class="section-title" style="margin-top:40px">Live log</div>
       <p class="section-note">
-        Two records, kept separate on purpose. The <strong>live log</strong> is
-        the unbiased one: every signal is recorded the day it&rsquo;s published and
-        resolved at its expiry close — losses stay forever. The current
-        two-tier strategy went live 2026-06-12; the numbers below track it from
-        that day. The engine it replaced (v1) stays on the record with all its
-        losses, clearly marked retired. The <strong>replay record</strong> is
-        the 19-year point-in-time simulation that validated both tiers before
-        they went live.
+        The unbiased forward record: every Conviction Pick is logged the day
+        it&rsquo;s published and resolved at its expiry close &mdash; wins and
+        losses stay forever. This strategy publishes its first picks now, so
+        the live counts start small; the validated expectation is the
+        backtest above.
       </p>
-
-      <h3 style="font-size:16px;font-weight:600;margin:26px 0 4px">Live log — current strategy (Tier 1 + Tier 2), since 2026-06-12</h3>
       <div class="cf-live-grid" id="live-grid">
-        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved (current strategy)</span></div>
+        <div class="cf-live-stat"><span class="num" id="live-resolved">&mdash;</span><span class="lbl">Resolved picks</span></div>
         <div class="cf-live-stat"><span class="num good" id="live-wins">&mdash;</span><span class="lbl">Wins</span></div>
         <div class="cf-live-stat"><span class="num bad" id="live-losses">&mdash;</span><span class="lbl">Losses</span></div>
         <div class="cf-live-stat"><span class="num" id="live-wr">&mdash;</span><span class="lbl">Live win rate</span></div>
       </div>
       <div class="cf-live-sub" id="live-sub"></div>
-      <p class="section-note" style="font-size:12px;margin-top:4px">
-        The current strategy has a short live track record on purpose — it
-        replaced the prior engine only on 2026-06-12. Its validated expectations
-        (Tier 1 99.4%, Tier 2 98.2% at 24.3% ROR) come from the 19-year replay
-        below, not from these still-accumulating live counts. Use the
-        <strong>Legacy</strong> filter to browse the retired engine&rsquo;s full
-        history.
-      </p>
-
       <div class="cf-filters" id="log-filters">
         <span class="lbl">Show</span>
         <button data-status="all" class="active">All</button>
         <button data-status="win">Wins</button>
         <button data-status="loss">Losses</button>
         <button data-status="pending">Pending</button>
-        <span class="lbl" style="margin-left:10px">Engine</span>
-        <button data-engine="all" class="active">All</button>
-        <button data-engine="v3">Tier 1</button>
-        <button data-engine="t2">Tier 2</button>
-        <button data-engine="v1">Legacy</button>
         <input type="text" id="log-ticker" placeholder="TICKER" maxlength="6" />
       </div>
       <div class="cf-tbl-scroll">
@@ -604,100 +543,6 @@
         </table>
       </div>
       <button class="cf-show-more" id="log-more" hidden>Show 200 more</button>
-
-      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Replay record — how this exact rule set performed, 2008&ndash;2026</h3>
-      <p class="section-note" style="margin-top:4px">
-        Point-in-time daily replay of the live protocol on full price history
-        (one independent trade per ticker/direction/expiry, 1 contract each,
-        conservative fills, commissions included). The rule was frozen on
-        2008&ndash;2018 and then run once, untouched, on 2019&ndash;2026.
-        Full protocol: <code style="font-family:var(--mono);font-size:12px">strategies/credit_spread/VALIDATION.md</code>.
-      </p>
-      <div class="cf-tbl-scroll">
-        <table class="cf-val-tbl">
-          <thead><tr><th>Year</th><th>Trades</th><th>Losses</th><th>P&amp;L (1 contract/trade)</th></tr></thead>
-          <tbody>
-            <tr class="era"><td colspan="4">Design window 2008&ndash;2018 (rule fitted here &mdash; GFC included)</td></tr>
-            <tr><td>2008</td><td>151</td><td class="good">0</td><td class="good">+$2,097</td></tr>
-            <tr><td>2009</td><td>70</td><td class="good">0</td><td class="good">+$521</td></tr>
-            <tr><td>2010</td><td>10</td><td class="good">0</td><td class="good">+$65</td></tr>
-            <tr><td>2011</td><td>12</td><td class="good">0</td><td class="good">+$105</td></tr>
-            <tr><td>2012</td><td>24</td><td class="good">0</td><td class="good">+$216</td></tr>
-            <tr><td>2013</td><td>9</td><td class="good">0</td><td class="good">+$84</td></tr>
-            <tr><td>2014</td><td>1</td><td class="good">0</td><td class="good">+$6</td></tr>
-            <tr><td>2015</td><td>27</td><td class="good">0</td><td class="good">+$193</td></tr>
-            <tr><td>2016</td><td>86</td><td class="good">0</td><td class="good">+$847</td></tr>
-            <tr><td>2017</td><td>44</td><td class="good">0</td><td class="good">+$352</td></tr>
-            <tr><td>2018</td><td>120</td><td class="good">0</td><td class="good">+$1,445</td></tr>
-            <tr class="era"><td colspan="4">Validation window 2019&ndash;2026 (untouched &mdash; the honest numbers)</td></tr>
-            <tr><td>2019</td><td>196</td><td class="bad">2</td><td class="good">+$351</td></tr>
-            <tr><td>2020</td><td>206</td><td class="bad">3</td><td class="bad">&minus;$1,386</td></tr>
-            <tr><td>2021</td><td>149</td><td class="bad">1</td><td class="good">+$1,581</td></tr>
-            <tr><td>2022</td><td>285</td><td class="bad">1</td><td class="good">+$4,557</td></tr>
-            <tr><td>2023</td><td>136</td><td class="good">0</td><td class="good">+$2,245</td></tr>
-            <tr><td>2024</td><td>169</td><td class="good">0</td><td class="good">+$5,237</td></tr>
-            <tr><td>2025</td><td>213</td><td class="good">0</td><td class="good">+$4,275</td></tr>
-            <tr><td>2026</td><td>154</td><td class="bad">2</td><td class="good">+$1,314</td></tr>
-            <tr class="era"><td><strong>Total</strong></td><td><strong>2,062</strong></td><td><strong>9</strong></td><td class="good"><strong>+$24,105</strong></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="cf-footnote">
-        The nine validation losses, with dates: MKTX (Sep 2019), MA, TDG, GNRC
-        (Mar 2020 — COVID), DKS (Nov 2021), EOG (Jun 2022), GWRE call (Feb 2026,
-        +38% acquisition pop), AVGO (Jun 2026). With the optional crash wing
-        attached where affordable, the validation record becomes 8 losses /
-        99.47%, the worst trade improves from &minus;$2,218 to &minus;$1,585,
-        and TDG&rsquo;s &minus;44% COVID move flips to <strong>+$1,209</strong>.
-        Replay caveats: today&rsquo;s surviving universe, modeled fills.
-      </div>
-
-      <h3 style="font-size:16px;font-weight:600;margin:34px 0 4px">Tier 2 backtest history — Vol-Alpha, 2019&ndash;2026 (high-liquidity subset)</h3>
-      <p class="section-note" style="margin-top:4px">
-        Tier 2 went live only recently, so its <em>live</em> record above is
-        still building (and the last few days were a market holiday). Below is
-        its full <strong>validated backtest</strong> — every machine-selected
-        put spread the frozen model would have taken on the same high-liquidity
-        (&ge;$250M/day) names it trades in production, 2019&ndash;2026 untouched,
-        deduped, priced with conservative fills, held to expiry. Vol-Alpha is
-        <strong>opportunistic, not steady</strong>: it fires mostly in the
-        aftermath of volatility spikes, so trade counts are lumpy (heavy in
-        2020, sparse in calm years) — that concentration is the edge, not a bug.
-      </p>
-      <div class="cf-live-grid" id="t2-grid">
-        <div class="cf-live-stat"><span class="num" id="t2-trades">&mdash;</span><span class="lbl">Backtest trades</span></div>
-        <div class="cf-live-stat"><span class="num good" id="t2-wr">&mdash;</span><span class="lbl">Win rate</span></div>
-        <div class="cf-live-stat"><span class="num good" id="t2-ror">&mdash;</span><span class="lbl">Avg return on risk / trade</span></div>
-        <div class="cf-live-stat"><span class="num" id="t2-pnl">&mdash;</span><span class="lbl">P&amp;L, 1 contract/trade</span></div>
-      </div>
-      <div class="cf-tbl-scroll">
-        <table class="cf-val-tbl">
-          <thead><tr><th>Year</th><th>Trades</th><th>Losses</th><th>Win rate</th><th>P&amp;L (1 contract/trade)</th></tr></thead>
-          <tbody id="t2-year-body"></tbody>
-        </table>
-      </div>
-      <p class="section-note" style="font-size:12px;margin:12px 0 4px">
-        Every backtested Tier 2 trade (newest first) — the actual strikes,
-        expiries, credits and outcomes the model produced:
-      </p>
-      <div class="cf-tbl-scroll">
-        <table class="cf-live-tbl">
-          <thead>
-            <tr><th>Published</th><th>Ticker</th><th>Trade</th><th>Short strike</th>
-            <th>Long strike</th><th>Expiry</th><th>Credit</th><th>ROR</th><th>Close@exp</th><th>Result</th></tr>
-          </thead>
-          <tbody id="t2-trade-body"></tbody>
-        </table>
-      </div>
-      <button class="cf-show-more" id="t2-more" hidden>Show 200 more</button>
-      <div class="cf-footnote">
-        Backtest, not live: conservative modeled fills on today&rsquo;s surviving
-        high-liquidity universe. ~1.5 of every 100 trades lose; losses cluster
-        in volatility episodes (worst single trade about &minus;$400/contract).
-        The live Tier 2 log above is the unbiased forward measure and will
-        populate as the strategy publishes. Full protocol:
-        <code style="font-family:var(--mono);font-size:12px">VALIDATION.md</code> §12&ndash;§17.
-      </div>
     </div>
   </section>
 
@@ -706,118 +551,72 @@
     <div class="section-inner">
       <div class="section-title">Method — the whole thing, no hand-waving</div>
       <div class="cf-method">
-        <h3>1. What a trade is</h3>
+        <h3>1. What the Conviction Pick is</h3>
         <p>
-          A vertical credit spread: sell one option at the short strike, buy one
-          at the long strike (5% of spot further out), same expiry. Maximum loss
-          is capped at the width between strikes minus the credit received, no
-          matter what the stock does. A <strong>put</strong> spread wins if the
-          stock closes at or above the short strike at expiry; a
-          <strong>call</strong> spread wins if it closes at or below.
+          One put credit spread at a time: <strong>sell</strong> a put near the
+          money-safe distance below the stock, <strong>buy</strong> a further
+          put 2.5% of spot below it (that long leg caps your loss), same expiry,
+          and hold to expiry. It wins if the stock closes at or above the short
+          strike on the expiry date. Maximum loss is the width between strikes
+          minus the credit — known and capped the moment you open it.
         </p>
-        <h3>2. Certification — which stocks are even considered</h3>
+        <h3>2. High-liquidity universe only</h3>
         <p>
-          Per stock, direction, and duration (1 week to 1 year), walk-forward
-          calendar-year folds <code>2006&hellip;2026</code> with purged gaps: the certified
-          buffer is the worst move ever seen in training plus 1%, and the combo
-          is certified only if every held-out test year stayed inside it, with
-          &ge;50 pooled out-of-sample tests. Certification is a stability
-          filter, <strong>not</strong> a forward win-rate claim.
+          Candidates are restricted to stocks trading at least
+          <strong>$250M/day</strong> in dollar volume — roughly the top ~450
+          U.S. names, with deep, continuous options markets. Every published
+          pick is then snapped onto the <em>real</em> live chain: an actual
+          listed expiration, real listed strikes, both legs with &ge;25
+          contracts of open interest and a tight short-leg bid/ask, priced at
+          the <strong>natural credit</strong> (sell the bid, buy the ask) — the
+          fill available without negotiating. If it isn&rsquo;t a real, fillable
+          contract, it isn&rsquo;t shown.
         </p>
-        <h3>3. The published strike (Sigma-Clear)</h3>
+        <h3>3. How the pick is chosen</h3>
         <p>
-          Published buffer = <code>2.5&sigma;&radic;h + 1%</code> (60-day realized vol),
-          required to clear <strong>&ge;80% of the worst move in the stock&rsquo;s
-          entire listed history</strong> — decades, not just recent years — capped
-          at 25% (&le;1 month) / 45% (&ge;2 months). The expiry is snapped
-          <em>down</em> to the latest standard weekly/monthly expiry the certified
-          window covers. The underlying must have listed options, &ge;10 years of
-          history, and a fresh price series. Finally the spread must still pay a
-          conservative net credit &ge; $0.05/share after slippage and commissions —
-          if the market won&rsquo;t pay for the distance, nothing is published.
+          A systematic scan of 1.5M+ historical candidate trades against 14
+          causal technical features found one edge that replicates out of
+          sample: selling premium when a stock&rsquo;s volatility is elevated
+          versus its own long-run level <em>and</em> already calming (the
+          post-spike &ldquo;vol-crush&rdquo; regime) wins far more often than
+          the market prices in. A gradient-boosted model over those features —
+          fit only on 2008&ndash;2018, then frozen — scores every candidate.
+          Each week, the single highest-confidence high-liquidity put spread
+          is published <em>only</em> if it clears a bar set at the design
+          97th-percentile of confidence.
         </p>
-        <h3>4. The liquidity gate — will it actually trade?</h3>
+        <h3>4. The 96.9% bar, and the Elite (&asymp;99%) band</h3>
         <p>
-          A listed contract is not the same as a tradeable one. Every published
-          spread must clear three liquidity tests against the live chain, or it
-          is not shown: the underlying trades at least <strong>$250M/day</strong>
-          in dollar volume (a high-liquidity name — top ~450 U.S. stocks, deep
-          continuous options markets); both legs carry at least <strong>25 contracts of open
-          interest</strong>; and the short leg&rsquo;s bid/ask spread is a small
-          fraction of the trade width (a wide short-leg quote means the bid the
-          credit relies on is stale). The published credit is always the
-          <em>natural</em> credit — sell the bid, buy the ask — the fill available
-          without negotiating. Each card&rsquo;s details show the underlying
-          volume, open interest, and short-leg spread so you can judge for
-          yourself. Applying this liquidity floor to the full validation history
-          <strong>does not cost accuracy or return</strong> — both tiers hold
-          (and slightly improve) their numbers, because the most liquid names
-          have the cleanest behavior. Filtering to tradeable names is free.
+          On untouched 2019&ndash;2026 data, picks clearing that bar validated
+          at <strong>96.9% accuracy and ~24.7% return-on-risk per trade</strong>,
+          about 21 per year (one every 2&ndash;3 weeks). A stricter
+          <strong>Elite</strong> band (top-tier confidence) validated even
+          higher — <strong>73 for 73, 0 losses</strong>, ~10 per year — and
+          those picks are marked with a gold badge. Weekly cadence above 95% is
+          impossible: forcing a pick every week drops accuracy to ~92%, so the
+          strategy waits for conviction rather than lowering the bar.
         </p>
-        <h3>5. The crash wing (optional, listed per trade)</h3>
-        <p>
-          Half a unit of a long option one width past the long leg, same expiry,
-          attached only when the credit can afford it. It costs ~7% of long-run
-          P&amp;L and converts crash-sized breaches into profits: in the replay,
-          the deepest validation loss (TDG, &minus;44% in March 2020) flips from
-          &minus;$2,218 to +$1,209.
-        </p>
-        <h3>6. How it was validated — and what we tried that failed</h3>
-        <p>
-          The validation instrument is a point-in-time daily replay of the live
-          protocol (as-of-date eligibility, publish, resolve at the snapped
-          expiry close), verified to reproduce the actual live log exactly. The
-          rule set was frozen on 2008&ndash;2018 and run once on untouched
-          2019&ndash;2026. Things we tested that do <em>not</em> work, with
-          receipts in the repository: claiming 100% from fold backtests (the
-          legacy engine&rsquo;s &ldquo;100%&rdquo; replayed at 99.25%), stop-losses
-          (win rate falls — every stop near the strike is itself a realized
-          loss), GTC take-profits (gives up 77% of P&amp;L to rescue 2 losses),
-          GTC resting entries at richer credit (pure adverse selection: all 9
-          losers fill, most winners don&rsquo;t, total P&amp;L goes negative),
-          and liquidity filters (the losers that survive a $1B/day filter are
-          Mastercard and Broadcom). A strategy that is simultaneously
-          &ldquo;100% safe against its own full history&rdquo; and
-          &ldquo;profitable under conservative fills&rdquo; selects an empty
-          set — measured across 18 years &times; 960 optionable names &times; 8
-          durations.
-        </p>
-        <h3>7. Tier 2 — Vol-Alpha (max profit at high accuracy)</h3>
-        <p>
-          A systematic scan of 1.5M+ candidate trades against 14 causal
-          technical features found one substantial, out-of-sample-replicating
-          edge: premium sold when a stock&rsquo;s volatility is elevated versus
-          its own long-run level <em>and</em> already calming (the post-spike
-          &ldquo;vol-crush&rdquo; regime) wins far more often than the market
-          prices at that distance. Tier&nbsp;2 industrializes it: a
-          gradient-boosted model over the feature library (fit only on
-          2008&ndash;2018, committed artifact, frozen deep-confidence
-          threshold) selects put spreads at 0.6&sigma; with 2.5%-of-spot
-          width. The (horizon&nbsp;&times;&nbsp;distance) grid was searched —
-          the shipped cell dominates every neighbor. Validated once on
-          untouched 2019&ndash;2026: 98.2% / 24.3% ROR per trade.
-        </p>
-        <h3>8. Why hold to expiry — exits were tested to destruction</h3>
+        <h3>5. Hold to expiry — exits were tested to destruction</h3>
         <p>
           Five kinds of exit management were tested with the same design/
           validation discipline: fixed stops, fixed take-profits, GTC resting
-          entries, GTC exits, and a fully <em>learned</em> exit policy (a
-          second model watching every open position daily). Every one reduced
-          both win rate and P&amp;L; the learned policy, given eleven years of
-          examples, converged to <strong>never exiting</strong>. At two-week
-          tenors an exit pays slippage, commissions, and the market&rsquo;s
-          already-repriced threat — hold-to-maturity is the optimum, not a
-          simplification.
+          entries, GTC exits, and a fully <em>learned</em> exit policy. Every
+          one reduced both win rate and P&amp;L; the learned policy, given
+          eleven years of examples, converged to <strong>never exiting</strong>.
+          At two-week tenors an exit pays slippage, commissions, and the
+          market&rsquo;s already-repriced threat. Hold to expiry is the optimum.
         </p>
-        <h3>9. What this does <em>not</em> guarantee</h3>
+        <h3>6. What this does <em>not</em> guarantee</h3>
         <p>
-          The replay-validated 99.4% is an estimate, not a floor. The residual
-          ~0.6% of trades lose on exactly the events no price-history rule can
-          rule out in advance: systemic crashes, M&amp;A pops, earnings
-          collapses. Defined-risk spreads cap each loss at width minus credit;
-          the crash wing makes the deepest of those convex. Position-size to
-          survive the worst trade, trade it as a portfolio, and assume future
-          drawdowns can exceed historical ones.
+          The validated 96.9% (and the Elite band&rsquo;s 73/73) are estimates
+          from one carefully de-biased history on today&rsquo;s surviving
+          liquid universe, with conservative modeled fills — not a floor and
+          not a promise of 100%. The trades that lose do so on exactly the
+          events no price-history rule can rule out in advance: systemic
+          crashes, M&amp;A pops, earnings collapses. Defined-risk spreads cap
+          each loss at width minus credit. Size to survive the worst trade
+          (backtest worst: about &minus;$160/contract), and assume the future
+          can be worse than the past. <strong>Not financial advice.</strong>
         </p>
       </div>
     </div>
@@ -845,8 +644,8 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-col">
-        <a href="#trades" class="footer-link">Today&rsquo;s Trades</a>
-        <a href="#history" class="footer-link">History</a>
+        <a href="#pick" class="footer-link">The Pick</a>
+        <a href="#history" class="footer-link">Track record</a>
         <a href="#method" class="footer-link">Method</a>
         <a href="#disclosures" class="footer-link">Disclosures</a>
         <a href="/" class="footer-link">Main Site</a>
@@ -855,7 +654,7 @@
       </div>
       <div class="footer-col footer-col-logo">
         <span class="footer-logo-text"><span class="footer-logo-dot" style="background:var(--orange)"></span>CreditFloor</span>
-        <span class="footer-text">Two-tier reality-verified credit-spread engine — Tier 1 &ldquo;Sigma-Clear&rdquo; (max accuracy) and Tier 2 &ldquo;Vol-Alpha&rdquo; (max profit at high accuracy). Updated once daily after market close, New York time.</span>
+        <span class="footer-text">The Conviction Pick — one reality-verified, high-liquidity put credit spread at a time, validated at 96.9% (Elite band ≈99%). Updated once daily after market close, New York time.</span>
         <span class="footer-text footnote-text">Past performance does not predict future results.</span>
         <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
       </div>

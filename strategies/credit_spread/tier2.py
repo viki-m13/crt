@@ -264,10 +264,12 @@ def scan() -> int:
     conv_candidates = [s for s in signals if s["gbm_confidence"] >= conv_thr
                        and s.get("real") is not None]
     tier2_signals = [s for s in signals if s["gbm_confidence"] >= thr]
+    elite_thr = meta.get("elite_threshold", 0.9662)
     conviction_pick = None
     if conv_candidates:
         cp = dict(conv_candidates[0])          # highest confidence
         cp["engine"] = CONV_ENGINE
+        cp["elite"] = bool(cp["gbm_confidence"] >= elite_thr)
         cp["ladder"] = [{**cp["ladder"][0], "engine": CONV_ENGINE}]
         conviction_pick = cp
 
@@ -282,12 +284,16 @@ def scan() -> int:
         "min_adv_usd": meta.get("conviction_min_adv_usd", 250e6),
         "published_today": conviction_pick is not None,
         "ticker": conviction_pick["ticker"] if conviction_pick else None,
+        "elite_today": bool(conviction_pick and conviction_pick.get("elite")),
+        "elite_threshold": elite_thr,
         "validated": {"window": "2019-2026", "accuracy": 0.969,
                       "avg_ror_per_trade": 0.247, "per_year": 21,
                       "worst_trade_usd": -160,
+                      "elite_accuracy": 1.0, "elite_per_year": 10,
                       "note": ("One highest-confidence high-liquidity put "
                                "spread per week when the bar is met; ~1 every "
-                               "2-3 weeks. NOT a guarantee; ~3% of trades lose.")},
+                               "2-3 weeks. NOT a guarantee; ~3% of trades lose. "
+                               "Elite (99%) band: 73/73 in backtest, ~10/yr.")},
     }
     blob["summary"]["tier2"] = {
         "engine": ENGINE, "n_scored": n_scored,

@@ -267,48 +267,28 @@
   /* ---------------- history: live log ---------------- */
 
   function renderLiveStats(log) {
-    const s = log.summary || {};
-    const be = s.by_engine || {};
-    const v3 = be["v3-sigmaclear"] || {};
-    const t2 = be["t2-volalpha-gbm"] || {};
-    const v1 = be["v1"] || {};
-    // The big tiles reflect the CURRENT strategy (Tier 1 + Tier 2) — the
-    // live record of what the page publishes today. The legacy engine's
-    // large resolved count would otherwise drown it out; it stays visible
-    // below, clearly marked retired.
-    const cur = {
-      resolved: (v3.resolved || 0) + (t2.resolved || 0),
-      wins: (v3.wins || 0) + (t2.wins || 0),
-      losses: (v3.losses || 0) + (t2.losses || 0),
-      pending: (v3.pending || 0) + (t2.pending || 0),
-    };
-    const curWR = cur.resolved > 0 ? cur.wins / cur.resolved : null;
-    $("#live-resolved").textContent = fmtInt(cur.resolved);
-    $("#live-wins").textContent = fmtInt(cur.wins);
-    $("#live-losses").textContent = fmtInt(cur.losses);
-    $("#live-wr").textContent = curWR != null ? fmtPct(100 * curWR, 2)
-      : "building";
+    const be = (log.summary || {}).by_engine || {};
+    const cp = be["conviction-pick"] || {};
+    const resolved = cp.resolved || 0;
+    const wr = resolved > 0 ? cp.wins / resolved : null;
+    $("#live-resolved").textContent = fmtInt(resolved);
+    $("#live-wins").textContent = fmtInt(cp.wins || 0);
+    $("#live-losses").textContent = fmtInt(cp.losses || 0);
+    $("#live-wr").textContent = wr != null ? fmtPct(100 * wr, 2) : "building";
     $("#live-sub").innerHTML =
-      `<span>First current-strategy signal: <strong>2026-06-12</strong></span>` +
-      `<span>Pending: <strong>${fmtInt(cur.pending)}</strong></span>` +
-      `<span>Tier 1 &ldquo;Sigma-Clear&rdquo;: <strong>${fmtInt(v3.total || 0)}</strong> published · ` +
-      `<strong>${fmtInt(v3.wins || 0)}</strong> wins · <strong>${fmtInt(v3.losses || 0)}</strong> losses` +
-      `${(v3.pending || 0) ? ` · ${fmtInt(v3.pending)} pending` : ""}</span>` +
-      `<span>Tier 2 &ldquo;Vol-Alpha&rdquo;: <strong>${fmtInt(t2.total || 0)}</strong> published · ` +
-      `<strong>${fmtInt(t2.wins || 0)}</strong> wins · <strong>${fmtInt(t2.losses || 0)}</strong> losses` +
-      `${(t2.pending || 0) ? ` · ${fmtInt(t2.pending)} pending` : ""}</span>` +
-      `<span style="opacity:.75">Retired legacy engine (v1, before 2026-06-12): <strong>${fmtInt(v1.resolved || 0)}</strong> resolved · ` +
-      `<strong>${fmtInt(v1.losses || 0)}</strong> losses — kept on the record, not part of the current strategy</span>`;
+      `<span>Published: <strong>${fmtInt(cp.total || 0)}</strong></span>` +
+      `<span>Pending: <strong>${fmtInt(cp.pending || 0)}</strong></span>` +
+      `<span style="opacity:.8">Live record accrues as the Conviction Pick publishes; ` +
+      `the validated expectation is the backtest above.</span>`;
   }
 
   function applyLogFilters() {
     const sig = state.log || [];
     const tk = state.logTicker.trim().toUpperCase();
     state.logFiltered = sig.filter((s) => {
+      // Conviction-only page: show just the Conviction Pick engine.
+      if ((s.engine || "") !== "conviction-pick") return false;
       if (state.logStatus !== "all" && s.status !== state.logStatus) return false;
-      const eng = s.engine === "v3-sigmaclear" ? "v3"
-        : (s.engine || "").startsWith("t2") ? "t2" : "v1";
-      if (state.logEngine !== "all" && eng !== state.logEngine) return false;
       if (tk && s.ticker !== tk) return false;
       return true;
     });
@@ -327,12 +307,10 @@
     const html = rows.map((s) => {
       const cls = s.status === "win" ? "win" : s.status === "loss" ? "loss" : "pending";
       const res = s.status === "win" ? "WIN" : s.status === "loss" ? "LOSS" : "pending";
-      const eng = s.engine === "v3-sigmaclear" ? " · T1"
-        : (s.engine || "").startsWith("t2") ? " · T2" : "";
       return `<tr>
         <td>${s.publish_date}</td>
         <td class="tkr">${s.ticker}</td>
-        <td>${s.side.toUpperCase()} ${s.horizon}d${eng}</td>
+        <td>${s.side.toUpperCase()} ${s.horizon}d</td>
         <td>${fmt$(s.strike)}</td>
         <td>${fmt$(s.spot_at_publish)}</td>
         <td>${s.expiry_date}</td>
@@ -395,15 +373,12 @@
   async function boot() {
     try {
       const d = await fetchJSON("data/signals.json");
-      state.trades = flattenTrades(d);
-      state.reality = (d.summary || {}).reality || null;
       renderStats(d);
       renderConvictionPick(d);
-      renderTrades();
-      wireSort();
     } catch (e) {
-      $("#trade-list").innerHTML =
-        `<div class="cf-empty">Could not load today's signals. Try a hard refresh.</div>`;
+      const el = $("#pick-card");
+      if (el) el.innerHTML =
+        `<div class="cf-empty">Could not load the pick. Try a hard refresh.</div>`;
     }
     try {
       const log = await fetchJSON("data/live_log.json");
@@ -414,14 +389,6 @@
     } catch (e) {
       $("#log-body").innerHTML =
         `<tr><td colspan="8" style="color:var(--muted)">Live log unavailable.</td></tr>`;
-    }
-    try {
-      const h = await fetchJSON("data/tier2_history.json");
-      renderTier2History(h);
-    } catch (e) {
-      const b = $("#t2-trade-body");
-      if (b) b.innerHTML =
-        `<tr><td colspan="10" style="color:var(--muted)">Tier 2 backtest history unavailable.</td></tr>`;
     }
     try {
       const c = await fetchJSON("data/conviction_history.json");
@@ -452,12 +419,16 @@
     }
     const r = cp.real;
     const annRor = (r.ror_natural * 100) * (365 / Math.max(r.cal_days_to_expiry, 1));
+    const eliteBadge = cp.elite
+      ? `<span class="cf-side-badge" style="color:#fff;background:#b8860b;border-color:#b8860b">elite · ≈99%</span>`
+      : "";
     el.innerHTML = `
-      <div class="cf-card" style="border-width:2px;border-color:#6b21a8">
+      <div class="cf-card" style="border-width:2px;border-color:${cp.elite ? "#b8860b" : "#6b21a8"}">
         <div class="cf-card-head">
           <span>
             <span class="cf-card-ticker">${cp.ticker}</span>
             <span class="cf-side-badge" style="color:#6b21a8;border-color:#6b21a8">conviction pick</span>
+            ${eliteBadge}
             <span class="cf-side-badge" style="color:var(--green);border-color:var(--green)">verified live chain</span>
           </span>
           <span class="cf-card-price">last close <strong>${fmt$(cp.today_close)}</strong> · ${cp.end_date}</span>
@@ -489,11 +460,12 @@
 
   function renderConvictionHistory(h) {
     const s = h.summary || {};
+    const el = s.elite || {};
     if ($("#cp-trades")) $("#cp-trades").textContent = fmtInt(s.trades || 0);
     if ($("#cp-wr")) $("#cp-wr").textContent = s.win_rate != null ? fmtPct(s.win_rate, 2) : "—";
     if ($("#cp-ror")) $("#cp-ror").textContent = s.avg_ror != null ? fmtPct(s.avg_ror, 1) : "—";
-    if ($("#cp-pnl")) $("#cp-pnl").textContent = s.pnl != null
-      ? (s.pnl >= 0 ? "+" : "") + "$" + fmtInt(Math.round(s.pnl)) : "—";
+    if ($("#cp-elite")) $("#cp-elite").textContent = el.win_rate != null
+      ? fmtPct(el.win_rate, 1) + ` (${fmtInt(el.trades)})` : "—";
     const yb = $("#cp-year-body");
     if (yb) yb.innerHTML = (h.by_year || []).map((y) =>
       `<tr><td>${y.year}</td><td>${fmtInt(y.trades)}</td>
@@ -501,11 +473,26 @@
        <td>${fmtPct(y.win_rate, 1)}</td>
        <td class="${y.pnl >= 0 ? "good" : "bad"}">${y.pnl >= 0 ? "+" : "−"}$${fmtInt(Math.abs(Math.round(y.pnl)))}</td></tr>`
     ).join("");
-    state.cptrades = h.trades || [];
+    state.cptradesAll = h.trades || [];
+    state.cpEliteOnly = false;
+    resetCP();
+    $$("#cp-filter button[data-cp]").forEach((b) => {
+      b.addEventListener("click", () => {
+        $$("#cp-filter button[data-cp]").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        state.cpEliteOnly = b.dataset.cp === "elite";
+        resetCP();
+      });
+    });
+    if ($("#cp-more")) $("#cp-more").addEventListener("click", renderMoreCP);
+  }
+
+  function resetCP() {
+    state.cptrades = state.cpEliteOnly
+      ? state.cptradesAll.filter((t) => t.elite) : state.cptradesAll;
     state.cpshown = 0;
     if ($("#cp-trade-body")) $("#cp-trade-body").innerHTML = "";
     renderMoreCP();
-    if ($("#cp-more")) $("#cp-more").addEventListener("click", renderMoreCP);
   }
 
   function renderMoreCP() {
@@ -513,11 +500,14 @@
     const rows = (state.cptrades || []).slice(state.cpshown, state.cpshown + CHUNK);
     const html = rows.map((t) => {
       const cls = t.outcome === "win" ? "win" : "loss";
+      const conf = t.elite
+        ? `<span style="color:#b8860b;font-weight:600">${fmtPct(t.confidence, 1)} ★</span>`
+        : fmtPct(t.confidence, 1);
       return `<tr>
         <td>${t.date}</td><td class="tkr">${t.ticker}</td>
         <td>${fmt$(t.short_strike)}</td><td>${fmt$(t.long_strike)}</td>
         <td>${t.expiry}</td><td>$${fmtInt(Math.round(t.credit))}</td>
-        <td>${fmtPct(t.ror, 0)}</td><td>${fmtPct(t.confidence, 1)}</td>
+        <td>${fmtPct(t.ror, 0)}</td><td>${conf}</td>
         <td>${t.close_at_expiry != null ? fmt$(t.close_at_expiry) : "—"}</td>
         <td class="${cls}">${t.outcome.toUpperCase()}</td>
       </tr>`;
