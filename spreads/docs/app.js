@@ -303,6 +303,16 @@
 
   function renderMoreLog() {
     const CHUNK = 200;
+    if (state.logShown === 0 && state.logFiltered.length === 0) {
+      const msg = (state.logStatus === "all" && !state.logTicker.trim())
+        ? "No live picks yet — the first Conviction Pick will appear here the day it publishes (about once every 2–3 weeks). The validated expectation is the backtest above."
+        : "No picks match this filter.";
+      $("#log-body").innerHTML =
+        `<tr><td colspan="8" style="color:var(--muted);padding:16px 12px">${msg}</td></tr>`;
+      const more0 = $("#log-more");
+      if (more0) more0.hidden = true;
+      return;
+    }
     const rows = state.logFiltered.slice(state.logShown, state.logShown + CHUNK);
     const html = rows.map((s) => {
       const cls = s.status === "win" ? "win" : s.status === "loss" ? "loss" : "pending";
