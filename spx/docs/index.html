@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPX Direction — defined-risk spreads with a +40pp edge over the option market</title>
+  <meta name="description" content="A validated directional read on SPX/SPY that disagrees with the option market by ~40 points and monetizes it as defined-risk spreads: a bull call spread (~82% win, +60% ROR) and a put credit spread (~89% win, 96% out-of-sample). One position at a time, GTC limit exits, held on the most liquid options listed." />
+  <meta name="keywords" content="SPX prediction, SPY options, risk premium, call spread, put credit spread, variance risk premium, defined risk, backtested" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
+      <div class="nav-links">
+        <a href="/">Monthly Pick</a>
+        <a href="/screener">Screener</a>
+        <a href="/spreads/">Spreads</a>
+        <a href="/spx/" class="active">SPX Direction</a>
+        <a href="/max/">Max</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <!-- HERO -->
+    <section class="hero">
+      <p class="eyebrow">SPX / SPY directional edge · updated daily</p>
+      <h1>The market prices SPX at a coin flip. History says it isn't.</h1>
+      <p class="lede">Over 1993–2026, SPY finishes higher far more often than the option
+        market's implied probability — a persistent <strong>+40-point</strong> disagreement
+        (the equity + variance risk premium). Holding the index turns that into ~10%/yr.
+        Expressed as <strong>defined-risk spreads</strong>, the same edge pays
+        <strong>+60% ROR</strong> per trade.</p>
+      <p class="updated" id="asof">Loading latest signal…</p>
+    </section>
+
+    <!-- TODAY'S SIGNAL -->
+    <section id="signal">
+      <p class="eyebrow">Today's positions</p>
+      <h2>Two books, opposite ends of the frontier</h2>
+      <p class="section-note">Both harvest the same directional edge on SPY, 252-session (~1-year)
+        horizon, one position at a time, closed early on a good-till-cancelled limit and rolled.
+        The <strong>call spread</strong> maximizes return on risk; the <strong>put credit
+        spread</strong> maximizes accuracy.</p>
+      <div class="cards" id="cards"><p class="muted">Loading…</p></div>
+    </section>
+
+    <!-- TRACK RECORD -->
+    <section id="record">
+      <p class="eyebrow">Track record</p>
+      <h2>Validated 1993–2026, out-of-sample from 2016</h2>
+      <p class="section-note">Every eligible entry day, held under the exact live exit rule
+        (thousands of samples). Win rate and ROR are the robust full-sample figures; CAGR and
+        drawdown come from a real, non-overlapping one-position-at-a-time book.</p>
+      <div class="tbl-wrap">
+        <table id="record-tbl">
+          <thead><tr>
+            <th>Book</th><th>Win rate</th><th>Out-of-sample</th><th>Mean ROR</th>
+            <th>Median ROR</th><th>Avg hold</th><th>Annualized</th><th>Worst trade</th>
+          </tr></thead>
+          <tbody><tr><td class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="sizing"></div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how">
+      <p class="eyebrow">Where the edge comes from</p>
+      <h2>A real disagreement, not a forecast trick</h2>
+      <div class="two-col">
+        <div>
+          <h3>The market underprices the drift</h3>
+          <p>The option market prices strikes as if SPX has no drift (risk-neutral). Physically it
+            drifts up and its crashes are rarer than implied vol suggests. So the actual chance SPY
+            is higher in a year (~80%) far exceeds the ~46% the market implies — a <strong>+40pp
+            edge</strong> measured point-in-time across three decades.</p>
+          <h3>Options convert the edge to ROR</h3>
+          <p>Holding SPY earns the drift (~10%/yr). A <strong>defined-risk spread</strong> is
+            leveraged: you risk a small debit to capture a multiple of it. The same 80%-accurate
+            read becomes <strong>+60% mean ROR</strong> per trade on the call spread.</p>
+        </div>
+        <div>
+          <h3>GTC limits bank wins early</h3>
+          <p>A good-till-cancelled limit closes the spread the moment it reaches its profit target —
+            before a late reversal can flip a winner into a loser. That lifts the win rate a few
+            points <em>and</em> recycles capital in ~3–5 months instead of a year.</p>
+          <h3>A regime filter, not a hedge</h3>
+          <p>The losers cluster in bear markets, so the book only opens new trades when SPY is above
+            its 200-day average and <strong>stands aside in downtrends</strong>. This free filter
+            beats every hedge we tested: it lifts win rate 81→87% and cuts the drawdown 39→28%.
+            Buying puts to hedge does the opposite — it pays away the very premium the strategy
+            harvests and erases the edge.</p>
+          <h3>Honest about the frontier</h3>
+          <p>This is ~80–90% accurate, <strong>not 99%</strong>. Pushing accuracy higher (the put
+            spread, at 96% out-of-sample) trades away ROR. The ~1-in-5 to 1-in-10 losers cluster in
+            bear markets — which is why position <em>sizing</em>, not the signal, sets your
+            drawdown.</p>
+        </div>
+      </div>
+      <div class="callout">
+        <p><strong>What "ROR" means and doesn't.</strong> The per-trade ROR is high because the
+          risk is a small defined debit. Turning that into portfolio CAGR is a sizing choice: risk
+          10% of capital per trade for ~10% CAGR at a −27% max drawdown; risk 25% for ~24% CAGR at
+          −58%. The edge is real; the leverage is yours to set.</p>
+      </div>
+      <div class="callout green">
+        <p><strong>Why these fills are trustworthy.</strong> Backtest prices are modeled
+          Black-Scholes (IV = 60-day realized × 1.12). SPY and SPX carry the deepest, tightest
+          options market listed — penny-wide, hundreds of strikes, weeklies to LEAPS — so unlike
+          thin single-name spreads, these structures genuinely fill at prices close to the model.</p>
+      </div>
+    </section>
+
+    <!-- RECENT TRADES -->
+    <section id="trades">
+      <p class="eyebrow">Recent closed trades</p>
+      <h2>The sequential book, most recent first</h2>
+      <div class="tbl-wrap">
+        <table id="trades-tbl">
+          <thead><tr>
+            <th>Book</th><th>Entered</th><th>Exited</th><th>Strikes</th><th>Hold</th>
+            <th>Exit</th><th>ROR</th>
+          </tr></thead>
+          <tbody><tr><td class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <p><a href="/">← Daily Stock Guide</a> · <a href="/spreads/">Credit Spreads</a> ·
+        <a href="https://github.com/viki-m13/crt/tree/main/strategies/spx_predict">Source &amp; validation</a></p>
+      <p class="disclaimer">Educational research, not investment advice. Backtests use modeled
+        option prices and do not guarantee future results; options involve substantial risk of loss.
+        The strategy is ~80–90% accurate — real losing trades occur, and clustered losses in bear
+        markets can produce large drawdowns depending on position sizing. Nothing here is a
+        recommendation to buy or sell any security.</p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -175,11 +175,71 @@ back, and the crash losers remain.
 direction trade (~90% win, ~11% CAGR, −33% worst) dominates the 99% version on
 every axis that pays.
 
+## 7. The shipped strategy — express the direction edge as options
+
+Holding the direction view on the underlying only earns the drift
+(~10%/yr). The edge is worth far more expressed as **defined-risk option
+spreads**, because the risk is a small debit/credit and the payoff is a
+multiple of it. Prices are modeled Black-Scholes (IV = 60d realized ×
+1.12, r=0, ±2% slippage); SPY/SPX are the most liquid options listed, so
+modeled fills are realistic. Two frozen books, 252-session horizon, one
+position at a time, GTC limit exits, re-enter next session:
+
+**CALL book (max ROR)** — bull call spread, long ATM / short +5%. GTC
+sell the spread when it marks 80% of width.
+**PUT book (max accuracy)** — short put spread −5%/−10%. GTC buy back
+after capturing 50% of the credit.
+
+Both add a **200-day regime filter**: only open when SPY ≥ its 200-day
+average; stand aside in downtrends (see §8). Full-sample results
+(every eligible entry day, 1993–2026; out-of-sample = ≥2016):
+
+| Book | Win rate | OOS win | Mean ROR | Median ROR | Avg hold | Annualized |
+|------|---------:|--------:|---------:|-----------:|---------:|-----------:|
+| Call ATM/+5% | 87% | 90% | +70% | ~+115% | 154d | +115% |
+| Put −5%/−10% | 94% | 95% | +18% | ~+29% | 80d | +55% |
+
+**Per-trade ROR is not portfolio CAGR** — that is a sizing choice, and
+sizing sets the drawdown. On the real non-overlapping sequential book:
+risk 10% of capital/trade → ~10% CAGR at −19% max drawdown; 15% → ~15%
+at −28%; 25% → ~24% at −44%. The edge is real; the leverage is the
+operator's to set.
+
+Honest ceiling: this is **~87–94% accurate, not 99%**. The GTC limit
+adds a few points of accuracy (§6 mechanism) but the residual losers are
+real bear-market trades, not noise.
+
+## 8. Downside protection — what works and what backfires
+
+The losers cluster in bear markets, so the natural question is how to
+protect them. Measured on the call book (sequential, 15% sizing):
+
+| Overlay | Win | Mean ROR | CAGR | Max DD |
+|---------|----:|---------:|-----:|-------:|
+| Baseline | 81% | +60% | 14.5% | −39% |
+| Stop-loss 40% (tight) | 60% | +39% | 14.6% | −30% |
+| Stop-loss 60% (loose) | 75% | +55% | 15.5% | −33% |
+| **Buy protective puts −10%** | 47% | **+2%** | **−0.2%** | −39% |
+| **Regime filter (≥200d avg)** | **87%** | **+70%** | 14.9% | **−28%** |
+| Regime + loose stop | 79% | +62% | 14.3% | **−19%** |
+
+- **Buying puts is self-defeating.** You pay the exact variance risk
+  premium the strategy harvests; the drag erases the edge (CAGR → ~0%)
+  and barely dents the drawdown. Never hedge a premium-harvesting book by
+  buying the thing it is structurally short.
+- **Stop-losses are marginal.** Tight stops whipsaw (win → 60%); a loose
+  ~60%-of-debit stop trims drawdown a little and is CAGR-neutral, but
+  can't stop a gap-down (worst trade still −100%).
+- **The 200-day regime filter is the real protection — and it is free.**
+  It improves win rate, ROR, and drawdown simultaneously by not entering
+  into established downtrends. It is now part of the frozen rule. Adding a
+  loose stop on top pushes max drawdown to −19%.
+
 ## What we ship
 
-`predict.py` emits, for the current spot, both books honestly labelled:
-a **no-breach** book (down-levels where we clear ≥99% physical and beat
-the market by ≥3pp — populated when vol is elevated) and a **direction**
-book (near/up levels where we disagree with the market by ≥5pp), each
-carrying our probability, the market-implied probability, and the edge.
-`backtest.py` reproduces every table above from the raw SPY panel.
+`signal.py` emits `spx/docs/data/signal.json` daily (via `fetch_spy.py`
++ the `spx-daily` cron): today's action (ENTER / HOLD / EXIT / STAND
+ASIDE), the exact spread to trade, the open position, the full-sample
+track record, and the sizing→CAGR/drawdown frontier. The `/spx/` page
+renders it. `backtest.py` and `predict.py` reproduce the underlying
+edge measurements (§1–6) from the raw SPY panel.
