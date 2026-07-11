@@ -6,7 +6,7 @@
   var el = function (t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   var signClass = function (x) { return x >= 0 ? "pos" : "neg"; };
 
-  fetch("data/signal.json?_=" + Date.now())
+  fetch("/spx/data/signal.json?_=" + Date.now())
     .then(function (r) { if (!r.ok) throw new Error("no data"); return r.json(); })
     .then(render)
     .catch(function () {

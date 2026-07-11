@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Site password gate (client-side). See /gate.js -->
+  <style id="cf-gate-init">html{visibility:hidden!important}</style>
+  <script src="/gate.js"></script>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <title>SPX Direction — defined-risk spreads with a +40pp edge over the option market</title>
   <meta name="description" content="A validated directional read on SPX/SPY that disagrees with the option market by ~40 points and monetizes it as defined-risk spreads: a bull call spread (~82% win, +60% ROR) and a put credit spread (~89% win, 96% out-of-sample). One position at a time, GTC limit exits, held on the most liquid options listed." />
   <meta name="keywords" content="SPX prediction, SPY options, risk premium, call spread, put credit spread, variance risk premium, defined risk, backtested" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/spx/styles.css" />
 </head>
 <body>
   <nav class="site-nav">
@@ -180,6 +188,6 @@
     </footer>
   </main>
 
-  <script src="app.js"></script>
+  <script src="/spx/app.js"></script>
 </body>
 </html>
