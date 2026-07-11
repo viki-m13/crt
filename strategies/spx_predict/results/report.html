@@ -98,10 +98,12 @@
   </div>
 
   <div class="verdict">
-    <p><strong>The finding in one line.</strong> The market systematically underprices SPY's
-      tendency to rise and overprices its tendency to crash (equity + variance risk premium).
-      That mispricing is real, large, and persistent — but you monetize it as
-      <em>either</em> a high-accuracy call <em>or</em> a high-edge call, never both.</p>
+    <p><strong>The finding in one line.</strong> The market underprices SPY's tendency to rise
+      and overprices its tendency to crash — a real, large, persistent edge. And yes, closing a
+      directional long early <em>does</em> lift the win rate to ~99%. But the two cannot combine:
+      the 99%-win version compounds <em>below</em> buy-and-hold, because accuracy and edge trade
+      off along <code>win ≈ 1/(1+payoff)</code>. The best joint point is a trailing trigger —
+      ~90% win-rate <em>and</em> ~11% CAGR with a shallower drawdown than the index.</p>
   </div>
 
   <div class="regions">
@@ -203,7 +205,52 @@
       model cannot forecast, and it is exactly the distance between "98% accurate" and "99%."</p>
   </div>
 
-  <h2><span class="num">05</span>The honest verdict on "99% + beats the market"</h2>
+  <h2><span class="num">05</span>Close early to reach 99%? Yes — but the edge dies</h2>
+  <p>The direction call has the highest edge, so the natural move: enter a long 21–252 days out,
+    then <strong>close early on a profit trigger</strong> to lock the win. For a directional long
+    this is a <em>first-passage</em> bet — the chance a path <em>touches</em> a small gain before
+    the horizon is far higher than the chance it <em>ends</em> above a level — so, unlike credit
+    spreads, early-close genuinely <strong>does</strong> lift the win rate toward 99%.</p>
+  <figure>
+    <table>
+      <caption>Fixed profit target: buy, take +δ, hold losers to the horizon</caption>
+      <thead><tr><th>Setup</th><th>Win rate</th><th>Val ≥2016</th><th>Avg win</th><th>Avg loss</th><th>Ann.</th></tr></thead>
+      <tbody>
+        <tr><td>252d, +2%</td><td>95.0%</td><td>98.1%</td><td class="pos">+2.0%</td><td class="crit">−20.3%</td><td>5.7%</td></tr>
+        <tr><td>252d, +1%</td><td>97.0%</td><td>98.8%</td><td class="pos">+1.0%</td><td class="crit">−21.5%</td><td>3.6%</td></tr>
+        <tr class="hl"><td>504d, +1%</td><td>98.0%</td><td>100.0%</td><td class="pos">+1.0%</td><td class="crit">−24.7%</td><td>4.1%</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <div class="callout crit">
+    <p><strong>The 99% is real — and it's an illusion of skew.</strong> To win 98% of the time at
+      +1%, the 2% of losers are ~20% each (bear markets you're stuck holding): <strong>avg loss ≈
+      20× avg win.</strong> On a real one-position-at-a-time book the 99%-win version compounds at
+      <strong>6.7% CAGR — well below just holding SPY (10.8%).</strong> You win a penny almost
+      always and give it all back in the crashes. It is the same
+      <code>win ≈ 1/(1+payoff)</code> identity: accuracy and edge trade against each other.</p>
+  </div>
+  <h3>The best you can actually have: a trailing trigger (~90% + market-beating return)</h3>
+  <p>Let winners run — arm at a small gain, then exit when price falls a step below its running
+    max — instead of clipping every winner at +1%.</p>
+  <figure>
+    <table>
+      <caption>Trailing trigger vs the 99% target vs buy-and-hold (sequential CAGR)</caption>
+      <thead><tr><th>Strategy</th><th>Win rate</th><th>CAGR</th><th>Worst trade</th></tr></thead>
+      <tbody>
+        <tr><td>Fixed 252d/+1% (the "99%")</td><td>98.2%</td><td>6.71%</td><td class="crit">−31%</td></tr>
+        <tr class="hl"><td>Trailing 252d, arm+5% / 3%</td><td>92.3%</td><td class="pos">10.88%</td><td>−33%</td></tr>
+        <tr class="hl"><td>Trailing 126d, arm+3% / 2%</td><td>85.3%</td><td class="pos">10.88%</td><td>−30%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>—</td><td>10.81%</td><td class="crit">−55%</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <p class="sub">The trailing trigger gives ~90% win-rate <em>and</em> ~10.9% CAGR — matching
+    buy-and-hold with a shallower worst drawdown (−33% vs −55%). That is the real sweet spot for
+    edge and accuracy together. It cannot reach 99%: letting winners run means giving some back,
+    and the crash losers remain.</p>
+
+  <h2><span class="num">06</span>The honest verdict on "99% + beats the market"</h2>
   <p>The three regions do not overlap into a free lunch:</p>
   <div class="callout">
     <p><strong>99% accuracy with a real edge does not exist.</strong> Reaching ~99.7% realized

@@ -117,6 +117,64 @@ a big edge over the market" is selling one of two illusions — either it
 is not really disagreeing with the market, or it is not counting the
 crashes.
 
+## 6. Early-close trigger: does closing early buy 99% accuracy?
+
+The direction call has the highest edge, so the natural question: enter a
+long 21–252 sessions out, then **close early on a profit trigger** to lock
+the win and lift accuracy. For a directional long this is a *first-passage*
+problem — the probability a path **touches** a small gain before the horizon
+is much higher than the probability it **ends** above a level — so, unlike
+credit spreads (where early exit loses), early-close genuinely **does** raise
+the win rate. Measured on SPY closes, entered every session:
+
+**Fixed profit target (buy, take +dp, hold losers to the horizon):**
+
+| setup | win | val≥2016 | avg win | avg loss | worst | ann |
+|------|----:|---------:|--------:|---------:|------:|----:|
+| 252d, +2% | 95.0% | 98.1% | +2.0% | −20.3% | −44% | 5.7% |
+| 252d, +1% | 97.0% | 98.8% | +1.0% | −21.5% | −44% | 3.6% |
+| **504d, +1%** | **98.0%** | **100.0%** | +1.0% | −24.7% | −46% | 4.1% |
+
+So **yes — betting ~1–2 years out and closing early at +1% reaches a 98–100%
+win rate.** But the catch is structural and unavoidable: to win 98% of the
+time at +1%, the 2% of losers are ~20% each (bear markets you are stuck
+holding), so **avg_loss ≈ 20× avg_win**. On a real sequential
+one-position-at-a-time book:
+
+| strategy | win-rate | **CAGR** | worst trade |
+|----------|---------:|---------:|------------:|
+| fixed 252d/+1% (99% win) | 98.2% | **6.71%** | −31% |
+| fixed 252d/+2% | 96.1% | 8.58% | −31% |
+| **SPY buy & hold** | — | **10.81%** | −55% |
+
+**The 99%-win-rate version returns ~6.7% CAGR — well below just holding SPY
+(10.8%).** The "accuracy" is an accounting artifact of negative skew: you win
+a penny 98% of the time and give it all back in the crashes. A stop-loss caps
+the −44% tail but drops the win rate to ~88% and the CAGR stays ~6%. This is
+the same `win ≈ 1/(1+payoff)` identity from the spreads — **accuracy and edge
+trade against each other; you cannot maximize both.**
+
+**The best joint point is a *trailing* trigger** (arm at +arm, then exit when
+price falls `tr` below its running max — lets winners run instead of clipping
+them):
+
+| setup | win | val≥2016 | avg win | avg loss | CAGR | worst trade |
+|------|----:|---------:|--------:|---------:|-----:|------------:|
+| trail 252d, arm+5% trail 3% | 89.5% | 95.2% | +7.0% | −18.0% | **10.9%** | −33% |
+| trail 126d, arm+3% trail 2% | 85.9% | 90.4% | +4.4% | −8.8% | **10.9%** | −30% |
+
+The trailing trigger delivers **~90% win-rate AND ~10.9% CAGR — matching
+buy-and-hold with a shallower worst-case drawdown (−33% vs −55%)** because it
+side-steps the deepest bear legs. That is the genuine sweet spot for "edge and
+accuracy together." It cannot reach 99%: letting winners run means giving some
+back, and the crash losers remain.
+
+**Verdict on the request.** Early-close *can* deliver a 99% win rate, but not a
+99% win rate *with* a high edge — pushing accuracy to 99% cuts the return to
+~2/3 of buy-and-hold. If the goal is the best real outcome, the trailing-trigger
+direction trade (~90% win, ~11% CAGR, −33% worst) dominates the 99% version on
+every axis that pays.
+
 ## What we ship
 
 `predict.py` emits, for the current spot, both books honestly labelled:
