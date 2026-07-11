@@ -41,6 +41,8 @@
     { "src": "/spreads/(.*)", "dest": "/spreads/docs/$1" },
     { "src": "/max/(.*)", "dest": "/max/docs/$1" },
     { "src": "/experiments/(.*)", "dest": "/experiments/docs/$1" },
+    { "src": "/spx$", "dest": "/spx/docs/index.html" },
+    { "src": "/spx/(.*)", "dest": "/spx/docs/$1" },
     { "src": "/screener$", "dest": "/docs/screener.html" },
     { "src": "/screener/$", "status": 308, "headers": { "Location": "/screener" } },
     { "src": "/screener/(.*)", "dest": "/docs/$1" },
