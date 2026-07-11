@@ -241,6 +241,58 @@ def stats(dates, px, rv, sma, spec, seq_trades):
     }
 
 
+REF_FRAC = 0.15   # reference sizing for the plotted equity curve
+
+
+def equity_curve(seq_trades, frac=REF_FRAC):
+    """Stepwise account equity at each trade exit (start 1.0)."""
+    if not seq_trades:
+        return []
+    cap = 1.0
+    pts = [[seq_trades[0]["entry_date"], 1.0]]
+    for t in seq_trades:
+        cap *= (1 + frac * t["ror"])
+        pts.append([t["exit_date"], round(cap, 4)])
+    return pts
+
+
+def ror_histogram(seq_trades, edges=(-1.01, -0.5, 0.0, 0.5, 1.0, 1.4)):
+    """Bin per-trade RORs for a distribution bar chart."""
+    r = np.array([t["ror"] for t in seq_trades])
+    labels = ["≤−50%", "−50–0%", "0–50%", "50–100%", "≥100%"]
+    counts = [int(((r >= edges[i]) & (r < edges[i + 1])).sum()) for i in range(len(edges) - 1)]
+    counts[-1] += int((r >= edges[-1]).sum())  # fold the +140% max into the top bin
+    return [{"label": labels[i], "count": counts[i]} for i in range(len(labels))]
+
+
+def examples(seq_trades):
+    """A representative winner (median-ish win) and the worst loser."""
+    wins = sorted([t for t in seq_trades if t["win"]], key=lambda t: t["ror"])
+    losses = sorted([t for t in seq_trades if not t["win"]], key=lambda t: t["ror"])
+    out = {}
+    if wins:
+        out["winner"] = wins[len(wins) // 2]
+    if losses:
+        out["loser"] = losses[0]
+    return out
+
+
+def spy_benchmark(dates, px, start_date):
+    """SPY buy-and-hold, normalized to 1.0 at start_date, ~monthly points."""
+    i0 = int(np.searchsorted(dates, np.datetime64(start_date)))
+    base = px[i0]
+    pts = []
+    step = 21  # ~monthly
+    for i in range(i0, len(px), step):
+        pts.append([str(dates[i]), round(float(px[i] / base), 4)])
+    if pts[-1][0] != str(dates[-1]):
+        pts.append([str(dates[-1]), round(float(px[-1] / base), 4)])
+    cagr = (px[-1] / base) ** (365.25 / max((dates[-1] - dates[i0]).astype("timedelta64[D]").astype(int), 1)) - 1
+    eq = px[i0:] / base
+    dd = float((eq / np.maximum.accumulate(eq) - 1).min())
+    return {"curve": pts, "cagr": round(float(cagr), 4), "maxdd": round(dd, 4)}
+
+
 def action(open_pos, spec, regime_ok):
     if open_pos is None:
         return "ENTER" if regime_ok else "STAND ASIDE — SPY below its 200-day average (downtrend)"
@@ -283,19 +335,28 @@ def main() -> int:
     dates, px, rv, sma = load()
     regime_ok = _regime_ok(px[-1], sma[-1])
     books = {}
+    earliest = None
     for key, spec in STRUCTURES.items():
         trades, open_pos = simulate(dates, px, rv, sma, spec)
+        if trades:
+            e = trades[0]["entry_date"]
+            earliest = e if earliest is None or e < earliest else earliest
         books[key] = {
             "label": spec["label"], "spec": spec,
             "today_action": action(open_pos, spec, regime_ok),
             "open_position": open_pos,
             "enter_today": enter_today(dates, px, rv, sma, spec),
             "track_record": stats(dates, px, rv, sma, spec, trades),
-            "recent_trades": trades[-24:],
+            "equity": equity_curve(trades),
+            "ror_histogram": ror_histogram(trades),
+            "examples": examples(trades),
+            "recent_trades": list(reversed(trades)),
         }
     out = {
         "as_of": str(dates[-1]), "spot": round(float(px[-1]), 2),
         "horizon_sessions": HORIZON,
+        "equity_sizing": REF_FRAC,
+        "spy_benchmark": spy_benchmark(dates, px, earliest or str(dates[60])),
         "regime": {"sma200": round(float(sma[-1]), 2) if np.isfinite(sma[-1]) else None,
                    "uptrend": bool(regime_ok),
                    "filter": "enter only when SPY >= its 200-day average"},

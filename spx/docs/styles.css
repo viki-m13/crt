@@ -98,6 +98,28 @@ tbody tr:last-child td{border-bottom:none}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px}
 @media(max-width:760px){.two-col{grid-template-columns:1fr}}
 
+/* charts */
+.chart-card{border:1px solid var(--rule-light);border-radius:8px;padding:16px 12px 12px;background:var(--bg)}
+canvas{width:100%;display:block}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;padding:10px 6px 2px;color:#333}
+.legend .swatch{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.hist-row{display:grid;grid-template-columns:72px 1fr 46px;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:12.5px;margin:7px 0}
+.hist-bar{height:16px;background:var(--green);border-radius:3px;min-width:2px}
+.hist-bar.neg{background:var(--red)}
+.hist-row .lab{color:var(--muted);text-align:right}
+.hist-row .ct{text-align:right;font-variant-numeric:tabular-nums}
+.ex-card{border:1px solid var(--rule-light);border-radius:8px;padding:12px 14px;margin-bottom:12px;
+  font-size:13.5px}
+.ex-card .tag{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  padding:2px 8px;border-radius:20px}
+.ex-card .tag.win{background:var(--green-bg);color:var(--green)}
+.ex-card .tag.loss{background:#fdeee6;color:var(--red)}
+.ex-card .row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;
+  font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ex-card .row .k{color:var(--muted)}
+.scroll-tall{max-height:520px;overflow-y:auto}
+
 footer{padding:36px 0;font-size:13px;color:var(--muted)}
 footer a{color:var(--muted)}
 .disclaimer{font-size:12px;color:var(--muted);max-width:80ch;margin-top:10px;line-height:1.6}

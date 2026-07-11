@@ -67,6 +67,43 @@
       <div id="sizing"></div>
     </section>
 
+    <!-- EQUITY & RISK -->
+    <section id="equity">
+      <p class="eyebrow">Equity &amp; risk</p>
+      <h2>Compounding the book, 1993–2026</h2>
+      <p class="section-note">The account equity of the non-overlapping one-position-at-a-time book
+        at <strong>15% risk per trade</strong>, against SPY buy-and-hold over the same span. Both
+        start at 1.0; log scale. The strategy holds cash between trades and uses defined-risk
+        options, so it rides shallower drawdowns than the index.</p>
+      <div class="chart-card">
+        <canvas id="eq-chart" height="380" aria-label="Equity curve"></canvas>
+        <div class="legend" id="eq-legend"></div>
+      </div>
+      <div class="stats" id="eq-stats" style="margin-top:20px"></div>
+
+      <h3 style="margin-top:34px">Drawdown</h3>
+      <p class="section-note">How far each book sat below its own prior peak — the lived experience
+        of holding it.</p>
+      <div class="chart-card">
+        <canvas id="dd-chart" height="240" aria-label="Drawdown"></canvas>
+      </div>
+
+      <div class="two-col" style="margin-top:34px">
+        <div>
+          <h3>Distribution of per-trade returns</h3>
+          <p class="section-note">Where the ROR of each closed trade lands. The call book's wins
+            cluster near max width; the losers are the full-debit bear-market trades.</p>
+          <div id="hist"></div>
+        </div>
+        <div>
+          <h3>Example trades</h3>
+          <p class="section-note">A representative winner and the worst loser from the call book —
+            the shape of both outcomes.</p>
+          <div id="examples"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- HOW IT WORKS -->
     <section id="how">
       <p class="eyebrow">Where the edge comes from</p>
@@ -119,7 +156,9 @@
     <section id="trades">
       <p class="eyebrow">Recent closed trades</p>
       <h2>The sequential book, most recent first</h2>
-      <div class="tbl-wrap">
+      <p class="section-note">Every trade the one-position-at-a-time book took, newest first.
+        "limit"/"profit" = closed early on the GTC target; "expiry" = held the full year.</p>
+      <div class="tbl-wrap scroll-tall">
         <table id="trades-tbl">
           <thead><tr>
             <th>Book</th><th>Entered</th><th>Exited</th><th>Strikes</th><th>Hold</th>
