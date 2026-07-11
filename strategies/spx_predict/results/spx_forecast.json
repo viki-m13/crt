@@ -1,0 +1,363 @@
+{
+  "as_of": "2026-06-12",
+  "spot": 741.780029296875,
+  "iv_proxy": 0.1688,
+  "forecast": [
+    {
+      "horizon": 5,
+      "level_off": 0.0,
+      "level": 741.780029296875,
+      "side": "above",
+      "physical_prob": 0.5841224747474747,
+      "market_prob": 0.4952559811034568,
+      "edge_pp": 8.886649364401789,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 21,
+      "level_off": 0.0,
+      "level": 741.780029296875,
+      "side": "above",
+      "physical_prob": 0.6534810126582279,
+      "market_prob": 0.49027838759162934,
+      "edge_pp": 16.320262506659855,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 63,
+      "level_off": 0.0,
+      "level": 741.780029296875,
+      "side": "above",
+      "physical_prob": 0.7182223638101306,
+      "market_prob": 0.48316500617032865,
+      "edge_pp": 23.505735763980194,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 63,
+      "level_off": 0.02,
+      "level": 756.6156298828125,
+      "side": "above",
+      "physical_prob": 0.6185090793246257,
+      "market_prob": 0.3909762891616162,
+      "edge_pp": 22.753279016300954,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 63,
+      "level_off": 0.03,
+      "level": 764.0334301757813,
+      "side": "above",
+      "physical_prob": 0.5546352341510035,
+      "market_prob": 0.3474042062633906,
+      "edge_pp": 20.723102788761288,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 126,
+      "level_off": 0.0,
+      "level": 741.780029296875,
+      "side": "above",
+      "physical_prob": 0.7506033789219629,
+      "market_prob": 0.47619879017722794,
+      "edge_pp": 27.4404588744735,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 126,
+      "level_off": 0.02,
+      "level": 756.6156298828125,
+      "side": "above",
+      "physical_prob": 0.6994368463395012,
+      "market_prob": 0.41077265672589514,
+      "edge_pp": 28.86641896136061,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 126,
+      "level_off": 0.03,
+      "level": 764.0334301757813,
+      "side": "above",
+      "physical_prob": 0.6695092518101368,
+      "market_prob": 0.37931777522238863,
+      "edge_pp": 29.019147658774813,
+      "verdict": "direction"
+    },
+    {
+      "horizon": 126,
+      "level_off": 0.05,
+      "level": 778.8690307617188,
+      "side": "above",
+      "physical_prob": 0.5882542236524537,
+      "market_prob": 0.31976718737587745,
+      "edge_pp": 26.848703627657628,
+      "verdict": "direction"
+    }
+  ],
+  "track_record": {
+    "calibration": [
+      {
+        "bucket": "[0.800,0.900)",
+        "predicted_mid": 0.85,
+        "realized": 0.8502,
+        "n": 16998
+      },
+      {
+        "bucket": "[0.900,0.950)",
+        "predicted_mid": 0.925,
+        "realized": 0.9123,
+        "n": 14846
+      },
+      {
+        "bucket": "[0.950,0.980)",
+        "predicted_mid": 0.965,
+        "realized": 0.9485,
+        "n": 12771
+      },
+      {
+        "bucket": "[0.980,0.990)",
+        "predicted_mid": 0.985,
+        "realized": 0.9632,
+        "n": 6584
+      },
+      {
+        "bucket": "[0.990,0.995)",
+        "predicted_mid": 0.9925,
+        "realized": 0.9819,
+        "n": 4032
+      },
+      {
+        "bucket": "[0.995,1.000)",
+        "predicted_mid": 0.9975,
+        "realized": 0.9797,
+        "n": 10483
+      }
+    ],
+    "nobreach": [
+      {
+        "horizon": 21,
+        "level_off": -0.1,
+        "fires": 593,
+        "realized_all": 0.9798,
+        "realized_design": 0.9798,
+        "realized_val": null,
+        "n_design": 593,
+        "n_val": 0,
+        "realized_nonoverlap": 0.9688,
+        "n_nonoverlap": 32,
+        "mean_physical": 0.9961,
+        "mean_market": 0.9288,
+        "mean_edge_pp": 6.73
+      },
+      {
+        "horizon": 21,
+        "level_off": -0.13,
+        "fires": 291,
+        "realized_all": 0.9966,
+        "realized_design": 0.9966,
+        "realized_val": null,
+        "n_design": 291,
+        "n_val": 0,
+        "realized_nonoverlap": 0.96,
+        "n_nonoverlap": 25,
+        "mean_physical": 0.9997,
+        "mean_market": 0.9795,
+        "mean_edge_pp": 2.02
+      },
+      {
+        "horizon": 63,
+        "level_off": -0.15,
+        "fires": 853,
+        "realized_all": 0.9789,
+        "realized_design": 0.9789,
+        "realized_val": null,
+        "n_design": 853,
+        "n_val": 0,
+        "realized_nonoverlap": 0.9444,
+        "n_nonoverlap": 18,
+        "mean_physical": 0.9963,
+        "mean_market": 0.9089,
+        "mean_edge_pp": 8.74
+      },
+      {
+        "horizon": 126,
+        "level_off": -0.15,
+        "fires": 991,
+        "realized_all": 0.9576,
+        "realized_design": 0.9573,
+        "realized_val": 1.0,
+        "n_design": 984,
+        "n_val": 7,
+        "realized_nonoverlap": 0.9167,
+        "n_nonoverlap": 12,
+        "mean_physical": 0.9994,
+        "mean_market": 0.8135,
+        "mean_edge_pp": 18.59
+      },
+      {
+        "horizon": 63,
+        "level_off": -0.1,
+        "fires": 332,
+        "realized_all": 0.9337,
+        "realized_design": 0.9337,
+        "realized_val": null,
+        "n_design": 332,
+        "n_val": 0,
+        "realized_nonoverlap": 0.8889,
+        "n_nonoverlap": 9,
+        "mean_physical": 0.9998,
+        "mean_market": 0.8336,
+        "mean_edge_pp": 16.62
+      }
+    ],
+    "direction": [
+      {
+        "horizon": 21,
+        "level_off": 0.0,
+        "n": 7078,
+        "realized_hit": 0.6483,
+        "mean_our_prob": 0.6471,
+        "mean_market_prob": 0.4896,
+        "mean_edge_pp": 15.75,
+        "realized_val": 0.6986,
+        "n_val": 2568
+      },
+      {
+        "horizon": 21,
+        "level_off": 0.03,
+        "n": 113,
+        "realized_hit": 0.4425,
+        "mean_our_prob": 0.5225,
+        "mean_market_prob": 0.3453,
+        "mean_edge_pp": 17.72,
+        "realized_val": 0.0,
+        "n_val": 6
+      },
+      {
+        "horizon": 21,
+        "level_off": 0.05,
+        "n": 325,
+        "realized_hit": 0.6185,
+        "mean_our_prob": 0.8047,
+        "mean_market_prob": 0.7444,
+        "mean_edge_pp": 6.03,
+        "realized_val": 0.6751,
+        "n_val": 197
+      },
+      {
+        "horizon": 63,
+        "level_off": 0.0,
+        "n": 7011,
+        "realized_hit": 0.6938,
+        "mean_our_prob": 0.7129,
+        "mean_market_prob": 0.482,
+        "mean_edge_pp": 23.1,
+        "realized_val": 0.7769,
+        "n_val": 2523
+      },
+      {
+        "horizon": 63,
+        "level_off": 0.03,
+        "n": 6114,
+        "realized_hit": 0.5229,
+        "mean_our_prob": 0.5565,
+        "mean_market_prob": 0.3314,
+        "mean_edge_pp": 22.51,
+        "realized_val": 0.6447,
+        "n_val": 2508
+      },
+      {
+        "horizon": 63,
+        "level_off": 0.05,
+        "n": 450,
+        "realized_hit": 0.3644,
+        "mean_our_prob": 0.5679,
+        "mean_market_prob": 0.325,
+        "mean_edge_pp": 24.29,
+        "realized_val": 0.9677,
+        "n_val": 31
+      },
+      {
+        "horizon": 126,
+        "level_off": 0.0,
+        "n": 6828,
+        "realized_hit": 0.7291,
+        "mean_our_prob": 0.7636,
+        "mean_market_prob": 0.4749,
+        "mean_edge_pp": 28.87,
+        "realized_val": 0.8154,
+        "n_val": 2460
+      },
+      {
+        "horizon": 126,
+        "level_off": 0.03,
+        "n": 6717,
+        "realized_hit": 0.6402,
+        "mean_our_prob": 0.6875,
+        "mean_market_prob": 0.3678,
+        "mean_edge_pp": 31.97,
+        "realized_val": 0.7419,
+        "n_val": 2460
+      },
+      {
+        "horizon": 126,
+        "level_off": 0.05,
+        "n": 6387,
+        "realized_hit": 0.543,
+        "mean_our_prob": 0.6053,
+        "mean_market_prob": 0.3012,
+        "mean_edge_pp": 30.41,
+        "realized_val": 0.6776,
+        "n_val": 2460
+      },
+      {
+        "horizon": 252,
+        "level_off": 0.0,
+        "n": 6670,
+        "realized_hit": 0.7772,
+        "mean_our_prob": 0.8174,
+        "mean_market_prob": 0.4644,
+        "mean_edge_pp": 35.3,
+        "realized_val": 0.8646,
+        "n_val": 2334
+      },
+      {
+        "horizon": 252,
+        "level_off": 0.03,
+        "n": 6616,
+        "realized_hit": 0.7388,
+        "mean_our_prob": 0.7862,
+        "mean_market_prob": 0.3886,
+        "mean_edge_pp": 39.76,
+        "realized_val": 0.8406,
+        "n_val": 2334
+      },
+      {
+        "horizon": 252,
+        "level_off": 0.05,
+        "n": 6579,
+        "realized_hit": 0.7009,
+        "mean_our_prob": 0.7477,
+        "mean_market_prob": 0.3415,
+        "mean_edge_pp": 40.62,
+        "realized_val": 0.8128,
+        "n_val": 2334
+      }
+    ],
+    "misses_by_year": {
+      "1998": {
+        "misses": 1,
+        "fires": 53
+      },
+      "2001": {
+        "misses": 11,
+        "fires": 52
+      }
+    }
+  },
+  "span": [
+    "1993-01-29",
+    "2026-06-12"
+  ],
+  "note": "Physical = point-in-time regime-conditioned historical probability; market = BS N(d2) with IV=realized*1.12. See VALIDATION.md."
+}

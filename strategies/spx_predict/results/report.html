@@ -1,0 +1,274 @@
+<title>SPX/SPY level prediction — edge over the option market</title>
+<style>
+  :root {
+    --paper: #f6f7f9; --ink: #14181e; --ink-soft: #4a525e; --hair: #d9dde3;
+    --card: #ffffff; --accent: #2f6595; --accent-soft: #e7eef5;
+    --pos: #3f7a58; --warn: #b07d24; --crit: #b0503f;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --serif: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10141a; --ink: #e6e9ee; --ink-soft: #9aa4b2; --hair: #29313c;
+      --card: #171c24; --accent: #6fa8d6; --accent-soft: #1b2733;
+      --pos: #6fb98a; --warn: #d6a94c; --crit: #d97a66;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10141a; --ink: #e6e9ee; --ink-soft: #9aa4b2; --hair: #29313c;
+    --card: #171c24; --accent: #6fa8d6; --accent-soft: #1b2733;
+    --pos: #6fb98a; --warn: #d6a94c; --crit: #d97a66;
+  }
+  :root[data-theme="light"] {
+    --paper: #f6f7f9; --ink: #14181e; --ink-soft: #4a525e; --hair: #d9dde3;
+    --card: #ffffff; --accent: #2f6595; --accent-soft: #e7eef5;
+    --pos: #3f7a58; --warn: #b07d24; --crit: #b0503f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: clamp(1.5rem, 4vw, 4rem) 1.25rem 6rem; }
+  .eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 .9rem; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.9rem, 5vw, 3rem);
+    line-height: 1.08; letter-spacing: -.01em; text-wrap: balance; margin: 0 0 .8rem; }
+  .lede { font-size: 1.16rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.4rem; }
+  .meta { font-family: var(--mono); font-size: .78rem; color: var(--ink-soft);
+    border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+    padding: .7rem 0; display: flex; flex-wrap: wrap; gap: 1.4rem; margin-bottom: 2.6rem; }
+  h2 { font-family: var(--serif); font-weight: 600; font-size: 1.5rem; letter-spacing: -.01em;
+    margin: 3rem 0 .3rem; text-wrap: balance; }
+  h2 .num { font-family: var(--mono); font-size: .8rem; color: var(--accent);
+    font-weight: 400; margin-right: .6rem; vertical-align: .18em; }
+  h3 { font-family: var(--sans); font-weight: 650; font-size: 1rem; margin: 1.8rem 0 .3rem; }
+  p { max-width: 68ch; }
+  p.sub { color: var(--ink-soft); margin-top: .2rem; }
+  strong { font-weight: 650; }
+  .verdict { background: var(--card); border: 1px solid var(--hair);
+    border-left: 3px solid var(--accent); border-radius: 6px;
+    padding: 1.3rem 1.4rem; margin: 0 0 1rem; }
+  .verdict p { margin: .3rem 0; max-width: none; }
+  .regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: .9rem; margin: 1.4rem 0 .5rem; }
+  .region { background: var(--card); border: 1px solid var(--hair); border-radius: 6px;
+    padding: 1rem 1.1rem; }
+  .region .tag { font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-soft); }
+  .region .big { font-family: var(--serif); font-size: 1.7rem; font-weight: 600;
+    line-height: 1.1; margin: .35rem 0 .1rem; }
+  .region.acc .big { color: var(--pos); }
+  .region.edge .big { color: var(--accent); }
+  .region.limit .big { color: var(--warn); }
+  .region .cap { font-size: .86rem; color: var(--ink-soft); }
+  figure { margin: 1.2rem 0; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono);
+    font-size: .82rem; font-variant-numeric: tabular-nums; }
+  caption { text-align: left; font-family: var(--sans); font-size: .82rem;
+    color: var(--ink-soft); margin-bottom: .5rem; }
+  th, td { padding: .42rem .7rem; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { border-bottom: 1.5px solid var(--ink-soft); font-weight: 600;
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; }
+  tbody tr { border-bottom: 1px solid var(--hair); }
+  tbody tr:last-child { border-bottom: none; }
+  .pos { color: var(--pos); } .warn { color: var(--warn); } .crit { color: var(--crit); }
+  .hl { background: var(--accent-soft); }
+  .bar { display: inline-block; height: .62em; border-radius: 2px;
+    background: var(--accent); vertical-align: baseline; margin-left: .4rem; opacity: .85; }
+  .callout { border: 1px solid var(--hair); border-left: 3px solid var(--warn);
+    background: var(--card); border-radius: 6px; padding: 1rem 1.2rem; margin: 1.4rem 0; }
+  .callout.crit { border-left-color: var(--crit); }
+  .callout p { margin: .3rem 0; max-width: none; }
+  .foot { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--hair);
+    font-family: var(--mono); font-size: .74rem; color: var(--ink-soft); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--accent-soft);
+    padding: .05em .35em; border-radius: 3px; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Quant research note · SPY 1993–2026</p>
+  <h1>Where the option market is wrong about SPX — and where it isn't</h1>
+  <p class="lede">We can beat the option market's implied probabilities by a wide, validated
+    margin. We cannot be 99% accurate <em>and</em> disagree with it. Those are different regions of
+    the same frontier, and the gap between them is unforecastable crashes.</p>
+  <div class="meta">
+    <span>8,400 sessions</span><span>Point-in-time · no look-ahead</span>
+    <span>Design &lt;2016 · Val ≥2016</span><span>Market = BS N(d₂), IV = realized×1.12</span>
+  </div>
+
+  <div class="verdict">
+    <p><strong>The finding in one line.</strong> The market underprices SPY's tendency to rise
+      and overprices its tendency to crash — a real, large, persistent edge. And yes, closing a
+      directional long early <em>does</em> lift the win rate to ~99%. But the two cannot combine:
+      the 99%-win version compounds <em>below</em> buy-and-hold, because accuracy and edge trade
+      off along <code>win ≈ 1/(1+payoff)</code>. The best joint point is a trailing trigger —
+      ~90% win-rate <em>and</em> ~11% CAGR with a shallower drawdown than the index.</p>
+  </div>
+
+  <div class="regions">
+    <div class="region edge">
+      <div class="tag">Direction · big edge</div>
+      <div class="big">65–78%</div>
+      <div class="cap">hit-rate on "higher in X days" vs the market's ~50/50 (edge +16 to +40pp) — but accuracy caps at ~78%.</div>
+    </div>
+    <div class="region acc">
+      <div class="tag">No-breach · high accuracy</div>
+      <div class="big">~98%</div>
+      <div class="cap">"won't fall −10% in 21 days" while the market prices it ~93% — a real +6.7pp edge.</div>
+    </div>
+    <div class="region limit">
+      <div class="tag">The 99% mirage</div>
+      <div class="big">+2pp</div>
+      <div class="cap">to reach ~99.7% realized you retreat to −13%, where the market already agrees. Edge gone.</div>
+    </div>
+  </div>
+
+  <h2><span class="num">01</span>The edge is real and large</h2>
+  <p>Across the full history, the <em>actual</em> frequency that SPY sits above a level exceeds
+    the option-implied (risk-neutral) probability at essentially every horizon. The gap is the
+    risk premium, and it widens with time.</p>
+  <figure>
+    <table>
+      <caption>Actual "above spot" frequency vs option-implied, by horizon</caption>
+      <thead><tr><th>Horizon</th><th>Actual</th><th>Market implied</th><th>Edge</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>5 days</td><td>58.9%</td><td>49.5%</td><td class="pos">+9.4pp</td><td><span class="bar" style="width:19px"></span></td></tr>
+        <tr><td>21 days</td><td>65.8%</td><td>49.0%</td><td class="pos">+16.8pp</td><td><span class="bar" style="width:34px"></span></td></tr>
+        <tr><td>63 days</td><td>71.6%</td><td>48.2%</td><td class="pos">+23.5pp</td><td><span class="bar" style="width:47px"></span></td></tr>
+        <tr><td>126 days</td><td>75.6%</td><td>47.4%</td><td class="pos">+28.2pp</td><td><span class="bar" style="width:56px"></span></td></tr>
+        <tr><td>252 days</td><td>81.5%</td><td>46.3%</td><td class="pos">+35.1pp</td><td><span class="bar" style="width:70px"></span></td></tr>
+      </tbody>
+    </table>
+  </figure>
+
+  <h2><span class="num">02</span>Direction — a wide edge, ~65–78% accuracy</h2>
+  <p>Predict the more-likely side and surface it only when we disagree with the market by ≥5pp.
+    This beats the market's coin-flip by a large margin and is directionally right most of the
+    time — <strong>but its ceiling is ~78%, not 99%.</strong></p>
+  <figure>
+    <table>
+      <caption>Realized hit-rate of directional calls (point-in-time, 1993–2026)</caption>
+      <thead><tr><th>Horizon</th><th>Level</th><th>Realized hit</th><th>Our prob</th><th>Market</th><th>Edge</th></tr></thead>
+      <tbody>
+        <tr><td>21 days</td><td>at spot</td><td>64.8%</td><td>64.7%</td><td>49.0%</td><td class="pos">+15.8pp</td></tr>
+        <tr><td>63 days</td><td>at spot</td><td>69.4%</td><td>71.3%</td><td>48.2%</td><td class="pos">+23.1pp</td></tr>
+        <tr><td>126 days</td><td>at spot</td><td>72.9%</td><td>76.4%</td><td>47.5%</td><td class="pos">+28.9pp</td></tr>
+        <tr class="hl"><td>252 days</td><td>at spot</td><td>77.7%</td><td>81.7%</td><td>46.4%</td><td class="pos">+35.3pp</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <p class="sub">Predicting a <em>specific higher level</em> ("above +5%") is harder — 36–62% —
+    because you are now betting on magnitude, not just direction.</p>
+
+  <h2><span class="num">03</span>No-breach — ~98% accuracy, +3–9pp edge</h2>
+  <p>Predict "SPY will <em>not</em> fall below a down-level" only when our calibrated no-breach
+    probability clears 99% <em>and</em> beats the market by the stated margin. The
+    <strong>21-day / −10%</strong> operating point is the sweet spot.</p>
+  <figure>
+    <table>
+      <caption>No-breach track record (design period; non-overlapping subsample in parens)</caption>
+      <thead><tr><th>Horizon</th><th>Level</th><th>Fires</th><th>Realized</th><th>Non-overlap</th><th>Edge</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>21 days</td><td>−10%</td><td>593</td><td class="pos">97.98%</td><td>96.9%</td><td>+6.7pp</td></tr>
+        <tr><td>21 days</td><td>−13%</td><td>291</td><td>99.66%</td><td>96.0%</td><td class="warn">+2.0pp</td></tr>
+        <tr><td>63 days</td><td>−15%</td><td>853</td><td class="pos">97.89%</td><td>94.4%</td><td>+8.7pp</td></tr>
+        <tr><td>126 days</td><td>−15%</td><td>991</td><td>95.76%</td><td>91.7%</td><td>+18.6pp</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <p class="sub">These fires concentrate in 1997–2001 (elevated nominal vol). In the modern
+    low-vol regime the market rarely misprices downside enough to trigger — so the rule is
+    self-silencing when there is no edge, which is the correct behavior.</p>
+
+  <h2><span class="num">04</span>The estimator is calibrated — and where it stops</h2>
+  <p>When the model says <em>p</em>, the realized frequency really is <em>p</em> — until the very
+    top, where it saturates near 98% no matter how confident it claims to be.</p>
+  <figure>
+    <table>
+      <caption>Predicted probability bucket vs realized frequency</caption>
+      <thead><tr><th>Model says</th><th>Realized</th><th>n</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>~85.0%</td><td>85.0%</td><td>16,998</td><td class="pos">calibrated</td></tr>
+        <tr><td>~92.5%</td><td>91.2%</td><td>14,846</td><td class="pos">calibrated</td></tr>
+        <tr><td>~96.5%</td><td>94.9%</td><td>12,771</td><td class="pos">calibrated</td></tr>
+        <tr><td>~98.5%</td><td>96.3%</td><td>6,584</td><td class="warn">drifting</td></tr>
+        <tr><td>~99.2%</td><td>98.2%</td><td>4,032</td><td class="warn">saturating</td></tr>
+        <tr class="hl"><td>~99.8%</td><td>98.0%</td><td>10,483</td><td class="crit">ceiling</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <div class="callout crit">
+    <p><strong>The ~2% that never closes.</strong> The 21-day / −10% misses are concentrated
+      entirely in <strong>1998 (LTCM)</strong> and <strong>2001 (dot-com / 9-11)</strong> —
+      crash onsets with no precedent in the prior in-regime window. That is the residual the
+      model cannot forecast, and it is exactly the distance between "98% accurate" and "99%."</p>
+  </div>
+
+  <h2><span class="num">05</span>Close early to reach 99%? Yes — but the edge dies</h2>
+  <p>The direction call has the highest edge, so the natural move: enter a long 21–252 days out,
+    then <strong>close early on a profit trigger</strong> to lock the win. For a directional long
+    this is a <em>first-passage</em> bet — the chance a path <em>touches</em> a small gain before
+    the horizon is far higher than the chance it <em>ends</em> above a level — so, unlike credit
+    spreads, early-close genuinely <strong>does</strong> lift the win rate toward 99%.</p>
+  <figure>
+    <table>
+      <caption>Fixed profit target: buy, take +δ, hold losers to the horizon</caption>
+      <thead><tr><th>Setup</th><th>Win rate</th><th>Val ≥2016</th><th>Avg win</th><th>Avg loss</th><th>Ann.</th></tr></thead>
+      <tbody>
+        <tr><td>252d, +2%</td><td>95.0%</td><td>98.1%</td><td class="pos">+2.0%</td><td class="crit">−20.3%</td><td>5.7%</td></tr>
+        <tr><td>252d, +1%</td><td>97.0%</td><td>98.8%</td><td class="pos">+1.0%</td><td class="crit">−21.5%</td><td>3.6%</td></tr>
+        <tr class="hl"><td>504d, +1%</td><td>98.0%</td><td>100.0%</td><td class="pos">+1.0%</td><td class="crit">−24.7%</td><td>4.1%</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <div class="callout crit">
+    <p><strong>The 99% is real — and it's an illusion of skew.</strong> To win 98% of the time at
+      +1%, the 2% of losers are ~20% each (bear markets you're stuck holding): <strong>avg loss ≈
+      20× avg win.</strong> On a real one-position-at-a-time book the 99%-win version compounds at
+      <strong>6.7% CAGR — well below just holding SPY (10.8%).</strong> You win a penny almost
+      always and give it all back in the crashes. It is the same
+      <code>win ≈ 1/(1+payoff)</code> identity: accuracy and edge trade against each other.</p>
+  </div>
+  <h3>The best you can actually have: a trailing trigger (~90% + market-beating return)</h3>
+  <p>Let winners run — arm at a small gain, then exit when price falls a step below its running
+    max — instead of clipping every winner at +1%.</p>
+  <figure>
+    <table>
+      <caption>Trailing trigger vs the 99% target vs buy-and-hold (sequential CAGR)</caption>
+      <thead><tr><th>Strategy</th><th>Win rate</th><th>CAGR</th><th>Worst trade</th></tr></thead>
+      <tbody>
+        <tr><td>Fixed 252d/+1% (the "99%")</td><td>98.2%</td><td>6.71%</td><td class="crit">−31%</td></tr>
+        <tr class="hl"><td>Trailing 252d, arm+5% / 3%</td><td>92.3%</td><td class="pos">10.88%</td><td>−33%</td></tr>
+        <tr class="hl"><td>Trailing 126d, arm+3% / 2%</td><td>85.3%</td><td class="pos">10.88%</td><td>−30%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>—</td><td>10.81%</td><td class="crit">−55%</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <p class="sub">The trailing trigger gives ~90% win-rate <em>and</em> ~10.9% CAGR — matching
+    buy-and-hold with a shallower worst drawdown (−33% vs −55%). That is the real sweet spot for
+    edge and accuracy together. It cannot reach 99%: letting winners run means giving some back,
+    and the crash losers remain.</p>
+
+  <h2><span class="num">06</span>The honest verdict on "99% + beats the market"</h2>
+  <p>The three regions do not overlap into a free lunch:</p>
+  <div class="callout">
+    <p><strong>99% accuracy with a real edge does not exist.</strong> Reaching ~99.7% realized
+      forces you to the −13% level, where the market already agrees (+2pp). Go shorter/deeper and
+      you hit 99% only where the market fully agrees — useless by the task's own test.</p>
+    <p><strong>~98% accuracy with a genuine +3–9pp edge</strong> is achievable and validated
+      (21-day / −10%).</p>
+    <p><strong>A +16–40pp edge</strong> is achievable at <strong>65–78% accuracy</strong> (the
+      directional risk-premium call).</p>
+  </div>
+  <p>This is the same structural frontier established for the credit spreads, independently
+    confirmed on the index: option-implied probabilities are near-efficient, the only durable
+    edge is the risk premium, and the last one-to-two points of accuracy are unforecastable
+    crashes. Any claim of "99% accurate <em>and</em> a big edge over the market" is selling one
+    of two illusions — it is not really disagreeing, or it is not counting the crashes.</p>
+
+  <p class="foot">Physical probability = point-in-time, regime-conditioned historical distribution
+    of forward returns (no look-ahead). Market probability = Black-Scholes N(d₂) with
+    IV = 60-day realized × 1.12. Reproduce with <code>strategies/spx_predict/backtest.py</code>.
+    SPY daily adjusted close, 1993-01-29 → 2026-06-12.</p>
+</div>
