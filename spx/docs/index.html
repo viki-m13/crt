@@ -78,11 +78,12 @@
     <!-- EQUITY & RISK -->
     <section id="equity">
       <p class="eyebrow">Equity &amp; risk</p>
-      <h2>Compounding the book, 1993–2026</h2>
-      <p class="section-note">The account equity of the non-overlapping one-position-at-a-time book
-        at <strong>15% risk per trade</strong>, against SPY buy-and-hold over the same span. Both
-        start at 1.0; log scale. The strategy holds cash between trades and uses defined-risk
-        options, so it rides shallower drawdowns than the index.</p>
+      <h2>The strategy equity curve, 1993–2026</h2>
+      <p class="section-note">The bold navy line is <strong>the strategy</strong> — one account
+        splitting capital 50/50 across both books at <strong>15% risk per trade</strong>. The
+        lighter lines are each book alone and SPY buy-and-hold for reference. All start at 1.0; log
+        scale. Holding cash between trades and running defined-risk options, the strategy compounds
+        <strong>faster than SPY at roughly half the drawdown</strong>.</p>
       <div class="chart-card">
         <canvas id="eq-chart" height="380" aria-label="Equity curve"></canvas>
         <div class="legend" id="eq-legend"></div>

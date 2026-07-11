@@ -277,6 +277,33 @@ def examples(seq_trades):
     return out
 
 
+def combined_strategy(eq_a, eq_b):
+    """The strategy as one account: 50% capital to each book, no rebalance.
+    Blend the two normalized equity curves on the union of their dates
+    (forward-filled). Diversification across the two books lowers the
+    drawdown below either alone."""
+    if not eq_a or not eq_b:
+        return None
+    all_dates = sorted(set([p[0] for p in eq_a] + [p[0] for p in eq_b]))
+
+    def step(eq):
+        ds = [p[0] for p in eq]; vs = [p[1] for p in eq]
+        out = {}; j = 0; cur = 1.0
+        for d in all_dates:
+            while j < len(ds) and ds[j] <= d:
+                cur = vs[j]; j += 1
+            out[d] = cur
+        return out
+    sa, sb = step(eq_a), step(eq_b)
+    curve = [[d, round(0.5 * sa[d] + 0.5 * sb[d], 4)] for d in all_dates]
+    v = np.array([c[1] for c in curve])
+    dd = float((v / np.maximum.accumulate(v) - 1).min())
+    yrs = (np.datetime64(all_dates[-1]) - np.datetime64(all_dates[0])
+           ).astype("timedelta64[D]").astype(int) / 365.25
+    return {"curve": curve, "cagr": round(float(v[-1] ** (1 / yrs) - 1), 4),
+            "maxdd": round(dd, 4)}
+
+
 def spy_benchmark(dates, px, start_date):
     """SPY buy-and-hold, normalized to 1.0 at start_date, ~monthly points."""
     i0 = int(np.searchsorted(dates, np.datetime64(start_date)))
@@ -356,6 +383,7 @@ def main() -> int:
         "as_of": str(dates[-1]), "spot": round(float(px[-1]), 2),
         "horizon_sessions": HORIZON,
         "equity_sizing": REF_FRAC,
+        "strategy_equity": combined_strategy(books["call"]["equity"], books["put"]["equity"]),
         "spy_benchmark": spy_benchmark(dates, px, earliest or str(dates[60])),
         "regime": {"sma200": round(float(sma[-1]), 2) if np.isfinite(sma[-1]) else None,
                    "uptrend": bool(regime_ok),

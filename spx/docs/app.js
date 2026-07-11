@@ -163,7 +163,7 @@
   }
 
   // ---- charts (self-contained Canvas, no libraries) ----
-  var COL = { call: "#1a2ea1", put: "#064e2b", spy: "#b35900" };
+  var COL = { call: "#7f8fb8", put: "#7aa98c", spy: "#d0a36a", strat: "#0b1f5e" };
 
   function setupCanvas(cv, hLogical) {
     // hLogical is passed explicitly — NEVER read back from the height
@@ -185,9 +185,11 @@
     var cv = document.getElementById("eq-chart"); if (!cv) return;
     var s = setupCanvas(cv, 380), ctx = s.ctx;
     var series = [
-      { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve },
-      { name: "Call spread book", color: COL.call, points: d.books.call.equity },
-      { name: "Put spread book", color: COL.put, points: d.books.put.equity }
+      { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve, w: 1.2 },
+      { name: "Call spread book", color: COL.call, points: d.books.call.equity, w: 1.2 },
+      { name: "Put spread book", color: COL.put, points: d.books.put.equity, w: 1.2 },
+      { name: "Strategy — 50/50 both books", color: COL.strat,
+        points: (d.strategy_equity || {}).curve, w: 3 }
     ].filter(function (x) { return x.points && x.points.length; });
 
     var xs = [], vals = [];
@@ -215,9 +217,10 @@
       ctx.strokeStyle = "#f3f3f3"; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, s.h - padB); ctx.stroke();
       ctx.fillStyle = "#999"; ctx.fillText(yr, x, s.h - padB + 5);
     }
-    // series lines
+    // series lines — draw thin references first, bold strategy last (on top)
+    ctx.lineJoin = "round";
     series.forEach(function (se) {
-      ctx.strokeStyle = se.color; ctx.lineWidth = se.name.indexOf("SPY") === 0 ? 1.3 : 2;
+      ctx.strokeStyle = se.color; ctx.lineWidth = se.w || 1.5;
       ctx.beginPath();
       se.points.forEach(function (p, i) {
         var x = PX(ts(p[0])), y = PY(Math.max(p[1], 0.3));
@@ -226,22 +229,28 @@
       ctx.stroke();
     });
 
+    // legend: strategy first (bold swatch), then references
     var lg = document.getElementById("eq-legend"); lg.innerHTML = "";
-    series.forEach(function (se) {
-      var sp = el("span", null, '<span class="swatch" style="background:' + se.color + '"></span>' + se.name);
+    series.slice().reverse().forEach(function (se) {
+      var thick = (se.w || 1.5) >= 3 ? "height:4px;" : "";
+      var sp = el("span", null, '<span class="swatch" style="' + thick + 'background:' + se.color + '"></span>' + se.name);
       lg.appendChild(sp);
     });
 
-    // equity stat strip
+    // equity stat strip — lead with the combined strategy
     var host = document.getElementById("eq-stats"); host.innerHTML = "";
     var refFrac = Math.round((d.equity_sizing || 0.15) * 100);
-    [["Call book", d.books.call.track_record.sizing[1]],
-     ["Put book", d.books.put.track_record.sizing[1]]].forEach(function (r) {
-      host.appendChild(statBox(r[0] + " CAGR", pct(r[1].cagr, 1), r[0] + " · " + refFrac + "% sizing"));
-      host.appendChild(statBox(r[0] + " max DD", pct(r[1].maxdd, 0), "worst peak-to-trough"));
-    });
+    var strat = d.strategy_equity;
+    if (strat) {
+      host.appendChild(statBox("Strategy CAGR", pct(strat.cagr, 1), "50/50 both books · " + refFrac + "% sizing"));
+      host.appendChild(statBox("Strategy max DD", pct(strat.maxdd, 0), "worst peak-to-trough"));
+    }
     host.appendChild(statBox("SPY CAGR", pct(d.spy_benchmark.cagr, 1), "buy & hold"));
     host.appendChild(statBox("SPY max DD", pct(d.spy_benchmark.maxdd, 0), "buy & hold"));
+    [["Call book", d.books.call.track_record.sizing[1]],
+     ["Put book", d.books.put.track_record.sizing[1]]].forEach(function (r) {
+      host.appendChild(statBox(r[0] + " CAGR", pct(r[1].cagr, 1), r[0] + " alone · " + refFrac + "%"));
+    });
   }
 
   function statBox(num, val, lab) {
