@@ -30,7 +30,12 @@
     renderHist(d);
     renderExamples(d);
     renderTrades(d);
+    var lastW = window.innerWidth;
     window.addEventListener("resize", debounce(function () {
+      // Mobile browsers fire resize on scroll (URL bar hide/show) with an
+      // unchanged width — ignore those; only re-render when width changes.
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
       renderEquity(d); renderDrawdown(d);
     }, 200));
   }
@@ -160,21 +165,25 @@
   // ---- charts (self-contained Canvas, no libraries) ----
   var COL = { call: "#1a2ea1", put: "#064e2b", spy: "#b35900" };
 
-  function setupCanvas(cv) {
+  function setupCanvas(cv, hLogical) {
+    // hLogical is passed explicitly — NEVER read back from the height
+    // attribute, because setting cv.height rewrites it (dpr-multiplied),
+    // which would compound on every resize and squash the chart.
     var dpr = window.devicePixelRatio || 1;
     var w = cv.clientWidth || cv.parentNode.clientWidth || 700;
-    var h = cv.getAttribute("height") * 1;
-    cv.width = w * dpr; cv.height = h * dpr;
+    cv.style.height = hLogical + "px";       // pin CSS display height
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(hLogical * dpr);  // drawing buffer
     var ctx = cv.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { ctx: ctx, w: w, h: h };
+    return { ctx: ctx, w: w, h: hLogical };
   }
   var ts = function (s) { return Date.parse(s); };
   var fmtYear = function (t) { return new Date(t).getUTCFullYear(); };
 
   function renderEquity(d) {
     var cv = document.getElementById("eq-chart"); if (!cv) return;
-    var s = setupCanvas(cv), ctx = s.ctx;
+    var s = setupCanvas(cv, 380), ctx = s.ctx;
     var series = [
       { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve },
       { name: "Call spread book", color: COL.call, points: d.books.call.equity },
@@ -250,7 +259,7 @@
 
   function renderDrawdown(d) {
     var cv = document.getElementById("dd-chart"); if (!cv) return;
-    var s = setupCanvas(cv), ctx = s.ctx;
+    var s = setupCanvas(cv, 240), ctx = s.ctx;
     var series = [
       { name: "call", color: COL.call, points: ddSeries(d.books.call.equity) },
       { name: "put", color: COL.put, points: ddSeries(d.books.put.equity) }
