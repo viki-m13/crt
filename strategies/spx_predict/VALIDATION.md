@@ -375,6 +375,47 @@ unseen crash/stagnation variants — the strategy is substantially more
 profitable than holding SPY. Its specific unprecedented-failure shape is
 the repeated regime-whipsaw decline, disclosed above.
 
+## 12. Live option-chain validation (SPY and SPX)
+
+`validate_live.py` runs nightly in CI: pulls the real SPY and ^SPX
+chains, finds the listed contracts nearest the strategy's legs
+(−3%/−6%, ~91 days), and compares real credits (mid and NATURAL
+worst-case fills) and leg IVs against the model. First check
+(2026-07-12, calm regime, SPY 754.95 / SPX 7575):
+
+| | SPY | SPX |
+|---|---:|---:|
+| real credit (mid) | $3.58 (17.9% of width) | $40.25 (17.5%) |
+| real credit (natural) | $3.54 | $38.90 |
+| model books | $4.98 | $60.82 |
+| model / natural | 1.41× | 1.56× |
+| market leg IVs | 15.4% / 17.3% | 14.8% / 17.1% |
+| model leg IVs | 18.5% / 19.0% | 18.4% / 19.0% |
+| bid-ask (% of mid) | 0.3% / 0.4% | 1.1% / 1.4% |
+| open interest | 9,264 / 1,905 | 2,875 / 390 |
+
+Findings, reported straight:
+- **The model is NOT conservative in today's calm regime** — it books
+  ~1.4–1.6× the real worst-case credit. Cause: the blended IV runs rich
+  when volatility sits at cycle lows (model ATM 17.8% vs market ~15%),
+  and the real ~90-day skew is steeper than β=1.0 (the protective leg
+  we buy is relatively dearer). The nightly check tracks this.
+- **Liquidity is far better than modeled**: real bid-ask 0.3–1.4% of
+  mid vs the 3% slippage assumed; OI in the thousands. Fills are the
+  conservative side of the model.
+- **SPX ports identically**: same credit as % of width (17.5% vs
+  17.9%), European exercise (no early assignment), cash settlement,
+  Section 1256 treatment, 10× SPY size (XSP = SPY-sized mini).
+
+**Credit-haircut stress**: multiply every entry credit in the full
+33-year backtest by 0.70 (i.e., premiums are ALWAYS as lean as today's
+calm market — a lower bound, since the VRP was far fatter through most
+of history): full period **11.4% CAGR / −32% maxDD**, design 10.8%,
+validation 12.5%, win 88% (unchanged). The strategy still beats SPY
+buy-and-hold (10.8% / −55%) at its leanest-premium bound. Honest
+expectation bracket: ~11%/yr (all-lean) → ~27%/yr (modeled), with the
+§10 perturbation band (19–22%) between.
+
 ## What we ship
 
 `signal.py` emits `spx/docs/data/signal.json` daily (via `fetch_spy.py`

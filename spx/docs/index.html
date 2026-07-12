@@ -334,6 +334,22 @@
         (sell at the bid, buy at the ask). The model passes if it books <strong>no more than the
         worst-case real fill</strong>.</p>
       <div class="cards" id="live-validation"><p class="muted">First live check runs tonight after the close.</p></div>
+      <div class="callout" style="margin-top:16px">
+        <p><strong>What the first live check found — reported straight.</strong> In today's
+          unusually calm market (multi-year-low volatility), the model books <em>more</em> credit
+          than the market currently pays: real mid ≈ 18% of spread width vs the model's ~25%.
+          Two offsetting facts: real <em>liquidity</em> is far better than modeled (bid-ask
+          0.3–1.4% of mid vs our 3% slippage assumption; thousands of open contracts), and the
+          gap reflects the calm regime — the model's IV blend runs rich when volatility is at
+          cycle lows and steep skew makes the protective leg relatively dear.</p>
+        <p><strong>So we stress-tested it:</strong> haircut every entry credit in the entire
+          33-year backtest to today's lean level (×0.70) and re-run the ladder. Result:
+          <strong>11.4% CAGR at −32% drawdown</strong> (design 10.8%, validation 12.5%, win rate
+          unchanged at 88%) — the strategy still beats SPY buy-and-hold (10.8% at −55%) even if
+          every week forever paid like today. The honest expectation is the bracket:
+          <strong>~11%/yr if premiums are always this lean → ~27%/yr at modeled premiums</strong>,
+          with the perturbation tests (19–22%) in between. The nightly check above keeps score.</p>
+      </div>
       <div class="callout green" style="margin-top:16px">
         <p><strong>The same strategy on SPX index options is structurally better.</strong> SPX
           options are <strong>European-style</strong> (no early assignment — that caveat above
