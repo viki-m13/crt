@@ -172,6 +172,154 @@
       </div>
     </section>
 
+    <!-- DOWNSIDE PROTECTION & STRESS -->
+    <section id="stress">
+      <p class="eyebrow">Downside protection</p>
+      <h2>What happens in bears — including ones that never happened</h2>
+      <p class="section-note">The protection is structural, not a hedge: every rung's loss is
+        capped by the long put (defined risk); total exposure is capped at 60% of equity; and the
+        200-day filter stops new rungs in a downtrend, so the book is <strong>fully flat within
+        ~3 months of a regime break</strong> and stays in cash while the market keeps falling.
+        We tested it against every historical bear <em>and</em> synthetic bears built to be worse
+        than anything since 1993.</p>
+
+      <h3>Every historical bear hurt the strategy less than holding SPY</h3>
+      <figure class="tbl-wrap">
+        <table>
+          <thead><tr><th>Drawdown window</th><th>Strategy</th><th>SPY buy &amp; hold</th></tr></thead>
+          <tbody>
+            <tr><td>Dot-com bear · Sep 2000 → Oct 2002</td><td class="neg">−27.6%</td><td class="neg">−47.3%</td></tr>
+            <tr class="hl"><td>Global financial crisis · Oct 2007 → Mar 2009</td><td class="neg">−17.8%</td><td class="neg">−55.2%</td></tr>
+            <tr><td>COVID crash · Feb 2020 → Mar 2020</td><td class="neg">−6.0%</td><td class="neg">−33.7%</td></tr>
+            <tr><td>2022 bear · Jan 2022 → Oct 2022</td><td class="neg">−23.4%</td><td class="neg">−24.5%</td></tr>
+          </tbody>
+        </table>
+      </figure>
+
+      <h3>Synthetic stress: prolonged bears with no historical precedent</h3>
+      <p class="section-note">Paths block-bootstrapped from real SPY returns (volatility
+        clustering preserved), spliced onto real history so the regime and volatility state are
+        realistic at stress onset, then re-drifted into shapes SPY has never produced.
+        Reproduce with <code>strategies/spx_predict/stress.py</code>.</p>
+      <figure class="tbl-wrap">
+        <table>
+          <thead><tr><th>Scenario</th><th>Strategy</th><th>SPY buy &amp; hold</th></tr></thead>
+          <tbody>
+            <tr class="hl"><td>Japan-style: −60% crash, then 7 years flat</td><td class="pos">+54.0%</td><td class="neg">−61.0%</td></tr>
+            <tr><td>Lost decade: −5%/yr grind for 10 years (seed 1)</td><td class="neg">−17.9%</td><td class="neg">−40.1%</td></tr>
+            <tr><td>Lost decade (seed 2)</td><td class="neg">−37.4%</td><td class="neg">−40.6%</td></tr>
+            <tr><td>Lost decade (seed 3)</td><td class="pos">+8.2%</td><td class="neg">−39.8%</td></tr>
+            <tr><td>Whipsaw grind: −20% legs + 16% re-arming rallies, 8 years</td><td class="neg">−94.4%</td><td class="neg">−56.4%</td></tr>
+          </tbody>
+        </table>
+      </figure>
+      <div class="callout green">
+        <p><strong>Crash-then-stagnation is where the strategy shines most.</strong> It doesn't
+          need the market to rise — only to not fall 3%+ over each ~3-month window. In the
+          Japan path it <em>made +54%</em> while the index lost 61%: after the crash the filter
+          kept it flat, and through the long stagnation it kept collecting put premium in a
+          market going nowhere. In grinding −5%/yr declines it beat buy-and-hold in 3 of 3
+          seeds.</p>
+      </div>
+      <div class="callout crit" style="border-left-color:var(--red)">
+        <p><strong>The honest failure shape: the whipsaw.</strong> A path of repeated −20% legs,
+          each followed by a +16% rally that recrosses the 200-day average, re-arms entries at
+          every local top — and each new leg kills the fresh rungs. On a path built to do exactly
+          that for 8 years, the strategy loses −94% vs −56% for buy-and-hold. Nothing like it
+          exists in post-1993 SPY (1929–42 and 1968–82 partially rhyme). The mitigation is
+          sizing, not signal: halving the rung to 1.5% roughly halves every stress number. We
+          disclose this because a strategy whose worst case you haven't seen is a strategy you
+          don't understand.</p>
+      </div>
+    </section>
+
+    <!-- METHODOLOGY / RESEARCH LOG -->
+    <section id="methodology">
+      <p class="eyebrow">Methodology &amp; research log</p>
+      <h2>How this strategy was actually built</h2>
+      <p class="section-note">The full research trail, in the order it happened — including the
+        findings that killed earlier versions. Every number is reproducible from
+        <a href="https://github.com/viki-m13/crt/tree/main/strategies/spx_predict">the source</a>;
+        the complete write-up is in
+        <a href="https://github.com/viki-m13/crt/blob/main/strategies/spx_predict/VALIDATION.md">VALIDATION.md</a>.</p>
+
+      <h3>1 · Data &amp; discipline</h3>
+      <p>SPY daily (total-return adjusted), 1993–2026, ~8,400 sessions. Everything is
+        point-in-time: any probability or indicator at date <em>t</em> uses only data before
+        <em>t</em>. Structures and parameters were selected on the <strong>design era
+        (&lt;2016)</strong> only; <strong>2016–2026 is untouched validation</strong>. Where the
+        validation decade outperforms the design era — as it does for the final strategy — that
+        is evidence the edge is durable rather than fitted.</p>
+
+      <h3>2 · The measured edge</h3>
+      <p>The option market prices SPY near risk-neutral; the physical distribution drifts up and
+        crashes less than implied. Actual frequency above spot beats option-implied probability
+        by <strong>+9pp at 5 days → +35pp at 1 year</strong>. The volatility skew concentrates
+        that mispricing in downside strikes: OTM puts are the most systematically overpriced
+        options listed. That premium — not a forecast — is what the strategy collects.</p>
+
+      <h3>3 · Findings that shaped (and killed) earlier versions</h3>
+      <figure class="tbl-wrap prose-tbl">
+        <table>
+          <thead><tr><th>Question</th><th>Measured answer</th></tr></thead>
+          <tbody>
+            <tr><td>Can we be 99% accurate AND disagree with the market?</td>
+                <td>No — calibration saturates at ~98% (crash onsets are unforecastable); at 99%+ the market already agrees, so the edge is ~0. The accuracy/edge frontier is <code>win ≈ 1/(1+payoff)</code>.</td></tr>
+            <tr><td>Close early to lock profits?</td>
+                <td>Lifts win-rate to ~99% but collapses CAGR below buy-and-hold (avg loss ≈ 20× avg win). Negative skew, not edge.</td></tr>
+            <tr><td>Stop-losses?</td><td>Whipsaw. Tight stops cut the win rate to 60%; loose ones are CAGR-neutral and can't stop gaps.</td></tr>
+            <tr><td>Buying protective puts?</td><td>Self-defeating — pays away the exact premium the strategy harvests; CAGR → ~0%.</td></tr>
+            <tr><td>Regime filter (200-day average)?</td><td>The one free improvement: lifts win rate, ROR, and drawdown simultaneously by standing aside in downtrends.</td></tr>
+            <tr><td>One position at a time?</td><td>Wastes capital — laddering entries (weekly rungs, at-risk cap) roughly doubles CAGR at the same drawdown. Entry day-of-month is irrelevant.</td></tr>
+          </tbody>
+        </table>
+      </figure>
+
+      <h3>4 · The pricing audit that inverted the strategy</h3>
+      <p>Early versions priced options with flat IV (60-day realized × 1.12) and zero interest.
+        Auditing that model against real market features found four material errors. Each is
+        toggleable in the code; the attribution on the then-champion call-spread ladder:</p>
+      <figure class="tbl-wrap prose-tbl num-last">
+        <table>
+          <thead><tr><th>Pricing correction</th><th>Why it matters</th><th>CAGR impact</th></tr></thead>
+          <tbody>
+            <tr><td>Cost of carry (historical T-bill forward)</td><td>The panel is total-return SPY; r=0 overstated the edge by the bill rate, leveraged</td><td>28.1% → 20.5%</td></tr>
+            <tr><td>Volatility skew (β=1.0)</td><td>OTM calls actually trade cheap, OTM puts rich — v1 sold the call leg at fantasy vol</td><td>28.1% → 19.6%</td></tr>
+            <tr><td>Mean-reverting blended IV</td><td>1-year IV priced 2008 at ~46%, not ~100%; sane calm-market levels (~16%)</td><td>28.1% → 24.8%</td></tr>
+            <tr><td>3% slippage per side</td><td>Long-dated spreads are wider than fronts</td><td>28.1% → 26.7%</td></tr>
+            <tr class="hl"><td><strong>All corrections together</strong></td><td>debit/width 41% → 54% (the realistic figure)</td><td><strong>28.1% → 10.0%</strong></td></tr>
+          </tbody>
+        </table>
+      </figure>
+      <p>Under honest pricing the frontier <strong>inverts</strong>: buying call spreads pays
+        the carry and buys the expensive side of the skew; <em>selling put spreads collects
+        both</em>. Re-selected on the design era only and confirmed out-of-sample:</p>
+      <figure class="tbl-wrap">
+        <table>
+          <thead><tr><th>Book (ladder, v2 pricing)</th><th>Design &lt;2016</th><th>Validation 2016–26</th></tr></thead>
+          <tbody>
+            <tr class="hl"><td><strong>Put credit spread −3%/−6%, 63d, hold to expiry, weekly</strong></td><td>25.2% / −31%</td><td><strong>30.3% / −28%</strong></td></tr>
+            <tr><td>Call spread +2%/+7%, 252d, GTC 80%, monthly</td><td>9.9% / −30%</td><td>13.5% / −26%</td></tr>
+          </tbody>
+        </table>
+      </figure>
+
+      <h3>5 · Robustness of the selected strategy</h3>
+      <p>The put ladder was perturbed on every pricing assumption (full period, 1993–2026):
+        steeper skew β=1.4 → 20.5% CAGR; β=1.8 → 19.1%; cheaper IV (×1.05) → 19.2%; spikier vol
+        blend → 21.3%; 5% slippage → 21.0%. <strong>Win rate pinned at 88% throughout.</strong>
+        The edge is not an artifact of any single modeling choice. Entry cadence is likewise
+        insensitive (weekly/biweekly/monthly all work; weekly is smoothest).</p>
+
+      <h3>6 · Honest limits</h3>
+      <p>Premiums are modeled (audited v2 surface), not historical quotes — SPY/SPX options are
+        the most liquid listed, so modeled fills are attainable, but they are still a model. The
+        strategy is ~88% accurate, not 99%. Losers cluster: concurrent rungs fail together in a
+        crash (bounded by the 60% cap). The equity curve marks at exits; intra-month marks sit
+        lower. And the whipsaw failure shape above is real, if unprecedented. What we will not
+        do is present a backtest we couldn't defend trade-by-trade.</p>
+    </section>
+
     <!-- RECENT TRADES -->
     <section id="trades">
       <p class="eyebrow">Recent closed trades</p>

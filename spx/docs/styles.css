@@ -93,6 +93,13 @@ thead th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(
 tbody tr:last-child td{border-bottom:none}
 .hl td{background:var(--wash)}
 
+figure.tbl-wrap{margin:14px 0 22px}
+section h3{margin-top:26px}
+.prose-tbl table{font-family:var(--sans);font-size:14px}
+.prose-tbl th,.prose-tbl td{white-space:normal;text-align:left;line-height:1.5;min-width:150px}
+.prose-tbl.num-last td:last-child,.prose-tbl.num-last th:last-child{
+  font-family:var(--mono);font-size:12.5px;white-space:nowrap;min-width:0;text-align:right}
+
 /* callout */
 .callout{border:1px solid var(--rule-light);border-left:3px solid var(--orange);
   background:var(--wash);border-radius:8px;padding:16px 18px;margin:18px 0;max-width:80ch}

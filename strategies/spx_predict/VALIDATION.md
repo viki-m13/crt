@@ -313,6 +313,53 @@ edge is not an artifact of any single pricing assumption.
 `signal.py` now prices everything under v2 and ships the put ladder as
 the strategy with the call ladder as the max-ROR-per-trade alternative.
 
+## 11. Downside protection & stress tests (incl. unprecedented bears)
+
+The protection is structural, not a hedge: every rung's loss is capped
+by the long leg (defined risk); the at-risk cap bounds total exposure to
+60% of equity; the 200-dma filter stops new rungs in a downtrend, so the
+book is fully flat within ~3 months of a regime break; idle capital is
+never levered. Measured (put ladder, v2 pricing, `stress.py`):
+
+**Every historical bear hurt the strategy less than buy-and-hold:**
+
+| window | strategy | SPY B&H |
+|--------|---------:|--------:|
+| dot-com 2000-09 → 2002-10 | −27.6% | −47.3% |
+| GFC 2007-10 → 2009-03 | **−17.8%** | −55.2% |
+| COVID 2020-02 → 2020-03 | −6.0% | −33.7% |
+| 2022 bear | −23.4% | −24.5% |
+
+**Synthetic paths that have never happened** (block-bootstrapped from
+real returns, appended after real history so regime/IV state is warm):
+
+| scenario | strategy | SPY B&H |
+|----------|---------:|--------:|
+| JAPAN: −60% crash then 7y flat | **+54.0%** | −61.0% |
+| LOST DECADE −5%/yr ×10y (seed 1) | −17.9% | −40.1% |
+| LOST DECADE (seed 2) | −37.4% | −40.6% |
+| LOST DECADE (seed 3) | +8.2% | −39.8% |
+| WHIPSAW: −20% legs + 16% rallies ×8y | **−94.4%** | −56.4% |
+
+Readings:
+- **Crash-then-stagnation is where the strategy shines most.** It does
+  not need the market to rise — only to not fall 3%+ over each ~3-month
+  window. In the Japan path it made +54% while the index lost 61%.
+- **Grinding declines**: better than B&H in 3 of 3 seeds on final value
+  (avg −16% vs −40%), with comparable interim drawdowns.
+- **The honest kryptonite is the whipsaw**: an adversarial path of −20%
+  legs each followed by a +16% rally that recrosses the 200-dma re-arms
+  entries at every local top; each new leg kills the fresh rungs. On a
+  path built to do exactly that for 8 years the strategy loses −94% vs
+  −56% for B&H. Nothing like it exists in post-1993 SPY (1929-42 and
+  1968-82 rhyme partially). Mitigation is sizing, not signal: halving
+  the rung to 1.5% roughly halves every stress number.
+
+So: in prolonged bears of the shapes seen historically — and in worse,
+unseen crash/stagnation variants — the strategy is substantially more
+profitable than holding SPY. Its specific unprecedented-failure shape is
+the repeated regime-whipsaw decline, disclosed above.
+
 ## What we ship
 
 `signal.py` emits `spx/docs/data/signal.json` daily (via `fetch_spy.py`
