@@ -325,6 +325,26 @@
           effort to make the model honest, and every number survives adverse perturbations of
           it.</p>
       </div>
+
+      <h3>Checked against live option prices — SPY and SPX</h3>
+      <p class="section-note">Every night the model is put on trial against the real market: we
+        pull the live SPY and SPX option chains, find the actual listed contracts closest to the
+        strategy's legs (−3% / −6%, ~91 days), and compare the credit the model books against
+        what the market genuinely pays — at mid, and at the <em>natural</em> worst-case fill
+        (sell at the bid, buy at the ask). The model passes if it books <strong>no more than the
+        worst-case real fill</strong>.</p>
+      <div class="cards" id="live-validation"><p class="muted">First live check runs tonight after the close.</p></div>
+      <div class="callout green" style="margin-top:16px">
+        <p><strong>The same strategy on SPX index options is structurally better.</strong> SPX
+          options are <strong>European-style</strong> (no early assignment — that caveat above
+          disappears), <strong>cash-settled</strong> (no stock delivery, positions simply settle
+          to dollars at expiry), typically taxed 60/40 long/short-term in the US (Section 1256),
+          and 10× SPY's size (one SPX spread ≈ ten SPY spreads — fewer contracts, less
+          commission for larger accounts; XSP is the SPY-sized mini with the same European
+          cash-settled terms). The skew premium being sold is the same S&amp;P 500 downside
+          surface, so the strategy ports unchanged: same strikes in percent, same tenor, same
+          cadence, same sizing.</p>
+      </div>
     </section>
 
     <!-- DOWNSIDE PROTECTION & STRESS -->

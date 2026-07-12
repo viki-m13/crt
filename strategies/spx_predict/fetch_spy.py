@@ -45,10 +45,27 @@ def fetch_spy() -> dict | None:
     return None
 
 
+def fetch_spy_yf() -> dict | None:
+    """Fallback: yfinance handles Yahoo's cookie/crumb auth (works on CI
+    runners where the raw chart endpoint 401s)."""
+    try:
+        import yfinance as yf
+        h = yf.Ticker("SPY").history(period="max", auto_adjust=True)
+        if h is None or len(h) < 1000:
+            return None
+        dates = [d.strftime("%Y-%m-%d") for d in h.index]
+        prices = [float(x) for x in h["Close"].tolist()]
+        return {"ticker": "SPY", "series": {"dates": dates, "prices": prices}}
+    except Exception as e:  # noqa: BLE001
+        print(f"  yfinance fallback failed: {e}", file=sys.stderr)
+        return None
+
+
 def main() -> int:
-    blob = fetch_spy()
+    blob = fetch_spy() or fetch_spy_yf()
     if blob is None:
-        print("FAILED to fetch SPY from Yahoo chart endpoint", file=sys.stderr)
+        print("FAILED to fetch SPY (chart endpoint and yfinance fallback)",
+              file=sys.stderr)
         return 1
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w") as fh:

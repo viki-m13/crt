@@ -67,7 +67,10 @@ jobs:
           FORCE_RUN: ${{ github.event.inputs.force == 'true' && '1' || '' }}
 
       - name: Refresh SPY panel
+        # Fail-soft: on a Yahoo outage the signal still runs from the
+        # last committed panel rather than aborting the whole job.
         if: steps.gate.outputs.skip != 'true'
+        continue-on-error: true
         run: python strategies/spx_predict/fetch_spy.py
 
       - name: Run SPX directional signal

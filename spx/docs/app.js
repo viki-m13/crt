@@ -11,14 +11,17 @@
       .then(function (r) { if (!r.ok) throw new Error("no data"); return r.json(); }),
     fetch("/spx/data/research.json?_=" + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; }),
+    fetch("/spx/data/live_validation.json?_=" + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
-  ]).then(function (both) { render(both[0], both[1]); })
+  ]).then(function (all) { render(all[0], all[1], all[2]); })
     .catch(function () {
       document.getElementById("asof").textContent = "Signal data not yet published.";
       document.getElementById("cards").innerHTML = '<p class="muted">The nightly cron has not published a signal yet.</p>';
     });
 
-  function render(d, research) {
+  function render(d, research, liveVal) {
     var reg = d.regime || {};
     var regTxt = reg.uptrend
       ? '<span class="pos">uptrend — active</span>'
@@ -46,6 +49,7 @@
       renderEdgeStats(research);
     }
     renderLegPricing(d);
+    renderLiveValidation(liveVal);
     var lastW = window.innerWidth;
     window.addEventListener("resize", debounce(function () {
       // Mobile browsers fire resize on scroll (URL bar hide/show) with an
@@ -696,6 +700,57 @@
       (pr.sell_leg.iv * 100).toFixed(1) + "%) — the model charges us the conservative way, and " +
       "the strategy is profitable anyway because the whole downside surface is overpriced " +
       "relative to what actually happens."));
+  }
+
+  function renderLiveValidation(lv) {
+    var host = document.getElementById("live-validation"); if (!host) return;
+    if (!lv || !lv.checks) return;   // keep the "runs tonight" note
+    host.innerHTML = "";
+    lv.checks.forEach(function (c) {
+      var card = el("div", "card");
+      var head = el("div", "card-head");
+      head.appendChild(el("h3", null, c.symbol === "^SPX" ? "SPX (index options)" : c.symbol));
+      if (c.ok) {
+        head.appendChild(el("span", "badge " + (c.model_conservative ? "acc" : "ror"),
+          c.model_conservative ? "Model conservative ✓" : "Model above market"));
+      }
+      card.appendChild(head);
+      var body = el("div", "card-body");
+      if (!c.ok) {
+        body.appendChild(el("p", "muted", "Check failed: " + (c.error || "unknown") +
+          " — retries on the next nightly run."));
+        card.appendChild(body); host.appendChild(card); return;
+      }
+      var tl = el("div", "trade-line");
+      tl.innerHTML = '<span class="big">' + c.expiry + " " + c.sell_leg.strike + " / " +
+        c.buy_leg.strike + " put spread</span><br>spot " + usd(c.spot) +
+        " &nbsp;·&nbsp; " + c.dte_calendar + " days out";
+      body.appendChild(tl);
+      var kv = el("dl", "kv");
+      [["Real credit (mid)", usd(c.real_credit_mid) + " (" +
+          Math.round(c.real_credit_mid_pct_width * 100) + "% of width)"],
+       ["Real credit (worst-case fill)", usd(c.real_credit_natural)],
+       ["Model books", usd(c.model_credit_booked) +
+          (c.booked_vs_natural ? " (" + Math.round(c.booked_vs_natural * 100) + "% of worst-case)" : "")],
+       ["Leg IVs — market", (c.market_leg_ivs[0] * 100).toFixed(1) + "% / " +
+          (c.market_leg_ivs[1] * 100).toFixed(1) + "%"],
+       ["Leg IVs — model", (c.model_leg_ivs[0] * 100).toFixed(1) + "% / " +
+          (c.model_leg_ivs[1] * 100).toFixed(1) + "%"],
+       ["Open interest", c.sell_leg.oi.toLocaleString() + " / " + c.buy_leg.oi.toLocaleString()],
+       ["Bid-ask (% of mid)", Math.round(c.bidask_pct_of_mid[0] * 100) + "% / " +
+          Math.round(c.bidask_pct_of_mid[1] * 100) + "%"]]
+        .forEach(function (r) {
+          kv.appendChild(el("dt", null, r[0]));
+          kv.appendChild(el("dd", null, r[1]));
+        });
+      body.appendChild(kv);
+      card.appendChild(body);
+      host.appendChild(card);
+    });
+    if (lv.as_of) {
+      host.appendChild(el("p", "muted", "Checked " + lv.as_of.replace("T", " ").replace("Z", " UTC") +
+        " — re-verified nightly; last " + (lv.history || []).length + " checks kept on file."));
+    }
   }
 
   function renderTrades(d) {
