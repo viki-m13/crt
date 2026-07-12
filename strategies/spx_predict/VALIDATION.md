@@ -264,6 +264,55 @@ Honest caveats: all concurrent rungs lose together in a crash (the cap
 bounds the hit to ~cap × full loss, and the equity curve is marked at
 exits, so intra-month marks can sit lower); ~87% accurate, not 99%.
 
+## 10. Pricing model v2 — the audit that changed the answer
+
+All results in §7–9 used pricing v1: flat IV = 60d realized × 1.12,
+r=0, 2% slippage. Auditing that model against real market features
+found four material errors, each toggleable for attribution
+(call ladder f=5%/cap30%, full period):
+
+| model | win | mean ROR | ladder CAGR |
+|-------|----:|---------:|------------:|
+| v1 (as shipped) | 86.5% | +70% | 28.1% |
+| v1 + carry (T-bill forward) | 87.2% | +51% | 20.5% |
+| v1 + skew (OTM calls cheap) | 86.5% | +50% | 19.6% |
+| v1 + mean-reverting blended IV | 86.0% | +65% | 24.8% |
+| v1 + 3% slippage | 86.5% | +67% | 26.7% |
+| **v2 (all corrections)** | 86.2% | **+27%** | **10.0%** |
+
+- **Carry**: the panel is total-return SPY, so the self-consistent
+  forward is F = S·e^{rT} with r = historical 3m T-bill. v1's r=0
+  overstated the edge by ~the bill rate, leveraged through the spread.
+- **Skew**: IV(K) = s_atm·(1 + β·ln(F/K)), β=1.0 — OTM puts rich, OTM
+  calls cheap, as on the real SPX surface. v1 sold the +5% call leg at
+  fantasy (flat) vol.
+- **Blended IV**: s_atm = 1.15·√(0.3·rv60² + 0.7·rvbar²) with rvbar the
+  point-in-time expanding mean. Sanity: mean 1y ATM ≈ 18.6%, 2008 peak
+  ≈ 46% (v1 said ~100%), dead calm ≈ 16%. Debit/width for the ATM/+5%
+  call spread: 41% (v1) → 54% (v2) — the v2 figure is the realistic one
+  when the forward sits ~2.5% above spot.
+
+**The frontier inverts under v2.** Buying call spreads pays the carry
+and buys the expensive side of the skew; selling put spreads collects
+both. Re-gridding structures on the design era only:
+
+| book (ladder) | design | validation |
+|---------------|-------:|-----------:|
+| call 1.02/1.07, 252d, GTC 80%, monthly f=5%/cap30 | 9.9% / −30% | 13.5% / −26% |
+| **put 0.97/0.94, 63d, hold-to-expiry, weekly f=3%/cap60** | **25.2% / −31%** | **30.3% / −28%** |
+
+Full period the put ladder runs ~27%/−31%. Exits stay dead under v2
+(regime-break exit: 1.8% CAGR — whipsaw; profit-capture buybacks give
+back the tail), so the put book holds to expiry.
+
+Sensitivity of the selected book (full period): steeper skew β=1.4 →
+20.5%; β=1.8 → 19.1%; cheaper IV (×1.05) → 19.2%; spikier blend (w=0.5)
+→ 21.3%; slippage 5% → 21.0%. Win rate pinned at 88% throughout — the
+edge is not an artifact of any single pricing assumption.
+
+`signal.py` now prices everything under v2 and ships the put ladder as
+the strategy with the call ladder as the max-ROR-per-trade alternative.
+
 ## What we ship
 
 `signal.py` emits `spx/docs/data/signal.json` daily (via `fetch_spy.py`

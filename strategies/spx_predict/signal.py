@@ -1,27 +1,32 @@
 """Live daily signal for the SPX/SPY directional options strategy.
 
-Two frozen books harvest the same +40pp directional edge (physical
-P(SPY up) ~80% vs option-implied ~46%) at opposite ends of the
-ROR/accuracy frontier (see VALIDATION.md §7). Both trade SPY (a liquid,
-cash-settled SPX proxy), 252-session (~1y) horizon, GTC limit exits.
+PRICING MODEL v2 (VALIDATION.md §10) — the premium model is audited
+against real-market features that v1 ignored, each of which materially
+changed the numbers:
+  carry — forward F = S*exp(r*T) with historical 3m T-bill rates (the
+          panel is TOTAL-RETURN SPY, so the self-consistent carry is r).
+  skew  — IV(K) = s_atm * (1 + BETA*ln(F/K)): OTM puts trade rich, OTM
+          calls trade cheap, as in the real SPX surface.
+  blend — ATM IV from blended variance (w*rv60^2 + (1-w)*rvbar^2, rvbar
+          = point-in-time expanding mean): long-dated IV mean-reverts,
+          so 2008 prices at ~46% (not 90%) and dead-calm at ~16%.
+  slip  — 3% each way (LEAPS/quarter spreads are wider than fronts).
+Under v2 the old call-heavy numbers fell hard (28%->10% CAGR) and the
+frontier inverted: SELLING the skew-rich puts is the durable edge.
 
-  CALL  — bull CALL SPREAD, long ATM / short +5%. GTC sell the spread
-          when it marks 80% of width. ~87% win, +70% ROR/trade. (max ROR)
-  PUT   — short PUT SPREAD, -5% / -10%. GTC buy-back after capturing 50%
-          of the credit. ~94% win (95% validation), +18% ROR. (max accuracy)
+THE STRATEGY (selected on design <2016, confirmed on validation >=2016):
+  PUT   — SPY put credit spread, sell -3% / buy -6%, 63 sessions
+          (~3 months), HOLD TO EXPIRY. Weekly ladder (every 5th
+          session), 3% of equity per rung, 60% total at-risk cap,
+          200-dma regime filter. Design 25.2%/-31% DD; validation
+          30.3%/-28%; robust to skew/IV/slippage perturbations (19-22%).
+  CALL  — bull call spread +2%/+7%, 252 sessions, GTC sell at 80% of
+          width, monthly ladder f=5%/cap 30%. The max-per-trade-ROR
+          alternative: design 9.9%/-30%, validation 13.5%/-26%.
 
-Deployment is a monthly LADDER (VALIDATION.md §9): open a new spread on
-the first session of each month (regime permitting), several open at
-once, each risking LADDER_F of current equity, total at-risk capped at
-LADDER_CAP. Same frozen trade rule as one-at-a-time — only the schedule
-changes — but capital is no longer idle: the call ladder compounds at
-~28% CAGR / -30% maxDD (design 24%, validation 34%) vs ~15% sequential.
-
-Pricing: Black-Scholes, IV = 60d realized * 1.12, r=0. Entry padded and
-exit cut by 2% slippage. SPY/SPX options are the most liquid listed, so
-modeled fills are realistic — but this is ~87-94% accurate, NOT 99%: the
-ROR comes with real losing trades in bear markets, and all concurrent
-rungs lose together in a crash (the cap bounds that).
+Honest limits: ~88-93% win, NOT 99%; all concurrent rungs lose together
+in a crash (the cap bounds it); fills are modeled (v2 surface), though
+SPY/SPX options are the most liquid listed.
 
 Emits spx/docs/data/signal.json.
 """
@@ -39,135 +44,171 @@ _LOCAL = os.path.join(HERE, "data", "SPY.json")
 _SHARED = os.path.join(HERE, "..", "credit_spread", "cache_full", "SPY.json")
 SPY_PATH = os.environ.get("SPX_SPY_PATH", _LOCAL if os.path.exists(_LOCAL) else _SHARED)
 
-HORIZON = 252
-IV_MULT = 1.12
-SLIP = 0.02
-REGIME_SMA = 200      # only enter when SPY >= its 200-day average (free
-                      # downside protection: sidesteps bear-market clusters,
-                      # lifts win 81->87%, ROR +60->+70%, cuts DD -39->-28%)
-LADDER_F = 0.05       # equity fraction risked per spread (ladder rung)
-LADDER_CAP = 0.30     # max total equity fraction at risk across open rungs
+# ---- pricing model v2 ----
+SLIP = 0.03        # per-side slippage on spread value
+BETA = 1.0         # skew slope per unit ln(F/K)
+W_BLEND = 0.30     # weight on current rv60^2 in the ATM variance blend
+IVM = 1.15         # VRP multiplier on the blended base
+REGIME_SMA = 200
 SPLIT = np.datetime64("2016-01-01")
 
-# Frozen structure specs.
+# 3m T-bill, annual average (decimal). Coarse but far better than r=0;
+# extend yearly. Years missing default to the last entry.
+TBILL = {1993: .030, 1994: .042, 1995: .055, 1996: .050, 1997: .051,
+         1998: .048, 1999: .046, 2000: .058, 2001: .034, 2002: .016,
+         2003: .010, 2004: .014, 2005: .032, 2006: .047, 2007: .044,
+         2008: .014, 2009: .0015, 2010: .001, 2011: .0005, 2012: .001,
+         2013: .0005, 2014: .0003, 2015: .0005, 2016: .003, 2017: .009,
+         2018: .020, 2019: .021, 2020: .004, 2021: .0005, 2022: .020,
+         2023: .051, 2024: .050, 2025: .043, 2026: .040}
+
+# Frozen books. THE strategy is the put ladder; the call ladder is the
+# max-per-trade-ROR alternative.
 STRUCTURES = {
-    "call": {"kind": "call_spread", "label": "Bull call spread (max ROR)",
-             "k1_off": 0.0, "k2_off": 0.05, "exit": "limit", "exit_level": 0.80},
-    "put":  {"kind": "put_spread", "label": "Put credit spread (max accuracy)",
-             "k1_off": -0.05, "k2_off": -0.10, "exit": "capture", "exit_level": 0.50},
+    "put":  {"kind": "put_spread", "label": "Put credit spread (the strategy)",
+             "k1_off": -0.03, "k2_off": -0.06, "horizon": 63,
+             "exit": "expiry", "exit_level": None,
+             "every": 5, "f": 0.03, "cap": 0.60},
+    "call": {"kind": "call_spread", "label": "Bull call spread (max ROR/trade)",
+             "k1_off": 0.02, "k2_off": 0.07, "horizon": 252,
+             "exit": "limit", "exit_level": 0.80,
+             "every": 21, "f": 0.05, "cap": 0.30},
 }
 
 
 def _N(x): return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
 
-def bs_call(S, K, T, s):
+def bs_call_F(F, K, T, s, r):
     if T <= 0 or s <= 0:
-        return max(S - K, 0.0)
-    d1 = (math.log(S / K) + 0.5 * s * s * T) / (s * math.sqrt(T))
-    return S * _N(d1) - K * _N(d1 - s * math.sqrt(T))
+        return max(F - K, 0.0) * math.exp(-r * T)
+    d1 = (math.log(F / K) + 0.5 * s * s * T) / (s * math.sqrt(T))
+    return math.exp(-r * T) * (F * _N(d1) - K * _N(d1 - s * math.sqrt(T)))
 
 
-def bs_put(S, K, T, s):
+def bs_put_F(F, K, T, s, r):
     if T <= 0 or s <= 0:
-        return max(K - S, 0.0)
-    d1 = (math.log(S / K) + 0.5 * s * s * T) / (s * math.sqrt(T))
-    return K * _N(-(d1 - s * math.sqrt(T))) - S * _N(-d1)
+        return max(K - F, 0.0) * math.exp(-r * T)
+    d1 = (math.log(F / K) + 0.5 * s * s * T) / (s * math.sqrt(T))
+    return math.exp(-r * T) * (K * _N(-(d1 - s * math.sqrt(T))) - F * _N(-d1))
 
 
-def load():
-    b = json.load(open(SPY_PATH))
-    dates = np.array(b["series"]["dates"], dtype="datetime64[D]")
-    px = np.array(b["series"]["prices"], float)
-    m = (px > 0) & np.isfinite(px)
-    dates, px = dates[m], px[m]
-    lr = np.concatenate(([0.0], np.diff(np.log(px))))
-    n = len(px)
-    rv = np.full(n, np.nan)
-    for i in range(60, n):
-        rv[i] = np.std(lr[i - 59:i + 1], ddof=1) * math.sqrt(252)
-    sma = np.full(n, np.nan)
-    for i in range(REGIME_SMA, n):
-        sma[i] = px[i - REGIME_SMA + 1:i + 1].mean()
-    return dates, px, rv, sma
+class Market:
+    """SPY panel + the v2 pricing surface (carry, skew, blended IV)."""
+
+    def __init__(self, path=SPY_PATH):
+        with open(path) as fh:
+            blob = json.load(fh)
+        s = blob["series"]
+        dates = np.array(s["dates"], dtype="datetime64[D]")
+        px = np.array(s["prices"], float)
+        m = (px > 0) & np.isfinite(px)
+        self.dates, self.px = dates[m], px[m]
+        n = len(self.px)
+        lr = np.concatenate(([0.0], np.diff(np.log(self.px))))
+        self.rv = np.full(n, np.nan)
+        for i in range(60, n):
+            self.rv[i] = np.std(lr[i - 59:i + 1], ddof=1) * math.sqrt(252)
+        self.sma = np.full(n, np.nan)
+        for i in range(REGIME_SMA, n):
+            self.sma[i] = self.px[i - REGIME_SMA + 1:i + 1].mean()
+        self.rvbar = np.full(n, np.nan)
+        csum = 0.0; cnt = 0
+        for i in range(60, n):
+            csum += self.rv[i]; cnt += 1
+            self.rvbar[i] = csum / cnt
+        years = np.array([int(str(dt)[:4]) for dt in self.dates])
+        last = max(TBILL)
+        self.rate = np.array([TBILL.get(y, TBILL[last]) for y in years])
+        self.n = n
+
+    def regime_ok(self, i):
+        return np.isfinite(self.sma[i]) and self.px[i] >= self.sma[i]
+
+    def atm_iv(self, i):
+        if not np.isfinite(self.rv[i]) or not np.isfinite(self.rvbar[i]):
+            return float("nan")
+        return IVM * math.sqrt(W_BLEND * self.rv[i] ** 2
+                               + (1 - W_BLEND) * self.rvbar[i] ** 2)
+
+    def spread_val(self, j, K1, K2, T, kind):
+        """Mid value of the K1/K2 spread at session j, time-to-expiry T."""
+        S = self.px[j]
+        r = self.rate[j]
+        F = S * math.exp(r * T)
+        s_atm = self.atm_iv(j)
+        if not np.isfinite(s_atm) or s_atm <= 0:
+            return None
+
+        def iv(K):
+            return max(s_atm * (1.0 + BETA * math.log(F / K)), 0.03)
+        if kind == "call_spread":
+            return bs_call_F(F, K1, T, iv(K1), r) - bs_call_F(F, K2, T, iv(K2), r)
+        return bs_put_F(F, K1, T, iv(K1), r) - bs_put_F(F, K2, T, iv(K2), r)
 
 
-def _regime_ok(px_i, sma_i):
-    """Enter only in an uptrend (spot at/above its 200-day average)."""
-    return np.isfinite(sma_i) and px_i >= sma_i
-
-
-def _val_at(px_j, K1, K2, Tr, sj, kind):
-    if kind == "call_spread":
-        return bs_call(px_j, K1, Tr, sj) - bs_call(px_j, K2, Tr, sj)
-    return bs_put(px_j, K1, Tr, sj) - bs_put(px_j, K2, Tr, sj)
-
-
-def _trade_path(dates, px, rv, sma, spec, i):
-    """Run one spread entered at session i under the frozen rule.
-    Returns ("closed", trade_dict) | ("open", open_dict) | None."""
-    n = len(px); T0 = HORIZON / 252.0
+def _trade_path(mkt: Market, spec, i):
+    """One spread entered at session i under the frozen rule.
+    Returns ("closed", dict) | ("open", dict) | None."""
+    n = mkt.n
+    X = spec["horizon"]; T0 = X / 252.0
     kind = spec["kind"]; is_credit = kind == "put_spread"
-    split_i = int(np.searchsorted(dates, SPLIT))
-    S = px[i]; s = rv[i] * IV_MULT
-    if not np.isfinite(s) or s <= 0 or not _regime_ok(S, sma[i]):
+    if not mkt.regime_ok(i):
         return None
+    S = mkt.px[i]
     K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"])
     width = abs(K2 - K1)
-    entry = _val_at(S, K1, K2, T0, s, kind)
+    v = mkt.spread_val(i, K1, K2, T0, kind)
+    if v is None or v <= 0:
+        return None
     if is_credit:
-        credit = entry * (1 - SLIP); risk = width - credit
+        credit = v * (1 - SLIP); risk = width - credit
         if credit <= 0 or risk <= 0:
             return None
-        cost_basis = credit; denom = risk
-        buyback = (1 - spec["exit_level"]) * credit  # capture X% of credit
+        denom = risk; basis = credit
     else:
-        debit = entry * (1 + SLIP)
-        if debit <= 0:
-            return None
-        cost_basis = debit; denom = debit
-        tgt = spec["exit_level"] * width  # sell when mark >= X% of width
+        debit = v * (1 + SLIP)
+        denom = debit; basis = debit
+        tgt = spec["exit_level"] * width
 
-    jend = min(i + HORIZON, n - 1)
+    jend = min(i + X, n - 1)
     pnl = None; exit_j = None; reason = None
-    for j in range(i + 1, jend + 1):
-        Tr = (i + HORIZON - j) / 252.0
-        sj = rv[j] * IV_MULT if np.isfinite(rv[j]) else s
-        v = _val_at(px[j], K1, K2, Tr, sj, kind)
-        if is_credit:
-            vb = v * (1 + SLIP)
-            if vb <= buyback:
-                pnl = credit - vb; exit_j = j; reason = "gtc-profit"; break
-        else:
-            if v >= tgt:
-                pnl = v * (1 - SLIP) - debit; exit_j = j; reason = "gtc-limit"; break
+    if not is_credit:  # GTC limit exit for the call book
+        for j in range(i + 1, jend + 1):
+            Tr = (i + X - j) / 252.0
+            vj = mkt.spread_val(j, K1, K2, Tr, kind)
+            if vj is not None and vj >= tgt:
+                pnl = vj * (1 - SLIP) - debit; exit_j = j; reason = "gtc-limit"
+                break
     if pnl is None and jend < n - 1:
         if is_credit:
-            loss = min(max(K1 - px[jend], 0.0), width); pnl = credit - loss
+            loss = min(max(K1 - mkt.px[jend], 0.0), width)
+            pnl = credit - loss
         else:
-            pnl = min(max(px[jend] - K1, 0.0), width) - debit
+            pnl = min(max(mkt.px[jend] - K1, 0.0), width) - debit
         exit_j = jend; reason = "expiry"
     if pnl is None:
         # still open at panel end
-        Tr = max((i + HORIZON - (n - 1)) / 252.0, 1e-6)
-        sj = rv[n - 1] * IV_MULT if np.isfinite(rv[n - 1]) else s
-        mark = _val_at(px[n - 1], K1, K2, Tr, sj, kind)
-        cur_pnl = (credit - mark * (1 + SLIP)) if is_credit else (mark * (1 - SLIP) - debit)
-        exp_date = dates[i] + np.timedelta64(int(round(HORIZON * 365 / 252)), "D")
+        Tr = max((i + X - (n - 1)) / 252.0, 1e-6)
+        mark = mkt.spread_val(n - 1, K1, K2, Tr, kind) or 0.0
+        cur = (credit - mark * (1 + SLIP)) if is_credit else (mark * (1 - SLIP) - basis)
+        exp_date = mkt.dates[i] + np.timedelta64(int(round(X * 365 / 252)), "D")
         return ("open", {
-            "entry_date": str(dates[i]), "spot_at_entry": round(float(S), 2),
+            "entry_date": str(mkt.dates[i]), "spot_at_entry": round(float(S), 2),
             "k1": round(float(K1), 2), "k2": round(float(K2), 2),
             "width": round(float(width), 2),
-            "entry_credit" if is_credit else "entry_debit": round(float(cost_basis), 2),
-            "current_spot": round(float(px[n - 1]), 2),
+            "entry_credit" if is_credit else "entry_debit": round(float(basis), 2),
+            "current_spot": round(float(mkt.px[n - 1]), 2),
             "current_mark": round(float(mark), 2),
-            "current_ror": round(float(cur_pnl / denom), 4),
-            "max_ror": round(float((credit / risk) if is_credit else (width - debit) / debit), 4),
+            "current_ror": round(float(cur / denom), 4),
+            "max_ror": round(float((credit / risk) if is_credit
+                                   else (width - basis) / basis), 4),
             "expiry_date": str(exp_date),
-            "days_held": int(n - 1 - i), "days_to_expiry": int(HORIZON - (n - 1 - i)),
+            "days_held": int(n - 1 - i), "days_to_expiry": int(X - (n - 1 - i)),
         })
+    split_i = int(np.searchsorted(mkt.dates, SPLIT))
     return ("closed", {
-        "entry_date": str(dates[i]), "exit_date": str(dates[exit_j]),
+        "entry_date": str(mkt.dates[i]), "exit_date": str(mkt.dates[exit_j]),
         "spot_at_entry": round(float(S), 2), "k1": round(float(K1), 2),
         "k2": round(float(K2), 2), "ror": round(float(pnl / denom), 4),
         "win": bool(pnl > 0), "hold_days": int(exit_j - i), "reason": reason,
@@ -175,46 +216,34 @@ def _trade_path(dates, px, rv, sma, spec, i):
     })
 
 
-def month_first_sessions(dates, start=200):
-    """Index of the first trading session of each calendar month."""
-    out = []; last = None
-    for i in range(start, len(dates)):
-        m = str(dates[i])[:7]
-        if m != last:
-            out.append(i); last = m
-    return out
-
-
-def simulate_ladder(dates, px, rv, sma, spec, f=LADDER_F, cap=LADDER_CAP):
-    """Monthly ladder: open a new spread on the first session of each
-    month (regime permitting). Each rung risks f of CURRENT equity;
-    total at-risk fraction capped at cap (a rung that would exceed the
-    cap is sized down to fit, or skipped if no room). PnL applied to
-    equity at exit — same marking as the previous sequential curve.
+def simulate_ladder(mkt: Market, spec, f=None, cap=None):
+    """Ladder: a new rung every spec['every'] sessions (regime
+    permitting), each risking f of current equity, total at-risk capped.
     Returns (closed_trades, open_positions, equity_curve)."""
-    n = len(px)
-    entries = month_first_sessions(dates)
+    f = spec["f"] if f is None else f
+    cap = spec["cap"] if cap is None else cap
+    n = mkt.n
+    entries = list(range(210, n, spec["every"]))
     trades = []; opens = []
     for i in entries:
-        r = _trade_path(dates, px, rv, sma, spec, i)
+        r = _trade_path(mkt, spec, i)
         if r is None:
             continue
         (trades if r[0] == "closed" else opens).append((i, r[1]))
-    # walk time, applying exits to equity, sizing each rung under the cap
-    pending = {}   # exit_i -> list of closed-trade dicts (with f_used set)
+    pending = {}
     eq = 1.0; at_risk = 0.0
     curve = []; closed = []; open_out = []
     ev = {i: ("closed", t) for i, t in trades}
     ev.update({i: ("open", t) for i, t in opens})
     start_i = entries[0] if entries else n
-    curve.append([str(dates[start_i]), 1.0])
+    curve.append([str(mkt.dates[start_i]), 1.0])
     for i in range(start_i, n):
         if i in pending:
             for t in pending.pop(i):
                 eq *= (1 + t["f_used"] * t["ror"])
                 at_risk -= t["f_used"]
                 closed.append(t)
-            curve.append([str(dates[i]), round(eq, 4)])
+            curve.append([str(mkt.dates[i]), round(eq, 4)])
         if i in ev:
             r_kind, t = ev[i]
             fu = min(f, max(cap - at_risk, 0.0))
@@ -230,51 +259,22 @@ def simulate_ladder(dates, px, rv, sma, spec, f=LADDER_F, cap=LADDER_CAP):
     return closed, open_out, curve
 
 
-def backtest_full(dates, px, rv, sma, spec):
-    """Every eligible entry day, same exit rule — the robust headline
-    win-rate/ROR (thousands of overlapping samples). Returns arrays."""
-    n = len(px); T0 = HORIZON / 252.0; kind = spec["kind"]
-    is_credit = kind == "put_spread"; split_i = int(np.searchsorted(dates, SPLIT))
+def backtest_full(mkt: Market, spec):
+    """Every eligible entry day under the exact live rule (overlapping
+    samples) — the robust headline win-rate/ROR."""
+    split_i = int(np.searchsorted(mkt.dates, SPLIT))
     ror = []; win = []; hold = []; val = []
-    for i in range(60, n - HORIZON):
-        S = px[i]; s = rv[i] * IV_MULT
-        if not np.isfinite(s) or s <= 0 or not _regime_ok(S, sma[i]):
+    for i in range(210, mkt.n - spec["horizon"]):
+        r = _trade_path(mkt, spec, i)
+        if r is None or r[0] != "closed":
             continue
-        K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"]); width = abs(K2 - K1)
-        entry = _val_at(S, K1, K2, T0, s, kind)
-        if is_credit:
-            credit = entry * (1 - SLIP); risk = width - credit
-            if credit <= 0 or risk <= 0:
-                continue
-            denom = risk; buyback = (1 - spec["exit_level"]) * credit
-        else:
-            debit = entry * (1 + SLIP)
-            if debit <= 0:
-                continue
-            denom = debit; tgt = spec["exit_level"] * width
-        pnl = None; hd = HORIZON
-        for j in range(i + 1, i + HORIZON + 1):
-            Tr = (i + HORIZON - j) / 252.0
-            sj = rv[j] * IV_MULT if np.isfinite(rv[j]) else s
-            v = _val_at(px[j], K1, K2, Tr, sj, kind)
-            if is_credit:
-                vb = v * (1 + SLIP)
-                if vb <= buyback:
-                    pnl = credit - vb; hd = j - i; break
-            else:
-                if v >= tgt:
-                    pnl = v * (1 - SLIP) - debit; hd = j - i; break
-        if pnl is None:
-            if is_credit:
-                pnl = credit - min(max(K1 - px[i + HORIZON], 0.0), width)
-            else:
-                pnl = min(max(px[i + HORIZON] - K1, 0.0), width) - debit
-        ror.append(pnl / denom); win.append(int(pnl > 0)); hold.append(hd); val.append(i >= split_i)
-    return (np.array(ror), np.array(win), np.array(hold), np.array(val))
+        t = r[1]
+        ror.append(t["ror"]); win.append(int(t["win"]))
+        hold.append(t["hold_days"]); val.append(i >= split_i)
+    return map(np.array, (ror, win, hold, val))
 
 
 def curve_metrics(curve):
-    """CAGR and max drawdown of an equity curve [[date, value], ...]."""
     if not curve or len(curve) < 2:
         return {"cagr": None, "maxdd": None}
     v = np.array([c[1] for c in curve])
@@ -284,41 +284,40 @@ def curve_metrics(curve):
     return {"cagr": round(float(v[-1] ** (1 / yrs) - 1), 4), "maxdd": round(dd, 4)}
 
 
-def stats(dates, px, rv, sma, spec, ladder_trades):
-    r, w, hold, val = backtest_full(dates, px, rv, sma, spec)
+def stats(mkt: Market, spec, ladder_trades):
+    r, w, hold, val = backtest_full(mkt, spec)
 
-    def sizing(f):
-        """Re-run the monthly ladder at rung size f (cap scales with f)."""
-        _, _, curve = simulate_ladder(dates, px, rv, sma, spec,
-                                      f=f, cap=LADDER_CAP * f / LADDER_F)
+    def sizing(mult):
+        f = spec["f"] * mult; cap = spec["cap"] * mult
+        _, _, curve = simulate_ladder(mkt, spec, f=f, cap=cap)
         m = curve_metrics(curve)
-        return {"frac": f, "cagr": m["cagr"], "maxdd": m["maxdd"]}
+        return {"frac": round(f, 3), "cagr": m["cagr"], "maxdd": m["maxdd"]}
     return {
         "n": int(len(r)), "n_ladder": len(ladder_trades),
         "win_rate": round(float(w.mean()), 4),
         "win_rate_val": round(float(w[val].mean()), 4) if val.sum() else None,
-        "mean_ror": round(float(r.mean()), 4), "median_ror": round(float(np.median(r)), 4),
+        "mean_ror": round(float(r.mean()), 4),
+        "median_ror": round(float(np.median(r)), 4),
         "mean_ror_val": round(float(r[val].mean()), 4) if val.sum() else None,
         "avg_hold_days": round(float(hold.mean()), 1),
         "worst_ror": round(float(r.min()), 4),
         "annualized_ror": round(float(r.mean() * 252 / hold.mean()), 4),
-        "sizing": [sizing(f) for f in (0.03, 0.05, 0.08)],
+        "sizing": [sizing(m) for m in (0.67, 1.0, 1.5)],
     }
 
 
-def ror_histogram(seq_trades, edges=(-1.01, -0.5, 0.0, 0.5, 1.0, 1.4)):
-    """Bin per-trade RORs for a distribution bar chart."""
-    r = np.array([t["ror"] for t in seq_trades])
+def ror_histogram(trades, edges=(-1.01, -0.5, 0.0, 0.5, 1.0, 1.4)):
+    r = np.array([t["ror"] for t in trades])
     labels = ["≤−50%", "−50–0%", "0–50%", "50–100%", "≥100%"]
-    counts = [int(((r >= edges[i]) & (r < edges[i + 1])).sum()) for i in range(len(edges) - 1)]
-    counts[-1] += int((r >= edges[-1]).sum())  # fold the +140% max into the top bin
+    counts = [int(((r >= edges[i]) & (r < edges[i + 1])).sum())
+              for i in range(len(edges) - 1)]
+    counts[-1] += int((r >= edges[-1]).sum())
     return [{"label": labels[i], "count": counts[i]} for i in range(len(labels))]
 
 
-def examples(seq_trades):
-    """A representative winner (median-ish win) and the worst loser."""
-    wins = sorted([t for t in seq_trades if t["win"]], key=lambda t: t["ror"])
-    losses = sorted([t for t in seq_trades if not t["win"]], key=lambda t: t["ror"])
+def examples(trades):
+    wins = sorted([t for t in trades if t["win"]], key=lambda t: t["ror"])
+    losses = sorted([t for t in trades if not t["win"]], key=lambda t: t["ror"])
     out = {}
     if wins:
         out["winner"] = wins[len(wins) // 2]
@@ -327,113 +326,119 @@ def examples(seq_trades):
     return out
 
 
-def spy_benchmark(dates, px, start_date):
-    """SPY buy-and-hold, normalized to 1.0 at start_date, ~monthly points."""
+def spy_benchmark(mkt: Market, start_date):
+    dates, px = mkt.dates, mkt.px
     i0 = int(np.searchsorted(dates, np.datetime64(start_date)))
     base = px[i0]
-    pts = []
-    step = 21  # ~monthly
-    for i in range(i0, len(px), step):
-        pts.append([str(dates[i]), round(float(px[i] / base), 4)])
+    pts = [[str(dates[i]), round(float(px[i] / base), 4)]
+           for i in range(i0, len(px), 21)]
     if pts[-1][0] != str(dates[-1]):
         pts.append([str(dates[-1]), round(float(px[-1] / base), 4)])
-    cagr = (px[-1] / base) ** (365.25 / max((dates[-1] - dates[i0]).astype("timedelta64[D]").astype(int), 1)) - 1
+    yrs = max((dates[-1] - dates[i0]).astype("timedelta64[D]").astype(int), 1) / 365.25
     eq = px[i0:] / base
     dd = float((eq / np.maximum.accumulate(eq) - 1).min())
-    return {"curve": pts, "cagr": round(float(cagr), 4), "maxdd": round(dd, 4)}
+    return {"curve": pts, "cagr": round(float((px[-1] / base) ** (1 / yrs) - 1), 4),
+            "maxdd": round(dd, 4)}
 
 
-def action(open_positions, regime_ok, is_month_first):
-    """Ladder cadence: a new rung opens on the first session of each
-    month (regime permitting); exits are automatic via the GTC limits."""
+def action(spec, open_positions, regime_ok, is_entry_day):
     if not regime_ok:
         return "STAND ASIDE — SPY below its 200-day average (no new rungs)"
-    if is_month_first:
-        return f"ENTER — open this month's rung ({int(LADDER_F*100)}% of equity at risk)"
+    cadence = "weekly" if spec["every"] <= 5 else "monthly"
+    if is_entry_day:
+        return (f"ENTER — open this {cadence.rstrip('ly')}'s rung "
+                f"({spec['f']*100:.0f}% of equity at risk)")
     n_open = len(open_positions)
-    return (f"HOLD — {n_open} rung{'s' if n_open != 1 else ''} open, GTC limits working; "
-            "next rung on the first session of next month")
+    nxt = "next session" if spec["every"] <= 5 else "the first session of next month"
+    return (f"HOLD — {n_open} rung{'s' if n_open != 1 else ''} open; "
+            f"next {cadence} rung {nxt}")
 
 
-def enter_today(dates, px, rv, sma, spec):
-    i = len(px) - 1; S = px[i]; s = rv[i] * IV_MULT; T0 = HORIZON / 252.0
+def enter_today(mkt: Market, spec):
+    i = mkt.n - 1
+    S = mkt.px[i]; X = spec["horizon"]; T0 = X / 252.0
     kind = spec["kind"]; is_credit = kind == "put_spread"
-    K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"]); width = abs(K2 - K1)
-    entry = _val_at(S, K1, K2, T0, s, kind)
-    exp_date = dates[i] + np.timedelta64(int(round(HORIZON * 365 / 252)), "D")
+    K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"])
+    width = abs(K2 - K1)
+    v = mkt.spread_val(i, K1, K2, T0, kind) or 0.0
+    exp_date = mkt.dates[i] + np.timedelta64(int(round(X * 365 / 252)), "D")
+    iv = mkt.atm_iv(i)
     if is_credit:
-        credit = entry * (1 - SLIP); risk = width - credit
+        credit = v * (1 - SLIP); risk = width - credit
         return {"spot": round(float(S), 2), "sell_strike": round(float(K1), 2),
                 "buy_strike": round(float(K2), 2), "width": round(float(width), 2),
-                "est_credit": round(float(credit), 2), "max_ror": round(float(credit / risk), 4),
-                "iv_proxy": round(float(s), 4), "expiry_date": str(exp_date),
-                "profit_target": f"buy back at {int((1-spec['exit_level'])*100)}% of credit"}
-    debit = entry * (1 + SLIP)
+                "est_credit": round(float(credit), 2),
+                "max_ror": round(float(credit / risk), 4) if risk > 0 else None,
+                "iv_proxy": round(float(iv), 4), "expiry_date": str(exp_date),
+                "profit_target": "hold to expiry"}
+    debit = v * (1 + SLIP)
     return {"spot": round(float(S), 2), "long_strike": round(float(K1), 2),
             "short_strike": round(float(K2), 2), "width": round(float(width), 2),
-            "est_debit": round(float(debit), 2), "max_ror": round(float((width - debit) / debit), 4),
-            "breakeven": round(float(K1 + debit), 2), "iv_proxy": round(float(s), 4),
-            "expiry_date": str(exp_date),
-            "profit_target": f"sell spread at {int(spec['exit_level']*100)}% of width"}
+            "est_debit": round(float(debit), 2),
+            "max_ror": round(float((width - debit) / debit), 4) if debit > 0 else None,
+            "breakeven": round(float(K1 + debit), 2),
+            "iv_proxy": round(float(iv), 4), "expiry_date": str(exp_date),
+            "profit_target": f"GTC sell at {int(spec['exit_level']*100)}% of width"}
 
 
 def main() -> int:
-    dates, px, rv, sma = load()
-    regime_ok = _regime_ok(px[-1], sma[-1])
-    is_month_first = str(dates[-1])[:7] != str(dates[-2])[:7]
+    mkt = Market()
+    i_last = mkt.n - 1
+    regime_ok = mkt.regime_ok(i_last)
     books = {}
     earliest = None
     for key, spec in STRUCTURES.items():
-        trades, opens, curve = simulate_ladder(dates, px, rv, sma, spec)
+        trades, opens, curve = simulate_ladder(mkt, spec)
         if trades:
             e = trades[0]["entry_date"]
             earliest = e if earliest is None or e < earliest else earliest
+        # entry day if the last session falls on the entry cadence grid
+        entries = list(range(210, mkt.n, spec["every"]))
+        is_entry_day = i_last in entries
         books[key] = {
             "label": spec["label"], "spec": spec,
-            "today_action": action(opens, regime_ok, is_month_first),
+            "today_action": action(spec, opens, regime_ok, is_entry_day),
             "open_positions": opens,
-            "enter_today": enter_today(dates, px, rv, sma, spec),
-            "track_record": stats(dates, px, rv, sma, spec, trades),
+            "enter_today": enter_today(mkt, spec),
+            "track_record": stats(mkt, spec, trades),
             "equity": curve,
             "equity_metrics": curve_metrics(curve),
             "ror_histogram": ror_histogram(trades),
             "examples": examples(trades),
-            "recent_trades": list(reversed(trades)),
+            "recent_trades": list(reversed(trades))[:150],
         }
-    # THE strategy = the call-spread ladder (the put book drags CAGR at the
-    # same drawdown — kept on the page as the max-accuracy alternative).
-    strat_curve = books["call"]["equity"]
+    strat_curve = books["put"]["equity"]
     out = {
-        "as_of": str(dates[-1]), "spot": round(float(px[-1]), 2),
-        "horizon_sessions": HORIZON,
-        "equity_sizing": LADDER_F, "ladder_cap": LADDER_CAP,
-        "cadence": "one new rung on the first session of each month",
+        "as_of": str(mkt.dates[-1]), "spot": round(float(mkt.px[-1]), 2),
+        "pricing_model": {"version": 2, "carry": "3m T-bill", "skew_beta": BETA,
+                          "iv": f"{IVM} x sqrt({W_BLEND}*rv60^2 + {1-W_BLEND:.2f}*rvbar^2)",
+                          "slippage": SLIP},
+        "equity_sizing": STRUCTURES["put"]["f"],
+        "ladder_cap": STRUCTURES["put"]["cap"],
+        "cadence": "one new rung every week (put book) / month (call book)",
         "strategy_equity": dict(curve_metrics(strat_curve), curve=strat_curve),
-        "spy_benchmark": spy_benchmark(dates, px, earliest or str(dates[60])),
-        "regime": {"sma200": round(float(sma[-1]), 2) if np.isfinite(sma[-1]) else None,
+        "spy_benchmark": spy_benchmark(mkt, earliest or str(mkt.dates[210])),
+        "regime": {"sma200": round(float(mkt.sma[i_last]), 2)
+                   if np.isfinite(mkt.sma[i_last]) else None,
                    "uptrend": bool(regime_ok),
                    "filter": "enter only when SPY >= its 200-day average"},
         "books": books,
-        "note": ("Modeled Black-Scholes fills (IV = 60d realized x 1.12); SPY/SPX "
-                 "options are the most liquid listed, so fills are realistic. "
-                 "~87-94% accurate, NOT 99% — the ROR comes with real bear-market "
-                 "losers, and concurrent rungs lose together in a crash (the "
-                 f"{int(LADDER_CAP*100)}% at-risk cap bounds that)."),
+        "note": ("Pricing model v2: carry (historical T-bill), volatility skew, "
+                 "mean-reverting blended IV, 3% slippage — audited so the "
+                 "backtest pays real-world premiums. ~88-93% accurate, NOT "
+                 "99%; concurrent rungs lose together in a crash (the at-risk "
+                 "cap bounds it)."),
     }
     os.makedirs(WEB_DATA, exist_ok=True)
     with open(os.path.join(WEB_DATA, "signal.json"), "w") as fh:
         json.dump(out, fh, indent=2)
-    print(f"as_of={out['as_of']} spot={out['spot']} month_first={is_month_first}")
+    print(f"as_of={out['as_of']} spot={out['spot']} regime_ok={regime_ok}")
     for key, bk in books.items():
         tr = bk["track_record"]; em = bk["equity_metrics"]
-        print(f"  [{key}] {bk['today_action'][:30]:30s} n={tr['n']} "
+        print(f"  [{key}] {bk['today_action'][:34]:34s} n={tr['n']} "
               f"win={tr['win_rate']*100:.0f}%(val {(tr['win_rate_val'] or 0)*100:.0f}%) "
               f"ROR={tr['mean_ror']*100:+.0f}% | ladder CAGR={em['cagr']*100:.1f}% "
-              f"DD={em['maxdd']*100:.0f}% open_rungs={len(bk['open_positions'])}")
-        for op in bk["open_positions"]:
-            print(f"        OPEN {op['entry_date']} {op['k1']}/{op['k2']} "
-                  f"exp {op['expiry_date']} ROR {op['current_ror']*100:+.0f}% "
-                  f"({op['days_to_expiry']}d left)")
+              f"DD={em['maxdd']*100:.0f}% open={len(bk['open_positions'])}")
     return 0
 
 

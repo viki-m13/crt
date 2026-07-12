@@ -21,7 +21,8 @@
       : '<span class="neg">below 200-day avg — standing aside</span>';
     document.getElementById("asof").innerHTML =
       "SPY <strong>" + usd(d.spot) + "</strong> · as of " + d.as_of +
-      " · " + d.horizon_sessions + "-session horizon · regime: " + regTxt;
+      " · pricing model v" + ((d.pricing_model || {}).version || 2) +
+      " · regime: " + regTxt;
 
     renderCards(d);
     renderRecord(d);
@@ -45,15 +46,15 @@
   }
 
   function bookMeta(key) {
-    return key === "call"
-      ? { badge: "ror", tag: "Max ROR", verb: "Buy" }
-      : { badge: "acc", tag: "Max accuracy", verb: "Sell" };
+    return key === "put"
+      ? { badge: "acc", tag: "The strategy", verb: "Sell" }
+      : { badge: "ror", tag: "Max ROR / trade", verb: "Buy" };
   }
 
   function renderCards(d) {
     var wrap = document.getElementById("cards");
     wrap.innerHTML = "";
-    ["call", "put"].forEach(function (key) {
+    ["put", "call"].forEach(function (key) {
       var bk = d.books[key]; if (!bk) return;
       var meta = bookMeta(key), et = bk.enter_today, tr = bk.track_record, op = bk.open_position;
       var card = el("div", "card");
@@ -104,7 +105,8 @@
       var ops = bk.open_positions || [];
       if (ops.length) {
         var o = el("div", "openpos");
-        o.appendChild(el("div", "muted", "Open rungs (" + ops.length + ") — one opened each month"));
+        var cad = (bk.spec && bk.spec.every <= 5) ? "week" : "month";
+        o.appendChild(el("div", "muted", "Open rungs (" + ops.length + ") — one opened each " + cad));
         var tbl = el("table", "rungs");
         tbl.innerHTML = "<thead><tr><th>Entered</th><th>Strikes</th><th>ROR</th><th>Expiry</th></tr></thead>";
         var tb = el("tbody");
@@ -131,10 +133,10 @@
   function renderRecord(d) {
     var tb = document.querySelector("#record-tbl tbody");
     tb.innerHTML = "";
-    ["call", "put"].forEach(function (key) {
+    ["put", "call"].forEach(function (key) {
       var bk = d.books[key]; if (!bk) return;
       var tr = bk.track_record;
-      var row = el("tr", key === "call" ? "hl" : "");
+      var row = el("tr", key === "put" ? "hl" : "");
       [
         bk.label, pct(tr.win_rate, 1), pct(tr.win_rate_val, 0).replace("+", ""),
         pct(tr.mean_ror), pct(tr.median_ror), Math.round(tr.avg_hold_days) + "d",
@@ -146,12 +148,12 @@
     // sizing → CAGR table
     var host = document.getElementById("sizing");
     host.innerHTML = "";
-    var call = d.books.call && d.books.call.track_record.sizing;
+    var call = d.books.put && d.books.put.track_record.sizing;
     if (!call) return;
     var wrap = el("div", "tbl-wrap");
     wrap.style.marginTop = "18px";
     var t = el("table");
-    t.innerHTML = "<caption>Rung size → portfolio CAGR is a sizing choice (call-spread ladder; " +
+    t.innerHTML = "<caption>Rung size → portfolio CAGR is a sizing choice (put-spread ladder; " +
       "total at-risk cap scales with rung size). Aggressive sizing lifts return and drawdown together.</caption>" +
       "<thead><tr><th>Risk per rung</th><th>CAGR</th><th>Max drawdown</th></tr></thead>";
     var tb2 = el("tbody");
@@ -189,8 +191,8 @@
     var s = setupCanvas(cv, 380), ctx = s.ctx;
     var series = [
       { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve, w: 1.2 },
-      { name: "Put ladder (max accuracy)", color: COL.put, points: d.books.put.equity, w: 1.2 },
-      { name: "Strategy — monthly call-spread ladder", color: COL.strat,
+      { name: "Call ladder (max ROR/trade)", color: COL.call, points: d.books.call.equity, w: 1.2 },
+      { name: "Strategy — weekly put-spread ladder", color: COL.strat,
         points: (d.strategy_equity || {}).curve, w: 3 }
     ].filter(function (x) { return x.points && x.points.length; });
 
@@ -251,10 +253,10 @@
     }
     host.appendChild(statBox("SPY CAGR", pct(d.spy_benchmark.cagr, 1), "buy & hold"));
     host.appendChild(statBox("SPY max DD", pct(d.spy_benchmark.maxdd, 0), "buy & hold"));
-    var pm = d.books.put.equity_metrics;
-    if (pm && pm.cagr != null) {
-      host.appendChild(statBox("Put ladder CAGR", pct(pm.cagr, 1), "max-accuracy book"));
-      host.appendChild(statBox("Put ladder max DD", pct(pm.maxdd, 0), "max-accuracy book"));
+    var cm = d.books.call.equity_metrics;
+    if (cm && cm.cagr != null) {
+      host.appendChild(statBox("Call ladder CAGR", pct(cm.cagr, 1), "max ROR/trade book"));
+      host.appendChild(statBox("Call ladder max DD", pct(cm.maxdd, 0), "max ROR/trade book"));
     }
   }
 
@@ -307,7 +309,7 @@
   function renderHist(d) {
     var host = document.getElementById("hist"); if (!host) return;
     host.innerHTML = "";
-    ["call", "put"].forEach(function (key) {
+    ["put", "call"].forEach(function (key) {
       var bk = d.books[key]; if (!bk || !bk.ror_histogram) return;
       host.appendChild(el("div", "muted", "<strong>" + (key === "call" ? "Call spread" : "Put spread") + "</strong>"));
       var max = Math.max.apply(null, bk.ror_histogram.map(function (h) { return h.count; })) || 1;
@@ -329,13 +331,13 @@
   function renderExamples(d) {
     var host = document.getElementById("examples"); if (!host) return;
     host.innerHTML = "";
-    var ex = d.books.call.examples || {};
+    var ex = d.books.put.examples || {};
     [["winner", "win", "Representative winner"], ["loser", "loss", "Worst loser"]].forEach(function (e) {
       var t = ex[e[0]]; if (!t) return;
       var c = el("div", "ex-card");
       c.appendChild(el("div", null, '<span class="tag ' + e[1] + '">' + e[2] + "</span>"));
       [["Entered", t.entry_date + " · SPY " + usd(t.spot_at_entry)],
-       ["Strikes", t.k1 + " / " + t.k2 + " call spread"],
+       ["Strikes", t.k1 + " / " + t.k2 + " spread"],
        ["Exited", t.exit_date + " · " + t.reason.replace("gtc-", "").replace("-", " ")],
        ["Held", t.hold_days + " days"],
        ["Result", '<span class="' + signClass(t.ror) + '">' + pct(t.ror) + " ROR</span>"]].forEach(function (r) {
@@ -351,7 +353,7 @@
     var tb = document.querySelector("#trades-tbl tbody");
     tb.innerHTML = "";
     var all = [];
-    ["call", "put"].forEach(function (key) {
+    ["put", "call"].forEach(function (key) {
       var bk = d.books[key]; if (!bk) return;
       (bk.recent_trades || []).forEach(function (t) { all.push([key, t]); });
     });

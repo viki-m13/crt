@@ -11,8 +11,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>SPX Direction — defined-risk spreads with a +40pp edge over the option market</title>
-  <meta name="description" content="A validated directional read on SPX/SPY that disagrees with the option market by ~40 points and monetizes it as defined-risk spreads: a bull call spread (~82% win, +60% ROR) and a put credit spread (~89% win, 96% out-of-sample). One position at a time, GTC limit exits, held on the most liquid options listed." />
+  <title>SPX Direction — selling the overpriced downside with a weekly put-spread ladder</title>
+  <meta name="description" content="A weekly ladder of SPY put credit spreads that sells the systematically overpriced downside skew: ~88% win rate, ~27%/yr at roughly half the index's drawdown, validated 1993-2026 under an audited pricing model (carry, skew, mean-reverting IV, real slippage) with an untouched 2016-2026 out-of-sample period." />
   <meta name="keywords" content="SPX prediction, SPY options, risk premium, call spread, put credit spread, variance risk premium, defined risk, backtested" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -36,13 +36,13 @@
     <!-- HERO -->
     <section class="hero">
       <p class="eyebrow">SPX / SPY directional edge · updated daily</p>
-      <h1>The market prices SPX at a coin flip. History says it isn't.</h1>
-      <p class="lede">Over 1993–2026, SPY finishes higher far more often than the option
-        market's implied probability — a persistent <strong>+40-point</strong> disagreement
-        (the equity + variance risk premium). Holding the index turns that into ~10%/yr.
-        Deployed as a <strong>monthly ladder of defined-risk call spreads</strong>, the same
-        edge compounds at <strong>~28%/yr at half the index's drawdown</strong> — +70% ROR
-        per trade, a new rung every month.</p>
+      <h1>The market overpays for SPX crash protection. We sell it — carefully.</h1>
+      <p class="lede">Over 1993–2026, the option market persistently overprices SPY's
+        downside — the volatility skew charges a premium for puts that expire worthless ~90%
+        of the time. Sold as a <strong>weekly ladder of defined-risk put credit spreads</strong>
+        under a fully audited pricing model (carry, skew, mean-reverting IV, real slippage),
+        that edge compounds at <strong>~25–30%/yr at roughly half the index's
+        drawdown</strong>.</p>
       <p class="updated" id="asof">Loading latest signal…</p>
     </section>
 
@@ -50,12 +50,12 @@
     <section id="signal">
       <p class="eyebrow">Today's positions</p>
       <h2>Two books, opposite ends of the frontier</h2>
-      <p class="section-note">Both harvest the same directional edge on SPY, 252-session (~1-year)
-        horizon, run as a <strong>monthly ladder</strong>: a new spread opens on the first session
-        of each month (5% of equity per rung, 30% total at-risk cap, only in an uptrend), and each
-        rung closes on its own good-till-cancelled limit. The <strong>call spread</strong> is the
-        strategy — max return on risk; the <strong>put credit spread</strong> is the max-accuracy
-        alternative.</p>
+      <p class="section-note">Both harvest the SPY risk premium as ladders, entered only in an
+        uptrend. <strong>The strategy is the put credit spread</strong>: sell −3% / buy −6%,
+        ~3 months out, held to expiry, a new rung every week (3% of equity per rung, 60%
+        at-risk cap) — it gets <em>paid</em> by the volatility skew. The <strong>call
+        spread</strong> (+2%/+7%, 1 year, GTC at 80% of width, monthly) is the
+        max-ROR-per-trade alternative.</p>
       <div class="cards" id="cards"><p class="muted">Loading…</p></div>
     </section>
 
@@ -65,8 +65,8 @@
       <h2>Validated 1993–2026, out-of-sample from 2016</h2>
       <p class="section-note">Every eligible entry day, held under the exact live exit rule
         (thousands of samples). Win rate and ROR are the robust full-sample figures; CAGR and
-        drawdown come from the monthly ladder book (a new rung each month, exits applied as they
-        occur).</p>
+        drawdown come from the ladder books (weekly rungs for the put book, monthly for the
+        call book, exits applied as they occur).</p>
       <div class="tbl-wrap">
         <table id="record-tbl">
           <thead><tr>
@@ -83,12 +83,12 @@
     <section id="equity">
       <p class="eyebrow">Equity &amp; risk</p>
       <h2>The strategy equity curve, 1993–2026</h2>
-      <p class="section-note">The bold navy line is <strong>the strategy</strong> — the monthly
-        call-spread ladder, risking <strong>5% of equity per rung</strong> with a 30% total
-        at-risk cap. Lighter lines: the put ladder and SPY buy-and-hold. All start at 1.0; log
-        scale. Laddering keeps capital deployed (~6 rungs open at a time) instead of idle between
-        trades — that is what lifts compounding to <strong>~28%/yr at half the index's
-        drawdown</strong> (design era 24%, untouched 2016–2026 validation 34%).</p>
+      <p class="section-note">The bold navy line is <strong>the strategy</strong> — the weekly
+        put-spread ladder, risking <strong>3% of equity per rung</strong> with a 60% total
+        at-risk cap, priced under the audited v2 model. Lighter lines: the call ladder and SPY
+        buy-and-hold. All start at 1.0; log scale. Weekly laddering keeps ~10 rungs working at
+        once — <strong>~27%/yr at roughly half the index's drawdown</strong> (design era 25%,
+        untouched 2016–2026 validation 30%).</p>
       <div class="chart-card">
         <canvas id="eq-chart" height="380" aria-label="Equity curve"></canvas>
         <div class="legend" id="eq-legend"></div>
@@ -105,13 +105,14 @@
       <div class="two-col" style="margin-top:34px">
         <div>
           <h3>Distribution of per-trade returns</h3>
-          <p class="section-note">Where the ROR of each closed trade lands. The call book's wins
-            cluster near max width; the losers are the full-debit bear-market trades.</p>
+          <p class="section-note">Where the ROR of each closed trade lands. The put book banks its
+            credit ~90% of the time; the losers are bear-market breaches, capped by the long
+            leg.</p>
           <div id="hist"></div>
         </div>
         <div>
           <h3>Example trades</h3>
-          <p class="section-note">A representative winner and the worst loser from the call book —
+          <p class="section-note">A representative winner and the worst loser from the put book —
             the shape of both outcomes.</p>
           <div id="examples"></div>
         </div>
@@ -124,21 +125,24 @@
       <h2>A real disagreement, not a forecast trick</h2>
       <div class="two-col">
         <div>
-          <h3>The market underprices the drift</h3>
-          <p>The option market prices strikes as if SPX has no drift (risk-neutral). Physically it
-            drifts up and its crashes are rarer than implied vol suggests. So the actual chance SPY
-            is higher in a year (~80%) far exceeds the ~46% the market implies — a <strong>+40pp
-            edge</strong> measured point-in-time across three decades.</p>
+          <h3>The market overprices the downside</h3>
+          <p>The volatility skew makes SPY puts the most systematically overpriced options listed:
+            a −3% put carries a higher implied vol than any call, yet expires worthless ~90% of
+            the time in an uptrend. Selling a defined-risk put spread collects that premium with
+            the loss capped by the long leg — the seller is paid by the skew, twice over when
+            entries are gated to uptrends.</p>
           <h3>Options convert the edge to ROR</h3>
-          <p>Holding SPY earns the drift (~10%/yr). A <strong>defined-risk spread</strong> is
-            leveraged: you risk a small debit to capture a multiple of it. The same 80%-accurate
-            read becomes <strong>+60% mean ROR</strong> per trade on the call spread.</p>
+          <p>Holding SPY earns the drift (~10%/yr). A <strong>defined-risk credit spread</strong>
+            is leveraged: each rung risks a small, fixed amount to collect the skew premium —
+            <strong>+21% mean ROR</strong> per ~3-month trade at an 88% win rate, recycled
+            weekly.</p>
         </div>
         <div>
-          <h3>GTC limits bank wins early</h3>
-          <p>A good-till-cancelled limit closes the spread the moment it reaches its profit target —
-            before a late reversal can flip a winner into a loser. That lifts the win rate a few
-            points <em>and</em> recycles capital in ~3–5 months instead of a year.</p>
+          <h3>Hold to expiry — exits give back the edge</h3>
+          <p>We tested every exit: profit-capture buybacks, stop-losses, regime-break dumps.
+            Under honest pricing they all pay extra slippage to give back the tail of the
+            premium. The put book holds each rung the full ~3 months and lets the skew decay to
+            zero; only the call book keeps a GTC limit (its first-passage profit is real).</p>
           <h3>A regime filter, not a hedge</h3>
           <p>The losers cluster in bear markets, so the book only opens new trades when SPY is above
             its 200-day average and <strong>stands aside in downtrends</strong>. This free filter
@@ -146,24 +150,25 @@
             Buying puts to hedge does the opposite — it pays away the very premium the strategy
             harvests and erases the edge.</p>
           <h3>Honest about the frontier</h3>
-          <p>This is ~80–90% accurate, <strong>not 99%</strong>. Pushing accuracy higher (the put
-            spread, at 96% out-of-sample) trades away ROR. The ~1-in-5 to 1-in-10 losers cluster in
-            bear markets — which is why position <em>sizing</em>, not the signal, sets your
-            drawdown.</p>
+          <p>This is ~88–93% accurate, <strong>not 99%</strong>. The ~1-in-9 losers cluster in
+            bear markets, and concurrent rungs lose together in a crash — the 60% at-risk cap is
+            what bounds that. Position <em>sizing</em>, not the signal, sets your drawdown.</p>
         </div>
       </div>
       <div class="callout">
-        <p><strong>What "ROR" means and doesn't.</strong> The per-trade ROR is high because the
-          risk is a small defined debit. Turning that into portfolio CAGR is a sizing choice on the
-          ladder: 3% of equity per rung compounds ~21%/yr at a −28% max drawdown; 5% (the
-          reference) ~28%/yr at −30%; 8% ~41%/yr at −39%. The edge is real; the leverage is yours
-          to set.</p>
+        <p><strong>What "ROR" means and doesn't.</strong> Turning per-trade ROR into portfolio
+          CAGR is a sizing choice on the ladder: 2% of equity per rung compounds ~19%/yr at a
+          −23% max drawdown; 3% (the reference) ~27%/yr at −31%; 4.5% ~35%/yr at −41%. The edge
+          is real; the leverage is yours to set.</p>
       </div>
       <div class="callout green">
-        <p><strong>Why these fills are trustworthy.</strong> Backtest prices are modeled
-          Black-Scholes (IV = 60-day realized × 1.12). SPY and SPX carry the deepest, tightest
-          options market listed — penny-wide, hundreds of strikes, weeklies to LEAPS — so unlike
-          thin single-name spreads, these structures genuinely fill at prices close to the model.</p>
+        <p><strong>The pricing model is audited, not convenient.</strong> Backtest premiums
+          include the cost of carry (historical T-bill rates), the real volatility skew (OTM puts
+          priced rich, OTM calls cheap), mean-reverting long-dated IV (2008 prices at ~46%, not
+          90%), and 3% slippage each way. These corrections cut the naive backtest's numbers by
+          more than half — what remains survives every perturbation we threw at it (steeper skew,
+          cheaper IV, 5% slippage: 19–22%/yr). SPY/SPX options are the most liquid listed, so the
+          modeled fills are attainable.</p>
       </div>
     </section>
 
