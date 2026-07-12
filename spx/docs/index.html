@@ -63,6 +63,35 @@
       <div id="anatomy" class="anatomy"><p class="muted">Loading…</p></div>
     </section>
 
+    <!-- CADENCE -->
+    <section id="cadence">
+      <p class="eyebrow">Cadence</p>
+      <h2>How often it trades, and what triggers a trade</h2>
+      <p class="section-note">There is no prediction and no signal to wait for. A trade is
+        triggered by the <strong>calendar plus one filter</strong>: on the first session of each
+        week, if SPY closed at or above its 200-day average, sell the next rung. That's the
+        entire trigger. Exits need no decision at all — every rung simply expires ~13 weeks
+        after it was opened.</p>
+      <div class="stats">
+        <div class="stat"><div class="num">Weekly</div>
+          <div class="lab"><strong>Trigger</strong> — first session of the week, uptrend only. No news, no indicators, no discretion.</div></div>
+        <div class="stat"><div class="num">~38/yr</div>
+          <div class="lab"><strong>New trades per year</strong> — a rung opens in ~77% of weeks (1,252 trades over 32½ years).</div></div>
+        <div class="stat"><div class="num">~12</div>
+          <div class="lab"><strong>Spreads open at a time</strong> — one entered and (usually) one expiring most weeks.</div></div>
+        <div class="stat"><div class="num">0 exits</div>
+          <div class="lab"><strong>Decisions after entry</strong> — held to expiry; no stops, no adjustments, no monitoring intraday.</div></div>
+        <div class="stat"><div class="num">~23%</div>
+          <div class="lab"><strong>Of weeks: do nothing</strong> — SPY below its 200-day average. Longest stretch: ~15 months (2000–02 bear).</div></div>
+      </div>
+      <p style="margin-top:16px"><strong>A typical week takes about five minutes:</strong> check
+        whether SPY is above its 200-day average (the page header shows this). If yes, sell one
+        put spread — strikes 3% and 6% below spot, ~3 months out, sized to 3% of equity at risk —
+        and place no other orders. If no, place nothing and let the open rungs run off. Any rung
+        expiring this week settles by itself. When the regime turns off mid-bear, the book winds
+        itself down to cash within ~13 weeks without a single sell decision.</p>
+    </section>
+
     <!-- TRACK RECORD -->
     <section id="record">
       <p class="eyebrow">Track record</p>
