@@ -200,36 +200,89 @@
   var ts = function (s) { return Date.parse(s); };
   var fmtYear = function (t) { return new Date(t).getUTCFullYear(); };
 
+  // Timeframe presets for the equity chart. State survives re-renders
+  // (resize) and re-windows every series, re-normalized to 1× at the
+  // window start, with per-window return + CAGR shown below the chart.
+  var EQ_RANGES = [["All", null], ["20Y", 20], ["10Y", 10], ["5Y", 5], ["3Y", 3], ["1Y", 1]];
+  var eqRange = "All";
+
+  function windowSeries(points, startTs) {
+    // step-normalize: base = last value at/before the window start
+    var base = null, out = [];
+    for (var i = 0; i < points.length; i++) {
+      var t = ts(points[i][0]);
+      if (t <= startTs) { base = points[i][1]; continue; }
+      if (base === null) base = points[i][1];
+      out.push([points[i][0], points[i][1]]);
+    }
+    if (base === null || base <= 0) return null;
+    var norm = [[new Date(startTs).toISOString().slice(0, 10), 1.0]];
+    out.forEach(function (p) { norm.push([p[0], p[1] / base]); });
+    return norm;
+  }
+
   function renderEquity(d) {
     var cv = document.getElementById("eq-chart"); if (!cv) return;
     var s = setupCanvas(cv, 380), ctx = s.ctx;
-    var series = [
+    var full = [
       { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve, w: 1.2 },
       { name: "Call ladder (max ROR/trade)", color: COL.call, points: d.books.call.equity, w: 1.2 },
       { name: "Strategy — weekly put-spread ladder", color: COL.strat,
         points: (d.strategy_equity || {}).curve, w: 3 }
     ].filter(function (x) { return x.points && x.points.length; });
 
+    // range chips
+    var chips = document.getElementById("eq-range");
+    if (chips && !chips.childNodes.length) {
+      EQ_RANGES.forEach(function (r) {
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = r[0];
+        b.addEventListener("click", function () { eqRange = r[0]; renderEquity(d); });
+        chips.appendChild(b);
+      });
+    }
+    if (chips) {
+      Array.prototype.forEach.call(chips.children, function (b) {
+        b.className = b.textContent === eqRange ? "active" : "";
+      });
+    }
+
+    // window the series to the selected range
+    var endTs = Math.max.apply(null, full.map(function (se) { return ts(se.points[se.points.length - 1][0]); }));
+    var yrsBack = null;
+    EQ_RANGES.forEach(function (r) { if (r[0] === eqRange) yrsBack = r[1]; });
+    var startTs = yrsBack ? endTs - yrsBack * 365.25 * 86400e3 : null;
+    var series = full.map(function (se) {
+      var pts = startTs ? windowSeries(se.points, startTs) : se.points;
+      return pts && pts.length > 1 ? { name: se.name, color: se.color, w: se.w, points: pts } : null;
+    }).filter(Boolean);
+    if (!series.length) { series = full; }
+
     var xs = [], vals = [];
     series.forEach(function (se) { se.points.forEach(function (p) { xs.push(ts(p[0])); vals.push(p[1]); }); });
     var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
     var vmin = Math.min.apply(null, vals), vmax = Math.max.apply(null, vals);
-    var ly0 = Math.log(Math.max(vmin, 0.3)), ly1 = Math.log(vmax * 1.05);
-    var padL = 46, padR = 10, padT = 10, padB = 24;
+    var ly0 = Math.log(Math.max(vmin * 0.98, 0.05)), ly1 = Math.log(vmax * 1.04);
+    if (ly1 - ly0 < 0.05) { ly0 -= 0.05; ly1 += 0.05; }
+    var padL = 52, padR = 10, padT = 10, padB = 24;
     var PX = function (t) { return padL + (t - x0) / (x1 - x0) * (s.w - padL - padR); };
     var PY = function (v) { return padT + (ly1 - Math.log(v)) / (ly1 - ly0) * (s.h - padT - padB); };
 
-    // y gridlines (log: 1,2,5,10,20,50,100…)
+    // adaptive y gridlines: 5 log-spaced levels across the window
     ctx.font = "11px 'IBM Plex Mono',monospace"; ctx.textBaseline = "middle";
-    [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].forEach(function (g) {
-      if (g < Math.exp(ly0) || g > Math.exp(ly1)) return;
-      var y = PY(g);
+    var fmtG = function (v) {
+      return (Math.exp(ly1) < 3 ? v.toFixed(2) : v >= 10 ? Math.round(v) : v.toFixed(1)) + "×";
+    };
+    for (var g = 0; g <= 4; g++) {
+      var lv = ly0 + (ly1 - ly0) * g / 4, v = Math.exp(lv), y = PY(v);
       ctx.strokeStyle = "#eee"; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(s.w - padR, y); ctx.stroke();
-      ctx.fillStyle = "#999"; ctx.textAlign = "right"; ctx.fillText(g + "×", padL - 6, y);
-    });
-    // x year ticks
+      ctx.fillStyle = "#999"; ctx.textAlign = "right"; ctx.fillText(fmtG(v), padL - 6, y);
+    }
+    // x ticks: years for long windows, quarters for short
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for (var yr = fmtYear(x0) + 1; yr <= fmtYear(x1); yr += 5) {
+    var spanYrs = (x1 - x0) / (365.25 * 86400e3);
+    var step = spanYrs > 20 ? 5 : spanYrs > 8 ? 2 : 1;
+    for (var yr = fmtYear(x0) + 1; yr <= fmtYear(x1); yr += step) {
       var t = Date.UTC(yr, 0, 1); if (t < x0 || t > x1) continue;
       var x = PX(t);
       ctx.strokeStyle = "#f3f3f3"; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, s.h - padB); ctx.stroke();
@@ -241,7 +294,7 @@
       ctx.strokeStyle = se.color; ctx.lineWidth = se.w || 1.5;
       ctx.beginPath();
       se.points.forEach(function (p, i) {
-        var x = PX(ts(p[0])), y = PY(Math.max(p[1], 0.3));
+        var x = PX(ts(p[0])), y = PY(Math.max(p[1], Math.exp(ly0)));
         i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
       });
       ctx.stroke();
@@ -254,6 +307,33 @@
       var sp = el("span", null, '<span class="swatch" style="' + thick + 'background:' + se.color + '"></span>' + se.name);
       lg.appendChild(sp);
     });
+
+    // per-window return + CAGR table
+    var wsHost = document.getElementById("eq-window-stats");
+    if (wsHost) {
+      wsHost.innerHTML = "";
+      var t0 = startTs || Math.min.apply(null, full.map(function (se) { return ts(se.points[0][0]); }));
+      var yrs = (endTs - t0) / (365.25 * 86400e3);
+      var tbl = el("table", "win-stats");
+      tbl.innerHTML = "<thead><tr><th>" +
+        (eqRange === "All" ? "Full period" : "Last " + eqRange.toLowerCase()) +
+        " (" + new Date(t0).toISOString().slice(0, 10) + " → " +
+        new Date(endTs).toISOString().slice(0, 10) + ")</th>" +
+        "<th>Total return</th><th>CAGR</th></tr></thead>";
+      var tb = el("tbody");
+      series.slice().reverse().forEach(function (se) {
+        var last = se.points[se.points.length - 1][1];
+        var ret = last - 1;
+        var cagr = yrs > 0 ? Math.pow(Math.max(last, 1e-9), 1 / yrs) - 1 : 0;
+        var row = el("tr");
+        row.appendChild(el("td", null, '<span class="sw" style="background:' + se.color + '"></span>' + se.name));
+        row.appendChild(el("td", null, '<span class="' + signClass(ret) + '">' + pct(ret, 1) + "</span>"));
+        row.appendChild(el("td", null, '<span class="' + signClass(cagr) + '">' + pct(cagr, 1) + "/yr</span>"));
+        tb.appendChild(row);
+      });
+      tbl.appendChild(tb);
+      wsHost.appendChild(tbl);
+    }
 
     // equity stat strip — lead with the strategy (the call ladder)
     var host = document.getElementById("eq-stats"); host.innerHTML = "";

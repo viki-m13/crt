@@ -130,6 +130,19 @@ canvas{width:100%;display:block}
 .ex-card .row .k{color:var(--muted)}
 .scroll-tall{max-height:520px;overflow-y:auto}
 
+/* timeframe chips + window stats */
+.range-chips{display:flex;gap:6px;flex-wrap:wrap;padding:2px 4px 12px}
+.range-chips button{font-family:var(--mono);font-size:12px;padding:5px 12px;background:var(--bg);
+  border:1px solid var(--rule-light);color:var(--ink);cursor:pointer;border-radius:20px}
+.range-chips button:hover{border-color:var(--ink)}
+.range-chips button.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.win-stats{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums;margin-top:10px}
+.win-stats td,.win-stats th{padding:6px 10px;border-top:1px solid var(--rule-light);text-align:right;white-space:nowrap}
+.win-stats td:first-child,.win-stats th:first-child{text-align:left;font-family:var(--sans);font-size:13px}
+.win-stats thead th{border-top:none;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.win-stats .sw{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:7px}
+
 /* research charts */
 .chart-title{font-size:13px;color:var(--muted);padding:2px 6px 10px}
 .mini-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:14px 0 22px}
