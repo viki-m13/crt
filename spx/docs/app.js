@@ -6,15 +6,19 @@
   var el = function (t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   var signClass = function (x) { return x >= 0 ? "pos" : "neg"; };
 
-  fetch("/spx/data/signal.json?_=" + Date.now())
-    .then(function (r) { if (!r.ok) throw new Error("no data"); return r.json(); })
-    .then(render)
+  Promise.all([
+    fetch("/spx/data/signal.json?_=" + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error("no data"); return r.json(); }),
+    fetch("/spx/data/research.json?_=" + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+  ]).then(function (both) { render(both[0], both[1]); })
     .catch(function () {
       document.getElementById("asof").textContent = "Signal data not yet published.";
       document.getElementById("cards").innerHTML = '<p class="muted">The nightly cron has not published a signal yet.</p>';
     });
 
-  function render(d) {
+  function render(d, research) {
     var reg = d.regime || {};
     var regTxt = reg.uptrend
       ? '<span class="pos">uptrend — active</span>'
@@ -25,12 +29,21 @@
       " · regime: " + regTxt;
 
     renderCards(d);
+    renderAnatomy(d);
     renderRecord(d);
     renderEquity(d);
     renderDrawdown(d);
     renderHist(d);
     renderExamples(d);
     renderTrades(d);
+    if (research) {
+      renderStressCharts(research);
+      renderEdgeChart(research);
+      renderAuditChart(research);
+      renderIvChart(research);
+      renderSensChart(research);
+      renderEraTable(research);
+    }
     var lastW = window.innerWidth;
     window.addEventListener("resize", debounce(function () {
       // Mobile browsers fire resize on scroll (URL bar hide/show) with an
@@ -38,6 +51,7 @@
       if (window.innerWidth === lastW) return;
       lastW = window.innerWidth;
       renderEquity(d); renderDrawdown(d);
+      if (research) { renderStressCharts(research); renderIvChart(research); }
     }, 200));
   }
 
@@ -346,6 +360,209 @@
         c.appendChild(row);
       });
       host.appendChild(c);
+    });
+  }
+
+  // ---- research documentation charts ----
+
+  function renderAnatomy(d) {
+    var host = document.getElementById("anatomy"); if (!host) return;
+    var et = d.books.put && d.books.put.enter_today; if (!et) return;
+    host.innerHTML = "";
+    var perRisk = (et.width - et.est_credit) * 100;   // $ at risk per contract
+    var perCredit = et.est_credit * 100;
+    var sizing = d.equity_sizing || 0.03;
+    // one contract IS the rung; the account size that makes it the
+    // reference 3% rung follows from the per-contract risk
+    var acct = Math.round(perRisk / sizing / 1000) * 1000;
+    host.appendChild(el("div", null,
+      "<strong>Sell 1× the " + et.expiry_date + " " + et.sell_strike +
+      " / " + et.buy_strike + " put spread</strong> (SPY at " + usd(et.spot) + ")"));
+    var flow = el("div", "flow");
+    [["$" + acct.toLocaleString(), "account for which one contract = the " +
+      Math.round(sizing * 100) + "% reference rung"],
+     [usd(perCredit), "credit collected up front"],
+     [usd(perRisk), "maximum possible loss (defined)"],
+     [pct(et.max_ror), "return on risk if SPY holds above " + et.sell_strike],
+     ["~13 wks", "held to the " + et.expiry_date + " expiry"]]
+      .forEach(function (x) {
+        var st = el("div", "step");
+        st.appendChild(el("div", "v", x[0]));
+        st.appendChild(el("div", "k", x[1]));
+        flow.appendChild(st);
+      });
+    host.appendChild(flow);
+    host.appendChild(el("div", "outcomes",
+      "<strong>At expiry:</strong> SPY above " + et.sell_strike + " (−3%) → keep the full " +
+      usd(perCredit) + " <span class='pos'>(" + pct(et.max_ror) + " on risk)</span>. " +
+      "Between the strikes → partial loss. Below " + et.buy_strike + " (−6%) → lose " +
+      usd(perRisk) + ", never more <span class='neg'>(−100% of risk, ~" +
+      Math.round(sizing * 100) + "% of the account)</span>. " +
+      "Historically the full credit is kept ~88% of the time. Smaller accounts: trade the " +
+      "same structure less often, or accept a larger fraction at risk per rung."));
+  }
+
+  function miniLine(canvas, seriesArr, fmtY) {
+    var s = setupCanvas(canvas, 180), ctx = s.ctx;
+    var xs = [], ys = [];
+    seriesArr.forEach(function (se) {
+      se.points.forEach(function (p) { xs.push(ts(p[0])); ys.push(p[1]); });
+    });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var pad = (y1 - y0) * 0.06 || 0.1; y0 -= pad; y1 += pad;
+    var padL = 40, padR = 6, padT = 6, padB = 18;
+    var PX = function (t) { return padL + (t - x0) / (x1 - x0) * (s.w - padL - padR); };
+    var PY = function (v) { return padT + (y1 - v) / (y1 - y0) * (s.h - padT - padB); };
+    ctx.font = "10px 'IBM Plex Mono',monospace"; ctx.textBaseline = "middle"; ctx.textAlign = "right";
+    for (var g = 0; g <= 3; g++) {
+      var v = y0 + (y1 - y0) * g / 3, y = PY(v);
+      ctx.strokeStyle = "#eee"; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(s.w - padR, y); ctx.stroke();
+      ctx.fillStyle = "#999"; ctx.fillText(fmtY(v), padL - 5, y);
+    }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    [x0, (x0 + x1) / 2, x1].forEach(function (t) {
+      ctx.fillStyle = "#999"; ctx.fillText(fmtYear(t), PX(t), s.h - padB + 4);
+    });
+    ctx.lineJoin = "round";
+    seriesArr.forEach(function (se) {
+      ctx.strokeStyle = se.color; ctx.lineWidth = se.w || 1.5;
+      ctx.beginPath();
+      se.points.forEach(function (p, i) {
+        var x = PX(ts(p[0])), y = PY(p[1]);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function renderStressCharts(r) {
+    var host = document.getElementById("stress-charts"); if (!host || !r.stress) return;
+    host.innerHTML = "";
+    r.stress.forEach(function (sc) {
+      var card = el("div", "mini-chart");
+      card.appendChild(el("div", "mc-title", sc.name));
+      var cv = document.createElement("canvas");
+      cv.setAttribute("height", "180");
+      card.appendChild(cv);
+      var sub = el("div", "mc-sub",
+        '<span class="' + signClass(sc.strategy_final) + '">strategy ' + pct(sc.strategy_final, 1) + "</span>" +
+        ' · <span class="' + signClass(sc.spy_final) + '">SPY ' + pct(sc.spy_final, 1) + "</span>");
+      card.appendChild(sub);
+      host.appendChild(card);
+      miniLine(cv, [
+        { color: COL.spy, points: sc.spy, w: 1.2 },
+        { color: COL.strat, points: sc.strategy, w: 2.2 }
+      ], function (v) { return v.toFixed(1) + "×"; });
+    });
+  }
+
+  function renderEdgeChart(r) {
+    var host = document.getElementById("edge-chart"); if (!host || !r.edge_by_horizon) return;
+    host.innerHTML = "";
+    r.edge_by_horizon.forEach(function (e) {
+      var row = el("div", "pair-row");
+      row.appendChild(el("div", "lab", e.horizon + "d"));
+      var bars = el("div", "pair-bars");
+      var a = el("div", "pb actual"); a.style.width = (e.actual * 100) + "%";
+      a.innerHTML = "<span>actual " + Math.round(e.actual * 100) + "%</span>";
+      var b = el("div", "pb implied"); b.style.width = (e.implied * 100) + "%";
+      b.innerHTML = "<span>market " + Math.round(e.implied * 100) + "%</span>";
+      bars.appendChild(a); bars.appendChild(b);
+      row.appendChild(bars);
+      host.appendChild(row);
+    });
+  }
+
+  function hbars(hostId, rows, cls) {
+    var host = document.getElementById(hostId); if (!host || !rows) return;
+    host.innerHTML = "";
+    var max = Math.max.apply(null, rows.map(function (x) { return x.cagr; }));
+    rows.forEach(function (x, i) {
+      var row = el("div", "hbar-row");
+      row.appendChild(el("div", "lab", x.label));
+      var wrap = el("div");
+      var bar = el("div", "hbar " + (cls ? cls(x, i, rows) : ""));
+      bar.style.width = Math.round(x.cagr / max * 100) + "%";
+      wrap.appendChild(bar);
+      row.appendChild(wrap);
+      row.appendChild(el("div", "val", pct(x.cagr, 1)));
+      host.appendChild(row);
+    });
+  }
+
+  function renderAuditChart(r) {
+    hbars("audit-chart", r.audit, function (x, i, rows) {
+      return i === 0 ? "warn" : (i === rows.length - 1 ? "" : "dim");
+    });
+  }
+
+  function renderSensChart(r) {
+    hbars("sens-chart", r.sensitivity, function (x, i) { return i === 0 ? "" : "dim"; });
+  }
+
+  function renderIvChart(r) {
+    var cv = document.getElementById("iv-chart"); if (!cv || !r.iv_series) return;
+    var s = setupCanvas(cv, 230), ctx = s.ctx;
+    var v2 = r.iv_series.map(function (p) { return [p[0], p[1] * 100]; });
+    var v1 = r.iv_series.map(function (p) { return [p[0], p[2] * 100]; });
+    miniLineOn(s, ctx, [
+      { color: "#c9a0a0", points: v1, w: 1.1 },
+      { color: COL.strat, points: v2, w: 2 }
+    ], function (v) { return Math.round(v) + "%"; });
+    var lg = document.getElementById("iv-legend");
+    if (lg) lg.innerHTML =
+      '<span><span class="swatch" style="background:#0b1f5e"></span>v2 audited 1y ATM IV</span>' +
+      '<span><span class="swatch" style="background:#c9a0a0"></span>v1 naive (1.12 × realized)</span>';
+  }
+
+  function miniLineOn(s, ctx, seriesArr, fmtY) {
+    var xs = [], ys = [];
+    seriesArr.forEach(function (se) {
+      se.points.forEach(function (p) { xs.push(ts(p[0])); ys.push(p[1]); });
+    });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var y0 = 0, y1 = Math.max.apply(null, ys) * 1.06;
+    var padL = 40, padR = 6, padT = 6, padB = 18;
+    var PX = function (t) { return padL + (t - x0) / (x1 - x0) * (s.w - padL - padR); };
+    var PY = function (v) { return padT + (y1 - v) / (y1 - y0) * (s.h - padT - padB); };
+    ctx.font = "10px 'IBM Plex Mono',monospace"; ctx.textBaseline = "middle"; ctx.textAlign = "right";
+    for (var g = 0; g <= 4; g++) {
+      var v = y1 * g / 4, y = PY(v);
+      ctx.strokeStyle = "#eee"; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(s.w - padR, y); ctx.stroke();
+      ctx.fillStyle = "#999"; ctx.fillText(fmtY(v), padL - 5, y);
+    }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (var yr = fmtYear(x0) + 2; yr <= fmtYear(x1); yr += 5) {
+      var t = Date.UTC(yr, 0, 1);
+      ctx.fillStyle = "#999"; ctx.fillText(yr, PX(t), s.h - padB + 4);
+    }
+    ctx.lineJoin = "round";
+    seriesArr.forEach(function (se) {
+      ctx.strokeStyle = se.color; ctx.lineWidth = se.w || 1.5;
+      ctx.beginPath();
+      se.points.forEach(function (p, i) {
+        var x = PX(ts(p[0])), y = PY(p[1]);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function renderEraTable(r) {
+    var tb = document.querySelector("#era-tbl tbody"); if (!tb || !r.era_examples) return;
+    tb.innerHTML = "";
+    r.era_examples.forEach(function (t) {
+      var row = el("tr");
+      var credit = t.credit != null ? "$" + Math.round(t.credit * 100) : "—";
+      var risk = t.risk != null ? "$" + Math.round(t.risk * 100) : "—";
+      [t.era + (t.kind === "loss" ? ' <span class="neg">✕</span>' : ""),
+       t.entry_date, t.k1 + " / " + t.k2, credit, risk,
+       t.exit_date + " · " + t.reason.replace("gtc-", ""),
+       t.hold_days + "d",
+       '<span class="' + signClass(t.ror) + '">' + pct(t.ror) + "</span>"]
+        .forEach(function (v, i) { row.appendChild(el(i === 0 ? "th" : "td", null, v)); });
+      tb.appendChild(row);
     });
   }
 

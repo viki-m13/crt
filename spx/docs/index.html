@@ -57,6 +57,10 @@
         spread</strong> (+2%/+7%, 1 year, GTC at 80% of width, monthly) is the
         max-ROR-per-trade alternative.</p>
       <div class="cards" id="cards"><p class="muted">Loading…</p></div>
+      <h3 style="margin-top:30px">Anatomy of one rung, in dollars</h3>
+      <p class="section-note">What this week's rung looks like per contract, and the account size
+        for which one contract equals the reference sizing (3% of equity at risk per rung).</p>
+      <div id="anatomy" class="anatomy"><p class="muted">Loading…</p></div>
     </section>
 
     <!-- TRACK RECORD -->
@@ -197,6 +201,7 @@
       </figure>
 
       <h3>Synthetic stress: prolonged bears with no historical precedent</h3>
+      <div class="mini-charts" id="stress-charts"></div>
       <p class="section-note">Paths block-bootstrapped from real SPY returns (volatility
         clustering preserved), spliced onto real history so the regime and volatility state are
         realistic at stress onset, then re-drifted into shapes SPY has never produced.
@@ -257,6 +262,10 @@
         by <strong>+9pp at 5 days → +35pp at 1 year</strong>. The volatility skew concentrates
         that mispricing in downside strikes: OTM puts are the most systematically overpriced
         options listed. That premium — not a forecast — is what the strategy collects.</p>
+      <div class="chart-card">
+        <div class="chart-title">Actual frequency SPY finishes above spot vs option-implied probability (v2 surface, 1993–2026)</div>
+        <div id="edge-chart"></div>
+      </div>
 
       <h3>3 · Findings that shaped (and killed) earlier versions</h3>
       <figure class="tbl-wrap prose-tbl">
@@ -279,6 +288,15 @@
       <p>Early versions priced options with flat IV (60-day realized × 1.12) and zero interest.
         Auditing that model against real market features found four material errors. Each is
         toggleable in the code; the attribution on the then-champion call-spread ladder:</p>
+      <div class="chart-card">
+        <div class="chart-title">Backtest CAGR of the same strategy as each pricing correction is applied</div>
+        <div id="audit-chart"></div>
+      </div>
+      <div class="chart-card" style="margin-top:16px">
+        <div class="chart-title">The v2 implied-vol surface vs the naive v1 proxy — v1 was absurd in crashes and too cheap in calm</div>
+        <canvas id="iv-chart" height="230" aria-label="Implied volatility: v2 vs v1"></canvas>
+        <div class="legend" id="iv-legend"></div>
+      </div>
       <figure class="tbl-wrap prose-tbl num-last">
         <table>
           <thead><tr><th>Pricing correction</th><th>Why it matters</th><th>CAGR impact</th></tr></thead>
@@ -311,7 +329,19 @@
         The edge is not an artifact of any single modeling choice. Entry cadence is likewise
         insensitive (weekly/biweekly/monthly all work; weekly is smoothest).</p>
 
-      <h3>6 · Honest limits</h3>
+      <h3>6 · Example trades from every market era</h3>
+      <p class="section-note">A representative winner and the worst loser from each era of the
+        backtest — entry, strikes, premium collected, capital at risk, and outcome. Dollar
+        figures are per contract (×100 shares).</p>
+      <div class="tbl-wrap scroll-tall">
+        <table id="era-tbl">
+          <thead><tr><th>Era</th><th>Entered</th><th>Sold / bought strikes</th><th>Credit</th>
+            <th>At risk</th><th>Exited</th><th>Hold</th><th>ROR</th></tr></thead>
+          <tbody><tr><td class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <h3>7 · Honest limits</h3>
       <p>Premiums are modeled (audited v2 surface), not historical quotes — SPY/SPX options are
         the most liquid listed, so modeled fills are attainable, but they are still a model. The
         strategy is ~88% accurate, not 99%. Losers cluster: concurrent rungs fail together in a
