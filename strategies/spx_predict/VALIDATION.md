@@ -235,6 +235,35 @@ protect them. Measured on the call book (sequential, 15% sizing):
   into established downtrends. It is now part of the frozen rule. Adding a
   loose stop on top pushes max drawdown to −19%.
 
+## 9. Deployment: the monthly ladder (same rule, no idle capital)
+
+The sequential one-position-at-a-time book compounds at only ~15%/yr
+despite +70% per-trade ROR because capital is idle most of the time
+(one rung, ~15% at risk, nothing else deployed). The fix is a **monthly
+ladder**: open a new spread on the first session of each month (regime
+permitting), several open concurrently, each risking a fixed fraction
+*f* of current equity, with a cap on the total at-risk fraction. This
+changes **only the deployment schedule** — the trade rule, exits, and
+regime filter are untouched, so it adds no new signal parameters.
+
+Call-spread ladder (f per rung, cap = 6f), 1993–2026:
+
+| f/rung | cap | CAGR | maxDD | notes |
+|-------:|----:|-----:|------:|-------|
+| 3% | 18% | ~21% | −28% | same DD as sequential, +6pp CAGR |
+| **5%** | **30%** | **28.1%** | **−30%** | **reference sizing** |
+| 8% | 48% | ~41% | −39% | aggressive |
+
+Robustness: entry day-of-month barely matters (28.1–29.5% CAGR across
+sessions 1/5/10/15); design era (<2016) 24.2% CAGR / −30% DD; untouched
+validation (2016–2026) **34.1% CAGR / −26% DD**. The put-book ladder
+compounds at only ~8.5% at the same drawdown — so the call ladder IS the
+strategy, and the put book is kept as the max-accuracy alternative.
+
+Honest caveats: all concurrent rungs lose together in a crash (the cap
+bounds the hit to ~cap × full loss, and the equity curve is marked at
+exits, so intra-month marks can sit lower); ~87% accurate, not 99%.
+
 ## What we ship
 
 `signal.py` emits `spx/docs/data/signal.json` daily (via `fetch_spy.py`

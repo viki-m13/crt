@@ -40,8 +40,9 @@
       <p class="lede">Over 1993–2026, SPY finishes higher far more often than the option
         market's implied probability — a persistent <strong>+40-point</strong> disagreement
         (the equity + variance risk premium). Holding the index turns that into ~10%/yr.
-        Expressed as <strong>defined-risk spreads</strong>, the same edge pays
-        <strong>+60% ROR</strong> per trade.</p>
+        Deployed as a <strong>monthly ladder of defined-risk call spreads</strong>, the same
+        edge compounds at <strong>~28%/yr at half the index's drawdown</strong> — +70% ROR
+        per trade, a new rung every month.</p>
       <p class="updated" id="asof">Loading latest signal…</p>
     </section>
 
@@ -50,9 +51,11 @@
       <p class="eyebrow">Today's positions</p>
       <h2>Two books, opposite ends of the frontier</h2>
       <p class="section-note">Both harvest the same directional edge on SPY, 252-session (~1-year)
-        horizon, one position at a time, closed early on a good-till-cancelled limit and rolled.
-        The <strong>call spread</strong> maximizes return on risk; the <strong>put credit
-        spread</strong> maximizes accuracy.</p>
+        horizon, run as a <strong>monthly ladder</strong>: a new spread opens on the first session
+        of each month (5% of equity per rung, 30% total at-risk cap, only in an uptrend), and each
+        rung closes on its own good-till-cancelled limit. The <strong>call spread</strong> is the
+        strategy — max return on risk; the <strong>put credit spread</strong> is the max-accuracy
+        alternative.</p>
       <div class="cards" id="cards"><p class="muted">Loading…</p></div>
     </section>
 
@@ -62,7 +65,8 @@
       <h2>Validated 1993–2026, out-of-sample from 2016</h2>
       <p class="section-note">Every eligible entry day, held under the exact live exit rule
         (thousands of samples). Win rate and ROR are the robust full-sample figures; CAGR and
-        drawdown come from a real, non-overlapping one-position-at-a-time book.</p>
+        drawdown come from the monthly ladder book (a new rung each month, exits applied as they
+        occur).</p>
       <div class="tbl-wrap">
         <table id="record-tbl">
           <thead><tr>
@@ -79,11 +83,12 @@
     <section id="equity">
       <p class="eyebrow">Equity &amp; risk</p>
       <h2>The strategy equity curve, 1993–2026</h2>
-      <p class="section-note">The bold navy line is <strong>the strategy</strong> — one account
-        splitting capital 50/50 across both books at <strong>15% risk per trade</strong>. The
-        lighter lines are each book alone and SPY buy-and-hold for reference. All start at 1.0; log
-        scale. Holding cash between trades and running defined-risk options, the strategy compounds
-        <strong>faster than SPY at roughly half the drawdown</strong>.</p>
+      <p class="section-note">The bold navy line is <strong>the strategy</strong> — the monthly
+        call-spread ladder, risking <strong>5% of equity per rung</strong> with a 30% total
+        at-risk cap. Lighter lines: the put ladder and SPY buy-and-hold. All start at 1.0; log
+        scale. Laddering keeps capital deployed (~6 rungs open at a time) instead of idle between
+        trades — that is what lifts compounding to <strong>~28%/yr at half the index's
+        drawdown</strong> (design era 24%, untouched 2016–2026 validation 34%).</p>
       <div class="chart-card">
         <canvas id="eq-chart" height="380" aria-label="Equity curve"></canvas>
         <div class="legend" id="eq-legend"></div>
@@ -149,9 +154,10 @@
       </div>
       <div class="callout">
         <p><strong>What "ROR" means and doesn't.</strong> The per-trade ROR is high because the
-          risk is a small defined debit. Turning that into portfolio CAGR is a sizing choice: risk
-          10% of capital per trade for ~10% CAGR at a −27% max drawdown; risk 25% for ~24% CAGR at
-          −58%. The edge is real; the leverage is yours to set.</p>
+          risk is a small defined debit. Turning that into portfolio CAGR is a sizing choice on the
+          ladder: 3% of equity per rung compounds ~21%/yr at a −28% max drawdown; 5% (the
+          reference) ~28%/yr at −30%; 8% ~41%/yr at −39%. The edge is real; the leverage is yours
+          to set.</p>
       </div>
       <div class="callout green">
         <p><strong>Why these fills are trustworthy.</strong> Backtest prices are modeled
@@ -164,8 +170,8 @@
     <!-- RECENT TRADES -->
     <section id="trades">
       <p class="eyebrow">Recent closed trades</p>
-      <h2>The sequential book, most recent first</h2>
-      <p class="section-note">Every trade the one-position-at-a-time book took, newest first.
+      <h2>Every rung the ladder took, most recent first</h2>
+      <p class="section-note">All closed ladder rungs, newest first.
         "limit"/"profit" = closed early on the GTC target; "expiry" = held the full year.</p>
       <div class="tbl-wrap scroll-tall">
         <table id="trades-tbl">

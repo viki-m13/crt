@@ -3,18 +3,25 @@
 Two frozen books harvest the same +40pp directional edge (physical
 P(SPY up) ~80% vs option-implied ~46%) at opposite ends of the
 ROR/accuracy frontier (see VALIDATION.md §7). Both trade SPY (a liquid,
-cash-settled SPX proxy), 252-session (~1y) horizon, one position at a
-time, GTC limit exits, re-enter next session on close.
+cash-settled SPX proxy), 252-session (~1y) horizon, GTC limit exits.
 
   CALL  — bull CALL SPREAD, long ATM / short +5%. GTC sell the spread
-          when it marks 80% of width. ~82% win, +60% ROR/trade. (max ROR)
+          when it marks 80% of width. ~87% win, +70% ROR/trade. (max ROR)
   PUT   — short PUT SPREAD, -5% / -10%. GTC buy-back after capturing 50%
-          of the credit. ~89% win (96% validation), +14% ROR. (max accuracy)
+          of the credit. ~94% win (95% validation), +18% ROR. (max accuracy)
+
+Deployment is a monthly LADDER (VALIDATION.md §9): open a new spread on
+the first session of each month (regime permitting), several open at
+once, each risking LADDER_F of current equity, total at-risk capped at
+LADDER_CAP. Same frozen trade rule as one-at-a-time — only the schedule
+changes — but capital is no longer idle: the call ladder compounds at
+~28% CAGR / -30% maxDD (design 24%, validation 34%) vs ~15% sequential.
 
 Pricing: Black-Scholes, IV = 60d realized * 1.12, r=0. Entry padded and
 exit cut by 2% slippage. SPY/SPX options are the most liquid listed, so
-modeled fills are realistic — but this is ~80-90% accurate, NOT 99%: the
-ROR comes with real losing trades in bear markets.
+modeled fills are realistic — but this is ~87-94% accurate, NOT 99%: the
+ROR comes with real losing trades in bear markets, and all concurrent
+rungs lose together in a crash (the cap bounds that).
 
 Emits spx/docs/data/signal.json.
 """
@@ -38,6 +45,8 @@ SLIP = 0.02
 REGIME_SMA = 200      # only enter when SPY >= its 200-day average (free
                       # downside protection: sidesteps bear-market clusters,
                       # lifts win 81->87%, ROR +60->+70%, cuts DD -39->-28%)
+LADDER_F = 0.05       # equity fraction risked per spread (ladder rung)
+LADDER_CAP = 0.30     # max total equity fraction at risk across open rungs
 SPLIT = np.datetime64("2016-01-01")
 
 # Frozen structure specs.
@@ -94,80 +103,131 @@ def _val_at(px_j, K1, K2, Tr, sj, kind):
     return bs_put(px_j, K1, Tr, sj) - bs_put(px_j, K2, Tr, sj)
 
 
-def simulate(dates, px, rv, sma, spec):
-    """Sequential one-position-at-a-time for one structure."""
+def _trade_path(dates, px, rv, sma, spec, i):
+    """Run one spread entered at session i under the frozen rule.
+    Returns ("closed", trade_dict) | ("open", open_dict) | None."""
     n = len(px); T0 = HORIZON / 252.0
     kind = spec["kind"]; is_credit = kind == "put_spread"
-    trades = []; open_pos = None; i = 60
     split_i = int(np.searchsorted(dates, SPLIT))
-    while i < n:
-        S = px[i]; s = rv[i] * IV_MULT
-        if not np.isfinite(s) or s <= 0 or not _regime_ok(S, sma[i]):
-            i += 1; continue
-        K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"])
-        width = abs(K2 - K1)
-        entry = _val_at(S, K1, K2, T0, s, kind)
-        if is_credit:
-            credit = entry * (1 - SLIP); risk = width - credit
-            if credit <= 0 or risk <= 0:
-                i += 1; continue
-            cost_basis = credit; denom = risk
-            buyback = (1 - spec["exit_level"]) * credit  # capture X% of credit
-        else:
-            debit = entry * (1 + SLIP)
-            if debit <= 0:
-                i += 1; continue
-            cost_basis = debit; denom = debit
-            tgt = spec["exit_level"] * width  # sell when mark >= X% of width
+    S = px[i]; s = rv[i] * IV_MULT
+    if not np.isfinite(s) or s <= 0 or not _regime_ok(S, sma[i]):
+        return None
+    K1 = S * (1 + spec["k1_off"]); K2 = S * (1 + spec["k2_off"])
+    width = abs(K2 - K1)
+    entry = _val_at(S, K1, K2, T0, s, kind)
+    if is_credit:
+        credit = entry * (1 - SLIP); risk = width - credit
+        if credit <= 0 or risk <= 0:
+            return None
+        cost_basis = credit; denom = risk
+        buyback = (1 - spec["exit_level"]) * credit  # capture X% of credit
+    else:
+        debit = entry * (1 + SLIP)
+        if debit <= 0:
+            return None
+        cost_basis = debit; denom = debit
+        tgt = spec["exit_level"] * width  # sell when mark >= X% of width
 
-        jend = min(i + HORIZON, n - 1)
-        pnl = None; exit_j = None; reason = None
-        for j in range(i + 1, jend + 1):
-            Tr = (i + HORIZON - j) / 252.0
-            sj = rv[j] * IV_MULT if np.isfinite(rv[j]) else s
-            v = _val_at(px[j], K1, K2, Tr, sj, kind)
-            if is_credit:
-                vb = v * (1 + SLIP)
-                if vb <= buyback:
-                    pnl = credit - vb; exit_j = j; reason = "gtc-profit"; break
-            else:
-                if v >= tgt:
-                    pnl = v * (1 - SLIP) - debit; exit_j = j; reason = "gtc-limit"; break
-        if pnl is None and jend < n - 1:
-            if is_credit:
-                loss = min(max(K1 - px[jend], 0.0), width); pnl = credit - loss
-            else:
-                pnl = min(max(px[jend] - K1, 0.0), width) - debit
-            exit_j = jend; reason = "expiry"
-        if pnl is None:
-            # still open at panel end
-            Tr = max((i + HORIZON - (n - 1)) / 252.0, 1e-6)
-            sj = rv[n - 1] * IV_MULT if np.isfinite(rv[n - 1]) else s
-            mark = _val_at(px[n - 1], K1, K2, Tr, sj, kind)
-            cur_pnl = (credit - mark * (1 + SLIP)) if is_credit else (mark * (1 - SLIP) - debit)
-            exp_date = dates[i] + np.timedelta64(int(round(HORIZON * 365 / 252)), "D")
-            open_pos = {
-                "entry_date": str(dates[i]), "spot_at_entry": round(float(S), 2),
-                "k1": round(float(K1), 2), "k2": round(float(K2), 2),
-                "width": round(float(width), 2),
-                "entry_credit" if is_credit else "entry_debit": round(float(cost_basis), 2),
-                "current_spot": round(float(px[n - 1]), 2),
-                "current_mark": round(float(mark), 2),
-                "current_ror": round(float(cur_pnl / denom), 4),
-                "max_ror": round(float((credit / risk) if is_credit else (width - debit) / debit), 4),
-                "expiry_date": str(exp_date),
-                "days_held": int(n - 1 - i), "days_to_expiry": int(HORIZON - (n - 1 - i)),
-            }
-            break
-        trades.append({
-            "entry_date": str(dates[i]), "exit_date": str(dates[exit_j]),
-            "spot_at_entry": round(float(S), 2), "k1": round(float(K1), 2),
-            "k2": round(float(K2), 2), "ror": round(float(pnl / denom), 4),
-            "win": bool(pnl > 0), "hold_days": int(exit_j - i), "reason": reason,
-            "is_val": bool(i >= split_i),
+    jend = min(i + HORIZON, n - 1)
+    pnl = None; exit_j = None; reason = None
+    for j in range(i + 1, jend + 1):
+        Tr = (i + HORIZON - j) / 252.0
+        sj = rv[j] * IV_MULT if np.isfinite(rv[j]) else s
+        v = _val_at(px[j], K1, K2, Tr, sj, kind)
+        if is_credit:
+            vb = v * (1 + SLIP)
+            if vb <= buyback:
+                pnl = credit - vb; exit_j = j; reason = "gtc-profit"; break
+        else:
+            if v >= tgt:
+                pnl = v * (1 - SLIP) - debit; exit_j = j; reason = "gtc-limit"; break
+    if pnl is None and jend < n - 1:
+        if is_credit:
+            loss = min(max(K1 - px[jend], 0.0), width); pnl = credit - loss
+        else:
+            pnl = min(max(px[jend] - K1, 0.0), width) - debit
+        exit_j = jend; reason = "expiry"
+    if pnl is None:
+        # still open at panel end
+        Tr = max((i + HORIZON - (n - 1)) / 252.0, 1e-6)
+        sj = rv[n - 1] * IV_MULT if np.isfinite(rv[n - 1]) else s
+        mark = _val_at(px[n - 1], K1, K2, Tr, sj, kind)
+        cur_pnl = (credit - mark * (1 + SLIP)) if is_credit else (mark * (1 - SLIP) - debit)
+        exp_date = dates[i] + np.timedelta64(int(round(HORIZON * 365 / 252)), "D")
+        return ("open", {
+            "entry_date": str(dates[i]), "spot_at_entry": round(float(S), 2),
+            "k1": round(float(K1), 2), "k2": round(float(K2), 2),
+            "width": round(float(width), 2),
+            "entry_credit" if is_credit else "entry_debit": round(float(cost_basis), 2),
+            "current_spot": round(float(px[n - 1]), 2),
+            "current_mark": round(float(mark), 2),
+            "current_ror": round(float(cur_pnl / denom), 4),
+            "max_ror": round(float((credit / risk) if is_credit else (width - debit) / debit), 4),
+            "expiry_date": str(exp_date),
+            "days_held": int(n - 1 - i), "days_to_expiry": int(HORIZON - (n - 1 - i)),
         })
-        i = exit_j + 1
-    return trades, open_pos
+    return ("closed", {
+        "entry_date": str(dates[i]), "exit_date": str(dates[exit_j]),
+        "spot_at_entry": round(float(S), 2), "k1": round(float(K1), 2),
+        "k2": round(float(K2), 2), "ror": round(float(pnl / denom), 4),
+        "win": bool(pnl > 0), "hold_days": int(exit_j - i), "reason": reason,
+        "is_val": bool(i >= split_i), "_exit_i": exit_j,
+    })
+
+
+def month_first_sessions(dates, start=200):
+    """Index of the first trading session of each calendar month."""
+    out = []; last = None
+    for i in range(start, len(dates)):
+        m = str(dates[i])[:7]
+        if m != last:
+            out.append(i); last = m
+    return out
+
+
+def simulate_ladder(dates, px, rv, sma, spec, f=LADDER_F, cap=LADDER_CAP):
+    """Monthly ladder: open a new spread on the first session of each
+    month (regime permitting). Each rung risks f of CURRENT equity;
+    total at-risk fraction capped at cap (a rung that would exceed the
+    cap is sized down to fit, or skipped if no room). PnL applied to
+    equity at exit — same marking as the previous sequential curve.
+    Returns (closed_trades, open_positions, equity_curve)."""
+    n = len(px)
+    entries = month_first_sessions(dates)
+    trades = []; opens = []
+    for i in entries:
+        r = _trade_path(dates, px, rv, sma, spec, i)
+        if r is None:
+            continue
+        (trades if r[0] == "closed" else opens).append((i, r[1]))
+    # walk time, applying exits to equity, sizing each rung under the cap
+    pending = {}   # exit_i -> list of closed-trade dicts (with f_used set)
+    eq = 1.0; at_risk = 0.0
+    curve = []; closed = []; open_out = []
+    ev = {i: ("closed", t) for i, t in trades}
+    ev.update({i: ("open", t) for i, t in opens})
+    start_i = entries[0] if entries else n
+    curve.append([str(dates[start_i]), 1.0])
+    for i in range(start_i, n):
+        if i in pending:
+            for t in pending.pop(i):
+                eq *= (1 + t["f_used"] * t["ror"])
+                at_risk -= t["f_used"]
+                closed.append(t)
+            curve.append([str(dates[i]), round(eq, 4)])
+        if i in ev:
+            r_kind, t = ev[i]
+            fu = min(f, max(cap - at_risk, 0.0))
+            if fu > 1e-9:
+                t = dict(t); t["f_used"] = round(fu, 4)
+                at_risk += fu
+                if r_kind == "closed":
+                    pending.setdefault(t["_exit_i"], []).append(t)
+                else:
+                    open_out.append(t)
+    for t in closed:
+        t.pop("_exit_i", None)
+    return closed, open_out, curve
 
 
 def backtest_full(dates, px, rv, sma, spec):
@@ -213,23 +273,28 @@ def backtest_full(dates, px, rv, sma, spec):
     return (np.array(ror), np.array(win), np.array(hold), np.array(val))
 
 
-def stats(dates, px, rv, sma, spec, seq_trades):
+def curve_metrics(curve):
+    """CAGR and max drawdown of an equity curve [[date, value], ...]."""
+    if not curve or len(curve) < 2:
+        return {"cagr": None, "maxdd": None}
+    v = np.array([c[1] for c in curve])
+    dd = float((v / np.maximum.accumulate(v) - 1).min())
+    yrs = (np.datetime64(curve[-1][0]) - np.datetime64(curve[0][0])
+           ).astype("timedelta64[D]").astype(int) / 365.25
+    return {"cagr": round(float(v[-1] ** (1 / yrs) - 1), 4), "maxdd": round(dd, 4)}
+
+
+def stats(dates, px, rv, sma, spec, ladder_trades):
     r, w, hold, val = backtest_full(dates, px, rv, sma, spec)
 
-    def sizing(frac):
-        """Realistic compounding on the non-overlapping sequential book."""
-        if not seq_trades:
-            return {"frac": frac, "cagr": None, "maxdd": None}
-        cap = 1.0; eq = [1.0]
-        for t in seq_trades:
-            cap *= (1 + frac * t["ror"]); eq.append(cap)
-        eq = np.array(eq)
-        dd = float((eq / np.maximum.accumulate(eq) - 1).min())
-        yrs = (np.datetime64(seq_trades[-1]["exit_date"]) - np.datetime64(seq_trades[0]["entry_date"])
-               ).astype("timedelta64[D]").astype(int) / 365.25
-        return {"frac": frac, "cagr": round(cap ** (1 / yrs) - 1, 4), "maxdd": round(dd, 4)}
+    def sizing(f):
+        """Re-run the monthly ladder at rung size f (cap scales with f)."""
+        _, _, curve = simulate_ladder(dates, px, rv, sma, spec,
+                                      f=f, cap=LADDER_CAP * f / LADDER_F)
+        m = curve_metrics(curve)
+        return {"frac": f, "cagr": m["cagr"], "maxdd": m["maxdd"]}
     return {
-        "n": int(len(r)), "n_sequential": len(seq_trades),
+        "n": int(len(r)), "n_ladder": len(ladder_trades),
         "win_rate": round(float(w.mean()), 4),
         "win_rate_val": round(float(w[val].mean()), 4) if val.sum() else None,
         "mean_ror": round(float(r.mean()), 4), "median_ror": round(float(np.median(r)), 4),
@@ -237,23 +302,8 @@ def stats(dates, px, rv, sma, spec, seq_trades):
         "avg_hold_days": round(float(hold.mean()), 1),
         "worst_ror": round(float(r.min()), 4),
         "annualized_ror": round(float(r.mean() * 252 / hold.mean()), 4),
-        "sizing": [sizing(f) for f in (0.10, 0.15, 0.25)],
+        "sizing": [sizing(f) for f in (0.03, 0.05, 0.08)],
     }
-
-
-REF_FRAC = 0.15   # reference sizing for the plotted equity curve
-
-
-def equity_curve(seq_trades, frac=REF_FRAC):
-    """Stepwise account equity at each trade exit (start 1.0)."""
-    if not seq_trades:
-        return []
-    cap = 1.0
-    pts = [[seq_trades[0]["entry_date"], 1.0]]
-    for t in seq_trades:
-        cap *= (1 + frac * t["ror"])
-        pts.append([t["exit_date"], round(cap, 4)])
-    return pts
 
 
 def ror_histogram(seq_trades, edges=(-1.01, -0.5, 0.0, 0.5, 1.0, 1.4)):
@@ -277,33 +327,6 @@ def examples(seq_trades):
     return out
 
 
-def combined_strategy(eq_a, eq_b):
-    """The strategy as one account: 50% capital to each book, no rebalance.
-    Blend the two normalized equity curves on the union of their dates
-    (forward-filled). Diversification across the two books lowers the
-    drawdown below either alone."""
-    if not eq_a or not eq_b:
-        return None
-    all_dates = sorted(set([p[0] for p in eq_a] + [p[0] for p in eq_b]))
-
-    def step(eq):
-        ds = [p[0] for p in eq]; vs = [p[1] for p in eq]
-        out = {}; j = 0; cur = 1.0
-        for d in all_dates:
-            while j < len(ds) and ds[j] <= d:
-                cur = vs[j]; j += 1
-            out[d] = cur
-        return out
-    sa, sb = step(eq_a), step(eq_b)
-    curve = [[d, round(0.5 * sa[d] + 0.5 * sb[d], 4)] for d in all_dates]
-    v = np.array([c[1] for c in curve])
-    dd = float((v / np.maximum.accumulate(v) - 1).min())
-    yrs = (np.datetime64(all_dates[-1]) - np.datetime64(all_dates[0])
-           ).astype("timedelta64[D]").astype(int) / 365.25
-    return {"curve": curve, "cagr": round(float(v[-1] ** (1 / yrs) - 1), 4),
-            "maxdd": round(dd, 4)}
-
-
 def spy_benchmark(dates, px, start_date):
     """SPY buy-and-hold, normalized to 1.0 at start_date, ~monthly points."""
     i0 = int(np.searchsorted(dates, np.datetime64(start_date)))
@@ -320,20 +343,16 @@ def spy_benchmark(dates, px, start_date):
     return {"curve": pts, "cagr": round(float(cagr), 4), "maxdd": round(dd, 4)}
 
 
-def action(open_pos, spec, regime_ok):
-    if open_pos is None:
-        return "ENTER" if regime_ok else "STAND ASIDE — SPY below its 200-day average (downtrend)"
-    is_credit = spec["kind"] == "put_spread"
-    if is_credit:
-        # GTC target = capture exit_level of the credit
-        tgt_ror = spec["exit_level"] * open_pos["max_ror"]
-    else:
-        # GTC target = spread marks exit_level of width; ROR at that mark
-        debit = open_pos["entry_debit"]
-        tgt_ror = (spec["exit_level"] * open_pos["width"] - debit) / max(debit, 1e-9)
-    if open_pos["current_ror"] >= tgt_ror:
-        return "EXIT — GTC target reached, close and roll a fresh 1-year spread"
-    return "HOLD — GTC limit working"
+def action(open_positions, regime_ok, is_month_first):
+    """Ladder cadence: a new rung opens on the first session of each
+    month (regime permitting); exits are automatic via the GTC limits."""
+    if not regime_ok:
+        return "STAND ASIDE — SPY below its 200-day average (no new rungs)"
+    if is_month_first:
+        return f"ENTER — open this month's rung ({int(LADDER_F*100)}% of equity at risk)"
+    n_open = len(open_positions)
+    return (f"HOLD — {n_open} rung{'s' if n_open != 1 else ''} open, GTC limits working; "
+            "next rung on the first session of next month")
 
 
 def enter_today(dates, px, rv, sma, spec):
@@ -361,29 +380,35 @@ def enter_today(dates, px, rv, sma, spec):
 def main() -> int:
     dates, px, rv, sma = load()
     regime_ok = _regime_ok(px[-1], sma[-1])
+    is_month_first = str(dates[-1])[:7] != str(dates[-2])[:7]
     books = {}
     earliest = None
     for key, spec in STRUCTURES.items():
-        trades, open_pos = simulate(dates, px, rv, sma, spec)
+        trades, opens, curve = simulate_ladder(dates, px, rv, sma, spec)
         if trades:
             e = trades[0]["entry_date"]
             earliest = e if earliest is None or e < earliest else earliest
         books[key] = {
             "label": spec["label"], "spec": spec,
-            "today_action": action(open_pos, spec, regime_ok),
-            "open_position": open_pos,
+            "today_action": action(opens, regime_ok, is_month_first),
+            "open_positions": opens,
             "enter_today": enter_today(dates, px, rv, sma, spec),
             "track_record": stats(dates, px, rv, sma, spec, trades),
-            "equity": equity_curve(trades),
+            "equity": curve,
+            "equity_metrics": curve_metrics(curve),
             "ror_histogram": ror_histogram(trades),
             "examples": examples(trades),
             "recent_trades": list(reversed(trades)),
         }
+    # THE strategy = the call-spread ladder (the put book drags CAGR at the
+    # same drawdown — kept on the page as the max-accuracy alternative).
+    strat_curve = books["call"]["equity"]
     out = {
         "as_of": str(dates[-1]), "spot": round(float(px[-1]), 2),
         "horizon_sessions": HORIZON,
-        "equity_sizing": REF_FRAC,
-        "strategy_equity": combined_strategy(books["call"]["equity"], books["put"]["equity"]),
+        "equity_sizing": LADDER_F, "ladder_cap": LADDER_CAP,
+        "cadence": "one new rung on the first session of each month",
+        "strategy_equity": dict(curve_metrics(strat_curve), curve=strat_curve),
         "spy_benchmark": spy_benchmark(dates, px, earliest or str(dates[60])),
         "regime": {"sma200": round(float(sma[-1]), 2) if np.isfinite(sma[-1]) else None,
                    "uptrend": bool(regime_ok),
@@ -391,24 +416,24 @@ def main() -> int:
         "books": books,
         "note": ("Modeled Black-Scholes fills (IV = 60d realized x 1.12); SPY/SPX "
                  "options are the most liquid listed, so fills are realistic. "
-                 "~80-90% accurate, NOT 99% — the ROR comes with real bear-market "
-                 "losers. Per-trade ROR becomes portfolio CAGR only via position "
-                 "sizing, which sets the drawdown."),
+                 "~87-94% accurate, NOT 99% — the ROR comes with real bear-market "
+                 "losers, and concurrent rungs lose together in a crash (the "
+                 f"{int(LADDER_CAP*100)}% at-risk cap bounds that)."),
     }
     os.makedirs(WEB_DATA, exist_ok=True)
     with open(os.path.join(WEB_DATA, "signal.json"), "w") as fh:
         json.dump(out, fh, indent=2)
-    print(f"as_of={out['as_of']} spot={out['spot']}")
+    print(f"as_of={out['as_of']} spot={out['spot']} month_first={is_month_first}")
     for key, bk in books.items():
-        tr = bk["track_record"]
-        print(f"  [{key}] {bk['today_action'][:22]:22s} n={tr['n']} "
+        tr = bk["track_record"]; em = bk["equity_metrics"]
+        print(f"  [{key}] {bk['today_action'][:30]:30s} n={tr['n']} "
               f"win={tr['win_rate']*100:.0f}%(val {(tr['win_rate_val'] or 0)*100:.0f}%) "
-              f"ROR={tr['mean_ror']*100:+.0f}% ann={tr['annualized_ror']*100:+.0f}% "
-              f"hold={tr['avg_hold_days']:.0f}d")
-        if bk["open_position"]:
-            op = bk["open_position"]
-            print(f"        OPEN {op['k1']}/{op['k2']} exp {op['expiry_date']} "
-                  f"ROR {op['current_ror']*100:+.0f}% ({op['days_to_expiry']}d left)")
+              f"ROR={tr['mean_ror']*100:+.0f}% | ladder CAGR={em['cagr']*100:.1f}% "
+              f"DD={em['maxdd']*100:.0f}% open_rungs={len(bk['open_positions'])}")
+        for op in bk["open_positions"]:
+            print(f"        OPEN {op['entry_date']} {op['k1']}/{op['k2']} "
+                  f"exp {op['expiry_date']} ROR {op['current_ror']*100:+.0f}% "
+                  f"({op['days_to_expiry']}d left)")
     return 0
 
 

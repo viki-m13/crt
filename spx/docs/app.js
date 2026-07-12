@@ -100,23 +100,26 @@
       });
       body.appendChild(kv);
 
-      // open position
-      if (op) {
+      // open rungs (ladder)
+      var ops = bk.open_positions || [];
+      if (ops.length) {
         var o = el("div", "openpos");
-        o.appendChild(el("div", "muted", "Open position"));
-        var okv = el("dl", "kv");
-        var entryPx = (key === "call")
-          ? "debit " + usd(op.entry_debit) : "credit " + usd(op.entry_credit);
-        [
-          ["Entered", op.entry_date + " @ " + usd(op.spot_at_entry)],
-          ["Strikes", op.k1 + " / " + op.k2 + " (" + entryPx + ")"],
-          ["Current ROR", '<span class="' + signClass(op.current_ror) + '">' + pct(op.current_ror) + "</span>"],
-          ["Expiry", op.expiry_date + " (" + op.days_to_expiry + "d left)"]
-        ].forEach(function (r) {
-          okv.appendChild(el("dt", null, r[0]));
-          okv.appendChild(el("dd", null, r[1]));
+        o.appendChild(el("div", "muted", "Open rungs (" + ops.length + ") — one opened each month"));
+        var tbl = el("table", "rungs");
+        tbl.innerHTML = "<thead><tr><th>Entered</th><th>Strikes</th><th>ROR</th><th>Expiry</th></tr></thead>";
+        var tb = el("tbody");
+        ops.slice().reverse().forEach(function (op) {
+          var row = el("tr");
+          [op.entry_date,
+           op.k1 + " / " + op.k2,
+           '<span class="' + signClass(op.current_ror) + '">' + pct(op.current_ror) + "</span>",
+           op.days_to_expiry + "d"].forEach(function (v, i) {
+            row.appendChild(el("td", null, v));
+          });
+          tb.appendChild(row);
         });
-        o.appendChild(okv);
+        tbl.appendChild(tb);
+        o.appendChild(tbl);
         body.appendChild(o);
       }
 
@@ -148,13 +151,13 @@
     var wrap = el("div", "tbl-wrap");
     wrap.style.marginTop = "18px";
     var t = el("table");
-    t.innerHTML = "<caption>Per-trade ROR → portfolio CAGR is a sizing choice (call-spread book). " +
-      "Aggressive sizing lifts return and drawdown together.</caption>" +
-      "<thead><tr><th>Risk per trade</th><th>CAGR</th><th>Max drawdown</th></tr></thead>";
+    t.innerHTML = "<caption>Rung size → portfolio CAGR is a sizing choice (call-spread ladder; " +
+      "total at-risk cap scales with rung size). Aggressive sizing lifts return and drawdown together.</caption>" +
+      "<thead><tr><th>Risk per rung</th><th>CAGR</th><th>Max drawdown</th></tr></thead>";
     var tb2 = el("tbody");
     call.forEach(function (s) {
       var row = el("tr");
-      row.appendChild(el("th", null, Math.round(s.frac * 100) + "% of capital"));
+      row.appendChild(el("th", null, Math.round(s.frac * 100) + "% of equity"));
       row.appendChild(el("td", null, s.cagr == null ? "—" : pct(s.cagr, 1)));
       row.appendChild(el("td", null, s.maxdd == null ? "—" : pct(s.maxdd, 0)));
       tb2.appendChild(row);
@@ -186,9 +189,8 @@
     var s = setupCanvas(cv, 380), ctx = s.ctx;
     var series = [
       { name: "SPY buy & hold", color: COL.spy, points: d.spy_benchmark.curve, w: 1.2 },
-      { name: "Call spread book", color: COL.call, points: d.books.call.equity, w: 1.2 },
-      { name: "Put spread book", color: COL.put, points: d.books.put.equity, w: 1.2 },
-      { name: "Strategy — 50/50 both books", color: COL.strat,
+      { name: "Put ladder (max accuracy)", color: COL.put, points: d.books.put.equity, w: 1.2 },
+      { name: "Strategy — monthly call-spread ladder", color: COL.strat,
         points: (d.strategy_equity || {}).curve, w: 3 }
     ].filter(function (x) { return x.points && x.points.length; });
 
@@ -237,20 +239,23 @@
       lg.appendChild(sp);
     });
 
-    // equity stat strip — lead with the combined strategy
+    // equity stat strip — lead with the strategy (the call ladder)
     var host = document.getElementById("eq-stats"); host.innerHTML = "";
-    var refFrac = Math.round((d.equity_sizing || 0.15) * 100);
+    var refFrac = Math.round((d.equity_sizing || 0.05) * 100);
+    var capPct = Math.round((d.ladder_cap || 0.30) * 100);
     var strat = d.strategy_equity;
     if (strat) {
-      host.appendChild(statBox("Strategy CAGR", pct(strat.cagr, 1), "50/50 both books · " + refFrac + "% sizing"));
+      host.appendChild(statBox("Strategy CAGR", pct(strat.cagr, 1),
+        refFrac + "%/rung · " + capPct + "% cap"));
       host.appendChild(statBox("Strategy max DD", pct(strat.maxdd, 0), "worst peak-to-trough"));
     }
     host.appendChild(statBox("SPY CAGR", pct(d.spy_benchmark.cagr, 1), "buy & hold"));
     host.appendChild(statBox("SPY max DD", pct(d.spy_benchmark.maxdd, 0), "buy & hold"));
-    [["Call book", d.books.call.track_record.sizing[1]],
-     ["Put book", d.books.put.track_record.sizing[1]]].forEach(function (r) {
-      host.appendChild(statBox(r[0] + " CAGR", pct(r[1].cagr, 1), r[0] + " alone · " + refFrac + "%"));
-    });
+    var pm = d.books.put.equity_metrics;
+    if (pm && pm.cagr != null) {
+      host.appendChild(statBox("Put ladder CAGR", pct(pm.cagr, 1), "max-accuracy book"));
+      host.appendChild(statBox("Put ladder max DD", pct(pm.maxdd, 0), "max-accuracy book"));
+    }
   }
 
   function statBox(num, val, lab) {
