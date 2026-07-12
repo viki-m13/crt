@@ -6791,7 +6791,25 @@
         "max_ror": 0.3453,
         "iv_proxy": 0.1836,
         "expiry_date": "2026-09-11",
-        "profit_target": "hold to expiry"
+        "profit_target": "hold to expiry",
+        "pricing": {
+          "rate": 0.04,
+          "forward": 749.24,
+          "atm_iv": 0.1836,
+          "tenor_years": 0.25,
+          "sell_leg": {
+            "strike": 719.53,
+            "iv": 0.191,
+            "price": 15.44
+          },
+          "buy_leg": {
+            "strike": 697.27,
+            "iv": 0.1968,
+            "price": 9.55
+          },
+          "mid_value": 5.89,
+          "slippage": 0.03
+        }
       },
       "track_record": {
         "n": 6264,

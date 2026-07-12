@@ -43,7 +43,9 @@
       renderIvChart(research);
       renderSensChart(research);
       renderEraTable(research);
+      renderEdgeStats(research);
     }
+    renderLegPricing(d);
     var lastW = window.innerWidth;
     window.addEventListener("resize", debounce(function () {
       // Mobile browsers fire resize on scroll (URL bar hide/show) with an
@@ -644,6 +646,56 @@
         .forEach(function (v, i) { row.appendChild(el(i === 0 ? "th" : "td", null, v)); });
       tb.appendChild(row);
     });
+  }
+
+  function renderEdgeStats(r) {
+    var host = document.getElementById("edge-stats");
+    if (!host || !r.breach_stats) return;
+    var b = r.breach_stats;
+    host.innerHTML = "";
+    host.appendChild(statBox("Market says", Math.round(b.implied_breach * 100) + "%",
+      "implied probability SPY breaches −3% within 3 months"));
+    host.appendChild(statBox("Reality", Math.round(b.actual_breach * 100) + "%",
+      "actual breach frequency across " + b.n.toLocaleString() + " uptrend entries"));
+    host.appendChild(statBox("Premium kept", "$" + (1 - b.payout_per_premium).toFixed(2),
+      "of every $1.00 collected, after all actual payouts"));
+    host.appendChild(statBox("Credit richness", Math.round(b.avg_credit_per_width * 100) + "%",
+      "average credit as a share of spread width at entry"));
+  }
+
+  function renderLegPricing(d) {
+    var host = document.getElementById("leg-pricing"); if (!host) return;
+    var et = d.books.put && d.books.put.enter_today;
+    var pr = et && et.pricing;
+    if (!pr) { host.innerHTML = '<p class="muted">Pricing detail unavailable.</p>'; return; }
+    host.innerHTML = "";
+    host.appendChild(el("div", null,
+      "<strong>Pricing the " + et.expiry_date + " " + et.sell_strike + " / " + et.buy_strike +
+      " put spread</strong> (SPY " + usd(et.spot) + ", " + d.as_of + ")"));
+    var flow = el("div", "flow");
+    [[usd(pr.forward), "forward = spot × e<sup>rT</sup> (r = " + (pr.rate * 100).toFixed(1) +
+        "%, T = " + pr.tenor_years + "y)"],
+     [(pr.atm_iv * 100).toFixed(1) + "%", "ATM implied vol from the blended surface"],
+     ["$" + pr.sell_leg.price.toFixed(2), "SELL the " + pr.sell_leg.strike + " put · IV " +
+        (pr.sell_leg.iv * 100).toFixed(1) + "% (skew-adjusted)"],
+     ["$" + pr.buy_leg.price.toFixed(2), "BUY the " + pr.buy_leg.strike + " put · IV " +
+        (pr.buy_leg.iv * 100).toFixed(1) + "% (deeper strike = richer vol)"],
+     [usd(pr.mid_value), "net mid value = sell − buy"],
+     [usd(et.est_credit), "credit after " + Math.round(pr.slippage * 100) + "% slippage — " +
+        "what the backtest actually books"]]
+      .forEach(function (x) {
+        var st = el("div", "step");
+        st.appendChild(el("div", "v", x[0]));
+        st.appendChild(el("div", "k", x[1]));
+        flow.appendChild(st);
+      });
+    host.appendChild(flow);
+    host.appendChild(el("div", "outcomes",
+      "Note the skew doing its work: the deeper −6% put we <em>buy</em> carries a richer vol (" +
+      (pr.buy_leg.iv * 100).toFixed(1) + "%) than the −3% put we <em>sell</em> (" +
+      (pr.sell_leg.iv * 100).toFixed(1) + "%) — the model charges us the conservative way, and " +
+      "the strategy is profitable anyway because the whole downside surface is overpriced " +
+      "relative to what actually happens."));
   }
 
   function renderTrades(d) {

@@ -178,6 +178,126 @@
       </div>
     </section>
 
+    <!-- THE RULEBOOK -->
+    <section id="rulebook">
+      <p class="eyebrow">The rulebook</p>
+      <h2>Exactly which options we sell, and why — step by step</h2>
+      <p class="section-note">There is no black box. The whole strategy is five mechanical rules,
+        each chosen by measurement on the design era (&lt;2016) and confirmed on untouched
+        2016–2026 data. Here is the complete logic, the edge behind it, and how every premium
+        is priced.</p>
+
+      <h3>The weekly decision</h3>
+      <figure class="tbl-wrap prose-tbl">
+        <table>
+          <thead><tr><th>Step</th><th>Rule</th><th>Why — and the evidence</th></tr></thead>
+          <tbody>
+            <tr><td><strong>1 · Check the regime</strong></td>
+              <td>Is SPY at or above its 200-day average? If not, do nothing this week.</td>
+              <td>Put-selling losses live almost entirely in established downtrends. Adding this
+                one filter lifted the win rate ~6 points and cut the max drawdown by a quarter —
+                the only "free" improvement found. Every hedge tested (buying puts, stop-losses)
+                cost more than it saved.</td></tr>
+            <tr><td><strong>2 · Pick the strikes</strong></td>
+              <td>Sell the put <strong>3% below spot</strong>; buy the put <strong>6% below
+                spot</strong>.</td>
+              <td>−3% is the sweet spot where the skew premium is rich but breaches are still
+                rare (see the edge numbers below). The −6% long leg caps the worst case and
+                defines the risk. Grid-tested against −5%/−10%, −4%/−9%, wider and narrower — on
+                design-era data only.</td></tr>
+            <tr><td><strong>3 · Pick the expiry</strong></td>
+              <td><strong>~3 months out</strong> (63 trading sessions).</td>
+              <td>Short enough that the premium decays fast and capital recycles ~4×/year; long
+                enough to survive noise. Tested against 1-year (carry drag, slower recycling)
+                and 1-month — 63 sessions won on design data and validated better
+                out-of-sample.</td></tr>
+            <tr><td><strong>4 · Size the rung</strong></td>
+              <td>Risk <strong>3% of current equity</strong>; stop adding rungs at
+                <strong>60% total at risk</strong>.</td>
+              <td>Sizing is the only real risk dial: 2%/rung ≈ 19%/yr at −23% max drawdown, 3% ≈
+                27%/yr at −31%, 4.5% ≈ 35%/yr at −41%. The cap bounds how much a crash can take
+                — all open rungs lose together in a bear.</td></tr>
+            <tr><td><strong>5 · Hold to expiry</strong></td>
+              <td>No profit-taking, no stop-loss, no adjustment. Let it expire; enter the next
+                rung next week.</td>
+              <td>Every exit tested gives back edge: profit-capture buybacks pay slippage to
+                surrender the tail of the decay, stop-losses whipsaw, regime-break dumps sell
+                the lows. The premium is earned by carrying the position to zero.</td></tr>
+          </tbody>
+        </table>
+      </figure>
+
+      <h3>The edge, in two numbers</h3>
+      <p class="section-note">This is the entire alpha. Option prices imply a probability that
+        SPY falls through the −3% strike within 3 months. Reality, measured across every
+        uptrend entry since 1993 (6,215 samples), is far kinder to the seller:</p>
+      <div class="stats" id="edge-stats"></div>
+      <p style="margin-top:14px">Put differently: the buyer of this spread is buying insurance,
+        and like most insurance it is priced well above actuarial cost. <strong>Who pays it, and
+        why it persists:</strong> institutions are structurally obliged to hedge (mandates,
+        regulation, career risk), so they buy index puts at almost any price; the skew premium is
+        their willingness-to-pay. The seller earns it by bearing crash risk — which is exactly
+        why the regime filter, the −6% long leg, and the at-risk cap exist. The premium has
+        persisted for three decades <em>because</em> the occasional crash keeps most sellers
+        away.</p>
+
+      <h3>How every option is priced — today's rung, leg by leg</h3>
+      <p class="section-note">The backtest never uses a magic price. Every leg is priced with
+        Black-76 on the forward, with the volatility read off an audited surface. This is
+        today's actual computation, live from the signal:</p>
+      <div id="leg-pricing" class="anatomy"><p class="muted">Loading…</p></div>
+
+      <h3>Every modeling assumption, and its evidence</h3>
+      <figure class="tbl-wrap prose-tbl">
+        <table>
+          <thead><tr><th>Assumption</th><th>Value used</th><th>Evidence it's right (or conservative)</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Pricing formula</strong></td>
+              <td>Black-76 on the forward: F = S·e<sup>rT</sup>; puts valued at
+                e<sup>−rT</sup>[K·N(−d₂) − F·N(−d₁)]</td>
+              <td>Standard European options pricing. The panel is total-return SPY, so the
+                self-consistent carry is the full T-bill rate (dividends already live in the
+                path).</td></tr>
+            <tr><td><strong>Interest rate r</strong></td>
+              <td>Historical 3-month T-bill, by year (5.5% in 1995 → 0.05% in 2021 → ~4% now)</td>
+              <td>Setting r=0 (the naive choice) overstated the strategy's CAGR by ~8 points —
+                the single biggest error found in the pricing audit. Corrected.</td></tr>
+            <tr><td><strong>ATM implied volatility</strong></td>
+              <td>1.15 × √(0.30·rv₆₀² + 0.70·r̄v²) — a mean-reverting blend of current 60-day
+                realized vol and its expanding historical mean</td>
+              <td>Produces a mean 1y ATM IV of 18.6% (real SPX ≈ 19%), a 2008 peak of ~46% (real
+                long-dated IV peaked ~45–50%, while the naive proxy said an absurd ~90%), and
+                dead-calm ~16%. See the IV chart below.</td></tr>
+            <tr><td><strong>Volatility skew</strong></td>
+              <td>IV(K) = ATM · (1 + ln(F/K)) — each leg gets its own vol: today the −3% put
+                prices ~0.7pt over ATM, the −6% put ~1.3pt over</td>
+              <td>Matches the typical SPX skew slope. Crucially this makes the model
+                <em>charge us more</em> to buy the −6% leg — the conservative direction. Results
+                hold at double the skew slope (β=1.8 → still 19%/yr).</td></tr>
+            <tr><td><strong>Slippage</strong></td>
+              <td>3% of spread value each way (≈17¢ round trip on today's ~$5.70 spread)</td>
+              <td>SPY options are penny-to-nickel wide at these strikes — the most liquid
+                options listed. 3% is generous; at 5% the strategy still makes 21%/yr.</td></tr>
+            <tr><td><strong>Fills</strong></td>
+              <td>Enter at model mid − slippage; expire at intrinsic value</td>
+              <td>No intraday timing is assumed anywhere — entries use the daily close, expiries
+                settle at intrinsic. Nothing depends on execution skill.</td></tr>
+          </tbody>
+        </table>
+      </figure>
+
+      <div class="callout">
+        <p><strong>What the model deliberately does not capture</strong> — disclosed, not
+          hidden: SPY options are American-style, so a short put that goes deep in-the-money can
+          be assigned early (worst case unchanged — you'd own stock hedged by the long put, same
+          defined loss, but know it can happen). Real strikes come in $1 increments and real
+          expiries on fixed Fridays, so live strikes/dates will sit within ~½% of the model's.
+          And all premiums are modeled, not historical quotes — the audit (below) is our best
+          effort to make the model honest, and every number survives adverse perturbations of
+          it.</p>
+      </div>
+    </section>
+
     <!-- DOWNSIDE PROTECTION & STRESS -->
     <section id="stress">
       <p class="eyebrow">Downside protection</p>

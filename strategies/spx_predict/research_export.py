@@ -163,11 +163,47 @@ def era_examples(trades, mkt):
     return out
 
 
+def breach_stats(mkt):
+    """The edge of the exact traded structure, in plain numbers:
+    market-implied vs actual probability that SPY breaches the -3% short
+    strike within 63 sessions (uptrend entries only), plus the insurance
+    'loss ratio': actual payouts per $1 of premium collected."""
+    spec = S.STRUCTURES["put"]; X = spec["horizon"]; T0 = X / 252.0
+    imp = []; act = []; credits = []; payouts = []
+    for i in range(260, mkt.n - X):
+        if not mkt.regime_ok(i):
+            continue
+        S0 = mkt.px[i]
+        K1 = S0 * (1 + spec["k1_off"]); K2 = S0 * (1 + spec["k2_off"])
+        width = K1 - K2
+        r = mkt.rate[i]; F = S0 * math.exp(r * T0)
+        s_atm = mkt.atm_iv(i)
+        if not np.isfinite(s_atm) or s_atm <= 0:
+            continue
+        s1 = max(s_atm * (1.0 + S.BETA * math.log(F / K1)), 0.03)
+        d2 = (math.log(F / K1) - 0.5 * s1 * s1 * T0) / (s1 * math.sqrt(T0))
+        imp.append(1 - 0.5 * (1 + math.erf(d2 / math.sqrt(2))))  # P(S_T < K1)
+        ST = mkt.px[i + X]
+        act.append(1.0 if ST < K1 else 0.0)
+        v = mkt.spread_val(i, K1, K2, T0, "put_spread")
+        if v and v > 0:
+            credits.append(v * (1 - S.SLIP) / width)
+            payouts.append(min(max(K1 - ST, 0.0), width) / width)
+    return {
+        "n": len(act),
+        "implied_breach": round(float(np.mean(imp)), 4),
+        "actual_breach": round(float(np.mean(act)), 4),
+        "avg_credit_per_width": round(float(np.mean(credits)), 4),
+        "payout_per_premium": round(float(np.mean(payouts) / np.mean(credits)), 4),
+    }
+
+
 def main():
     mkt = S.Market()
     trades, _, _ = S.simulate_ladder(mkt, S.STRUCTURES["put"])
 
     out = {
+        "breach_stats": breach_stats(mkt),
         "edge_by_horizon": edge_by_horizon(mkt),
         "iv_series": iv_series(mkt),
         "stress": stress_scenarios(mkt.dates, mkt.px),

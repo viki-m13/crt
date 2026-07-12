@@ -313,6 +313,21 @@ edge is not an artifact of any single pricing assumption.
 `signal.py` now prices everything under v2 and ships the put ladder as
 the strategy with the call ladder as the max-ROR-per-trade alternative.
 
+### The edge of the traded structure, in two numbers
+
+For the exact structure traded (−3% short put, 63 sessions, uptrend
+entries only; 6,215 samples 1993–2026, v2 surface):
+
+- **Implied breach probability 35.3% vs actual 13.5%** — the market
+  prices the −3% breach at ~2.6× its realized frequency.
+- **Loss ratio $0.39** — of every $1.00 of premium collected, actual
+  payouts (including partial breaches) averaged 39¢; the seller keeps
+  61¢. Average credit at entry ≈ 25.6% of spread width.
+
+These are computed by `research_export.py` (breach_stats) and shown on
+the site's Rulebook section, alongside the leg-by-leg pricing of the
+current rung (forward, per-leg skew-adjusted IVs, mid, slippage).
+
 ## 11. Downside protection & stress tests (incl. unprecedented bears)
 
 The protection is structural, not a hedge: every rung's loss is capped

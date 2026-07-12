@@ -365,12 +365,23 @@ def enter_today(mkt: Market, spec):
     iv = mkt.atm_iv(i)
     if is_credit:
         credit = v * (1 - SLIP); risk = width - credit
+        # leg-by-leg pricing detail for the worked example on the page
+        r = float(mkt.rate[i]); F = S * math.exp(r * T0)
+        def leg(K):
+            s_leg = max(iv * (1.0 + BETA * math.log(F / K)), 0.03)
+            return {"strike": round(float(K), 2), "iv": round(float(s_leg), 4),
+                    "price": round(float(bs_put_F(F, K, T0, s_leg, r)), 2)}
         return {"spot": round(float(S), 2), "sell_strike": round(float(K1), 2),
                 "buy_strike": round(float(K2), 2), "width": round(float(width), 2),
                 "est_credit": round(float(credit), 2),
                 "max_ror": round(float(credit / risk), 4) if risk > 0 else None,
                 "iv_proxy": round(float(iv), 4), "expiry_date": str(exp_date),
-                "profit_target": "hold to expiry"}
+                "profit_target": "hold to expiry",
+                "pricing": {"rate": round(r, 4), "forward": round(float(F), 2),
+                            "atm_iv": round(float(iv), 4), "tenor_years": round(T0, 3),
+                            "sell_leg": leg(K1), "buy_leg": leg(K2),
+                            "mid_value": round(float(v), 2),
+                            "slippage": SLIP}}
     debit = v * (1 + SLIP)
     return {"spot": round(float(S), 2), "long_strike": round(float(K1), 2),
             "short_strike": round(float(K2), 2), "width": round(float(width), 2),
