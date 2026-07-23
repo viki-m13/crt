@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-23T22:12:00Z",
+  "as_of": "2026-07-23T23:10:21Z",
   "checks": [
     {
       "symbol": "SPY",
@@ -55,6 +55,63 @@
     }
   ],
   "history": [
+    {
+      "as_of": "2026-07-23T23:10:21Z",
+      "checks": [
+        {
+          "symbol": "SPY",
+          "ok": true,
+          "spot": 738.18,
+          "expiry": "2026-10-16",
+          "dte_calendar": 85,
+          "sell_leg": {
+            "strike": 716.0,
+            "bid": 13.83,
+            "ask": 13.9,
+            "mid": 13.865,
+            "iv": 0.1658,
+            "oi": 343,
+            "volume": 7
+          },
+          "buy_leg": {
+            "strike": 695.0,
+            "bid": 9.97,
+            "ask": 10.02,
+            "mid": 9.995000000000001,
+            "iv": 0.1885,
+            "oi": 1179,
+            "volume": 372
+          },
+          "width": 21.0,
+          "real_credit_mid": 3.87,
+          "real_credit_natural": 3.81,
+          "real_credit_mid_pct_width": 0.1843,
+          "model_atm_iv": 0.178,
+          "model_leg_ivs": [
+            0.1851,
+            0.1904
+          ],
+          "market_leg_ivs": [
+            0.1658,
+            0.1885
+          ],
+          "model_credit_mid": 5.41,
+          "model_credit_booked": 5.25,
+          "model_vs_real_mid": 1.399,
+          "booked_vs_natural": 1.378,
+          "model_conservative": false,
+          "bidask_pct_of_mid": [
+            0.005,
+            0.005
+          ]
+        },
+        {
+          "symbol": "^SPX",
+          "ok": false,
+          "error": "cannot convert float NaN to integer"
+        }
+      ]
+    },
     {
       "as_of": "2026-07-23T22:12:00Z",
       "checks": [
