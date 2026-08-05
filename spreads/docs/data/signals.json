@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-04T23:23:30Z",
+  "generated_at": "2026-08-05T22:25:31Z",
   "engine": "v3-sigmaclear",
   "summary": {
-    "n_tickers_processed": 815,
+    "n_tickers_processed": 816,
     "horizons": [
       7,
       10,
@@ -50,6 +50,8 @@
     "reality": {
       "chain_fetch_failures": 0,
       "drops": {
+        "natural_credit_below_floor": 1,
+        "no_listed_expiration_in_window": 1,
         "underlying_adv_below_floor": 1
       }
     },
@@ -64,23 +66,23 @@
       "note": "Win rate is NOT 100%. Residual tail risk is real: systemic crashes (Mar 2020) and single-name events (M&A, earnings) can and do breach published strikes ~0.5% of the time out-of-sample. Defined-risk spreads cap each loss at width minus credit."
     },
     "put": {
-      "n_certified": 53,
+      "n_certified": 54,
       "n_published": 0,
-      "pooled_wins": 172116,
+      "pooled_wins": 175762,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     },
     "call": {
-      "n_certified": 9,
+      "n_certified": 8,
       "n_published": 0,
-      "pooled_wins": 40236,
+      "pooled_wins": 38356,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     },
     "combined": {
       "n_certified": 62,
       "n_published": 0,
-      "pooled_wins": 212352,
+      "pooled_wins": 214118,
       "pooled_losses": 0,
       "pooled_win_rate": 1.0
     },
@@ -105,8 +107,8 @@
     },
     "tier2": {
       "engine": "t2-volalpha-gbm",
-      "n_scored": 815,
-      "n_above_threshold": 3,
+      "n_scored": 816,
+      "n_above_threshold": 0,
       "n_published": 0,
       "spec": {
         "c_sigma": 0.6,
@@ -126,19 +128,14 @@
       },
       "reality": {
         "chain_fetch_failures": 0,
-        "drops": {
-          "natural_credit_below_floor": 2,
-          "zero_bid_or_no_ask": 1
-        }
+        "drops": {}
       }
     },
     "conviction_open": {
-      "n_open": 1,
-      "panel_last": "2026-08-04",
+      "n_open": 0,
+      "panel_last": "2026-08-05",
       "lookback_sessions": 20,
-      "tickers": [
-        "AMZN"
-      ]
+      "tickers": []
     }
   },
   "put_signals": [],
@@ -146,23 +143,23 @@
   "put_watchlist": [
     {
       "ticker": "ABT",
-      "today_close": 105.45999908447266,
-      "end_date": "2026-08-04",
+      "today_close": 105.70999908447266,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.20629643496958783,
-          "buffer_pct": 20.62964349695878,
-          "strike": 83.70397724144995,
-          "today_close": 105.45999908447266,
+          "buffer": 0.2062961879326175,
+          "buffer_pct": 20.62961879326175,
+          "strike": 83.90242924698546,
+          "today_close": 105.70999908447266,
           "regime_ok_today": false,
           "pooled_wins": 3674,
           "pooled_losses": 0,
           "n_test": 3674,
           "n_folds": 20,
-          "history_worst_buffer": 0.19629643496958782,
+          "history_worst_buffer": 0.1962961879326175,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         },
@@ -170,49 +167,25 @@
           "side": "put",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24770512163323133,
-          "buffer_pct": 24.770512163323133,
-          "strike": 79.33701718381289,
-          "today_close": 105.45999908447266,
+          "buffer": 0.2477048984697514,
+          "buffer_pct": 24.770489846975142,
+          "strike": 79.52511449401584,
+          "today_close": 105.70999908447266,
           "regime_ok_today": false,
           "pooled_wins": 3674,
           "pooled_losses": 0,
           "n_test": 3674,
           "n_folds": 20,
-          "history_worst_buffer": 0.23770512163323132,
+          "history_worst_buffer": 0.2377048984697514,
           "expiry_date": "2026-08-21",
           "expiry_type": "weekly"
         }
       ]
     },
     {
-      "ticker": "MCK",
-      "today_close": 830.4299926757812,
-      "end_date": "2026-08-04",
-      "rungs": [
-        {
-          "side": "put",
-          "variant": "regime",
-          "horizon": 7,
-          "buffer": 0.2157787662753251,
-          "buffer_pct": 21.57787662753251,
-          "strike": 651.2408333781739,
-          "today_close": 830.4299926757812,
-          "regime_ok_today": false,
-          "pooled_wins": 3596,
-          "pooled_losses": 0,
-          "n_test": 3596,
-          "n_folds": 21,
-          "history_worst_buffer": 0.2057787662753251,
-          "expiry_date": "2026-08-14",
-          "expiry_type": "weekly"
-        }
-      ]
-    },
-    {
       "ticker": "WDAY",
-      "today_close": 171.27999877929688,
-      "end_date": "2026-08-04",
+      "today_close": 170.63499450683594,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "put",
@@ -220,8 +193,8 @@
           "horizon": 7,
           "buffer": 0.21633917175266282,
           "buffer_pct": 21.633917175266284,
-          "strike": 134.2254257055867,
-          "today_close": 171.27999877929688,
+          "strike": 133.71996112320687,
+          "today_close": 170.63499450683594,
           "regime_ok_today": false,
           "pooled_wins": 1402,
           "pooled_losses": 0,
@@ -235,23 +208,23 @@
     },
     {
       "ticker": "PPL",
-      "today_close": 35.18000030517578,
-      "end_date": "2026-08-04",
+      "today_close": 34.95000076293945,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2241883834076117,
-          "buffer_pct": 22.41883834076117,
-          "strike": 27.293052908479137,
-          "today_close": 35.18000030517578,
+          "buffer": 0.2241880657095907,
+          "buffer_pct": 22.41880657095907,
+          "strike": 27.114627695347338,
+          "today_close": 34.95000076293945,
           "regime_ok_today": false,
           "pooled_wins": 3438,
           "pooled_losses": 0,
           "n_test": 3438,
           "n_folds": 21,
-          "history_worst_buffer": 0.2141883834076117,
+          "history_worst_buffer": 0.2141880657095907,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         }
@@ -259,23 +232,23 @@
     },
     {
       "ticker": "PEG",
-      "today_close": 76.2699966430664,
-      "end_date": "2026-08-04",
+      "today_close": 75.54000091552734,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "put",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2338098172089177,
-          "buffer_pct": 23.380981720891768,
-          "strike": 58.43732266942629,
-          "today_close": 76.2699966430664,
+          "buffer": 0.23380917297203907,
+          "buffer_pct": 23.380917297203908,
+          "strike": 57.878055775160824,
+          "today_close": 75.54000091552734,
           "regime_ok_today": false,
           "pooled_wins": 3647,
           "pooled_losses": 0,
           "n_test": 3647,
           "n_folds": 21,
-          "history_worst_buffer": 0.22380981720891768,
+          "history_worst_buffer": 0.22380917297203906,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         },
@@ -283,16 +256,16 @@
           "side": "put",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24047830084977873,
-          "buffer_pct": 24.04783008497787,
-          "strike": 57.92871744452347,
-          "today_close": 76.2699966430664,
+          "buffer": 0.2404787165875084,
+          "buffer_pct": 24.047871658750843,
+          "strike": 57.37423844434212,
+          "today_close": 75.54000091552734,
           "regime_ok_today": false,
           "pooled_wins": 3647,
           "pooled_losses": 0,
           "n_test": 3647,
           "n_folds": 21,
-          "history_worst_buffer": 0.23047830084977872,
+          "history_worst_buffer": 0.2304787165875084,
           "expiry_date": "2026-08-21",
           "expiry_type": "weekly"
         }
@@ -302,23 +275,23 @@
   "call_watchlist": [
     {
       "ticker": "CHD",
-      "today_close": 103.0,
-      "end_date": "2026-08-04",
+      "today_close": 103.63999938964844,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2193047515556712,
-          "buffer_pct": 21.93047515556712,
-          "strike": 125.58838941023413,
-          "today_close": 103.0,
+          "buffer": 0.21930348497079444,
+          "buffer_pct": 21.930348497079443,
+          "strike": 126.36861243816935,
+          "today_close": 103.63999938964844,
           "regime_ok_today": false,
           "pooled_wins": 1102,
           "pooled_losses": 0,
           "n_test": 1102,
           "n_folds": 20,
-          "history_worst_buffer": 0.2093047515556712,
+          "history_worst_buffer": 0.20930348497079443,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         }
@@ -326,23 +299,23 @@
     },
     {
       "ticker": "LLY",
-      "today_close": 1115.6800537109375,
-      "end_date": "2026-08-04",
+      "today_close": 1169.8599853515625,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.21976019990646534,
-          "buffer_pct": 21.976019990646535,
-          "strike": 1360.862125346109,
-          "today_close": 1115.6800537109375,
+          "buffer": 0.21976068578859054,
+          "buffer_pct": 21.976068578859053,
+          "strike": 1426.9492180090524,
+          "today_close": 1169.8599853515625,
           "regime_ok_today": false,
           "pooled_wins": 1010,
           "pooled_losses": 0,
           "n_test": 1010,
           "n_folds": 15,
-          "history_worst_buffer": 0.20976019990646533,
+          "history_worst_buffer": 0.20976068578859053,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         }
@@ -350,8 +323,8 @@
     },
     {
       "ticker": "VEEV",
-      "today_close": 211.86000061035156,
-      "end_date": "2026-08-04",
+      "today_close": 213.50999450683594,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
@@ -359,8 +332,8 @@
           "horizon": 7,
           "buffer": 0.23087157047108242,
           "buffer_pct": 23.087157047108242,
-          "strike": 260.7724516712679,
-          "today_close": 211.86000061035156,
+          "strike": 262.80338224990135,
+          "today_close": 213.50999450683594,
           "regime_ok_today": false,
           "pooled_wins": 335,
           "pooled_losses": 0,
@@ -374,23 +347,23 @@
     },
     {
       "ticker": "ALLE",
-      "today_close": 165.36000061035156,
-      "end_date": "2026-08-04",
+      "today_close": 168.5800018310547,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24129812958108454,
-          "buffer_pct": 24.129812958108452,
-          "strike": 205.2610594651564,
-          "today_close": 165.36000061035156,
+          "buffer": 0.24129776463359232,
+          "buffer_pct": 24.12977646335923,
+          "strike": 209.25797943481507,
+          "today_close": 168.5800018310547,
           "regime_ok_today": false,
           "pooled_wins": 216,
           "pooled_losses": 0,
           "n_test": 216,
           "n_folds": 4,
-          "history_worst_buffer": 0.23129812958108453,
+          "history_worst_buffer": 0.2312977646335923,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         },
@@ -398,16 +371,16 @@
           "side": "call",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24129812958108454,
-          "buffer_pct": 24.129812958108452,
-          "strike": 205.2610594651564,
-          "today_close": 165.36000061035156,
+          "buffer": 0.24129776463359232,
+          "buffer_pct": 24.12977646335923,
+          "strike": 209.25797943481507,
+          "today_close": 168.5800018310547,
           "regime_ok_today": false,
-          "pooled_wins": 215,
+          "pooled_wins": 216,
           "pooled_losses": 0,
-          "n_test": 215,
+          "n_test": 216,
           "n_folds": 4,
-          "history_worst_buffer": 0.23129812958108453,
+          "history_worst_buffer": 0.2312977646335923,
           "expiry_date": "2026-08-21",
           "expiry_type": "weekly"
         }
@@ -415,23 +388,23 @@
     },
     {
       "ticker": "REXR",
-      "today_close": 37.0,
-      "end_date": "2026-08-04",
+      "today_close": 37.040000915527344,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.24145069794626917,
-          "buffer_pct": 24.145069794626917,
-          "strike": 45.93367582401196,
-          "today_close": 37.0,
+          "buffer": 0.24145054099973406,
+          "buffer_pct": 24.145054099973407,
+          "strike": 45.98332917521206,
+          "today_close": 37.040000915527344,
           "regime_ok_today": false,
           "pooled_wins": 548,
           "pooled_losses": 0,
           "n_test": 548,
           "n_folds": 4,
-          "history_worst_buffer": 0.23145069794626916,
+          "history_worst_buffer": 0.23145054099973406,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         },
@@ -439,16 +412,16 @@
           "side": "call",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24145069794626917,
-          "buffer_pct": 24.145069794626917,
-          "strike": 45.93367582401196,
-          "today_close": 37.0,
+          "buffer": 0.24145054099973406,
+          "buffer_pct": 24.145054099973407,
+          "strike": 45.98332917521206,
+          "today_close": 37.040000915527344,
           "regime_ok_today": false,
-          "pooled_wins": 546,
+          "pooled_wins": 547,
           "pooled_losses": 0,
-          "n_test": 546,
+          "n_test": 547,
           "n_folds": 4,
-          "history_worst_buffer": 0.23145069794626916,
+          "history_worst_buffer": 0.23145054099973406,
           "expiry_date": "2026-08-21",
           "expiry_type": "weekly"
         }
@@ -456,23 +429,23 @@
     },
     {
       "ticker": "MORN",
-      "today_close": 200.25,
-      "end_date": "2026-08-04",
+      "today_close": 199.3249969482422,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2432437847397655,
-          "buffer_pct": 24.324378473976548,
-          "strike": 248.95956789413805,
-          "today_close": 200.25,
+          "buffer": 0.2432439886641764,
+          "buffer_pct": 24.32439886641764,
+          "strike": 247.80960424640742,
+          "today_close": 199.3249969482422,
           "regime_ok_today": false,
           "pooled_wins": 1026,
           "pooled_losses": 0,
           "n_test": 1026,
           "n_folds": 10,
-          "history_worst_buffer": 0.23324378473976548,
+          "history_worst_buffer": 0.2332439886641764,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         }
@@ -480,23 +453,23 @@
     },
     {
       "ticker": "CAG",
-      "today_close": 15.0,
-      "end_date": "2026-08-04",
+      "today_close": 15.010000228881836,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 10,
-          "buffer": 0.24446575959435224,
-          "buffer_pct": 24.446575959435222,
-          "strike": 18.666986393915284,
-          "today_close": 15.0,
+          "buffer": 0.2444656278436057,
+          "buffer_pct": 24.44656278436057,
+          "strike": 18.6794293587681,
+          "today_close": 15.010000228881836,
           "regime_ok_today": false,
-          "pooled_wins": 1863,
+          "pooled_wins": 1864,
           "pooled_losses": 0,
-          "n_test": 1863,
+          "n_test": 1864,
           "n_folds": 21,
-          "history_worst_buffer": 0.23446575959435223,
+          "history_worst_buffer": 0.2344656278436057,
           "expiry_date": "2026-08-21",
           "expiry_type": "weekly"
         }
@@ -504,23 +477,23 @@
     },
     {
       "ticker": "VIRT",
-      "today_close": 57.0,
-      "end_date": "2026-08-04",
+      "today_close": 58.470001220703125,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
           "variant": "regime",
           "horizon": 7,
-          "buffer": 0.2459546347520758,
-          "buffer_pct": 24.59546347520758,
-          "strike": 71.01941418086832,
-          "today_close": 57.0,
+          "buffer": 0.24595520870727294,
+          "buffer_pct": 24.595520870727295,
+          "strike": 72.85100257405567,
+          "today_close": 58.470001220703125,
           "regime_ok_today": false,
           "pooled_wins": 544,
           "pooled_losses": 0,
           "n_test": 544,
           "n_folds": 7,
-          "history_worst_buffer": 0.2359546347520758,
+          "history_worst_buffer": 0.23595520870727293,
           "expiry_date": "2026-08-14",
           "expiry_type": "weekly"
         }
@@ -528,8 +501,8 @@
     },
     {
       "ticker": "MSGS",
-      "today_close": 394.9700012207031,
-      "end_date": "2026-08-04",
+      "today_close": 391.3500061035156,
+      "end_date": "2026-08-05",
       "rungs": [
         {
           "side": "call",
@@ -537,8 +510,8 @@
           "horizon": 7,
           "buffer": 0.24708434353778896,
           "buffer_pct": 24.708434353778898,
-          "strike": 492.56090468944024,
-          "today_close": 394.9700012207031,
+          "strike": 488.04646545511247,
+          "today_close": 391.3500061035156,
           "regime_ok_today": false,
           "pooled_wins": 403,
           "pooled_losses": 0,
@@ -554,8 +527,8 @@
           "horizon": 10,
           "buffer": 0.24708434353778896,
           "buffer_pct": 24.708434353778898,
-          "strike": 492.56090468944024,
-          "today_close": 394.9700012207031,
+          "strike": 488.04646545511247,
+          "today_close": 391.3500061035156,
           "regime_ok_today": false,
           "pooled_wins": 403,
           "pooled_losses": 0,
@@ -570,55 +543,5 @@
   ],
   "conviction_pick": null,
   "tier2_signals": [],
-  "conviction_open": [
-    {
-      "engine": "conviction-pick",
-      "ticker": "AMZN",
-      "side": "put",
-      "today_close": 277.4200134277344,
-      "end_date": "2026-08-04",
-      "horizon": 14,
-      "gbm_confidence": 0.9508648341780551,
-      "elite": false,
-      "strike": 260.0,
-      "expiry_date": "2026-08-21",
-      "buffer_pct": 6.279292258873798,
-      "variant": "gbm",
-      "real": {
-        "expiry": "2026-08-21",
-        "sessions_to_expiry": 13,
-        "cal_days_to_expiry": 17,
-        "short_strike": 260.0,
-        "long_strike": 252.5,
-        "width": 7.5,
-        "short_bid": 1.93,
-        "short_ask": 2.18,
-        "long_bid": 0.89,
-        "long_ask": 1.35,
-        "short_oi": 8171,
-        "long_oi": 1374,
-        "short_spread_frac": 0.0333,
-        "adv_usd": 12263497822.9,
-        "natural_credit": 0.5799999999999998,
-        "mid_credit": 0.935,
-        "net_natural_credit": 0.5667999999999999,
-        "max_loss": 6.92,
-        "ror_natural": 0.08190751445086704,
-        "real_buffer_pct": 6.279292258873798,
-        "wing": null,
-        "quote_time": "2026-08-04T23:23:53Z"
-      },
-      "status": "pending",
-      "ladder": [
-        {
-          "engine": "conviction-pick",
-          "horizon": 14,
-          "expiry_date": "2026-08-21",
-          "strike": 260.0,
-          "buffer_pct": 6.279292258873798,
-          "variant": "gbm"
-        }
-      ]
-    }
-  ]
+  "conviction_open": []
 }
