@@ -30,6 +30,10 @@ def available_dates() -> list[str]:
     return sorted(os.path.basename(p)[:-8] for p in glob.glob(os.path.join(CHAINS_DIR, "*.parquet")))
 
 
+import functools
+
+
+@functools.lru_cache(maxsize=64)
 def load_chain(day: str) -> pd.DataFrame:
     df = pd.read_parquet(os.path.join(CHAINS_DIR, f"{day}.parquet"))
     df["mid"] = (df.bid + df.ask) / 2.0
@@ -83,6 +87,16 @@ def build_spot_panel(dates: list[str]) -> pd.DataFrame:
             rows.append((d, sym, s))
     sp = pd.DataFrame(rows, columns=["date", "act_symbol", "spot"])
     return sp.pivot(index="date", columns="act_symbol", values="spot").sort_index()
+
+
+# T-bill (3m) approx annual yields by year — cash collateral earns this; the
+# same table is subtracted in Sharpe. Source: FRED TB3MS yearly averages.
+RF_BY_YEAR = {2019: 0.021, 2020: 0.004, 2021: 0.0004, 2022: 0.020,
+              2023: 0.0503, 2024: 0.052, 2025: 0.043, 2026: 0.040}
+
+
+def rf_at(ts: pd.Timestamp) -> float:
+    return RF_BY_YEAR.get(ts.year, 0.03)
 
 
 # ---------------------------------------------------------------- positions
@@ -147,7 +161,12 @@ class Backtester:
         fills: list[Fill] = []
         last_spots: dict[str, float] = {}
 
+        prev_ts = None
         for day in self.dates:
+            ts = pd.Timestamp(day)
+            if prev_ts is not None and cash > 0:
+                cash *= 1.0 + rf_at(ts) * (ts - prev_ts).days / 365.0
+            prev_ts = ts
             chain = load_chain(day)
             quotes = Quotes(chain)
             spots = spot_panel.loc[day].dropna().to_dict() if day in spot_panel.index else {}
@@ -225,13 +244,17 @@ class Backtester:
 
 # ---------------------------------------------------------------- metrics
 
-def weekly_sharpe(eq: pd.Series, rf_annual: float = 0.03) -> dict:
+def weekly_sharpe(eq: pd.Series, rf_annual: float | None = None) -> dict:
     w = eq.resample("W-FRI").last().dropna()
     r = w.pct_change().dropna()
     if len(r) < 20 or r.std() == 0:
         return {"sharpe": np.nan, "n": len(r)}
-    rf_w = rf_annual / 52.0
-    sh = (r.mean() - rf_w) / r.std() * math.sqrt(52.0)
+    if rf_annual is None:
+        rf_w = pd.Series([rf_at(t) for t in r.index], index=r.index) / 52.0
+    else:
+        rf_w = rf_annual / 52.0
+    ex = r - rf_w
+    sh = ex.mean() / r.std() * math.sqrt(52.0)
     years = (eq.index[-1] - eq.index[0]).days / 365.25
     cagr = (eq.iloc[-1] / eq.iloc[0]) ** (1 / max(years, 1e-9)) - 1
     dd = (eq / eq.cummax() - 1).min()

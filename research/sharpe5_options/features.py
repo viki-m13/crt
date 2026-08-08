@@ -80,8 +80,22 @@ def build(dates: list[str]) -> None:
             gi2 = ivt[(ivt.act_symbol == sym) & (ivt.dte > 50)]
             iv_back = float(gi2.sort_values("dte").atm_iv.iloc[0]) if len(gi2) else np.nan
             vm = volmap.get(sym, {})
+            # 25-delta skew on the front expiry (put IV minus call IV)
+            skew = np.nan
+            gfe = ch[(ch.act_symbol == sym) & (ch.dte >= 15) & (ch.dte <= 50)
+                     & (ch.bid > 0) & (ch.vol > 0.01)]
+            if len(gfe):
+                exp1 = gfe.expiration.min()
+                gg = gfe[gfe.expiration == exp1]
+                p25 = gg[(gg.call_put == "Put") & (gg.delta.abs().between(0.15, 0.35))]
+                c25 = gg[(gg.call_put == "Call") & (gg.delta.between(0.15, 0.35))]
+                if len(p25) and len(c25):
+                    pv = p25.loc[(p25.delta.abs() - 0.25).abs().idxmin()].vol
+                    cv = c25.loc[(c25.delta - 0.25).abs().idxmin()].vol
+                    skew = float(pv - cv)
             feat_rows.append((d, sym, s, rv, iv_front, iv_back,
-                              vm.get("hv_current", np.nan), vm.get("iv_current", np.nan)))
+                              vm.get("hv_current", np.nan), vm.get("iv_current", np.nan),
+                              skew))
         if (i + 1) % 100 == 0:
             print(f"features {i+1}/{len(dates)}", flush=True)
 
@@ -89,7 +103,7 @@ def build(dates: list[str]) -> None:
     spots.to_parquet(SPOTS_PQ, index=False)
     feats = pd.DataFrame(feat_rows, columns=[
         "date", "act_symbol", "spot", "rv_ewma", "iv_front", "iv_back",
-        "hv_db", "iv_db"])
+        "hv_db", "iv_db", "skew25"])
     feats.to_parquet(FEAT_PQ, index=False)
     print("saved", spots.shape, feats.shape)
 
