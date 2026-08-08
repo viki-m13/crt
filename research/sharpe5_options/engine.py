@@ -184,11 +184,23 @@ class Backtester:
             last_spots.update(spots)
             vol = load_vol(day)
 
-            # 1) settle expired legs at intrinsic (expiration <= day)
+            # 1) settle expired legs at intrinsic, using the spot observed
+            # closest to the expiration date (prefer on/before expiry, else the
+            # first observation after it) — never the current mark day's spot.
             for key in [k for k, q0 in positions.items() if k[1] <= day and q0 != 0]:
                 sym, exp, k_, cp = key
                 qty = positions.pop(key)
-                s = last_spots.get(sym)
+                s = None
+                if sym in spot_panel.columns:
+                    col = spot_panel[sym].dropna()
+                    before = col[col.index <= exp]
+                    after = col[col.index > exp]
+                    if len(before) and (pd.Timestamp(exp) - pd.Timestamp(before.index[-1])).days <= 4:
+                        s = float(before.iloc[-1])
+                    elif len(after) and (pd.Timestamp(after.index[0]) - pd.Timestamp(exp)).days <= 4:
+                        s = float(after.iloc[0])
+                if s is None:
+                    s = last_spots.get(sym)
                 if s is None:
                     continue
                 intr = max(s - k_, 0.0) if cp == "Call" else max(k_ - s, 0.0)
