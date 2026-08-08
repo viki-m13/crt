@@ -106,6 +106,15 @@ Conclusion: EOD quotes on liquid names are smile-efficient within costs;
 no market-making-adjacent family exists in this data. (Event-loop sleeve
 A_ps calibration: engine Sharpe 0.70 vs screen 0.92 → marks deflate ~25%.)
 
+### 06:15 UTC — FULL DATASET COMPLETE
+
+**1254 observation dates, 2019-02-09 → 2026-08-06, 128 symbols, 0 fetch
+failures.** Per-year obs: 2019:47, 2020:155, 2021:154, 2022:151, 2023:153,
+2024:182, 2025:259, 2026:153. Everything below this line uses the full panel;
+everything above used a partial (2019→2022) cache and is superseded except
+where noted as a structural lesson (C long-leg ask fills, smile efficiency,
+exit-spread dominance) — those hold regardless of window.
+
 Slate for full data: A (SPY putspread, straddle_dh w/ contango gate),
 B (strangle25 idio_inv .06/.09 liq), C (short-only quintile cy+mom liq),
 D (put_skewrich_liq). Running trial count N≈71.
