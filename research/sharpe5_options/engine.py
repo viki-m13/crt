@@ -39,9 +39,10 @@ import functools
 @functools.lru_cache(maxsize=64)
 def load_chain(day: str) -> pd.DataFrame:
     df = pd.read_parquet(os.path.join(CHAINS_DIR, f"{day}.parquet"))
-    p2 = os.path.join(CHAINS2_DIR, f"{day}.parquet")
-    if os.path.exists(p2):
-        df = pd.concat([df, pd.read_parquet(p2)], ignore_index=True)
+    if os.environ.get("USE_TIER2") == "1":
+        p2 = os.path.join(CHAINS2_DIR, f"{day}.parquet")
+        if os.path.exists(p2):
+            df = pd.concat([df, pd.read_parquet(p2)], ignore_index=True)
     df["mid"] = (df.bid + df.ask) / 2.0
     df["spread"] = df.ask - df.bid
     # drop absurd quotes: crossed, negative, ask==0
@@ -51,8 +52,9 @@ def load_chain(day: str) -> pd.DataFrame:
 
 
 def load_vol(day: str) -> pd.DataFrame | None:
-    ps = [os.path.join(VOL_DIR, f"{day}.parquet"),
-          os.path.join(HERE, "cache", "vol2", f"{day}.parquet")]
+    ps = [os.path.join(VOL_DIR, f"{day}.parquet")]
+    if os.environ.get("USE_TIER2") == "1":
+        ps.append(os.path.join(HERE, "cache", "vol2", f"{day}.parquet"))
     ps = [p for p in ps if os.path.exists(p)]
     if not ps:
         return None
@@ -172,8 +174,9 @@ class Backtester:
         prev_ts = None
         for day in self.dates:
             ts = pd.Timestamp(day)
-            if prev_ts is not None and cash > 0:
-                cash *= 1.0 + rf_at(ts) * (ts - prev_ts).days / 365.0
+            if prev_ts is not None and cash != 0:
+                rate = rf_at(ts) + (0.01 if cash < 0 else 0.0)
+                cash *= 1.0 + rate * (ts - prev_ts).days / 365.0
             prev_ts = ts
             chain = load_chain(day)
             quotes = Quotes(chain)

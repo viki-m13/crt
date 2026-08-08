@@ -73,7 +73,7 @@ def main():
         scr(f"A_{st}_cont+ivr<.8", g.groupby("date").ret.mean(), res)
 
     # ---- B: single-name term-inversion (earnings crush)
-    for thr in (0.02, 0.04, 0.06):
+    for thr in (0.02, 0.04, 0.06, 0.09, 0.13):
         for k in (2, 3):
             g = exd[(exd.k == k) & (exd.idio_inv > thr)]
             scr(f"B_exit{k}_idioinv>{thr}", g.groupby("date").apply(
@@ -83,6 +83,20 @@ def main():
                 lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
         g2 = dev[(dev.structure == "short_straddle_dh") & (dev.idio_inv > thr)]
         scr(f"B_hold_idioinv>{thr}", g2.groupby("date").ret.mean(), res)
+        g3 = dev[(dev.structure == "calendar_sf_lb") & (dev.idio_inv > thr)]
+        scr(f"B_cal_idioinv>{thr}", g3.groupby("date").ret.mean(), res)
+        g3l = g3[g3.act_symbol.isin(LIQUID)]
+        scr(f"B_cal_idioinv>{thr}_liq", g3l.groupby("date").ret.mean(), res)
+        g4 = dev[(dev.structure == "short_strangle25") & (dev.idio_inv > thr)
+                 & dev.act_symbol.isin(LIQUID)]
+        scr(f"B_str25_idioinv>{thr}_liq", g4.groupby("date").ret.mean(), res)
+
+    # ---- E: weekend theta (Friday entries, k=1 exits)
+    fri = exd[(exd.k == 1) & (exd.date.dt.weekday == 4)]
+    scr("E_wkndtheta_all", fri.groupby("date").apply(
+        lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
+    scr("E_wkndtheta_SPY", fri[fri.act_symbol == "SPY"].groupby("date").apply(
+        lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
 
     # ---- C: cross-sectional rank long-short (market-neutral-ish)
     d = dev[dev.structure == "short_straddle_dh"].dropna(subset=["credit_yield", "mom8"]).copy()
