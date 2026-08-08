@@ -44,24 +44,37 @@ def _nearest(ge, cp, target, need_bid=True):
 
 # ---------------------------------------------------------------- selectors
 
-def sel_A_putspread(day, chain, spots, F):
-    """SPY 4%/9% OTM put credit spread, every obs date."""
-    s = spots.get("SPY")
-    if s is None:
-        return []
-    ge = _front(chain, "SPY")
-    if ge is None:
-        return []
-    sl = _nearest(ge, "Put", s * 0.96)
-    wl = _nearest(ge, "Put", s * 0.91, need_bid=False)
-    if sl is None or wl is None or float(wl.strike) >= float(sl.strike):
-        return []
-    if sl.bid - wl.ask <= 0:
-        return []
-    width = (float(sl.strike) - float(wl.strike)) * 100.0
-    legs = [E.Leg("SPY", sl.expiration, float(sl.strike), "Put", -1),
-            E.Leg("SPY", wl.expiration, float(wl.strike), "Put", +1)]
-    return [dict(symbol="SPY", legs=legs, margin=width, iv=float(sl.vol), hedged=False)]
+def make_sel_putspread(short_pct=0.04, long_pct=0.09, syms=("SPY",),
+                       mom_gate=False):
+    def sel(day, chain, spots, F):
+        out = []
+        for sym in syms:
+            s = spots.get(sym)
+            if s is None:
+                continue
+            if mom_gate:
+                r = F.get((day, sym))
+                if r is None or not (r.get("mom1w", 0) > 0):
+                    continue
+            ge = _front(chain, sym)
+            if ge is None:
+                continue
+            sl = _nearest(ge, "Put", s * (1 - short_pct))
+            wl = _nearest(ge, "Put", s * (1 - long_pct), need_bid=False)
+            if sl is None or wl is None or float(wl.strike) >= float(sl.strike):
+                continue
+            if sl.bid - wl.ask <= 0:
+                continue
+            width = (float(sl.strike) - float(wl.strike)) * 100.0
+            legs = [E.Leg(sym, sl.expiration, float(sl.strike), "Put", -1),
+                    E.Leg(sym, wl.expiration, float(wl.strike), "Put", +1)]
+            out.append(dict(symbol=sym, legs=legs, margin=width,
+                            iv=float(sl.vol), hedged=False))
+        return out
+    return sel
+
+
+sel_A_putspread = make_sel_putspread()
 
 
 def sel_A_ss_dh(day, chain, spots, F):
@@ -119,12 +132,14 @@ def make_sel_B_strangle25(thr=0.06, max_new=6):
     return sel
 
 
-def make_sel_C_shortonly(q=0.8, max_new=8):
+def make_sel_C_shortonly(q=0.8, max_new=8, wings=None, ivr_min=None):
     def sel(day, chain, spots, F):
         cands = []
         for sym in sorted(LIQUID & set(spots)):
             r = F.get((day, sym))
             if r is None:
+                continue
+            if ivr_min is not None and not (r.get("iv_rank", np.nan) > ivr_min):
                 continue
             z = r.get("z_cy", np.nan) + r.get("z_mom", np.nan)
             if np.isfinite(z):
@@ -149,7 +164,17 @@ def make_sel_C_shortonly(q=0.8, max_new=8):
                 continue
             legs = [E.Leg(sym, cA.expiration, float(cA.strike), "Call", -1),
                     E.Leg(sym, pA.expiration, float(pA.strike), "Put", -1)]
-            out.append(dict(symbol=sym, legs=legs, margin=0.30 * s * 100.0,
+            margin = 0.30 * s * 100.0
+            if wings:
+                pw = _nearest(ge, "Put", s * (1 - wings), need_bid=False)
+                cw = _nearest(ge, "Call", s * (1 + wings), need_bid=False)
+                if pw is not None and cw is not None and \
+                   float(pw.strike) < float(pA.strike) and float(cw.strike) > float(cA.strike):
+                    legs += [E.Leg(sym, pw.expiration, float(pw.strike), "Put", +1),
+                             E.Leg(sym, cw.expiration, float(cw.strike), "Call", +1)]
+                    margin = max(float(pA.strike) - float(pw.strike),
+                                 float(cw.strike) - float(cA.strike)) * 100.0
+            out.append(dict(symbol=sym, legs=legs, margin=margin,
                             iv=float(np.nanmean([cA.vol, pA.vol])), hedged=True))
         return out
     return sel
@@ -209,6 +234,9 @@ def load_feats() -> pd.DataFrame:
     feats["inv"] = feats.iv_front - feats.iv_back
     feats = feats.sort_values(["act_symbol", "date"])
     feats["mom8"] = feats.groupby("act_symbol").spot.transform(lambda s: s / s.shift(24) - 1)
+    feats["mom1w"] = feats.groupby("act_symbol").spot.transform(lambda s: s / s.shift(3) - 1)
+    feats["iv_rank"] = feats.groupby("act_symbol").iv_front.transform(
+        lambda s: s.rolling(150, min_periods=40).rank(pct=True))
     # credit yield proxy at feature level: iv_front * sqrt(dte) ~ premium/notional;
     # use iv_front directly z-scored + mom8 z-scored per date
     feats["z_cy"] = feats.groupby("date").iv_front.transform(
@@ -225,11 +253,17 @@ def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
     spots_df = pd.read_parquet(os.path.join(HERE, "cache", "spots.parquet"))
     spot_panel = spots_df.pivot(index="date", columns="act_symbol", values="spot").sort_index()
     sel, hedge = {
-        "A_ps": (sel_A_putspread, False),
+        "A_ps": (make_sel_putspread(), False),
+        "A_ps_mom": (make_sel_putspread(mom_gate=True), False),
+        "A_ps_2_7": (make_sel_putspread(0.02, 0.07), False),
+        "A_ps_6_12": (make_sel_putspread(0.06, 0.12), False),
+        "A_ps_spydia": (make_sel_putspread(syms=("SPY", "DIA")), False),
         "A_ss": (sel_A_ss_dh, True),
         "B_str25": (make_sel_B_strangle25(), False),
         "B_str25_hi": (make_sel_B_strangle25(thr=0.09), False),
         "C_short": (make_sel_C_shortonly(), True),
+        "C_short_ivr": (make_sel_C_shortonly(ivr_min=0.5), True),
+        "C_short_wings": (make_sel_C_shortonly(wings=0.10), True),
     }[name]
     dates = dates or E.available_dates()
     if dev_only:
