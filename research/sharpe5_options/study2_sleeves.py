@@ -99,7 +99,12 @@ def main():
         lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
 
     # ---- C: cross-sectional rank long-short (market-neutral-ish)
-    d = dev[dev.structure == "short_straddle_dh"].dropna(subset=["credit_yield", "mom8"]).copy()
+    # short leg uses real short_straddle_dh rows (entered at bid); long leg
+    # uses real long_straddle_dh rows (entered at ask) — no spread shortcut.
+    sh_ = dev[dev.structure == "short_straddle_dh"].dropna(subset=["credit_yield", "mom8"]).copy()
+    lg_ = dev[dev.structure == "long_straddle_dh"][
+        ["date", "act_symbol", "ret"]].rename(columns={"ret": "ret_long"})
+    d = sh_.merge(lg_, on=["date", "act_symbol"], how="inner")
     d["z_cy"] = d.groupby("date").credit_yield.transform(
         lambda s: (s - s.mean()) / (s.std() + 1e-9))
     d["z_mom"] = d.groupby("date").mom8.transform(
@@ -112,13 +117,18 @@ def main():
                 return np.nan
             q1 = x.sig.quantile(0.8)
             q0 = x.sig.quantile(0.2)
-            short_leg = x[x.sig >= q1].ret.mean()     # short straddle earns ret
-            long_leg = -x[x.sig <= q0].ret.mean()     # long straddle = -short ret approx
+            short_leg = x[x.sig >= q1].ret.mean()          # real bid-side short
+            long_leg = x[x.sig <= q0].ret_long.mean()      # real ask-side long
             return 0.5 * (short_leg + long_leg)
         s = dd.groupby("date").apply(ls, include_groups=False).dropna()
         scr(f"C_ls_{nm}", s, res)
         s2 = dd[dd.act_symbol.isin(LIQUID)].groupby("date").apply(ls, include_groups=False).dropna()
         scr(f"C_ls_{nm}_liq", s2, res)
+        # short-only variant (top quintile short, no long leg)
+        s3 = dd[dd.act_symbol.isin(LIQUID)].groupby("date").apply(
+            lambda x: x[x.sig >= x.sig.quantile(0.8)].ret.mean() if len(x) >= 20 else np.nan,
+            include_groups=False).dropna()
+        scr(f"C_shortonly_{nm}_liq", s3, res)
 
     # ---- D: skew-conditioned credit spreads
     for st, cond, nm in [("credit_putspread", "hi", "put_skewrich"),

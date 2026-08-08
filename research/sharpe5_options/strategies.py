@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""Event-loop implementations of the surviving sleeves (hold-to-expiry).
+
+A selector examines (day, chain, spots, feats) and returns a list of
+candidate positions: each = dict(symbol, legs=[Leg...], margin, iv, hedged).
+The cohort wrapper sizes them (equal margin), enforces a utilization cap,
+tracks hedge targets, and lets the engine settle at expiry (no exit orders).
+"""
+from __future__ import annotations
+
+import os
+from typing import Callable
+
+import numpy as np
+import pandas as pd
+
+import engine as E
+import verify_engine as V
+from structures import bs_delta
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+LIQUID = {"SPY", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+          "AMD", "MU", "QCOM", "NFLX", "BA", "XOM", "JPM", "BAC", "C", "GM", "F",
+          "INTC", "CSCO", "PYPL", "AVGO", "ORCL", "CRM", "ADBE", "TXN", "COST",
+          "WMT", "DIS", "CAT", "GE", "PFE", "CVX", "WFC", "MS", "GS"}
+
+
+def _front(chain, sym, lo=15, hi=50):
+    g = chain[(chain.act_symbol == sym) & (chain.dte >= lo) & (chain.dte <= hi)]
+    if g.empty:
+        return None
+    return g[g.expiration == g.expiration.min()]
+
+
+def _nearest(ge, cp, target, need_bid=True):
+    g = ge[(ge.call_put == cp)]
+    if need_bid:
+        g = g[g.bid > 0]
+    if g.empty:
+        return None
+    return g.loc[(g.strike - target).abs().idxmin()]
+
+
+# ---------------------------------------------------------------- selectors
+
+def sel_A_putspread(day, chain, spots, F):
+    """SPY 4%/9% OTM put credit spread, every obs date."""
+    s = spots.get("SPY")
+    if s is None:
+        return []
+    ge = _front(chain, "SPY")
+    if ge is None:
+        return []
+    sl = _nearest(ge, "Put", s * 0.96)
+    wl = _nearest(ge, "Put", s * 0.91, need_bid=False)
+    if sl is None or wl is None or float(wl.strike) >= float(sl.strike):
+        return []
+    if sl.bid - wl.ask <= 0:
+        return []
+    width = (float(sl.strike) - float(wl.strike)) * 100.0
+    legs = [E.Leg("SPY", sl.expiration, float(sl.strike), "Put", -1),
+            E.Leg("SPY", wl.expiration, float(wl.strike), "Put", +1)]
+    return [dict(symbol="SPY", legs=legs, margin=width, iv=float(sl.vol), hedged=False)]
+
+
+def sel_A_ss_dh(day, chain, spots, F):
+    """SPY ATM short straddle, delta-hedged, only in contango (spy inv<0)."""
+    r = F.get((day, "SPY"))
+    if r is None or not np.isfinite(r.get("inv", np.nan)) or r["inv"] >= 0:
+        return []
+    s = spots.get("SPY")
+    if s is None:
+        return []
+    ge = _front(chain, "SPY")
+    if ge is None:
+        return []
+    cA, pA = _nearest(ge, "Call", s), _nearest(ge, "Put", s)
+    if cA is None or pA is None:
+        return []
+    legs = [E.Leg("SPY", cA.expiration, float(cA.strike), "Call", -1),
+            E.Leg("SPY", pA.expiration, float(pA.strike), "Put", -1)]
+    return [dict(symbol="SPY", legs=legs, margin=0.30 * s * 100.0,
+                 iv=float(np.nanmean([cA.vol, pA.vol])), hedged=True)]
+
+
+def make_sel_B_strangle25(thr=0.06, max_new=6):
+    def sel(day, chain, spots, F):
+        out = []
+        spy = F.get((day, "SPY"))
+        if spy is None or not np.isfinite(spy.get("inv", np.nan)):
+            return out
+        for sym in sorted(LIQUID & set(spots)):
+            if len(out) >= max_new:
+                break
+            r = F.get((day, sym))
+            if r is None or not np.isfinite(r.get("inv", np.nan)):
+                continue
+            if (r["inv"] - spy["inv"]) <= thr:
+                continue
+            ge = _front(chain, sym)
+            if ge is None:
+                continue
+            s = spots[sym]
+            gp = ge[(ge.call_put == "Put") & (ge.delta.abs().between(0.15, 0.35)) & (ge.bid > 0)]
+            gc = ge[(ge.call_put == "Call") & (ge.delta.between(0.15, 0.35)) & (ge.bid > 0)]
+            if gp.empty or gc.empty:
+                continue
+            p25 = gp.loc[(gp.delta.abs() - 0.25).abs().idxmin()]
+            c25 = gc.loc[(gc.delta - 0.25).abs().idxmin()]
+            prem = p25.bid + c25.bid
+            if prem <= 0 or (p25.spread + c25.spread) / prem > 0.30:
+                continue
+            legs = [E.Leg(sym, p25.expiration, float(p25.strike), "Put", -1),
+                    E.Leg(sym, c25.expiration, float(c25.strike), "Call", -1)]
+            out.append(dict(symbol=sym, legs=legs, margin=0.25 * s * 100.0,
+                            iv=float(np.nanmean([p25.vol, c25.vol])), hedged=False))
+        return out
+    return sel
+
+
+def make_sel_C_shortonly(q=0.8, max_new=8):
+    def sel(day, chain, spots, F):
+        cands = []
+        for sym in sorted(LIQUID & set(spots)):
+            r = F.get((day, sym))
+            if r is None:
+                continue
+            z = r.get("z_cy", np.nan) + r.get("z_mom", np.nan)
+            if np.isfinite(z):
+                cands.append((z, sym))
+        if len(cands) < 12:
+            return []
+        cands.sort(reverse=True)
+        cut = np.quantile([z for z, _ in cands], q)
+        out = []
+        for z, sym in cands:
+            if z < cut or len(out) >= max_new:
+                break
+            ge = _front(chain, sym)
+            if ge is None:
+                continue
+            s = spots[sym]
+            cA, pA = _nearest(ge, "Call", s), _nearest(ge, "Put", s)
+            if cA is None or pA is None:
+                continue
+            prem = cA.bid + pA.bid
+            if prem <= 0 or (cA.spread + pA.spread) / prem > 0.25:
+                continue
+            legs = [E.Leg(sym, cA.expiration, float(cA.strike), "Call", -1),
+                    E.Leg(sym, pA.expiration, float(pA.strike), "Put", -1)]
+            out.append(dict(symbol=sym, legs=legs, margin=0.30 * s * 100.0,
+                            iv=float(np.nanmean([cA.vol, pA.vol])), hedged=True))
+        return out
+    return sel
+
+
+# ---------------------------------------------------------------- wrapper
+
+def make_cohort_strategy(selector: Callable, feats: pd.DataFrame,
+                         capital: float, f_pos: float = 0.03,
+                         util_cap: float = 0.95):
+    f = feats.copy()
+    f["date_s"] = f.date.dt.strftime("%Y-%m-%d")
+    F = {(r["date_s"], r["act_symbol"]): r for r in f.to_dict("records")}
+
+    def strategy(day, chain, quotes, spots, vol, state, eng):
+        cohorts = state.setdefault("cohorts", [])
+        # drop expired cohorts
+        cohorts[:] = [c for c in cohorts if c["exp"] > day]
+        margin_used = sum(c["margin"] for c in cohorts)
+        orders = []
+        for cand in selector(day, chain, spots, F):
+            m1 = cand["margin"]
+            qty = max(int((capital * f_pos) / m1), 0)
+            if qty == 0:
+                qty = 0 if m1 > capital * f_pos * 3 else 1
+            if qty == 0:
+                continue
+            if margin_used + qty * m1 > util_cap * capital:
+                continue
+            legs = [E.Leg(l.symbol, l.expiration, l.strike, l.cp, l.qty * qty)
+                    for l in cand["legs"]]
+            orders.extend(legs)
+            cohorts.append({"legs": legs, "iv": cand["iv"], "margin": qty * m1,
+                            "exp": legs[0].expiration, "hedged": cand["hedged"]})
+            margin_used += qty * m1
+        # hedge targets
+        tgt: dict[str, float] = {}
+        for c in cohorts:
+            if not c["hedged"]:
+                continue
+            for leg in c["legs"]:
+                sp = spots.get(leg.symbol)
+                if sp is None:
+                    continue
+                T = max((pd.Timestamp(leg.expiration) - pd.Timestamp(day)).days, 0) / 365.0
+                d = bs_delta(sp, leg.strike, T, max(c["iv"], 0.05), leg.cp)
+                tgt[leg.symbol] = tgt.get(leg.symbol, 0.0) - leg.qty * d * 100.0
+        state["hedge_targets"] = tgt
+        return orders
+
+    return strategy
+
+
+def load_feats() -> pd.DataFrame:
+    feats = pd.read_parquet(os.path.join(HERE, "cache", "features.parquet"))
+    feats["date"] = pd.to_datetime(feats.date)
+    feats["inv"] = feats.iv_front - feats.iv_back
+    feats = feats.sort_values(["act_symbol", "date"])
+    feats["mom8"] = feats.groupby("act_symbol").spot.transform(lambda s: s / s.shift(24) - 1)
+    # credit yield proxy at feature level: iv_front * sqrt(dte) ~ premium/notional;
+    # use iv_front directly z-scored + mom8 z-scored per date
+    feats["z_cy"] = feats.groupby("date").iv_front.transform(
+        lambda s: (s - s.mean()) / (s.std() + 1e-9))
+    feats["z_mom"] = feats.groupby("date").mom8.transform(
+        lambda s: (s - s.mean()) / (s.std() + 1e-9))
+    return feats
+
+
+def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
+               n_trials=1, f_pos=0.03):
+    import ensemble as X
+    feats = load_feats()
+    spots_df = pd.read_parquet(os.path.join(HERE, "cache", "spots.parquet"))
+    spot_panel = spots_df.pivot(index="date", columns="act_symbol", values="spot").sort_index()
+    sel, hedge = {
+        "A_ps": (sel_A_putspread, False),
+        "A_ss": (sel_A_ss_dh, True),
+        "B_str25": (make_sel_B_strangle25(), False),
+        "B_str25_hi": (make_sel_B_strangle25(thr=0.09), False),
+        "C_short": (make_sel_C_shortonly(), True),
+    }[name]
+    dates = dates or E.available_dates()
+    if dev_only:
+        dates = [d for d in dates if d <= "2024-12-31"]
+    strat = make_cohort_strategy(sel, feats, capital, f_pos=f_pos)
+    bt = E.Backtester(dates, capital=capital, stock_hedge=hedge)
+    eq, fills, _ = bt.run(strat, spot_panel)
+    V.report(eq, f"sleeve_{name}", n_trials=n_trials)
+    X.save_eq(eq, name)
+    return eq
+
+
+if __name__ == "__main__":
+    import sys
+    run_sleeve(sys.argv[1] if len(sys.argv) > 1 else "A_ps")

@@ -81,3 +81,21 @@ IV-crush via term-inversion detector, short-hold; (C) cross-sectional
 credit_yield/mom rank long-short; (D) skew-conditioned credit spreads.
 NOTE: partial-window numbers; will re-run on full data. Trial count so far
 N≈17 (6 signals × ~1 + 17 sleeve/universe combos).
+
+### Trials 18-71 (partial data 2019→mid-2022): study2 sleeve screens
+
+45 configs + 9 corrected-C configs. Window = worst-case for short vol.
+- **C long-short vol EXPOSED AS FAKE**: with the long leg priced at real ask
+  (not the negated-short shortcut), C_ls_cy+mom_liq falls +2.32 → **−1.64**.
+  Long ATM straddle legs at worst-side fills + hedge costs bleed ~5%/mo.
+  Lesson: long options only as far-OTM wings, never as symmetric alpha legs.
+- Survivors (scrSharpe, worst window): **C_shortonly_cy+mom_liq +1.23**
+  (hit 70%), **A_credit_putspread SPY uncond +0.92** (hit 92% incl COVID),
+  **A_short_straddle_dh_contango +0.91**, **B_str25_idioinv>0.06_liq +0.90**.
+- Dead: calendars (double-spread entry + back-leg exit spread), weekend theta
+  (−2.2, hit 2.5% — EOD spread ≫ 2-day theta), call spreads on low skew
+  (−2.0), B with 2-obs exits (round-trip spread ≫ 2-day crush capture).
+  → All premium harvesting must be HOLD-TO-EXPIRY; exits only for risk.
+Slate for full data: A (SPY putspread, straddle_dh w/ contango gate),
+B (strangle25 idio_inv .06/.09 liq), C (short-only quintile cy+mom liq),
+D (put_skewrich_liq). Running trial count N≈71.
