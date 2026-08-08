@@ -32,10 +32,12 @@ def build_panel():
     feats["skew_rank"] = feats.groupby("act_symbol").skew25.transform(
         lambda s: s.rolling(150, min_periods=40).rank(pct=True))
     feats["mom8"] = feats.groupby("act_symbol").spot.transform(lambda s: s / s.shift(24) - 1)
+    feats["mom1w"] = feats.groupby("act_symbol").spot.transform(lambda s: s / s.shift(3) - 1)
     feats["inv"] = feats.iv_front - feats.iv_back  # >0 = inverted term
     spyf = feats[feats.act_symbol == "SPY"][
-        ["date", "iv_front", "inv", "iv_rank"]].rename(
-        columns={"iv_front": "spy_iv", "inv": "spy_inv", "iv_rank": "spy_ivrank"})
+        ["date", "iv_front", "inv", "iv_rank", "mom1w"]].rename(
+        columns={"iv_front": "spy_iv", "inv": "spy_inv", "iv_rank": "spy_ivrank",
+                 "mom1w": "spy_mom1w"})
     feats = feats.merge(spyf, on="date", how="left")
     feats["idio_inv"] = feats.inv - feats.spy_inv
 
@@ -71,6 +73,10 @@ def main():
         scr(f"A_{st}_contango", g.groupby("date").ret.mean(), res)
         g = base[(base.inv < 0) & (base.iv_rank < 0.8)]
         scr(f"A_{st}_cont+ivr<.8", g.groupby("date").ret.mean(), res)
+        g = base[base.spy_mom1w > 0]
+        scr(f"A_{st}_mom1w>0", g.groupby("date").ret.mean(), res)
+        g = base[(base.inv < 0) & (base.spy_mom1w > 0)]
+        scr(f"A_{st}_cont+mom", g.groupby("date").ret.mean(), res)
 
     # ---- B: single-name term-inversion (earnings crush)
     for thr in (0.02, 0.04, 0.06, 0.09, 0.13):
@@ -129,6 +135,11 @@ def main():
             lambda x: x[x.sig >= x.sig.quantile(0.8)].ret.mean() if len(x) >= 20 else np.nan,
             include_groups=False).dropna()
         scr(f"C_shortonly_{nm}_liq", s3, res)
+        # + own-name IV elevated filter
+        s4 = dd[dd.act_symbol.isin(LIQUID) & (dd.iv_rank > 0.5)].groupby("date").apply(
+            lambda x: x[x.sig >= x.sig.quantile(0.8)].ret.mean() if len(x) >= 10 else np.nan,
+            include_groups=False).dropna()
+        scr(f"C_shortonly_{nm}_liq_ivr", s4, res)
 
     # ---- D: skew-conditioned credit spreads
     for st, cond, nm in [("credit_putspread", "hi", "put_skewrich"),

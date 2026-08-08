@@ -96,6 +96,16 @@ N≈17 (6 signals × ~1 + 17 sleeve/universe combos).
   (−2.2, hit 2.5% — EOD spread ≫ 2-day theta), call spreads on low skew
   (−2.0), B with 2-obs exits (round-trip spread ≫ 2-day crush capture).
   → All premium harvesting must be HOLD-TO-EXPIRY; exits only for risk.
+### Trial 72 — Study 3: intra-chain smile RV → DEAD (efficient smile)
+
+Fitted vega-weighted quadratic smiles per (sym,exp) on the liquid tier;
+residual σ ≈ 2.2 vol pts, 95th pct ≈ 1 vol pt. The only ≥2.5-pt-rich quotes
+are far-OTM 3-40¢ options with vega ≤0.035 → est. edge ~$0.08/spread vs $8
+minimum after worst-side entry. **Zero tradable candidates over 580 dates.**
+Conclusion: EOD quotes on liquid names are smile-efficient within costs;
+no market-making-adjacent family exists in this data. (Event-loop sleeve
+A_ps calibration: engine Sharpe 0.70 vs screen 0.92 → marks deflate ~25%.)
+
 Slate for full data: A (SPY putspread, straddle_dh w/ contango gate),
 B (strangle25 idio_inv .06/.09 liq), C (short-only quintile cy+mom liq),
 D (put_skewrich_liq). Running trial count N≈71.
