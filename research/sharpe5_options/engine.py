@@ -26,6 +26,9 @@ VOL_DIR = os.path.join(HERE, "cache", "vol")
 
 # ---------------------------------------------------------------- loading
 
+CHAINS2_DIR = os.path.join(HERE, "cache", "chains2")
+
+
 def available_dates() -> list[str]:
     return sorted(os.path.basename(p)[:-8] for p in glob.glob(os.path.join(CHAINS_DIR, "*.parquet")))
 
@@ -36,6 +39,9 @@ import functools
 @functools.lru_cache(maxsize=64)
 def load_chain(day: str) -> pd.DataFrame:
     df = pd.read_parquet(os.path.join(CHAINS_DIR, f"{day}.parquet"))
+    p2 = os.path.join(CHAINS2_DIR, f"{day}.parquet")
+    if os.path.exists(p2):
+        df = pd.concat([df, pd.read_parquet(p2)], ignore_index=True)
     df["mid"] = (df.bid + df.ask) / 2.0
     df["spread"] = df.ask - df.bid
     # drop absurd quotes: crossed, negative, ask==0
@@ -45,10 +51,12 @@ def load_chain(day: str) -> pd.DataFrame:
 
 
 def load_vol(day: str) -> pd.DataFrame | None:
-    p = os.path.join(VOL_DIR, f"{day}.parquet")
-    if not os.path.exists(p):
+    ps = [os.path.join(VOL_DIR, f"{day}.parquet"),
+          os.path.join(HERE, "cache", "vol2", f"{day}.parquet")]
+    ps = [p for p in ps if os.path.exists(p)]
+    if not ps:
         return None
-    v = pd.read_parquet(p)
+    v = pd.concat([pd.read_parquet(p) for p in ps], ignore_index=True)
     for c in v.columns:
         if c.startswith(("hv", "iv")) and not c.endswith("date"):
             v[c] = pd.to_numeric(v[c], errors="coerce")
@@ -266,7 +274,8 @@ def weekly_sharpe(eq: pd.Series, rf_annual: float | None = None) -> dict:
 def block_bootstrap_ci(eq: pd.Series, n_boot: int = 2000, block: int = 8,
                        rf_annual: float = 0.03, seed: int = 7) -> tuple[float, float]:
     w = eq.resample("W-FRI").last().dropna()
-    r = (w.pct_change().dropna() - rf_annual / 52.0).values
+    rr = w.pct_change().dropna()
+    r = (rr - pd.Series([rf_at(t) for t in rr.index], index=rr.index) / 52.0).values
     rng = np.random.default_rng(seed)
     n = len(r)
     out = []

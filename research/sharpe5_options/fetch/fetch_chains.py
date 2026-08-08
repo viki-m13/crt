@@ -22,9 +22,21 @@ import pandas as pd
 BASE = "https://www.dolthub.com/api/v1alpha1/post-no-preference/options/master"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "..", "cache")
-CHAINS_DIR = os.path.join(CACHE, "chains")
-VOL_DIR = os.path.join(CACHE, "vol")
-MANIFEST = os.path.join(CACHE, "manifest.json")
+TIER = os.environ.get("FETCH_TIER", "1")
+SUF = "" if TIER == "1" else "2"
+CHAINS_DIR = os.path.join(CACHE, "chains" + SUF)
+VOL_DIR = os.path.join(CACHE, "vol" + SUF)
+MANIFEST = os.path.join(CACHE, f"manifest{SUF}.json")
+
+UNIVERSE2 = [
+    "ADI", "AMAT", "ANET", "AXP", "BKNG", "BLK", "CB", "CI", "CL", "CMG",
+    "COF", "DE", "DHR", "DUK", "EBAY", "ETN", "FDX", "GD", "GILD", "GOOG",
+    "HCA", "ISRG", "KLAC", "LIN", "LMT", "LRCX", "MA", "MDLZ", "MDT", "MET",
+    "MRVL", "NEE", "NOC", "NOW", "ON", "ORLY", "PANW", "PGR", "PLTR", "PM",
+    "PNC", "REGN", "ROP", "RTX", "SCHW", "SLB", "SO", "SPG", "SYK", "TGT",
+    "TJX", "TMO", "TMUS", "UNP", "USB", "V", "VLO", "VRTX", "WDC", "WMB",
+    "ZTS", "ABNB", "UBER", "DASH", "COIN", "ROKU", "SMCI",
+]
 
 UNIVERSE = [
     # ETFs present in the DB
@@ -40,6 +52,9 @@ UNIVERSE = [
     "CSCO", "ORCL", "CRM", "ADBE", "INTC", "AMD", "QCOM", "NFLX", "MU", "TXN",
     "IBM", "PYPL", "SBUX", "LOW", "GM", "F",
 ]
+if TIER == "2":
+    UNIVERSE = UNIVERSE2
+
 BATCH = 8
 PAGE = 1000
 START = dt.date(2019, 2, 1)
@@ -68,7 +83,8 @@ def q(sql: str, tries: int = 5, timeout: int = 150):
 def fetch_date(day: str) -> tuple[str, str]:
     """Fetch one observation date. Returns (day, status)."""
     # cheap probe: AAPL is always covered when a scrape ran
-    probe = q(f"SELECT COUNT(*) n FROM option_chain WHERE `date`='{day}' AND act_symbol='AAPL'")
+    probe_sym = "AAPL" if TIER == "1" else "GILD"
+    probe = q(f"SELECT COUNT(*) n FROM option_chain WHERE `date`='{day}' AND act_symbol='{probe_sym}'")
     if int(probe[0]["n"]) == 0:
         return day, "empty"
 

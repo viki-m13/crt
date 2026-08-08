@@ -53,3 +53,31 @@ on total portfolio returns including cash drag, not per-trade or "when active".
 ## Experiment log
 
 (appended chronologically; every trial counts toward DSR trial count N)
+
+### 04:30-05:00 UTC — infrastructure + data quality
+
+- DoltHub `option_chain` verified: real EOD bid/ask/IV/greeks, 2019-02→2026-08,
+  ~weekly (2019) then ~M/W/F cadence; ~3 monthly expirations per chain.
+- Parity spots validate against known closes (AAPL 186 Mar-2019, SPY 240.3 on
+  2020-03-18 ✓). All 61 universe names remained quoted through the COVID crash
+  with sane spreads (SPY ATM 2.8% spread/mid at the worst).
+- **Spread-cost map (2024-06-03, ATM/5%OTM spread ÷ mid):** SPY 0.7/1.9%,
+  NVDA 1.2/1.8%, MU 2.4/2.9%, AAPL 2.8/4.8%, KO 6/26%, GE 13/10%, JNJ 16/33%,
+  XLF >100% (quote junk). ⇒ worst-side round trips are only viable on a
+  liquid tier; wide names only via hold-to-expiry (pay half-spread once).
+- Engine smoke test (toy SPY strangle, 2019): mechanics verified; loses money
+  at worst-side fills, as a no-edge strategy should.
+
+### Trials 1-17 (partial data 2019→mid-2021 only, dev): baseline screens
+
+All unconditional premium-selling sleeves NEGATIVE after worst-side fills in
+this crash-heavy partial window (scrSharpe: short_straddle all −0.84, SPY
+iron_condor −0.41, SPY short_straddle_dh +0.35 best). Signal ICs vs
+short_straddle_dh returns (Spearman, t over dates): **credit_yield +5.6**,
+**mom8 +5.1**, **term(iv_back−iv_front) −4.0** (inversion → richer short
+returns; consistent with earnings-crush harvesting), ivrv +1.75 (weak).
+→ Sleeve hypotheses: (A) index VRP regime-gated; (B) single-name earnings
+IV-crush via term-inversion detector, short-hold; (C) cross-sectional
+credit_yield/mom rank long-short; (D) skew-conditioned credit spreads.
+NOTE: partial-window numbers; will re-run on full data. Trial count so far
+N≈17 (6 signals × ~1 + 17 sleeve/universe combos).
