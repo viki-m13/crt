@@ -90,44 +90,87 @@ deficit of two orders of magnitude.
 
 This is why the answer is "no" rather than "not yet."
 
-## 4. How a Sharpe-5 options backtest actually gets made
+## 4. The out-of-sample test: the best candidate lost money
 
-The best sleeve, run through the full event-loop engine, by year:
+The holdout (2025-01 → 2026-08) was touched exactly once, by the final
+ensemble, with inverse-volatility weights frozen on the development window.
 
-> 2019: **12.18** · 2020: 0.36 · 2021: **15.90** · 2022: 0.00 · 2023: 7.74 ·
-> 2024: 8.87 — **full period: 0.63, max drawdown −36%**
+| Period | Sharpe | CAGR | Max DD |
+|---|---:|---:|---:|
+| Development 2019–2024 | **+0.57** | +6.6% | −15% |
+| **Holdout 2025–2026 (single test)** | **−1.12** | **−28.1%** | **−43%** |
+| Full period | −0.24 | −1.9% | −43% |
 
-Every calm year prints a Sharpe far above 5. Report 2021 alone and you have a
-"Sharpe 15.9 options strategy" — from real quotes, real fills, no fabrication.
-The full-period figure is 0.63. **Subperiod selection alone is sufficient to
-manufacture the headline**, which is why the pre-registered protocol scored the
-whole window including both crashes.
+95% bootstrap CI on the holdout: (−2.05, 0.25). **The strategy that looked
+mildly profitable in development lost money out of sample.**
 
-Short premium selling has exactly this shape: it earns a small, steady carry
-and pays it back in rare, violent episodes. High Sharpe over any window that
-excludes the episode is the *expected* result, not evidence of edge.
+One sleeve did not merely underperform — it went **insolvent**. The
+term-inversion strangle sleeve (`B_str25`) survived the entire development
+window *including the COVID crash*, then took equity through zero on
+**2025-05-12**. I deliberately left it in the holdout book: the exclusion rule
+is applied on development data only, because removing a sleeve after seeing it
+fail out of sample would hide exactly what the holdout exists to reveal.
+(Two other sleeves went bust *within* development and were excluded on that
+basis — a legitimate in-sample decision.)
 
-## 5. The honest best strategy
+This is the most important number in the report. Not "Sharpe 5 was out of
+reach" but "the best honest candidate did not survive contact with unseen
+data."
+
+## 5. How a Sharpe-5 options backtest actually gets made
+
+Every figure below comes from the **same strategy on the same real quotes with
+the same worst-side fills**. Only the accounting convention changes.
+
+| Convention | Sharpe |
+|---|---:|
+| **Honest: worst-side fills, weekly marks, margin base, full period** | **+0.79** |
+| Report 2021 only | **+15.94** |
+| Report 2019 only | **+17.02** |
+| 2021 only + per-trade annualization (×√149) | **+6.51** |
+| 2023 only + per-trade annualization (×√151) | **+7.48** |
+| 2021 + per-trade + drop worst 2% of trades | **+15.86** |
+
+And the individual shortcuts, isolated on identical trades:
+
+| Shortcut | Sharpe | Inflation |
+|---|---:|---:|
+| Honest baseline | +0.53 | — |
+| Per-trade Sharpe × √(164 trades/yr) | +1.76 | **3.3×** |
+| Drop the worst 1% of weeks (4 weeks removed) | +1.35 | **2.5×** |
+| No intermediate marks (entry-bucketed) | +0.55 | 1.04× |
+| Return on premium instead of margin | +0.45 | 0.85× |
+
+The two dominant illusions are **treating 164 overlapping monthly trades as
+164 independent bets** and **removing a handful of bad weeks**. Combine either
+with subperiod selection and Sharpe 5 appears without a single fabricated
+price.
+
+Short premium selling has exactly this shape: it earns a small steady carry
+and repays it in rare violent episodes. A high Sharpe over any window that
+excludes the episode is the *expected* result, not evidence of edge — which is
+why the pre-registered protocol scored the whole window including both crashes.
+
+## 6. The honest best strategy
 
 **SPY put credit spread, 4% short strike / 9% long wing, front expiry
 (15–50 DTE), held to expiry, entered at worst-side quotes.**
 
 | Metric | Value |
 |---|---:|
-| Sharpe (weekly, excess of T-bills) | **0.57** |
-| 95% bootstrap CI (stationary block) | **(−0.18, 1.99)** |
+| Sharpe, development (weekly, excess of T-bills) | **0.57** |
+| 95% bootstrap CI (stationary block) | (−0.18, 1.99) |
 | CAGR | 11.9% |
 | Max drawdown | **−38%** |
-| Annualized vol | 18.9% |
 | Hit rate | 87% |
-| **Deflated Sharpe (164 trials)** | **≈ 0.00** |
+| **Deflated Sharpe (170 trials)** | **≈ 0.00** |
 
-The confidence interval includes zero and the Deflated Sharpe is
-indistinguishable from zero once the trial count is priced in. **I would not
-describe this as a validated edge.** It is the best thing I found, reported
-with the uncertainty it actually carries.
+The confidence interval includes zero, the Deflated Sharpe is indistinguishable
+from zero once the trial count is priced in, and the ensemble built around it
+was negative out of sample. **This is not a validated edge.** It is the best
+thing I found, reported with the uncertainty it actually carries.
 
-## 6. Two bugs I found in my own work
+## 7. Two bugs I found in my own work
 
 Both were caught by internal audits and both are logged. They matter because
 each one, uncaught, would have changed the conclusion:
@@ -148,7 +191,7 @@ each one, uncaught, would have changed the conclusion:
    said 528.98. **The entire panel was re-run on corrected spots** — the
    uncorrected log is kept at `cache/rebuild_uncorrected_spot.log`.
 
-## 7. What would actually be required
+## 8. What would actually be required
 
 Sharpe 5 in options is not impossible in general — it exists in market making
 and latency-sensitive strategies. Reaching it requires breadth or edge this
@@ -162,7 +205,7 @@ data cannot supply:
 - **Genuinely uncorrelated sleeves** — the binding constraint is 0.185 mean
   correlation, not signal strength
 
-## 8. Reproducing this
+## 9. Reproducing this
 
 ```bash
 cd research/sharpe5_options
@@ -177,10 +220,23 @@ holds the full chronological ledger, including every failed trial.
 
 ---
 
-**Bottom line.** I could not honestly build a Sharpe-5 options strategy, and I
-can now show with measured numbers why no strategy built from these signals and
-this breadth could reach it — the ceiling is about **0.5**, and the best honest
-result I produced sits right at that ceiling with a confidence interval that
-includes zero. The Sharpe-5 version of this project exists only if you report
-2021 by itself, price long legs at mid, or divide by premium instead of
-capital. Each of those was tested, and each is documented above.
+**Bottom line.** I could not honestly build a Sharpe-5 options strategy. Three
+findings, in order of importance:
+
+1. **The best candidate failed out of sample.** +0.57 in development, **−1.12
+   in the holdout**, with one sleeve going insolvent in May 2025 after
+   surviving COVID. The honest answer is not "I reached 2 instead of 5" — it is
+   "the thing that looked like an edge was not one."
+2. **Sharpe 5 was never reachable here, and that is measurable.** IC of 0.037
+   against 13.7 effective independent names caps IR at **~0.48 gross of
+   costs**. Reaching 5 needs 111× this market's breadth or 11× the measured
+   signal. This is a structural property of EOD equity options, not a search
+   failure.
+3. **A Sharpe-5 headline is trivially manufacturable from these very same
+   trades** — 15.94 by reporting 2021 alone, 7.48 by annualizing overlapping
+   trades as independent — with no fabricated prices anywhere. Which is
+   precisely why the protocol was pre-registered before the first backtest ran.
+
+If a strategy claiming Sharpe 5 in options crosses your desk, the fastest
+diagnostics are: what window, marks or entry-only P&L, capital or premium in
+the denominator, and how many trials produced it.

@@ -45,10 +45,19 @@ def combine(names: list[str] | None = None, label: str = "ensemble",
     # narrow defined-risk width can lever a position far enough to take equity
     # through zero; such a curve has no meaningful return series and must not
     # be blended into a portfolio, however small its inverse-vol weight.
-    broke = [k for k, v in eqs.items() if (v <= 0).any()]
+    # The rule is applied on DEV ONLY. A sleeve that survives the development
+    # window and goes bust inside the holdout must stay in the book: removing
+    # it with hindsight would hide exactly the failure the holdout exists to
+    # reveal.
+    broke = [k for k, v in eqs.items() if (v[v.index <= DEV_END] <= 0).any()]
     for k in broke:
-        print(f"EXCLUDED (equity went non-positive): {k}")
+        print(f"EXCLUDED (equity went non-positive during DEV): {k}")
         eqs.pop(k)
+    late = [k for k, v in eqs.items() if (v <= 0).any()]
+    for k in late:
+        first = v = eqs[k]
+        print(f"KEPT but went bust IN HOLDOUT: {k} "
+              f"(first non-positive {v[v <= 0].index[0].date()})")
     rets = {}
     for k, eq in eqs.items():
         w = eq.resample("W-FRI").last().dropna()

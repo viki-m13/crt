@@ -210,3 +210,34 @@ mechanism, demonstrated on real fills.
 position through zero. Its inverse-vol weight was only 0.005, but a busted
 curve has no meaningful return series and must not be blended in at any
 weight.
+
+### FINAL — holdout touched once (2025-01 → 2026-08)
+
+Exclusion rule applied on DEV ONLY (C_short bust 2022-03-04, C_short_wings
+bust 2020-07-31 — both in-sample decisions). B_str25 KEPT despite going
+insolvent 2025-05-12, because dropping it would hide the holdout's finding.
+
+| | Sharpe | CAGR | maxDD | CI95 |
+|---|---:|---:|---:|---|
+| DEV 2019-2024 | +0.57 | +6.6% | −15% | (−0.28, 1.80) |
+| **HOLDOUT 2025-2026** | **−1.12** | **−28.1%** | **−43%** | (−2.05, 0.25) |
+| FULL | −0.24 | −1.9% | −43% | (−0.80, 0.68) |
+
+**The candidate failed out of sample.** Sleeve correlations confirm the
+breadth diagnosis: the five put-spread variants correlate 0.71-0.94 with each
+other — five configurations of one bet, not five bets.
+
+### Illusion audit — identical trades, different conventions
+
+| convention | Sharpe |
+|---|---:|
+| honest (worst-side, weekly marks, margin, full period) | +0.79 |
+| 2021 only | **+15.94** |
+| 2019 only | **+17.02** |
+| 2021 + per-trade ×√149 | +6.51 |
+| 2023 + per-trade ×√151 | +7.48 |
+| 2021 + per-trade + drop worst 2% | +15.86 |
+| per-trade ×√164 (full period) | +1.76 (3.3x) |
+| drop worst 1% of weeks (4 weeks) | +1.35 (2.5x) |
+
+Final trial count N≈170. Deflated Sharpe of every candidate ≈ 0.
