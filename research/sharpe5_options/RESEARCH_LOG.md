@@ -525,3 +525,26 @@ Positive in dev AND holdout, positive in 7 of 8 years (only 2022 negative at
 sample.** BUT a 75-day hold gives ~5 independent rounds/yr, so 7 years is
 ~35 independent observations: the 101k "trades" are overwhelmingly overlapping
 and correlated. **t=+0.51 is not significant.** Suggestive, not established.
+
+### FINAL — 75d/20% put spreads through the event-loop engine
+
+| | Sharpe | CAGR | maxDD | CI95 | DSR |
+|---|---:|---:|---:|---|---:|
+| dev 2019-2024 | +0.55 | +16.6% | −50.4% | (−0.04, 1.29) | 0.00 |
+| **full incl. holdout** | **+0.51** | **+15.3%** | **−50.4%** | (−0.04, 1.11) | 0.00 |
+| LD_wide10 full | +0.51 | +16.4% | −52.3% | (−0.03, 1.07) | 0.00 |
+
+Yearly: 2019 0.98, 2020 0.75, 2021 1.61, 2022 −0.94, 2023 1.97, 2024 0.20,
+**2025 0.24, 2026 0.85** — positive in 7 of 8 including both holdout years
+and COVID. Best result in the project by a wide margin (previous best
+full-period was −0.24).
+
+**BUT vs the benchmark: SPY buy & hold = Sharpe 0.85, CAGR 14.6%, maxDD
+−34.2%.** The best options strategy delivers the same return with a worse
+Sharpe and a 16pp deeper drawdown. CI touches zero; DSR ~0 at ~300 trials.
+
+**PROJECT CONCLUSION: no honest options strategy here beats holding the index,
+let alone reaches Sharpe 5.** The one genuine structural discovery is that
+tenor and width dominate signal selection — the toll is fixed per leg while
+premium grows with sqrt(T) and risk grows with width — and that the standard
+30d/5% retail structure is the worst cell in the design space.

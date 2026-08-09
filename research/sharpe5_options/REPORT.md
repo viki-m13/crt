@@ -305,6 +305,43 @@ edge. Any strategy sold on "wins 9 months out of 10" is describing its payoff
 shape, not its profitability, and this table is the cleanest demonstration of
 that distinction I produced.
 
+## 8c. The best strategy found — and the benchmark that ends it
+
+The last search abandoned signal-hunting entirely and asked a structural
+question instead: the bid-ask toll is roughly **fixed per leg in dollars**,
+while premium scales with √tenor and risk scales with width. So *where* in the
+design space is the toll smallest relative to the edge?
+
+| Tenor × width | Breakeven fill f* | Net at worst-side fills |
+|---|---:|---:|
+| **75d / 20% wide** | **−0.585** | **+0.0098** |
+| **75d / 10% wide** | **−0.428** | **+0.0102** |
+| 75d / 5% | +0.147 | −0.0065 |
+| **30d / 5% — where §§2–7 lived** | **+0.740** | **−0.0339** |
+
+Premium roughly **triples** from 30d to 75d for the same toll; the toll falls
+**4.6×** from 3%-wide to 20%-wide. Both were predicted from first principles
+before measurement. **This entire project had been sitting in the worst cell of
+the design space** — the one retail defaults to because it is the most liquid.
+
+Run through the full event-loop engine, all costs, full period:
+
+| Metric | 75d/20% put spreads | **SPY buy & hold** |
+|---|---:|---:|
+| Sharpe | +0.51 | **+0.85** |
+| CAGR | +15.3% | +14.6% |
+| Max drawdown | −50.4% | **−34.2%** |
+| 95% CI on Sharpe | (−0.04, 1.11) | — |
+| Deflated Sharpe (~300 trials) | ≈0.00 | — |
+
+Positive in **7 of 8 years**, including both holdout years and COVID — a real
+improvement on every earlier candidate, all of which were negative out of
+sample. **And it still loses to the index.** Same return, worse Sharpe, a
+drawdown 16 points deeper, and a confidence interval that touches zero.
+
+That is the honest end state: after ~300 configurations across seven families,
+the best options strategy I can build is worse than holding SPY.
+
 ## 9. Two bugs I found in my own work
 
 Both were caught by internal audits and both are logged. They matter because
@@ -358,10 +395,11 @@ holds the full chronological ledger, including every failed trial.
 **Bottom line.** I could not honestly build a Sharpe-5 options strategy. Three
 findings, in order of importance:
 
-1. **The best candidate failed out of sample.** +0.57 in development, **−1.12
-   in the holdout**, with one sleeve going insolvent in May 2025 after
-   surviving COVID. The honest answer is not "I reached 2 instead of 5" — it is
-   "the thing that looked like an edge was not one."
+1. **The best strategy found does not beat holding the index.** After ~300
+   configurations, long-dated wide put spreads reach Sharpe 0.51 / CAGR 15.3%
+   with a −50% drawdown, against SPY's 0.85 / 14.6% / −34%. Positive in 7 of 8
+   years and out of sample — a real improvement on every earlier candidate,
+   all of which were negative — and still worse than doing nothing."
 2. **Sharpe 5 was never reachable here, and that is measurable.** The best
    *clean* IC of 0.033 against ~12 effective independent names caps IR at
    **~0.39 gross of costs**. Reaching 5 needs 13× the signal or ~100× the
