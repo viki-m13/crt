@@ -379,3 +379,58 @@ Options reshape the payoff into many small wins and rare large losses without
 creating edge. A "wins 9 months out of 10" claim describes payoff shape, not
 profitability — and this table is the cleanest demonstration of it in the
 whole project.
+
+### Trials 230-260 — Study 10: option signals expressed in STOCK
+
+Premise: stock spreads are 1-5bp vs 100-500bp in options. IC vs FORWARD STOCK
+returns (signal at t, entry t+1 so the same quote never both signals and
+prices the entry):
+
+| signal | h=1 | h=3 | h=5 | h=8 |
+|---|---:|---:|---:|---:|
+| **skew25** | +0.005 | +0.019(t3.5) | +0.025(t4.7) | **+0.028(t+5.6)** |
+| d_iv | +0.015(t2.9) | +0.017(t3.4) | +0.014 | +0.011 |
+| ivrv | +0.017(t2.9) | +0.015 | +0.009 | +0.005 |
+| iv_spread (parity dev) | −0.001 | +0.002 | +0.006 | +0.003 |
+| mom / rev | ~0 | ~0 | ~0 | ~0 |
+
+**Skew is a REAL signal** — monotone in horizon, t=+5.6. **Parity deviation
+(Cremers-Weinbaum) is DEAD** (t 0.3-1.5), arbitraged away post-publication.
+
+Long-short stock book, skew25 h=8, cost sensitivity:
+
+| cost | gross | net | dev | holdout |
+|---|---:|---:|---:|---:|
+| 0bp | +0.25 | +0.25 | +0.18 | +0.47 |
+| **2bp (realistic)** | +0.25 | **+0.22** | +0.15 | **+0.43** |
+| 10bp (punitive) | +0.25 | +0.07 | +0.02 | +0.24 |
+
+**This is the ONLY strategy in the project that is POSITIVE out of sample**
+(+0.43 holdout vs options ensemble −1.12). Robust but small.
+
+**Breadth, the punchline:** 70 names → **8.7 effective independent (12%)**.
+Even a market-neutral stock book hits the same wall. IR = 0.0283 x sqrt(182)
+= 0.38 — the same ~0.4 ceiling found in options, reached by a completely
+different route.
+
+### Trials 261-290 — Study 13: stock effects x option state — NOISE
+
+No monotonic gradient across conditioning buckets (the pre-stated bar). Best
+cell momentum x low-IV h=5 = +0.32, but that is 1 of 30 cells and the rest
+straddle zero. Reported as noise, not a finding.
+
+### Study 14 — the leverage question: why CAGR is capped by Sharpe^2
+
+g(L) = L*mu − (L*sigma)^2/2, maximised at Kelly L* = mu/sigma^2, giving
+**g_max = S^2/2 regardless of leverage, vol, or notional.**
+
+| strategy | Sharpe | max CAGR at optimal leverage |
+|---|---:|---:|
+| skew→stock (best OOS) | 0.22 | **2.4%** |
+| measured market ceiling | 0.39 | 7.9% |
+| best options sleeve (dev only) | 0.63 | 22.0% |
+| SPY buy & hold | 0.85 | 43.5% |
+| options ensemble (full period) | −0.24 | no growth at any leverage |
+
+1000% CAGR requires **S=2.19 at full Kelly**, 2.53 at half Kelly, 3.31 at
+quarter Kelly. Against a measured ceiling of 0.39 for this market.
