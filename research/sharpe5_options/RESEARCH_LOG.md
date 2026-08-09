@@ -734,3 +734,27 @@ Tenor points OPPOSITE to my single-cohort finding (where longer was better):
 for a LADDER, shorter tenor means more rungs, and rung count drives the
 diversification that gives the ladder its Sharpe. Rung size scales
 return/risk without changing Sharpe (0.80-0.83 across 2-8%).
+
+### Study 21 — joint sweep: a PARETO improvement on the deployed config
+
+36 combinations (tenor x OTM x width), worst-side fills, weekly rungs:
+
+| config | Sharpe | CAGR | maxDD |
+|---|---:|---:|---:|
+| **DEPLOYED 83d / 3% OTM / 3% wide** | 0.77 | 5.3% | −18.8% |
+| **60d / 5% OTM / 5% wide** | **1.02** | **8.0%** | **−17.5%** |
+| **60d / 5% OTM / 3% wide** | **1.01** | **8.6%** | −17.9% |
+| 30d / 5% OTM / 8% wide (best Sharpe) | 1.04 | 3.9% | −11.1% |
+
+**60d/5% beats deployed on all three axes: +32% Sharpe, +51% CAGR, better
+drawdown.** No tradeoff.
+
+**Not a single-cell artifact.** The 5%-OTM column is strong across every tenor
+and width (0.92-1.04); 2% OTM is weak everywhere (0.55-0.94); 3% OTM middling
+(0.63-1.02). A broad plateau, which is what a structural effect looks like.
+Mechanism: 3%->5% OTM cuts breach probability more than it cuts premium, and
+60d doubles rung count vs 83d (381 vs 193), and rung count is what generates
+the ladder's diversification.
+
+CAVEAT: 36 configs swept and winners picked — exactly the trial-count trap
+logged repeatedly above. Study 22 splits dev/holdout before any recommendation.
