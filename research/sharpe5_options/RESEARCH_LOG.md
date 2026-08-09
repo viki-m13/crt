@@ -148,6 +148,28 @@ trade's entry and its settlement and biases settlement payouts (it flatters
 put spreads, roughly cancels for straddles). Fixed by fitting ln F = ln S + cT
 across the expiration curve and taking the intercept, recovering spot and
 carry from the quotes alone. Corrected SPY on 2024-06-03: 528.33 (true close
-~527.8) vs naive forward 528.98. **All full-panel numbers are being re-run on
+~527.8) vs naive forward 528.98. **All full-panel numbers were re-run on
 corrected spots; the uncorrected log is kept at
 cache/rebuild_uncorrected_spot.log for comparison.**
+
+### Trials 119-164 — FULL PANEL, CORRECTED SPOT (definitive)
+
+The correction behaved exactly as predicted: it deflated put spreads (which it
+had been flattering) and left straddles ~unchanged. Conclusions are unchanged.
+
+| sleeve | corrected | uncorrected |
+|---|---:|---:|
+| A_credit_putspread_uncond (best of all) | **+0.53** | +0.57 |
+| A_credit_putspread_cont+mom | +0.41 | +0.45 |
+| B_str25_idioinv>0.09_liq | +0.30 | +0.24 |
+| A_short_strangle25_uncond | +0.03 | +0.01 |
+| A_short_straddle_dh_uncond | −0.16 | −0.15 |
+| A_iron_condor_uncond | −0.15 | −0.11 |
+| dispersion (short idx / long comps) | **−0.43** | −0.44 |
+| reverse dispersion | −0.61 | −0.60 |
+| index short only | −0.10 | −0.11 |
+
+Implied correlation median 0.25 (mean 0.30). The rho∈[0.4,0.6) reverse-
+dispersion cell at +0.55 is on 124 observations and is not treated as a
+finding — it is one cell of a conditioning grid and would need its own
+out-of-sample test to mean anything.
