@@ -548,3 +548,33 @@ let alone reaches Sharpe 5.** The one genuine structural discovery is that
 tenor and width dominate signal selection — the toll is fixed per leg while
 premium grows with sqrt(T) and risk grows with width — and that the standard
 30d/5% retail structure is the worst cell in the design space.
+
+### Study 17 — ACTIVE management (revisiting a premise held for ~250 trials)
+
+"Hold to expiry" came from trials 18-71 on 30d ATM straddles held 2-3 days —
+the worst possible case — then went unexamined through ~250 configurations.
+Re-tested on the 75d/20% structure. Sharpe* annualizes on REALIZED holding
+period so faster rules get credit for the breadth they create.
+
+| rule | ret/trade | hold | rounds/yr | Sharpe* | ann | lossRate | worst |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| hold to expiry | +0.0150 | 57.5d | 6.4 | +0.21 | +9.9% | 22.6% | −0.99 |
+| profit 25% | +0.0052 | 34.2d | 10.7 | +0.18 | +5.7% | 15.0% | −0.99 |
+| **profit 50%** | +0.0115 | 43.5d | 8.4 | **+0.26** | +10.0% | 18.8% | −0.99 |
+| **profit 75%** | +0.0138 | 51.3d | 7.1 | **+0.26** | +10.2% | 21.5% | −0.99 |
+| stop 2x credit | −0.0039 | 45.7d | 8.0 | **−0.17** | −3.1% | **37.8%** | **−2.02** |
+| stop 3x credit | +0.0021 | 52.4d | 7.0 | −0.12 | +1.5% | 28.3% | −2.02 |
+
+**Profit-taking helps modestly** (Sharpe 0.21 → 0.26, loss rate −4pp). Taking
+at 25% over-trades: pays the spread too often for too little, the same failure
+mode as the original exit tests.
+
+**STOPS ARE ACTIVELY HARMFUL, and the worst-trade column says why.** Hold-to-
+expiry is bounded at −0.99 of width; stop rules reach **−2.02**. A defined-risk
+spread cannot lose more than its width AT EXPIRY, but closing early at
+worst-side prices can cost MORE than that: buy back the short leg at a wide
+ask, sell the long leg at a beaten-down bid, and the round trip on a deep-ITM
+spread exceeds the max loss you would have taken by doing nothing. Stops also
+realize temporary losses that recover (loss rate 22.6% → 37.8%).
+**On defined-risk structures the stop-loss is itself the risk** — the opposite
+of standard retail practice.
