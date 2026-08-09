@@ -175,3 +175,51 @@ footer{padding:36px 0;font-size:13px;color:var(--muted)}
 footer a{color:var(--muted)}
 .disclaimer{font-size:12px;color:var(--muted);max-width:80ch;margin-top:10px;line-height:1.6}
 .updated{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* ---- per-calendar-year returns (mobile-first) ---- */
+.per-year{margin:14px 0 8px}
+.yr-row{display:grid;grid-template-columns:44px 1fr 62px;align-items:center;
+  gap:8px;margin:3px 0}
+.yr-lab{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.yr-track{position:relative;height:16px;background:var(--rule-light);border-radius:3px}
+.yr-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--rule);opacity:.7}
+.yr-bar{position:absolute;top:2px;bottom:2px;border-radius:2px;min-width:2px}
+.yr-bar.pos{background:var(--pos,#1a7f4b)}
+.yr-bar.neg{background:var(--neg,#c0392b)}
+.yr-val{font-family:var(--mono);font-size:12px;text-align:right}
+
+/* ---- pricing-model calibration ---- */
+.cal-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:14px 0 8px}
+.cal-box{border:1px solid var(--rule-light);border-left-width:4px;border-radius:8px;
+  padding:14px 16px;background:var(--bg)}
+.cal-box.good{border-left-color:var(--pos,#1a7f4b)}
+.cal-box.bad{border-left-color:var(--neg,#c0392b)}
+.cal-num{font-family:var(--mono);font-size:1.6rem;font-weight:500;letter-spacing:-.02em}
+.cal-lab{font-size:13px;font-weight:600;margin-top:2px}
+.cal-sub{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+.cal-note{font-size:13px;color:var(--muted);line-height:1.55;
+  border-top:1px solid var(--rule-light);padding-top:10px}
+@media(min-width:700px){.cal-grid{grid-template-columns:1fr 1fr}
+  .cal-note{grid-column:1/-1}}
+
+/* ---- mobile hardening ---- */
+@media(max-width:640px){
+  .stats{grid-template-columns:repeat(auto-fit,minmax(104px,1fr))}
+  .stat{padding:11px 12px}
+  .stat .num{font-size:1.16rem}
+  .stat .lab{font-size:11px}
+  .yr-row{grid-template-columns:38px 1fr 54px;gap:6px}
+  .yr-lab,.yr-val{font-size:11px}
+  .cal-num{font-size:1.35rem}
+  table.rungs{font-size:11.5px}
+  table.rungs th,table.rungs td{padding:4px 6px}
+  .hbar-row{grid-template-columns:120px 1fr 52px}
+  .hist-row{grid-template-columns:64px 1fr 40px}
+  .pair-row{grid-template-columns:56px 1fr}
+  .anatomy .flow{grid-template-columns:1fr}
+}
+/* no horizontal overflow anywhere on small screens */
+@media(max-width:640px){
+  html,body{overflow-x:hidden}
+  canvas{max-width:100%}
+}

@@ -78,12 +78,41 @@ jobs:
         run: python strategies/spx_predict/signal.py
 
       - name: Validate model vs live SPY/SPX option prices
-        # Compares the v2 model's spread credit and leg IVs against real
-        # quoted chains (mid + natural fills). Fail-soft: a Yahoo outage
-        # must never block the signal publication.
+        # Compares the v3 model's spread credit and leg IVs against real
+        # quoted chains (mid + natural fills). The check that matters is
+        # booked_vs_natural <= 1.0 — if the surface drifts optimistic again,
+        # this is where it shows up first. Fail-soft: a Yahoo outage must
+        # never block the signal publication.
         if: steps.gate.outputs.skip != 'true'
         continue-on-error: true
         run: python strategies/spx_predict/validate_live.py
+
+      - name: Alert if the pricing surface has drifted optimistic
+        # Non-blocking guard. v2 booked 1.37x the natural credit for months
+        # before it was measured; this makes that condition loud instead of
+        # silent. Warns rather than fails so a single odd quote cannot stop
+        # publication.
+        if: steps.gate.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          p = "spx/docs/data/live_validation.json"
+          if not os.path.exists(p):
+              print("no live_validation.json; skipping"); sys.exit(0)
+          d = json.load(open(p))
+          bad = []
+          for c in d.get("checks", []):
+              if not c.get("ok"):
+                  continue
+              r = c.get("booked_vs_natural")
+              if r is not None and r > 1.10:
+                  bad.append(f"{c['symbol']}: booked/natural={r}")
+          if bad:
+              print("::warning title=Pricing surface drifted optimistic::" + "; ".join(bad))
+          else:
+              print("pricing surface OK (booked <= 1.10x natural on all checks)")
+          PY
 
       - name: Commit & push
         if: steps.gate.outputs.skip != 'true'
@@ -92,7 +121,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add spx/docs/data/signal.json spx/docs/data/live_validation.json \
-                  strategies/spx_predict/data/SPY.json || true
+                  strategies/spx_predict/data/SPY.json \
+                  strategies/spx_predict/data/calibration.json \
+                  strategies/spx_predict/data/surface_selected.json || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

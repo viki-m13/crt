@@ -346,10 +346,34 @@
     var refFrac = Math.round((d.equity_sizing || 0.05) * 100);
     var capPct = Math.round((d.ladder_cap || 0.30) * 100);
     var strat = d.strategy_equity;
+    var num = function (x, dg) { return x == null ? "\u2014" : Number(x).toFixed(dg == null ? 2 : dg); };
     if (strat) {
       host.appendChild(statBox("Strategy CAGR", pct(strat.cagr, 1),
-        refFrac + "%/rung · " + capPct + "% cap"));
+        refFrac + "%/rung \u00b7 " + capPct + "% cap"));
       host.appendChild(statBox("Strategy max DD", pct(strat.maxdd, 0), "worst peak-to-trough"));
+      host.appendChild(statBox("Sharpe", num(strat.sharpe), "excess/vol, annualised"));
+      host.appendChild(statBox("Sortino", num(strat.sortino), "downside deviation only"));
+      host.appendChild(statBox("Calmar", num(strat.calmar), "CAGR \u00f7 max DD"));
+      host.appendChild(statBox("Volatility", pct(strat.vol_ann, 1), "annualised"));
+      host.appendChild(statBox("Ulcer index", num(strat.ulcer_index, 3), "depth \u00d7 duration of DD"));
+      host.appendChild(statBox("Growth", num(strat.final_multiple, 2) + "\u00d7",
+        num(strat.years, 1) + " years"));
+      if (strat.positive_years != null) {
+        host.appendChild(statBox("Positive years",
+          strat.positive_years + "/" + strat.total_years,
+          Math.round(100 * strat.positive_years / strat.total_years) + "% of calendar years"));
+      }
+      if (strat.maxdd_trough) {
+        host.appendChild(statBox("Deepest DD",
+          String(strat.maxdd_peak).slice(0, 7) + " \u2192 " + String(strat.maxdd_trough).slice(0, 7),
+          strat.maxdd_recovery_days != null
+            ? "recovered in " + strat.maxdd_recovery_days + "d"
+            : "not yet recovered"));
+      }
+      if (strat.worst_obs != null) {
+        host.appendChild(statBox("Worst settlement", pct(strat.worst_obs, 1), "single event"));
+        host.appendChild(statBox("Best settlement", pct(strat.best_obs, 1), "single event"));
+      }
     }
     host.appendChild(statBox("SPY CAGR", pct(d.spy_benchmark.cagr, 1), "buy & hold"));
     host.appendChild(statBox("SPY max DD", pct(d.spy_benchmark.maxdd, 0), "buy & hold"));
@@ -358,6 +382,63 @@
       host.appendChild(statBox("Call ladder CAGR", pct(cm.cagr, 1), "max ROR/trade book"));
       host.appendChild(statBox("Call ladder max DD", pct(cm.maxdd, 0), "max ROR/trade book"));
     }
+    renderPerYear(d);
+    renderCalibration(d);
+  }
+
+  /* Per-calendar-year returns. A single CAGR hides how the curve was earned:
+     short premium pays steadily and gives back in clusters. */
+  function renderPerYear(d) {
+    var host = document.getElementById("per-year");
+    if (!host) return;
+    var strat = d.strategy_equity || {};
+    var rows = strat.per_year || [];
+    host.innerHTML = "";
+    if (!rows.length) return;
+    var mx = 0;
+    rows.forEach(function (r) { mx = Math.max(mx, Math.abs(r.ret)); });
+    if (mx <= 0) mx = 0.01;
+    rows.forEach(function (r) {
+      var row = el("div", "yr-row");
+      row.appendChild(el("div", "yr-lab", String(r.year)));
+      var track = el("div", "yr-track");
+      track.appendChild(el("div", "yr-mid"));
+      var bar = el("div", "yr-bar " + (r.ret >= 0 ? "pos" : "neg"));
+      var w = (Math.abs(r.ret) / mx) * 50;
+      bar.style.width = w + "%";
+      bar.style.left = r.ret >= 0 ? "50%" : (50 - w) + "%";
+      track.appendChild(bar);
+      row.appendChild(track);
+      row.appendChild(el("div", "yr-val " + signClass(r.ret), pct(r.ret, 1)));
+      host.appendChild(row);
+    });
+  }
+
+  /* Pricing-model calibration — the most load-bearing assumption in the
+     backtest. If the model books credit nobody will pay, everything
+     downstream is fiction, so the evidence is published. */
+  function renderCalibration(d) {
+    var host = document.getElementById("calibration");
+    if (!host) return;
+    var cal = (d.pricing_model || {}).calibration;
+    host.innerHTML = "";
+    if (!cal || !cal.booked_vs_natural) return;
+    var b = cal.booked_vs_natural;
+    var mk = function (label, o, good) {
+      var box = el("div", "cal-box " + (good ? "good" : "bad"));
+      box.appendChild(el("div", "cal-num", Number(o.mean).toFixed(3) + "\u00d7"));
+      box.appendChild(el("div", "cal-lab", label));
+      box.appendChild(el("div", "cal-sub", "median " + Number(o.median).toFixed(3)
+        + "\u00d7 \u00b7 " + o.verdict));
+      return box;
+    };
+    if (b.v2_linear_skew) host.appendChild(mk("v2 \u2014 linear skew (previous)", b.v2_linear_skew, false));
+    if (b.v3_quadratic_skew) host.appendChild(mk("v3 \u2014 quadratic skew (current)", b.v3_quadratic_skew, true));
+    var note = el("div", "cal-note");
+    note.innerHTML = "<strong>" + Number(b.n_spreads || 0).toLocaleString() +
+      "</strong> real SPY spreads priced against natural (worst-side) fills \u2014 "
+      + (b.structure_tested || "") + ". " + (b.note || "");
+    host.appendChild(note);
   }
 
   function statBox(num, val, lab) {

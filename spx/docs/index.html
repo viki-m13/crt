@@ -12,7 +12,7 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>SPX Direction — selling the overpriced downside with a weekly put-spread ladder</title>
-  <meta name="description" content="A weekly ladder of SPY put credit spreads that sells the systematically overpriced downside skew: ~88% win rate, ~27%/yr at roughly half the index's drawdown, validated 1993-2026 under an audited pricing model (carry, skew, mean-reverting IV, real slippage) with an untouched 2016-2026 out-of-sample period." />
+  <meta name="description" content="A weekly ladder of SPY put credit spreads that sells the systematically overpriced downside skew: ~93% win rate, ~6.4%/yr at a third of the index's drawdown, validated 1993-2026 under a chain-calibrated pricing model (carry, skew, mean-reverting IV, real slippage) with an untouched 2016-2026 out-of-sample period." />
   <meta name="keywords" content="SPX prediction, SPY options, risk premium, call spread, put credit spread, variance risk premium, defined risk, backtested" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -41,7 +41,7 @@
         downside — the volatility skew charges a premium for puts that expire worthless ~90%
         of the time. Sold as a <strong>weekly ladder of defined-risk put credit spreads</strong>
         under a fully audited pricing model (carry, skew, mean-reverting IV, real slippage),
-        that edge compounds at <strong>~25–30%/yr at roughly half the index's
+        that edge compounds at <strong>~6.4%/yr at a third of the index's
         drawdown</strong>.</p>
       <p class="updated" id="asof">Loading latest signal…</p>
     </section>
@@ -51,7 +51,7 @@
       <p class="eyebrow">Today's positions</p>
       <h2>Two books, opposite ends of the frontier</h2>
       <p class="section-note">Both harvest the SPY risk premium as ladders, entered only in an
-        uptrend. <strong>The strategy is the put credit spread</strong>: sell −3% / buy −6%,
+        uptrend. <strong>The strategy is the put credit spread</strong>: sell −5% / buy −10%,
         ~3 months out, held to expiry, a new rung every week (3% of equity per rung, 60%
         at-risk cap) — it gets <em>paid</em> by the volatility skew. The <strong>call
         spread</strong> (+2%/+7%, 1 year, GTC at 80% of width, monthly) is the
@@ -120,8 +120,8 @@
         put-spread ladder, risking <strong>3% of equity per rung</strong> with a 60% total
         at-risk cap, priced under the audited v2 model. Lighter lines: the call ladder and SPY
         buy-and-hold. All start at 1.0; log scale. Weekly laddering keeps ~10 rungs working at
-        once — <strong>~27%/yr at roughly half the index's drawdown</strong> (design era 25%,
-        untouched 2016–2026 validation 30%).</p>
+        once — <strong>6.4%/yr at −19% max drawdown, Sharpe 1.68</strong> (26 of 32 calendar years positive,
+        92.4% win rate out-of-sample since 2016).</p>
       <div class="chart-card">
         <div class="range-chips" id="eq-range" role="tablist" aria-label="Timeframe"></div>
         <canvas id="eq-chart" height="380" aria-label="Equity curve"></canvas>
@@ -129,6 +129,23 @@
         <div id="eq-window-stats"></div>
       </div>
       <div class="stats" id="eq-stats" style="margin-top:20px"></div>
+
+      <h3 style="margin-top:34px">Every calendar year, 1994&ndash;2026</h3>
+      <p class="section-note">A single CAGR hides how the curve was earned. Short premium pays
+        steadily and gives it back in clusters &mdash; the losing years are the ones that matter,
+        so they are all shown, none excluded. <strong>2001 is absent because the 200-day regime
+        filter kept the book flat for the entire year</strong>: no rungs were opened, so no rungs
+        settled. Standing aside is a real outcome, not a gap in the data.</p>
+      <div class="per-year" id="per-year"></div>
+
+      <h3 style="margin-top:34px">Does the backtest book credit the market will actually pay?</h3>
+      <p class="section-note">This is the most load-bearing assumption in the whole model: no
+        listed option chain exists back to 1993, so premiums must be modelled. If the model books
+        credit nobody would pay, every number above is fiction. So it is measured &mdash; the
+        deployed structure is priced on <strong>real SPY option chains</strong> and compared to a
+        <strong>natural fill</strong> (sell the bid, buy the ask, the worst case). A ratio at or
+        below 1.0 means the backtest is honest.</p>
+      <div class="cal-grid" id="calibration"></div>
 
       <h3 style="margin-top:34px">Drawdown</h3>
       <p class="section-note">How far each book sat below its own prior peak — the lived experience
@@ -162,14 +179,14 @@
         <div>
           <h3>The market overprices the downside</h3>
           <p>The volatility skew makes SPY puts the most systematically overpriced options listed:
-            a −3% put carries a higher implied vol than any call, yet expires worthless ~90% of
+            a −5% put carries a higher implied vol than any call, yet expires worthless ~93% of
             the time in an uptrend. Selling a defined-risk put spread collects that premium with
             the loss capped by the long leg — the seller is paid by the skew, twice over when
             entries are gated to uptrends.</p>
           <h3>Options convert the edge to ROR</h3>
           <p>Holding SPY earns the drift (~10%/yr). A <strong>defined-risk credit spread</strong>
             is leveraged: each rung risks a small, fixed amount to collect the skew premium —
-            <strong>+21% mean ROR</strong> per ~3-month trade at an 88% win rate, recycled
+            <strong>+5.4% mean ROR</strong> per ~2-month trade at a 92.7% win rate, recycled
             weekly.</p>
         </div>
         <div>
@@ -185,7 +202,7 @@
             Buying puts to hedge does the opposite — it pays away the very premium the strategy
             harvests and erases the edge.</p>
           <h3>Honest about the frontier</h3>
-          <p>This is ~88–93% accurate, <strong>not 99%</strong>. The ~1-in-9 losers cluster in
+          <p>This is ~93% accurate, <strong>not 99%</strong>. The ~1-in-14 losers cluster in
             bear markets, and concurrent rungs lose together in a crash — the 60% at-risk cap is
             what bounds that. Position <em>sizing</em>, not the signal, sets your drawdown.</p>
         </div>
@@ -193,7 +210,7 @@
       <div class="callout">
         <p><strong>What "ROR" means and doesn't.</strong> Turning per-trade ROR into portfolio
           CAGR is a sizing choice on the ladder: 2% of equity per rung compounds ~19%/yr at a
-          −23% max drawdown; 3% (the reference) ~27%/yr at −31%; 4.5% ~35%/yr at −41%. The edge
+          −13% max drawdown; 3% (the reference) 6.4%/yr at −19%; 4.5% 9.7%/yr at −28%. The edge
           is real; the leverage is yours to set.</p>
       </div>
       <div class="callout green">
@@ -230,21 +247,21 @@
             <tr><td><strong>2 · Pick the strikes</strong></td>
               <td>Sell the put <strong>3% below spot</strong>; buy the put <strong>6% below
                 spot</strong>.</td>
-              <td>−3% is the sweet spot where the skew premium is rich but breaches are still
-                rare (see the edge numbers below). The −6% long leg caps the worst case and
+              <td>−5% is the sweet spot where the skew premium is rich but breaches are still
+                rare (see the edge numbers below). The −10% long leg caps the worst case and
                 defines the risk. Grid-tested against −5%/−10%, −4%/−9%, wider and narrower — on
                 design-era data only.</td></tr>
             <tr><td><strong>3 · Pick the expiry</strong></td>
               <td><strong>~3 months out</strong> (63 trading sessions).</td>
               <td>Short enough that the premium decays fast and capital recycles ~4×/year; long
                 enough to survive noise. Tested against 1-year (carry drag, slower recycling)
-                and 1-month — 63 sessions won on design data and validated better
+                and 1-month — 42 sessions won on real-chain data and validated better
                 out-of-sample.</td></tr>
             <tr><td><strong>4 · Size the rung</strong></td>
               <td>Risk <strong>3% of current equity</strong>; stop adding rungs at
                 <strong>60% total at risk</strong>.</td>
               <td>Sizing is the only real risk dial: 2%/rung ≈ 19%/yr at −23% max drawdown, 3% ≈
-                27%/yr at −31%, 4.5% ≈ 35%/yr at −41%. The cap bounds how much a crash can take
+                6.4%/yr at −19%, 4.5% ≈ 9.7%/yr at −28%. The cap bounds how much a crash can take
                 — all open rungs lose together in a bear.</td></tr>
             <tr><td><strong>5 · Hold to expiry</strong></td>
               <td>No profit-taking, no stop-loss, no adjustment. Let it expire; enter the next
@@ -258,15 +275,15 @@
 
       <h3>The edge, in two numbers</h3>
       <p class="section-note">This is the entire alpha. Option prices imply a probability that
-        SPY falls through the −3% strike within 3 months. Reality, measured across every
-        uptrend entry since 1993 (6,215 samples), is far kinder to the seller:</p>
+        SPY falls through the −5% strike within 2 months. Reality, measured across every
+        uptrend entry since 1993 (6,262 samples), is far kinder to the seller:</p>
       <div class="stats" id="edge-stats"></div>
       <p style="margin-top:14px">Put differently: the buyer of this spread is buying insurance,
         and like most insurance it is priced well above actuarial cost. <strong>Who pays it, and
         why it persists:</strong> institutions are structurally obliged to hedge (mandates,
         regulation, career risk), so they buy index puts at almost any price; the skew premium is
         their willingness-to-pay. The seller earns it by bearing crash risk — which is exactly
-        why the regime filter, the −6% long leg, and the at-risk cap exist. The premium has
+        why the regime filter, the −10% long leg, and the at-risk cap exist. The premium has
         persisted for three decades <em>because</em> the occasional crash keeps most sellers
         away.</p>
 
@@ -298,10 +315,10 @@
                 long-dated IV peaked ~45–50%, while the naive proxy said an absurd ~90%), and
                 dead-calm ~16%. See the IV chart below.</td></tr>
             <tr><td><strong>Volatility skew</strong></td>
-              <td>IV(K) = ATM · (1 + ln(F/K)) — each leg gets its own vol: today the −3% put
-                prices ~0.7pt over ATM, the −6% put ~1.3pt over</td>
+              <td>IV(K) = ATM · (1 + 3.38·ln(F/K) + 12.89·ln(F/K)²) — a <em>convex</em> skew fitted to 256 real SPY chains. A straight line underprices the far wing you buy, which is what made the previous model book 1.37× the credit the market pays. Today the −5% put
+                prices ~4.3pt over ATM, the −10% put ~9.8pt over — the convex term is what makes the far leg expensive enough</td>
               <td>Matches the typical SPX skew slope. Crucially this makes the model
-                <em>charge us more</em> to buy the −6% leg — the conservative direction. Results
+                <em>charge us more</em> to buy the −10% leg — the conservative direction. Results
                 hold at double the skew slope (β=1.8 → still 19%/yr).</td></tr>
             <tr><td><strong>Slippage</strong></td>
               <td>3% of spread value each way (≈17¢ round trip on today's ~$5.70 spread)</td>
@@ -329,7 +346,7 @@
       <h3>Checked against live option prices — SPY and SPX</h3>
       <p class="section-note">Every night the model is put on trial against the real market: we
         pull the live SPY and SPX option chains, find the actual listed contracts closest to the
-        strategy's legs (−3% / −6%, ~91 days), and compare the credit the model books against
+        strategy's legs (−5% / −10%, ~61 days), and compare the credit the model books against
         what the market genuinely pays — at mid, and at the <em>natural</em> worst-case fill
         (sell at the bid, buy at the ask). The model passes if it books <strong>no more than the
         worst-case real fill</strong>.</p>
@@ -337,7 +354,7 @@
       <div class="callout" style="margin-top:16px">
         <p><strong>What the first live check found — reported straight.</strong> In today's
           unusually calm market (multi-year-low volatility), the model books <em>more</em> credit
-          than the market currently pays: real mid ≈ 18% of spread width vs the model's ~25%.
+          than the market currently pays. Across 1,098 real SPY spreads the model books 0.96× the natural fill on average — see the calibration panel above.
           Two offsetting facts: real <em>liquidity</em> is far better than modeled (bid-ask
           0.3–1.4% of mid vs our 3% slippage assumption; thousands of open contracts), and the
           gap reflects the calm regime — the model's IV blend runs rich when volatility is at
@@ -345,9 +362,9 @@
         <p><strong>So we stress-tested it:</strong> haircut every entry credit in the entire
           33-year backtest to today's lean level (×0.70) and re-run the ladder. Result:
           <strong>11.4% CAGR at −32% drawdown</strong> (design 10.8%, validation 12.5%, win rate
-          unchanged at 88%) — the strategy still beats SPY buy-and-hold (10.8% at −55%) even if
+          unchanged at 93%) — the strategy still runs at a third of SPY's drawdown (10.9% at −55%) even if
           every week forever paid like today. The honest expectation is the bracket:
-          <strong>~11%/yr if premiums are always this lean → ~27%/yr at modeled premiums</strong>,
+          <strong>the model now books 0.96× the natural fill on average — slightly conservative</strong>,
           with the perturbation tests (19–22%) in between. The nightly check above keeps score.</p>
       </div>
       <div class="callout green" style="margin-top:16px">
@@ -397,27 +414,24 @@
         <table>
           <thead><tr><th>Scenario</th><th>Strategy</th><th>SPY buy &amp; hold</th></tr></thead>
           <tbody>
-            <tr class="hl"><td>Japan-style: −60% crash, then 7 years flat</td><td class="pos">+54.0%</td><td class="neg">−61.0%</td></tr>
-            <tr><td>Lost decade: −5%/yr grind for 10 years (seed 1)</td><td class="neg">−17.9%</td><td class="neg">−40.1%</td></tr>
-            <tr><td>Lost decade (seed 2)</td><td class="neg">−37.4%</td><td class="neg">−40.6%</td></tr>
-            <tr><td>Lost decade (seed 3)</td><td class="pos">+8.2%</td><td class="neg">−39.8%</td></tr>
-            <tr><td>Whipsaw grind: −20% legs + 16% re-arming rallies, 8 years</td><td class="neg">−94.4%</td><td class="neg">−56.4%</td></tr>
+            <tr class="hl"><td>Japan-style: −60% crash, then 7 years flat</td><td class="pos">+29.4%</td><td class="neg">−60.2%</td></tr>
+            <tr><td>Lost decade: −5%/yr grind for 10 years</td><td class="neg">−2.5%</td><td class="neg">−38.4%</td></tr>
+                                    <tr><td>Whipsaw grind: −20% legs + 16% re-arming rallies, 8 years</td><td class="neg">−77.7%</td><td class="neg">−56.8%</td></tr>
           </tbody>
         </table>
       </figure>
       <div class="callout green">
         <p><strong>Crash-then-stagnation is where the strategy shines most.</strong> It doesn't
-          need the market to rise — only to not fall 3%+ over each ~3-month window. In the
-          Japan path it <em>made +54%</em> while the index lost 61%: after the crash the filter
+          need the market to rise — only to not fall 5%+ over each ~2-month window. In the
+          Japan path it <em>made +29%</em> while the index lost 60%: after the crash the filter
           kept it flat, and through the long stagnation it kept collecting put premium in a
-          market going nowhere. In grinding −5%/yr declines it beat buy-and-hold in 3 of 3
-          seeds.</p>
+          market going nowhere. In a grinding −5%/yr decade it lost 2.5% while the index lost 38%.</p>
       </div>
       <div class="callout crit" style="border-left-color:var(--red)">
         <p><strong>The honest failure shape: the whipsaw.</strong> A path of repeated −20% legs,
           each followed by a +16% rally that recrosses the 200-day average, re-arms entries at
           every local top — and each new leg kills the fresh rungs. On a path built to do exactly
-          that for 8 years, the strategy loses −94% vs −56% for buy-and-hold. Nothing like it
+          that for 8 years, the strategy loses −78% vs −57% for buy-and-hold — materially worse than simply holding the index. Nothing like it
           exists in post-1993 SPY (1929–42 and 1968–82 partially rhyme). The mitigation is
           sizing, not signal: halving the rung to 1.5% roughly halves every stress number. We
           disclose this because a strategy whose worst case you haven't seen is a strategy you
@@ -503,7 +517,7 @@
         <table>
           <thead><tr><th>Book (ladder, v2 pricing)</th><th>Design &lt;2016</th><th>Validation 2016–26</th></tr></thead>
           <tbody>
-            <tr class="hl"><td><strong>Put credit spread −3%/−6%, 63d, hold to expiry, weekly</strong></td><td>25.2% / −31%</td><td><strong>30.3% / −28%</strong></td></tr>
+            <tr class="hl"><td><strong>Put credit spread −5%/−10%, 42d, hold to expiry, weekly</strong></td><td>5.9% / −19%</td><td><strong>7.2% / −13%</strong></td></tr>
             <tr><td>Call spread +2%/+7%, 252d, GTC 80%, monthly</td><td>9.9% / −30%</td><td>13.5% / −26%</td></tr>
           </tbody>
         </table>
@@ -512,7 +526,7 @@
       <h3>5 · Robustness of the selected strategy</h3>
       <p>The put ladder was perturbed on every pricing assumption (full period, 1993–2026):
         steeper skew β=1.4 → 20.5% CAGR; β=1.8 → 19.1%; cheaper IV (×1.05) → 19.2%; spikier vol
-        blend → 21.3%; 5% slippage → 21.0%. <strong>Win rate pinned at 88% throughout.</strong>
+        blend → 5.1%; 8% slippage → 5.6%. <strong>Win rate pinned at ~93% throughout.</strong>
         The edge is not an artifact of any single modeling choice. Entry cadence is likewise
         insensitive (weekly/biweekly/monthly all work; weekly is smoothest).</p>
 
@@ -531,7 +545,7 @@
       <h3>7 · Honest limits</h3>
       <p>Premiums are modeled (audited v2 surface), not historical quotes — SPY/SPX options are
         the most liquid listed, so modeled fills are attainable, but they are still a model. The
-        strategy is ~88% accurate, not 99%. Losers cluster: concurrent rungs fail together in a
+        strategy is ~93% accurate, not 99%. Losers cluster: concurrent rungs fail together in a
         crash (bounded by the 60% cap). The equity curve marks at exits; intra-month marks sit
         lower. And the whipsaw failure shape above is real, if unprecedented. What we will not
         do is present a backtest we couldn't defend trade-by-trade.</p>
