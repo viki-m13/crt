@@ -184,7 +184,13 @@ def make_sel_C_shortonly(q=0.8, max_new=8, wings=None, ivr_min=None):
 
 def make_cohort_strategy(selector: Callable, feats: pd.DataFrame,
                          capital: float, f_pos: float = 0.03,
-                         util_cap: float = 0.95):
+                         util_cap: float = 0.95, profit_take: float | None = None):
+    """profit_take: close a cohort once its buy-back cost has fallen to
+    (1-profit_take) of the credit received. Study 17 found this is the only
+    active rule that survives out of sample — closing winners buys back cheap
+    far-OTM options (small toll) and recycles capital into more rounds, whereas
+    every loss-cutting rule pays a toll that scales with how badly the trade
+    has gone."""
     f = feats.copy()
     f["date_s"] = f.date.dt.strftime("%Y-%m-%d")
     F = {(r["date_s"], r["act_symbol"]): r for r in f.to_dict("records")}
@@ -193,8 +199,31 @@ def make_cohort_strategy(selector: Callable, feats: pd.DataFrame,
         cohorts = state.setdefault("cohorts", [])
         # drop expired cohorts
         cohorts[:] = [c for c in cohorts if c["exp"] > day]
-        margin_used = sum(c["margin"] for c in cohorts)
         orders = []
+
+        # profit-taking: close cohorts whose buy-back cost has fallen enough.
+        # Cost is the worst side as always: buy back shorts at ask, sell longs
+        # at bid. A leg with no quote cannot be closed, so the cohort is held.
+        if profit_take is not None:
+            keep = []
+            for c in cohorts:
+                cost, ok = 0.0, True
+                for leg in c["legs"]:
+                    q = quotes.get(leg)
+                    if q is None:
+                        ok = False
+                        break
+                    px = q[1] if leg.qty < 0 else q[0]   # short->ask, long->bid
+                    cost += -leg.qty * px * 100.0
+                if ok and c.get("credit", 0) > 0 and \
+                        cost <= (1 - profit_take) * c["credit"]:
+                    orders.extend([E.Leg(l.symbol, l.expiration, l.strike, l.cp,
+                                         -l.qty) for l in c["legs"]])
+                else:
+                    keep.append(c)
+            cohorts[:] = keep
+
+        margin_used = sum(c["margin"] for c in cohorts)
         for cand in selector(day, chain, spots, F):
             m1 = cand["margin"]
             qty = max(int((capital * f_pos) / m1), 0)
@@ -207,8 +236,14 @@ def make_cohort_strategy(selector: Callable, feats: pd.DataFrame,
             legs = [E.Leg(l.symbol, l.expiration, l.strike, l.cp, l.qty * qty)
                     for l in cand["legs"]]
             orders.extend(legs)
+            credit = 0.0
+            for l in legs:
+                q = quotes.get(l)
+                if q is not None:
+                    credit += -l.qty * (q[0] if l.qty < 0 else q[1]) * 100.0
             cohorts.append({"legs": legs, "iv": cand["iv"], "margin": qty * m1,
-                            "exp": legs[0].expiration, "hedged": cand["hedged"]})
+                            "exp": legs[0].expiration, "hedged": cand["hedged"],
+                            "credit": credit})
             margin_used += qty * m1
         # hedge targets
         tgt: dict[str, float] = {}
@@ -247,7 +282,7 @@ def load_feats() -> pd.DataFrame:
 
 
 def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
-               n_trials=1, f_pos=0.03):
+               n_trials=1, f_pos=0.03, profit_take=None):
     import ensemble as X
     feats = load_feats()
     spots_df = pd.read_parquet(os.path.join(HERE, "cache", "spots.parquet"))
@@ -270,11 +305,13 @@ def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
     dates = dates or E.available_dates()
     if dev_only:
         dates = [d for d in dates if d <= "2024-12-31"]
-    strat = make_cohort_strategy(sel, feats, capital, f_pos=f_pos)
+    strat = make_cohort_strategy(sel, feats, capital, f_pos=f_pos,
+                                profit_take=profit_take)
     bt = E.Backtester(dates, capital=capital, stock_hedge=hedge)
     eq, fills, _ = bt.run(strat, spot_panel)
-    V.report(eq, f"sleeve_{name}", n_trials=n_trials)
-    X.save_eq(eq, name)
+    tag = name + (f"_pt{int(profit_take*100)}" if profit_take else "")
+    V.report(eq, f"sleeve_{tag}", n_trials=n_trials)
+    X.save_eq(eq, tag)
     return eq
 
 
