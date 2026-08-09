@@ -327,3 +327,55 @@ structure, no monotonic exploitable pattern in either direction.
 **Pass 2 conclusion: the ceiling is lower than pass 1 said (0.39), the one
 unbounded-Sharpe family is closed, and the best genuinely-clean signals
 improve but do not rescue the economics.**
+
+---
+
+## THIRD PASS — bringing the STOCK in (trials 211-240)
+
+Premise: every failure so far paid the OPTION spread (100-500 bps). Nothing
+forces the trade to be expressed in options. Three ways to involve stock:
+(11) option signals timing an index position, (12) stock and options held
+jointly, (10) option signals expressed purely in stock.
+
+### Trials 211-222 — Study 11: option-implied MARKET TIMING of SPY — DEAD
+
+| strategy | Sharpe | CAGR | maxDD |
+|---|---:|---:|---:|
+| **buy & hold SPY (benchmark)** | **+0.85** | +14.6% | −34.2% |
+| vol-target on option-implied IV | +0.84 | +12.1% | **−24.5%** |
+| vol-target on trailing realized | +0.79 | +11.8% | −21.2% |
+| long only when contango | +0.67 | +6.4% | −15.2% |
+| long only when IV < 80th pct | +0.64 | +8.2% | −28.5% |
+| long only when VRP > 0 | +0.40 | +4.7% | −31.2% |
+| vol-target x VRP>0 | +0.38 | +3.6% | −19.0% |
+
+**No option-implied timing rule beats buy-and-hold.** Every gate that sits out
+of the market gives up more return than risk. Vol-targeting on IMPLIED vol
+matches buy-and-hold's Sharpe while cutting drawdown ~10pp, and is the single
+most STABLE result in the project (dev 0.93 / holdout 0.85, essentially no
+decay) — but it is risk scaling, not alpha.
+
+### Trials 223-229 — Study 12: STOCK + OPTION combinations — ALL WORSE
+
+Held to expiry, benchmarked against buy-and-hold of the same stock over
+identical dates. Liquid tier, 46,037 observations each:
+
+| structure | Sharpe | vs stock | hit rate |
+|---|---:|---:|---:|
+| **stock only** | **+0.77** | — | 55.2% |
+| prot_put 5% | +0.65 | −0.11 | 48.1% |
+| buy_write 5% | +0.56 | −0.21 | 61.0% |
+| buy_write 2% | +0.48 | −0.29 | 65.7% |
+| **put_write 5%** | +0.46 | −0.30 | **83.2%** |
+| buy_write ATM | +0.44 | −0.33 | 70.0% |
+| collar 5% | +0.25 | −0.51 | 53.7% |
+
+**Every overlay reduces risk-adjusted return.** SPY-only: stock 0.74 vs
+buy_write_5pct 0.73 — the closest anything came, still not an improvement.
+
+**The hit-rate column runs OPPOSITE to the Sharpe column.** Put writes win
+83% of the time (92.6% on SPY) with the second-worst Sharpe in the table.
+Options reshape the payoff into many small wins and rare large losses without
+creating edge. A "wins 9 months out of 10" claim describes payoff shape, not
+profitability — and this table is the cleanest demonstration of it in the
+whole project.

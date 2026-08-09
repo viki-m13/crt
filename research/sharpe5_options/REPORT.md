@@ -261,7 +261,51 @@ tautology), the shortest available tenor to double turnover, stress overlays,
 and selling cheap premium instead of rich (every credit-yield quintile is
 negative for every structure).
 
-## 8. Two bugs I found in my own work
+## 8. Third pass: bringing the stock in
+
+Every failure above paid the **option** spread — 100–500 bps per round trip
+against a gross edge of similar size. But nothing forces a trade to be
+expressed in options. Stock spreads on these names are 1–5 bps.
+
+### 8a. Option-implied market timing of SPY — no rule beats holding
+
+| Strategy | Sharpe | CAGR | Max DD |
+|---|---:|---:|---:|
+| **Buy & hold SPY** | **+0.85** | +14.6% | −34.2% |
+| Vol-target on option-implied IV | +0.84 | +12.1% | **−24.5%** |
+| Vol-target on trailing realized | +0.79 | +11.8% | −21.2% |
+| Long only in contango | +0.67 | +6.4% | −15.2% |
+| Long only when VRP > 0 | +0.40 | +4.7% | −31.2% |
+
+Every gate that sits out of the market surrenders more return than risk. The
+one durable result: **vol-targeting on implied vol matches buy-and-hold's
+Sharpe while cutting drawdown by ten points**, and it is the most stable thing
+in this entire project — dev 0.93, holdout 0.85, essentially no decay. That is
+risk scaling, not alpha, and I present it as such.
+
+### 8b. Stock + option combinations — every overlay is worse than the stock
+
+Held to expiry, benchmarked against buy-and-hold of the same stock over
+identical dates (46,037 observations per structure):
+
+| Structure | Sharpe | vs stock | Hit rate |
+|---|---:|---:|---:|
+| **Stock only** | **+0.77** | — | 55.2% |
+| Protective put 5% | +0.65 | −0.11 | 48.1% |
+| Buy-write 5% OTM | +0.56 | −0.21 | 61.0% |
+| **Cash-secured put write 5%** | +0.46 | −0.30 | **83.2%** |
+| Buy-write ATM | +0.44 | −0.33 | 70.0% |
+| Collar 5% | +0.25 | −0.51 | 53.7% |
+
+**Read the hit-rate column against the Sharpe column — they run in opposite
+directions.** The put write wins **83% of the time** (92.6% on SPY alone) and
+delivers the second-worst risk-adjusted return in the table. Options reshape
+the payoff into many small wins and rare large losses; they do not manufacture
+edge. Any strategy sold on "wins 9 months out of 10" is describing its payoff
+shape, not its profitability, and this table is the cleanest demonstration of
+that distinction I produced.
+
+## 9. Two bugs I found in my own work
 
 Both were caught by internal audits and both are logged. They matter because
 each one, uncaught, would have changed the conclusion:
@@ -282,7 +326,7 @@ each one, uncaught, would have changed the conclusion:
    said 528.98. **The entire panel was re-run on corrected spots** — the
    uncorrected log is kept at `cache/rebuild_uncorrected_spot.log`.
 
-## 9. What would actually be required
+## 10. What would actually be required
 
 Sharpe 5 in options is not impossible in general — it exists in market making
 and latency-sensitive strategies. Reaching it requires breadth or edge this
@@ -296,7 +340,7 @@ data cannot supply:
 - **Genuinely uncorrelated sleeves** — the binding constraint is 0.185 mean
   correlation, not signal strength
 
-## 10. Reproducing this
+## 11. Reproducing this
 
 ```bash
 cd research/sharpe5_options
