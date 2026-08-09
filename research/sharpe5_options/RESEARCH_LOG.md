@@ -173,3 +173,40 @@ Implied correlation median 0.25 (mean 0.30). The rho∈[0.4,0.6) reverse-
 dispersion cell at +0.55 is on 124 observations and is not treated as a
 finding — it is one cell of a conditioning grid and would need its own
 out-of-sample test to mean anything.
+
+### Trials 165-170 — Study 6: short-dated (8-14 DTE), held to expiry
+
+No sub-week expirations exist in this DB; 8-14 DTE is the shortest tenor and
+is present on ~94% of dates. SPY: putspread **+0.57**, strangle25 +0.35,
+straddle +0.17. Liquid tier: all negative (−0.11 to −0.27). Denser theta does
+not outrun the spread except on the single tightest-quoted instrument, and
+even there it only matches the monthly version.
+
+### Study 5 — the ceiling (the central result)
+
+IC=+0.0371 (t=+5.54, 1237 dates) on the liquid tier. 38 names, mean pairwise
+return correlation +0.185, **effective independent names 13.7** (eigenvalue
+participation ratio, 36% of nominal) → 164 independent bets/yr →
+**IR ceiling 0.48 gross of costs**. Sharpe 5 needs BR=18,130/yr (**111x**
+available) or IC=0.391 (**11x** measured). The breadth deficit, not signal
+quality, is what makes 5 unreachable.
+
+### Event-loop finals (dev) — the only numbers reported as results
+
+| sleeve | Sharpe | CI95 | maxDD | DSR |
+|---|---:|---|---:|---:|
+| A_ps_6_12 | 0.63 | (−0.17, 3.14) | −36% | 0.0002 |
+| A_ps | 0.57 | (−0.18, 1.99) | −38% | 0.00 |
+| A_ps_mom | 0.54 | (−0.14, 1.81) | −19% | 0.0001 |
+| **ensemble (inv-vol, frozen dev weights)** | **0.74** | **(−0.11, 1.96)** | **−15%** | 0.0001 |
+
+Per-year for A_ps_6_12: 2019 **12.18**, 2020 0.36, 2021 **15.90**, 2022 0.00,
+2023 7.74, 2024 8.87 — full period **0.63**. Any single calm year clears
+Sharpe 5 comfortably; the full window does not. This is the manufacturing
+mechanism, demonstrated on real fills.
+
+**Sleeve C_short_wings excluded from the ensemble: equity went non-positive
+(−500% DD).** Sizing capital/f_pos by a narrow defined-risk width levered the
+position through zero. Its inverse-vol weight was only 0.005, but a busted
+curve has no meaningful return series and must not be blended in at any
+weight.

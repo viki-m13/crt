@@ -41,6 +41,14 @@ def combine(names: list[str] | None = None, label: str = "ensemble",
     eqs = load_all()
     if names:
         eqs = {k: v for k, v in eqs.items() if k in names}
+    # Drop sleeves that went bust. A sizing rule that divides capital by a
+    # narrow defined-risk width can lever a position far enough to take equity
+    # through zero; such a curve has no meaningful return series and must not
+    # be blended into a portfolio, however small its inverse-vol weight.
+    broke = [k for k, v in eqs.items() if (v <= 0).any()]
+    for k in broke:
+        print(f"EXCLUDED (equity went non-positive): {k}")
+        eqs.pop(k)
     rets = {}
     for k, eq in eqs.items():
         w = eq.resample("W-FRI").last().dropna()
