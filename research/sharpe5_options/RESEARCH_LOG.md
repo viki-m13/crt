@@ -578,3 +578,35 @@ spread exceeds the max loss you would have taken by doing nothing. Stops also
 realize temporary losses that recover (loss rate 22.6% → 37.8%).
 **On defined-risk structures the stop-loss is itself the risk** — the opposite
 of standard retail practice.
+
+**Full rule table (all 13 tested):**
+
+| rule | Sharpe* | lossRate | worst |
+|---|---:|---:|---:|
+| **profit 50% / 75%** | **+0.26** | 18.8% | −0.99 |
+| hold to expiry | +0.21 | 22.6% | −0.99 |
+| profit 25% | +0.18 | 15.0% | −0.99 |
+| exit at 21 DTE | +0.15 | 27.3% | −1.61 |
+| profit50 + 21DTE | +0.15 | 25.0% | −1.61 |
+| profit50 + stop3x | +0.02 | 24.4% | −2.02 |
+| profit50 + stop2x | −0.11 | 34.0% | −2.02 |
+| stop 3x credit | −0.12 | 28.3% | −2.02 |
+| stop 2x credit | −0.17 | 37.8% | −2.02 |
+| **breach exit** | **−0.25** | **45.3%** | −2.02 |
+
+**THE UNIFIED RESULT: every rule that closes a LOSING position early hurts;
+only rules that close WINNING positions early help.** Nine variants, no
+exceptions, and the ordering tracks how aggressively each realizes losses.
+
+Same fixed-per-leg toll as everywhere else in this project. Closing a winner
+buys back a cheap far-OTM option — small ask, small toll — and frees capital
+for another round. Closing a loser buys back a deep-ITM option at a wide ask
+while dumping the long leg at a beaten-down bid; the toll scales with how badly
+the trade has gone, exactly when you can least afford it.
+
+**On defined-risk spreads: take profits, never take losses** — the inverse of
+"cut losses, let winners run." That maxim is right for UNDEFINED risk where
+losses are unbounded. On a spread the loss is already capped by construction,
+so paying a widened spread to exit early buys protection you already own, at a
+price that can exceed the maximum loss itself.
+
