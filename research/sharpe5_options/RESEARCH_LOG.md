@@ -678,3 +678,59 @@ Binary gates (long only when rho low) LOSE — same lesson as every other
 sit-out rule in this project.
 
 See METHOD.md for the full specification.
+
+## COMPARISON TO THE DEPLOYED SPX STRATEGY (dailystockguide.com/spx)
+
+Deployed: SPY/SPX put credit spread, ~83 DTE, short ~3% OTM, 3% wide, weekly
+rungs, 3% equity per rung, 60% ladder cap. Site reports CAGR 27.05%,
+maxDD -30.7% (1993-2026).
+
+### Finding 1 — the structure has REAL edge at worst-side fills
+
+On real SPY quotes 2019-2026, per trade: natural credit/width 0.1874, realized
+loss/width 0.1369 -> **net +0.045 of width per trade, +21.3%/yr**. Profitable
+CROSSING the spread, which nothing in my own research achieved. SPX/SPY has the
+tightest option spreads in existence; index-only concentration is a design
+feature, not a limitation, and is exactly why my 128-name universe drowned in
+costs where this does not.
+
+### Finding 2 — the backtest books credit the market does not pay
+
+live_validation.json (their own instrumentation) reports:
+- SPY booked_vs_natural **1.413**, ^SPX **1.582**, `model_conservative: false`
+- model IV 0.181 from `1.15*sqrt(0.3*rv60^2+0.7*rvbar^2)` vs market leg IVs
+  0.1514 / 0.1728
+
+Same ladder, same window, only the credit assumption changing:
+
+| booking | CAGR | Sharpe |
+|---|---:|---:|
+| MODEL credit (1.413x natural) | +11.9% | 1.09 |
+| real MID | +5.6% | 0.81 |
+| **real NATURAL (worst-side)** | **+5.3%** | **0.77** |
+
+Phantom credit +0.0762 of width/trade vs real gross premium +0.0507 — the
+markup is 1.5x the entire real edge.
+
+### CORRECTION — my own annualization error
+
+I first reported the honest ladder at Sharpe 1.07 using sqrt(52). The 60-110
+DTE filter yields only 193 entries over 7.3 years = **26.4 obs/yr, not 52**.
+sqrt(52/26.4)=1.40 explains the gap exactly. **Correct baseline Sharpe 0.77**,
+below SPY's 0.84. Fifth measurement error caught in this project.
+
+### Finding 3 — the deployed structure is improvable on three axes
+
+Single-lever sweeps at worst-side fills (Sharpe):
+
+| lever | deployed | better | Sharpe |
+|---|---|---|---:|
+| **tenor** | 83d | **30d** | 0.82 -> **0.98** |
+| | | 60d | **0.95** (CAGR 8.1%) |
+| width | 3% | 5% | 0.77 -> 0.84 |
+| OTM | 3% | 2% | 0.82 -> 0.87 |
+
+Tenor points OPPOSITE to my single-cohort finding (where longer was better):
+for a LADDER, shorter tenor means more rungs, and rung count drives the
+diversification that gives the ladder its Sharpe. Rung size scales
+return/risk without changing Sharpe (0.80-0.83 across 2-8%).
