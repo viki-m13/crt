@@ -30,7 +30,17 @@ import numpy as np
 import pandas as pd
 
 import engine as E
-from structures import pick, leg_entry, settle
+from structures import leg_entry, settle
+
+
+def pick_any(ge: pd.DataFrame, cp: str, target: float, need_bid: bool = True):
+    """Nearest strike of the given type. Long legs are bought at the ask, so
+    they do not require a live bid; short legs do."""
+    g = ge[ge.call_put == cp]
+    g = g[g.bid > 0] if need_bid else g[g.ask > 0]
+    if g.empty:
+        return None
+    return g.loc[(g.strike - target).abs().idxmin()]
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "cache", "combos.parquet")
@@ -84,7 +94,7 @@ def main():
 
             # --- buy-write at several call strikes
             for pct, tag in ((1.00, "atm"), (1.02, "2pct"), (1.05, "5pct")):
-                c = pick(ge, "Call", s * pct)
+                c = pick_any(ge, "Call", s * pct)
                 if c is None:
                     continue
                 prem = leg_entry(c, -1)
@@ -95,8 +105,8 @@ def main():
                              "pnl": stock_pnl + call_pnl, "iv": float(c.vol)})
 
             # --- collar: long 5% put, short 5% call, plus stock
-            cp = pick(ge, "Call", s * 1.05)
-            pp = pick(ge, "Put", s * 0.95, need_bid=False)
+            cp = pick_any(ge, "Call", s * 1.05)
+            pp = pick_any(ge, "Put", s * 0.95, need_bid=False)
             if cp is not None and pp is not None:
                 ec, ep = leg_entry(cp, -1), leg_entry(pp, +1)
                 if ec is not None and ep is not None:
@@ -115,7 +125,7 @@ def main():
                                  "pnl": stock_pnl + opt, "iv": float(pp.vol)})
 
             # --- cash-secured put write 5% OTM (no stock leg)
-            pw = pick(ge, "Put", s * 0.95)
+            pw = pick_any(ge, "Put", s * 0.95)
             if pw is not None:
                 e = leg_entry(pw, -1)
                 if e is not None:
