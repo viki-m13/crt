@@ -860,3 +860,53 @@ hit on breaches.
 
 Only helpful conditioning: **iv_rank LOW quartile** (options cheap vs their own
 history) — straddle Kelly growth +2.6%/yr. Real, but not 1000%.
+
+### Study 25 — directional signal expressed convexly: BETA, NOT SIGNAL
+
+skew25 is the only genuinely directional signal found here (t=+5.6 on forward
+stock returns). Expressed in stock it earned Sharpe 0.44. Expressed in OTM
+options it should convert a hit-rate edge into convex payoff — the exact
+structure Kelly rewards. Bought at the ask, held to expiry:
+
+| OTM | all | calls only | puts only |
+|---|---:|---:|---:|
+| 3% | +0.2% | **+8.1%** (win 31.9%) | 0.0% |
+| 6% | +0.1% | +4.4% | 0.0% |
+| 10% | 0.0% | +0.4% | 0.0% |
+
+Puts fail everywhere (mean −0.137 to −0.227). A two-sided signal should work on
+both sides; that asymmetry was the tell, so I ran the control.
+
+**CONTROL — 3% OTM calls by skew bucket:**
+
+| bucket | n | mean | Kelly ann |
+|---|---:|---:|---:|
+| high skew ("signal") | 4,850 | +0.215 | +8.1% |
+| **mid skew** | 12,967 | **+0.259** | **+11.1%** |
+| low skew | 4,825 | +0.194 | +6.0% |
+| **ALL NAMES (no selection)** | 22,642 | +0.236 | **+9.2%** |
+
+**high_skew − ALL = −0.020.** Selecting on skew is WORSE than not selecting.
+Mid-skew scores best, which is what noise looks like. Zero selection value.
+
+By year, all-names 3% OTM calls: 2019 +0.061, 2020 +0.136, 2021 +0.330,
+**2022 −0.134**, 2023 +0.416, 2024 +0.324, 2025 +0.240, 2026 +0.372. Profitable
+7 of 8 years because SPY tripled. **Leveraged long beta, not predictive power.**
+
+## FINAL ANSWER ON 1000% CAGR
+
+The arithmetic is sound: convexity escapes the g=S^2/2 bound, and a 10:1 payoff
+hit 15% of the time compounds to ~9000%/yr at 250 independent bets. 1000% IS
+reachable WITH predictive power. The search across ~350 configurations found
+none that is not already in the price:
+
+| signal | statistic | why it does not pay |
+|---|---|---|
+| credit_yield | t=+8.4 | accounting identity (ret ≡ cy when no loss) |
+| vol-of-vol | t=−5.30 | real large-move predictor; raises IV proportionally |
+| skew25 | t=+5.6 | real in stock; zero selection value convexly |
+| market's own credit/width | AUC 0.599 | beats every model built here |
+
+Every real signal is real AND priced. The most convex structure tested paid
+156x and has Kelly fraction exactly zero. That is not a failure of search —
+it is what an efficient options market looks like from the inside.
