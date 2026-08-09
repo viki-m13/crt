@@ -241,3 +241,89 @@ other — five configurations of one bet, not five bets.
 | drop worst 1% of weeks (4 weeks) | +1.35 (2.5x) |
 
 Final trial count N≈170. Deflated Sharpe of every candidate ≈ 0.
+
+---
+
+## SECOND PASS — attacking the ceiling's own terms (trials 171-210)
+
+IR = IC x sqrt(BR) names its levers. Pass 1 used one signal, one tenor, one
+direction. Pass 2 attacked each, plus the one family with unbounded Sharpe.
+
+### Trial 171 — Study 7: BOX SPREADS (defined payoff = true arbitrage) — DEAD
+
+114,649 boxes at worst-side fills. Implied lending rate: **median −99.9%**,
+99th pct −4.8%, vs T-bill +3.2%. Boxes lending above T-bill+2%: **0.023%**.
+Hard arbitrage (cost<=0 for guaranteed positive payoff): **10 of 114,649
+(0.0087%)** — and all 10 are in a **single name (F)** with median width $2.00,
+i.e. stale quotes on a low-priced stock, not opportunity. Crossing four spreads
+swamps any financing dislocation. **The only family with no Sharpe ceiling is
+decisively closed.** Doubles as a dataset warning: apparent edge in sub-$5
+structures on cheap names is quote noise.
+
+### Trial 172 — THE ACCOUNTING IDENTITY (invalidates Study 5's headline IC)
+
+For premium structures held to expiry: **ret = credit_yield − loss/margin**,
+and credit is KNOWN AT ENTRY. 76.3% of credit spreads expire worthless, so
+ret *literally equals* credit_yield most of the time.
+
+| measurement | value |
+|---|---:|
+| corr(credit_yield, ret) | **+0.53** ← what Study 5 reported as signal |
+| corr(credit_yield, −loss) | **−0.13** ← real content, and NEGATIVE |
+| among losing trades only | +0.05 |
+| mean ret \| no loss | +0.1228 (= mean credit_yield exactly) |
+| mean ret \| loss | −0.5099 |
+
+Richer premium predicts BIGGER losses. This resolves pass 1's paradox: a
+t=+8.4 signal that never produced a profitable sleeve was measuring an
+identity. **Generalizes: any "signal" that is a component of the payoff
+(premium, credit, IV level) shows large spurious IC in options backtests.**
+Not caught by pre-registration, walk-forward, or DSR — caught by asking why a
+strong signal made no money.
+
+### Trials 173-176 — Study 9: TRUE ceiling on clean signals
+
+IC vs the only uncertain term (−loss), signals not part of the payoff:
+
+| signal | IC | t |
+|---|---:|---:|
+| **vol-of-vol** | **−0.0330** | **−5.30** |
+| **skew25** | **+0.0231** | **+3.81** |
+| ivrv | −0.0078 | −1.32 |
+| mom8 | −0.0084 | −1.34 |
+| iv_rank | −0.0006 | −0.09 |
+| idio_inv | +0.0029 | +0.34 |
+
+11.7 effective names x 12 rounds = 141 bets/yr → **IR ceiling 0.39** (vs 0.48
+contaminated). IR=5 needs IC=0.421 = **13x** best clean signal.
+
+### Trials 177-200 — Study 8: composite x tenor x overlay — NO IMPROVEMENT
+
+- Composite (7 rank-signals, walk-forward OLS weights, fit on train only):
+  pooled OOS IC **+0.40** — but sleeve Sharpe ≈ 0. Same tautology: weights load
+  on z_cy. High IC, no money, again.
+- Signal cross-correlation mean |off-diag| 0.157 (genuinely diverse) — did not
+  help.
+- Shortest tenor (8-14 DTE) to double rounds/yr: OOS scrSharpe +0.05 to +0.10.
+- Stress overlays (SPY IV z-score, drawdown gates): −0.54 to +0.02, no gate
+  improved the base.
+
+### Trials 201-210 — risk-avoidance using the CLEAN signals (best honest idea)
+
+Since vov/skew genuinely predict losses, use them to avoid blowups rather than
+pick winners. Credit put spreads, full panel:
+
+| filter | mean ret | loss rate |
+|---|---:|---:|
+| unfiltered | −0.0145 | 20.2% |
+| low vov | −0.0094 | 18.4% |
+| high skew | −0.0060 | 20.2% |
+| **low vov + high skew** | **−0.0024** | **17.0%** |
+
+Removes 83% of the deficit and cuts loss rate by a fifth — **still negative.**
+Credit-yield quintiles (cheap vs rich premium) all negative for every
+structure, no monotonic exploitable pattern in either direction.
+
+**Pass 2 conclusion: the ceiling is lower than pass 1 said (0.39), the one
+unbounded-Sharpe family is closed, and the best genuinely-clean signals
+improve but do not rescue the economics.**

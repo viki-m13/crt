@@ -71,22 +71,25 @@ measure both terms on the actual data:
 
 | Quantity | Measured |
 |---|---:|
-| IC of the best signal (credit_yield → straddle return) | **+0.0371** (t = **+5.54**, 1237 dates) |
+| IC of the best **clean** signal (vol-of-vol → loss term) | **0.0330** (t = **−5.30**) |
 | Tradable liquid names | 38 |
 | Mean pairwise return correlation | +0.185 |
-| **Effective independent names** (eigenvalue participation ratio) | **13.7** — 36% of nominal |
-| Independent bets per year (13.7 × 12 monthly rounds) | 164 |
-| **Implied IR ceiling, gross of all costs** | **0.48** |
+| **Effective independent names** (eigenvalue participation ratio) | **11.7–13.7** — ~36% of nominal |
+| Independent bets per year (× 12 monthly rounds) | ~141–164 |
+| **Implied IR ceiling, gross of all costs** | **0.39** |
 
-**To reach Sharpe 5 you would need 18,130 independent bets per year — 111× the
-breadth this market offers — or an IC of 0.391, which is 11× what I measured.**
+**To reach Sharpe 5 you would need an IC of 0.421 — 13× the best clean signal —
+or roughly 100× the breadth this market offers.**
 
-The signals are real. `credit_yield` (t=+8.4), term structure (t=−7.9),
-momentum (t=+5.6) and IV−RV (t=+4.0) all rank rich options with high
-statistical significance, and the ICs got *stronger* as data was added. The
-problem is not signal quality. It is that 38 short-vol positions behave like
-~14 independent ones, and no amount of signal engineering fixes a breadth
-deficit of two orders of magnitude.
+The signals are real: vol-of-vol (t=−5.30) and 25-delta skew (t=+3.81) predict
+losses with genuine significance. The problem is not signal quality. It is that
+38 short-vol positions behave like ~12 independent ones, and no amount of
+signal engineering fixes a breadth deficit of two orders of magnitude.
+
+> **Note.** My first pass reported this ceiling as 0.48 using `credit_yield`
+> (IC 0.037, t=+5.54). That number was contaminated by an accounting identity —
+> see §7b. The corrected ceiling on genuinely predictable content is **0.39**.
+> The conclusion strengthens; the arithmetic changed.
 
 This is why the answer is "no" rather than "not yet."
 
@@ -170,7 +173,95 @@ from zero once the trial count is priced in, and the ensemble built around it
 was negative out of sample. **This is not a validated edge.** It is the best
 thing I found, reported with the uncertainty it actually carries.
 
-## 7. Two bugs I found in my own work
+## 7. Second research pass: attacking the ceiling's own terms
+
+The ceiling formula IR = IC × √BR names its own levers. The first pass used
+one signal, one holding period, one bet direction. This pass attacked each.
+
+### 7a. Box spreads — the one family with unbounded Sharpe potential
+
+A box (long call K1 / short call K2 / short put K1 / long put K2) pays exactly
+K2−K1 at expiry regardless of path. It is pure financing, so a mispriced box is
+true arbitrage, and arbitrage has no Sharpe ceiling. If Sharpe 5 lives anywhere
+in options, it lives here. **114,649 boxes scanned at worst-side fills:**
+
+| Implied lending rate from boxes | Value |
+|---|---:|
+| Median | **−99.9%** |
+| 99th percentile | −4.8% |
+| T-bill reference | +3.2% |
+| Boxes lending above T-bill + 2% | **0.023%** of sample |
+| Hard arbitrage (cost ≤ 0 for positive payoff) | **10 of 114,649 (0.0087%)** |
+
+Crossing four bid-ask spreads costs vastly more than any financing dislocation
+in EOD quotes. The distribution is not marginal — it is *catastrophically*
+negative, with the median box losing essentially its entire cost.
+
+And the handful of apparent free money is a **data artifact, not an
+opportunity**: all 10 cases concentrate in a single name (F), with a median box
+width of $2.00 — stale quotes on a low-priced stock. This doubles as a warning
+about the dataset: any strategy that appears to find edge in sub-$5 structures
+on cheap names is reading quote noise.
+
+### 7b. My headline signal was an accounting identity
+
+Study 5 reported credit_yield with IC +0.037 (t=+5.54) and called it real. It
+is not. For a premium structure held to expiry:
+
+> **ret = credit_yield − loss/margin**, and the credit is **known at entry**
+
+With **76% of credit spreads expiring worthless**, `ret` *literally equals*
+`credit_yield` most of the time. Regressing return on credit_yield partly
+regresses a variable on itself.
+
+| Measurement | Value |
+|---|---:|
+| corr(credit_yield, **return**) | **+0.53** ← what I reported |
+| corr(credit_yield, **−loss**) | **−0.13** ← real predictive content |
+
+The true relationship is *negative*: richer premium predicts **bigger** losses.
+This resolves the paradox in the first pass — a t=+8.4 signal that never
+produced a profitable sleeve. It was measuring an identity. **Any "signal" that
+is a component of the payoff (premium, credit, IV level) will show a large
+spurious IC in an options backtest.** I would not have caught this from the
+Sharpe numbers alone; it took asking why a strong signal made no money.
+
+### 7c. The true ceiling: 0.39
+
+Recomputing on signals that are *not* components of the payoff:
+
+| Clean signal | IC vs −loss | t |
+|---|---:|---:|
+| **Vol-of-vol** | **−0.0330** | **−5.30** |
+| **25-delta skew** | **+0.0231** | **+3.81** |
+| ivrv | −0.0078 | −1.32 |
+| momentum | −0.0084 | −1.34 |
+| IV rank | −0.0006 | −0.09 |
+
+Best clean IC 0.033 against 11.7 effective names → **IR ceiling 0.39** (not the
+0.48 I first reported). Reaching 5 needs IC 0.421 — **13× the best clean
+signal**.
+
+### 7d. What the clean signals actually buy
+
+Vol-of-vol and skew are *genuinely* predictive of losses, so I used them as a
+risk-avoidance filter rather than a return-picker:
+
+| Filter (credit put spreads) | Mean return | Loss rate |
+|---|---:|---:|
+| Unfiltered | −0.0145 | 20.2% |
+| Low vol-of-vol | −0.0094 | 18.4% |
+| High skew | −0.0060 | 20.2% |
+| **Low vol-of-vol + high skew** | **−0.0024** | **17.0%** |
+
+The filter works — it cuts the loss rate by a fifth and removes 83% of the
+deficit. **It still does not cross zero.** Also tested and dead: multi-signal
+composites with walk-forward weights (the apparent +0.40 OOS IC was the same
+tautology), the shortest available tenor to double turnover, stress overlays,
+and selling cheap premium instead of rich (every credit-yield quintile is
+negative for every structure).
+
+## 8. Two bugs I found in my own work
 
 Both were caught by internal audits and both are logged. They matter because
 each one, uncaught, would have changed the conclusion:
@@ -191,7 +282,7 @@ each one, uncaught, would have changed the conclusion:
    said 528.98. **The entire panel was re-run on corrected spots** — the
    uncorrected log is kept at `cache/rebuild_uncorrected_spot.log`.
 
-## 8. What would actually be required
+## 9. What would actually be required
 
 Sharpe 5 in options is not impossible in general — it exists in market making
 and latency-sensitive strategies. Reaching it requires breadth or edge this
@@ -205,7 +296,7 @@ data cannot supply:
 - **Genuinely uncorrelated sleeves** — the binding constraint is 0.185 mean
   correlation, not signal strength
 
-## 9. Reproducing this
+## 10. Reproducing this
 
 ```bash
 cd research/sharpe5_options
@@ -227,15 +318,21 @@ findings, in order of importance:
    in the holdout**, with one sleeve going insolvent in May 2025 after
    surviving COVID. The honest answer is not "I reached 2 instead of 5" — it is
    "the thing that looked like an edge was not one."
-2. **Sharpe 5 was never reachable here, and that is measurable.** IC of 0.037
-   against 13.7 effective independent names caps IR at **~0.48 gross of
-   costs**. Reaching 5 needs 111× this market's breadth or 11× the measured
-   signal. This is a structural property of EOD equity options, not a search
-   failure.
+2. **Sharpe 5 was never reachable here, and that is measurable.** The best
+   *clean* IC of 0.033 against ~12 effective independent names caps IR at
+   **~0.39 gross of costs**. Reaching 5 needs 13× the signal or ~100× the
+   breadth. Confirmed from the opposite direction by the box scan: the one
+   family with unbounded Sharpe potential prices at a **median −99.9% implied
+   rate** once you cross four spreads.
 3. **A Sharpe-5 headline is trivially manufacturable from these very same
    trades** — 15.94 by reporting 2021 alone, 7.48 by annualizing overlapping
    trades as independent — with no fabricated prices anywhere. Which is
    precisely why the protocol was pre-registered before the first backtest ran.
+4. **The subtlest trap is an accounting identity posing as a signal.** My own
+   headline IC survived a pre-registered protocol, a walk-forward, and a
+   deflated-Sharpe penalty — and was still measuring `ret ≡ credit_yield` on
+   the 76% of trades that expire worthless. What exposed it was not any
+   validation test but asking why a t=+8.4 signal made no money.
 
 If a strategy claiming Sharpe 5 in options crosses your desk, the fastest
 diagnostics are: what window, marks or entry-only P&L, capital or premium in
