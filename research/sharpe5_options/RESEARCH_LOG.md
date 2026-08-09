@@ -782,3 +782,55 @@ parameter choice escapes it. Expect materially less than dev numbers suggest.
 CAGR in the table (3.9%). A 2.4x dev→holdout jump on a low-return config is a
 small-sample low-vol artifact. Promoting it would repeat the exact error made
 five times already in this project.
+
+### Study 23 — de-risking gates and the orthogonal overlay (FINAL)
+
+**23a — rung sizing gates on 60d/5%/5%: none help.**
+
+| gate | Sharpe | CAGR | maxDD |
+|---|---:|---:|---:|
+| no gate | **1.02** | 8.0% | −17.5% |
+| half size when IV z>1 | 1.01 | 7.5% | −17.5% |
+| skip when IV z>1.5 | 0.99 | 7.2% | −17.0% |
+| **vol-target 1/IV** | **0.76** | 5.8% | −17.4% |
+| double when IV z<−0.5 | 1.06 | 9.3% | −21.3% |
+
+Vol-targeting HELPS long equity (0.79→0.84) and HURTS a short-premium book
+(1.02→0.76). High IV is when short premium is best compensated, so scaling
+down in high vol sells exactly the wrong inventory. Only sizing UP in calm
+markets helps, buying +0.04 Sharpe for 4pp more drawdown.
+
+**23b — adding the orthogonal skew sleeve: the best verified result here.**
+
+correlation ladder vs skew sleeve **−0.018** (n=380)
+
+| book | Sharpe | dev | holdout |
+|---|---:|---:|---:|
+| deployed 83d/3%/3% | 0.77 | 0.88 | **0.14** |
+| ladder 60d/5%/5% | 1.02 | 1.09 | 0.72 |
+| skew sleeve alone | 0.55 | — | — |
+| **ladder + skew (inv-vol, dev-fit)** | **1.13** | 1.15 | **1.06** |
+| ladder 50% + skew 50% | 1.15 | | |
+
+**The holdout column is the finding.** Ladder alone degrades 1.09→0.72 as every
+short-premium book does in 2025-26; the combined book holds 1.15→1.06. The
+uncorrelated sleeve absorbs a regime shift the short-put book cannot.
+
+NOTE: ladder holdout reads 0.56 in study 22 and 0.72 here — study 22 restarts
+the ladder from equity 1.0 within the segment, this slices returns from the
+full-period curve with rung state carried over. Honest range 0.56-0.72.
+
+## BOTTOM LINE FOR THE DEPLOYED STRATEGY
+
+1. **Fix the credit model.** Backtest books 1.413x (SPY) / 1.582x (SPX) the
+   natural credit; live_validation already reports model_conservative:false.
+   Real fills: CAGR 11.9%→5.3%, Sharpe 2.25→0.77. The edge is real (profitable
+   crossing the spread) but published numbers are ~2x what fills support.
+2. **Move 83d/3%OTM/3%wide → 60d/5%OTM/5%wide.** Sharpe 0.77→1.02, CAGR
+   5.3%→8.0%, maxDD −18.8%→−17.5%. Verified in dev AND holdout; sits on a
+   plateau, not a spike.
+3. **Add the skew long-short overlay.** Correlation −0.02, lifts combined to
+   1.13 and — the real prize — holds holdout Sharpe at 1.06 vs the ladder's
+   0.72.
+4. **Do NOT add de-risking gates.** All neutral-to-harmful; vol-targeting is
+   actively wrong for short premium.
