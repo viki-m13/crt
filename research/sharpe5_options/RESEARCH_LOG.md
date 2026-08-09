@@ -434,3 +434,52 @@ g(L) = L*mu − (L*sigma)^2/2, maximised at Kelly L* = mu/sigma^2, giving
 
 1000% CAGR requires **S=2.19 at full Kelly**, 2.53 at half Kelly, 3.31 at
 quarter Kelly. Against a measured ceiling of 0.39 for this market.
+
+### Study 15 — IS THE MARKET'S BREACH FORECAST BEATABLE? (the core question)
+
+For a vertical held to expiry, return = credit/width − loss/width, and
+credit/width IS the market's risk-neutral expected loss ratio. So the market
+publishes its own forecast and we can grade ours against it.
+
+**TEST 1 — realized vs breakeven win rate (put credit spreads):**
+
+| credit/width | breakeven win% | realized win% | edge |
+|---|---:|---:|---:|
+| Q0 ~0.06 | 94.0% | 84.6% | −9.4% |
+| Q2 ~0.15 | 85.3% | 74.6% | −10.7% |
+| Q4 ~0.27 | 73.4% | 66.3% | −7.2% |
+
+Every bucket falls short of the accuracy its own price demands. Call spreads
+miss by 18-20% (sample artifact: SPY ~tripled over the window).
+
+**TEST 2 — VRP exists; costs are larger (n=5,974):**
+
+| | loss ratio |
+|---|---:|
+| risk-neutral at MID | 0.1853 |
+| REALIZED | 0.1599 |
+| **gross premium (VRP)** | **+0.0254 EXISTS** |
+| half-spread cost | 0.0346 |
+| **net at worst-side** | **−0.0092** |
+| **cost / gross premium** | **1.36x** |
+
+Every earlier study in this log conflated "no edge" with "costs eat the edge."
+The edge is real. The spread is 136% of it.
+
+**TEST 3 — the market out-predicts any model I can build:**
+market baseline (credit/width) AUC **0.599**; best single feature 0.586;
+walk-forward logistic model mean AUC **0.028 BELOW market**, losing 5 of 6
+years. You cannot out-forecast the quoted odds on breach probability.
+
+**Fill-quality sensitivity — the actionable result:**
+
+| f (half-spread captured) | win rate | ann. return |
+|---|---:|---:|
+| 0.00 worst-side | 75.8% | −19.0% |
+| 0.50 | 77.2% | −0.2% |
+| 1.00 mid | 78.1% | **+22.5%** |
+
+**BREAKEVEN f* = 0.504.** Win rate moves 2.3pp across the whole range while
+annual return moves 41pp. **Accuracy is not the lever; execution is.**
+Caveats: mid fills carry adverse selection (filled preferentially when the
+market moves against you), and returns are on width-as-margin (levered).
