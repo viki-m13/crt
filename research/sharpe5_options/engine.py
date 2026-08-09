@@ -67,25 +67,62 @@ def load_vol(day: str) -> pd.DataFrame | None:
 
 # ---------------------------------------------------------------- parity spot
 
+def parity_forward(ge: pd.DataFrame) -> float | None:
+    """Forward price implied by put-call parity on one expiration.
+
+    C - P = e^{-rT}(F - K), so C - P + K = F to first order for K near F
+    (the residual is rT(F-K), second-order small at the money). Median over
+    the 5 strikes closest to the money for robustness against a single quote.
+    """
+    c = ge[ge.call_put == "Call"].set_index("strike").mid
+    p = ge[ge.call_put == "Put"].set_index("strike").mid
+    ks = c.index.intersection(p.index)
+    if len(ks) < 2:
+        return None
+    diff = (c[ks] - p[ks]).abs().sort_values()
+    near = diff.index[:5]
+    return float(np.median([c[k] - p[k] + float(k) for k in near]))
+
+
 def parity_spots(chain: pd.DataFrame) -> dict[str, float]:
-    """Extract spot per symbol via put-call parity on near-ATM pairs."""
+    """Extract SPOT per symbol from the parity-forward term structure.
+
+    Parity gives the forward F(T) = S·e^{cT} with c = r − q, not the spot. Using
+    F directly makes "spot" drift with the tenor of whichever expiry happens to
+    be nearest: ~+0.3% at 30 DTE versus ~+0.1% at 10 DTE. That difference lands
+    between a trade's entry and its settlement, systematically inflating
+    settlement payouts and biasing every short-premium result downward.
+
+    With two or more expirations we fit ln F = ln S + c·T across the curve and
+    take the intercept, which recovers the spot and the carry from the quotes
+    themselves — no external dividend or rate data required. With only one
+    expiration available we fall back to the near-dated forward and accept the
+    residual (small, since we prefer the shortest tenor).
+    """
     out: dict[str, float] = {}
     for sym, g in chain.groupby("act_symbol"):
-        g = g[(g.dte >= 5) & (g.dte <= 70) & (g.bid > 0)]
+        g = g[(g.dte >= 3) & (g.dte <= 200) & (g.bid > 0)]
         if g.empty:
             continue
-        exp = g[g.dte == g.dte.min()].expiration.iloc[0]
-        ge = g[g.expiration == exp]
-        c = ge[ge.call_put == "Call"].set_index("strike").mid
-        p = ge[ge.call_put == "Put"].set_index("strike").mid
-        ks = c.index.intersection(p.index)
-        if len(ks) < 2:
+        pts = []
+        for exp, ge in g.groupby("expiration"):
+            f = parity_forward(ge)
+            if f is not None and f > 0:
+                pts.append((float(ge.dte.iloc[0]) / 365.0, f))
+        if not pts:
             continue
-        # ATM ≈ where |C-P| smallest; take median parity spot over 5 nearest
-        diff = (c[ks] - p[ks]).abs().sort_values()
-        near = diff.index[:5]
-        spots = [c[k] - p[k] + float(k) for k in near]
-        out[sym] = float(np.median(spots))
+        pts.sort()
+        if len(pts) >= 2:
+            T = np.array([t for t, _ in pts])
+            lnF = np.log(np.array([f for _, f in pts]))
+            # carry from the curve, clipped to a sane band (|r−q| <= 15%/yr)
+            c_hat, ln_s = np.polyfit(T, lnF, 1)[0], None
+            c_hat = float(np.clip(c_hat, -0.15, 0.15))
+            # intercept implied by the shortest tenor at the fitted carry
+            ln_s = lnF[0] - c_hat * T[0]
+            out[sym] = float(np.exp(ln_s))
+        else:
+            out[sym] = pts[0][1]
     return out
 
 

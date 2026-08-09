@@ -4,6 +4,8 @@
 set -e
 export USE_TIER2=1
 cd "$(dirname "$0")"
+echo "=== features $(date -u +%H:%M) ==="
+python3 features.py
 echo "=== structures $(date -u +%H:%M) ==="
 python3 structures.py
 echo "=== study1 predictability $(date -u +%H:%M) ==="

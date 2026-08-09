@@ -118,3 +118,36 @@ exit-spread dominance) — those hold regardless of window.
 Slate for full data: A (SPY putspread, straddle_dh w/ contango gate),
 B (strangle25 idio_inv .06/.09 liq), C (short-only quintile cy+mom liq),
 D (put_skewrich_liq). Running trial count N≈71.
+
+### Trials 73-118 — FULL PANEL (1254 dates), uncorrected spot
+
+**Every sleeve family collapses on the full panel.** Best is
+A_credit_putspread_uncond at **+0.57** screening (was +0.92 on the partial
+window); the previously-best C_shortonly_cy+mom_liq goes **+1.23 → −0.42**.
+Baselines: short_straddle_dh SPY −0.15, all-names −1.68; iron_condor
+all-names −3.55 (wide-spread names destroy the credit). Signal ICs *hold* and
+even strengthen with more data (credit_yield t=+8.4, term t=−7.9, mom8 t=+5.6,
+ivrv t=+4.0) — the signals rank cross-sectionally, but ranking does not
+overcome the half-spread paid on entry.
+
+**Study 4 dispersion (Trial ~119): DEAD both directions.** Vega-matched short
+SPY straddle vs long 36-name component basket: **−0.44**. Reverse: **−0.60**.
+Index short alone: −0.11. Implied correlation (computed point-in-time from the
+chains) median 0.25. Conditioning on rho does not rescue it: rho∈[0.4,0.6)
+gives disp −1.74 / rev +0.52 on only 124 obs. The correlation premium is real
+in the IV data but is smaller than the two-sided spread cost of trading 37
+straddles.
+
+### Methodology correction (applies to everything above)
+
+Audit of my own spot extraction found a genuine bias: `C−P+K` recovers the
+**forward** F = S·e^{(r−q)T}, not the spot. Whichever expiry is nearest sets
+the tenor, so "spot" drifts with it — measured **+15 bps at 2024 rates**,
++1 bp under 2021 ZIRP, −4 bps in the COVID crash. That drift sits between a
+trade's entry and its settlement and biases settlement payouts (it flatters
+put spreads, roughly cancels for straddles). Fixed by fitting ln F = ln S + cT
+across the expiration curve and taking the intercept, recovering spot and
+carry from the quotes alone. Corrected SPY on 2024-06-03: 528.33 (true close
+~527.8) vs naive forward 528.98. **All full-panel numbers are being re-run on
+corrected spots; the uncorrected log is kept at
+cache/rebuild_uncorrected_spot.log for comparison.**
