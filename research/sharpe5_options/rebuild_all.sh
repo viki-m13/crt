@@ -1,14 +1,15 @@
 #!/bin/bash
-# Full pipeline rebuild after fetch completion. Run from sharpe5_options/.
+# Full research pipeline on the complete panel. Run from sharpe5_options/.
+# Each stage is resumable; structures checkpoints every 50 dates.
 set -e
-echo "=== features $(date -u +%H:%M) ==="
-python3 features.py
+export USE_TIER2=1
+cd "$(dirname "$0")"
 echo "=== structures $(date -u +%H:%M) ==="
 python3 structures.py
-echo "=== exits $(date -u +%H:%M) ==="
-python3 structures2_exits.py
-echo "=== study1 $(date -u +%H:%M) ==="
+echo "=== study1 predictability $(date -u +%H:%M) ==="
 python3 study1_predictability.py
-echo "=== study2 $(date -u +%H:%M) ==="
+echo "=== study2 sleeves $(date -u +%H:%M) ==="
 python3 study2_sleeves.py
+echo "=== study4 dispersion $(date -u +%H:%M) ==="
+python3 study4_dispersion.py
 echo "=== rebuild done $(date -u +%H:%M) ==="

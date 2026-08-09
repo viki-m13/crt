@@ -45,9 +45,18 @@ def build_panel():
                   how="left", suffixes=("", "_f"))
     df["credit_yield"] = df.credit / df.margin
 
-    ex = pd.read_parquet(os.path.join(HERE, "cache", "exits.parquet"))
-    ex["date"] = pd.to_datetime(ex.date)
-    ex = ex.merge(feats.drop(columns=["spot"]), on=["date", "act_symbol"], how="left")
+    # Short-hold exit variants (cache/exits.parquet) are only built on demand:
+    # every exit-based screen was decisively negative (round-trip spread >
+    # theta captured), so the default full-panel run skips that pass.
+    exp_path = os.path.join(HERE, "cache", "exits.parquet")
+    if os.path.exists(exp_path):
+        ex = pd.read_parquet(exp_path)
+        ex["date"] = pd.to_datetime(ex.date)
+        ex = ex.merge(feats.drop(columns=["spot"]), on=["date", "act_symbol"], how="left")
+    else:
+        ex = pd.DataFrame(columns=["date", "act_symbol", "k", "short_dh_pnl",
+                                   "margin", "idio_inv", "iv_rank"])
+        ex["date"] = pd.to_datetime(ex.date)
     return df, ex
 
 
@@ -80,7 +89,7 @@ def main():
 
     # ---- B: single-name term-inversion (earnings crush)
     for thr in (0.02, 0.04, 0.06, 0.09, 0.13):
-        for k in (2, 3):
+        for k in (2, 3) if len(exd) else ():
             g = exd[(exd.k == k) & (exd.idio_inv > thr)]
             scr(f"B_exit{k}_idioinv>{thr}", g.groupby("date").apply(
                 lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
@@ -97,12 +106,13 @@ def main():
                  & dev.act_symbol.isin(LIQUID)]
         scr(f"B_str25_idioinv>{thr}_liq", g4.groupby("date").ret.mean(), res)
 
-    # ---- E: weekend theta (Friday entries, k=1 exits)
-    fri = exd[(exd.k == 1) & (exd.date.dt.weekday == 4)]
-    scr("E_wkndtheta_all", fri.groupby("date").apply(
-        lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
-    scr("E_wkndtheta_SPY", fri[fri.act_symbol == "SPY"].groupby("date").apply(
-        lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
+    # ---- E: weekend theta (Friday entries, k=1 exits) — needs exits pass
+    if len(exd):
+        fri = exd[(exd.k == 1) & (exd.date.dt.weekday == 4)]
+        scr("E_wkndtheta_all", fri.groupby("date").apply(
+            lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
+        scr("E_wkndtheta_SPY", fri[fri.act_symbol == "SPY"].groupby("date").apply(
+            lambda x: (x.short_dh_pnl / x.margin).mean(), include_groups=False), res)
 
     # ---- C: cross-sectional rank long-short (market-neutral-ish)
     # short leg uses real short_straddle_dh rows (entered at bid); long leg

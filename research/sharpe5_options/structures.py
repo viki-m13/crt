@@ -11,6 +11,7 @@ Output: cache/structures.parquet with one row per (date, symbol, structure).
 """
 from __future__ import annotations
 
+import glob
 import math
 import os
 from bisect import bisect_right
@@ -23,7 +24,20 @@ import engine as E
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_PQ = os.path.join(HERE, "cache", "structures.parquet")
+SHARD_DIR = os.path.join(HERE, "cache", "struct_shards")
 STOCK_BPS = 2.0
+
+COLUMNS = ["date", "act_symbol", "structure", "expiration", "dte", "pnl",
+           "margin", "credit", "iv", "spot", "spot_exp"]
+
+
+def _flush(rows, upto):
+    """Checkpoint a shard so a killed run resumes instead of losing hours."""
+    if not rows:
+        return
+    os.makedirs(SHARD_DIR, exist_ok=True)
+    pd.DataFrame(rows, columns=COLUMNS).to_parquet(
+        os.path.join(SHARD_DIR, f"{upto:06d}.parquet"), index=False)
 
 
 def bs_delta(S, K, T, sigma, cp):
@@ -109,8 +123,24 @@ def main():
         pnl -= abs(sh) * se * STOCK_BPS / 1e4
         return pnl
 
+    # resume: skip whole shards already on disk
+    done_upto = 0
+    if os.path.isdir(SHARD_DIR):
+        have = sorted(int(os.path.basename(p)[:-8])
+                      for p in glob.glob(os.path.join(SHARD_DIR, "*.parquet")))
+        # only trust a contiguous run of 50-date shards
+        for k, v in enumerate(have, start=1):
+            if v == k * 50:
+                done_upto = v
+            else:
+                break
+    if done_upto:
+        print(f"resuming after {done_upto} dates", flush=True)
+
     rows = []
     for di, day in enumerate(dates):
+        if di < done_upto:
+            continue
         ch = E.load_chain(day)
         ch = ch[ch.dte >= 15]
         for sym, g in ch.groupby("act_symbol"):
@@ -220,44 +250,20 @@ def main():
                 rows.append((day, sym, f"credit_{side}spread", exp1, dte1,
                              credit - loss, width, credit, ivm, s_now, se))
 
-            # ---- 5) calendar: sell front ATM straddle, buy back ATM straddle
-            back = g[(g.dte > 50) & (g.dte <= 100)]
-            if not back.empty:
-                exp2 = back.expiration.min()
-                gb = g[g.expiration == exp2]
-                cB, pB = pick(gb, "Call", s_now), pick(gb, "Put", s_now)
-                if cB is not None and pB is not None:
-                    e1, e2 = leg_entry(cA, -1), leg_entry(pA, -1)
-                    e3, e4 = leg_entry(cB, +1), leg_entry(pB, +1)
-                    if all(v is not None for v in (e1, e2, e3, e4)):
-                        entry_cash = (e1 + e2 - e3 - e4) * 100.0
-                        # settle: front at intrinsic at exp1; back leg SOLD at
-                        # bid on the first obs >= exp1 (real quote), else skip
-                        ds_, _ = sym_hist[sym]
-                        j = bisect_right(ds_, exp1)
-                        pnl = None
-                        if j < len(ds_):
-                            dsell = ds_[j]
-                            ch2 = E.load_chain(dsell)
-                            q2 = ch2[(ch2.act_symbol == sym) & (ch2.expiration == exp2)]
-                            qc = q2[(q2.call_put == "Call") & (q2.strike == float(cB.strike))]
-                            qp = q2[(q2.call_put == "Put") & (q2.strike == float(pB.strike))]
-                            if len(qc) and len(qp) and float(qc.bid.iloc[0]) > 0 and float(qp.bid.iloc[0]) > 0:
-                                back_out = (float(qc.bid.iloc[0]) + float(qp.bid.iloc[0])) * 100.0
-                                front_loss = (settle(se, float(cA.strike), "Call")
-                                              + settle(se, float(pA.strike), "Put")) * 100.0
-                                pnl = entry_cash - front_loss + back_out
-                        if pnl is not None:
-                            margin = 0.30 * s_now * 100.0
-                            ivb = float(np.nanmean([cB.vol, pB.vol]))
-                            rows.append((day, sym, "calendar_sf_lb", exp1, dte1,
-                                         pnl, margin, entry_cash, ivm - ivb, s_now, se))
-        if (di + 1) % 100 == 0:
-            print(f"structures {di+1}/{len(dates)} rows={len(rows)}", flush=True)
+            # NOTE: the calendar structure (sell front / buy back straddle) was
+            # dropped after Trial-set 18-71 showed it dead (screen -1.9..-0.3:
+            # two entry spreads plus an exit spread on the back leg). It also
+            # required loading a second observation date's chain inside this
+            # loop, which thrashed the chain cache and made the pass
+            # ~100x slower. Both reasons are documented in RESEARCH_LOG.md.
+        if (di + 1) % 50 == 0:
+            _flush(rows, di + 1)
+            rows = []
+            print(f"structures {di+1}/{len(dates)}", flush=True)
 
-    df = pd.DataFrame(rows, columns=["date", "act_symbol", "structure", "expiration",
-                                     "dte", "pnl", "margin", "credit", "iv", "spot",
-                                     "spot_exp"])
+    _flush(rows, len(dates))
+    parts = sorted(glob.glob(os.path.join(SHARD_DIR, "*.parquet")))
+    df = pd.concat([pd.read_parquet(p) for p in parts], ignore_index=True)
     df.to_parquet(OUT_PQ, index=False)
     print("saved", df.shape)
 
