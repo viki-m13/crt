@@ -483,3 +483,45 @@ years. You cannot out-forecast the quoted odds on breach probability.
 annual return moves 41pp. **Accuracy is not the lever; execution is.**
 Caveats: mid fills carry adverse selection (filled preferentially when the
 market moves against you), and returns are on width-as-margin (levered).
+
+### Study 16 — WHERE is the edge largest relative to the toll? (best result)
+
+The toll is roughly FIXED per leg in dollars; premium scales ~sqrt(tenor) and
+risk scales with width. Both are levers. f* = breakeven fraction of the
+half-spread that must be captured.
+
+| tenor x width | f* | gross | net (worst-side) | toll | n |
+|---|---:|---:|---:|---:|---:|
+| **75d / 20%** | **−0.585** | +0.0266 | **+0.0098** | 0.0168 | 52,233 |
+| **75d / 10%** | **−0.428** | +0.0341 | **+0.0102** | 0.0239 | 52,293 |
+| 75d / 5% | +0.147 | +0.0380 | −0.0065 | 0.0446 | 51,352 |
+| 30d / 5% (what pass 1-2 tested) | +0.740 | +0.0119 | −0.0339 | 0.0458 | 92,122 |
+
+Both structural predictions confirmed: gross premium ~TRIPLES from 30d to 75d
+for the same toll, and the toll falls 4.6x from 3%-wide to 20%-wide. **The
+entire project had been sitting in the 30d/5% corner — structurally the worst
+cell in the space, and the one retail defaults to because it is most liquid.**
+
+**BUG FOUND on inspection:** worst trade showed −4.66 of width, impossible for
+a defined-risk spread (max loss = width). Cause: filtered on mid-credit>0 but
+not worst-side-credit>0, keeping 0.21% of rows where the requested strike
+spacing did not exist and the long leg cost more than the short collected —
+not credit spreads at all. Fixed by requiring cw>0.
+
+**CLEAN 75d/wide (n=101,343):**
+
+| | |
+|---|---:|
+| net per trade, worst-side | **+0.0170 of width** |
+| dev 2019-2024 | **+0.0215** |
+| holdout 2025-2026 | **+0.0087** |
+| worst trade | −0.998 (properly capped) |
+| loss rate | 24.4% |
+| annualized on width | +8.6% |
+| **t-stat on independent rounds** | **+0.51** |
+
+Positive in dev AND holdout, positive in 7 of 8 years (only 2022 negative at
+−0.053). **First result in the project positive at worst-side fills out of
+sample.** BUT a 75-day hold gives ~5 independent rounds/yr, so 7 years is
+~35 independent observations: the 101k "trades" are overwhelmingly overlapping
+and correlated. **t=+0.51 is not significant.** Suggestive, not established.

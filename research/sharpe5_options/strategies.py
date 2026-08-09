@@ -264,6 +264,8 @@ def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
         "C_short": (make_sel_C_shortonly(), True),
         "C_short_ivr": (make_sel_C_shortonly(ivr_min=0.5), True),
         "C_short_wings": (make_sel_C_shortonly(wings=0.10), True),
+        "LD_wide": (make_sel_longdated_wide(), False),
+        "LD_wide10": (make_sel_longdated_wide(width=0.10), False),
     }[name]
     dates = dates or E.available_dates()
     if dev_only:
@@ -279,3 +281,44 @@ def run_sleeve(name: str, dates=None, capital=1_000_000.0, dev_only=True,
 if __name__ == "__main__":
     import sys
     run_sleeve(sys.argv[1] if len(sys.argv) > 1 else "A_ps")
+
+
+def make_sel_longdated_wide(otm=0.04, width=0.20, dte_lo=50, dte_hi=100,
+                            syms=None, max_new=8):
+    """Study-16 structure: long-dated, WIDE put credit spread.
+
+    The bid-ask is roughly fixed per leg in dollars while premium scales with
+    sqrt(tenor) and risk scales with width, so this corner of the design space
+    dilutes a fixed toll over far more premium and far more margin than the
+    30-day/5%-wide spreads the rest of this project tested. Requires a positive
+    worst-side credit: if the requested strike spacing is unavailable and the
+    long leg costs more than the short collects, it is not a credit spread and
+    must not be entered.
+    """
+    universe = syms or LIQUID
+
+    def sel(day, chain, spots, F):
+        out = []
+        for sym in sorted(universe & set(spots)):
+            if len(out) >= max_new:
+                break
+            s = spots[sym]
+            g = chain[(chain.act_symbol == sym) & (chain.dte >= dte_lo)
+                      & (chain.dte <= dte_hi)]
+            if g.empty:
+                continue
+            ge = g[g.expiration == g.expiration.min()]
+            sl = _nearest(ge, "Put", s * (1 - otm))
+            wl = _nearest(ge, "Put", s * (1 - otm - width), need_bid=False)
+            if sl is None or wl is None or float(wl.strike) >= float(sl.strike):
+                continue
+            credit = sl.bid - wl.ask
+            if credit <= 0:
+                continue
+            w = (float(sl.strike) - float(wl.strike)) * 100.0
+            legs = [E.Leg(sym, sl.expiration, float(sl.strike), "Put", -1),
+                    E.Leg(sym, wl.expiration, float(wl.strike), "Put", +1)]
+            out.append(dict(symbol=sym, legs=legs, margin=w,
+                            iv=float(sl.vol), hedged=False))
+        return out
+    return sel

@@ -150,7 +150,7 @@ def show(d, by, label, min_n=400):
                 flag = "  <== PROFITABLE CROSSING THE SPREAD"
             elif f < 0.5:
                 flag = "  <- easier than average"
-        k = key if isinstance(key, str) else "/".join(map(str, key))
+        k = "/".join(map(str, key)) if isinstance(key, tuple) else str(key)
         print(f"  {k:>14} {f:>8.3f} {gross:>+9.4f} {net:>+11.4f} "
               f"{toll:>8.4f} {n:>8,}{flag}")
 
