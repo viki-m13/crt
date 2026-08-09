@@ -834,3 +834,29 @@ full-period curve with rung state carried over. Honest range 0.56-0.72.
    0.72.
 4. **Do NOT add de-risking gates.** All neutral-to-harmful; vol-targeting is
    actively wrong for short premium.
+
+### Study 24 — BUYING convexity: the Kelly test. DEAD.
+
+Growth is capped at S^2/2 only for near-Gaussian returns; convex payoffs escape
+that bound, so this tests whether buying convexity compounds. Bought at the ASK,
+held to expiry, 22,971 observations each:
+
+| structure | mean | median | win% | max | Kelly f* | annualized |
+|---|---:|---:|---:|---:|---:|---:|
+| straddle | +0.019 | −0.168 | 41.8% | +10.2x | 0.027 | **+0.3%** |
+| strangle5 | +0.028 | −0.742 | 33.3% | +50.3x | 0.010 | **+0.2%** |
+| **strangle10** | **−0.045** | **−1.000** | 19.4% | **+156.8x** | **0.000** | **0.0%** |
+
+**The most convex structure — paying up to 156x — has Kelly fraction exactly
+zero.** Median outcome is total loss. Convexity is abundant; its PRICE already
+reflects it.
+
+**Vol-of-vol FAILS as a buy signal**, contradicting my hypothesis. High-vov
+quartile made things worse (straddle +0.007 vs +0.019 unconditional; strangle10
+−0.056 vs −0.045). Reason: vov genuinely predicts large moves, but high vov also
+means high IV, so the option costs more in the same proportion the extra
+movement is worth. Real signal, already in the price — the same wall study 15
+hit on breaches.
+
+Only helpful conditioning: **iv_rank LOW quartile** (options cheap vs their own
+history) — straddle Kelly growth +2.6%/yr. Real, but not 1000%.
