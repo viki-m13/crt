@@ -645,3 +645,36 @@ profits. Real at trade level, absent at portfolio level.
 **FINAL STRATEGY: 75d/20% put credit spreads, held to expiry, no active
 management.** Sharpe 0.51, CAGR 15.3%, maxDD −50.4%, positive 7 of 8 years.
 Still loses to SPY buy & hold (0.85 / 14.6% / −34.2%).
+
+### Study 18 — THE INVENTED METHOD: orthogonal three-sleeve book
+
+First construction in ~330 configurations that BEATS the benchmark.
+
+| | Sharpe | CAGR | maxDD |
+|---|---:|---:|---:|
+| SPY buy & hold | 0.84 | 14.5% | −34.2% |
+| **combined, levered 2.54x to SPY vol** | **0.98** | **17.3%** | **−31.0%** |
+| combined unlevered | 0.98 | 6.9% | −13.1% |
+| dev | 0.91 | 6.5% | −13.1% |
+| **holdout** | **1.24** | 8.3% | **−5.4%** |
+
+Sleeves: A vol-targeted SPY on IMPLIED vol (0.90), B skew-ranked stock
+long-short market-neutral (0.44), C 75d/20% put spreads (0.59).
+
+**Correlations — the whole point:** A-B **−0.03**, B-C **0.00**, A-C 0.46.
+Sleeve B is orthogonal to both. Combining uncorrelated sleeves scales Sharpe
+~sqrt(k); that, not any individual edge, carries 0.90 -> 0.98 while halving
+drawdown. **A mediocre uncorrelated stream beats a good correlated one.**
+Weights inverse-vol on DEV only, frozen: A 0.251, B 0.646, C 0.103.
+
+**Cost fragility (B carries 65% weight):** 2bp -> 0.98, 5bp -> 0.92,
+**10bp -> 0.82, below SPY.** Needs <=5bp round-trip stock execution.
+
+**Novel signal — implied correlation as an equity risk gate.** Computed from
+index IV vs component basket (median 0.248, p90 0.448); measures priced
+co-movement, which VIX cannot. Half-sizing when rho > 70th pct: Sharpe 0.93
+vs SPY 0.84, maxDD 22.4% vs 34.2%. Genuine but smaller than vol-targeting.
+Binary gates (long only when rho low) LOSE — same lesson as every other
+sit-out rule in this project.
+
+See METHOD.md for the full specification.
