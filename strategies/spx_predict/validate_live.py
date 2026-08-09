@@ -3,19 +3,19 @@ both SPY and SPX (index) options.
 
 For each underlying:
   1. Pull the real option chain (yfinance) and pick the listed expiry
-     closest to the strategy's 63-trading-session (~91 calendar day)
+     closest to the strategy's 42-trading-session (~61 calendar day)
      tenor.
-  2. Find the real listed strikes closest to 0.97*spot (sell leg) and
-     0.94*spot (buy leg).
+  2. Find the real listed strikes closest to 0.95*spot (sell leg) and
+     0.90*spot (buy leg).
   3. Record real bid/ask/mid, Yahoo-implied vol, open interest for both
      legs; compute the real spread credit at MID and at NATURAL (sell at
      bid, buy at ask — the worst-case fill).
-  4. Price the SAME strikes and SAME calendar tenor with the v2 model
-     surface and compare: model credit vs real credit, model leg IVs vs
-     market leg IVs.
+  4. Price the SAME strikes and SAME calendar tenor with the v3 model
+     surface (quadratic skew) and compare: model credit vs real credit,
+     model leg IVs vs market leg IVs.
 
 Verdict logic: the backtest is CONSERVATIVE if the credit it books
-(model mid minus 3% slippage) is at or below what the live market
+(model mid minus slippage) is at or below what the live market
 actually pays (natural credit). Emits spx/docs/data/live_validation.json
 (append-style: keeps a short history of past checks) and prints a
 summary. Fail-soft: any error emits ok=false rather than raising.
@@ -38,7 +38,7 @@ S = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(S)
 
 OUT = os.path.join(HERE, "..", "..", "spx", "docs", "data", "live_validation.json")
-TARGET_CAL_DAYS = 91          # ~63 trading sessions
+TARGET_CAL_DAYS = 61          # ~42 trading sessions (v3 structure)
 DIV_YIELD = {"SPY": 0.0, "^SPX": 0.013}   # SPY panel is TR (q folded into carry)
 
 
@@ -87,8 +87,8 @@ def validate_underlying(mkt, symbol):
         h = t.history(period="5d")
         spot = float(h["Close"].iloc[-1])
 
-    sell = _leg(puts, spot * 0.97)
-    buy = _leg(puts, spot * 0.94)
+    sell = _leg(puts, spot * 0.95)   # v3: 5% OTM short leg
+    buy = _leg(puts, spot * 0.90)    # v3: 5% wide
     if not sell or not buy or sell["strike"] <= buy["strike"]:
         return {"symbol": symbol, "ok": False, "error": "legs not found",
                 "spot": spot, "expiry": exp}
@@ -96,7 +96,7 @@ def validate_underlying(mkt, symbol):
     real_mid = sell["mid"] - buy["mid"]
     real_natural = sell["bid"] - buy["ask"]
 
-    # ---- model pricing of the SAME strikes / tenor on the v2 surface ----
+    # ---- model pricing of the SAME strikes / tenor on the v3 surface ----
     i = mkt.n - 1
     T = dte / 365.25
     r = float(mkt.rate[i])
@@ -105,7 +105,10 @@ def validate_underlying(mkt, symbol):
     s_atm = float(mkt.atm_iv(i))
 
     def model_leg(K):
-        s_leg = max(s_atm * (1.0 + S.BETA * math.log(F / K)), 0.03)
+        # v3 surface: quadratic skew. A linear skew underprices the far wing
+        # (the leg bought), which is what made v2 book ~1.37x the natural credit.
+        x = math.log(F / K)
+        s_leg = max(s_atm * (1.0 + S.BETA * x + S.BETA2 * x * x), 0.03)
         return S.bs_put_F(F, K, T, s_leg, r), s_leg
     v1, iv1 = model_leg(sell["strike"])
     v2, iv2 = model_leg(buy["strike"])

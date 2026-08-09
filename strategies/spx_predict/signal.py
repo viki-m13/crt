@@ -44,11 +44,24 @@ _LOCAL = os.path.join(HERE, "data", "SPY.json")
 _SHARED = os.path.join(HERE, "..", "credit_spread", "cache_full", "SPY.json")
 SPY_PATH = os.environ.get("SPX_SPY_PATH", _LOCAL if os.path.exists(_LOCAL) else _SHARED)
 
-# ---- pricing model v2 ----
-SLIP = 0.03        # per-side slippage on spread value
-BETA = 1.0         # skew slope per unit ln(F/K)
+# ---- pricing model v3 (calibrated against 1,098 real SPY spreads) ----
+# v2 priced the surface with a LINEAR skew, IV(K) = ATM*(1 + 1.0*ln(F/K)).
+# Real SPX skew is CONVEX, and a straight line through it underprices the far
+# wing — the leg you BUY — which inflates the credit. Measured on real chains,
+# v2 booked 1.369x the credit a natural (worst-side) fill receives, matching
+# what live_validation.py reports from live quotes (1.413 on SPY).
+#
+# Fitting IV(K) = ATM*(1 + b1*x + b2*x^2), x = ln(F/K), across 256 real SPY
+# chains gives b1 = 3.38, b2 = 12.89. Fixing ONLY the skew shape takes booking
+# from 1.369x to 0.979x — the ATM multiplier was never the problem, so IVM
+# stays at its v2 value. Slippage is raised 3% -> 5% so the surface lands
+# slightly conservative: mean 0.959, median 0.915 of the natural credit.
+# See calibrate.py, data/calibration.json, data/surface_selected.json.
+SLIP = 0.05        # per-side slippage on spread value (was 0.03)
+BETA = 3.38        # linear skew term per unit ln(F/K)  (was 1.0)
+BETA2 = 12.89      # QUADRATIC skew term — the actual v2 -> v3 fix
 W_BLEND = 0.30     # weight on current rv60^2 in the ATM variance blend
-IVM = 1.15         # VRP multiplier on the blended base
+IVM = 1.15         # multiplier on the blended base (unchanged from v2)
 REGIME_SMA = 200
 SPLIT = np.datetime64("2016-01-01")
 
@@ -65,8 +78,22 @@ TBILL = {1993: .030, 1994: .042, 1995: .055, 1996: .050, 1997: .051,
 # Frozen books. THE strategy is the put ladder; the call ladder is the
 # max-per-trade-ROR alternative.
 STRUCTURES = {
+    # v3 structure. Selected on real 2019-2026 SPY chains at worst-side fills
+    # (research/sharpe5_options/study21_joint.py) over a 36-cell sweep of
+    # tenor x OTM x width, then verified dev/holdout. Beats the previous
+    # -3%/-6% at 63 sessions on ALL THREE axes: Sharpe 0.77 -> 1.02,
+    # CAGR 5.3% -> 8.0%, maxDD -18.8% -> -17.5%.
+    #   further OTM  a 5% short strike cuts breach probability faster than it
+    #                cuts premium; the 5%-OTM column was strong across every
+    #                tenor and width tested (a plateau, not a swept spike)
+    #   shorter      42 sessions (~60 calendar days) doubles the rung count vs
+    #                63, and rung count is what generates the ladder's
+    #                entry-timing diversification
+    #   wider        a 5% width is far less sensitive to IV-model error than
+    #                3%; the old 3%-wide structure could not be priced without
+    #                bias by ANY constants in this model class (min 1.28x)
     "put":  {"kind": "put_spread", "label": "Put credit spread (the strategy)",
-             "k1_off": -0.03, "k2_off": -0.06, "horizon": 63,
+             "k1_off": -0.05, "k2_off": -0.10, "horizon": 42,
              "exit": "expiry", "exit_level": None,
              "every": 5, "f": 0.03, "cap": 0.60},
     "call": {"kind": "call_spread", "label": "Bull call spread (max ROR/trade)",
@@ -141,7 +168,8 @@ class Market:
             return None
 
         def iv(K):
-            return max(s_atm * (1.0 + BETA * math.log(F / K)), 0.03)
+            x = math.log(F / K)
+            return max(s_atm * (1.0 + BETA * x + BETA2 * x * x), 0.03)
         if kind == "call_spread":
             return bs_call_F(F, K1, T, iv(K1), r) - bs_call_F(F, K2, T, iv(K2), r)
         return bs_put_F(F, K1, T, iv(K1), r) - bs_put_F(F, K2, T, iv(K2), r)
@@ -275,13 +303,66 @@ def backtest_full(mkt: Market, spec):
 
 
 def curve_metrics(curve):
+    """Full risk/return profile of an equity curve.
+
+    The curve is event-sampled (a point per settlement), not calendar-regular,
+    so ratios are annualised on the ACTUAL observations-per-year rather than an
+    assumed 52. Getting that wrong inflates Sharpe by sqrt(52/actual) — a real
+    error caught during this work when 26 observations/year were annualised as
+    though they were weekly.
+    """
     if not curve or len(curve) < 2:
         return {"cagr": None, "maxdd": None}
-    v = np.array([c[1] for c in curve])
-    dd = float((v / np.maximum.accumulate(v) - 1).min())
-    yrs = (np.datetime64(curve[-1][0]) - np.datetime64(curve[0][0])
-           ).astype("timedelta64[D]").astype(int) / 365.25
-    return {"cagr": round(float(v[-1] ** (1 / yrs) - 1), 4), "maxdd": round(dd, 4)}
+    v = np.array([c[1] for c in curve], dtype=float)
+    d = np.array([np.datetime64(c[0]) for c in curve])
+    dd_series = v / np.maximum.accumulate(v) - 1
+    dd = float(dd_series.min())
+    yrs = (d[-1] - d[0]).astype("timedelta64[D]").astype(int) / 365.25
+    yrs = max(yrs, 1e-9)
+    cagr = float(v[-1] ** (1 / yrs) - 1)
+    r = np.diff(v) / v[:-1]
+    ppy = len(r) / yrs                       # actual observations per year
+    sd = float(r.std(ddof=1)) if len(r) > 2 else float("nan")
+    downside = r[r < 0]
+    dsd = float(downside.std(ddof=1)) if len(downside) > 2 else float("nan")
+    sharpe = float(r.mean() / sd * math.sqrt(ppy)) if sd and np.isfinite(sd) and sd > 0 else None
+    sortino = float(r.mean() / dsd * math.sqrt(ppy)) if dsd and np.isfinite(dsd) and dsd > 0 else None
+    # time to recover the deepest drawdown
+    trough = int(np.argmin(dd_series))
+    peak = int(np.argmax(v[:trough + 1])) if trough > 0 else 0
+    rec = None
+    for k in range(trough, len(v)):
+        if v[k] >= v[peak]:
+            rec = int((d[k] - d[trough]).astype("timedelta64[D]").astype(int))
+            break
+    # per-calendar-year returns
+    years = {}
+    for i in range(1, len(v)):
+        y = int(str(d[i])[:4])
+        years.setdefault(y, [v[i - 1], v[i]])
+        years[y][1] = v[i]
+    per_year = [{"year": y, "ret": round(float(a[1] / a[0] - 1), 4)}
+                for y, a in sorted(years.items())]
+    ulcer = float(np.sqrt(np.mean(dd_series ** 2)))
+    return {
+        "cagr": round(cagr, 4), "maxdd": round(dd, 4),
+        "sharpe": round(sharpe, 3) if sharpe is not None else None,
+        "sortino": round(sortino, 3) if sortino is not None else None,
+        "calmar": round(float(cagr / abs(dd)), 3) if dd < 0 else None,
+        "vol_ann": round(float(sd * math.sqrt(ppy)), 4) if sd and np.isfinite(sd) else None,
+        "obs_per_year": round(float(ppy), 1), "n_obs": int(len(v)),
+        "years": round(float(yrs), 2),
+        "ulcer_index": round(ulcer, 4),
+        "maxdd_recovery_days": rec,
+        "maxdd_peak": str(d[peak]), "maxdd_trough": str(d[trough]),
+        "best_obs": round(float(r.max()), 4) if len(r) else None,
+        "worst_obs": round(float(r.min()), 4) if len(r) else None,
+        "pct_positive_obs": round(float((r > 0).mean()), 4) if len(r) else None,
+        "final_multiple": round(float(v[-1]), 3),
+        "per_year": per_year,
+        "positive_years": int(sum(1 for p in per_year if p["ret"] > 0)),
+        "total_years": len(per_year),
+    }
 
 
 def stats(mkt: Market, spec, ladder_trades):
@@ -323,6 +404,39 @@ def examples(trades):
         out["winner"] = wins[len(wins) // 2]
     if losses:
         out["loser"] = losses[0]
+    return out
+
+
+def _calibration_block():
+    """Evidence that the pricing surface books credit the market actually pays.
+
+    Published on the page because it is the single most load-bearing assumption
+    in the whole backtest: if the model books credit no one will pay, every
+    downstream number is fiction.
+    """
+    out = {"method": ("surface fitted to real SPY option chains, then checked "
+                      "by booking the deployed structure against natural "
+                      "(worst-side) fills on every one of those chains")}
+    for fn, key in (("calibration.json", "fit"), ("surface_selected.json", "selected")):
+        p = os.path.join(HERE, "data", fn)
+        if os.path.exists(p):
+            try:
+                with open(p) as fh:
+                    out[key] = json.load(fh)
+            except Exception:
+                pass
+    out["booked_vs_natural"] = {
+        "v2_linear_skew": {"mean": 1.369, "median": 1.273,
+                           "verdict": "booked ~1.37x the credit the market pays"},
+        "v3_quadratic_skew": {"mean": 0.959, "median": 0.915,
+                              "verdict": "unbiased, slightly conservative"},
+        "n_spreads": 1098,
+        "structure_tested": "5% OTM / 5% wide / ~60 days, real SPY chains 2019-2026",
+        "note": ("Measured by pricing the deployed structure on every real "
+                 "chain and comparing to a natural (worst-side) fill. Agrees "
+                 "with live_validation.py's 1.413 on live SPY quotes. The fix "
+                 "is the skew SHAPE, not the IV level."),
+    }
     return out
 
 
@@ -368,7 +482,8 @@ def enter_today(mkt: Market, spec):
         # leg-by-leg pricing detail for the worked example on the page
         r = float(mkt.rate[i]); F = S * math.exp(r * T0)
         def leg(K):
-            s_leg = max(iv * (1.0 + BETA * math.log(F / K)), 0.03)
+            _x = math.log(F / K)
+            s_leg = max(iv * (1.0 + BETA * _x + BETA2 * _x * _x), 0.03)
             return {"strike": round(float(K), 2), "iv": round(float(s_leg), 4),
                     "price": round(float(bs_put_F(F, K, T0, s_leg, r)), 2)}
         return {"spot": round(float(S), 2), "sell_strike": round(float(K1), 2),
@@ -421,9 +536,12 @@ def main() -> int:
     strat_curve = books["put"]["equity"]
     out = {
         "as_of": str(mkt.dates[-1]), "spot": round(float(mkt.px[-1]), 2),
-        "pricing_model": {"version": 2, "carry": "3m T-bill", "skew_beta": BETA,
+        "pricing_model": {"version": 3, "carry": "3m T-bill",
+                          "skew_beta": BETA, "skew_beta2": BETA2,
                           "iv": f"{IVM} x sqrt({W_BLEND}*rv60^2 + {1-W_BLEND:.2f}*rvbar^2)",
-                          "slippage": SLIP},
+                          "skew": "IV(K) = ATM x (1 + 3.38x + 12.89x²), x = ln(F/K)",
+                          "slippage": SLIP,
+                          "calibration": _calibration_block()},
         "equity_sizing": STRUCTURES["put"]["f"],
         "ladder_cap": STRUCTURES["put"]["cap"],
         "cadence": "one new rung every week (put book) / month (call book)",
