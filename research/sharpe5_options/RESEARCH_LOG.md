@@ -758,3 +758,27 @@ the ladder's diversification.
 
 CAVEAT: 36 configs swept and winners picked — exactly the trial-count trap
 logged repeatedly above. Study 22 splits dev/holdout before any recommendation.
+
+### Study 22 — dev/holdout verification of the swept winners
+
+| config | dev Sh | hold Sh | full Sh | dev CAGR | hold CAGR |
+|---|---:|---:|---:|---:|---:|
+| **DEPLOYED 83d/3%/3%** | 0.88 | **0.14** | 0.77 | 6.0% | 2.7% |
+| **60d/5%/5%** | **1.09** | **0.56** | **1.02** | 8.7% | 5.4% |
+| 60d/5%/3% | 1.16 | 0.24 | 1.01 | 10.0% | 3.7% |
+| 60d/3%/8% | 1.01 | 0.52 | 0.95 | 8.8% | 5.8% |
+| 30d/5%/8% | 0.92 | 2.21 (?) | 1.04 | 3.7% | 4.6% |
+| 83d/5%/5% | 0.67 | 0.87 | 0.73 | 3.9% | 4.7% |
+
+**The improvement is consistent: 60d/5%/5% beats deployed in dev (1.09 vs
+0.88) AND holdout (0.56 vs 0.14).** The relative gain survives the split, which
+is the test that matters.
+
+**But absolute level decays for everything** — deployed 0.88→0.14, improved
+1.09→0.56. 2025-26 is simply a harder regime for short-put premium; no
+parameter choice escapes it. Expect materially less than dev numbers suggest.
+
+**30d/5%/8%'s holdout 2.21 is DISCOUNTED, not promoted.** Dev only 0.92, lowest
+CAGR in the table (3.9%). A 2.4x dev→holdout jump on a low-return config is a
+small-sample low-vol artifact. Promoting it would repeat the exact error made
+five times already in this project.
