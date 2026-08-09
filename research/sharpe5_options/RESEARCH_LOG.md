@@ -610,3 +610,38 @@ losses are unbounded. On a spread the loss is already capped by construction,
 so paying a widened spread to exit early buys protection you already own, at a
 price that can exceed the maximum loss itself.
 
+
+### Study 17b — ENGINE CHECK: the profit-taking gain does NOT survive
+
+Screening layer said profit-taking lifted Sharpe 0.21→0.26 (holdout 0.15→0.29).
+Run through the real event-loop engine, full period:
+
+| rule | Sharpe | CAGR | maxDD |
+|---|---:|---:|---:|
+| hold to expiry | **0.511** | 15.3% | −50.4% |
+| profit-take 50% | 0.459 | 13.5% | −48.6% |
+| profit-take 75% | 0.519 | 15.6% | −50.3% |
+
+**No improvement.** pt50 is worse; pt75 is +0.008, noise.
+
+**Why the screening layer was wrong — and it was my own construction.** I
+annualized on REALIZED holding period, deliberately crediting faster rules
+with the breadth they create (stated as a design choice in the code). A real
+portfolio does not convert freed capital into extra rounds: entries are gated
+by the selector's schedule and the utilization cap, not by cash availability.
+The sqrt(2.5) breadth multiplier never materializes — positions close sooner
+and the capital then sits idle.
+
+`portfolio.py` has carried the warning since the first commit: "Use ONLY for
+ranking/screening. Final numbers must come from engine.Backtester." I reported
+screening numbers as results and the engine corrected me. Fourth time in this
+project a measurement of mine inflated a result.
+
+**What survives:** the loss-cutting result is robust across screening, dev,
+holdout and engine — stops/breach/time exits all clearly harmful, worst trade
+−2.02 vs −0.99 for doing nothing. **What does not:** any benefit from taking
+profits. Real at trade level, absent at portfolio level.
+
+**FINAL STRATEGY: 75d/20% put credit spreads, held to expiry, no active
+management.** Sharpe 0.51, CAGR 15.3%, maxDD −50.4%, positive 7 of 8 years.
+Still loses to SPY buy & hold (0.85 / 14.6% / −34.2%).
