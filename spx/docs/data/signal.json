@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-08-07",
-  "spot": 773.26,
+  "as_of": "2026-08-10",
+  "spot": 773.03,
   "pricing_model": {
     "version": 3,
     "carry": "3m T-bill",
@@ -59,23 +59,23 @@
   "ladder_cap": 0.6,
   "cadence": "one new rung every week (put book) / month (call book)",
   "strategy_equity": {
-    "cagr": 0.064,
+    "cagr": 0.0641,
     "maxdd": -0.192,
-    "sharpe": 1.676,
-    "sortino": 0.919,
-    "calmar": 0.333,
+    "sharpe": 1.678,
+    "sortino": 0.92,
+    "calmar": 0.334,
     "vol_ann": 0.0375,
     "obs_per_year": 38.6,
-    "n_obs": 1262,
-    "years": 32.67,
+    "n_obs": 1263,
+    "years": 32.69,
     "ulcer_index": 0.0515,
     "maxdd_recovery_days": 522,
     "maxdd_peak": "2020-03-04",
     "maxdd_trough": "2020-04-23",
     "best_obs": 0.0038,
     "worst_obs": -0.03,
-    "pct_positive_obs": 0.9286,
-    "final_multiple": 7.591,
+    "pct_positive_obs": 0.9287,
+    "final_multiple": 7.615,
     "per_year": [
       {
         "year": 1994,
@@ -203,7 +203,7 @@
       },
       {
         "year": 2026,
-        "ret": 0.0587
+        "ret": 0.0621
       }
     ],
     "positive_years": 26,
@@ -2063,7 +2063,7 @@
       ],
       [
         "2006-07-11",
-        2.2394
+        2.2395
       ],
       [
         "2006-07-18",
@@ -2075,7 +2075,7 @@
       ],
       [
         "2006-08-01",
-        2.2588
+        2.2589
       ],
       [
         "2006-08-08",
@@ -2131,11 +2131,11 @@
       ],
       [
         "2006-11-30",
-        2.3535
+        2.3536
       ],
       [
         "2006-12-07",
-        2.3601
+        2.3602
       ],
       [
         "2006-12-14",
@@ -2211,7 +2211,7 @@
       ],
       [
         "2007-04-27",
-        2.4873
+        2.4874
       ],
       [
         "2007-05-04",
@@ -2339,7 +2339,7 @@
       ],
       [
         "2007-12-20",
-        2.6905
+        2.6906
       ],
       [
         "2007-12-28",
@@ -2435,11 +2435,11 @@
       ],
       [
         "2009-12-01",
-        2.6315
+        2.6316
       ],
       [
         "2009-12-08",
-        2.6413
+        2.6414
       ],
       [
         "2009-12-15",
@@ -2447,7 +2447,7 @@
       ],
       [
         "2009-12-22",
-        2.661
+        2.6611
       ],
       [
         "2009-12-30",
@@ -2463,7 +2463,7 @@
       ],
       [
         "2010-01-22",
-        2.7012
+        2.7013
       ],
       [
         "2010-01-29",
@@ -4071,7 +4071,7 @@
       ],
       [
         "2019-05-24",
-        5.423
+        5.4229
       ],
       [
         "2019-06-03",
@@ -5256,6 +5256,10 @@
       [
         "2026-07-31",
         7.5914
+      ],
+      [
+        "2026-08-07",
+        7.6153
       ]
     ]
   },
@@ -5563,7 +5567,7 @@
       ],
       [
         "2000-02-24",
-        3.2402
+        3.2401
       ],
       [
         "2000-03-24",
@@ -6091,11 +6095,11 @@
       ],
       [
         "2011-03-03",
-        3.9248
+        3.9247
       ],
       [
         "2011-04-01",
-        3.9324
+        3.9323
       ],
       [
         "2011-05-03",
@@ -6191,7 +6195,7 @@
       ],
       [
         "2013-04-05",
-        4.7828
+        4.7827
       ],
       [
         "2013-05-06",
@@ -6539,11 +6543,11 @@
       ],
       [
         "2020-07-08",
-        11.2518
+        11.2519
       ],
       [
         "2020-08-06",
-        11.8978
+        11.8977
       ],
       [
         "2020-09-04",
@@ -6579,7 +6583,7 @@
       ],
       [
         "2021-05-07",
-        15.196
+        15.1959
       ],
       [
         "2021-06-08",
@@ -6815,7 +6819,7 @@
       ],
       [
         "2026-04-15",
-        26.9783
+        26.9782
       ],
       [
         "2026-05-14",
@@ -6830,15 +6834,15 @@
         29.01
       ],
       [
-        "2026-08-07",
-        29.8811
+        "2026-08-10",
+        29.8722
       ]
     ],
     "cagr": 0.1095,
     "maxdd": -0.5519
   },
   "regime": {
-    "sma200": 700.13,
+    "sma200": 700.67,
     "uptrend": true,
     "filter": "enter only when SPY >= its 200-day average"
   },
@@ -6857,24 +6861,8 @@
         "f": 0.03,
         "cap": 0.6
       },
-      "today_action": "HOLD \u2014 9 rungs open; next weekly rung next session",
+      "today_action": "HOLD \u2014 8 rungs open; next weekly rung next session",
       "open_positions": [
-        {
-          "entry_date": "2026-06-08",
-          "spot_at_entry": 737.32,
-          "k1": 700.45,
-          "k2": 663.59,
-          "width": 36.87,
-          "entry_credit": 3.5,
-          "current_spot": 773.26,
-          "current_mark": 0.0,
-          "current_ror": 0.105,
-          "max_ror": 0.105,
-          "expiry_date": "2026-08-08",
-          "days_held": 42,
-          "days_to_expiry": 0,
-          "f_used": 0.03
-        },
         {
           "entry_date": "2026-06-15",
           "spot_at_entry": 752.89,
@@ -6882,13 +6870,13 @@
           "k2": 677.6,
           "width": 37.64,
           "entry_credit": 3.59,
-          "current_spot": 773.26,
-          "current_mark": 0.09,
-          "current_ror": 0.1029,
+          "current_spot": 773.03,
+          "current_mark": 0.04,
+          "current_ror": 0.1045,
           "max_ror": 0.1056,
           "expiry_date": "2026-08-15",
-          "days_held": 37,
-          "days_to_expiry": 5,
+          "days_held": 38,
+          "days_to_expiry": 4,
           "f_used": 0.03
         },
         {
@@ -6898,13 +6886,13 @@
           "k2": 660.22,
           "width": 36.68,
           "entry_credit": 3.5,
-          "current_spot": 773.26,
-          "current_mark": 0.24,
-          "current_ror": 0.0978,
+          "current_spot": 773.03,
+          "current_mark": 0.18,
+          "current_ror": 0.0996,
           "max_ror": 0.1054,
           "expiry_date": "2026-08-23",
-          "days_held": 32,
-          "days_to_expiry": 10,
+          "days_held": 33,
+          "days_to_expiry": 9,
           "f_used": 0.03
         },
         {
@@ -6914,13 +6902,13 @@
           "k2": 672.09,
           "width": 37.34,
           "entry_credit": 3.52,
-          "current_spot": 773.26,
-          "current_mark": 0.87,
-          "current_ror": 0.0772,
+          "current_spot": 773.03,
+          "current_mark": 0.79,
+          "current_ror": 0.0796,
           "max_ror": 0.1042,
           "expiry_date": "2026-08-30",
-          "days_held": 27,
-          "days_to_expiry": 15,
+          "days_held": 28,
+          "days_to_expiry": 14,
           "f_used": 0.03
         },
         {
@@ -6930,13 +6918,13 @@
           "k2": 670.86,
           "width": 37.27,
           "entry_credit": 3.49,
-          "current_spot": 773.26,
-          "current_mark": 1.18,
-          "current_ror": 0.0669,
+          "current_spot": 773.03,
+          "current_mark": 1.12,
+          "current_ror": 0.0686,
           "max_ror": 0.1034,
           "expiry_date": "2026-09-07",
-          "days_held": 22,
-          "days_to_expiry": 20,
+          "days_held": 23,
+          "days_to_expiry": 19,
           "f_used": 0.03
         },
         {
@@ -6946,13 +6934,13 @@
           "k2": 679.33,
           "width": 37.74,
           "entry_credit": 3.53,
-          "current_spot": 773.26,
-          "current_mark": 1.9,
-          "current_ror": 0.0448,
+          "current_spot": 773.03,
+          "current_mark": 1.86,
+          "current_ror": 0.0461,
           "max_ror": 0.1031,
           "expiry_date": "2026-09-14",
-          "days_held": 17,
-          "days_to_expiry": 25,
+          "days_held": 18,
+          "days_to_expiry": 24,
           "f_used": 0.03
         },
         {
@@ -6962,13 +6950,13 @@
           "k2": 672.67,
           "width": 37.37,
           "entry_credit": 3.49,
-          "current_spot": 773.26,
-          "current_mark": 1.7,
-          "current_ror": 0.0503,
+          "current_spot": 773.03,
+          "current_mark": 1.68,
+          "current_ror": 0.0509,
           "max_ror": 0.1031,
           "expiry_date": "2026-09-21",
-          "days_held": 12,
-          "days_to_expiry": 30,
+          "days_held": 13,
+          "days_to_expiry": 29,
           "f_used": 0.03
         },
         {
@@ -6978,13 +6966,13 @@
           "k2": 656.51,
           "width": 36.47,
           "entry_credit": 3.42,
-          "current_spot": 773.26,
+          "current_spot": 773.03,
           "current_mark": 1.03,
           "current_ror": 0.0709,
           "max_ror": 0.1036,
           "expiry_date": "2026-09-28",
-          "days_held": 7,
-          "days_to_expiry": 35,
+          "days_held": 8,
+          "days_to_expiry": 34,
           "f_used": 0.03
         },
         {
@@ -6994,70 +6982,70 @@
           "k2": 692.81,
           "width": 38.49,
           "entry_credit": 3.64,
-          "current_spot": 773.26,
-          "current_mark": 3.49,
+          "current_spot": 773.03,
+          "current_mark": 3.5,
           "current_ror": -0.0009,
           "max_ror": 0.1044,
           "expiry_date": "2026-10-05",
-          "days_held": 2,
-          "days_to_expiry": 40,
+          "days_held": 3,
+          "days_to_expiry": 39,
           "f_used": 0.03
         }
       ],
       "enter_today": {
-        "spot": 773.26,
-        "sell_strike": 734.6,
-        "buy_strike": 695.93,
-        "width": 38.66,
-        "est_credit": 3.66,
+        "spot": 773.03,
+        "sell_strike": 734.38,
+        "buy_strike": 695.73,
+        "width": 38.65,
+        "est_credit": 3.65,
         "max_ror": 0.1044,
-        "iv_proxy": 0.181,
-        "expiry_date": "2026-10-07",
+        "iv_proxy": 0.1809,
+        "expiry_date": "2026-10-10",
         "profit_target": "hold to expiry",
         "pricing": {
           "rate": 0.04,
-          "forward": 778.43,
-          "atm_iv": 0.181,
+          "forward": 778.2,
+          "atm_iv": 0.1809,
           "tenor_years": 0.167,
           "sell_leg": {
-            "strike": 734.6,
-            "iv": 0.2243,
-            "price": 10.99
+            "strike": 734.38,
+            "iv": 0.2242,
+            "price": 10.97
           },
           "buy_leg": {
-            "strike": 695.93,
-            "iv": 0.2788,
-            "price": 7.14
+            "strike": 695.73,
+            "iv": 0.2787,
+            "price": 7.12
           },
           "mid_value": 3.85,
           "slippage": 0.05
         }
       },
       "track_record": {
-        "n": 6311,
-        "n_ladder": 1261,
+        "n": 6312,
+        "n_ladder": 1262,
         "win_rate": 0.9273,
         "win_rate_val": 0.9236,
         "mean_ror": 0.0542,
         "median_ror": 0.1049,
-        "mean_ror_val": 0.0516,
+        "mean_ror_val": 0.0517,
         "avg_hold_days": 42.0,
         "worst_ror": -1.0,
         "annualized_ror": 0.3252,
         "sizing": [
           {
             "frac": 0.02,
-            "cagr": 0.0426,
+            "cagr": 0.0427,
             "maxdd": -0.1325
           },
           {
             "frac": 0.03,
-            "cagr": 0.064,
+            "cagr": 0.0641,
             "maxdd": -0.192
           },
           {
             "frac": 0.045,
-            "cagr": 0.0969,
+            "cagr": 0.097,
             "maxdd": -0.2755
           }
         ]
@@ -8917,7 +8905,7 @@
         ],
         [
           "2006-07-11",
-          2.2394
+          2.2395
         ],
         [
           "2006-07-18",
@@ -8929,7 +8917,7 @@
         ],
         [
           "2006-08-01",
-          2.2588
+          2.2589
         ],
         [
           "2006-08-08",
@@ -8985,11 +8973,11 @@
         ],
         [
           "2006-11-30",
-          2.3535
+          2.3536
         ],
         [
           "2006-12-07",
-          2.3601
+          2.3602
         ],
         [
           "2006-12-14",
@@ -9065,7 +9053,7 @@
         ],
         [
           "2007-04-27",
-          2.4873
+          2.4874
         ],
         [
           "2007-05-04",
@@ -9193,7 +9181,7 @@
         ],
         [
           "2007-12-20",
-          2.6905
+          2.6906
         ],
         [
           "2007-12-28",
@@ -9289,11 +9277,11 @@
         ],
         [
           "2009-12-01",
-          2.6315
+          2.6316
         ],
         [
           "2009-12-08",
-          2.6413
+          2.6414
         ],
         [
           "2009-12-15",
@@ -9301,7 +9289,7 @@
         ],
         [
           "2009-12-22",
-          2.661
+          2.6611
         ],
         [
           "2009-12-30",
@@ -9317,7 +9305,7 @@
         ],
         [
           "2010-01-22",
-          2.7012
+          2.7013
         ],
         [
           "2010-01-29",
@@ -10925,7 +10913,7 @@
         ],
         [
           "2019-05-24",
-          5.423
+          5.4229
         ],
         [
           "2019-06-03",
@@ -12110,26 +12098,30 @@
         [
           "2026-07-31",
           7.5914
+        ],
+        [
+          "2026-08-07",
+          7.6153
         ]
       ],
       "equity_metrics": {
-        "cagr": 0.064,
+        "cagr": 0.0641,
         "maxdd": -0.192,
-        "sharpe": 1.676,
-        "sortino": 0.919,
-        "calmar": 0.333,
+        "sharpe": 1.678,
+        "sortino": 0.92,
+        "calmar": 0.334,
         "vol_ann": 0.0375,
         "obs_per_year": 38.6,
-        "n_obs": 1262,
-        "years": 32.67,
+        "n_obs": 1263,
+        "years": 32.69,
         "ulcer_index": 0.0515,
         "maxdd_recovery_days": 522,
         "maxdd_peak": "2020-03-04",
         "maxdd_trough": "2020-04-23",
         "best_obs": 0.0038,
         "worst_obs": -0.03,
-        "pct_positive_obs": 0.9286,
-        "final_multiple": 7.591,
+        "pct_positive_obs": 0.9287,
+        "final_multiple": 7.615,
         "per_year": [
           {
             "year": 1994,
@@ -12257,7 +12249,7 @@
           },
           {
             "year": 2026,
-            "ret": 0.0587
+            "ret": 0.0621
           }
         ],
         "positive_years": 26,
@@ -12274,7 +12266,7 @@
         },
         {
           "label": "0\u201350%",
-          "count": 1171
+          "count": 1172
         },
         {
           "label": "50\u2013100%",
@@ -12314,6 +12306,19 @@
         }
       },
       "recent_trades": [
+        {
+          "entry_date": "2026-06-08",
+          "exit_date": "2026-08-07",
+          "spot_at_entry": 737.32,
+          "k1": 700.45,
+          "k2": 663.59,
+          "ror": 0.105,
+          "win": true,
+          "hold_days": 42,
+          "reason": "expiry",
+          "is_val": true,
+          "f_used": 0.03
+        },
         {
           "entry_date": "2026-06-01",
           "exit_date": "2026-07-31",
@@ -14250,19 +14255,6 @@
           "reason": "expiry",
           "is_val": true,
           "f_used": 0.03
-        },
-        {
-          "entry_date": "2023-03-08",
-          "exit_date": "2023-05-08",
-          "spot_at_entry": 381.44,
-          "k1": 362.37,
-          "k2": 343.3,
-          "ror": 0.1034,
-          "win": true,
-          "hold_days": 42,
-          "reason": "expiry",
-          "is_val": true,
-          "f_used": 0.03
         }
       ]
     },
@@ -14289,13 +14281,13 @@
           "k2": 798.48,
           "width": 37.31,
           "entry_debit": 25.99,
-          "current_spot": 773.26,
-          "current_mark": 27.71,
-          "current_ror": 0.0129,
+          "current_spot": 773.03,
+          "current_mark": 27.64,
+          "current_ror": 0.0101,
           "max_ror": 0.4354,
           "expiry_date": "2027-05-14",
-          "days_held": 58,
-          "days_to_expiry": 194,
+          "days_held": 59,
+          "days_to_expiry": 193,
           "f_used": 0.05
         },
         {
@@ -14305,13 +14297,13 @@
           "k2": 805.59,
           "width": 37.64,
           "entry_debit": 26.33,
-          "current_spot": 773.26,
-          "current_mark": 27.47,
-          "current_ror": -0.009,
+          "current_spot": 773.03,
+          "current_mark": 27.39,
+          "current_ror": -0.0117,
           "max_ror": 0.4298,
           "expiry_date": "2027-06-15",
-          "days_held": 37,
-          "days_to_expiry": 215,
+          "days_held": 38,
+          "days_to_expiry": 214,
           "f_used": 0.05
         },
         {
@@ -14321,32 +14313,32 @@
           "k2": 803.27,
           "width": 37.54,
           "entry_debit": 25.94,
-          "current_spot": 773.26,
-          "current_mark": 28.43,
-          "current_ror": 0.0413,
+          "current_spot": 773.03,
+          "current_mark": 28.36,
+          "current_ror": 0.0386,
           "max_ror": 0.4472,
           "expiry_date": "2027-07-16",
-          "days_held": 16,
-          "days_to_expiry": 236,
+          "days_held": 17,
+          "days_to_expiry": 235,
           "f_used": 0.05
         }
       ],
       "enter_today": {
-        "spot": 773.26,
-        "long_strike": 788.73,
-        "short_strike": 827.39,
-        "width": 38.66,
-        "est_debit": 26.88,
-        "max_ror": 0.4384,
-        "breakeven": 815.6,
-        "iv_proxy": 0.181,
-        "expiry_date": "2027-08-07",
+        "spot": 773.03,
+        "long_strike": 788.49,
+        "short_strike": 827.14,
+        "width": 38.65,
+        "est_debit": 26.87,
+        "max_ror": 0.4386,
+        "breakeven": 815.36,
+        "iv_proxy": 0.1809,
+        "expiry_date": "2027-08-10",
         "profit_target": "GTC sell at 80% of width"
       },
       "track_record": {
-        "n": 6114,
+        "n": 6115,
         "n_ladder": 271,
-        "win_rate": 0.8678,
+        "win_rate": 0.8679,
         "win_rate_val": 0.8947,
         "mean_ror": 0.1089,
         "median_ror": 0.1741,
@@ -14495,7 +14487,7 @@
         ],
         [
           "1997-05-05",
-          1.1122
+          1.1123
         ],
         [
           "1997-06-06",
@@ -14507,7 +14499,7 @@
         ],
         [
           "1997-07-16",
-          1.1306
+          1.1307
         ],
         [
           "1997-10-02",
@@ -14579,7 +14571,7 @@
         ],
         [
           "1999-03-18",
-          1.2096
+          1.2097
         ],
         [
           "1999-04-07",
@@ -14599,7 +14591,7 @@
         ],
         [
           "2000-01-07",
-          1.2403
+          1.2404
         ],
         [
           "2000-03-16",
@@ -14623,7 +14615,7 @@
         ],
         [
           "2001-03-26",
-          1.1888
+          1.1889
         ],
         [
           "2001-04-25",
@@ -14651,7 +14643,7 @@
         ],
         [
           "2003-09-18",
-          0.9421
+          0.9422
         ],
         [
           "2003-11-03",
@@ -14943,11 +14935,11 @@
         ],
         [
           "2013-10-25",
-          1.8017
+          1.8018
         ],
         [
           "2013-11-13",
-          1.8395
+          1.8396
         ],
         [
           "2013-11-22",
@@ -14959,7 +14951,7 @@
         ],
         [
           "2014-04-01",
-          1.9587
+          1.9588
         ],
         [
           "2014-05-27",
@@ -15035,7 +15027,7 @@
         ],
         [
           "2016-12-09",
-          1.9723
+          1.9724
         ],
         [
           "2016-12-13",
@@ -15163,7 +15155,7 @@
         ],
         [
           "2020-01-16",
-          2.7997
+          2.7998
         ],
         [
           "2020-02-11",
@@ -15223,7 +15215,7 @@
         ],
         [
           "2021-11-04",
-          3.8003
+          3.8004
         ],
         [
           "2021-11-05",
@@ -15231,7 +15223,7 @@
         ],
         [
           "2021-12-27",
-          3.9714
+          3.9715
         ],
         [
           "2022-09-07",
@@ -15275,7 +15267,7 @@
         ],
         [
           "2023-11-15",
-          2.9585
+          2.9586
         ],
         [
           "2023-11-20",
@@ -15303,11 +15295,11 @@
         ],
         [
           "2024-06-12",
-          3.0495
+          3.0496
         ],
         [
           "2024-06-13",
-          3.0584
+          3.0585
         ],
         [
           "2024-07-10",
@@ -15339,7 +15331,7 @@
         ],
         [
           "2025-06-26",
-          3.1157
+          3.1158
         ],
         [
           "2025-08-12",
@@ -15371,7 +15363,7 @@
         ],
         [
           "2026-04-17",
-          3.2408
+          3.2409
         ],
         [
           "2026-04-27",
@@ -15386,7 +15378,7 @@
         "cagr": 0.0378,
         "maxdd": -0.2676,
         "sharpe": 0.659,
-        "sortino": 0.76,
+        "sortino": 0.759,
         "calmar": 0.141,
         "vol_ann": 0.0592,
         "obs_per_year": 7.7,
@@ -16237,7 +16229,7 @@
         {
           "entry_date": "2021-02-05",
           "exit_date": "2021-04-15",
-          "spot_at_entry": 360.0,
+          "spot_at_entry": 360.01,
           "k1": 367.21,
           "k2": 385.21,
           "ror": 0.4134,
@@ -17254,7 +17246,7 @@
           "spot_at_entry": 107.92,
           "k1": 110.08,
           "k2": 115.48,
-          "ror": 0.3643,
+          "ror": 0.3642,
           "win": true,
           "hold_days": 115,
           "reason": "gtc-limit",
@@ -17371,7 +17363,7 @@
           "spot_at_entry": 101.56,
           "k1": 103.6,
           "k2": 108.67,
-          "ror": 0.1288,
+          "ror": 0.1289,
           "win": true,
           "hold_days": 252,
           "reason": "expiry",
