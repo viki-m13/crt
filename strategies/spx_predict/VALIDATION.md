@@ -424,3 +424,37 @@ ASIDE), the exact spread to trade, the open position, the full-sample
 track record, and the sizing→CAGR/drawdown frontier. The `/spx/` page
 renders it. `backtest.py` and `predict.py` reproduce the underlying
 edge measurements (§1–6) from the raw SPY panel.
+
+## §11 — Pricing model v3 (2026-08): the skew-shape correction
+
+v2 (§10) priced the surface with a linear skew, `IV(K) = ATM·(1 + 1.0·ln(F/K))`.
+Real SPX skew is convex; a straight line underprices the far wing — the leg the
+strategy BUYS — which inflates the booked credit. Measured against real SPY
+chains (256 chains for the fit; 1,098 spreads for the check,
+`calibrate.py` / `verify_calibration.py`):
+
+| surface | booked / natural fill |
+|---|---:|
+| v2 linear (IVM 1.15, β 1.0, slip 3%) | **1.369 mean / 1.273 median** |
+| v3 quadratic (IVM 1.15, b1 3.38, b2 12.89, slip 5%) | **0.959 mean / 0.915 median** |
+
+The ATM multiplier was never the problem; only the skew shape changed, plus
+slippage 3%→5% to land slightly conservative. First live cron under v3
+(2026-08-11): SPY booked/natural **1.024**, SPX **1.123** (the workflow now
+warns above 1.10). Caveat: leg IV *levels* remain above market even though the
+spread credit matches — the surface is calibrated for spreads, not for
+absolute IV.
+
+Structure simultaneously moved from −3%/−6% @ 63 sessions to **−5%/−10% @ 42
+sessions**, selected on real 2019–2026 chains at worst-side (natural) fills
+across a 36-cell tenor×OTM×width sweep and verified on a 2025–26 holdout
+(research/sharpe5_options/study21, study22). Under v3 pricing, 1993–2026:
+CAGR 6.4%, maxDD −19.2%, Sharpe 1.68, 26/32 positive years. The previously
+published 27%/yr was an artifact of v2's credit overstatement compounded
+weekly; §5's audit trail stands corrected by this section.
+
+Known measurement errors caught during this work (all inflating, all fixed):
+sqrt(52) annualization on 26-obs/yr series; adjusted-vs-real spot mismatch in
+an early calibration pass (produced a spurious 2.29× reading); negated-short
+long-leg proxies in two studies. Method: every headline number recomputed at
+least two independent ways before publication.
