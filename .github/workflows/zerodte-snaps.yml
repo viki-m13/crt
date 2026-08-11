@@ -1,0 +1,70 @@
+name: zerodte-snaps
+
+# 0DTE forward-test data collection — see research/zerodte/PREREGISTRATION.md.
+#
+# No free historical intraday 0DTE data exists, so this cron records real
+# CBOE delayed quotes (SPX + SPY, expirations <= 1 day, strikes within
+# +/-2.5% of spot) five times per US trading day. The pre-registered
+# strategies are scored against these snapshots by evaluate.py after the
+# 60-trading-day minimum sample. Snapshot times (UTC) bracket the two entry
+# points named in the registration: 13:36 (S1 entry), 15:00, 17:00, 19:00
+# (S2 signal+entry), 19:45 (pre-close mark).
+
+on:
+  schedule:
+    - cron: "36 13 * * 1-5"
+    - cron: "0 15,17,19 * * 1-5"
+    - cron: "45 19 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zerodte-snaps
+  cancel-in-progress: false
+
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install pandas
+
+      - name: Collect 0DTE snapshots
+        run: python research/zerodte/collect.py
+
+      - name: Commit & push
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/zerodte/snaps || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          TS=$(date -u '+%Y-%m-%d %H:%M UTC')
+          git commit -m "0DTE snapshot ${TS}"
+          for attempt in 1 2 3 4; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+               && git push origin HEAD:"${GITHUB_REF_NAME}"; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+            sleep $((2 ** attempt))
+          done
+          echo "Push failed after 4 attempts." >&2
+          exit 1

@@ -1061,3 +1061,26 @@ drift/noise ~ sqrt(T) while the toll is fixed per leg — extrapolated to 0DTE
 (T ~ 6.5h, drift ~3bp vs ~1% intraday vol) the drift engine is ~zero and the
 structure is a coin flip minus spread, consistent with Dim-Eraker-Vilkov and
 Almeida et al. (0DTE VRP "small and difficult to monetize after frictions").
+
+### Study 31 (setup) — 0DTE: no honest backtest possible; forward test registered
+
+Checked for usable 0DTE history (2026-08-11): the only free archives are EOD
+2013 — daily expirations began late 2022, so no free source covers the modern
+0DTE regime, and intraday history is paid-only. Per project standards no
+model-quote backtest was attempted. Instead:
+
+- research/zerodte/collect.py + .github/workflows/zerodte-snaps.yml record
+  real CBOE delayed chains (SPX+SPY, DTE<=1, strikes +/-2.5% of spot) five
+  times per trading day (13:36/15:00/17:00/19:00/19:45 UTC). Verified live:
+  312 SPX + 152 SPY rows per snapshot, ~10 KB gzipped.
+- research/zerodte/PREREGISTRATION.md freezes TWO strategies before any data:
+  S1 morning richness condor (sell 15-delta 0DTE iron condor at the open,
+  hold to cash settlement — Almeida et al. / Dim-Eraker-Vilkov morning-VRP
+  concentration) and S2 last-hour momentum ride (ATM debit spread in the
+  direction of the 9:30->15:00 move when |r|>=0.30% — Gao-Han-Li-Zhou
+  intraday momentum). Worst-side fills, defined risk, no parameter sweeps.
+- evaluate.py enforces the pre-stated bars: >=60 valid days, bootstrap 90%
+  CI excluding 0, else REJECT. Adds exactly 2 trials (project ~435).
+
+NOTE: the cron must be merged to main before collection starts (scheduled
+workflows fire from the default branch only).
