@@ -275,6 +275,60 @@ def main():
     print("levered beta if (a) ladder alpha t>2 vs SPY, (b) holdout does not")
     print("collapse, (c) worst year survivable at the sized cap.")
 
+    part2(ds, panel)
+
+
+def part2(ds, panel):
+    """Corrections after reading part-1 output.
+
+    The weekly beta control in part 1 is INVALID: the ladder marks P&L only at
+    expiry, so weekly equity changes reflect trades entered ~60 days earlier.
+    Contemporaneous-week regression on SPY therefore measures nothing (it
+    printed beta ~ -0.3 for a leveraged-LONG structure — an artifact).  The
+    honest control is at TRADE level: regress per-trade ret/risk on SPY's
+    return over the SAME window (entry -> expiry).  If the residual mean is
+    ~0, the entire edge is delta (equity premium), not selection skill.
+
+    Also: part 1's maxDD -85% / worstYr -80% at 5%-risk rungs fails the
+    survivability criterion, so a rung-size frontier is measured here.
+    """
+    print("\n" + "=" * 96)
+    print("PART 2 — trade-level beta control + sizing frontier")
+    print("=" * 96)
+
+    print("\n--- 6. trade-level control: ret/risk ~ SPY window return ---")
+    print("    (alpha = residual mean per trade; t on per-trade residuals is")
+    print("     OPTIMISTIC because overlapping windows are serially correlated —")
+    print("     the honest t divides by sqrt(overlap) ~ sqrt(trades per window))")
+    for off in (0.00, 0.02, 0.05):
+        d = ds[off]
+        if d is None or len(d) < 100:
+            continue
+        rw = (d.se / d.spot - 1.0)
+        y = d.ret_risk
+        b = y.cov(rw) / rw.var()
+        a = y.mean() - b * rw.mean()
+        resid = y - (a + b * rw)
+        n = len(d)
+        overlap = d.dte.mean() / ((d.date.max() - d.date.min()).days / n)
+        t_naive = a / (resid.std() / math.sqrt(n))
+        t_adj = t_naive / math.sqrt(max(overlap, 1.0))
+        print(f"  off={off:+.0%}: beta={b:+6.2f}  alpha/trade={a:+.4f}  "
+              f"t_naive={t_naive:+.2f}  t_overlap-adj={t_adj:+.2f}  "
+              f"(mean ret/risk={y.mean():+.4f} -> {100*a/max(y.mean(),1e-9):.0f}% "
+              f"of edge is non-delta)")
+
+    print("\n--- 7. rung-size frontier, ITM 5%, gate=always (survivability) ---")
+    d = ds[0.05]
+    for re_ in (0.01, 0.02, 0.03, 0.05, 0.08):
+        r = ladder(d, rung_eq=re_, cap=0.60)
+        show(r, f"rung={re_:.0%} of equity at risk")
+
+    print("\n--- 8. same frontier, dev/holdout, rung=2% ---")
+    for lab, cut in (("dev", d.date <= DEV_END), ("holdout", d.date > DEV_END)):
+        r = ladder(d[cut.values].copy(), rung_eq=0.02, cap=0.60)
+        show(r, f"ITM 5% rung=2% {lab}")
+
 
 if __name__ == "__main__":
     main()
