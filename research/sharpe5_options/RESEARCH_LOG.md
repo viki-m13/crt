@@ -910,3 +910,48 @@ none that is not already in the price:
 Every real signal is real AND priced. The most convex structure tested paid
 156x and has Kelly fraction exactly zero. That is not a failure of search —
 it is what an efficient options market looks like from the inside.
+
+### Study 28 — the self-funding barbell (last untested family)
+
+**A. Put ratio backspreads** (sell 5%-OTM put, buy N far 13%-OTM puts, monthly):
+
+| ratio | net credit | mean P&L (% spot) | worst | hit |
+|---|---:|---:|---:|---:|
+| short only | +1.31% | +0.81% | −13.97% | 93% |
+| 1:1 | +0.83% | +0.53% | −9.73% | 90% |
+| 1:2 | +0.35% | +0.25% | −7.74% | 82% |
+| 1:3 | −0.13% | **−0.04%** | −8.30% | 44% |
+
+The short credit CANNOT fund crash-protective quantities of far puts: at 1:3
+the book is already negative-carry AND still loses −8.3% in the valley. This is
+the convex skew (b2=12.9) doing exactly its job — the market charges for the
+far wing precisely what makes the barbell self-defeating. Family closed.
+(Portfolio "RUIN" rows used an 8%-of-spot reserve — too thin vs the −14% worst
+cohort, i.e. an implicit ~12x leverage artifact; with honest reserves the books
+are not ruin but remain deeply negative. Noted to avoid over-claiming.)
+
+**B. Conditional tail buying — the one glimmer, stated exactly:**
+
+| gate | n | mean multiple | hit |
+|---|---:|---:|---:|
+| always | 52 | 0.34x | 1.9% |
+| **SPY term inverted (stress)** | **12** | **1.46x** | 8.3% |
+| calm | 40 | 0.00x | 0.0% |
+
+First positive-EV option BUY in 28 studies — but n=12 with exactly ONE paying
+cohort. One winner cannot distinguish signal from luck; recorded as an open
+thread requiring far more events (longer history or intraday), NOT a finding.
+
+**C. Levered ladder+backspread combos**: corr −0.10 (good), but the backspread
+leg's negative carry drags every mix below the ladder alone; leverage
+accelerates ruin (2022-08 at 2x). Confirms: leverage cannot rescue a
+negative-carry leg.
+
+**PROJECT VERDICT after 28 studies, ~360 configurations, 7 families dead:**
+the evidence-supported maximum on this data is the ~1.0–1.13 Sharpe book
+(v3 ladder + skew overlay) at survivable leverage → ~15–25%/yr expectation
+with real drawdowns. 1000% CAGR requires either the undocumented (sustained
+IC ≥ 0.4) or the unfunded (tail convexity whose carry the record prices at
+−3%/yr). No creative recombination of these instruments changes that
+arithmetic, because every leg's cost is set by the same market that prices
+the target.
