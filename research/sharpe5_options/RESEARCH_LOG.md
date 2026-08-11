@@ -955,3 +955,53 @@ IC ≥ 0.4) or the unfunded (tail convexity whose carry the record prices at
 −3%/yr). No creative recombination of these instruments changes that
 arithmetic, because every leg's cost is set by the same market that prices
 the target.
+
+### Study 29 — HIGH credit/width credit spreads (the "risk $100 to make $200" spec)
+
+User spec: credit >= 0.5x risk, ideally credit = 2-3x risk. That forces the
+short strike ITM (credit/width >= 1/3). By parity an ITM put credit spread IS
+a long OTM call spread — a leveraged bullish bet. Pre-stated verdict criteria:
+strategy (not beta) iff (a) alpha survives a delta control, (b) holdout holds,
+(c) worst year survivable.
+
+**Screening (SPY, 5% wide, 45-75 DTE, worst-side, n=1160 per cell):**
+
+| short strike | credit:risk | breakeven | realized win | edge | ret/risk |
+|---|---:|---:|---:|---:|---:|
+| 5% OTM | 0.14x | 88.1% | 89.2% | +1.1% | +0.054 |
+| ATM | 0.35x | 74.3% | 79.8% | +5.5% | +0.107 |
+| 2% ITM | 0.57x | 64.0% | 69.5% | +5.5% | +0.143 |
+| **5% ITM** | **1.50x** | 41.4% | 56.5% | **+15.0%** | **+0.238** |
+
+The spec is structurally REAL: 1.50x credit:risk exists at honest fills, and
+the win rate beats breakeven by 15 points. ITM liquidity toll is paid: short
+leg bid-ask 0.121% of spot at +5% ITM vs 0.011% ATM (10x wider), already in
+the worst-side numbers.
+
+**Trade-level delta control (the decisive test):** regress per-trade ret/risk
+on SPY's return over the SAME window. Betas: +5.9 (ATM), +7.5 (+2%), +11.5
+(+5% ITM). Residual alpha: −13%, −7%, +2% of the edge respectively, all
+t_overlap-adj < 0.4. **The entire edge is the equity risk premium at ~6-11x
+delta leverage. Zero selection skill beyond being long.** (Part 1's weekly
+beta control printed beta −0.3 — an artifact of settle-at-expiry accounting
+lagging SPY by ~60d; corrected in part 2. Logged as measurement error #7.)
+
+**Ladder frontier (weekly rungs, capital = max loss, 60% cap, ITM 5%):**
+
+| rung | CAGR | Sharpe | maxDD | worst yr |
+|---|---:|---:|---:|---:|
+| 1% | +15.4% | 1.34 | −26.6% | −21.8% |
+| 2% | +28.6% | 1.26 | −47.6% | −40.5% |
+| 5% (Kelly peak) | +49.7% | 1.00 | −85.5% | −80.2% |
+| 8% (past Kelly) | +33.5% | 0.76 | −96.3% | −92.5% |
+
+Yearly at 5%: 2021 +205%, 2024 +586%, but 2022 **−80%**. Dev/holdout at 2%:
++33.0%/1.40 dev, +21.1%/1.05 holdout (holdout years bullish — consistent, not
+independent proof). Uptrend gate (200d-SMA): helps dev, COLLAPSES holdout
+(ITM5% uptrend holdout −6.6%, Sharpe +0.05) — gate rejected. Sharpe/maxDD here
+are settlement-marked (no MTM between expiries); true intraperiod DD is worse.
+
+**Verdict: criterion (a) FAILS — this is levered beta, honestly measured, not
+an accuracy edge. The payoff spec is deliverable; 1000% CAGR is not: the Kelly
+peak of the frontier is ~+50%/yr and costs −85% drawdowns. Trials this study:
+5 offsets x (2 gates + 5 rung sizes + splits) ~ 30 configs, all logged.**
