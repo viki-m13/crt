@@ -149,3 +149,23 @@ signal-count this market does not offer.
 - [Empirical Limitations on High Frequency Trading Profitability — arXiv 1007.2593](https://arxiv.org/pdf/1007.2593)
 - [Risk and Return in High Frequency Trading — CFTC](https://www.cftc.gov/sites/default/files/idc/groups/public/@economicanalysis/documents/file/oce_riskandreturn0414.pdf)
 - [Sharpe Ratio for Algorithmic Trading — QuantStart](https://www.quantstart.com/articles/Sharpe-Ratio-for-Algorithmic-Trading-Performance-Measurement/)
+
+---
+
+## Appendix — live validation of the v3 recalibration
+
+First nightly cron run under the v3 surface (2026-08-11), against live quotes:
+
+| underlying | v2 booked/natural | **v3 booked/natural** |
+|---|---:|---:|
+| SPY | 1.413 | **1.024** |
+| ^SPX | 1.582 | **1.123** |
+
+The convex-skew fix holds on live market data, not only on the historical
+chains it was fitted to. SPX remains ~12% optimistic and trips the 1.10 guard
+added to the workflow.
+
+Caveat worth recording: the model's individual leg IVs are still far above
+market (0.225/0.281 vs 0.168/0.210) even though the *credit* now matches. For
+a spread only the difference matters, so the strategy prices correctly, but
+this surface should not be trusted for anything requiring absolute IV levels.
