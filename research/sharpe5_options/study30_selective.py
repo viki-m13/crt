@@ -44,7 +44,32 @@ def cohorts_with_mtm(off=0.05, width=0.05, dte_lo=45, dte_hi=75):
         mtm = pd.read_parquet(MTM_PATH)
         if len(mtm) and mtm.cid.max() == d.cid.max():
             return d, mtm, panel
-    # single pass: for each chain date, liquidation cost of every open cohort
+    # single pass: for each chain date, liquidation cost of every open cohort.
+    # DATA CONSTRAINT (verified): the DoltHub scrape stores only ~3 rolling
+    # tenor buckets per date, and later scrapes of an expiration carry a
+    # COARSE $10-ish strike grid whose offset shifts — exact-strike lookups
+    # fail ~94% of the time. Marks therefore use LINEAR INTERPOLATION in
+    # strike across the coarse grid. Put price is convex in strike, so the
+    # chord OVERSTATES both legs' prices: conservative (an upper bound) for
+    # the short-leg buy-back at ask, anti-conservative by only the convexity
+    # gap for the long leg sold at bid — a $0.25 penalty is added whenever
+    # either leg is interpolated, which more than covers the ~$0.13-0.25
+    # curvature gap of a $10 grid near ATM. Marks exist only on dates whose
+    # scrape carries the cohort's expiration (~9 per cohort, clustered near
+    # the 28d/14d buckets): exit rules act with up to ~3 weeks of latency,
+    # and MTM drawdowns remain a LOWER bound on the true path.
+    def interp(grid, k, col):
+        ex = grid[grid.strike == k]
+        if len(ex):
+            return float(ex[col].iloc[0]), True
+        lo = grid[grid.strike < k]
+        hi = grid[grid.strike > k]
+        if lo.empty or hi.empty:
+            return None, False
+        k1, v1 = float(lo.strike.iloc[-1]), float(lo[col].iloc[-1])
+        k2, v2 = float(hi.strike.iloc[0]), float(hi[col].iloc[0])
+        return v1 + (v2 - v1) * (k - k1) / (k2 - k1), False
+
     by_exp: dict = {}
     for r in d.itertuples(index=False):
         by_exp.setdefault(r.exp, []).append((r.cid, r.date, r.ks, r.kl))
@@ -58,21 +83,19 @@ def cohorts_with_mtm(off=0.05, width=0.05, dte_lo=45, dte_hi=75):
             if ch is None:
                 ch = E.load_chain(day)
                 g_all = ch[(ch.act_symbol == "SPY") & (ch.call_put == "Put")]
-            ge = g_all[g_all.expiration == exp]
-            if ge.empty:
+            ge = g_all[(g_all.expiration == exp) & (g_all.ask > 0)
+                       ].sort_values("strike")
+            if len(ge) < 3:
                 continue
             for cid, t0, ks, kl in lst:
                 if not (t0 < ts):
                     continue
-                qs = ge[ge.strike == ks]
-                ql = ge[ge.strike == kl]
-                if qs.empty or ql.empty:
+                a_s, ex1 = interp(ge, ks, "ask")
+                b_l, ex2 = interp(ge, kl, "bid")
+                if a_s is None or b_l is None:
                     continue
-                ask_s = float(qs.ask.iloc[0])
-                bid_l = float(ql.bid.iloc[0])
-                if ask_s <= 0:
-                    continue
-                rows.append((cid, day, ask_s - bid_l))
+                pen = 0.0 if (ex1 and ex2) else 0.25
+                rows.append((cid, day, a_s - max(b_l, 0.0) + pen))
     mtm = pd.DataFrame(rows, columns=["cid", "date", "liq"])
     mtm["date"] = pd.to_datetime(mtm.date)
     os.makedirs(os.path.dirname(MTM_PATH), exist_ok=True)
