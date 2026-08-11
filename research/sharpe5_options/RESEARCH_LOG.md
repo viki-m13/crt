@@ -1005,3 +1005,39 @@ are settlement-marked (no MTM between expiries); true intraperiod DD is worse.
 an accuracy edge. The payoff spec is deliverable; 1000% CAGR is not: the Kelly
 peak of the frontier is ~+50%/yr and costs −85% drawdowns. Trials this study:
 5 offsets x (2 gates + 5 rung sizes + splits) ~ 30 configs, all logged.**
+
+### Study 30 — selectivity + MTM exits on ITM-5% spreads (target: CAGR>50%, DD<10%)
+
+User target = Calmar > 5 sustained. Method upgrades over study 29: (1) TRUE
+mark-to-market — every open cohort marked at worst-side liquidation on every
+scrape date carrying its expiration (10,304 marks; strike-grid mismatch across
+scrapes solved by convexity-safe linear interpolation + $0.25 penalty);
+(2) 12 pre-registered gates ranked on dev only, holdout consulted for top 3;
+(3) exit rules on real unwind quotes. Data constraint (verified at source):
+DoltHub carries only ~3 tenor buckets/date, so marks cluster near the 28d/14d
+buckets — exits act with up to ~3 weeks latency; MTM maxDD is a LOWER bound.
+
+**MTM strips the settlement-mark illusion**: baseline 2%-rung Sharpe 1.25 →
+0.94, maxDD −47.7% → −53.3%; 5%-rung maxDD −87% → −90.5%. Study 29's curves
+were smoothed by marking only at expiry (as flagged there).
+
+**Gates (dev Sharpe rank → holdout):** best dev = G5 iv/rv>1 (Calmar 0.7 dev)
+→ holdout Calmar 0.2. #2 trend200∧term-calm → holdout −0.1. #3 term-calm →
+holdout −0.1. Every timing gate that helped dev collapsed OOS — same failure
+as study 29's 200dma gate. With ~45 independent 60d windows and 2 bear
+episodes in sample, a gate has ~2 bits of bear-avoidance evidence: gates
+CANNOT be validated on this history, only falsified. All 12 were.
+
+**Exits HURT, decisively**: cut@−50%-of-risk dev CAGR +12.0% vs hold +47.0%;
+cut@−25% +1.4%. Buying back spreads at worst-side after adverse moves, with
+mark latency, costs more than the losses it avoids — third independent
+confirmation (structures2_exits, study 22, now on MTM quotes). Profit-taking
+neutral-to-negative. Best honest full-sample config: G5+hold at 2% rungs =
+CAGR +16.3%, maxDD −28.0%, Calmar 0.6.
+
+**Verdict: the target fails by ~10x on the Calmar axis in every one of 36
+configs (best 0.7). The instrument is levered equity beta; no entry gate
+survives holdout; loss-cutting is negative-EV at real quotes. CAGR>50% with
+DD<10% is not obtainable from defined-risk SPY credit spreads on this data —
+and nothing in the documented literature sustains Calmar 5 outside
+market-making. Trials: 36 (project total ~430).**
