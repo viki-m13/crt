@@ -169,3 +169,66 @@ Caveat worth recording: the model's individual leg IVs are still far above
 market (0.225/0.281 vs 0.168/0.210) even though the *credit* now matches. For
 a spread only the difference matters, so the strategy prices correctly, but
 this surface should not be trusted for anything requiring absolute IV levels.
+
+---
+
+## Appendix 2 — documented 1000%+ EPISODES, and study 27
+
+The target does appear in the published record — as *episodes*, never as a
+compound annual rate. The two best-documented:
+
+| case | return | window | mechanism |
+|---|---|---|---|
+| **Universa Investments** | **+4,144%** YTD (investor letter; +3,612% in March alone) | Q1 2020 | deep-OTM SPX puts into the COVID crash; ~$3bn gain on <$100M premium; monetised mid-crash |
+| **Larry Williams, WCTC** | **+11,376%** ($10k → $2.1M peak → $1.14M net) | calendar 1987 | extreme futures leverage; **−46% drawdown from peak inside the winning year**; never repeated at scale |
+
+Both are convexity events — the one mathematical route to 1000% (study 24).
+The record then documents what the same instruments do BETWEEN events:
+
+- **CBOE Eurekahedge Tail Risk HF Index: −3.23%/yr annualized 2008–2022**;
+  cumulative **−60%** from 2011 to the eve of COVID. The professionals running
+  the Universa trade, as an index, lost money over the full cycle.
+- **AQR ("Chasing Your Own Tail (Risk)")**: insurance drag ~2.65%/yr for the
+  tail-manager index; implied variance persistently exceeds realized — the same
+  VRP this project measured at +2.54% of width. **The tail buyer is the
+  counterparty paying the premium every seller here harvests.**
+
+### Study 27 — the construction on real chains (2019–2026)
+
+Monthly cohorts of far-OTM SPY puts at the real ask, window containing COVID,
+2022 and the 2025 shock:
+
+| depth | cost/spot | hold-to-expiry | 10×-trigger | omniscient exit* |
+|---|---:|---:|---:|---:|
+| 10% OTM | 0.672% | 0.31× | 0.31× | 0.82× |
+| 15% OTM | 0.373% | 0.20× | 0.45× | 0.89× |
+| 20% OTM | 0.299% | 0.00× | 0.00× | 0.57× |
+
+*sell at the best bid ever printed — hindsight upper bound, not tradable.
+
+**Even with a perfect-hindsight exit, every achievable depth returns <1× per
+dollar of premium.** Best real cohort: 17.6× (Feb-2020). The pre-stated 10×
+monetisation trigger rescues crash cohorts that expire worthless (Mar-2020
+0×→11.8×; Apr-2025 0×→10.4×) and the average is still 0.45×. Portfolio level:
+SPY alone 14.7%/yr; +3%/yr put budget → 12.4% with NO drawdown reduction; all
+levered "Spitznagel" variants Sharpe-inferior to plain SPY. Universa's 100×+
+multiples live in strikes/tenors/execution EOD retail-grade data cannot reach
+(deepest reliably-quoted strikes here max out at 17.6×).
+
+### Final synthesis
+
+1000% **years** are documented and their anatomy is public: cheap convexity ×
+tail event × monetisation at peak fear. 1000% **CAGR** is documented nowhere,
+because the convexity that produces the episode costs a documented −3%/yr to
+hold between episodes, and no documented method times the episodes better
+than the price of the insurance. The two halves of the published record agree
+with each other and with every measurement in this project.
+
+**Additional sources**
+- [Bloomberg — Taleb-advised Universa returned 3,600% in March 2020](https://www.bloomberg.com/news/articles/2020-04-08/taleb-advised-universa-tail-risk-fund-returned-3-600-in-march)
+- [CNBC — Universa gains over 4,000% in Q1 2020](https://www.cnbc.com/video/2020/08/17/universa-hedge-fund-investments-gain-over-4000-percent-return.html)
+- [Trading Greats — Larry Williams, 11,376% WCTC record](https://www.tradinggreats.com/traders/larry-williams)
+- [World Cup Trading Championships](https://www.worldcupchampionships.com/)
+- [AQR — Chasing Your Own Tail (Risk)](https://www.aqr.com/-/media/AQR/Documents/Insights/White-Papers/AQR-Chasing-Your-Own-Tail-Risk.pdf)
+- [Disciplined Systematic Global Macro — Eurekahedge Tail Risk index](http://mrzepczynski.blogspot.com/2020/10/cboe-eurekahedge-tail-risk-hedge-fund.html)
+- [Forbes — Are tail risk funds worth the losses in good times?](https://www.forbes.com/sites/jacobwolinsky/2022/06/30/are-tail-risk-hedge-funds-worth-the-steep-losses-in-good-times-to-win-big-in-bad-times/)
