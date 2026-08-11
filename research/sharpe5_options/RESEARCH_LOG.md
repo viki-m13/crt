@@ -1041,3 +1041,23 @@ survives holdout; loss-cutting is negative-EV at real quotes. CAGR>50% with
 DD<10% is not obtainable from defined-risk SPY credit spreads on this data —
 and nothing in the documented literature sustains Calmar 5 outside
 market-making. Trials: 36 (project total ~430).**
+
+### Trials ~431-433 — tenor gradient toward 0DTE for the ITM-5% spec
+
+No sub-8-DTE data exists in this DB (min bucket ~14d, EOD quotes only), so
+0DTE itself is untestable here; the gradient across available tenors is the
+honest proxy. ITM-5% put credit spreads, 5% wide, worst-side, 2% rungs:
+
+| tenor | credit:risk | win-BE edge | ret/risk | toll (% of risk) | ladder CAGR | Sharpe |
+|---|---:|---:|---:|---:|---:|---:|
+| ~14d | 3.42x | +18.9% | +0.074 | 16.1% | +11.7% | 0.70 |
+| ~28d | 2.20x | +17.8% | +0.187 | 12.0% | +20.4% | 1.17 |
+| ~60d | 1.50x | +15.0% | +0.238 | 8.3% | +28.6% | 1.26 |
+
+Monotone: shorter tenor LOOKS more like the spec (higher credit:risk, bigger
+win-rate edge) and PAYS less (per-trade EV −69%, toll share doubles, Sharpe
+0.70 vs 1.26). Mechanism: the position's engine is drift (study 29), and
+drift/noise ~ sqrt(T) while the toll is fixed per leg — extrapolated to 0DTE
+(T ~ 6.5h, drift ~3bp vs ~1% intraday vol) the drift engine is ~zero and the
+structure is a coin flip minus spread, consistent with Dim-Eraker-Vilkov and
+Almeida et al. (0DTE VRP "small and difficult to monetize after frictions").
