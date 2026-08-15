@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-08-14T23:03:39Z",
+  "as_of": "2026-08-15T00:03:34Z",
   "checks": [
     {
       "symbol": "SPY",
       "ok": true,
       "spot": 776.34,
       "expiry": "2026-10-16",
-      "dte_calendar": 63,
+      "dte_calendar": 62,
       "sell_leg": {
         "strike": 738.0,
         "bid": 6.55,
         "ask": 6.58,
         "mid": 6.5649999999999995,
-        "iv": 0.16,
+        "iv": 0.1613,
         "oi": 2406,
         "volume": 4
       },
@@ -21,7 +21,7 @@
         "bid": 3.24,
         "ask": 3.26,
         "mid": 3.25,
-        "iv": 0.2008,
+        "iv": 0.2024,
         "oi": 23362,
         "volume": 6741
       },
@@ -31,17 +31,17 @@
       "real_credit_mid_pct_width": 0.0872,
       "model_atm_iv": 0.1799,
       "model_leg_ivs": [
-        0.2226,
-        0.2753
+        0.2225,
+        0.2752
       ],
       "market_leg_ivs": [
-        0.16,
-        0.2008
+        0.1613,
+        0.2024
       ],
-      "model_credit_mid": 3.87,
-      "model_credit_booked": 3.68,
-      "model_vs_real_mid": 1.167,
-      "booked_vs_natural": 1.117,
+      "model_credit_mid": 3.86,
+      "model_credit_booked": 3.67,
+      "model_vs_real_mid": 1.165,
+      "booked_vs_natural": 1.115,
       "model_conservative": false,
       "bidask_pct_of_mid": [
         0.005,
@@ -53,13 +53,13 @@
       "ok": true,
       "spot": 7785.76,
       "expiry": "2026-10-16",
-      "dte_calendar": 63,
+      "dte_calendar": 62,
       "sell_leg": {
         "strike": 7395.0,
         "bid": 62.7,
         "ask": 63.6,
         "mid": 63.150000000000006,
-        "iv": 0.159,
+        "iv": 0.1603,
         "oi": 6,
         "volume": 1
       },
@@ -68,7 +68,7 @@
         "bid": 31.1,
         "ask": 31.9,
         "mid": 31.5,
-        "iv": 0.2015,
+        "iv": 0.2031,
         "oi": 17,
         "volume": 1
       },
@@ -78,17 +78,17 @@
       "real_credit_mid_pct_width": 0.0822,
       "model_atm_iv": 0.1799,
       "model_leg_ivs": [
-        0.2214,
-        0.2744
+        0.2213,
+        0.2743
       ],
       "market_leg_ivs": [
-        0.159,
-        0.2015
+        0.1603,
+        0.2031
       ],
-      "model_credit_mid": 40.04,
-      "model_credit_booked": 38.03,
-      "model_vs_real_mid": 1.265,
-      "booked_vs_natural": 1.235,
+      "model_credit_mid": 39.94,
+      "model_credit_booked": 37.94,
+      "model_vs_real_mid": 1.262,
+      "booked_vs_natural": 1.232,
       "model_conservative": false,
       "bidask_pct_of_mid": [
         0.014,
@@ -97,6 +97,105 @@
     }
   ],
   "history": [
+    {
+      "as_of": "2026-08-15T00:03:34Z",
+      "checks": [
+        {
+          "symbol": "SPY",
+          "ok": true,
+          "spot": 776.34,
+          "expiry": "2026-10-16",
+          "dte_calendar": 62,
+          "sell_leg": {
+            "strike": 738.0,
+            "bid": 6.55,
+            "ask": 6.58,
+            "mid": 6.5649999999999995,
+            "iv": 0.1613,
+            "oi": 2406,
+            "volume": 4
+          },
+          "buy_leg": {
+            "strike": 700.0,
+            "bid": 3.24,
+            "ask": 3.26,
+            "mid": 3.25,
+            "iv": 0.2024,
+            "oi": 23362,
+            "volume": 6741
+          },
+          "width": 38.0,
+          "real_credit_mid": 3.31,
+          "real_credit_natural": 3.29,
+          "real_credit_mid_pct_width": 0.0872,
+          "model_atm_iv": 0.1799,
+          "model_leg_ivs": [
+            0.2225,
+            0.2752
+          ],
+          "market_leg_ivs": [
+            0.1613,
+            0.2024
+          ],
+          "model_credit_mid": 3.86,
+          "model_credit_booked": 3.67,
+          "model_vs_real_mid": 1.165,
+          "booked_vs_natural": 1.115,
+          "model_conservative": false,
+          "bidask_pct_of_mid": [
+            0.005,
+            0.006
+          ]
+        },
+        {
+          "symbol": "^SPX",
+          "ok": true,
+          "spot": 7785.76,
+          "expiry": "2026-10-16",
+          "dte_calendar": 62,
+          "sell_leg": {
+            "strike": 7395.0,
+            "bid": 62.7,
+            "ask": 63.6,
+            "mid": 63.150000000000006,
+            "iv": 0.1603,
+            "oi": 6,
+            "volume": 1
+          },
+          "buy_leg": {
+            "strike": 7010.0,
+            "bid": 31.1,
+            "ask": 31.9,
+            "mid": 31.5,
+            "iv": 0.2031,
+            "oi": 17,
+            "volume": 1
+          },
+          "width": 385.0,
+          "real_credit_mid": 31.65,
+          "real_credit_natural": 30.8,
+          "real_credit_mid_pct_width": 0.0822,
+          "model_atm_iv": 0.1799,
+          "model_leg_ivs": [
+            0.2213,
+            0.2743
+          ],
+          "market_leg_ivs": [
+            0.1603,
+            0.2031
+          ],
+          "model_credit_mid": 39.94,
+          "model_credit_booked": 37.94,
+          "model_vs_real_mid": 1.262,
+          "booked_vs_natural": 1.232,
+          "model_conservative": false,
+          "bidask_pct_of_mid": [
+            0.014,
+            0.025
+          ]
+        }
+      ]
+    },
     {
       "as_of": "2026-08-14T23:03:39Z",
       "checks": [
@@ -2591,105 +2690,6 @@
     },
     {
       "as_of": "2026-07-31T23:12:11Z",
-      "checks": [
-        {
-          "symbol": "SPY",
-          "ok": true,
-          "spot": 747.03,
-          "expiry": "2026-10-30",
-          "dte_calendar": 91,
-          "sell_leg": {
-            "strike": 725.0,
-            "bid": 13.32,
-            "ask": 13.4,
-            "mid": 13.36,
-            "iv": 0.1543,
-            "oi": 967,
-            "volume": 26
-          },
-          "buy_leg": {
-            "strike": 702.0,
-            "bid": 9.18,
-            "ask": 9.24,
-            "mid": 9.21,
-            "iv": 0.1774,
-            "oi": 59,
-            "volume": 1
-          },
-          "width": 23.0,
-          "real_credit_mid": 4.15,
-          "real_credit_natural": 4.08,
-          "real_credit_mid_pct_width": 0.1804,
-          "model_atm_iv": 0.1798,
-          "model_leg_ivs": [
-            0.1869,
-            0.1927
-          ],
-          "market_leg_ivs": [
-            0.1543,
-            0.1774
-          ],
-          "model_credit_mid": 6.01,
-          "model_credit_booked": 5.83,
-          "model_vs_real_mid": 1.448,
-          "booked_vs_natural": 1.428,
-          "model_conservative": false,
-          "bidask_pct_of_mid": [
-            0.006,
-            0.007
-          ]
-        },
-        {
-          "symbol": "^SPX",
-          "ok": true,
-          "spot": 7489.72,
-          "expiry": "2026-10-30",
-          "dte_calendar": 91,
-          "sell_leg": {
-            "strike": 7270.0,
-            "bid": 135.9,
-            "ask": 138.2,
-            "mid": 137.05,
-            "iv": 0.1568,
-            "oi": 62,
-            "volume": 2
-          },
-          "buy_leg": {
-            "strike": 7040.0,
-            "bid": 94.5,
-            "ask": 96.6,
-            "mid": 95.55,
-            "iv": 0.1805,
-            "oi": 88,
-            "volume": 2
-          },
-          "width": 230.0,
-          "real_credit_mid": 41.5,
-          "real_credit_natural": 39.3,
-          "real_credit_mid_pct_width": 0.1804,
-          "model_atm_iv": 0.1798,
-          "model_leg_ivs": [
-            0.1863,
-            0.1921
-          ],
-          "market_leg_ivs": [
-            0.1568,
-            0.1805
-          ],
-          "model_credit_mid": 62.67,
-          "model_credit_booked": 60.79,
-          "model_vs_real_mid": 1.51,
-          "booked_vs_natural": 1.547,
-          "model_conservative": false,
-          "bidask_pct_of_mid": [
-            0.017,
-            0.022
-          ]
-        }
-      ]
-    },
-    {
-      "as_of": "2026-07-31T22:12:50Z",
       "checks": [
         {
           "symbol": "SPY",
