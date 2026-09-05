@@ -198,11 +198,16 @@ def quote(symbol: str, rng: str = "2y") -> dict:
         except Exception:
             continue
     if not data:
-        # Yahoo is unavailable to us right now. Try the keyed global fallback
-        # before giving up, then fail honestly.
-        alt = _twelvedata(symbol)
-        if alt:
-            return _put(ck, alt)
+        # Yahoo is unavailable to us right now — which on a datacenter IP is
+        # the normal case, not the exception (measured: Vercel gets 429 on
+        # every symbol). Try the keyed global fallbacks before giving up.
+        for fallback in (_finnhub, _twelvedata):
+            try:
+                alt = fallback(symbol)
+            except Exception:  # noqa: BLE001
+                alt = None
+            if alt:
+                return _put(ck, alt)
         # Never cached: a throttle is a statement about us, not about the
         # stock, and must not harden into a permanent rejection.
         return {"ok": False, "symbol": symbol,
@@ -294,6 +299,51 @@ def _twelvedata(symbol: str) -> dict | None:
     out.update(_metrics_from_closes(closes))
     hi, lo = max(closes), min(closes)
     out["high_52w"], out["low_52w"] = hi, lo
+    return out
+
+
+def _finnhub(symbol: str) -> dict | None:
+    """Second keyed fallback. Finnhub's free tier allows 60 calls/minute,
+    which tolerates the concurrent verification burst a single game creates
+    far better than Twelve Data's 8/minute. Coverage is global, addressed
+    with exchange suffixes close to Yahoo's."""
+    key = os.environ.get("FINNHUB_API_KEY")
+    if not key:
+        return None
+    now = int(time.time())
+    start = now - 730 * 86400
+    try:
+        d = _get_json("https://finnhub.io/api/v1/stock/candle?" +
+                      urllib.parse.urlencode(
+                          {"symbol": symbol, "resolution": "D",
+                           "from": start, "to": now, "token": key}),
+                      timeout=12.0, tries=2)
+    except Exception:
+        return None
+    if not isinstance(d, dict) or d.get("s") != "ok":
+        return None
+    closes = [float(c) for c in (d.get("c") or []) if c]
+    if len(closes) < 60:
+        return None
+    out = {"ok": True, "symbol": symbol, "name": symbol, "price": closes[-1],
+           "currency": None, "exchange": None, "bars": len(closes),
+           "source": "finnhub"}
+    out.update(_metrics_from_closes(closes))
+    # a name makes the reveal readable; failure here must not sink the quote
+    try:
+        p = _get_json("https://finnhub.io/api/v1/stock/profile2?" +
+                      urllib.parse.urlencode({"symbol": symbol, "token": key}),
+                      timeout=8.0, tries=1)
+        if isinstance(p, dict):
+            out["name"] = p.get("name") or symbol
+            out["currency"] = p.get("currency")
+            out["exchange"] = p.get("exchange")
+            if p.get("marketCapitalization"):
+                out["market_cap"] = float(p["marketCapitalization"]) * 1e6
+            if p.get("finnhubIndustry"):
+                out["sector"] = p["finnhubIndustry"]
+    except Exception:
+        pass
     return out
 
 

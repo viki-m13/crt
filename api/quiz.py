@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 import traceback
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
@@ -142,12 +143,58 @@ def handle_health() -> dict:
             "dimensions": list(E.DIMS)}
 
 
+def handle_probe() -> dict:
+    """Report which market-data sources are reachable FROM THIS HOST.
+
+    Datacenter IPs are throttled very differently from residential ones, so
+    which provider works can only be settled by asking from the machine that
+    will actually serve traffic. Kept as a permanent operational endpoint:
+    when the game says it cannot verify a stock, this says why.
+    """
+    import _market as M
+    out = {"sources": {}}
+    t0 = time.time()
+    q = M.quote("AAPL", rng="1y")
+    out["sources"]["yahoo_chart"] = {
+        "ok": bool(q.get("ok")), "reason": q.get("reason"),
+        "seconds": round(time.time() - t0, 2),
+        "name": q.get("name"), "price": q.get("price")}
+
+    t0 = time.time()
+    try:
+        td = M._twelvedata("AAPL")
+        out["sources"]["twelvedata"] = {
+            "ok": bool(td), "configured": bool(os.environ.get("TWELVEDATA_API_KEY")),
+            "seconds": round(time.time() - t0, 2),
+            "price": (td or {}).get("price")}
+    except Exception as e:  # noqa: BLE001
+        out["sources"]["twelvedata"] = {"ok": False, "error": type(e).__name__}
+
+    t0 = time.time()
+    try:
+        fh = M._finnhub("AAPL")
+        out["sources"]["finnhub"] = {
+            "ok": bool(fh), "configured": bool(os.environ.get("FINNHUB_API_KEY")),
+            "seconds": round(time.time() - t0, 2),
+            "price": (fh or {}).get("price")}
+    except Exception as e:  # noqa: BLE001
+        out["sources"]["finnhub"] = {"ok": False, "error": type(e).__name__}
+
+    out["ok"] = any(s.get("ok") for s in out["sources"].values())
+    out["hint"] = ("at least one source works" if out["ok"] else
+                   "no market source reachable from this host — the game can "
+                   "ask questions but cannot verify a recommendation")
+    return out
+
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         q = parse_qs(urlparse(self.path).query)
         action = (q.get("action", ["health"])[0] or "health").lower()
         if action == "health":
             self._respond(200, handle_health())
+        elif action == "probe":
+            self._respond(200, handle_probe())
         else:
             self._respond(400, {"error": "use POST for next/pick"})
 
@@ -173,6 +220,8 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, handle_pick(body))
             elif action == "health":
                 self._respond(200, handle_health())
+            elif action == "probe":
+                self._respond(200, handle_probe())
             else:
                 self._respond(400, {"error": f"unknown action '{action}'"})
         except Exception as e:  # noqa: BLE001
