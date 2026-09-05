@@ -198,6 +198,11 @@ def quote(symbol: str, rng: str = "2y") -> dict:
         except Exception:
             continue
     if not data:
+        # Yahoo is unavailable to us right now. Try the keyed global fallback
+        # before giving up, then fail honestly.
+        alt = _twelvedata(symbol)
+        if alt:
+            return _put(ck, alt)
         # Never cached: a throttle is a statement about us, not about the
         # stock, and must not harden into a permanent rejection.
         return {"ok": False, "symbol": symbol,
@@ -242,6 +247,54 @@ def quote(symbol: str, rng: str = "2y") -> dict:
     except Exception:
         pass
     return _put(ck, out)
+
+
+def _twelvedata(symbol: str) -> dict | None:
+    """Fallback global provider, used only when Yahoo throttles us.
+
+    Twelve Data is genuinely global (Tokyo, XETRA, LSE, NSE...) on its free
+    tier, unlike Alpha Vantage. It needs a key, so this returns None when
+    unconfigured and the caller degrades honestly. Symbols are passed
+    through with the exchange suffix stripped, since Twelve Data addresses
+    listings by `symbol` + `exchange` rather than Yahoo's SYM.XX form.
+    """
+    key = os.environ.get("TWELVEDATA_API_KEY")
+    if not key:
+        return None
+    base, _, suffix = symbol.partition(".")
+    params = {"symbol": base, "interval": "1day", "outputsize": "500",
+              "apikey": key, "format": "JSON"}
+    mic = {"T": "XTKS", "AS": "XAMS", "PA": "XPAR", "DE": "XETR", "SW": "XSWX",
+           "HK": "XHKG", "NS": "XNSE", "AX": "XASX", "TO": "XTSE",
+           "KS": "XKRX", "SA": "BVMF", "L": "XLON", "MI": "XMIL",
+           "MC": "XMAD", "CO": "XCSE", "ST": "XSTO", "OL": "XOSL"}.get(suffix)
+    if mic:
+        params["mic_code"] = mic
+    try:
+        d = _get_json("https://api.twelvedata.com/time_series?" +
+                      urllib.parse.urlencode(params), timeout=12.0, tries=2)
+    except Exception:
+        return None
+    if not isinstance(d, dict) or d.get("status") == "error" or "values" not in d:
+        return None
+    try:
+        rows = list(reversed(d["values"]))          # API returns newest first
+        closes = [float(r["close"]) for r in rows if r.get("close")]
+    except Exception:
+        return None
+    if len(closes) < 60:
+        return None
+    meta = d.get("meta") or {}
+    out = {"ok": True, "symbol": symbol,
+           "name": meta.get("symbol") or symbol,
+           "price": closes[-1],
+           "currency": meta.get("currency"),
+           "exchange": meta.get("exchange"),
+           "bars": len(closes), "source": "twelvedata"}
+    out.update(_metrics_from_closes(closes))
+    hi, lo = max(closes), min(closes)
+    out["high_52w"], out["low_52w"] = hi, lo
+    return out
 
 
 def quotes(symbols: list[str], rng: str = "2y", workers: int = 8) -> dict:
