@@ -1,4 +1,28 @@
-# Signal — the stock-matching game
+# Signal — site engine
+
+Two products share this directory:
+
+- **`/` the stock-matching game** — an adaptive quiz that matches a player to
+  one verified stock (below).
+- **`/iso` the ISO / AMT calculator** — `_tax.py` + `iso.py`. Answers the one
+  question a chat assistant cannot answer reliably: exactly how many
+  incentive stock options you can exercise this year before AMT bites. All
+  arithmetic is in `_tax.py`; a model is allowed to explain the result and
+  nothing else.
+
+  Constants are from **IRS Rev. Proc. 2025-32** and must be re-verified each
+  January. OBBBA changed 2026 materially — the exemption phaseout dropped to
+  $500k/$1M and the phaseout rate doubled to 50¢ per dollar, creating a band
+  where a marginal dollar costs 39–42% rather than 26–28%. The page displays
+  the constants it used so a user can check them against the IRS.
+
+  `tests/test_amt.py` (42 checks) hand-computes every headline figure in the
+  comments. If a constant changes, recompute the expected values by hand —
+  a test that records whatever the code currently prints protects nothing.
+
+---
+
+## The stock-matching game
 
 The homepage (`docs/index.html` + `game.js` + `game.css`) plays a short,
 adaptive quiz and matches the player to one real, verified stock. This
