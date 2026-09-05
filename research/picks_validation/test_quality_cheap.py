@@ -102,7 +102,15 @@ def forward(px: pd.DataFrame, asof: pd.Timestamp, tickers, days=HOLD_DAYS):
     start = px.loc[:asof].iloc[-1]
     end = window.ffill().iloc[-1]
     out = (end[tickers] / start[tickers] - 1.0)
-    return out.replace([np.inf, -np.inf], np.nan).dropna()
+    out = out.replace([np.inf, -np.inf], np.nan).dropna()
+    # DATA-ERROR GUARD. The panel contains corrupted prices — TIE appears at
+    # $24,500 having started at $5.47, a +447,797% "return" that single-
+    # handedly pushed the equal-weight S&P mean to an impossible +50%/yr and
+    # would have been reported as a -36.9% excess for the strategy. An S&P
+    # constituent does not 10x in a year; anything that claims to has a bad
+    # price behind it. Dropped rather than winsorised so it cannot distort
+    # the tails either.
+    return out[(out > -0.995) & (out < 9.0)]
 
 
 def main():
@@ -139,18 +147,24 @@ def main():
 
         n = len(picks)
         # matched random control: same number of names, same month, same universe
-        rand = [sig.fwd.sample(n, random_state=int(RNG.integers(1e9))).mean()
+        rand = [sig.fwd.sample(n, random_state=int(RNG.integers(1e9))).median()
                 for _ in range(30)]
 
         rows.append({
             "month": asof, "n_universe": len(sig), "n_picks": n,
-            "pick_ret": picks.fwd.mean(),
+            # MEDIANS throughout. One-year equity returns are heavily right
+            # skewed, so a mean is driven by a handful of names and is not the
+            # statistic a subscriber experiences. Hit rates are unaffected by
+            # skew and are the primary comparison.
+            "pick_ret": picks.fwd.median(),
             "pick_hit": (picks.fwd > 0).mean(),
-            "base_ret": sig.fwd.mean(),          # equal-weight universe
+            "base_ret": sig.fwd.median(),        # equal-weight universe
             "base_hit": (sig.fwd > 0).mean(),    # the TRUE base rate
-            "rand_ret": float(np.mean(rand)),
-            "cheap_only": sig[cheap].fwd.mean(),
-            "quality_only": sig[hi_q].fwd.mean(),
+            "rand_ret": float(np.median(rand)),
+            "pick_mean": picks.fwd.mean(),
+            "base_mean": sig.fwd.mean(),
+            "cheap_only": sig[cheap].fwd.median(),
+            "quality_only": sig[hi_q].fwd.median(),
         })
 
     R = pd.DataFrame(rows)
@@ -167,10 +181,10 @@ def main():
           f"({R[MONTH].min().date()} -> {R[MONTH].max().date()})")
     print(f"  mean picks per month: {R.n_picks.mean():.0f} "
           f"from a universe of {R.n_universe.mean():.0f}\n")
-    print(f"  PICKS   1y hit rate {R.pick_hit.mean():6.1%}   mean return {R.pick_ret.mean():+7.2%}")
-    print(f"  BASE    1y hit rate {R.base_hit.mean():6.1%}   mean return {R.base_ret.mean():+7.2%}"
+    print(f"  PICKS   1y hit rate {R.pick_hit.mean():6.1%}   median return {R.pick_ret.mean():+7.2%}")
+    print(f"  BASE    1y hit rate {R.base_hit.mean():6.1%}   median return {R.base_ret.mean():+7.2%}"
           "   <- every S&P member that month")
-    print(f"  RANDOM  (same count)                     mean return {R.rand_ret.mean():+7.2%}")
+    print(f"  RANDOM  (same count)                     median return {R.rand_ret.mean():+7.2%}")
     print(f"\n  EXCESS over the base rate: {R.hit_excess.mean():+.1%} hit, "
           f"{R.excess.mean():+.2%} return")
 
