@@ -116,12 +116,24 @@ def audit_trade(trade: Trade, day_prints: list[dict]) -> Verdict:
         v.benchmark = _par_weighted(instit)
         v.benchmark_kind = "institutional"
     else:
-        v.benchmark = _par_weighted(same)
+        # The client's OWN trade is on the tape — every muni trade is
+        # reported — so it must be removed before it becomes part of its own
+        # benchmark. Leaving it in drags the benchmark toward the client's
+        # price and understates the cost, most severely on thin days where
+        # the client's print is a large share of the total.
+        others = [p for p in same
+                  if not (abs(p["price"] - trade.price) < 1e-9
+                          and abs(p["par"] - trade.par) < 1e-6)]
+        if not others:
+            return Verdict(trade, False, n_prints=len(same),
+                           reason="the only comparable print that day was this "
+                                  "trade itself — nothing to benchmark against")
+        v.benchmark = _par_weighted(others)
         v.benchmark_kind = "customer"
         v.notes.append(
             "No institutional-size print that day, so this compares against "
-            "other customer trades. That is a weaker yardstick and usually "
-            "understates the true cost.")
+            "other customer trades (this trade excluded). That is a weaker "
+            "yardstick and usually understates the true cost.")
 
     if v.benchmark is None:
         return Verdict(trade, False, reason="could not form a benchmark")

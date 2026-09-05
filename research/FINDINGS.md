@@ -115,6 +115,50 @@ never moved: 66.6% vs 65.1%.
 
 ---
 
+## 2b. The picks idea, re-examined — a real signal, but not the product
+
+The "not proven" verdict above was about a **14-name portfolio**, and that
+turned out to be the wrong thing to test. Two further experiments:
+
+**Signal survey** (`signal_survey.py`) — rank-IC for 20+ signals at four
+horizons, significance on non-overlapping periods. Six clear |t|>2 with a
+consistent holdout sign. The two that matter:
+
+| signal | horizon | IC | t | dev | holdout | 2020s |
+|---|---|---:|---:|---:|---:|---:|
+| `pct_above_sma` | 12m | +0.0747 | +2.76 | +0.0644 | +0.0915 | +0.0164 |
+| `quality_x_cheap` | 12m | +0.0473 | **+3.00** | +0.0476 | +0.0467 | +0.0237 |
+
+`quality_x_cheap` clears the bar at **every** horizon tested (1m, 3m, 6m,
+12m), which is much harder to produce by chance than a single lucky window.
+
+**Breadth test** (`test_breadth.py`) — same signal, varying only how many
+names are held. This resolved the contradiction between IC t=+3.00 and the
+portfolio's t=+1.91:
+
+| names held | excess/yr | t (annual) | holdout | 2020s |
+|---:|---:|---:|---:|---:|
+| 10 | +2.99% | +2.17 | +2.97% | −0.30% |
+| 50 | +1.85% | +2.38 | +2.00% | +0.46% |
+| 100 | +1.69% | +2.90 | +1.54% | +0.51% |
+| 150 | +1.53% | **+3.22** | +1.40% | +0.79% |
+
+Excess return **falls** with breadth while its t-statistic **rises
+monotonically** — the signature of a real but modest signal swamped by
+idiosyncratic noise in a concentrated book. The original 14-name test was
+not measuring the signal; it was measuring the noise around it.
+
+**So the honest verdict flips, into something other than what was asked
+for.** There is a real effect: roughly **+1.5% a year** over the equal-weight
+universe, t≈3.2, positive in dev, in holdout, and in the 2020s. But it is a
+**100–150 name, twelve-month-hold systematic tilt** — a strategy or an index,
+not a daily stock-picking list. The concentrated ten-name version that would
+actually make a "picks" product has the higher headline (+2.99%) and is the
+weakest evidence (t=+2.17, and negative in the 2020s).
+
+Not included: trading costs, taxes, or the tracking error of a portfolio this
+far from the index. +1.5% before those is not +1.5% after them.
+
 ## Conclusion
 
 The muni finding is stronger than the picks finding by orders of magnitude —
