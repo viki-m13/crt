@@ -1,0 +1,196 @@
+/* ISO / AMT calculator. Layers on game.css for the shared shell (colors,
+   topbar, footer, buttons). Mobile-first: single column, 16px inputs so iOS
+   does not zoom on focus, tables scroll inside their own container. */
+
+.iso-main {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 18px calc(40px + env(safe-area-inset-bottom));
+}
+
+.tag {
+  font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--gold); border: 1px solid rgba(245,196,81,.32);
+  background: rgba(245,196,81,.08);
+  padding: 6px 10px; border-radius: 99px; font-weight: 600; white-space: nowrap;
+}
+
+.hero { padding: 12px 0 6px; }
+.hero h1 {
+  margin: 0 0 14px;
+  font-size: clamp(28px, 8vw, 42px);
+  line-height: 1.08; letter-spacing: -.03em; font-weight: 700;
+  text-wrap: balance;
+}
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2) 60%, var(--gold));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero .lede { margin: 0 0 16px; font-size: 16px; color: var(--muted); }
+.hero .lede strong { color: var(--text); font-weight: 620; }
+
+.note-obbba {
+  margin: 0; padding: 12px 14px;
+  background: rgba(245,196,81,.07);
+  border: 1px solid rgba(245,196,81,.22);
+  border-radius: 13px;
+  font-size: 13px; line-height: 1.55; color: #ecd9ad;
+}
+.note-obbba strong { color: var(--gold); }
+
+/* ------------------------------------------------------------------- cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-top: 14px;
+}
+.card h3 {
+  margin: 0 0 10px; font-size: 15px; font-weight: 650; letter-spacing: -.01em;
+}
+.card .k {
+  font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--dim); font-weight: 600; margin: 0;
+}
+.card .k.sub { text-transform: none; letter-spacing: 0; font-size: 12.5px;
+  font-weight: 400; line-height: 1.55; margin: 0 0 10px; }
+
+/* -------------------------------------------------------------------- form */
+.form { margin-top: 18px; }
+.row { display: grid; gap: 12px; }
+@media (min-width: 620px) {
+  .row { grid-template-columns: 1fr 1fr; }
+  .row.three { grid-template-columns: 1fr 1fr 1fr; }
+}
+.field { display: block; margin-bottom: 12px; }
+.field > span {
+  display: block; font-size: 12.5px; color: var(--muted);
+  margin-bottom: 6px; font-weight: 550;
+}
+.field > span i {
+  display: block; font-style: normal; font-size: 11px; color: var(--dim);
+  font-weight: 400; margin-top: 2px;
+}
+.field input, .field select {
+  width: 100%;
+  /* 16px minimum: anything smaller makes iOS Safari zoom on focus */
+  font: 16px/1.3 inherit;
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 13px;
+  min-height: 48px;
+  -webkit-appearance: none; appearance: none;
+}
+.field select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 19px) 21px, calc(100% - 14px) 21px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 38px;
+}
+.field input:focus, .field select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,140,255,.18);
+}
+.field input.bad { border-color: var(--red); }
+
+.more { margin: 2px 0 16px; }
+.more summary {
+  cursor: pointer; font-size: 13px; color: var(--muted); font-weight: 600;
+  list-style: none; min-height: 44px; display: flex; align-items: center;
+}
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "▸ "; color: var(--dim); margin-right: 4px; }
+.more[open] summary::before { content: "▾ "; }
+.check {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  min-height: 44px; padding: 6px 0;
+}
+.check input { width: 20px; height: 20px; margin-top: 1px; flex: none; }
+
+/* ----------------------------------------------------------------- results */
+.headline-card {
+  background: linear-gradient(180deg, rgba(91,140,255,.14), var(--surface) 60%);
+  border-color: rgba(91,140,255,.3);
+  text-align: center;
+}
+.big {
+  margin: 6px 0 2px;
+  font-size: clamp(46px, 15vw, 76px); line-height: 1;
+  font-weight: 700; letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2) 60%, var(--gold));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.headline-grid {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+  margin-top: 16px; text-align: left;
+}
+@media (min-width: 520px) { .headline-grid { grid-template-columns: repeat(3, 1fr); } }
+.headline-grid > div {
+  background: var(--bg-soft); border: 1px solid var(--line);
+  border-radius: 12px; padding: 11px 12px;
+}
+.headline-grid b {
+  display: block; margin-top: 4px; font-size: 18px; font-weight: 660;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+.headline-grid b.good { color: var(--green); }
+.headline-grid b.bad { color: var(--red); }
+
+.danger-card { border-color: rgba(255,107,122,.28); }
+.danger-note {
+  margin: 14px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted);
+}
+.danger-note b { color: var(--text); }
+
+#explainText p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.65;
+  color: var(--muted); }
+#explainText p:last-child { margin-bottom: 0; }
+.src { margin: 12px 0 0; font-size: 11px; color: var(--dim); }
+
+/* ------------------------------------------------------------------ tables */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th {
+  text-align: right; font-size: 10.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--dim); font-weight: 600;
+  padding: 0 0 8px 12px; white-space: nowrap;
+}
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+td {
+  text-align: right; padding: 9px 0 9px 12px;
+  border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+tr.free td { color: var(--green); }
+tr.hit td { color: var(--muted); }
+tr.hit td.amt { color: var(--red); }
+
+.warn { border-color: rgba(245,196,81,.24); background: rgba(245,196,81,.05); }
+.warn ul { margin: 0; padding-left: 18px; }
+.warn li { font-size: 13px; line-height: 1.6; color: #e6d4ad; margin-bottom: 8px; }
+.warn li:last-child { margin-bottom: 0; }
+
+.constants td:first-child { color: var(--muted); }
+
+.err { border-color: rgba(255,107,122,.4); }
+.err p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.legal { margin: 20px 0 0; font-size: 11.5px; line-height: 1.75; color: var(--dim); }
+.legal a { color: var(--muted); padding: 10px 2px; display: inline-block; }
+
+.cta[disabled] { opacity: .6; cursor: default; }
+
+@media (min-width: 700px) {
+  .iso-main { padding-left: 32px; padding-right: 32px; }
+  .card { padding: 22px 20px; }
+}

@@ -4,10 +4,21 @@
     {
       "src": "api/analyze.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "250mb", "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**}" }
+      "config": {
+        "maxLambdaSize": "250mb",
+        "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**}"
+      }
     },
     {
       "src": "api/quiz.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "api/_*.py",
+        "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**,research/**,data/**,backtests/**,reports/**}"
+      }
+    },
+    {
+      "src": "api/iso.py",
       "use": "@vercel/python",
       "config": {
         "includeFiles": "api/_*.py",
@@ -40,21 +51,92 @@
     }
   ],
   "routes": [
-    { "src": "/api/quiz(.*)", "dest": "/api/quiz.py" },
-    { "src": "/api/(.*)", "dest": "/api/analyze.py" },
-    { "src": "/short$", "status": 308, "headers": { "Location": "/max/" } },
-    { "src": "/short/(.*)", "status": 308, "headers": { "Location": "/max/$1" } },
-    { "src": "/crypto$", "status": 308, "headers": { "Location": "/experiments/#crypto" } },
-    { "src": "/crypto/(.*)", "status": 308, "headers": { "Location": "/experiments/#crypto" } },
-    { "src": "/spreads$", "dest": "/spreads/docs/index.html" },
-    { "src": "/spreads/(.*)", "dest": "/spreads/docs/$1" },
-    { "src": "/max/(.*)", "dest": "/max/docs/$1" },
-    { "src": "/experiments/(.*)", "dest": "/experiments/docs/$1" },
-    { "src": "/spx$", "dest": "/spx/docs/index.html" },
-    { "src": "/spx/(.*)", "dest": "/spx/docs/$1" },
-    { "src": "/screener$", "dest": "/docs/screener.html" },
-    { "src": "/screener/$", "status": 308, "headers": { "Location": "/screener" } },
-    { "src": "/screener/(.*)", "dest": "/docs/$1" },
-    { "src": "/(.*)", "dest": "/docs/$1" }
+    {
+      "src": "/api/quiz(.*)",
+      "dest": "/api/quiz.py"
+    },
+    {
+      "src": "/api/iso(.*)",
+      "dest": "/api/iso.py"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/analyze.py"
+    },
+    {
+      "src": "/iso$",
+      "dest": "/docs/iso.html"
+    },
+    {
+      "src": "/short$",
+      "status": 308,
+      "headers": {
+        "Location": "/max/"
+      }
+    },
+    {
+      "src": "/short/(.*)",
+      "status": 308,
+      "headers": {
+        "Location": "/max/$1"
+      }
+    },
+    {
+      "src": "/crypto$",
+      "status": 308,
+      "headers": {
+        "Location": "/experiments/#crypto"
+      }
+    },
+    {
+      "src": "/crypto/(.*)",
+      "status": 308,
+      "headers": {
+        "Location": "/experiments/#crypto"
+      }
+    },
+    {
+      "src": "/spreads$",
+      "dest": "/spreads/docs/index.html"
+    },
+    {
+      "src": "/spreads/(.*)",
+      "dest": "/spreads/docs/$1"
+    },
+    {
+      "src": "/max/(.*)",
+      "dest": "/max/docs/$1"
+    },
+    {
+      "src": "/experiments/(.*)",
+      "dest": "/experiments/docs/$1"
+    },
+    {
+      "src": "/spx$",
+      "dest": "/spx/docs/index.html"
+    },
+    {
+      "src": "/spx/(.*)",
+      "dest": "/spx/docs/$1"
+    },
+    {
+      "src": "/screener$",
+      "dest": "/docs/screener.html"
+    },
+    {
+      "src": "/screener/$",
+      "status": 308,
+      "headers": {
+        "Location": "/screener"
+      }
+    },
+    {
+      "src": "/screener/(.*)",
+      "dest": "/docs/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/docs/$1"
+    }
   ]
 }

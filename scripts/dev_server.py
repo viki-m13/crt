@@ -25,6 +25,7 @@ DOCS = os.path.join(ROOT, "docs")
 sys.path.insert(0, os.path.join(ROOT, "api"))
 
 import _market as M     # noqa: E402
+import iso as ISO       # noqa: E402
 import quiz as API      # noqa: E402
 
 if os.environ.get("DEV_STUB_MARKET") == "1":
@@ -102,6 +103,9 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/quiz"):
             self._send(200, API.handle_health())
             return
+        if path.startswith("/api/iso"):
+            self._send(200, ISO.handle_constants())
+            return
         rel = path.lstrip("/") or "index.html"
         if rel.endswith("/"):
             rel += "index.html"
@@ -122,7 +126,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, data, MIME.get(ext, "application/octet-stream"))
 
     def do_POST(self):
-        if not urlparse(self.path).path.startswith("/api/quiz"):
+        path = urlparse(self.path).path
+        if not (path.startswith("/api/quiz") or path.startswith("/api/iso")):
             self._send(404, {"error": "no such endpoint"})
             return
         try:
@@ -130,6 +135,13 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(n).decode() or "{}")
         except Exception as e:  # noqa: BLE001
             self._send(400, {"error": str(e)})
+            return
+        if path.startswith("/api/iso"):
+            try:
+                self._send(200, ISO.handle_calc(body))
+            except Exception as e:  # noqa: BLE001
+                import traceback; traceback.print_exc()
+                self._send(500, {"error": f"{type(e).__name__}: {e}"})
             return
         action = str(body.get("action") or "next").lower()
         try:

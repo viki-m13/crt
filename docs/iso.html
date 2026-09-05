@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ISO &amp; AMT calculator — how many options can you exercise tax-free?</title>
+<meta name="description" content="Find your exact AMT crossover: how many incentive stock options you can exercise this year without triggering Alternative Minimum Tax. Updated for the 2026 OBBBA rules.">
+<meta name="theme-color" content="#0a0b0f">
+<link rel="icon" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="iso.css">
+<meta property="og:title" content="How many ISOs can you exercise without paying AMT?">
+<meta property="og:description" content="One number, computed exactly, updated for the 2026 rules most calculators still get wrong.">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="Home">
+    <span class="brand-dot" aria-hidden="true"></span>
+    <span class="brand-name">Signal</span>
+  </div>
+  <span class="tag" id="yearTag">2026 rules</span>
+</header>
+
+<main id="main" class="iso-main">
+
+  <section class="hero">
+    <p class="eyebrow">ISO / AMT calculator</p>
+    <h1>How many options can you exercise <em>before AMT hits</em>?</h1>
+    <p class="lede">
+      Exercising incentive stock options and holding them doesn't create
+      income — it creates an <strong>AMT preference item</strong>. There's a
+      precise number of shares you can exercise each year before that costs
+      you anything. This finds it.
+    </p>
+    <p class="note-obbba">
+      Updated for the <strong>2026 rules</strong>. The One Big Beautiful Bill
+      Act moved the AMT exemption phaseout down to $500k / $1M and
+      <strong>doubled</strong> the phaseout rate to 50¢ per dollar — which
+      creates a band where each extra dollar costs 39–42%, not 26–28%. Most
+      calculators still use the old rules.
+    </p>
+  </section>
+
+  <form class="card form" id="isoForm" novalidate>
+    <div class="row">
+      <label class="field">
+        <span>Filing status</span>
+        <select id="status">
+          <option value="single">Single</option>
+          <option value="mfj">Married, filing jointly</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Your income this year <i>wages, before deductions</i></span>
+        <input id="income" type="text" inputmode="numeric" placeholder="200,000" value="200,000">
+      </label>
+    </div>
+
+    <div class="row three">
+      <label class="field">
+        <span>ISO options you hold</span>
+        <input id="shares" type="text" inputmode="numeric" placeholder="10,000" value="10,000">
+      </label>
+      <label class="field">
+        <span>Strike price</span>
+        <input id="strike" type="text" inputmode="decimal" placeholder="2.00" value="2.00">
+      </label>
+      <label class="field">
+        <span>Current share price <i>409A or market</i></span>
+        <input id="fmv" type="text" inputmode="decimal" placeholder="52.00" value="52.00">
+      </label>
+    </div>
+
+    <details class="more">
+      <summary>Other income and deductions</summary>
+      <div class="row">
+        <label class="field">
+          <span>Long-term capital gains / qualified dividends</span>
+          <input id="ltcg" type="text" inputmode="numeric" placeholder="0" value="0">
+        </label>
+        <label class="field">
+          <span>Deduction <i>leave blank for the standard deduction</i></span>
+          <input id="deduction" type="text" inputmode="numeric" placeholder="standard">
+        </label>
+      </div>
+      <label class="check">
+        <input id="itemized" type="checkbox">
+        <span>I itemize (enter the AMT-allowable amount above — SALT is not
+        deductible for AMT)</span>
+      </label>
+    </details>
+
+    <button class="cta" type="submit" id="calcBtn">Find my AMT crossover</button>
+  </form>
+
+  <section id="results" hidden aria-live="polite">
+
+    <div class="card headline-card">
+      <p class="k">You can exercise</p>
+      <p class="big" id="freeShares">—</p>
+      <p class="k" id="freeSub">shares this year with zero AMT</p>
+      <div class="headline-grid">
+        <div><span class="k">Cash to exercise them</span><b id="freeCost">—</b></div>
+        <div><span class="k">Bargain element</span><b id="freeBe">—</b></div>
+        <div><span class="k">Extra federal tax</span><b class="good" id="freeTax">$0</b></div>
+      </div>
+    </div>
+
+    <div class="card danger-card">
+      <p class="k">If you exercise all of them instead</p>
+      <div class="headline-grid">
+        <div><span class="k">Cash to exercise</span><b id="allCost">—</b></div>
+        <div><span class="k">AMT you'd owe</span><b class="bad" id="allAmt">—</b></div>
+        <div><span class="k">Next dollar costs</span><b id="allMarginal">—</b></div>
+      </div>
+      <p class="danger-note" id="ladderNote"></p>
+    </div>
+
+    <div class="card" id="explainCard" hidden>
+      <h3>What this means</h3>
+      <div id="explainText"></div>
+      <p class="src" id="explainSrc"></p>
+    </div>
+
+    <div class="card">
+      <h3>The whole curve</h3>
+      <p class="k sub">Every row is real — no interpolation.</p>
+      <div class="table-wrap">
+        <table id="ladderTable">
+          <thead><tr>
+            <th>Shares</th><th>Cash out</th><th>Bargain element</th><th>AMT owed</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card warn">
+      <h3>What this does not include</h3>
+      <ul id="assumptions"></ul>
+    </div>
+
+    <div class="card constants">
+      <h3>The numbers used <span id="constYear"></span></h3>
+      <p class="k sub" id="constSrc"></p>
+      <div class="table-wrap">
+        <table id="constTable"><tbody></tbody></table>
+      </div>
+      <p class="k sub">Check these against the IRS yourself. If they're stale,
+      the answer above is wrong — that's true of every calculator, but most
+      don't show you.</p>
+    </div>
+
+    <p class="legal">
+      This is a planning tool, not tax advice, and not a substitute for a CPA
+      who can see your whole return. Exercising options is a large, often
+      irreversible financial decision. See our
+      <a href="disclaimer.html">disclaimer</a>.
+    </p>
+  </section>
+
+  <section id="errBox" class="card err" hidden>
+    <h3 id="errTitle">That didn't work</h3>
+    <p id="errBody"></p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>Signal</span>
+  <nav>
+    <a href="/">Stock match</a>
+    <a href="disclaimer.html">Disclaimer</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </nav>
+</footer>
+
+<script src="iso.js"></script>
+</body>
+</html>
