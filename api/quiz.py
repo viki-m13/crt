@@ -106,12 +106,15 @@ def handle_next(body: dict) -> dict:
     else:
         question["source"] = source
 
-    # progress the UI can trust: whichever bound will actually end the game
+    # Progress the UI can trust: whichever bound will actually end the game.
+    # Counted over questions ANSWERED-AFTER-THIS-ONE, so the very first
+    # question does not sit at a discouraging 0%, and floored so the bar is
+    # always visibly moving rather than appearing broken.
     by_conf = conf / CONFIDENCE_TARGET if CONFIDENCE_TARGET else 1.0
-    by_count = n / MAX_QUESTIONS
+    by_count = (n + 1) / float(MIN_QUESTIONS + 2)
     return {"done": False, "question": question,
             "confidence": round(conf, 3),
-            "progress": round(max(0.0, min(0.99, max(by_conf, by_count))), 3),
+            "progress": round(max(0.08, min(0.96, max(by_conf, by_count))), 3),
             "asked": n, "min_questions": MIN_QUESTIONS,
             "archetype_preview": Q.archetype(profile)}
 

@@ -227,6 +227,11 @@ a way that feels personal and earned.
 Hard rules:
 - Use ONLY the numbers provided. Never state a price, return, or statistic \
 that is not in the data given to you.
+- Describe the relationship that ACTUALLY holds between the numbers. If the \
+stock's volatility is well below the person's target, say it is calmer than \
+they asked for — never call two distant numbers "close" or "a match". Where \
+the fit is imperfect, say so plainly; an honest mismatch is more convincing \
+than a flattering one.
 - Do not promise performance. No "will", no "guaranteed", no price targets.
 - Second person, warm, confident, specific. No hype, no emoji, no disclaimers \
 (the interface handles those).
@@ -276,16 +281,43 @@ def _fallback_copy(stock: dict, profile: dict) -> dict:
     name = stock.get("name") or stock["symbol"]
     why = []
     tv = E._target_vol(profile)
-    if stock.get("ann_vol") is not None:
-        why.append(f"Its {stock['ann_vol']:.0%} volatility sits close to the "
-                   f"{tv:.0%} ride your answers asked for.")
+    vol = stock.get("ann_vol")
+    if vol is not None:
+        # Describe the RELATIONSHIP that actually holds. An earlier version
+        # said "sits close to" unconditionally and shipped the sentence
+        # "its 15% volatility sits close to the 33% ride you asked for",
+        # which is simply untrue and is exactly the sort of claim this
+        # product must never make.
+        gap = vol - tv
+        if abs(gap) <= 0.06:
+            why.append(f"Its {vol:.0%} volatility is about the {tv:.0%} ride "
+                       f"your answers asked for.")
+        elif gap < 0:
+            why.append(f"At {vol:.0%} volatility it is calmer than the {tv:.0%} "
+                       f"you'd tolerate — the steadiest thing that still fit "
+                       f"everything else you said.")
+        else:
+            why.append(f"At {vol:.0%} volatility it is livelier than the "
+                       f"{tv:.0%} you asked for, so expect a bumpier ride "
+                       f"than your answers implied.")
     if stock.get("dividend_yield") and profile["dims"]["income"] > 0.5:
         why.append(f"It pays {stock['dividend_yield']:.1%}, and you said you "
                    f"want to be paid while you wait.")
-    if stock.get("mom_12m") is not None:
-        d = "climbed" if stock["mom_12m"] >= 0 else "fallen"
-        why.append(f"It has {d} {abs(stock['mom_12m']):.0%} over the past year, "
-                   f"which matches how you answered on chasing strength.")
+    m12 = stock.get("mom_12m")
+    if m12 is not None:
+        want_momentum = profile["dims"]["momentum"] > 0.6
+        rising = m12 >= 0
+        if rising and want_momentum:
+            why.append(f"It has climbed {m12:.0%} over the past year, and you "
+                       f"said you back what is already working.")
+        elif not rising and not want_momentum:
+            why.append(f"It is down {abs(m12):.0%} over the past year, which is "
+                       f"the kind of unloved you said you look for.")
+        else:
+            direction = "up" if rising else "down"
+            why.append(f"It is {direction} {abs(m12):.0%} over the past year — "
+                       f"not the direction you leaned toward, but it fit you "
+                       f"better everywhere else.")
     if stock.get("themes"):
         why.append(f"It sits in {', '.join(stock['themes'][:2])}, the area you "
                    f"kept picking.")

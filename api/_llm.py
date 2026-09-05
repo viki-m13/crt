@@ -38,8 +38,17 @@ class LLMUnavailable(Exception):
 # --------------------------------------------------------------------------
 # provider adapters — each returns plain text or raises
 # --------------------------------------------------------------------------
+# Several providers sit behind Cloudflare, which blocks the default
+# "Python-urllib/3.x" signature outright (403, error code 1010). Sending an
+# explicit User-Agent is what makes these APIs reachable at all from a plain
+# stdlib client — verified against Cerebras, where its absence is a hard 403.
+UA = "signal-quiz/1.0 (+https://github.com/viki-m13/crt)"
+
+
 def _post(url: str, payload: dict, headers: dict, timeout: float) -> dict:
     body = json.dumps(payload).encode()
+    headers = dict(headers)
+    headers.setdefault("User-Agent", UA)
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode())
@@ -48,13 +57,28 @@ def _post(url: str, payload: dict, headers: dict, timeout: float) -> dict:
 def _openai_chat(base: str, key: str, model: str, messages: list, *,
                  max_tokens: int, temperature: float, timeout: float,
                  extra: dict | None = None) -> str:
+    # Reasoning models (gpt-oss, qwen3) emit a `reasoning` field before
+    # `content`, and when the budget runs out mid-thought they return a
+    # message with NO content key at all. Indexing blindly turned that into
+    # a KeyError that looked like a provider outage, so the budget is raised
+    # for these models and the read is defensive.
+    reasoning = any(t in model.lower() for t in ("gpt-oss", "qwen", "-r1", "thinking"))
     payload = {"model": model, "messages": messages,
-               "max_tokens": max_tokens, "temperature": temperature}
+               "max_tokens": max_tokens * 3 if reasoning else max_tokens,
+               "temperature": temperature}
     if extra:
         payload.update(extra)
     d = _post(base, payload, {"Content-Type": "application/json",
                               "Authorization": f"Bearer {key}"}, timeout)
-    return d["choices"][0]["message"]["content"]
+    choices = d.get("choices") or []
+    if not choices:
+        raise ValueError("no choices returned")
+    msg = choices[0].get("message") or {}
+    text = msg.get("content")
+    if not text:
+        raise ValueError(
+            f"empty content (finish_reason={choices[0].get('finish_reason')})")
+    return text
 
 
 def _anthropic(key: str, model: str, messages: list, *, max_tokens: int,
@@ -77,7 +101,9 @@ def _providers() -> dict:
         "cerebras": ("CEREBRAS_API_KEY",
                      lambda k, m, **kw: _openai_chat(
                          "https://api.cerebras.ai/v1/chat/completions", k,
-                         os.environ.get("CEREBRAS_MODEL", "llama-3.3-70b"), m, **kw)),
+                         # verified against the account's /v1/models list;
+                         # llama-3.3-70b is NOT available and 404s
+                         os.environ.get("CEREBRAS_MODEL", "gpt-oss-120b"), m, **kw)),
         "groq": ("GROQ_API_KEY",
                  lambda k, m, **kw: _openai_chat(
                      "https://api.groq.com/openai/v1/chat/completions", k,
@@ -104,8 +130,31 @@ PREFERENCE = {
 }
 
 
+# Environment variables are case-sensitive and easy to misname when set by
+# hand in a dashboard. Rather than fail silently with "no provider
+# configured", each provider accepts a few plausible spellings of its key.
+_ALIASES = {
+    "CEREBRAS_API_KEY": ("CEREBRAS_API_KEY", "CEREBRAS_KEY", "CEREBRAS",
+                         "CEREBRUS_API_KEY", "CEREBRUS_KEY", "CEREBRUS"),
+    "ANTHROPIC_API_KEY": ("ANTHROPIC_API_KEY", "ANTHROPIC_KEY", "CLAUDE_API_KEY"),
+    "PERPLEXITY_API_KEY": ("PERPLEXITY_API_KEY", "PERPLEXITY_KEY", "PPLX_API_KEY"),
+    "OPENAI_API_KEY": ("OPENAI_API_KEY", "OPENAI_KEY"),
+    "GROQ_API_KEY": ("GROQ_API_KEY", "GROQ_KEY"),
+}
+
+
+def _key_for(env: str) -> str | None:
+    """Find a provider key under any accepted spelling, in any case."""
+    for name in _ALIASES.get(env, (env,)):
+        for variant in (name, name.lower(), name.upper()):
+            v = os.environ.get(variant)
+            if v and v.strip():
+                return v.strip()
+    return None
+
+
 def available() -> list[str]:
-    return [n for n, (env, _) in _providers().items() if os.environ.get(env)]
+    return [n for n, (env, _) in _providers().items() if _key_for(env)]
 
 
 def complete(messages: list, *, task: str = "fast", max_tokens: int = 700,
@@ -124,7 +173,7 @@ def complete(messages: list, *, task: str = "fast", max_tokens: int = 700,
         if not entry:
             continue
         env, fn = entry
-        key = os.environ.get(env)
+        key = _key_for(env)
         if not key:
             continue
         try:

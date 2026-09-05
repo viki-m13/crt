@@ -7,6 +7,14 @@
       "config": { "maxLambdaSize": "250mb", "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**}" }
     },
     {
+      "src": "api/quiz.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "api/_*.py",
+        "excludeFiles": "{experiments/**,max/**,short/**,crypto/**,docs/**,spreads/**,strategies/**,research/**,data/**,backtests/**,reports/**}"
+      }
+    },
+    {
       "src": "docs/**",
       "use": "@vercel/static"
     },
@@ -32,6 +40,7 @@
     }
   ],
   "routes": [
+    { "src": "/api/quiz(.*)", "dest": "/api/quiz.py" },
     { "src": "/api/(.*)", "dest": "/api/analyze.py" },
     { "src": "/short$", "status": 308, "headers": { "Location": "/max/" } },
     { "src": "/short/(.*)", "status": 308, "headers": { "Location": "/max/$1" } },

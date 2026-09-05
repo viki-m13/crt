@@ -343,6 +343,22 @@ _VALID_DIMS = set(DIMS)
 _VALID_THEMES = set(THEMES)
 
 
+def _is_pictograph(ch: str) -> bool:
+    o = ord(ch)
+    return (0x1F000 <= o <= 0x1FAFF or 0x2600 <= o <= 0x27BF
+            or o in (0xFE0F, 0x200D, 0x20E3) or 0x1F1E6 <= o <= 0x1F1FF)
+
+
+def _strip_edge_emoji(s: str) -> str:
+    """Remove emoji and stray whitespace from both ends of a label."""
+    chars = list(s)
+    while chars and (_is_pictograph(chars[0]) or chars[0].isspace()):
+        chars.pop(0)
+    while chars and (_is_pictograph(chars[-1]) or chars[-1].isspace()):
+        chars.pop()
+    return "".join(chars).strip()
+
+
 def validate_question(raw: dict, asked: list[str]) -> dict | None:
     """Coerce a model's question into the contract, or reject it."""
     if not isinstance(raw, dict):
@@ -357,8 +373,14 @@ def validate_question(raw: dict, asked: list[str]) -> dict | None:
     for o in opts_in:
         if not isinstance(o, dict):
             return None
-        label = str(o.get("label") or "").strip()
-        if not (1 <= len(label) <= 90):
+        # Models reliably repeat the emoji inside the label as well as in the
+        # emoji field ("ROCKET All in on biotech ROCKET"), which renders twice
+        # in the card. Strip pictographs from both ends of the label.
+        label = _strip_edge_emoji(str(o.get("label") or "").strip())
+        # 64 chars is what fits an option card on a 360px phone at 16px
+        # without wrapping to three lines; longer labels are rejected rather
+        # than truncated mid-word.
+        if not (1 <= len(label) <= 64):
             return None
         eff_in = o.get("effects") or {}
         if not isinstance(eff_in, dict):
@@ -395,7 +417,22 @@ SYSTEM = """You write questions for a fast, addictive stock-matching game.
 
 Your question must reveal how someone ACTUALLY behaves with money. Never ask \
 them to rate themselves; put them in a concrete moment and make every option \
-tempting to somebody. Be vivid, specific and a little playful. Short lines.
+tempting to somebody. Be vivid, specific and a little playful.
+
+LENGTH IS CRITICAL — this is read on a phone:
+- question: under 100 characters, one sentence
+- each option label: under 45 characters
+Long options wrap badly and lose the player. Cut every wasted word.
+
+VARIETY IS CRITICAL. Do not reuse the SHAPE of an earlier question, not just \
+its words. "A sum of money arrives, where do you put it?" is one shape — used \
+once, it is finished. Same for "someone tips you about a small company".
+
+Rotate through genuinely different situations: a position already losing \
+money, a decision someone else made that you have to react to, a choice \
+between two companies you can see, how you'd feel a year from now, what you'd \
+tell a friend, what you would refuse to own, how you behaved last time, a \
+trade-off with no money in it at all. Vary the industry too.
 
 Return ONLY a JSON object:
 {"text": "the question", "subtext": "optional short line or empty",
@@ -414,8 +451,13 @@ implies, 0..1:
 Optionally "themes": [...] or "avoid_themes": [...] from this list:
 """ + ", ".join(THEMES) + """
 
-Set only the 1-3 dimensions the answer genuinely reveals. Do not restate a \
-question already asked. No preamble, no code fences, JSON only."""
+Set only the 1-3 dimensions the answer genuinely reveals.
+
+Use the FULL range, not just 0 and 1. A hedged or middle-of-the-road option \
+must carry middle values like 0.45 — forcing every option to an extreme makes \
+moderate players look extreme and produces a wrong recommendation.
+
+Do not restate a question already asked. No preamble, no code fences, JSON only."""
 
 
 def llm_question(profile: dict, asked_texts: list[str], asked_ids: list[str],
@@ -433,9 +475,9 @@ def llm_question(profile: dict, asked_texts: list[str], asked_ids: list[str],
         f"Answers so far:\n" + ("\n".join(story) or "(none yet — this is question 1)") +
         f"\n\nThemes they've leaned toward: {themes}"
         f"\nDimensions still unknown, ask about these: {', '.join(focus)}"
-        f"\nQuestions already used (do not repeat the idea): "
-        f"{'; '.join(t[:60] for t in asked_texts[-8:]) or 'none'}"
-        f"\n\nWrite question #{len(answers) + 1}.")
+        f"\nAlready used — do not repeat any of these SHAPES or subjects:\n"
+        + ("\n".join(f"  - {t[:80]}" for t in asked_texts[-10:]) or "  (none yet)")
+        + f"\n\nWrite question #{len(answers) + 1}.")
     try:
         raw, prov = _llm.complete_json(
             [{"role": "system", "content": SYSTEM},
