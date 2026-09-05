@@ -1,2 +1,11 @@
 cache/
 __pycache__/
+
+# Cross-sectional earnings study: regenerable bulk caches.
+# panel.parquet (59 MB) rebuilds from xs_earnings/e0_bars.py + e3_chains.py;
+# atm.parquet (6.5 MB) from e3_chains.py; company_tickers.json is the SEC's
+# public ticker map, re-downloaded by e1_edgar.py. The event tables, the
+# samples and the test outputs ARE committed.
+xs_earnings/panel.parquet
+xs_earnings/atm.parquet
+xs_earnings/company_tickers.json
