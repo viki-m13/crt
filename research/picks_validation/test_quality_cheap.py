@@ -43,6 +43,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CACHE = os.path.join(ROOT, "experiments", "monthly_dca", "cache")
 PIT = os.path.join(CACHE, "v2", "sp500_pit")
+MONTH = "month"
 HOLD_DAYS = 252
 RNG = np.random.default_rng(7)
 
@@ -142,7 +143,7 @@ def main():
                 for _ in range(30)]
 
         rows.append({
-            "asof": asof, "n_universe": len(sig), "n_picks": n,
+            "month": asof, "n_universe": len(sig), "n_picks": n,
             "pick_ret": picks.fwd.mean(),
             "pick_hit": (picks.fwd > 0).mean(),
             "base_ret": sig.fwd.mean(),          # equal-weight universe
@@ -163,7 +164,7 @@ def main():
     print("1. THE HEADLINE NUMBER, AND WHAT IT IS WORTH")
     print("=" * 92)
     print(f"  months evaluated: {len(R):,}  "
-          f"({R.asof.min().date()} -> {R.asof.max().date()})")
+          f"({R[MONTH].min().date()} -> {R[MONTH].max().date()})")
     print(f"  mean picks per month: {R.n_picks.mean():.0f} "
           f"from a universe of {R.n_universe.mean():.0f}\n")
     print(f"  PICKS   1y hit rate {R.pick_hit.mean():6.1%}   mean return {R.pick_ret.mean():+7.2%}")
@@ -177,7 +178,7 @@ def main():
     print("2. SIGNIFICANCE, WITH THE OVERLAP CORRECTION")
     print("=" * 92)
     naive_t = R.excess.mean() / (R.excess.std() / np.sqrt(len(R)))
-    ann = R.set_index("asof").excess.groupby(lambda d: d.year).mean()
+    ann = R.set_index("month").excess.groupby(lambda d: d.year).mean()
     ann_t = ann.mean() / (ann.std() / np.sqrt(len(ann))) if len(ann) > 2 else np.nan
     print(f"  naive t on {len(R)} overlapping monthly windows: {naive_t:+.2f}  "
           "<- OVERSTATED, do not quote")
@@ -195,14 +196,14 @@ def main():
     print("\n" + "=" * 92)
     print("4. DOES IT SURVIVE OUT OF SAMPLE AND ACROSS REGIMES?")
     print("=" * 92)
-    dev = R[R.asof < "2017-01-01"]
-    hold = R[R.asof >= "2017-01-01"]
+    dev = R[R[MONTH] < "2017-01-01"]
+    hold = R[R[MONTH] >= "2017-01-01"]
     for lab, part in (("dev   (pre-2017)", dev), ("holdout (2017+)", hold)):
         if len(part) > 5:
             print(f"  {lab:<18} excess {part.excess.mean():+.2%}  "
                   f"hit excess {part.hit_excess.mean():+.1%}  n={len(part)}")
     print()
-    for decade, part in R.groupby(R.asof.dt.year // 10 * 10):
+    for decade, part in R.groupby(R[MONTH].dt.year // 10 * 10):
         if len(part) > 5:
             print(f"  {decade}s  excess {part.excess.mean():+.2%}  "
                   f"picks {part.pick_ret.mean():+.2%} vs base {part.base_ret.mean():+.2%}  "
