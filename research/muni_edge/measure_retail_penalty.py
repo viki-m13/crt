@@ -124,7 +124,7 @@ def _summary(p: pd.Series, label: str, per_bond: pd.Series | None = None):
         return
     med, mean = p.median(), p.mean()
     line = (f"  {label:<34} n={len(p):>6,}  worse {100*(p>0).mean():>5.1f}%  "
-            f"median {med:+.3f} pts (${med*10:>7,.0f}/100k)  mean {mean:+.3f}")
+            f"median {med:+.3f} pts (${med*1000:>7,.0f}/100k)  mean {mean:+.3f}")
     if per_bond is not None and len(per_bond) > 2:
         t = per_bond.mean() / (per_bond.std() / np.sqrt(len(per_bond)))
         line += f"  t={t:+.1f} (clustered, {len(per_bond):,} bonds)"
