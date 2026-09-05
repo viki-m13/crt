@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WQQ9QE0FW6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-WQQ9QE0FW6');
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Site password gate (client-side). See /gate.js -->
+  <style id="cf-gate-init">html{visibility:hidden!important}</style>
+  <script src="/gate.js"></script>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>Daily Stock Guide — A Monthly DCA Strategy That Beat S&P-DCA in 100% of 10-Year Windows</title>
+  <meta name="description" content="A monthly dollar-cost-averaging strategy: two diversified sleeves (up to ~6 point-in-time S&P 500 stocks) from the same walk-forward GBM + HuggingFace Chronos model. On survivorship-bias-free PIT data 2003-2026, contributing every month beat the identical contributions into the S&P 500 in 100% of rolling 10-year windows (159/159) and 99% of 5-year windows, median money-weighted ~55%/yr vs ~13% for S&P-DCA, beating S&P-DCA in all four non-overlapping eras. Honest disclosure: edge heavily front-loaded in the 2003-2009 era, deep short-horizon drawdowns (~-56% interim on the accumulating account; ~-77% on the lump-sum picker). Lower-volatility market-neutral variant available." />
+  <meta name="keywords" content="monthly DCA strategy, dollar cost averaging, beat S&P 500 DCA, point in time S&P 500, rolling horizon win rate, ML stock picks, walk-forward GBM, drawdown protection, market-neutral switch, survivorship-corrected backtest" />
+  <link rel="canonical" href="https://dailystockguide.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Daily Stock Guide" />
+  <meta property="og:title" content="Daily Stock Guide — Monthly DCA That Beat S&P-DCA 100% of 10-Year Windows" />
+  <meta property="og:description" content="Contribute monthly into two diversified PIT S&P 500 sleeves (GBM + Chronos). On survivorship-free data 2003-2026 this beat the same contributions into the S&P in 159/159 rolling 10-year and 99% of 5-year windows, median ~55%/yr vs ~13%, beating S&P-DCA in all four eras. Honest: edge front-loaded in 2003-2009, ~-56% interim drawdowns." />
+  <meta property="og:url" content="https://dailystockguide.com/" />
+  <meta property="og:image" content="https://dailystockguide.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@bondso" />
+  <meta name="twitter:creator" content="@bondso" />
+  <meta name="twitter:title" content="Daily Stock Guide — Monthly DCA That Beat S&P-DCA 100% of 10y Windows" />
+  <meta name="twitter:description" content="Monthly DCA into two diversified PIT S&P 500 sleeves. 159/159 rolling 10-year & 99% of 5-year windows beat S&P-DCA, median ~55%/yr vs ~13%, all four eras beat S&P-DCA. Honest: edge front-loaded in 2003-2009, ~-56% interim drawdowns." />
+  <meta name="twitter:image" content="https://dailystockguide.com/og-image.png" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Daily Stock Guide",
+    "url": "https://dailystockguide.com",
+    "description": "A monthly dollar-cost-averaging strategy that holds two diversified sleeves (up to ~6 point-in-time S&P 500 stocks) of the same walk-forward Gradient Boosted Trees + HuggingFace Chronos model — the two sleeves swap which scorer drives stock selection vs rebalance timing, so they decorrelate. Evaluated as a monthly-contribution investor actually experiences it: on survivorship-bias-free PIT data 2003-2026, monthly contributions beat the identical contributions into the S&P 500 in 100% of rolling 10-year windows (159/159) and 99% of 5-year windows, median money-weighted ~55%/yr vs ~13% for S&P-DCA, beating S&P-DCA in all four non-overlapping eras. Honest disclosure: the edge is heavily front-loaded in the 2003-2009 GFC-recovery era, with ~-56% interim drawdowns on the accumulating account; a lower-volatility market-neutral variant is available.",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Person", "url": "https://x.com/bondso" }
+  }
+  </script>
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo"><span class="nav-logo-dot"></span>Daily Stock Guide</a>
+      <div class="nav-links">
+        <a href="#pick">This Month</a>
+        <a href="#dca">DCA outcomes</a>
+        <a href="#how">How it works</a>
+        <a href="#backtest">Lump-sum backtest</a>
+        <a href="#walkforward">Walk-forward</a>
+        <a href="#examples">Every basket</a>
+        <a href="#trades">Trades</a>
+        <a href="#robustness">Robustness</a>
+        <a href="/screener">Screener</a>
+        <a href="/spreads/">Spreads</a>
+        <a href="/spx/">SPX Direction</a>
+        <a href="/max/">Max</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <h1 class="hero-headline">A monthly DCA strategy that beat S&P-into-S&P in <span id="heroWin">100%</span> of 10-year windows.</h1>
+      <p class="hero-sub">This is built for people who <strong>invest a fixed amount every month</strong>. Each month the strategy holds <strong>two diversified sleeves</strong> (up to <strong>~6 S&P 500 names</strong>) from the same machine-learning model — using only the actual S&P 500 list at each date (no hindsight), confirmed by the <strong>HuggingFace Chronos</strong> foundation model, each sleeve held ≥6 months, with a <strong>crash gate</strong> to cash. The honest question isn't "what's the CAGR" — it's <em>"if I contribute every month, do I end up ahead of contributing the same into the S&P 500?"</em></p>
+      <p class="hero-sub"><strong>On survivorship-bias-free PIT data, 2003–2026, contributing $1 every month:</strong> a <strong>10-year</strong> DCA holder beat the identical S&P-500 DCA in <strong id="heroWin2">100%</strong> of all rolling windows (159 of 159) — and <strong>99%</strong> of 5-year and <strong>96%</strong> of 3-year windows — earning a <strong>median ~55%/yr</strong> money-weighted return (even the worst 10-year window still compounded at ~33%/yr and nearly 6&times;-ed the money) versus ~13%/yr for S&P-DCA. <strong>This is the honest version of a "high hit rate"</strong> — a multi-year commitment, not a monthly coin-flip.</p>
+      <p class="hero-sub hero-warn"><strong>Honest downside &amp; the front-loading caveat:</strong> the edge is <em>not</em> uniform. Its <em>magnitude</em> is heavily concentrated in the 2003–2009 GFC-recovery era (a one-off window — $1/mo became ~47× there vs ~1.0× for S&P-DCA — that will not repeat at that scale). The strategy holds <strong>two decorrelated sleeves</strong> of the same GBM+Chronos alpha (Sleeve A swaps which scorer drives selection vs rebalance timing so their noise cancels, and Sleeve B adds a regime-conditional blend weight plus conviction-adaptive breadth; "E2", deployed May 2026). It <strong>beats S&P-DCA in all four non-overlapping eras</strong>, including the previously-weak 2010–2015 era and the recent 2021–2025 era (the slimmest margin). It still does not "beat the S&P every short period" — only the multi-year horizon is reliable historically. Short-horizon outcomes can still be brutal: the worst 1-year DCA window ended at ~0.51× of contributions, and peak-to-trough the lump-sum picker fell <strong>~-77%</strong> (the accumulating monthly account ~-56%). There is no parabolic-upside-with-no-downside version; the data refuses it. A lower-volatility <strong>market-neutral drawdown-switch</strong> variant cuts the worst drawdown further for roughly half the upside — all shown honestly below, including a non-overlapping era-by-era table.</p>
+      <p class="hero-meta" id="heroMeta">Loading…</p>
+    </div>
+  </section>
+
+  <section id="dca" class="how-section">
+    <div class="section-inner">
+      <h2 class="section-h2">If you dollar-cost-average monthly — the honest outcome</h2>
+      <p class="section-sub">Every metric most sites show you (CAGR, Sharpe) is a <em>lump-sum</em> number — it describes nobody who contributes monthly. This section is the only one that describes the actual user of this product: someone who invests a fixed amount every month. For every possible start month on survivorship-bias-free point-in-time data (2003–2026, no parameter tuning), we ask: <strong>did contributing into the strategy beat contributing the same schedule into the S&P 500?</strong></p>
+
+      <div id="dcaInvestorSection">Loading…</div>
+
+      <div class="pick-disclaimer" style="margin-top:22px">
+        <strong>Read this before anything else.</strong> The "100% win rate" here is a <em>rolling 10-year DCA-vs-S&P-DCA</em> statistic on historical PIT data (159 of 159 windows) — it is NOT a promise, NOT a monthly hit rate (that's barely a coin-flip at ~58%), and NOT downside protection. Short-horizon outcomes were genuinely brutal (the worst 1-year window ended at ~0.51× of contributions; the accumulating monthly account fell ~-56% peak-to-trough and the underlying lump-sum picker ~-77%). The strategy's edge only reliably compounds past the value of a multi-year, every-month commitment that you do not interrupt during a crash. Past performance does not predict future results. Research, not financial advice.
+      </div>
+    </div>
+  </section>
+
+  <section id="pick" class="pick-section">
+    <div class="section-inner">
+      <div class="pick-eyebrow">Current basket</div>
+      <div id="pickBody" class="pick-loading">Loading…</div>
+      <div class="pick-disclaimer">
+        <strong>How rebalancing works:</strong> The basket is held for at least <strong>6 months</strong>. After that, the picker re-runs every month-end. Each sleeve <em>only swaps</em> when none of its current picks is still in its new top-K eligible pool — i.e., the picker has discovered they're no longer best. If at least one current pick still qualifies, that sleeve keeps its basket for another month. Force rebalance every 24 months no matter what. Crash regime forces 100% cash regardless of basket age. <strong>Inverse-volatility weighted</strong> (lower-vol stocks get more weight) with a 40% cap per pick. Pre-tax numbers; ~1.0-1.5× annual turnover. Not financial advice.
+      </div>
+    </div>
+  </section>
+
+<section id="how" class="how-section">
+    <div class="section-inner">
+      <h2 class="section-h2">How it works — 7 steps</h2>
+      <p class="section-sub">Two AI models, run as two decorrelated sleeves (up to ~6 S&P 500 names). Each sleeve re-picks when none of its names is still in its top-K pool. Cash on crash.</p>
+
+      <ol class="how-list">
+        <li><strong>Universe.</strong> Use the actual S&P 500 list at the rebalance date — never today's list. ~500 stocks per month. The historical panel is the <a href="https://github.com/viki-m13/crt/tree/main/data/sp500_pit">augmented PIT S&P 500 dataset</a> (1994 tickers, including 161 acquired/renamed large-caps backfilled from FNSPID + yfinance with date-overlap validation against PIT membership). The live current universe is loaded from iShares Core S&P 500 ETF (IVV) holdings.</li>
+        <li><strong>Features.</strong> 79 price-only signals per stock (momentum, trend, recovery, RSI, volatility, drawdowns, cross-sectional rank trajectories, Mahalanobis distance to a pre-runner archetype, etc.) ranked relative to peers each month.</li>
+        <li><strong>Primary model — walk-forward GBM.</strong> Gradient Boosted Trees, retrained every January with a 7-month embargo, produce 1-, 3- and 6-month forward-return rank predictions. Two scorers are derived: <code>ml_3plus6</code> (mean of the 3m &amp; 6m rank) and a 50/50 <strong>blend</strong> of the multi-horizon-consensus rank with <code>ml_3plus6</code>. The strategy runs <strong>two sleeves</strong> that swap which scorer drives stock <em>selection</em> vs rebalance <em>timing</em> — see the "Why two decorrelated sleeves (E2)" note below (deployed May 2026).</li>
+        <li><strong>Confirmation model.</strong> HuggingFace Chronos-bolt-tiny zero-shot foundation model (9M parameters). Forecasts 3-month price-distribution for each stock from its 252-day daily price history. <strong>Filter: require Chronos p70 cross-sectional rank ≥ 0.45</strong> — eliminates the bottom 45% by Chronos confidence.</li>
+        <li><strong>Crash gate.</strong> SPY drops 8% in 21 days, or 5% over 6 months with bad recent action → hold cash next month.</li>
+        <li><strong>Sleeve A picks the top 2</strong>; <strong>Sleeve B picks the top 2–3</strong> (conviction-adaptive — widens to 3 when scores are bunched) by its Gradient Boosted score from the Chronos-filtered pool, inverse-volatility weighted with a 40% cap per pick. The two sleeves are held 50/50, so the combined book is up to ~6 names.</li>
+        <li><strong>Hold &amp; check.</strong> Hold the basket for at least 6 months. After that, re-evaluate every month: if any current pick is still in the new top-K eligible pool, that sleeve keeps its basket; only swap when <em>none</em> is. Force rebalance at 24 months max. ~1.0-1.5× annual turnover.</li>
+      </ol>
+
+      <details class="accordion">
+        <summary>Walk-forward validation (10 splits, OOS test)</summary>
+        <div class="accordion-body">
+          <p>10 TRAIN/TEST splits covering 2003-2026 — three expanding-window (A1/A2/A3), six 3y rolling (R1-R6) including the GFC, COVID, 2022 bear and 2023-24 AI rally, plus one strict last-block holdout (STRICT). The model is fit only on TRAIN data with a 7-month embargo gap.</p>
+          <p><strong>The honest DCA reading is in the Walk-forward section above</strong> (money-weighted return vs S&P-DCA per window). The lump-sum "10/10 beat SPY" figure is engine evidence that the picker is real and not overfit — it survives the GFC, COVID, the 2022 bear and the 2023-24 AI rally out-of-sample — but a monthly contributor does not experience per-window lump-sum CAGR, so we do not headline it. Full breakdown in the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md research report</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why rule-based rebalance instead of fixed 6-month?</summary>
+        <div class="accordion-body">
+          <p><strong>Timing-luck mitigation.</strong> The deployed v5 used to rebalance mechanically every 6 months — twice a year. That schedule was exposed to <em>rebalance-date luck</em>: if the two annual entry dates happened to land on bad picking moments, the year underperformed even when the picker's average quality was fine. 2024 was the worst case: Jan-31 and Jul-31 lump-sum entries gave -25pp edge vs SPY for the year, even though the other 10 monthly entry dates averaged +5.7pp positive.</p>
+          <p>The <strong>rule-based rebalance</strong> fixes this. We hold each basket for at least 6 months (preserving the GBM's 3-6m prediction horizon), then re-evaluate every month-end. We rebalance EARLIER only when the picker has discovered that none of a sleeve's current picks is still in its top-K eligible pool. If at least one still qualifies, that sleeve keeps holding.</p>
+          <p>The rule-based schedule beats the old fixed-6-month one on rebalance-timing robustness (it materially fixed the 2024 timing-luck problem) at lower turnover (~18 early rebalances across 25 baskets vs 38 fixed). <strong>Honesty note:</strong> an earlier simplified sweep reported a flattering Sharpe 1.10 / −34.5% drawdown for this rule from a NaN-favorable sim. The canonical reference — and the DCA numbers throughout this page — is the honest one: deep interim drawdowns (~−77% lump-sum picker, ~−56% on the accumulating monthly-DCA portfolio under E2). The rule improves <em>when</em> we rotate; it does <em>not</em> remove the drawdown. Pure quarterly rotation was also tested and rejected (too frequent for the 3-6m signal horizon).</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why K = 2 per sleeve (and Sleeve B's adaptive 2→3)?</summary>
+        <div class="accordion-body">
+          <p>The augmented-PIT parameter sweep settled the base-K question. Within the S&P 500 cohort the cross-sectional alpha is concentrated at the top of the score distribution. K=15 dilutes alpha with mid-percentile names; K=3 (an earlier deployment) was tuned on the biased v2 panel and is sub-optimal once the universe is PIT-corrected. K=1 maximises the edge but the drawdown blows out (single-name fragility). <strong>K=2 is the per-sleeve sweet spot.</strong></p>
+          <p>E2 runs <strong>two</strong> such sleeves. <strong>Sleeve A (WIN1)</strong> always holds the top 2. <strong>Sleeve B</strong> is <em>conviction-adaptive</em>: it holds 2 when the cross-sectional score gap signals a genuine standout, and widens to 3 when the top scores are bunched (the picker is effectively guessing — historically the weaker years), so one low-conviction name can't dominate. Held 50/50, the combined live book is up to ~6 names. This adaptive breadth is one of the two levers that make E2 a strict improvement on the prior single-deploy E1 (validated in <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVE_PICK_RCD_FINDINGS.md">IMPROVE_PICK_RCD_FINDINGS.md</a>).</p>
+          <p>K=2 is chosen for the strength of the DCA edge, <em>not</em> for low drawdown — drawdowns are deep at every K. The honest E2 figure is ~−77% on the underlying lump-sum picker / ~−56% on the accumulating monthly-DCA portfolio (disclosed in the DCA section above), and that deep interim drawdown is the price of the upside. K=2 also dominates K=3 across <strong>every</strong> level of the Monte-Carlo synthetic-delisting overlay (α 0–20%/yr): fewer picks means fewer monthly delist exposures while the picker edge per surviving pick dominates the loss per delist event. See <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVEMENTS.md">IMPROVEMENTS.md</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Survivorship-bias overlay (Monte Carlo)</summary>
+        <div class="accordion-body">
+          <p>Even on the augmented PIT panel (1994 tickers, 72% coverage in 2003 → 99.7% in 2025), there are still ~213 historical OTC bankruptcy-Q tickers (AAMRQ, LEHMQ, WAMUQ, ANRZQ, etc.) that free data cannot reach. We run a Monte Carlo overlay where each pick has an independent per-month probability of being synthetically wiped to -100% at hazard rate α.</p>
+          <p>Across hazard rates the picker keeps beating the S&P up to a high synthetic-delisting rate (well beyond the realistic ~2-4%/yr large-cap rate), and K=2 stays more robust than K=3 at every level tested — fewer picks means fewer monthly delist exposures. The per-α robustness verdicts are in the "Survivorship stress" section below; this is engine robustness, not the DCA return.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Augmented PIT S&P 500 dataset</summary>
+        <div class="accordion-body">
+          <p>The historical universe was reconstructed to fill the gap that the original v2 panel left: it was missing 374 of the 985 historical PIT S&P 500 tickers (only 51% coverage in 2003), mostly acquired or bankrupt names whose tickers Yahoo retired. The augmented panel adds 161 backfilled tickers — 108 from the FNSPID Hugging Face dataset (CC BY-NC) and 53 from yfinance — including AGN (Allergan), ANTM (Anthem), ABMD (Abiomed), ALXN (Alexion), ATVI (Activision), BHGE→BKR (Baker Hughes), RTN→RTX (Raytheon), SYMC→GEN (Symantec), and others. Every backfill is validated by date-overlap against PIT membership to filter ticker-reuse traps.</p>
+          <p>Coverage lifts to <strong>72% in 2003 → 99.7% in 2025</strong>. Full methodology and per-year coverage in the <a href="https://github.com/viki-m13/crt/tree/main/data/sp500_pit">dataset README</a> and the <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/REPORT.md">PIT validation report</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>2024 timing-luck and the staggered alternative</summary>
+        <div class="accordion-body">
+          <p>The 6-month rebalance schedule means 2 entries per year — exposed to "rebalance-date luck". 2024 was the worst case at K=3: Jan-31 and Jul-31 entries landed on the year's two worst picking moments (-25 pp edge vs SPY), even though the other 10 monthly entry dates averaged +5.7 pp positive. Diagnosed in <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/TIMING_LUCK.md">TIMING_LUCK.md</a>.</p>
+          <p>Moving to K=2 (and now the E2 two-sleeve design) reduces 2024's edge gap from -25 pp to -10.2 pp just by being more selective. A more aggressive alternative — <strong>crash-aware 6-tranche staggered DCA</strong> — was studied and offers further timing-luck mitigation, but at the cost of ~3 pp WF mean. Not deployed; documented for the curious.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>The HuggingFace Chronos foundation model</summary>
+        <div class="accordion-body">
+          <p>The v5 strategy adds a confirmation signal from <strong>Amazon Chronos-bolt-tiny</strong> — a 9M-parameter zero-shot time-series foundation model from HuggingFace, trained on millions of generic time series.  Given a stock's trailing 252-day daily prices, it produces a probabilistic 64-day forecast distribution.  We take the 70th-percentile forecast (Chronos's confidence that the stock will be in the top end of its forward distribution) and cross-sectionally rank it within the S&P 500 cohort each month.</p>
+          <p>The strategy only considers stocks where the Chronos p70 rank is ≥ 0.45 (i.e., the upper 55% by Chronos confidence). From that filtered pool, Sleeve A picks its top 2 and Sleeve B its top 2–3 (conviction-adaptive). The two AI models capture different aspects of the cross-section — Gradient Boosted Trees on tabular features, Chronos on raw price-shape dynamics — and their combination is more robust than either alone.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why two decorrelated sleeves (E2, deployed May 2026)?</summary>
+        <div class="accordion-body">
+          <p>Stock <em>selection</em> and rebalance <em>timing</em> are two separate decisions, and the GBM gives two useful scorers: <code>ml_3plus6</code> (mean of the 3m &amp; 6m forward-rank) and a 50/50 <strong>blend</strong> of the multi-horizon-consensus rank with <code>ml_3plus6</code>. <strong>Sleeve&nbsp;A (WIN1)</strong> selects with <code>ml_3plus6</code> and uses the blend as its drift trigger. <strong>Sleeve&nbsp;B (RC&nbsp;D + adaptive breadth)</strong> selects with the blend (triggering on <code>ml_3plus6</code>) but with two extra, independently-validated picking levers: the blend weight is <em>regime-conditional</em> — momentum-leaning in a confirmed bull, consensus-stable in normal/recovery — and the basket breadth is <em>conviction-adaptive</em>, holding 2 names when the cross-sectional score gap signals genuine conviction and widening to 3 when scores are bunched. It is the <strong>same underlying alpha</strong>; the two sleeves rebalance on different dates and hold different names, so their idiosyncratic noise partly cancels (E1's free-consistency lever) <em>while Sleeve&nbsp;B's regime-timed blend adds forward return and adaptive breadth adds year-to-year consistency — orthogonal levers that stack</em>. We hold them <strong>50/50</strong> (the combined book is up to ~6 names). This is <strong>not a new alpha source</strong> — it is diversification plus regime/conviction-aware sizing of one edge.</p>
+          <p>E2 cleared the full production-harness gauntlet (Chronos + inv-vol + regime gate + rule-based rebalance + canonical walk-forward + Monte-Carlo delisting overlay) and is a <strong>strict Pareto improvement</strong> on the prior single-deploy E1: full CAGR <strong>51.9% → 56.6%</strong>, Sharpe <strong>1.03 → 1.10</strong>, max interim drawdown <strong>−56% → −56%</strong> (unchanged — the 2008 GFC floor), walk-forward splits beating SPY <strong>10/10</strong>, the worst rolling 5-year DCA outcome <strong>+11.7%/yr → +13.6%/yr</strong>, the forward CAGR excluding the front-loaded 2003–09 era <strong>33.4% → 38.2%</strong>, and it <strong>beats S&P-DCA in all four non-overlapping eras</strong> (slimmest: recent 2021–2025).</p>
+          <p><strong>Honest read:</strong> every headline metric improves and the rolling DCA win rate is a literal <strong>100% at 10y (159/159)</strong>, <strong>99% at 5y</strong>, <strong>96% at 3y</strong>. It is robust where it matters against overfitting: cost-insensitive (identical 0–30 bps), a wide 50/50 mix-weight plateau (0.3–0.7), more delisting-robust than E1, and the <em>strongest truly-out-of-sample holdout of any variant</em> (untouched 2013–2026: Sharpe ~1.24 vs E1's 1.08). <strong>The −56% drawdown does not move</strong> — it is the 2008 GFC systemic event, which a stock-picking lever cannot reshape; E2 raises return and consistency <em>at</em> E1's drawdown, it does not make the strategy low-risk. The edge magnitude is still hugely front-loaded in 2003–2009 and the interim drawdowns are still deep (~-56% on the accumulating account, ~-77% on the lump-sum picker) — E2 narrows the dispersion, it does not remove the risk. Full detail and the overfit gauntlet in <a href="https://github.com/viki-m13/crt/blob/main/experiments/monthly_dca/v5/spx_pit/IMPROVE_PICK_RCE1_FINDINGS.md">IMPROVE_PICK_RCE1_FINDINGS.md</a>.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Other strategies & full research</summary>
+        <div class="accordion-body">
+          <p>Full v5 research, the augmented PIT dataset, the parameter sweeps (K, scorer, Chronos quantile, hold, cap, regime gate), the Monte-Carlo delisting overlay, and the reproduction guide all live in the <code>experiments/monthly_dca/v5/spx_pit/</code> directory of the GitHub repo. The v2/v3/v4 baselines remain in their respective directories for comparison.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+<section id="backtest" class="bt-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Your DCA account — $1 contributed every month since 2003</h2>
+      <p class="section-sub">This is the monthly-DCA experience, not lump-sum: contribute <strong>$1 every month-end</strong> into the strategy and watch the account accumulate, versus contributing the <strong>identical</strong> schedule into the S&P 500. The grey line is the money you put in; green is the strategy account; the S&P-DCA line is the same contributions into SPY. Honest walk-forward predictions throughout — the model only sees data older than (test month − 7 months) and Chronos only sees prices up to the rebalance date.</p>
+      <div class="bt-stats" id="btStats">Loading…</div>
+      <div class="bt-chart-wrap">
+        <div class="bt-period-bar" id="btPeriodBar" role="tablist" aria-label="Chart period">
+          <button class="bt-period-btn" data-period="1y" role="tab">1Y</button>
+          <button class="bt-period-btn" data-period="3y" role="tab">3Y</button>
+          <button class="bt-period-btn" data-period="5y" role="tab">5Y</button>
+          <button class="bt-period-btn" data-period="10y" role="tab">10Y</button>
+          <button class="bt-period-btn" data-period="20y" role="tab">20Y</button>
+          <button class="bt-period-btn active" data-period="all" role="tab" aria-selected="true">All</button>
+        </div>
+        <canvas id="btChart" class="bt-chart"></canvas>
+        <div class="bt-legend">
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-strat"></span>Strategy DCA account</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-spy"></span>S&P-DCA (same contributions)</span>
+          <span class="bt-legend-item"><span class="bt-dot bt-dot-cash"></span>Money contributed</span>
+        </div>
+      </div>
+
+      <h3 class="section-h3">If you'd been DCA-ing for X years</h3>
+      <p class="section-sub">If you'd contributed monthly starting X years ago and kept going to today: the annualized money-weighted return your contributions earned, and the same for identical contributions into the S&P 500.</p>
+      <div id="horizonsSection" class="horizons-grid"></div>
+
+      <h3 class="section-h3">Year-by-year (DCA through each year)</h3>
+      <p class="section-sub">For each calendar year: if you contributed $1 every month <em>during that year</em>, the % return on the money you put in by year-end, versus the identical monthly contributions into the S&P 500. This is the DCA experience within each year — not lump-sum calendar compounding.</p>
+      <div id="btYearGrid" class="year-grid"></div>
+    </div>
+  </section>
+
+<section id="walkforward" class="wf-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Walk-forward — 10 out-of-sample windows, in DCA terms</h2>
+      <p class="section-sub">10 strictly out-of-sample train/test windows (the model only sees data older than test − 7 months). Shown the honest way: if you'd contributed monthly through each window, did you end ahead of the same contributions into the S&P 500? The often-quoted "10/10 beat SPY" is a lump-sum per-window statistic no monthly contributor experiences — the DCA reframe below is what you'd actually have lived, and it is deliberately less flattering over short windows.</p>
+      <div id="wfSection"></div>
+    </div>
+  </section>
+
+<section id="examples" class="examples-section">
+    <div class="section-inner">
+      <h2 class="section-h2">The picks that drove your DCA account</h2>
+      <p class="section-sub">Every sleeve-basket the strategy has held since 2003, newest first (the strategy runs two such sleeves in parallel; your monthly contributions are split 50/50 across them). A sleeve-basket holds 2–3 stocks (Sleeve B widens to 3 when conviction is low). Each card shows that sleeve-basket's stocks and its hold-period return (a picker mechanic, not your DCA outcome — the investor result is the DCA section at the top). Each sleeve holds its basket at least 6 months and rotates when none of its names is still in its top-K eligible pool.</p>
+      <div id="caseStudies" class="case-grid"></div>
+    </div>
+  </section>
+
+<section id="historical" class="historical-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Historical monthly baskets</h2>
+      <p class="section-sub">Browse every monthly basket the strategy has picked since inception. Use the year selector to jump to any past month and see what was bought, the entry/exit dates, and what happened.</p>
+      <div id="historicalSection">Loading…</div>
+    </div>
+  </section>
+
+<section id="trades" class="trades-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Every trade since inception</h2>
+      <p class="section-sub">Flat list of every pick — entry date, ticker, entry price, exit date (when none of a sleeve's picks remained in its top-K pool or 24-month max-hold reached), exit price, status (held vs exited), return, and the basket-id grouping. Sorted newest first.</p>
+      <div id="tradesSection"></div>
+    </div>
+  </section>
+
+<section id="robustness" class="robustness-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Robustness — the DCA edge and the engine behind it</h2>
+      <p class="section-sub">Sub-period robustness is shown in DCA terms (money-weighted return vs S&P-DCA). The universe- and parameter-generalisation checks below validate the <em>picker</em> that generates your DCA account — they are engine robustness, not a DCA return promise. Your DCA outcome is the section at the top of the page.</p>
+      <div id="v3Sections"></div>
+    </div>
+  </section>
+
+<section id="bias" class="bias-section">
+    <div class="section-inner">
+      <h2 class="section-h2">Survivorship stress — does the edge survive phantom failures?</h2>
+      <p class="section-sub">The universe is already true point-in-time S&P 500 (delisted names are eligible while listed, then removed). This goes further: a Monte-Carlo overlay wipes random picks to −100% at rising hazard rates to test whether the picker's edge over the S&P survives if the price panel quietly missed any failures. Shown as a robustness verdict (does it still beat the S&P?), not a return number — the DCA outcome is the section at the top.</p>
+
+      <div class="bias-grid">
+        <div class="bias-card bias-card-headline">
+          <div class="bias-label">Edge survives delisting up to</div>
+          <div id="biasAlpha" class="bias-value">≤ —%/yr</div>
+          <div class="bias-sub">Largest synthetic annual delisting hazard at which the picker still beats the S&P. The realistic large-cap rate is ~2-4%/yr.</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">At α=4%/yr (realistic)</div>
+          <div id="biasRandom" class="bias-value">—</div>
+          <div class="bias-sub">Historical large/mid-cap delisting rate. Robustness verdict for the picker.</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">At α=8%/yr (2× historical)</div>
+          <div id="biasStrat" class="bias-value">—</div>
+          <div class="bias-sub">Double the historical rate — a deliberately harsh stress.</div>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">At α=20%/yr (apocalypse)</div>
+          <div id="biasWorst" class="bias-value">—</div>
+          <div class="bias-sub">Every pick has a 20%/yr phantom-wipe probability — far beyond any real regime. The breakage stress.</div>
+        </div>
+      </div>
+
+      <details class="accordion">
+        <summary>Robustness verdict at eight annual delisting rates</summary>
+        <div class="accordion-body">
+          <p class="section-sub">Pretend each pick has an annual probability α of being silently wiped to −100% (a synthetic delisting). Does the picker still beat the S&P? This is engine robustness — the investor outcome is the DCA section at the top.</p>
+          <div class="bias-table-wrap">
+            <table id="sensTable" class="bias-table">
+              <thead>
+                <tr><th>Stress level</th><th>Robustness verdict</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Why true PIT membership matters</summary>
+        <div class="accordion-body">
+          <p>The naive backtest uses today's S&P 500 list back-applied to all dates — but today's list is curated by S&P to remove failures. Companies like Lehman Brothers (S&P 500 1986-2008), Bear Stearns (1998-2008), AIG (1980-2008), GM (1925-2009), Washington Mutual (2002-2008), SVB (2009-2023), Bed Bath &amp; Beyond (2003-2022), Sears (1956-2018) were all S&P 500 constituents during the periods they were collapsing — but they're absent from today's list. Restricting picks to today's list eliminates them automatically, gifting the backtest an enormous artificial edge.</p>
+          <p>The eligible universe is built from <strong>2,595 daily snapshots of the S&P 500 from 1996 to 2019</strong>, plus 110 explicit add/remove change events from 2019 onward. 976 unique tickers were S&P 500 constituents at some point; ~500 per month. The eligible pool at, say, September 2008 is the actual September 2008 S&P 500 — Lehman Brothers is eligible to be picked, then auto-removed in October 2008 when it actually delisted. No hindsight.</p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>Two different "win rates" — which 100% is real and which is impossible</summary>
+        <div class="accordion-body">
+          <p><strong>The impossible one:</strong> a ~100% <em>monthly</em> hit rate, or a 100% <em>lump-sum</em> win rate, with parabolic upside and no downside. That does not exist on this data and we will not claim it. The cross-sectional information coefficient (IC) within the S&P 500 cohort is ~0.04 for the GBM plus ~0.02 from the Chronos filter — small but real, and at the upper end of the ~0.06 literature ceiling for a price-only large-cap signal. Any strategy with finite IC has a ceiling; the monthly hit rate here is ~58% (barely above a coin-flip) and short-horizon drawdowns reach ~-77% on the lump-sum picker. We separately built and honestly killed multiple attempts to beat this (a Chronos-distribution downside model, conviction-adaptive concentration, vol-targeting and drawdown-breaker overlays) — they failed or bled too much return, confirming there is essentially one independent alpha here.</p>
+          <p><strong>The real one:</strong> a <em>rolling-10-year DCA-vs-S&P-DCA</em> win rate of 100%. These are completely different statistics. The first asks "is any single month/lump-sum a winner?" (no, not reliably). The second asks "if I contribute every month for 10 years, do I end up ahead of the same contributions into the S&P 500?" — and on PIT data 2003–2026 the answer was yes in 159 of 159 rolling 10-year windows (a literal 100% under the deployed E2 two-sleeve strategy; the worst such 10-year window still grew the money nearly 6&times;, and 99% of 5-year windows also won). A low monthly hit rate and a high multi-year DCA win rate are mathematically consistent: the big winners dominate the terminal portfolio while steady monthly contributions average through the drawdowns. The honest claim is the second one, with its multi-year-commitment, front-loading and interim-drawdown caveats stated plainly — never the first.</p>
+          <p>That the underlying picker stays positive out-of-sample across the GFC, COVID, the 2022 bear AND the 2023-24 AI rally is the strongest non-overfit evidence the engine is real — it is what makes the long-horizon DCA edge trustworthy rather than a backtest artifact.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <span class="footer-heading">Tools</span>
+        <a href="/" class="footer-link">Monthly Pick</a>
+        <a href="/screener" class="footer-link">Pullback Screener</a>
+        <a href="/spreads/" class="footer-link">Credit Spreads</a>
+        <a href="/max/" class="footer-link">Max Strategy</a>
+        <a href="/experiments/" class="footer-link">Experiments</a>
+        <a href="/experiments/monthly-dca/" class="footer-link">Monthly DCA Research</a>
+      </div>
+      <div class="footer-col">
+        <span class="footer-heading">Legal</span>
+        <a href="terms.html" class="footer-link">Terms of Service</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="disclaimer.html" class="footer-link">Disclaimer</a>
+      </div>
+      <div class="footer-col footer-col-logo">
+        <span class="footer-logo-text"><span class="footer-logo-dot"></span>Daily Stock Guide</span>
+        <span class="footer-text">Updated once daily after market close, New York time. The v5 strategy holds each basket for at least 6 months, then rebalances only when none of a sleeve's current picks remains in its top-K eligible pool (min 6m + score-drift trigger; force rebalance at 24m max).</span>
+        <span class="footer-text footnote-text">Past performance does not predict future results. Research, not financial advice.</span>
+        <a href="https://x.com/bondso" target="_blank" rel="noopener noreferrer" class="footer-link">Contact: @bondso on X</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="monthly_dca.js"></script>
+</body>
+</html>

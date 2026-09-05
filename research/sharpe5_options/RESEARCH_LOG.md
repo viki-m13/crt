@@ -955,3 +955,132 @@ IC ≥ 0.4) or the unfunded (tail convexity whose carry the record prices at
 −3%/yr). No creative recombination of these instruments changes that
 arithmetic, because every leg's cost is set by the same market that prices
 the target.
+
+### Study 29 — HIGH credit/width credit spreads (the "risk $100 to make $200" spec)
+
+User spec: credit >= 0.5x risk, ideally credit = 2-3x risk. That forces the
+short strike ITM (credit/width >= 1/3). By parity an ITM put credit spread IS
+a long OTM call spread — a leveraged bullish bet. Pre-stated verdict criteria:
+strategy (not beta) iff (a) alpha survives a delta control, (b) holdout holds,
+(c) worst year survivable.
+
+**Screening (SPY, 5% wide, 45-75 DTE, worst-side, n=1160 per cell):**
+
+| short strike | credit:risk | breakeven | realized win | edge | ret/risk |
+|---|---:|---:|---:|---:|---:|
+| 5% OTM | 0.14x | 88.1% | 89.2% | +1.1% | +0.054 |
+| ATM | 0.35x | 74.3% | 79.8% | +5.5% | +0.107 |
+| 2% ITM | 0.57x | 64.0% | 69.5% | +5.5% | +0.143 |
+| **5% ITM** | **1.50x** | 41.4% | 56.5% | **+15.0%** | **+0.238** |
+
+The spec is structurally REAL: 1.50x credit:risk exists at honest fills, and
+the win rate beats breakeven by 15 points. ITM liquidity toll is paid: short
+leg bid-ask 0.121% of spot at +5% ITM vs 0.011% ATM (10x wider), already in
+the worst-side numbers.
+
+**Trade-level delta control (the decisive test):** regress per-trade ret/risk
+on SPY's return over the SAME window. Betas: +5.9 (ATM), +7.5 (+2%), +11.5
+(+5% ITM). Residual alpha: −13%, −7%, +2% of the edge respectively, all
+t_overlap-adj < 0.4. **The entire edge is the equity risk premium at ~6-11x
+delta leverage. Zero selection skill beyond being long.** (Part 1's weekly
+beta control printed beta −0.3 — an artifact of settle-at-expiry accounting
+lagging SPY by ~60d; corrected in part 2. Logged as measurement error #7.)
+
+**Ladder frontier (weekly rungs, capital = max loss, 60% cap, ITM 5%):**
+
+| rung | CAGR | Sharpe | maxDD | worst yr |
+|---|---:|---:|---:|---:|
+| 1% | +15.4% | 1.34 | −26.6% | −21.8% |
+| 2% | +28.6% | 1.26 | −47.6% | −40.5% |
+| 5% (Kelly peak) | +49.7% | 1.00 | −85.5% | −80.2% |
+| 8% (past Kelly) | +33.5% | 0.76 | −96.3% | −92.5% |
+
+Yearly at 5%: 2021 +205%, 2024 +586%, but 2022 **−80%**. Dev/holdout at 2%:
++33.0%/1.40 dev, +21.1%/1.05 holdout (holdout years bullish — consistent, not
+independent proof). Uptrend gate (200d-SMA): helps dev, COLLAPSES holdout
+(ITM5% uptrend holdout −6.6%, Sharpe +0.05) — gate rejected. Sharpe/maxDD here
+are settlement-marked (no MTM between expiries); true intraperiod DD is worse.
+
+**Verdict: criterion (a) FAILS — this is levered beta, honestly measured, not
+an accuracy edge. The payoff spec is deliverable; 1000% CAGR is not: the Kelly
+peak of the frontier is ~+50%/yr and costs −85% drawdowns. Trials this study:
+5 offsets x (2 gates + 5 rung sizes + splits) ~ 30 configs, all logged.**
+
+### Study 30 — selectivity + MTM exits on ITM-5% spreads (target: CAGR>50%, DD<10%)
+
+User target = Calmar > 5 sustained. Method upgrades over study 29: (1) TRUE
+mark-to-market — every open cohort marked at worst-side liquidation on every
+scrape date carrying its expiration (10,304 marks; strike-grid mismatch across
+scrapes solved by convexity-safe linear interpolation + $0.25 penalty);
+(2) 12 pre-registered gates ranked on dev only, holdout consulted for top 3;
+(3) exit rules on real unwind quotes. Data constraint (verified at source):
+DoltHub carries only ~3 tenor buckets/date, so marks cluster near the 28d/14d
+buckets — exits act with up to ~3 weeks latency; MTM maxDD is a LOWER bound.
+
+**MTM strips the settlement-mark illusion**: baseline 2%-rung Sharpe 1.25 →
+0.94, maxDD −47.7% → −53.3%; 5%-rung maxDD −87% → −90.5%. Study 29's curves
+were smoothed by marking only at expiry (as flagged there).
+
+**Gates (dev Sharpe rank → holdout):** best dev = G5 iv/rv>1 (Calmar 0.7 dev)
+→ holdout Calmar 0.2. #2 trend200∧term-calm → holdout −0.1. #3 term-calm →
+holdout −0.1. Every timing gate that helped dev collapsed OOS — same failure
+as study 29's 200dma gate. With ~45 independent 60d windows and 2 bear
+episodes in sample, a gate has ~2 bits of bear-avoidance evidence: gates
+CANNOT be validated on this history, only falsified. All 12 were.
+
+**Exits HURT, decisively**: cut@−50%-of-risk dev CAGR +12.0% vs hold +47.0%;
+cut@−25% +1.4%. Buying back spreads at worst-side after adverse moves, with
+mark latency, costs more than the losses it avoids — third independent
+confirmation (structures2_exits, study 22, now on MTM quotes). Profit-taking
+neutral-to-negative. Best honest full-sample config: G5+hold at 2% rungs =
+CAGR +16.3%, maxDD −28.0%, Calmar 0.6.
+
+**Verdict: the target fails by ~10x on the Calmar axis in every one of 36
+configs (best 0.7). The instrument is levered equity beta; no entry gate
+survives holdout; loss-cutting is negative-EV at real quotes. CAGR>50% with
+DD<10% is not obtainable from defined-risk SPY credit spreads on this data —
+and nothing in the documented literature sustains Calmar 5 outside
+market-making. Trials: 36 (project total ~430).**
+
+### Trials ~431-433 — tenor gradient toward 0DTE for the ITM-5% spec
+
+No sub-8-DTE data exists in this DB (min bucket ~14d, EOD quotes only), so
+0DTE itself is untestable here; the gradient across available tenors is the
+honest proxy. ITM-5% put credit spreads, 5% wide, worst-side, 2% rungs:
+
+| tenor | credit:risk | win-BE edge | ret/risk | toll (% of risk) | ladder CAGR | Sharpe |
+|---|---:|---:|---:|---:|---:|---:|
+| ~14d | 3.42x | +18.9% | +0.074 | 16.1% | +11.7% | 0.70 |
+| ~28d | 2.20x | +17.8% | +0.187 | 12.0% | +20.4% | 1.17 |
+| ~60d | 1.50x | +15.0% | +0.238 | 8.3% | +28.6% | 1.26 |
+
+Monotone: shorter tenor LOOKS more like the spec (higher credit:risk, bigger
+win-rate edge) and PAYS less (per-trade EV −69%, toll share doubles, Sharpe
+0.70 vs 1.26). Mechanism: the position's engine is drift (study 29), and
+drift/noise ~ sqrt(T) while the toll is fixed per leg — extrapolated to 0DTE
+(T ~ 6.5h, drift ~3bp vs ~1% intraday vol) the drift engine is ~zero and the
+structure is a coin flip minus spread, consistent with Dim-Eraker-Vilkov and
+Almeida et al. (0DTE VRP "small and difficult to monetize after frictions").
+
+### Study 31 (setup) — 0DTE: no honest backtest possible; forward test registered
+
+Checked for usable 0DTE history (2026-08-11): the only free archives are EOD
+2013 — daily expirations began late 2022, so no free source covers the modern
+0DTE regime, and intraday history is paid-only. Per project standards no
+model-quote backtest was attempted. Instead:
+
+- research/zerodte/collect.py + .github/workflows/zerodte-snaps.yml record
+  real CBOE delayed chains (SPX+SPY, DTE<=1, strikes +/-2.5% of spot) five
+  times per trading day (13:36/15:00/17:00/19:00/19:45 UTC). Verified live:
+  312 SPX + 152 SPY rows per snapshot, ~10 KB gzipped.
+- research/zerodte/PREREGISTRATION.md freezes TWO strategies before any data:
+  S1 morning richness condor (sell 15-delta 0DTE iron condor at the open,
+  hold to cash settlement — Almeida et al. / Dim-Eraker-Vilkov morning-VRP
+  concentration) and S2 last-hour momentum ride (ATM debit spread in the
+  direction of the 9:30->15:00 move when |r|>=0.30% — Gao-Han-Li-Zhou
+  intraday momentum). Worst-side fills, defined risk, no parameter sweeps.
+- evaluate.py enforces the pre-stated bars: >=60 valid days, bootstrap 90%
+  CI excluding 0, else REJECT. Adds exactly 2 trials (project ~435).
+
+NOTE: the cron must be merged to main before collection starts (scheduled
+workflows fire from the default branch only).
