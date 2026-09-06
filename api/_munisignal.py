@@ -50,6 +50,34 @@ class DayPrints:
     sell_par: float = 0.0
 
     @property
+    def ord(self) -> int:
+        """Date as a day number, parsed once and cached.
+
+        A full daily scan compares every print against every window bound;
+        re-parsing the ISO string each time turned a market-wide scan into
+        tens of millions of date parses and made it unrunnable.
+        """
+        o = self.__dict__.get("_ord")
+        if o is None:
+            import datetime as _dt
+            o = _dt.date.fromisoformat(self.date).toordinal()
+            self.__dict__["_ord"] = o
+        return o
+
+    def __post_init__(self):
+        # NaN is the shape missing data actually arrives in from pandas, and
+        # `nan is not None` is True while every comparison against nan is
+        # False. Left alone, a bond with no prints sails past the "is not
+        # None" guards, fails the `discount < 3.0` check because that is
+        # False for nan, and is reported as DISLOCATED on no data at all.
+        # Measured: that bug produced 110 phantom signals on a calm day the
+        # strategy is supposed to be dormant. Normalise at the boundary.
+        for f in ("buy", "sell", "dealer"):
+            v = getattr(self, f)
+            if v is not None and v != v:          # nan != nan
+                setattr(self, f, None)
+
+    @property
     def mid(self) -> float | None:
         """Signal reference only — never quote this as tradeable."""
         if self.dealer is not None:
@@ -75,9 +103,9 @@ class Signal:
     notes: list = field(default_factory=list)
 
 
-def _days_between(a: str, b: str) -> int:
+def _day_ord(d: str) -> int:
     import datetime as dt
-    return abs((dt.date.fromisoformat(b) - dt.date.fromisoformat(a)).days)
+    return dt.date.fromisoformat(d).toordinal()
 
 
 def _median(xs: list[float]) -> float | None:
@@ -93,9 +121,10 @@ def evaluate(security_id: str, history: list[DayPrints], asof: str,
     """Assess one bond as of `asof`. `history` may include `asof` itself;
     everything used for the signal is strictly BEFORE it."""
     s = Signal(security_id=security_id, date=asof, description=description)
-    hist = sorted(history, key=lambda d: d.date)
-    prior = [d for d in hist if d.date < asof]
-    today = next((d for d in hist if d.date == asof), None)
+    hist = sorted(history, key=lambda d: d.ord)
+    asof_ord = _day_ord(asof)
+    prior = [d for d in hist if d.ord < asof_ord]
+    today = next((d for d in hist if d.ord == asof_ord), None)
 
     if today is None or today.buy is None:
         s.reason = "no customer-buy print today — nothing to act on"
@@ -103,7 +132,7 @@ def evaluate(security_id: str, history: list[DayPrints], asof: str,
     s.buy_price = today.buy
 
     # liquidity gate, trailing 90 days, no forward information
-    recent = [d for d in prior if _days_between(d.date, asof) <= LOOKBACK_DAYS]
+    recent = [d for d in prior if asof_ord - d.ord <= LOOKBACK_DAYS]
     s.active_days = len({d.date for d in recent})
     if s.active_days < MIN_ACTIVE_DAYS:
         s.reason = (f"too illiquid — printed on {s.active_days} days in the "
@@ -111,13 +140,15 @@ def evaluate(security_id: str, history: list[DayPrints], asof: str,
         return s
 
     window = [d.mid for d in prior
-              if _days_between(d.date, asof) <= MEDIAN_WINDOW_DAYS
-              and d.mid is not None]
+              if asof_ord - d.ord <= MEDIAN_WINDOW_DAYS and d.mid is not None]
     if len(window) < MIN_MEDIAN_OBS:
         s.reason = (f"not enough recent marks to form a trend "
                     f"({len(window)} of {MIN_MEDIAN_OBS} needed)")
         return s
     s.trailing_median = _median(window)
+    if s.trailing_median is None or s.trailing_median != s.trailing_median:
+        s.reason = "no usable trailing median for this bond"
+        return s
     s.discount_pts = s.trailing_median - today.buy
 
     # the latest prior mid is what the limit is set from
@@ -126,6 +157,10 @@ def evaluate(security_id: str, history: list[DayPrints], asof: str,
         s.prior_mid = prior_with_mid[-1].mid
         s.limit_price = s.prior_mid + LIMIT_CAP
 
+    if s.discount_pts is None or s.discount_pts != s.discount_pts:
+        s.discount_pts = None
+        s.reason = "prices on the tape were unusable for this bond"
+        return s
     if s.discount_pts < DISCOUNT_PTS:
         s.reason = (f"only {s.discount_pts:.2f} points below its own trend; "
                     f"the edge does not survive the control below "
