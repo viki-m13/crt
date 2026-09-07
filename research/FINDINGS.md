@@ -266,3 +266,61 @@ a daily feed. The check has an opinion on 91% of real quotes and objects to
 58% of them; the list is empty two days in five. Sell to whoever trades odd
 lots, not to whoever has the most AUM — above $1m of par the edge is zero
 and the pitch is false.
+
+## Can the advisor act on a "too rich" verdict?
+
+The gap we measure is only worth money if declining the quote has an
+alternative. `research/muni_edge/can_they_act.py` replays every flagged buy
+and looks forward ten trading days in the same bond.
+
+| | of 245,430 flagged buys |
+|---|---|
+| the bond printed a customer buy again | 96.0% |
+| **next print was cheaper** | **66.5%** |
+| **next print beat the flagged excess** | **30.2%** |
+| median improvement when cheaper | 1.001 pts = $250 on a $25k lot |
+| *ceiling: best of the ten days beat the excess* | *55.3% — needs foresight* |
+
+The headline uses the **next** print, not the best of the window; taking the
+minimum is look-ahead and inflates the result to 55%. Two further effects
+push the true number lower still: it ignores the cost of not owning the bond
+meanwhile, and it assumes the later print was available to this buyer, which
+the tape cannot confirm.
+
+So the signal is actionable, but recovers materially less than it measures —
+about a third of flagged trades, not the 58% headline.
+
+## Is anyone already selling this?
+
+Yes, and it is the same two products. BondWave's Effi platform ships
+**Transaction Quality Analysis** (total trade cost measured against
+marketplace peers, with a per-calculation archive and management reporting —
+i.e. the best-execution record), an **Effi Market Calculator** for pre-trade
+markup and fair pricing, and a **Price Confidence Tool**; plus premium
+municipal content via DPC DATA, proprietary trade benchmarks, muni yield
+curves and comparable-bond identification, and integrations into ICE Bonds
+([BondWave][bw1], [BondWave TQA][bw2], [FTF News][ftf]).
+
+[bw1]: https://bondwave.com/
+[bw2]: https://bondwave.com/effi-enhancements-tqa-solution-premium-content/
+[ftf]: https://www.ftfnews.com/bondwave-bolsters-its-fixed-income-platform/
+
+## Verdict on willingness to pay
+
+The measurement is sound and the segment is growing, but three things stop
+this being something people pay a lot for **willingly**:
+
+1. **The buyer is not the beneficiary.** The $250–274 a flag is worth accrues
+   to the *client*; the advisor pays the subscription. Execution-quality
+   tools therefore sell as compliance and defensibility, not as savings.
+2. **Recoverable ≪ measured.** 30% of flags, not 58%.
+3. **The compliance version is already sold** by an incumbent with the data
+   licences, the archive, and the custodian integrations we do not have.
+
+Our one scarce asset — solved EMMA extraction past the image-rendered CUSIPs
+and blocked clients — is a months-long lead, not a moat, against a vendor
+licensing DPC DATA.
+
+**This is a good tool and a bad business at the price that would justify
+building it.** It would flip only on distribution: an owned channel to
+odd-lot muni buyers, which the origami.chat constraint does not provide.
