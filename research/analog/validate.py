@@ -102,7 +102,14 @@ def query_shape(logp_col: np.ndarray, t: int, lookback: int):
 
 
 def pick(shapes, mask, q, top_k, end_ix, col_ix, rng=None):
-    """Top-k least-distant admissible windows, deduped, or random if rng."""
+    """Top-k least-distant admissible windows, deduped, or random if rng.
+
+    `mask` must already encode BOTH admissibility rules — the time gate and,
+    when measuring the shipped own-history configuration, the restriction to
+    the query's own column. Getting that second one wrong is how the first
+    version of this file measured a cross-sectional search over 400 tickers
+    and reported it as the accuracy of a tool that searches one.
+    """
     idx = np.flatnonzero(mask)
     if idx.size == 0:
         return np.empty(0, dtype=int)
@@ -129,6 +136,11 @@ def main():
     ap.add_argument("--points", type=int, default=3000)
     ap.add_argument("--stride", type=int, default=STRIDE)
     ap.add_argument("--seed", type=int, default=11)
+    ap.add_argument("--cross-sectional", action="store_true",
+                    help="search ALL tickers' history, not just the query's. "
+                         "Off by default because api/analog.py searches the "
+                         "query's own history and the measurement has to "
+                         "describe the thing that ships.")
     a = ap.parse_args()
 
     px = pd.read_parquet(PANEL)
@@ -161,7 +173,10 @@ def main():
         take = min(live.size, max(1, a.points // max(len(grid), 1)))
         for c in rng.choice(live, size=take, replace=False):
             pts.append((t, int(c)))
-    print(f"  {len(pts):,} test points across {len(grid)} non-overlapping dates\n")
+    print(f"  {len(pts):,} test points across {len(grid)} non-overlapping dates")
+    print(f"  search scope: "
+          + ("ALL tickers (cross-sectional)" if a.cross_sectional
+             else "the query ticker's own history — as shipped") + "\n")
 
     rows = []
     ctrl_rng = np.random.default_rng(a.seed + 1)
@@ -169,8 +184,11 @@ def main():
         q = query_shape(logp[:, c], t, LOOKBACK)
         if q is None:
             continue
-        # THE LOOK-AHEAD GATE: the analog's own outcome must predate t
-        mask = (end_ix + HORIZON) < t
+        # THE ADMISSIBILITY GATE, identical to api/_analog.py: the match and
+        # its sequel must both finish before the query window opens.
+        mask = (end_ix + HORIZON) < (t - LOOKBACK)
+        if not a.cross_sectional:
+            mask = mask & (col_ix == c)      # the shipped configuration
         real = logp[t + HORIZON, c] - logp[t, c]
 
         sel = pick(shapes, mask, q, TOP_K, end_ix, col_ix)
@@ -193,8 +211,10 @@ def main():
     R = pd.DataFrame(rows)
     print(f"\nscored {len(R):,} forecasts\n")
     report(R)
-    R.to_csv(os.path.join(HERE, "validation_points.csv"), index=False)
-    print(f"\n  per-forecast detail -> research/analog/validation_points.csv")
+    tag = "cross_sectional" if a.cross_sectional else "own_history"
+    R.to_csv(os.path.join(HERE, f"validation_points_{tag}.csv"), index=False)
+    print(f"\n  per-forecast detail -> research/analog/"
+          f"validation_points_{tag}.csv")
     return 0
 
 

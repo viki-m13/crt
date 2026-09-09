@@ -104,6 +104,19 @@ def main():
            [(a.end, a.distance) for a in fc3.analogs]
     check(same, "tripling every future bar changes nothing about the answer")
 
+    print("\n--- 2b. a match may not explain itself ---")
+    # REGRESSION: the gate used to allow a match ending H bars before today.
+    # Its "future" was then literally the right half of the window being
+    # matched, drawn on the chart as what followed. The match and its sequel
+    # must both finish before the query window opens.
+    fcx = A.find_analogs(px, lib, symbol="TEST", as_of_index=as_of,
+                         lookback=L, horizon=H, top_k=5, dates=dt)
+    q_start = as_of - L
+    check(all(dt.index(a.end) + H < q_start for a in fcx.analogs),
+          "no match's forward window reaches into the query window",
+          f"latest {max((dt.index(a.end) + H for a in fcx.analogs), default=-1)}"
+          f" < query start {q_start}")
+
     print("\n--- 3. matches are distinct events, not one window five times ---")
     ends = [dt.index(a.end) for a in fc.analogs]
     gaps = [abs(x - y) for i, x in enumerate(ends) for y in ends[i + 1:]]
@@ -120,12 +133,35 @@ def main():
           "with min_gap=1 the matches DO cluster, so dedupe is load-bearing",
           f"gaps {raw_gaps}")
 
-    print("\n--- 4. it matches shape, not price level ---")
+    print("\n--- 4. cross-symbol matching is gated too ---")
+    # REGRESSION: this shipped broken. With no `dates`, as_of_date was "" and
+    # the date gate silently never fired, so foreign series contributed
+    # windows from AFTER as_of — a match was returned from bar 857 with
+    # as_of=500. The gate now fails closed instead.
+    other = series(1300, seed=21)
+    nodates = A.find_analogs(px, {"TEST": (dt, px), "OTHER": (dt, other)},
+                             as_of_index=500, lookback=L, horizon=H,
+                             top_k=5, symbol="TEST")
+    check(all(a.symbol == "TEST" for a in nodates.analogs),
+          "without dates, foreign series are refused, not waved through")
+    check("OTHER" in nodates.skipped_unverifiable,
+          "and the refusal is reported rather than silent",
+          str(nodates.skipped_unverifiable))
+
+    # with dates supplied the foreign series IS usable, and still gated
+    withdates = A.find_analogs(px, {"TEST": (dt, px), "OTHER": (dt, other)},
+                               as_of_index=500, lookback=L, horizon=H,
+                               top_k=5, symbol="TEST", dates=dt)
+    cutoff = dt[500]
+    check(all(dt[dt.index(a.end) + H] < cutoff for a in withdates.analogs),
+          "every foreign match's forward window ends before as_of")
+
+    print("\n--- 5. it matches shape, not price level ---")
     # identical shape, 50x the price, different symbol
     scaled = [p * 50.0 for p in px[:400]]
     lib2 = {"TEST": (dt, px), "RICH": (dates(400), scaled)}
     fc4 = A.find_analogs(px[:200], lib2, symbol="TEST", lookback=L,
-                         horizon=H, top_k=3)
+                         horizon=H, top_k=3, dates=dt[:200])
     check(any(a.symbol == "RICH" for a in fc4.analogs),
           "a 50x-priced series with the same shape is reachable")
 
@@ -138,7 +174,7 @@ def main():
     check(d < 1e-6, "quarter-volatility copy is a near-exact shape match",
           f"distance {d:.2e}")
 
-    print("\n--- 5. the distribution is a distribution ---")
+    print("\n--- 6. the distribution is a distribution ---")
     check(len(fc.median_path) == len(fc.low_path) == len(fc.high_path),
           "median/low/high paths are the same length")
     check(all(lo <= m <= hi for lo, m, hi in
@@ -150,7 +186,7 @@ def main():
     check(abs(fc.agreement - expect) < 1e-9,
           "agreement counts the majority direction, not the up direction")
 
-    print("\n--- 6. it refuses rather than guesses ---")
+    print("\n--- 7. it refuses rather than guesses ---")
     short = A.find_analogs(px[:10], lib, symbol="TEST", lookback=L, horizon=H)
     check(not short.ok and "needs" in short.reason,
           "too little history is a refusal with a reason", short.reason)
@@ -163,7 +199,7 @@ def main():
                              horizon=H).ok,
           "an empty library is an empty answer, not a crash")
 
-    print("\n--- 7. the shape transform ---")
+    print("\n--- 8. the shape transform ---")
     check(A._shape([0.0] * 10) is None, "zero-variance window has no shape")
     check(A._shape([0.01, float('nan'), 0.02]) is None,
           "a gap in the window disqualifies it rather than being filled")
@@ -178,7 +214,7 @@ def main():
     check(abs(A._corr([1, 2, 3], [3, 2, 1]) + 1.0) < 1e-9,
           "and of a reversed copy is -1")
 
-    print("\n--- 8. serialisation ---")
+    print("\n--- 9. serialisation ---")
     d = A.to_dict(fc)
     check(d["ok"] and d["symbol"] == "TEST", "round-trips the basics")
     check(len(d["analogs"]) == len(fc.analogs), "keeps every analog")

@@ -162,13 +162,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, {"ok": False, "reason": "no_symbol",
                                  "accuracy": ANAPI.ACCURACY})
                 return
-            def _i(k, d):
-                try:
-                    return int(float((q.get(k) or [d])[0]))
-                except (TypeError, ValueError):
-                    return d
-            self._send(200, _analog_response(sym, _i("lookback", AN.LOOKBACK),
-                                             _i("horizon", AN.HORIZON)))
+            # clamp exactly as api/analog.py does, or dev accepts inputs
+            # production rejects and the two stop being the same surface
+            self._send(200, _analog_response(
+                sym,
+                ANAPI._int((q.get("lookback") or [None])[0], AN.LOOKBACK,
+                           20, ANAPI.MAX_LOOKBACK),
+                ANAPI._int((q.get("horizon") or [None])[0], AN.HORIZON,
+                           5, ANAPI.MAX_HORIZON)))
             return
         rel = path.lstrip("/") or "index.html"
         if rel.endswith("/"):

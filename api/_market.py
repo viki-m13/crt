@@ -547,22 +547,34 @@ def _history_alphavantage(symbol: str) -> dict | None:
     if len(rows) < 260:
         return None
     dates = [r[0] for r in rows]
-    px = _undo_splits([r[1] for r in rows])
+    adj: list = []
+    px = _undo_splits([r[1] for r in rows], log=adj)
     return {"ok": True, "symbol": symbol, "name": symbol, "currency": "USD",
             "exchange": None, "dates": dates, "closes": px,
-            "bars": len(px), "source": "alphavantage"}
+            "bars": len(px), "source": "alphavantage",
+            "split_adjustments": [dict(a, date=dates[a["index"]]) for a in adj]}
 
 
-def _undo_splits(px: list[float], thresh: float = 0.42) -> list[float]:
-    """Back-adjust obvious split jumps in an unadjusted close series.
+def _undo_splits(px: list[float], thresh: float = 0.62,
+                 log: list | None = None) -> list[float]:
+    """Back-adjust split jumps in an UNADJUSTED close series.
 
-    A single-day move beyond +/-58% that lands near a simple ratio (2, 3, 4,
-    5, 7, 10, 3/2, 2/3...) is a split, not a return. Everything before it is
-    rescaled. Real single-day crashes exist, so the guard only fires when the
-    move is close to a clean ratio, and a false negative (leaving a real
-    crash alone) is much cheaper here than a false positive.
+    Only reached when the adjusted primary source is unavailable and a
+    fallback returns raw closes. An unhandled 4:1 split is a -75% bar, which
+    every downstream calculation would read as a crash.
+
+    THE LIMITATION, stated plainly because it cannot be engineered away: on
+    close-only data a genuine -50% day is arithmetically identical to a 2:1
+    split, and this will treat it as a split. Tightening the tolerance does
+    not help — a stock that falls 50.5% prints a ratio of 2.02. The guard is
+    therefore conservative in the two places where it can be (|log r| > 0.62,
+    so a -46% day is left alone; no 1.25 or 1.5 ratios, which are rare as
+    splits and common as selloffs) and every adjustment it does make is
+    appended to `log` so a caller can surface it rather than discover it.
+
+    The real fix is an adjusted data source. This is the fallback's fallback.
     """
-    RATIOS = (2, 3, 4, 5, 6, 7, 8, 10, 20, 1.5, 2.5, 1.25)
+    RATIOS = (2, 3, 4, 5, 6, 7, 8, 10, 20)
     out = list(px)
     for i in range(len(out) - 1, 0, -1):
         a, b = out[i - 1], out[i]
@@ -575,6 +587,9 @@ def _undo_splits(px: list[float], thresh: float = 0.42) -> list[float]:
                    if r > 1 else abs(math.log(r * x)))
         f = best if r > 1 else 1.0 / best
         if abs(math.log(r / f)) < 0.06:          # within ~6% of a clean split
+            if log is not None:
+                log.append({"index": i, "factor": round(f, 4),
+                            "raw_ratio": round(r, 4)})
             for j in range(i):
                 out[j] /= f
     return out

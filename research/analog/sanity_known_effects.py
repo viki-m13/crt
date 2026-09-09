@@ -58,7 +58,7 @@ def main():
     print("=" * 78)
     print(f"  {'effect':<22}{'IC':>9}{'':>12}")
     tm = report("12-1 momentum", ic(m.shift(1) / m.shift(12) - 1, fwd, 12))
-    report("1-month reversal", ic(m.shift(1) / m.shift(2) - 1, fwd, 3))
+    report("1-month reversal", ic(m / m.shift(1) - 1, fwd, 3))
 
     print()
     print("=" * 78)

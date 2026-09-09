@@ -35,26 +35,27 @@ import _market as M     # noqa: E402
 # Frozen output of research/analog/validate.py. Editing these numbers without
 # re-running that script is falsifying a measurement.
 ACCURACY = {
-    "directional_accuracy": 0.5050,
-    "always_up_baseline": 0.5572,
-    "edge_vs_baseline": -0.0522,
-    "t_stat": -3.19,
-    "random_control_accuracy": 0.5118,
-    "information_coefficient": -0.0071,
-    "ic_t_stat": -0.43,
-    "forecasts": 3968,
+    "directional_accuracy": 0.5284,
+    "always_up_baseline": 0.5568,
+    "edge_vs_baseline": -0.0283,
+    "t_stat": -1.86,
+    "random_control_accuracy": 0.5162,
+    "information_coefficient": -0.0181,
+    "ic_t_stat": -0.91,
+    "forecasts": 3931,
     "dates": 128,
     "horizon_days": 60,
-    "beats_predicting_zero": 0.409,
+    "beats_predicting_zero": 0.424,
+    "scope": "the ticker's own history, which is what this endpoint searches",
     "verdict": (
-        "Measured out of sample on 3,968 non-overlapping forecasts, this "
-        "method called direction correctly 50.5% of the time. Simply "
+        "Measured out of sample on 3,931 non-overlapping forecasts, this "
+        "method called direction correctly 52.8% of the time. Simply "
         "assuming the stock rises was right 55.7% of the time. Choosing the "
-        "windows at random instead of matching them scored 51.2% — the same, "
-        "which means the pattern matching itself adds nothing. Closer "
-        "matches did not do better. Use this to see what has happened "
-        "before, not to predict what happens next."),
-    "method": "research/analog/validate.py",
+        "windows at random instead of matching them scored 51.6%. Closer "
+        "matches did not do better — the tightest quartile scored worst. "
+        "Use this to see what has happened before, not to predict what "
+        "happens next."),
+    "method": "research/analog/validate.py (own-history mode, the default)",
 }
 
 MAX_LOOKBACK = 500
@@ -76,7 +77,11 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Cache-Control", "public, max-age=900")
+        # Only successes are cacheable. A rate-limit is a statement about us,
+        # not about the ticker; caching it for 15 minutes would make the UI's
+        # "try again shortly" a lie at the CDN.
+        self.send_header("Cache-Control", "public, max-age=900"
+                         if payload.get("ok") else "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -113,9 +118,12 @@ class handler(BaseHTTPRequestHandler):
                     "accuracy": ACCURACY})
 
             # The library is the ticker's own history. Matching a stock to
-            # other stocks is supported by the engine but not offered here:
-            # it needs a preloaded universe, and the accuracy above was
-            # measured on this configuration.
+            # other stocks is supported by the engine but not offered here —
+            # it needs a preloaded universe. The ACCURACY block above is
+            # measured in exactly this configuration; the first version was
+            # measured cross-sectionally over 400 tickers and reported as if
+            # it described this, which overstated nothing but described the
+            # wrong thing (50.5% there, 52.8% here).
             lib = {symbol: (h["dates"], h["closes"])}
             fc = A.find_analogs(h["closes"], lib, lookback=lookback,
                                 horizon=horizon, symbol=symbol,

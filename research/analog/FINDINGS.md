@@ -1,10 +1,18 @@
 # Does analog pattern matching predict what a stock does next?
 
-**No.** Directional accuracy 50.5% out of sample, against a 55.7% baseline
+**No.** Directional accuracy 52.8% out of sample, against a 55.7% baseline
 you get by assuming the stock goes up. The edge over that baseline is
-**−5.2 points, t = −3.19** clustered by date. Choosing the windows at random
-instead of matching them scores the same, which is how we know the matching
-itself contributes nothing.
+**−2.8 points, t = −1.86** clustered by date — indistinguishable from zero,
+and on the wrong side of it.
+
+> **Correction (2026-09-09).** The first version of this file reported 50.5%.
+> That figure was measured with the search ranging over all 400 tickers'
+> histories, while `api/analog.py` searches only the queried ticker's own
+> history — so the published number described a configuration that does not
+> ship. Re-measured in the shipped configuration: 52.8%. The conclusion is
+> unchanged; the number was wrong and is corrected throughout. Two look-ahead
+> defects found in the same review are fixed and now have regression tests
+> (`tests/test_analog.py` sections 2b and 4).
 
 This was built because a 99%-accurate version was requested. That target is
 not reachable — a method that called three-month direction 99% of the time
@@ -28,12 +36,19 @@ tickers with the most history, 608,618 candidate windows.
 Each of these was included because without it the result would look better
 than it is.
 
-**No look-ahead.** At test date `t`, a candidate window ending at `s` is
-admissible only if `s + 60 < t` — its own outcome had to already be knowable.
-Matching windows whose futures overlap the forecast period is the standard
-way this technique manufactures skill. Enforced in `_analog.find_analogs` and
-checked in `tests/test_analog.py`, including the decisive test: tripling every
-future bar must not change the answer.
+**No look-ahead, and no self-explanation.** At test date `t`, a candidate
+window ending at `s` is admissible only if `s + 60 < t - 120` — both its own
+outcome and the window itself must be finished before the query window even
+opens. The weaker rule (`s + 60 <= t`) lets a match ending 60 days ago present
+the right half of the query window as its own sequel. Enforced in
+`_analog.find_analogs` and checked in `tests/test_analog.py`, including the
+decisive test: tripling every future bar must not change the answer.
+
+**Cross-symbol matches are gated by date, and fail closed.** Bar indices in
+another series mean nothing in ours, so a foreign window is admitted only on
+a date comparison. If no dates are supplied the series is skipped and listed
+in `skipped_unverifiable` — the original code silently admitted it, and
+returned a match from 357 bars *after* the as-of date.
 
 **Non-overlapping outcomes.** Test dates are spaced 60 trading days apart, so
 no two of the 3,968 forecasts share a forward window.
@@ -52,10 +67,13 @@ up" is the bar to clear, not 50%.
 five are five shifts of one window: one event counted five times, and an
 agreement score that is pure double-counting.
 
-**Same code, verified.** `validate.py` reimplements the search in numpy for
-speed. `check_equivalence.py` requires it to return byte-identical analogs to
-`api/_analog.py` on real ticker-dates — 12/12 matched. Otherwise the accuracy
-figures would describe code no user runs.
+**Same code, AND same configuration.** `validate.py` reimplements the search
+in numpy for speed, and `check_equivalence.py` requires it to return identical
+analogs to `api/_analog.py` on real ticker-dates. That check passed while the
+published number was still wrong, because it verified the *algorithm* and not
+the *search scope* — the endpoint searched one ticker's history and the
+validation searched four hundred. Own-history is now the default and
+`--cross-sectional` is an explicit opt-in.
 
 **A known effect, to prove the test can find one.** 12-1 momentum on this same
 panel: **IC +0.0188, t = +2.31** over 364 months. The harness detects a real
@@ -65,33 +83,34 @@ cross-sectional signal. Analog matching's IC is −0.0071, t = −0.43.
 
 | | accuracy | t (clustered, 128 dates) |
 |---|---|---|
-| analog matcher | **50.50%** | +59.95 |
-| random windows (control) | 51.18% | +55.96 |
-| always say up (baseline) | 55.72% | +30.29 |
-| **matcher − baseline** | **−5.22 pts** | **−3.19** |
-| control − baseline | −4.54 pts | −3.24 |
+| analog matcher | **52.84%** | +53.62 |
+| random windows (control) | 51.62% | +55.18 |
+| always say up (baseline) | 55.68% | +30.27 |
+| **matcher − baseline** | **−2.83 pts** | **−1.86** |
+| control − baseline | −4.06 pts | −2.78 |
 
 The matcher and the random control are statistically indistinguishable.
 
 **Magnitude carries no information either.** Correlation of predicted with
-realised return +0.0027; cross-sectional IC −0.0071, t = −0.43.
+realised return −0.0325; cross-sectional IC −0.0181, t = −0.91.
 
 **Confidence does not rescue it.** When all five analogs agreed on direction
-(n=300), accuracy was 49.0% against a 51.3% baseline — still negative.
+(n=413), accuracy was 52.8% against a 55.7% baseline — still negative.
 
-**Closer matches are not better.** The tightest quartile of matches had the
-*worst* edge (−6.96 pts); the loosest had the best (−3.43). If the shape
-metric were measuring anything, this table would slope the other way.
+**Closer matches are not better.** The tightest quartile of matches beat the
+baseline by −2.54; the loosest quartile was the only one positive (+0.92). If
+the shape metric were measuring anything, this table would slope the other
+way.
 
 | match quality | n | hit rate | always-up | edge |
 |---|---|---|---|---|
-| closest 25% | 992 | 48.89% | 55.85% | −6.96 |
-| 2nd quartile | 992 | 51.01% | 55.75% | −4.74 |
-| 3rd quartile | 992 | 50.71% | 56.45% | −5.75 |
-| loosest 25% | 992 | 51.41% | 54.84% | −3.43 |
+| closest 25% | 983 | 52.39% | 54.93% | −2.54 |
+| 2nd quartile | 983 | 50.97% | 56.46% | −5.49 |
+| 3rd quartile | 982 | 51.63% | 56.11% | −4.48 |
+| loosest 25% | 983 | 56.15% | 55.24% | +0.92 |
 
 **Predicting zero beats it.** The forecast is closer to the realised return
-than a flat "no change" guess on only **40.9%** of forecasts.
+than a flat "no change" guess on only **42.4%** of forecasts.
 
 ## Why the chart still ships
 
@@ -113,4 +132,5 @@ python tests/test_analog.py                        # 28 checks, incl. look-ahead
 python research/analog/check_equivalence.py        # fast search == shipped code
 python research/analog/sanity_known_effects.py     # momentum shows up
 python research/analog/validate.py --tickers 400 --points 4000
+python research/analog/validate.py --cross-sectional   # the other scope
 ```

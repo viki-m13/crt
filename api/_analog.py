@@ -5,11 +5,21 @@ a stock to 100, sweep history for the windows whose shape matches, and plot
 what each of those did over the following H days. What makes it honest or
 dishonest is entirely in the details, and there are four that decide it:
 
-1.  MATCHES MUST PRE-DATE THE OUTCOME THEY CLAIM. A window ending at `s` is
-    only usable as evidence at time `t` if `s + H <= t` — otherwise the
-    analog's own future is inside the period we are pretending to forecast,
-    and the backtest reports skill it did not have. `as_of` enforces this and
-    nothing else in this module is allowed to bypass it.
+1.  MATCHES MUST PRE-DATE THE OUTCOME THEY CLAIM, AND MUST NOT OVERLAP THE
+    QUERY. A window ending at `s` is only usable at time `t` if `s + H <= t`
+    — otherwise the analog's own future is inside the period we are
+    pretending to forecast. Within the query's own series that is not
+    sufficient: a match ending exactly H bars ago has a "future" that IS the
+    right half of the window we are matching on, so the chart would draw
+    recent history as its own sequel. The rule is therefore the stricter
+    `s + H < t - L`: the analog and everything that followed it must be over
+    before the query window even begins.
+
+    When the library holds series other than the query, admissibility can
+    only be judged by DATE, because bar indices in another series mean
+    nothing in ours. If `as_of_index` is set and `dates` was not supplied,
+    those series are skipped entirely rather than waved through — the gate
+    fails closed, and `Forecast.skipped_unverifiable` records it.
 
 2.  MATCHES MUST NOT OVERLAP EACH OTHER. Adjacent windows are nearly the same
     window. Take the top five by raw distance and you get one analog counted
@@ -48,7 +58,7 @@ class Analog:
     start: str                       # date of the first bar of the match
     end: str                         # date of the last bar of the match
     distance: float                  # lower is a closer match
-    correlation: float               # of daily returns, for a second opinion
+    correlation: float               # of the two normalised cumulative paths
     path: list[float] = field(default_factory=list)      # matched window, =100
     forward: list[float] = field(default_factory=list)   # what followed, =100
     forward_return: float = 0.0      # total return over the forward window
@@ -69,6 +79,7 @@ class Forecast:
     agreement: float = 0.0           # share of analogs agreeing on direction
     median_return: float = 0.0
     searched: int = 0
+    skipped_unverifiable: list[str] = field(default_factory=list)
     reason: str = ""
 
     @property
@@ -189,37 +200,47 @@ def find_analogs(query_closes, library, *, as_of_index: int | None = None,
         return Forecast(symbol=symbol, as_of=as_of_date, lookback=lookback,
                         horizon=horizon, reason="query window is flat or has gaps")
 
-    hits, searched = [], 0
+    hits, searched, skipped = [], 0, []
     for sym, (sym_dates, sym_closes) in library.items():
         sym_dates = list(sym_dates)
         sym_closes = list(sym_closes)
+        # A foreign series can only be gated by date. Without dates we cannot
+        # prove a window predates as_of, so we refuse to use it at all.
+        if sym != symbol and as_of_index is not None and not as_of_date:
+            skipped.append(sym)
+            continue
         rets = _log_returns(sym_closes)
         n = len(sym_closes)
         # j indexes the LAST bar of a candidate match window
         for j in range(lookback, n - horizon):
-            # --- the look-ahead gate --------------------------------------
+            # --- the admissibility gate -----------------------------------
             if sym == symbol:
-                # same series: the forward window must end before as_of
-                if j + horizon >= end:
+                # the match AND its sequel must finish before the query
+                # window opens, so a match never explains itself
+                if j + horizon >= end - 1 - lookback:
                     break
             elif as_of_date and sym_dates[j + horizon] >= as_of_date:
                 # different series: compare by date, indices are not aligned
                 break
             searched += 1
-            w = rets[j - lookback:j]
-            s = _shape(w)
-            if s is None:
+            sh = _shape(rets[j - lookback:j])
+            if sh is None:
                 continue
-            hits.append((_distance(q_shape, s), sym, j, s))
+            # only the key is retained: holding every candidate's full
+            # `lookback`-long shape costs ~170 MB at the permitted maximum
+            # and times the request out. The top few are recomputed below.
+            hits.append((_distance(q_shape, sh), sym, j))
 
     if not hits:
         return Forecast(symbol=symbol, as_of=as_of_date, lookback=lookback,
                         horizon=horizon, searched=searched,
+                        skipped_unverifiable=skipped,
                         reason="no admissible history to match against")
 
     out: list[Analog] = []
-    for d, sym, j, s in _dedupe(hits, min_gap)[:top_k]:
+    for d, sym, j in _dedupe(hits, min_gap)[:top_k]:
         sym_dates, sym_closes = library[sym]
+        s = _shape(_log_returns(sym_closes)[j - lookback:j])
         window = list(sym_closes[j - lookback:j + 1])
         fwd = list(sym_closes[j:j + horizon + 1])
         out.append(Analog(
@@ -233,6 +254,7 @@ def find_analogs(query_closes, library, *, as_of_index: int | None = None,
 
     fc = Forecast(symbol=symbol, as_of=as_of_date, lookback=lookback,
                   horizon=horizon, searched=searched, analogs=out,
+                  skipped_unverifiable=skipped,
                   query_path=[round(x, 3)
                               for x in _rebase(hist[-(lookback + 1):])])
 
@@ -270,6 +292,7 @@ def to_dict(fc: Forecast) -> dict:
         "lookback": fc.lookback,
         "horizon": fc.horizon,
         "searched": fc.searched,
+        "skipped_unverifiable": fc.skipped_unverifiable,
         "reason": fc.reason,
         "query_path": fc.query_path,
         "median_path": fc.median_path,
