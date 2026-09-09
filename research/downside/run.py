@@ -6,7 +6,7 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 from .features import load_archive,make_features
-from .model import Config,labels_for_horizon,fit_fold
+from .model import Config,METHODS,labels_for_horizon,fit_fold
 from .policy import replay,controls,metrics,calibration,clean_json
 
 
@@ -17,15 +17,23 @@ def dump(path,obj):
 def evaluate(root):
     meta=json.loads((root/'metadata.json').read_text());kw=meta['config']
     for k in ('horizons','thresholds'):kw[k]=tuple(kw[k])
-    cfg=Config(**kw);f=pd.read_parquet(root/'features.parquet')
+    cfg=Config(**kw);f=pd.read_parquet(root/'features.parquet',columns=['row_id','i','date','ticker','vol63_rank','rel63_rank'])
+    first=f.i.loc[pd.to_datetime(f.date).dt.year>=meta['years'][0]].min()
+    categories={c:pd.CategoricalDtype(sorted(f[c].unique())) for c in ['date','ticker']}
+    categories['regime']=pd.CategoricalDtype(['bull','stress'])
+    needed=['row_id','i','date','ticker','horizon','exit_i','fit_i','reference_price',
+            'vol63','vol63_rank','rel63_rank','regime',*METHODS,'gate_rebound','gate_squeeze_veto']
     preds=[];outcomes=[]
     for h in cfg.horizons:
         r=pd.read_parquet(root/f'forecasts_{h}.parquet');y=pd.read_parquet(root/f'outcomes_{h}.parquet')
-        if len(r):preds.append(r)
-        outcomes.append(y)
+        if len(r):
+            r=r[needed].copy()
+            for c,dtype in categories.items():r[c]=r[c].astype(dtype)
+            preds.append(r)
+        outcomes.append(y.loc[y.i>=first].copy())
     r=pd.concat(preds,ignore_index=True) if preds else pd.DataFrame(columns=['row_id','horizon','i','exit_i'])
     y=pd.concat(outcomes,ignore_index=True)
-    first=f.i.loc[pd.to_datetime(f.date).dt.year>=meta['years'][0]].min()
+    del preds,outcomes
     y=y.loc[y.i>=first];dates=sorted(f.i.loc[(f.i>=first)&pd.to_datetime(f.date).dt.year.isin(meta['years'])].unique())
     picks,decisions=replay(r,y,dates,cfg)
     picks=controls(picks,y,f)
@@ -79,6 +87,7 @@ def main():
                 for x in Path(__file__).parent.glob('*.py')})
         audits=[]
     dump(out/'metadata.json',meta)
+    y=chunks=pred=None
     for h in cfg.horizons:
         if a.resume and (out/f'forecasts_{h}.parquet').exists():
             completed=[v for v in audits if v['horizon']==h]
@@ -98,6 +107,9 @@ def main():
         pred=pd.concat(chunks,ignore_index=True) if chunks else pd.DataFrame()
         pred.to_parquet(out/f'forecasts_{h}.parquet',index=False);dump(out/'fit_audit.json',audits)
     meta['training_seconds']=time.time()-start;dump(out/'metadata.json',meta)
+    del p,m,market,f,y,chunks,pred
+    import gc
+    gc.collect()
     evaluate(out);meta=json.loads((out/'metadata.json').read_text());meta['total_seconds']=time.time()-start;dump(out/'metadata.json',meta)
     print('DONE',a.universe,round(meta['total_seconds'],2),flush=True)
 
