@@ -1,0 +1,34 @@
+# Funding cash-flow ladder — separate crypto extension, pre-outcome registration
+
+The user changed the objective to an honest strategy with net excess-return Sharpe >=3, without naming an asset in that latest instruction. The equity work remains intact and unsuccessful so far. This extension explicitly tests CRYPTO, not an individual-stock predictor and not success at the earlier stock-selection mandate. No live orders, account setup, region/access bypass or deployment. Public historical data only. Cash-and-carry/funding arbitrage is established; the custom funding-buffer/tenor decision rule is an experimental construction, not a justified global novelty claim.
+
+## First the economic edge and exact accounting
+
+Leveraged perpetual buyers may pay actual periodic funding to shorts. A spot/coin collateral holder hedged with an inverse USD-face perpetual short receives that cash flow while approximately neutralizing coin direction. This is a proposed risk premium paid by a counterparty, NOT free variance drag or manufactured prediction confidence. Negative funding, basis changes, fees, liquidation/operational failures, stablecoin conversion and exchange loss can overwhelm it.
+
+For inverse short USD face N entered at price P0 and marked at P: coin P&L=N*(1/P-1/P0). Initially purchase/hold Q=N/P0 coin units. Then total coins before funding equal N/P. USD-marked collateral value at the SAME price is N. At a distinct spot reference S it is N*S/P, which exposes basis instead of erasing it. Entry spot purchase cost is Q*S0, not assumed N when basis differs. Use observed independent spot and perpetual marks and actual signed funding; never replace missing basis or funding with zero. Keep funding coin exposure or convert explicitly with costs, rather than pretending coin income stays in USD for free.
+
+## Fixed data request and coverage
+
+Fixed BTCUSD_PERP and ETHUSD_PERP inverse contracts; matching BTCUSDT and ETHUSDT spot are USDT-valued proxies, NOT verified fiat USD. Use actual historical perpetual trade prices, funding rate event timestamps and spot prices. Mark-price series preferred for funding valuation; if unavailable, record traded-price proxy and do NOT call liquidation realism validated. Public Binance archives/checksums or documented API responses may be used; stop on geographic/access restrictions. No private Stormcodex/Vol data copied to public CRT. Download 2021-01 through 2025-12 for both instruments as a predetermined five-year scope. Historical archive revisions and lack of original publication timestamps prevent a complete historical realtime-availability claim.
+
+## Fixed strategies / no look-ahead
+
+All decisions after a complete UTC daily close; execute one complete day later. Only already-settled funding contributes to signals. 60/90 calendar-day locked lots (>=30 trading sessions in ordinary calendar spans, explicitly different 24/7 market clock). Compare:
+
+A. constant equal-allocation fully collateralized cash-and-carry (baseline).
+B. persistent funding: enter only when both trailing30-day and trailing7-day realized funding sums, annualized, exceed trailing observable risk-free plus 2%.
+C. buffer-tested funding: B plus a positive trailing90-day funding sum after subtracting the cost of all four entry/exit legs and a fixed 1% of face operational buffer. This buffer is a conservative hurdle, not an insurance payout.
+D. funding/basis compensation: C plus current basis magnitude <0.5% and trailing7-day realized funding greater than half of the current positive perpetual premium. Tests payment compensation for basis compression risk.
+
+Two-tenor adaptive policy: select60 days when trailing7/30 funding rates agree within50% relative scale; otherwise90, only using current information. Original expiry cannot be extended. Also show each fixed tenor separately. Six-day issue cadence, staggered cohorts; at most40% of NAV spot collateral deployed per instrument and total80%, leaving20% reserve cash. No notional leveraging above fully collateralized inverse hedge; sum absolute spot+derivative exposures can approach1.6x NAV, explicitly not the equity batch's1x-gross limit.
+
+Initial NAV100,000 USDT units; inverse contract notional rounded to its actual contract-size multiple (BTC100USD, ETH10USD subject to official specification verification). Spot purchase/sale10bp per side, perpetual5bp per side; total planned roundtrip30bp of paired face. All virtual same-instrument orders netted before fees where legally/operationally simultaneous, otherwise charge conservatively. Funding receipts held in coin until scheduled daily conversion, charged10bp on conversion amount. No interest on coin collateral. Uninvested stable cash receives ZERO base interest; subtract observed available risk-free opportunity cost for the full NAV. This is conservative to idle cash but avoids pretending exchange USDT earns Treasury rates. Cost sensitivity doubles all trading costs; funding haircut25%; liquidation/mark-basis stress and exchange-loss shocks of1%/5%NAV shown separately, not claimed as statistically calibrated probabilities.
+
+## Selection, validation and falsification
+
+2021–2022 validation; 2023–2025 final model-relative test (new for this exact batch, possibly previously researched in other projects). Choose one policy on validation net excess Sharpe BEFORE viewing its test metric. All variants reported; no optimizing exposure leverage to make Sharpe bigger. Include every calendar day, including idle and negative-funding days. Daily excess Sharpe sqrt365; weekly-aggregated Sharpe sqrt52; autocorrelation adjustment and63-day block bootstrap. Full cumulative daily marked account equity, initial-value drawdown, worst day/week, basis contribution, funding income, conversion costs, turnover, reserved collateral, peak gross and minimum margin buffer. No closed-trade-only metrics, no excluding exchange stress periods.
+
+Synthetic tests: perfect matched-price hedge cancels coin movement under arbitrary positive path; no funding/no fees implies zero paired P&L; a deliberately changing basis creates real gain/loss; negative funding subtracts; signals cannot see unsettled funding; entry-day funding earned only after entry; cash/coin notional reconciles every time; fee/netting conservation; forced liquidation/counterparty shocks not ignored. Delayed fills + another day and daily-vs-event mark matching are required sensitivities. Both-asset and leave-one-asset results prevent pooled headline hiding concentration.
+
+Finding a high historical Sharpe in this scope does not prove a never-before-made strategy, stock-selection skill, legal venue availability, or future Sharpe3. Actual historical contract/risk rules, executable funding snapshots, collateral transfer/liquidation and venue-credit risk must remain disclosed if not fully measured. Failure does not end the equity or broader edge research.
