@@ -38,25 +38,53 @@ def evaluate(root):
     print('EVALUATED',meta['inputs']['universe'],'policies',len(summary),'picks all policies',len(picks),flush=True)
 
 
+def validate_resume(meta,cfg,universe,years,null):
+    canonical=lambda x:json.dumps(x,sort_keys=True)
+    if canonical(meta['config'])!=canonical(asdict(cfg)) or meta['years']!=years or meta['null']!=null:
+        raise ValueError('Resume configuration differs from original experiment')
+    if meta['inputs']['universe']!=universe:
+        raise ValueError('Resume universe differs')
+    for name in ('model.py','features.py','policy.py'):
+        current=hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+        if meta['source_hashes'].get(name)!=current:
+            raise ValueError('Resume numerical source changed: '+name)
+
+
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--inputs',type=Path,required=True)
     ap.add_argument('--output',type=Path,required=True);ap.add_argument('--universe',choices=['sp500','ndx'],required=True)
     ap.add_argument('--null',action='store_true');ap.add_argument('--years',type=int,nargs='+')
     ap.add_argument('--horizons',type=int,nargs='+');ap.add_argument('--evaluate-only',action='store_true')
+    ap.add_argument('--resume',action='store_true')
     a=ap.parse_args();out=a.output;out.mkdir(parents=True,exist_ok=True)
     if a.evaluate_only:evaluate(out);return
     start=time.time();cfg=Config(**({'horizons':tuple(a.horizons)} if a.horizons else {}))
     p,m,market,notes=load_archive(a.inputs,a.universe)
     print('INPUT',a.universe,p.shape,notes['price_cutoff'],flush=True)
-    f,coverage,cols=make_features(p,m,market)
-    f.to_parquet(out/'features.parquet',index=False);coverage.to_csv(out/'coverage.csv',index=False)
     first=2013 if a.universe=='sp500' else 2018;years=a.years or list(range(first,p.index[-1].year+1))
-    meta=dict(config=asdict(cfg),years=years,null=bool(a.null),inputs=notes,cutoff_i=len(p)-1,
-        eligible_rows=len(f),tickers=f.ticker.nunique(),feature_columns=cols,
-        python=platform.python_version(),source_hashes={x.name:hashlib.sha256(x.read_bytes()).hexdigest()
-            for x in Path(__file__).parent.glob('*.py')})
-    dump(out/'metadata.json',meta);audits=[]
+    if a.resume:
+        meta=json.loads((out/'metadata.json').read_text())
+        validate_resume(meta,cfg,a.universe,years,bool(a.null))
+        if meta['inputs']['manifest_sha256']!=notes['manifest_sha256']:
+            raise ValueError('Resume input manifest changed')
+        f=pd.read_parquet(out/'features.parquet');cols=meta['feature_columns']
+        audits=json.loads((out/'fit_audit.json').read_text())
+        meta['resumed_after_resource_interruption']=True
+    else:
+        f,coverage,cols=make_features(p,m,market)
+        f.to_parquet(out/'features.parquet',index=False);coverage.to_csv(out/'coverage.csv',index=False)
+        meta=dict(config=asdict(cfg),years=years,null=bool(a.null),inputs=notes,cutoff_i=len(p)-1,
+            eligible_rows=len(f),tickers=f.ticker.nunique(),feature_columns=cols,
+            python=platform.python_version(),source_hashes={x.name:hashlib.sha256(x.read_bytes()).hexdigest()
+                for x in Path(__file__).parent.glob('*.py')})
+        audits=[]
+    dump(out/'metadata.json',meta)
     for h in cfg.horizons:
+        if a.resume and (out/f'forecasts_{h}.parquet').exists():
+            completed=[v for v in audits if v['horizon']==h]
+            if sorted(v['year'] for v in completed)==sorted(years):
+                print('RESUME verified completed horizon',h,flush=True);continue
+        audits=[v for v in audits if v['horizon']!=h]
         y=labels_for_horizon(f,p,market,h);y.to_parquet(out/f'outcomes_{h}.parquet',index=False);chunks=[]
         for year in years:
             asof=int(p.index.searchsorted(pd.Timestamp(year,1,1)))
