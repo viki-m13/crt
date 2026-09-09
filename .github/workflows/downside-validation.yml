@@ -1,0 +1,57 @@
+name: Direct downside reproducibility
+on:
+  push:
+    branches: [research/downside-20260909]
+    paths: [.github/workflows/downside-validation.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        universe: [sp500, ndx]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      PYTHONWARNINGS: ignore
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /research/failure_first/
+            /research/downside/
+            /tests/test_failure_first.py
+            /tests/test_downside.py
+            /tests/test_downside_resume.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned dependencies
+        run: python -m pip install -r research/downside/requirements.txt
+      - name: Regression tests
+        run: |
+          mkdir -p down-output/${{ matrix.universe }}
+          python -m pytest tests/test_failure_first.py tests/test_downside.py tests/test_downside_resume.py -q | tee down-output/${{ matrix.universe }}/tests.txt
+      - name: Verify immutable input archive
+        run: python -m research.failure_first.download --output pinned-inputs
+      - name: Complete historical downside experiment
+        run: |
+          python -m research.downside.run --inputs pinned-inputs --output down-output/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee down-output/${{ matrix.universe }}/run.log
+          python -m research.downside.validate --inputs pinned-inputs --directory down-output/${{ matrix.universe }} | tee down-output/${{ matrix.universe }}/audit.log
+      - name: Preserve detailed research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: direct-downside-${{ matrix.universe }}
+          retention-days: 30
+          path: |
+            down-output/${{ matrix.universe }}/*.csv
+            down-output/${{ matrix.universe }}/*.json
+            down-output/${{ matrix.universe }}/*.txt
+            down-output/${{ matrix.universe }}/*.log
