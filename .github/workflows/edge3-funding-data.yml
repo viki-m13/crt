@@ -1,0 +1,75 @@
+name: Edge3 public inverse funding data
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-funding-data.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  data:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - name: Fetch fixed archive; no access-restriction bypass
+        shell: bash
+        run: |
+          mkdir -p carry-data
+          python - <<'PY'
+          import requests,hashlib,json,pathlib,zipfile,io,time
+          import pandas as pd
+          from concurrent.futures import ThreadPoolExecutor
+          root=pathlib.Path('carry-data');manifest=[];errors=[];frames={};stop=False
+          start='2021-01';end='2025-12';months=pd.period_range(start,end,freq='M').astype(str)
+          session=requests.Session()
+          def pull(spec):
+              key,url=spec
+              r=requests.get(url,timeout=60)
+              if r.status_code in (403,429,451):raise PermissionError(f'Access restricted: {r.status_code} {url}')
+              if r.status_code==404:return key,None,{'url':url,'status':404}
+              r.raise_for_status();raw=r.content;sha=hashlib.sha256(raw).hexdigest()
+              check=requests.get(url+'.CHECKSUM',timeout=30)
+              verified=False
+              if check.status_code==200:
+                  if check.text.split()[0]!=sha:raise ValueError(f'checksum mismatch {url}')
+                  verified=True
+              elif check.status_code in (403,429,451):raise PermissionError('checksum access restricted')
+              z=zipfile.ZipFile(io.BytesIO(raw));names=[n for n in z.namelist() if n.endswith('.csv')]
+              if len(names)!=1:raise ValueError('ambiguous ZIP')
+              text=z.read(names[0]);first=text.splitlines()[0].decode()
+              header=0 if first[0].isalpha() else None
+              d=pd.read_csv(io.BytesIO(text),header=header)
+              return key,d,{'url':url,'sha256':sha,'archive_checksum_verified':verified,'rows':len(d),'columns':[str(x) for x in d.columns]}
+          todo=[]
+          for asset in ('BTC','ETH'):
+              perp=asset+'USD_PERP';spot=asset+'USDT'
+              for month in months:
+                  for typ in ('klines','markPriceKlines'):
+                      todo.append((asset+'_'+typ,f'https://data.binance.vision/data/futures/cm/monthly/{typ}/{perp}/1h/{perp}-1h-{month}.zip'))
+                  todo.append((asset+'_spot',f'https://data.binance.vision/data/spot/monthly/klines/{spot}/1h/{spot}-1h-{month}.zip'))
+                  todo.append((asset+'_funding',f'https://data.binance.vision/data/futures/cm/monthly/fundingRate/{perp}/{perp}-fundingRate-{month}.zip'))
+          try:
+              with ThreadPoolExecutor(max_workers=3) as ex:
+                  for key,d,meta in ex.map(pull,todo):
+                      if d is None:errors.append(meta)
+                      else:frames.setdefault(key,[]).append(d);manifest.append(meta)
+                      if (len(manifest)+len(errors))%40==0:print('done',len(manifest),'missing',len(errors),flush=True)
+          except Exception as e:stop=True;errors.append({'fatal':str(e)});print(str(e),flush=True)
+          for key,ds in frames.items():
+              d=pd.concat(ds,ignore_index=True);d.columns=[str(x) for x in d.columns]
+              d.to_parquet(root/(key+'.parquet'),index=False)
+          state={'status':'incomplete' if errors or stop else 'complete','files':len(manifest),'errors':errors,'frames':{k:sum(map(len,v)) for k,v in frames.items()},'scope':'Public historical crypto data; no venue account or authorization to trade.'}
+          (root/'source_manifest.json').write_text(json.dumps(manifest,indent=2))
+          (root/'download_state.json').write_text(json.dumps(state,indent=2))
+          (root/'export_hashes.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edge3-inverse-funding-inputs
+          path: carry-data/
+          retention-days: 30
