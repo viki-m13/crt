@@ -1,0 +1,68 @@
+name: Edge3 independent data audit
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-data.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  acquire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - name: Download public immutable inputs without calculating strategy outcomes
+        shell: bash
+        run: |
+          mkdir -p exported
+          python - <<'PY'
+          import requests, pathlib, hashlib, json, io, zipfile
+          import pandas as pd
+          from concurrent.futures import ThreadPoolExecutor
+          R='5f6cb8ffb14bbddf84e156a507cd3e5b37e77957'
+          C='9939e0f1e0f0d601c14b2d21ff14a38da82cc2e2'
+          root=pathlib.Path('exported')
+          def get(url):
+              x=requests.get(url,timeout=120); x.raise_for_status(); return x.content
+          murl=f'https://raw.githubusercontent.com/viki-m13/crt/{C}/experiments/monthly_dca/cache/v2/sp500_pit/sp500_membership_monthly.parquet'
+          mb=get(murl); (root/'sp500_membership.parquet').write_bytes(mb)
+          mem=pd.read_parquet(io.BytesIO(mb))
+          wanted=set(mem.ticker)|{s.replace('.','-') for s in mem.ticker}|{'GOOG','GOOGL','FOX','FOXA','NWS','NWSA','Z','ZG','UA','UAA','DISCA','DISCK','LBTYA','LBTYK','BRK-A','BRK.B','BRK.A','BRK-B','TQQQ','QQQ','UPRO','SPY','SPXL','SSO','TNA','IWM','URTY','TIE','MEE'}
+          url=f'https://api.github.com/repos/viki-m13/bonds/contents/dca/research/data/tiingo/prices?ref={R}'
+          entries=json.loads(get(url)); entries=[e for e in entries if e['name'].startswith('ac_') and e['name'].endswith('.parquet')]
+          entries.sort(key=lambda e:e['name'])
+          provenance=[]; frames=[]
+          for e in entries:
+              raw=get(e['download_url'])
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==e['sha']
+              d=pd.read_parquet(io.BytesIO(raw)); keep=[s for s in d.columns if s in wanted]
+              frames.append(d[keep].copy())
+              provenance.append({'repository':'viki-m13/bonds','ref':R,'path':e['path'],'git_blob':e['sha'],'sha256':hashlib.sha256(raw).hexdigest(),'kept_columns':keep})
+              print(e['name'],len(keep),flush=True)
+          px=pd.concat(frames,axis=1).sort_index()
+          if px.columns.has_duplicates: raise RuntimeError('Duplicate source security symbols; resolve rather than choose silently')
+          px.to_parquet(root/'bonds_prices.parquet')
+          uurl=f'https://raw.githubusercontent.com/viki-m13/bonds/{R}/dca/research/data/tiingo/tiingo_universe_pit.parquet'
+          ub=get(uurl); (root/'bonds_universe.parquet').write_bytes(ub)
+          provenance.append({'repository':'viki-m13/bonds','ref':R,'path':'dca/research/data/tiingo/tiingo_universe_pit.parquet','sha256':hashlib.sha256(ub).hexdigest()})
+          try:
+              ff=get('https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip')
+              (root/'french_daily.zip').write_bytes(ff)
+              provenance.append({'url':'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip','sha256':hashlib.sha256(ff).hexdigest()})
+          except Exception as e:
+              (root/'riskfree_download_error.txt').write_text(str(e))
+          provenance.append({'repository':'viki-m13/crt','ref':C,'path':'experiments/monthly_dca/cache/v2/sp500_pit/sp500_membership_monthly.parquet','sha256':hashlib.sha256(mb).hexdigest()})
+          (root/'provenance.json').write_text(json.dumps(provenance,indent=2))
+          manifest={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()}
+          (root/'export_hashes.json').write_text(json.dumps(manifest,indent=2))
+          print('exported',px.shape,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edge3-independent-inputs
+          path: exported/
+          retention-days: 30
