@@ -1,0 +1,61 @@
+name: Edge3 inverse history bounded queries
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-inverse-history-v2.yml]
+permissions:
+  contents: read
+jobs:
+  history:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - name: Correct public query parameters; never bypass denied access
+        run: |
+          mkdir -p inverse-history
+          python - <<'PY'
+          import requests,time,json,hashlib,pathlib
+          import pandas as pd
+          root=pathlib.Path('inverse-history');manifest=[];state={'status':'started','note':'Prior endpoint returned 400 parameter error, not an access restriction. This retry uses bounded monthly intervals and500 rows. Public research only, not trading authorization.'}
+          sess=requests.Session();sess.headers['User-Agent']='CRT public historical research viktormashalov@gmail.com'
+          def get(path,params):
+              time.sleep(1.25);r=sess.get('https://www.bitmex.com/api/v1/'+path,params=params,timeout=50)
+              if r.status_code in (403,429,451):raise PermissionError(f'Access restricted {r.status_code}; stop this venue')
+              if r.status_code!=200:raise RuntimeError(f'HTTP{r.status_code}: {r.text[:2000]} URL:{r.url}')
+              manifest.append({'url':r.url,'sha256':hashlib.sha256(r.content).hexdigest()});return r.json()
+          try:
+              specs=get('instrument',{'symbol':'XBTUSD','count':1});(root/'current_instrument_specs.json').write_text(json.dumps(specs,indent=2))
+              for typ in ('funding','trade/bucketed'):
+                  rows=[]
+                  for month in pd.period_range('2021-01','2025-12',freq='M'):
+                      cursor=month.start_time.tz_localize('UTC');end=(month+1).start_time.tz_localize('UTC')
+                      while cursor<end:
+                          params={'symbol':'XBTUSD','startTime':cursor.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),'endTime':end.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),'count':500,'reverse':'false'}
+                          if typ=='trade/bucketed':params.update(binSize='1h',partial='false')
+                          chunk=get(typ,params)
+                          if not isinstance(chunk,list):raise ValueError('non-list history')
+                          if not chunk:break
+                          rows.extend(chunk);nxt=pd.to_datetime(chunk[-1]['timestamp'],utc=True)+pd.Timedelta(milliseconds=1)
+                          if nxt<=cursor:raise ValueError('pagination not advancing')
+                          cursor=nxt
+                          if len(chunk)<500:break
+                      print(typ,str(month),len(rows),flush=True)
+                  d=pd.DataFrame(rows)
+                  if d.empty:raise ValueError('empty '+typ)
+                  d.to_parquet(root/('funding.parquet' if typ=='funding' else 'perpetual_hourly.parquet'),index=False);state[typ+'_rows']=len(d)
+              state['status']='complete'
+          except Exception as e:state.update(status='unavailable',reason=str(e));print(str(e),flush=True)
+          finally:
+              (root/'source_manifest.json').write_text(json.dumps(manifest,indent=2));(root/'status.json').write_text(json.dumps(state,indent=2))
+              (root/'export_hashes.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edge3-inverse-history-v2
+          path: inverse-history/
+          retention-days: 30
