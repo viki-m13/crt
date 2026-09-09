@@ -1,0 +1,46 @@
+name: Edge3 funding daily archive check
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-funding-daily-check.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - name: Check distinct official archive, not blocked API
+        run: |
+          mkdir -p funding-daily
+          python - <<'PY'
+          import requests,pathlib,hashlib,zipfile,io,json,time
+          import pandas as pd
+          root=pathlib.Path('funding-daily');state={'status':'started','sources':[]}
+          try:
+              probe='https://data.binance.vision/data/futures/cm/daily/fundingRate/BTCUSD_PERP/BTCUSD_PERP-fundingRate-2022-07-31.zip'
+              r=requests.get(probe,timeout=30)
+              if r.status_code!=200:raise RuntimeError(f'Daily funding archive unavailable: {r.status_code}; no further daily funding requests')
+              for asset in ('BTC','ETH'):
+                  rows=[]
+                  for day in pd.date_range('2022-07-31','2025-12-31',freq='ME').strftime('%Y-%m-%d'):
+                      time.sleep(.4);sym=asset+'USD_PERP'
+                      u=f'https://data.binance.vision/data/futures/cm/daily/fundingRate/{sym}/{sym}-fundingRate-{day}.zip'
+                      r=requests.get(u,timeout=30)
+                      if r.status_code in (403,429,451):raise PermissionError(f'Access restricted {r.status_code}')
+                      r.raise_for_status();z=zipfile.ZipFile(io.BytesIO(r.content));raw=z.read(z.namelist()[0]);d=pd.read_csv(io.BytesIO(raw));rows.append(d)
+                      state['sources'].append({'url':u,'sha256':hashlib.sha256(r.content).hexdigest()})
+                  pd.concat(rows,ignore_index=True).to_parquet(root/(asset+'_funding_daily.parquet'),index=False)
+              state['status']='complete'
+          except Exception as e:state.update(status='unavailable',reason=str(e))
+          (root/'status.json').write_text(json.dumps(state,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edge3-funding-daily-check
+          path: funding-daily/
+          retention-days: 30
