@@ -1,0 +1,70 @@
+name: Failure-first reproducibility
+on:
+  push:
+    branches: [research/failure-first-20260909]
+    paths:
+      - 'research/failure_first/*.py'
+      - 'research/failure_first/requirements.txt'
+      - 'research/failure_first/input_manifest.json'
+      - 'tests/test_failure_first.py'
+      - '.github/workflows/failure-first-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: failure-first-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        universe: [sp500, ndx]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      PYTHONWARNINGS: 'ignore:.*does not have valid feature names.*:UserWarning'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout: |
+            /research/failure_first/
+            /tests/test_failure_first.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned dependencies
+        run: python -m pip install -r research/failure_first/requirements.txt
+      - name: Regression tests
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_failure_first.py -q --disable-warnings | tee tests.log
+      - name: Download and verify immutable public inputs
+        run: python -m research.failure_first.download --output inputs
+      - name: Full historical model evaluation
+        run: |
+          python -m research.failure_first.run --inputs inputs --output output --universe ${{ matrix.universe }}
+          python -m research.failure_first.evaluate --directory output
+          python -m research.failure_first.validate --directory output --inputs inputs
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-first-${{ matrix.universe }}
+          retention-days: 30
+          path: |
+            tests.log
+            output/summary.json
+            output/summary.csv
+            output/picks.csv
+            output/decisions.csv
+            output/reliability.json
+            output/coverage.csv
+            output/metadata.json
+            output/fit_audit.json
+            output/validation.json
