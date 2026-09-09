@@ -36,9 +36,11 @@ def audit(inputs,root,repeat=True):
             np.testing.assert_allclose(r.consensus,r[['direct','competing','recent']].min(axis=1))
             assert (r.fit_i<=r.i).all() and (r.exit_i==r.i+h).all()
             assert (r.gate_rebound==((r.ma200<0)&(r.rel63<0)&(r.r21>0)&(r.lower_high63<0))).all()
-            forecasts.append(r);n+=len(r)
-        labels.append(y)
-    checks['independent_price_endpoint_labels']=sum(len(y) for y in labels)
+            keep=['row_id','i','date','ticker','horizon','exit_i','fit_i','reference_price',
+                'vol63','vol63_rank','rel63_rank','regime',*METHODS,'gate_rebound','gate_squeeze_veto']
+            forecasts.append(r[keep].copy());n+=len(r)
+        labels.append(len(y))
+    checks['independent_price_endpoint_labels']=sum(labels)
     checks['prediction_rows_checked']=n
     audits=json.loads((root/'fit_audit.json').read_text())
     for s in audits:
@@ -47,6 +49,7 @@ def audit(inputs,root,repeat=True):
             assert s['calibration_max_exit_i']<s['asof_i']
     checks['fitted_purged_folds']=sum(x['status']=='fitted' for x in audits)
     pred=pd.concat(forecasts,ignore_index=True) if forecasts else pd.DataFrame()
+    del forecasts
     picks=pd.read_csv(root/'picks.csv') if (root/'picks.csv').stat().st_size>1 else pd.DataFrame()
     bydate={i:g for i,g in pred.groupby('i')} if len(pred) else {}
     checked=0
@@ -68,7 +71,8 @@ def audit(inputs,root,repeat=True):
         asof=int(p.index.searchsorted(pd.Timestamp(year,1,1)));end=int(p.index.searchsorted(pd.Timestamp(year+1,1,1)))
         test=(f.i>=asof)&(f.i<end)
         new,s=fit_fold(f,y,cols,asof,h,cfg,test,shuffle=meta['null'])
-        stored=pred.loc[(pred.horizon==h)&(pred.fit_i==asof)].reset_index(drop=True)
+        stored=pd.read_parquet(root/f'forecasts_{h}.parquet')
+        stored=stored.loc[stored.fit_i==asof].reset_index(drop=True)
         pd.testing.assert_frame_equal(stored,new,check_exact=False,atol=1e-12,rtol=1e-12)
         poison=y.copy();future=poison.exit_i>=asof
         for k in ['down','up','persistent_down','squeeze_proxy']:poison.loc[future,k]=1
@@ -77,6 +81,9 @@ def audit(inputs,root,repeat=True):
         pd.testing.assert_frame_equal(new,attacked,check_exact=True)
         checks['exact_real_fold_reproduced']=len(new);checks['future_label_attack_unchanged']=True
         # Price/benchmark and membership corruption after a cutoff must not affect prior states.
+        del pred,bydate,stored,new,attacked,y,poison
+        import gc
+        gc.collect()
         k=len(p)-100;pm=p.copy();mm=m.copy();bm=b.copy()
         pm.iloc[k+1:]*=19;bm.iloc[k+1:]*=.01;mm.iloc[k+1:]=False
         alter,_,_=make_features(pm,mm,bm)
