@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pattern Finder — Daily Stock Guide</title>
+<meta name="description" content="Find the moments in a stock's own history that look most like right now, and see exactly what followed each one — with the measured accuracy of doing that.">
+<link rel="stylesheet" href="/game.css">
+<link rel="stylesheet" href="/patterns.css">
+</head>
+<body class="patterns-body">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Home">
+    <span class="brand-dot" aria-hidden="true"></span>
+    <span class="brand-name">Signal</span>
+  </a>
+  <span class="tag">Pattern finder</span>
+</header>
+
+<main id="main" class="pat-main">
+
+  <section class="hero">
+    <h1>What has this stock done before, when it looked like this?</h1>
+    <p class="lede">Enter a ticker. We take its last six months of shape,
+      search its entire history for the closest matches, and show what
+      happened over the three months that followed each one.</p>
+  </section>
+
+  <form class="pat-form" id="form" autocomplete="off">
+    <label class="sr-only" for="sym">Ticker symbol</label>
+    <input id="sym" name="sym" type="text" inputmode="text"
+           placeholder="NVDA, AAPL, 7203.T, SAP.DE…" maxlength="16"
+           spellcheck="false" autocapitalize="characters">
+    <button type="submit" id="go">Find patterns</button>
+  </form>
+
+  <p class="pat-status" id="status" hidden></p>
+
+  <!-- The honesty panel. Rendered from the API's frozen accuracy block, and
+       shown ABOVE the chart on purpose: the chart is persuasive and the
+       number is what it is worth. -->
+  <section class="truth" id="truth" hidden>
+    <h2>Before you read the chart</h2>
+    <div class="truth-grid">
+      <div class="truth-stat">
+        <div class="tv" id="tv-acc">—</div>
+        <div class="tl">this method's directional accuracy, measured out of sample</div>
+      </div>
+      <div class="truth-stat">
+        <div class="tv" id="tv-base">—</div>
+        <div class="tl">accuracy of just assuming the stock goes up</div>
+      </div>
+      <div class="truth-stat">
+        <div class="tv" id="tv-rand">—</div>
+        <div class="tl">accuracy using randomly chosen windows instead of matched ones</div>
+      </div>
+    </div>
+    <p class="truth-note" id="truth-note"></p>
+  </section>
+
+  <section class="chart-card" id="chartcard" hidden>
+    <div class="chart-head">
+      <div>
+        <h2 id="ch-title">—</h2>
+        <p class="chart-sub" id="ch-sub">—</p>
+      </div>
+      <div class="chart-toggle" role="group" aria-label="View">
+        <button type="button" class="on" data-view="chart" id="btn-chart">Chart</button>
+        <button type="button" data-view="table" id="btn-table">Table</button>
+      </div>
+    </div>
+
+    <div class="chart-wrap" id="chart-wrap">
+      <svg id="yaxis" class="yaxis" aria-hidden="true"></svg>
+      <div class="chart-scroll">
+        <svg id="chart" role="img" aria-labelledby="ch-title"
+             aria-describedby="ch-desc"></svg>
+      </div>
+      <p class="sr-only" id="ch-desc"></p>
+      <div class="tooltip" id="tip" hidden></div>
+    </div>
+    <p class="scroll-hint">Scroll the chart sideways to see the full window.</p>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="table-wrap" id="table-wrap" hidden>
+      <table class="pat-table">
+        <caption class="sr-only">Matched historical windows and what followed each</caption>
+        <thead><tr>
+          <th scope="col">Match</th><th scope="col">Period</th>
+          <th scope="col" class="n">Similarity</th>
+          <th scope="col" class="n">Next 3 months</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <p class="disclaim">Past price paths only. Not a forecast, not investment
+      advice. The measured accuracy above is what this method achieved on
+      3,968 out-of-sample forecasts.</p>
+  </section>
+
+  <section class="method" id="method" hidden>
+    <h2>How this is measured</h2>
+    <p>The temptation with a chart like this is to only ever look at it. So we
+      tested it instead: walk forward through thirty years of daily prices,
+      and at each date find the matches using <em>only</em> data available on
+      that date — a match is admissible only if its own three-month outcome
+      had already happened. Then compare what it implied against what actually
+      occurred.</p>
+    <ul>
+      <li><strong>3,968 forecasts</strong> across 128 dates whose outcome
+        windows never overlap, so no result is counted twice.</li>
+      <li><strong>Significance clustered by date</strong>, because every stock
+        moves with the market and a hundred tickers on one day is nowhere near
+        a hundred independent tests.</li>
+      <li><strong>A random control</strong> — the same pipeline with the
+        matching switched off. It scored the same, which is how we know the
+        pattern matching adds nothing.</li>
+      <li><strong>A known-effect check</strong> — 12-month momentum shows up on
+        this same data at t&nbsp;=&nbsp;+2.3, so the test is capable of finding
+        a real signal when one exists.</li>
+    </ul>
+    <p class="method-foot">Code: <code>api/_analog.py</code>,
+      <code>research/analog/validate.py</code>.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>Signal</span>
+  <nav>
+    <a href="/">Stock match</a>
+    <a href="/iso">ISO calculator</a>
+    <a href="disclaimer.html">Disclaimer</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </nav>
+</footer>
+
+<script src="/patterns.js"></script>
+</body>
+</html>
