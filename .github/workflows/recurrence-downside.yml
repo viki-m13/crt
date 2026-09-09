@@ -1,0 +1,59 @@
+name: Recurrence downside validation
+on:
+  push:
+    branches: [research/recurrence-downside-20260909]
+    paths: [.github/workflows/recurrence-downside.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        universe: [sp500, ndx]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      PYTHONWARNINGS: ignore
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /research/failure_first/
+            /research/recurrence_downside/
+            /tests/test_failure_first.py
+            /tests/test_recurrence_downside.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pinned dependencies
+        run: python -m pip install -r research/failure_first/requirements.txt
+      - name: Invariant tests
+        run: |
+          set -o pipefail
+          mkdir -p rd-output/${{ matrix.universe }}
+          python -m pytest tests/test_failure_first.py tests/test_recurrence_downside.py -q | tee rd-output/${{ matrix.universe }}/tests.txt
+      - name: Download immutable research inputs
+        run: python -m research.failure_first.download --output pinned-inputs
+      - name: Complete historical recurrence experiment
+        run: |
+          set -o pipefail
+          python -m research.recurrence_downside.run --inputs pinned-inputs --output rd-output/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee rd-output/${{ matrix.universe }}/run.log
+          python -m research.recurrence_downside.validate --inputs pinned-inputs --directory rd-output/${{ matrix.universe }} | tee rd-output/${{ matrix.universe }}/audit.log
+      - name: Preserve auditable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recurrence-downside-${{ matrix.universe }}
+          retention-days: 30
+          path: |
+            rd-output/${{ matrix.universe }}/*.csv
+            rd-output/${{ matrix.universe }}/*.json
+            rd-output/${{ matrix.universe }}/*.txt
+            rd-output/${{ matrix.universe }}/*.log
+            rd-output/${{ matrix.universe }}/predictions_*.parquet
