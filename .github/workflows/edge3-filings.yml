@@ -1,0 +1,83 @@
+name: Edge3 as-filed fundamentals
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-filings.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  acquire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - uses: actions/download-artifact@v4
+        with:
+          name: edge3-independent-inputs
+          run-id: 34410880624
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: independent
+      - name: Collect facts; stop on access restrictions, never bypass
+        shell: bash
+        run: |
+          mkdir -p facts
+          python - <<'PY'
+          import requests,time,json,hashlib,pathlib
+          import pandas as pd
+          root=pathlib.Path('facts'); state={'status':'started','success':0,'errors':[],'coverage_warning':'Current SEC ticker-to-CIK resolver may omit historical/delisted issuers or confuse reused symbols; not a PIT security-master claim.'}
+          session=requests.Session(); session.headers.update({'User-Agent':'CRT research Viktor Mashalov viktormashalov@gmail.com','Accept-Encoding':'gzip, deflate','Host':'www.sec.gov'})
+          def get(url):
+              time.sleep(.55)
+              h={'Host':url.split('/')[2]}
+              r=session.get(url,headers=h,timeout=40)
+              if r.status_code in (403,429): raise PermissionError(f'Access restricted: {r.status_code} {url}')
+              r.raise_for_status(); return r
+          manifest=[]; all_rows=[]
+          concepts={'RevenueFromContractWithCustomerExcludingAssessedTax','Revenues','SalesRevenueNet','RevenueFromContractWithCustomerIncludingAssessedTax','OperatingIncomeLoss','NetIncomeLoss','NetCashProvidedByUsedInOperatingActivities','PaymentsToAcquirePropertyPlantAndEquipment','Assets','StockholdersEquity'}
+          try:
+              raw=get('https://www.sec.gov/files/company_tickers.json').content
+              (root/'ticker_mapping.json').write_bytes(raw)
+              mapping=json.loads(raw)
+              wanted=set(pd.read_parquet('independent/sp500_membership.parquet').ticker.str.replace('.','-',regex=False))
+              targets={}
+              for v in mapping.values():
+                  if v['ticker'].replace('.','-') in wanted: targets.setdefault(int(v['cik_str']),[]).append(v['ticker'])
+              state['requested_ciks']=len(targets); state['resolved_symbols']=sum(map(len,targets.values()))
+              state['unresolved_symbols']=sorted(wanted-{s.replace('.','-') for ss in targets.values() for s in ss})
+              for cik, symbols in sorted(targets.items()):
+                  url=f'https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json'
+                  try:
+                      raw=get(url).content; obj=json.loads(raw)
+                      if int(obj['cik'])!=cik: raise ValueError('CIK mismatch')
+                      keep=[]
+                      for tag,d in obj.get('facts',{}).get('us-gaap',{}).items():
+                          if tag not in concepts:continue
+                          for f in d.get('units',{}).get('USD',[]):
+                              if f.get('form') in ('10-K','10-Q','10-K/A','10-Q/A') and f.get('filed','')<='2026-03-20':
+                                  keep.append({'cik':cik,'symbols':'|'.join(symbols),'tag':tag,**{k:f.get(k) for k in ['start','end','val','accn','filed','form','fy','fp']}})
+                      all_rows.extend(keep);manifest.append({'url':url,'sha256':hashlib.sha256(raw).hexdigest(),'retained':len(keep),'cik':cik,'symbols':symbols})
+                      state['success']+=1
+                      if state['success']%25==0:print(state['success'],len(all_rows),flush=True)
+                  except PermissionError:raise
+                  except Exception as e:state['errors'].append({'cik':cik,'error':str(e)})
+              state['status']='complete'
+          except Exception as e:
+              state['status']='blocked';state['errors'].append({'fatal':str(e)});print(str(e),flush=True)
+          finally:
+              if all_rows:pd.DataFrame(all_rows).to_parquet(root/'as_filed_facts.parquet',index=False)
+              (root/'source_manifest.json').write_text(json.dumps(manifest,indent=2))
+              (root/'download_state.json').write_text(json.dumps(state,indent=2))
+              h={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()}
+              (root/'export_hashes.json').write_text(json.dumps(h,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edge3-as-filed-facts
+          path: facts/
+          retention-days: 30
