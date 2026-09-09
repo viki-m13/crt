@@ -1,0 +1,69 @@
+{
+  "sample": {
+    "natural_exits": 468,
+    "daily_returns": 607,
+    "daily_marks": 608
+  },
+  "avg_trade_usd": 35.02,
+  "t_stat": 5.748,
+  "p_value_two_sided": 1.63e-08,
+  "win_rate_pct": 54.49,
+  "win_rate_ci95_pct": [
+    49.85,
+    59.06
+  ],
+  "sharpe_annual": 1.772,
+  "sortino_annual_mar0": 3.426,
+  "cagr_pct": 9.759,
+  "max_dd_daily_close_pct": -2.329,
+  "calmar_cagr_over_daily_dd": 4.19,
+  "skew_daily": 3.408,
+  "kurtosis_pearson_daily": 37.25,
+  "longest_underwater_days": 105,
+  "mc_closed_trade_dd_usd": {
+    "seed": 0,
+    "shuffles": 5000,
+    "median": -858.13,
+    "p95": -1321.87,
+    "worst": -2384.27
+  },
+  "deflated_sharpe": {
+    "library_25_of_31_fresh2025": {
+      "T_returns": 607,
+      "observed_sharpe_annual": 1.772,
+      "hurdle_sharpe_annual": 1.02,
+      "deflated_probability": 0.866,
+      "n_trials": 25,
+      "trial_sigma_annual": 0.511
+    },
+    "family_5_fresh2025": {
+      "T_returns": 607,
+      "observed_sharpe_annual": 1.772,
+      "hurdle_sharpe_annual": 1.333,
+      "deflated_probability": 0.742,
+      "n_trials": 5,
+      "trial_sigma_annual": 1.117
+    },
+    "family_5_history2020": {
+      "T_returns": 2434,
+      "observed_sharpe_annual": 1.277,
+      "hurdle_sharpe_annual": 1.333,
+      "deflated_probability": 0.439,
+      "n_trials": 5
+    },
+    "all_465_fresh2025": {
+      "T_returns": 607,
+      "observed_sharpe_annual": 1.772,
+      "hurdle_sharpe_annual": 6.874,
+      "deflated_probability": 0.0,
+      "n_trials": 465,
+      "trial_sigma_annual": 2.268,
+      "note": "sigma from 285 finite Sharpes across 286 campaign run files, not a one-to-one measurement of 465 expressions"
+    }
+  },
+  "notes": [
+    "Sharpe/Sortino annualize daily close-to-close returns by sqrt(365)",
+    "Calmar divides CAGR (365.25-day years) by the DAILY-close drawdown, not the minute-mark drawdown on the page",
+    "Monte Carlo reorders closed-trade net P&L: a dollar drawdown of the trade sequence, not an account-mark drawdown"
+  ]
+}
