@@ -433,3 +433,181 @@ def enrich(symbol: str) -> dict:
         "revenue_growth": num("QuarterlyRevenueGrowthYOY"),
         "analyst_target": num("AnalystTargetPrice"),
     }.items() if v is not None})
+
+
+def history(symbol: str, rng: str = "max") -> dict:
+    """Dated daily closes for one symbol — the input the analog matcher needs.
+
+    quote() deliberately throws history away and keeps only summary metrics,
+    because that is all the recommender wanted. Pattern matching needs the
+    series itself, aligned to dates, so this returns it.
+
+    Bars whose close is missing are dropped along with their date rather than
+    forward-filled: a filled bar is a fabricated return, and the matcher
+    treats a window containing one as unusable for good reason.
+    """
+    symbol = (symbol or "").strip().upper()
+    if not symbol or len(symbol) > 16:
+        return {"ok": False, "symbol": symbol, "reason": "malformed"}
+    ck = f"h:{symbol}:{rng}"
+    hit = _cached(ck)
+    if hit is not None:
+        return hit
+
+    data, throttled = None, False
+    for host in ("query1", "query2"):
+        url = CHART.format(host=host, sym=urllib.parse.quote(symbol)) + \
+            f"?range={rng}&interval=1d"
+        try:
+            data = _get_json(url)
+            break
+        except NotFound:
+            return _put(ck, {"ok": False, "symbol": symbol, "reason": "not_found"})
+        except RateLimited:
+            throttled = True
+            continue
+        except Exception:
+            continue
+    if not data:
+        # Yahoo is unreachable from most datacenter IPs, so this is the
+        # normal path in production rather than the exception.
+        for fb in (_history_alphavantage, _history_twelvedata):
+            try:
+                alt = fb(symbol)
+            except Exception:  # noqa: BLE001
+                alt = None
+            if alt:
+                return _put(ck, alt)
+        # Not cached: a throttle describes us, not the ticker.
+        return {"ok": False, "symbol": symbol,
+                "reason": "rate_limited" if throttled else "unreachable",
+                "retryable": True}
+
+    res = (data.get("chart") or {}).get("result")
+    if not res:
+        return _put(ck, {"ok": False, "symbol": symbol, "reason": "not_found"})
+    r0 = res[0]
+    meta = r0.get("meta") or {}
+    try:
+        stamps = r0["timestamp"]
+        closes = r0["indicators"]["quote"][0]["close"]
+    except Exception:
+        return _put(ck, {"ok": False, "symbol": symbol, "reason": "no_history"})
+
+    dates, px = [], []
+    for ts, c in zip(stamps, closes):
+        if c is None or not (c > 0):
+            continue
+        dates.append(time.strftime("%Y-%m-%d", time.gmtime(int(ts))))
+        px.append(float(c))
+    if len(px) < 260:
+        return _put(ck, {"ok": False, "symbol": symbol,
+                         "reason": "insufficient_history", "bars": len(px)})
+
+    name = meta.get("longName") or meta.get("shortName") or symbol
+    return _put(ck, {
+        "ok": True, "symbol": symbol, "name": name,
+        "currency": meta.get("currency"),
+        "exchange": meta.get("fullExchangeName"),
+        "dates": dates, "closes": px, "bars": len(px),
+        "source": "yahoo",
+    })
+
+
+def _history_alphavantage(symbol: str) -> dict | None:
+    """20+ years of daily closes. US-focused; needs ALPHAVANTAGE_API_KEY.
+
+    TIME_SERIES_DAILY is used rather than ..._ADJUSTED because the adjusted
+    endpoint is premium-gated on free keys and silently returns a rate-limit
+    object instead of data. Unadjusted closes carry split jumps, so splits
+    are divided out below — an unhandled 4:1 split is a -75% bar, which the
+    matcher would happily treat as a crash pattern.
+    """
+    key = os.environ.get("ALPHAVANTAGE_API_KEY")
+    if not key:
+        return None
+    url = AV + "?" + urllib.parse.urlencode(
+        {"function": "TIME_SERIES_DAILY", "symbol": symbol,
+         "outputsize": "full", "apikey": key})
+    try:
+        d = _get_json(url, timeout=25.0)
+    except Exception:  # noqa: BLE001
+        return None
+    ts = (d or {}).get("Time Series (Daily)")
+    if not isinstance(ts, dict) or len(ts) < 260:
+        return None
+    rows = []
+    for day in sorted(ts):
+        try:
+            c = float(ts[day]["4. close"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if c > 0:
+            rows.append((day, c))
+    if len(rows) < 260:
+        return None
+    dates = [r[0] for r in rows]
+    px = _undo_splits([r[1] for r in rows])
+    return {"ok": True, "symbol": symbol, "name": symbol, "currency": "USD",
+            "exchange": None, "dates": dates, "closes": px,
+            "bars": len(px), "source": "alphavantage"}
+
+
+def _undo_splits(px: list[float], thresh: float = 0.42) -> list[float]:
+    """Back-adjust obvious split jumps in an unadjusted close series.
+
+    A single-day move beyond +/-58% that lands near a simple ratio (2, 3, 4,
+    5, 7, 10, 3/2, 2/3...) is a split, not a return. Everything before it is
+    rescaled. Real single-day crashes exist, so the guard only fires when the
+    move is close to a clean ratio, and a false negative (leaving a real
+    crash alone) is much cheaper here than a false positive.
+    """
+    RATIOS = (2, 3, 4, 5, 6, 7, 8, 10, 20, 1.5, 2.5, 1.25)
+    out = list(px)
+    for i in range(len(out) - 1, 0, -1):
+        a, b = out[i - 1], out[i]
+        if a <= 0 or b <= 0:
+            continue
+        r = a / b
+        if abs(math.log(r)) < thresh:
+            continue
+        best = min(RATIOS, key=lambda x: abs(math.log(r / x))
+                   if r > 1 else abs(math.log(r * x)))
+        f = best if r > 1 else 1.0 / best
+        if abs(math.log(r / f)) < 0.06:          # within ~6% of a clean split
+            for j in range(i):
+                out[j] /= f
+    return out
+
+
+def _history_twelvedata(symbol: str) -> dict | None:
+    """Global daily history. Needs TWELVEDATA_API_KEY; 5000 bars on free."""
+    key = os.environ.get("TWELVEDATA_API_KEY")
+    if not key:
+        return None
+    url = "https://api.twelvedata.com/time_series?" + urllib.parse.urlencode(
+        {"symbol": symbol, "interval": "1day", "outputsize": "5000",
+         "order": "ASC", "apikey": key})
+    try:
+        d = _get_json(url, timeout=25.0)
+    except Exception:  # noqa: BLE001
+        return None
+    vals = (d or {}).get("values")
+    if not isinstance(vals, list) or len(vals) < 260:
+        return None
+    dates, px = [], []
+    for v in vals:
+        try:
+            c = float(v["close"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if c > 0:
+            dates.append(str(v.get("datetime"))[:10])
+            px.append(c)
+    if len(px) < 260:
+        return None
+    meta = (d or {}).get("meta") or {}
+    return {"ok": True, "symbol": symbol, "name": meta.get("symbol") or symbol,
+            "currency": meta.get("currency"), "exchange": meta.get("exchange"),
+            "dates": dates, "closes": px, "bars": len(px),
+            "source": "twelvedata"}

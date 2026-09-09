@@ -17,16 +17,61 @@ import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DOCS = os.path.join(ROOT, "docs")
 sys.path.insert(0, os.path.join(ROOT, "api"))
 
+import _analog as AN    # noqa: E402
 import _market as M     # noqa: E402
+import analog as ANAPI  # noqa: E402
 import iso as ISO       # noqa: E402
 import quiz as API      # noqa: E402
+
+# Yahoo throttles datacenter IPs, so local development of the pattern finder
+# would otherwise be impossible. DEV_LOCAL_PANEL=1 serves history out of the
+# cached parquet panel instead — REAL prices, just not live ones. It only
+# ever affects this dev server, and it announces itself.
+_PANEL = None
+
+
+def _panel_history(symbol: str):
+    global _PANEL
+    if os.environ.get("DEV_LOCAL_PANEL") != "1":
+        return None
+    if _PANEL is None:
+        import pandas as pd
+        _PANEL = pd.read_parquet(os.path.join(
+            ROOT, "experiments", "monthly_dca", "cache",
+            "prices_extended.parquet"))
+    if symbol not in _PANEL.columns:
+        return None
+    s = _PANEL[symbol].dropna()
+    if len(s) < 260:
+        return None
+    return {"ok": True, "symbol": symbol, "name": symbol, "currency": "USD",
+            "exchange": "cached panel", "source": "DEV local panel",
+            "dates": [str(d.date()) for d in s.index],
+            "closes": [float(x) for x in s.tolist()], "bars": len(s)}
+
+
+def _analog_response(symbol: str, lookback: int, horizon: int) -> dict:
+    h = _panel_history(symbol) or M.history(symbol, "max")
+    if not h.get("ok"):
+        return {"ok": False, "symbol": symbol,
+                "reason": h.get("reason", "unavailable"),
+                "accuracy": ANAPI.ACCURACY}
+    fc = AN.find_analogs(h["closes"], {symbol: (h["dates"], h["closes"])},
+                         lookback=lookback, horizon=horizon, symbol=symbol,
+                         dates=h["dates"])
+    out = AN.to_dict(fc)
+    out.update({"name": h.get("name"), "currency": h.get("currency"),
+                "exchange": h.get("exchange"), "bars": h.get("bars"),
+                "source": h.get("source"), "last_price": h["closes"][-1],
+                "accuracy": ANAPI.ACCURACY})
+    return out
 
 if os.environ.get("DEV_STUB_MARKET") == "1":
     import _recommend as R
@@ -105,6 +150,25 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path.startswith("/api/iso"):
             self._send(200, ISO.handle_constants())
+            return
+        if path.startswith("/api/analog"):
+            q = parse_qs(urlparse(self.path).query)
+            one = (q.get("action") or [""])[0]
+            if one == "accuracy":
+                self._send(200, {"ok": True, "accuracy": ANAPI.ACCURACY})
+                return
+            sym = (q.get("symbol") or [""])[0].strip().upper()
+            if not sym:
+                self._send(400, {"ok": False, "reason": "no_symbol",
+                                 "accuracy": ANAPI.ACCURACY})
+                return
+            def _i(k, d):
+                try:
+                    return int(float((q.get(k) or [d])[0]))
+                except (TypeError, ValueError):
+                    return d
+            self._send(200, _analog_response(sym, _i("lookback", AN.LOOKBACK),
+                                             _i("horizon", AN.HORIZON)))
             return
         rel = path.lstrip("/") or "index.html"
         if rel.endswith("/"):

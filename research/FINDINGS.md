@@ -170,3 +170,157 @@ cost a competitor real effort to reproduce.
 
 The picks idea is not worthless, but it cannot honestly carry the claim that
 would sell it.
+
+---
+
+# Muni product shape — market check and which of the two products to build
+
+Two candidate products, same tape, same locked rules in `api/_munisignal.py`:
+a **nightly list** of dislocated bonds, or a **pre-trade price check** where
+the advisor pastes a CUSIP and the quoted price. Scripts:
+`research/muni_edge/product_shape.py`, `price_check_control.py`,
+`who_needs_it.py`. Window: 2025-07-15 → 2026-07-10, 3,085 bonds, 5.0m prints.
+
+## Is the buyer segment real and growing?
+
+Measured on the tape (`market_check.py`): retail-size share of muni trades
+rose from **84.2%** (first three years) to **92.9%** (last three), +0.74
+pts/year. Not a shrinking segment.
+
+Published market structure, which changes who the customer is:
+
+- Muni SMAs hold **~$1.3tn across ~180 managers**, ~30% of the $4tn market,
+  up from 13–14% penetration in 2018 ([JPMorgan via Bloomberg][b],
+  [IMTC][i]).
+- **Odd-lot customer trading is no longer mostly retail.** MSRB research
+  finds institutional dealers accounted for **44% of odd-lot customer trades
+  in 2024**, and judges it likely that **≥50%** of odd-lot customer
+  transactions were with institutional clients — SMA growth being the cause
+  ([ION Analytics summarising MSRB][ion]).
+
+This retires the earlier objection that dislocations happen in lots too
+small for professional buyers. They happen in exactly the lots the fastest
+growing professional segment trades.
+
+[b]: https://www.bloomberg.com/news/articles/2026-02-09/jpmorgan-says-bespoke-muni-bond-accounts-grew-to-1-3-trillion
+[i]: https://imtc.com/insights/sma-muni-bond-revolution/
+[ion]: https://ionanalytics.com/insights/debtwire/muni-sma-growth-reshapes-bond-trading-patterns-and-curve-valuations/
+
+## Product 1 — the nightly list: not enough inventory
+
+| | |
+|---|---|
+| dislocations in 250 days | 1,627 across 625 distinct bonds |
+| per day | median **1**, mean 6.5, max 195 |
+| days with an empty list | **104/250 (42%)** |
+| days with nothing inside the limit | 114/250 (46%) |
+| discount when it fires | median 3.82 pts |
+
+A subscription that has nothing to show on 42% of days is a churn machine.
+The list is a feature, not a product.
+
+## Product 2 — the price check: fires on almost every trade
+
+Replaying all 385,610 retail-size customer buys in the window as if the
+advisor had asked first: **58.4% "too rich"**, 33.0% within limit, 8.7% no
+opinion. Median overpayment 1.13 pts.
+
+### The bias control that matters
+
+The limit is set off the *prior* mark, so in a rising market a fair buy
+clears it mechanically and the check would look valuable while measuring
+drift. Two controls:
+
+- **Drift is nil.** Median day-over-day change in mid **+0.0000 pts**, mean
+  +0.0226 — an order of magnitude too small to produce a +0.64 buy gap.
+- **Symmetry.** Customers are penalised on **both** sides: buys **+0.640**
+  pts median above the prior mark, sells **+0.190** below it. Drift can only
+  push one side. Clustered one-vote-per-bond: buys +0.693 pts across 3,081
+  bonds, **t=+74.3**; sells +0.345 across 3,068, **t=+47.6**.
+
+The reference mid is itself often built from customer prints, which already
+contain a markup — so the measured penalty is if anything understated.
+
+### Who actually needs it (median pts vs the prior mark, customer buys)
+
+| lot size | trades | median | past the 0.25 cap | t |
+|---|---|---|---|---|
+| under $25k | 150,351 | +0.490 | 60.3% | +61.4 |
+| $25k–$100k | 196,764 | **+0.742** | 67.0% | +73.6 |
+| $100k–$500k | 97,597 | +0.500 | 61.5% | +61.0 |
+| $500k–$1m | 11,958 | +0.156 | 42.9% | +26.2 |
+| $1m+ | 28,085 | **+0.000** | 29.1% | +10.9 |
+
+Monotone above $100k and it goes to **exactly zero** for block buyers. A
+$1m+ buyer already trades at the mark and has nothing to buy from us. Every
+dollar of value sits in the odd-lot band — which is both the direct-buying
+RIA and the SMA manager working an account-level ladder.
+
+Per firing: median **$274** saved, mean $451, 90th percentile $1,112, on a
+median $25,000 lot.
+
+## Verdict
+
+Build the **price check** as the product and ship the **list** inside it as
+a daily feed. The check has an opinion on 91% of real quotes and objects to
+58% of them; the list is empty two days in five. Sell to whoever trades odd
+lots, not to whoever has the most AUM — above $1m of par the edge is zero
+and the pitch is false.
+
+## Can the advisor act on a "too rich" verdict?
+
+The gap we measure is only worth money if declining the quote has an
+alternative. `research/muni_edge/can_they_act.py` replays every flagged buy
+and looks forward ten trading days in the same bond.
+
+| | of 245,430 flagged buys |
+|---|---|
+| the bond printed a customer buy again | 96.0% |
+| **next print was cheaper** | **66.5%** |
+| **next print beat the flagged excess** | **30.2%** |
+| median improvement when cheaper | 1.001 pts = $250 on a $25k lot |
+| *ceiling: best of the ten days beat the excess* | *55.3% — needs foresight* |
+
+The headline uses the **next** print, not the best of the window; taking the
+minimum is look-ahead and inflates the result to 55%. Two further effects
+push the true number lower still: it ignores the cost of not owning the bond
+meanwhile, and it assumes the later print was available to this buyer, which
+the tape cannot confirm.
+
+So the signal is actionable, but recovers materially less than it measures —
+about a third of flagged trades, not the 58% headline.
+
+## Is anyone already selling this?
+
+Yes, and it is the same two products. BondWave's Effi platform ships
+**Transaction Quality Analysis** (total trade cost measured against
+marketplace peers, with a per-calculation archive and management reporting —
+i.e. the best-execution record), an **Effi Market Calculator** for pre-trade
+markup and fair pricing, and a **Price Confidence Tool**; plus premium
+municipal content via DPC DATA, proprietary trade benchmarks, muni yield
+curves and comparable-bond identification, and integrations into ICE Bonds
+([BondWave][bw1], [BondWave TQA][bw2], [FTF News][ftf]).
+
+[bw1]: https://bondwave.com/
+[bw2]: https://bondwave.com/effi-enhancements-tqa-solution-premium-content/
+[ftf]: https://www.ftfnews.com/bondwave-bolsters-its-fixed-income-platform/
+
+## Verdict on willingness to pay
+
+The measurement is sound and the segment is growing, but three things stop
+this being something people pay a lot for **willingly**:
+
+1. **The buyer is not the beneficiary.** The $250–274 a flag is worth accrues
+   to the *client*; the advisor pays the subscription. Execution-quality
+   tools therefore sell as compliance and defensibility, not as savings.
+2. **Recoverable ≪ measured.** 30% of flags, not 58%.
+3. **The compliance version is already sold** by an incumbent with the data
+   licences, the archive, and the custodian integrations we do not have.
+
+Our one scarce asset — solved EMMA extraction past the image-rendered CUSIPs
+and blocked clients — is a months-long lead, not a moat, against a vendor
+licensing DPC DATA.
+
+**This is a good tool and a bad business at the price that would justify
+building it.** It would flip only on distribution: an owned channel to
+odd-lot muni buyers, which the origami.chat constraint does not provide.
