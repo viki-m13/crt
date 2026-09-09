@@ -67,7 +67,9 @@ def policy_replay(pred,outcomes,dates,cfg):
             row={**r,**indexed.loc[(r['row_id'],r['horizon'])].to_dict(),
                  'method':method,'threshold':float(t),'policy':'adaptive95','source_policy':selected}
             busy_strict[r['ticker']]=int(r['exit_i']);issued.append(row)
-    return pd.DataFrame(issued),pd.DataFrame(decisions)
+    columns=list(dict.fromkeys([*pred.columns,*outcomes.columns,'method','threshold','policy','estimated_success']))
+    output=pd.DataFrame(issued) if issued else pd.DataFrame(columns=columns)
+    return output,pd.DataFrame(decisions)
 
 
 def controls(picks,outcomes,f,cfg):
@@ -75,8 +77,8 @@ def controls(picks,outcomes,f,cfg):
     meta=f[['row_id','ticker','vol63_rank','rel63_rank']]
     d=outcomes[['row_id','i','horizon','success']].merge(meta,on='row_id',validate='many_to_one')
     ids=set(candidate_rows(f,cfg.candidate_k).row_id)
-    d['vol_bin']=np.minimum((d.vol63_rank*10).astype(int),9)
-    d['rel_bin']=np.minimum((d.rel63_rank*5).astype(int),4)
+    d['vol_bin']=np.minimum((d.vol63_rank.astype(np.float64)*10).astype(int),9)
+    d['rel_bin']=np.minimum((d.rel63_rank.astype(np.float64)*5).astype(int),4)
     all_=d.groupby(['i','horizon']).success.mean().to_dict()
     cand=d[d.row_id.isin(ids)].groupby(['i','horizon']).success.mean().to_dict()
     vol=d.groupby(['i','horizon','vol_bin']).success.mean().to_dict()
@@ -111,7 +113,7 @@ def summary(picks,decisions):
              'pending':len(g)-n,'precision':wins/n if n else None,
              'active_date_fraction':float(ds.issued.mean()),'decision_dates':len(ds),
              'longest_no_pick_decisions':longest,'nonoverlap_n':len(ind),'overlap_episodes':episodes(done),
-             'production_certified':False}
+             'production_certified':False,'random_expected':None,'candidate_expected':None}
         if n:
             unresolved=int((~done.resolved).sum())
             row.update(unresolved=unresolved,flat=int((done.outcome_kind=='flat').sum()),
