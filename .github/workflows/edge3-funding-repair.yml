@@ -1,0 +1,69 @@
+name: Edge3 funding source cross-check
+on:
+  push:
+    branches: [research/edge3-20260909]
+    paths: [.github/workflows/edge3-funding-repair.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pandas==2.3.3 pyarrow==21.0.0 requests==2.32.5
+      - name: Read public API once; stop on access restrictions
+        shell: bash
+        run: |
+          mkdir -p funding-check
+          python - <<'PY'
+          import requests,time,json,pathlib,hashlib,io,zipfile
+          import pandas as pd
+          root=pathlib.Path('funding-check');manifest=[];errors=[]
+          def get(url,params=None):
+              time.sleep(.6);r=requests.get(url,params=params,timeout=40)
+              if r.status_code in (403,429,451):raise PermissionError(f'Access restricted {r.status_code}: {r.url}')
+              r.raise_for_status()
+              manifest.append({'url':r.url,'sha256':hashlib.sha256(r.content).hexdigest()})
+              return r
+          try:
+              info=get('https://dapi.binance.com/dapi/v1/exchangeInfo').json()
+              specs=[s for s in info['symbols'] if s['symbol'] in ('BTCUSD_PERP','ETHUSD_PERP')]
+              (root/'contract_specs.json').write_text(json.dumps(specs,indent=2))
+              for symbol in ('BTCUSD_PERP','ETHUSD_PERP'):
+                  rows=[]
+                  for month in pd.period_range('2021-01','2025-12',freq='M'):
+                      a=int(month.start_time.timestamp()*1000);b=int((month+1).start_time.timestamp()*1000)-1
+                      d=get('https://dapi.binance.com/dapi/v1/fundingRate',{'symbol':symbol,'startTime':a,'endTime':b,'limit':1000}).json()
+                      if not isinstance(d,list):raise ValueError('unexpected funding response')
+                      rows.extend(d)
+                  pd.DataFrame(rows).to_parquet(root/(symbol+'_funding_api.parquet'),index=False)
+          except Exception as e:errors.append({'api':str(e)});print(str(e),flush=True)
+          # Official daily archive can repair a truncated monthly price file; it is
+          # a distinct public source endpoint, not a proxy for an access-blocked API.
+          try:
+              for asset in ('BTC','ETH'):
+                  for typ in ('klines','markPriceKlines'):
+                      rows=[]
+                      for day in pd.date_range('2023-08-28','2023-08-31').strftime('%Y-%m-%d'):
+                          symbol=asset+'USD_PERP';u=f'https://data.binance.vision/data/futures/cm/daily/{typ}/{symbol}/1h/{symbol}-1h-{day}.zip'
+                          raw=get(u).content;check=get(u+'.CHECKSUM').text.split()[0]
+                          if hashlib.sha256(raw).hexdigest()!=check:raise ValueError('daily archive checksum')
+                          z=zipfile.ZipFile(io.BytesIO(raw));text=z.read(z.namelist()[0])
+                          d=pd.read_csv(io.BytesIO(text),header=0 if text[:1].isalpha() else None);rows.append(d)
+                      d=pd.concat(rows,ignore_index=True);d.columns=[str(x) for x in d.columns]
+                      d.to_parquet(root/(asset+'_'+typ+'_daily_repair.parquet'),index=False)
+          except Exception as e:errors.append({'daily_price':str(e)});print(str(e),flush=True)
+          (root/'source_manifest.json').write_text(json.dumps(manifest,indent=2))
+          (root/'status.json').write_text(json.dumps({'errors':errors,'status':'complete' if not errors else 'partial'},indent=2))
+          (root/'export_hashes.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edge3-funding-source-check
+          path: funding-check/
+          retention-days: 30
