@@ -14,6 +14,7 @@ class Settings:
     borrow_rate: float=.01
     cash_rate: float=0.
     missing_grace: int=0
+    work_conserving: bool=False
     def __post_init__(self):
         if self.entry_lag<1 or self.fee_bps<0 or self.sleeves!=6 or self.names<1 or self.missing_grace<0:
             raise ValueError('Invalid ledger settings')
@@ -93,6 +94,10 @@ def simulate(p,market,feature_frames,method,start_i,maps=None,cfg=Settings()):
                 orders.append(dict(i=int(row.i),entry_i=t,sleeve=s,ticker=row.ticker,h=int(row.h),status='filled'))
         if (t-252)%5==0 and t in feature_frames:
             s=((t-252)//5)%6
+            if cfg.work_conserving:
+                reserved={x[0] for v in pending.values() for x in v}
+                free=[(s+j)%6 for j in range(6) if not books[(s+j)%6] and (s+j)%6 not in reserved]
+                if free:s=free[0]
             busy=bool(books[s]) or any(any(x[0]==s for x in v) for v in pending.values())
             if not busy and cash[s]>1e-12:
                 held={l['ticker'] for book in books for l in book}
