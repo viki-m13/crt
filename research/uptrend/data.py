@@ -32,7 +32,21 @@ import pandas as pd
 BONDS = "/home/user/bonds"
 SHARDS = os.path.join(BONDS, "dca/research/data/tiingo/prices")
 UNIVERSE = os.path.join(BONDS, "dca/research/data/tiingo/tiingo_universe_pit.parquet")
-CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".panel.pkl")
+CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".panel_v2.pkl")
+
+# NASDAQ/NYSE test symbols. Not securities — they exist so venues can test
+# order routing, and they print whatever the test needed. ZXZZT goes from
+# $0.0001 to $6,000 on one bar, a 6,000,000,000% return that survived every
+# direction-based check and destroyed the first mean-return figure computed
+# on this panel. Matched exactly, never by prefix: CBOE is a real company.
+TEST_TICKERS = frozenset((
+    "ZAZZT", "ZBZX", "ZBZZT", "ZCZZT", "ZEXIT", "ZIEXT", "ZJZZT", "ZTEST",
+    "ZVV", "ZVZZC", "ZVZZT", "ZWZZT", "ZXZZT", "NTEST", "IBM_TEST"))
+
+# A real equity does not move 10x in a session. Adjusted-close series that do
+# have failed their split or dividend adjustment somewhere, and the failure is
+# not confined to the one bar — the whole series is on two different scales.
+MAX_DAILY_MOVE = 10.0
 
 MIN_PRICE = 5.0          # sub-$5 names are a different market: wide spreads,
                          # and a "50% gain" that no one could have captured
@@ -105,6 +119,22 @@ def build(verbose: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
     # --- drop what cannot carry a usable observation ----------------------
     enough = px.notna().sum() >= MIN_BARS
     px = px.loc[:, enough]
+
+    # --- drop what is not a security, and what is not adjusted ------------
+    is_test = px.columns.isin(TEST_TICKERS)
+    if verbose and is_test.any():
+        print(f"  dropping {int(is_test.sum())} exchange test symbols: "
+              f"{sorted(px.columns[is_test])}")
+    px = px.loc[:, ~is_test]
+
+    lp = np.log(np.where(px.to_numpy() > 0, px.to_numpy(), np.nan))
+    with np.errstate(invalid="ignore"):
+        jump = np.nanmax(np.abs(np.diff(lp, axis=0)), axis=0)
+    broken = np.nan_to_num(jump, nan=0.0) > np.log(MAX_DAILY_MOVE)
+    if verbose and broken.any():
+        print(f"  dropping {int(broken.sum())} series with a >{MAX_DAILY_MOVE:.0f}x "
+              f"single-day move (failed price adjustment)")
+    px = px.loc[:, ~broken]
     if verbose:
         print(f"  panel: {px.shape[0]:,} bars x {px.shape[1]:,} tickers "
               f"({px.index[0].date()} -> {px.index[-1].date()})")

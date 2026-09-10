@@ -1,7 +1,17 @@
 # Predicting failure first: model every way the call breaks, buy when all are quiet
 
+> **Correction (2026-09-10).** Every number below was first computed on a
+> panel containing twelve exchange test symbols (ZXZZT prints $0.0001 →
+> $6,000 on one bar) and 540 series with failed price adjustments. Those are
+> now excluded at the data layer. Direction-based results survive but shift,
+> and the shift is against this idea: on the clean panel the conjunction
+> reaches **62.1%** (base 53.3%) but its margin over the best single channel
+> falls from +2.8/+6.4 points to **+1.2/+1.8**. Part of what looked like an
+> ensemble advantage was junk series. The clean table is at the end of this
+> section; the original is kept so the correction is visible.
+
 **Verdict: the mechanism is real and it is the best thing in this repo. It
-reaches 60.7%, not 90%.** And the premise it rests on — that the failure
+reaches 62.1%, not 90%.** And the premise it rests on — that the failure
 channels are independent risks — is measurably false until you force it to be
 true.
 
@@ -91,6 +101,20 @@ At the 30-session horizon the user asked about, the same shape holds at a
 lower level: **58.8%** at 0.20% coverage against a **52.0%** base rate, ahead
 of the best raw single channel at 4 of 5 levels (+2.6 to +4.9).
 
+### On the cleaned panel
+
+| coverage | orth. conjunction | best RAW single | delta | 95% lower bound |
+|---|---|---|---|---|
+| 5.00% | 57.9% | 62.2% (`tail`) | −4.3 | 48.0% |
+| 2.00% | 59.3% | 58.0% (`tail`) | +1.2 | 49.4% |
+| 1.00% | 60.3% | 58.8% (`market`) | +1.6 | 50.4% |
+| 0.50% | 61.3% | 59.6% (`market`) | +1.8 | 51.4% |
+| 0.20% | **62.1%** | 60.4% (`market`) | +1.7 | 52.2% |
+
+Base rate 53.3%, so +8.8 points over base at the tightest gate — but only
+**+1.7 over simply using the single best channel**. The seven-channel
+construction buys less than two points over one number.
+
 Scored on the second half of the panel only, the gain survives (+4.9 to +13.6
 at tight coverage for 63 sessions; +5.8 to +6.7 for 30). The orthogonalisation is fitted on all history at once, so
 these are an in-sample upper bound — a deliberate advantage handed to the idea
@@ -117,8 +141,9 @@ which has been documented for forty years. `market`, `trend`, `stretch` and
 
 ## Why 90% is not reachable here, and would not be provable if it were
 
-At the tightest gate: **60.7%** on 24,042 signals against a 52.9% base rate.
-95% lower bound **50.8%**. Distance to target: **29.3 points**.
+At the tightest gate on the clean panel: **62.1%** on 24,772 signals against
+a 53.3% base rate. 95% lower bound **52.2%**. Distance to target: **27.9
+points**.
 
 The harder limit is sample size. Those signals fall in **69 non-overlapping
 horizon blocks**. A rule that was *genuinely* 90% accurate would, with 69
@@ -130,7 +155,7 @@ Worst calendar year at the tightest gate: **28.0%** (2026), on 546 signals.
 
 ## Where this leaves the idea
 
-It is the best-performing thing built in this line of work: +7.8 points over
+It is the best-performing thing built in this line of work: +8.8 points over
 base rate, a real margin over any single channel, surviving out of sample, and
 a mechanism that behaves the way the theory says it should. It is also
 ~61%, it is mostly the low-volatility anomaly wearing seven hats, and its bad
