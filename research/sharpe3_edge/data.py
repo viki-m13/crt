@@ -24,8 +24,8 @@ def load(root, universe):
     broad=clean(read('prices_extended_pit.parquet'))
     if universe=='sp500':
         raw=broad; m=read('sp500_membership_monthly.parquet').copy()
-        m['ticker']=m.ticker.str.replace('.','-',regex=False); m['asof']=pd.to_datetime(m.asof)
-        latest=m.loc[m.asof.eq(m.asof.max()),'ticker'].tolist()
+        m['ticker']=m.ticker.str.replace('.','-',regex=False); m['asof']=pd.to_datetime(m['asof'])
+        latest=m.loc[m['asof'].eq(m['asof'].max()),'ticker'].tolist()
     elif universe=='ndx':
         raw=clean(read('n100_panel_close.parquet')); m=read('n100_panel_member__bonds.parquet').fillna(False).astype(bool)
         latest=m.columns[m.iloc[-1]].tolist()
