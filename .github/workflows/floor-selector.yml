@@ -1,0 +1,40 @@
+name: Floor selector research checks
+on:
+  push:
+    branches: [research/adaptive-path-20260909]
+    paths: ['research/floor_selector/**', 'tests/test_floor_selector.py', '.github/workflows/floor-selector.yml']
+  pull_request:
+    paths: ['research/floor_selector/**', 'tests/test_floor_selector.py', '.github/workflows/floor-selector.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENBLAS_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            research/floor_selector
+            tests/test_floor_selector.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r research/floor_selector/requirements.txt
+      - run: python -m unittest discover -s tests -p 'test_floor_selector.py' -v
+      - name: Verify immutable public inputs and panel adapter
+        run: |
+          python -m research.floor_selector.fetch_inputs --out /tmp/floor-inputs
+          python -c "from pathlib import Path; from research.floor_selector.data import load; p,r,m,n=load(Path('/tmp/floor-inputs'),'sp500'); assert str(p.index[-1].date())=='2026-03-20'; print('Verified panel:',p.shape)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: floor-selector-source
+          path: |
+            research/floor_selector
+            tests/test_floor_selector.py
+          retention-days: 7
