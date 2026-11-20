@@ -1,0 +1,66 @@
+name: Adaptive path pinned research data
+on:
+  push:
+    branches: [research/adaptive-path-20260909]
+    paths: [.github/workflows/adaptive-path-data.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch immutable public research inputs
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, urllib.request
+          root = pathlib.Path('adaptive_path_data')
+          root.mkdir()
+          ref = '9939e0f1e0f0d601c14b2d21ff14a38da82cc2e2'
+          paths = [
+              'experiments/monthly_dca/cache/v2/sp500_pit/prices_extended_pit.parquet',
+              'experiments/monthly_dca/cache/v2/sp500_pit/sp500_membership_monthly.parquet',
+              'data/pit_archive/ndx/n100_panel_member__bonds.parquet',
+              'data/pit_archive/ndx/n100_panels__bonds/n100_panel_close.parquet',
+              'data/pit_archive/ndx/n100_panels__bonds/n100_panel_open.parquet',
+              'data/pit_archive/ndx/n100_panels__bonds/n100_panel_high.parquet',
+              'data/pit_archive/ndx/n100_panels__bonds/n100_panel_low.parquet',
+              'data/pit_archive/ndx/n100_panels__bonds/n100_panel_volume.parquet',
+          ]
+          manifest = []
+          for p in paths:
+              url = f'https://raw.githubusercontent.com/viki-m13/crt/{ref}/{p}'
+              dst = root / pathlib.Path(p).name
+              with urllib.request.urlopen(url, timeout=120) as src:
+                  data = src.read(150_000_001)
+              if len(data) > 150_000_000:
+                  raise RuntimeError('Unexpected input size')
+              if not data.startswith(b'PAR1') or not data.endswith(b'PAR1'):
+                  raise RuntimeError(f'Not a Parquet file: {p}')
+              dst.write_bytes(data)
+              row = dict(repository='viki-m13/crt', ref=ref, path=p, file=dst.name,
+                         bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+              manifest.append(row)
+              print(json.dumps(row), flush=True)
+          (root / 'manifest.json').write_text(json.dumps(manifest, indent=2))
+          PY
+      - name: Archive pinned inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-path-pinned-inputs
+          path: adaptive_path_data/
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+      - name: Fetch offline Parquet reader (CPython 3.13 Linux)
+        run: |
+          python -m pip download --only-binary=:all: --platform manylinux_2_28_x86_64 --python-version 3.13 --implementation cp --abi cp313 --no-deps pyarrow==21.0.0 --dest offline_runtime
+      - name: Archive offline reader
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-path-offline-reader
+          path: offline_runtime/
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
