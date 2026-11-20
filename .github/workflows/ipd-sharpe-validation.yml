@@ -1,0 +1,63 @@
+name: IPD Sharpe research reproducibility
+on:
+  push:
+    branches: [research/sharpe3-edge-20260909]
+    paths: [.github/workflows/ipd-sharpe-validation.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        universe: [sp500, ndx]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONWARNINGS: ignore
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /research/sharpe3_edge/
+            /tests/test_ipd.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pinned dependencies
+        run: python -m pip install -r research/sharpe3_edge/requirements.txt
+      - name: Invariant and accounting tests
+        run: |
+          set -euo pipefail
+          mkdir -p ipd-output/A/${{ matrix.universe }} ipd-output/B/${{ matrix.universe }}
+          python -m pytest tests/test_ipd.py -q | tee ipd-output/tests-${{ matrix.universe }}.log
+      - name: Verify immutable public inputs
+        run: python -m research.sharpe3_edge.download --output pinned-inputs
+      - name: Experiment A complete portfolio grid
+        run: |
+          set -euo pipefail
+          python -m research.sharpe3_edge.run --inputs pinned-inputs --output ipd-output/A/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee ipd-output/A/${{ matrix.universe }}/run.log
+          python -m research.sharpe3_edge.validate --inputs pinned-inputs --directory ipd-output/A/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee ipd-output/A/${{ matrix.universe }}/audit.log
+      - name: Experiment B additional mechanisms
+        run: |
+          set -euo pipefail
+          python -m research.sharpe3_edge.run_extensions --inputs pinned-inputs --base ipd-output/A/${{ matrix.universe }} --output ipd-output/B/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee ipd-output/B/${{ matrix.universe }}/run.log
+          python -m research.sharpe3_edge.validate --inputs pinned-inputs --directory ipd-output/B/${{ matrix.universe }} --universe ${{ matrix.universe }} | tee ipd-output/B/${{ matrix.universe }}/audit.log
+      - name: Preserve complete ledgers and audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipd-sharpe-${{ matrix.universe }}
+          retention-days: 30
+          path: |
+            ipd-output/**/*.csv
+            ipd-output/**/*.json
+            ipd-output/**/*.log
